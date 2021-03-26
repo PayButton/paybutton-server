@@ -4,6 +4,6 @@ import addressRouter from './address';
 
 const router = Router();
 
-router.use('/api/address', addressRouter);
+router.use('/address', addressRouter);
 
 export default router;
