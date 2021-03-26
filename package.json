@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "nodemon",
     "build": "next build && tsc --project tsconfig.server.json",
-    "start": "cross-env NODE_ENV=production node dist/index.js"
+    "start": "cross-env NODE_ENV=production node dist/index.js",
+    "prod": "npm run build && NODE_ENV=production pm2 start dist/index.js"
   },
   "dependencies": {
     "@types/cors": "^2.8.10",
