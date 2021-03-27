@@ -50,6 +50,13 @@ export const getBCHBalance = async (address: string) => {
   return satoshis;
 };
 
+export const getTransactionDetails = async (hash: string) => {
+  const res = await (
+    await grpc.getTransaction({ hash, reversedHashOrder: true })
+  ).toObject();
+  return res;
+};
+
 export const Subscribe = async (
   addresses: string[],
   onTransactionNotification: (txn: Transaction.AsObject) => any
@@ -80,4 +87,5 @@ export default {
   getUtxos,
   Subscribe,
   getBCHBalance,
+  getTransactionDetails,
 };
