@@ -4,6 +4,7 @@ import {
   Transaction,
   GetTransactionResponse,
   GetAddressTransactionsResponse,
+  GetAddressUnspentOutputsResponse,
 } from 'grpc-bchrpc-node';
 const grpc = new GrpcClient();
 
@@ -16,30 +17,21 @@ export interface OutputsList {
   slpToken: string | undefined;
 }
 
-export interface Network {
-  SendTransaction(txnHex: string, callback?: () => any): Promise<string>;
-  GetTransaction(txid: string): Promise<GetTransactionResponse>;
-  GetAddressTransactions(
-    address: string,
-    sinceBlock?: number
-  ): Promise<GetAddressTransactionsResponse>;
-  Subscribe(
-    addresses: string[],
-    onTransactionNotification: (txn: Transaction) => any
-  ): Promise<void>;
-}
-
-export const getAddress = async (address: string) => {
+export const getAddress = async (
+  address: string
+): Promise<GetAddressTransactionsResponse.AsObject> => {
   const res = await (await grpc.getAddressTransactions({ address })).toObject();
   return res;
 };
 
-export const getUtxos = async (address: string) => {
+export const getUtxos = async (
+  address: string
+): Promise<GetAddressUnspentOutputsResponse.AsObject> => {
   const res = await (await grpc.getAddressUtxos({ address })).toObject();
   return res;
 };
 
-export const getBCHBalance = async (address: string) => {
+export const getBCHBalance = async (address: string): Promise<number> => {
   const { outputsList } = await getUtxos(address);
 
   let satoshis: number = 0;
@@ -50,7 +42,9 @@ export const getBCHBalance = async (address: string) => {
   return satoshis;
 };
 
-export const getTransactionDetails = async (hash: string) => {
+export const getTransactionDetails = async (
+  hash: string
+): Promise<GetTransactionResponse.AsObject> => {
   const res = await (
     await grpc.getTransaction({ hash, reversedHashOrder: true })
   ).toObject();
