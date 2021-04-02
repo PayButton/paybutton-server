@@ -1,5 +1,4 @@
 # paybutton-server
-PayButton Server
 
 https://paybutton.org
 
