@@ -6,7 +6,7 @@ import {
   GetAddressTransactionsResponse,
   GetAddressUnspentOutputsResponse,
 } from 'grpc-bchrpc-node';
-const grpc = new GrpcClient();
+const grpc = new GrpcClient({ url: "bchd.greyh.at:8335" });
 
 export interface OutputsList {
   outpoint: object;
