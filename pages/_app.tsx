@@ -1,9 +1,8 @@
-import '../styles/globals.css'
 import React from 'react'
 import SuperTokensReact from 'supertokens-auth-react'
 import SuperTokensNode from 'supertokens-node'
 
-import { frontendConfig, backendConfig } from './supertokensConfig'
+import { frontendConfig, backendConfig } from '../config/supertokensConfig'
 
 if (typeof window !== 'undefined') {
   SuperTokensReact.init(frontendConfig())
