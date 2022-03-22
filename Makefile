@@ -3,4 +3,4 @@ build-image:
 
 dev: 
 	make build-image
-	docker run -p -d 3000:3000 -v $(PWD):/app/src/ paybutton-server npm run dev
+	docker run -p 3000:3000 -v $(PWD):/app/src/ paybutton-server npm run dev
