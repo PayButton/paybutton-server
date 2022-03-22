@@ -8,7 +8,8 @@ _Requires Docker_
 ```
 make dev
 ```
-Server will be exposed at port 3000.
+Server will be exposed at http://localhost:3000.
+
 
 ## Want to join the team?
 

@@ -3,4 +3,4 @@ build:
 
 dev: 
 	make build
-	docker run -d -p 3000:3000 -v $(PWD):/app/ paybutton-server npm run dev
+	docker run -p -d 3000:3000 -v $(PWD):/app/src/ paybutton-server npm run dev
