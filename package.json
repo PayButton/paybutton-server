@@ -2,7 +2,7 @@
   "name": "custom-server-typescript",
   "version": "1.0.0",
   "scripts": {
-    "prepare-branch-env": "echo BRANCH=$(git branch --show-current) >> .env",
+    "prepare-branch-env": "echo BRANCH=$(git branch --show-current)n  >> .env",
     "dev": "next dev",
     "build": "yarn prepare-branch-env && NODE_ENV=production next build && tsc --project tsconfig.json",
     "start": "cross-env NODE_ENV=production node dist/index.js",
