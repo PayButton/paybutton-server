@@ -5,7 +5,7 @@ export default function Home() {
     <ul>
       <li>
         <Link href="/a" as="/a">
-          <a>a</a>
+          <a>PayButton</a>
         </Link>
       </li>
       <li>
