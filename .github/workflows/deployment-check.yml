@@ -1,0 +1,39 @@
+
+name: Deployment Check
+on:
+  pull_request:
+    branches:
+      - master
+jobs:
+  check-for-deploy-and-post-url:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Netlify Deploy
+        uses: probablyup/wait-for-netlify-action@3.2.0
+        id: waitForDeployment
+        with:
+          site_id: 'fc93e6dd-5767-41e1-882b-5d7eea06554e'
+        env:
+          NETLIFY_TOKEN: 'W6HuHe28rxU-IBNcNx0z1_tK8i0Y-CFVUpHGTfFbNYE'
+      - name: Run find-and-replace to remove refs/heads/
+        uses: mad9000/actions-find-and-replace-string@1
+        id: findandreplace
+        with:
+          source: ${{ github.event.pull_request.head.ref }}
+          find: 'refs/heads/'
+          replace: ''
+      - name: Get the above output
+        run: echo "The replaced value is ${{ steps.findandreplace.outputs.value }}"
+      - name: Run find-and-replace to remove slashes
+        uses: mad9000/actions-find-and-replace-string@1
+        id: findandreplace2
+        with:
+          source: ${{ steps.findandreplace.outputs.value }}
+          find: '/'
+          replace: '-'
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v1
+        with:
+          message: "New version of this PR deployed on: https://${{ steps.findandreplace2.outputs.value }}.paybutton.io"
+          GITHUB_TOKEN: ${{ secrets.PR_TOKEN }}
+
