@@ -14,7 +14,7 @@ jobs:
         with:
           site_id: 'fc93e6dd-5767-41e1-882b-5d7eea06554e'
         env:
-          NETLIFY_TOKEN: 'W6HuHe28rxU-IBNcNx0z1_tK8i0Y-CFVUpHGTfFbNYE'
+          NETLIFY_TOKEN: "${{ secrets.NETLIFY_TOKEN }}"
       - name: Run find-and-replace to remove refs/heads/
         uses: mad9000/actions-find-and-replace-string@1
         id: findandreplace
