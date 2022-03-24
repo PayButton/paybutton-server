@@ -1,8 +1,8 @@
 import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword'
 import SessionNode from 'supertokens-node/recipe/session'
 import { appInfo } from './appInfo'
-
-export let backendConfig = () => {
+import { TypeInput } from 'supertokens-node/types'
+export let backendConfig = () : TypeInput => {
   return {
     framework: 'express',
     supertokens: {
