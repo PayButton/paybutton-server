@@ -2,6 +2,8 @@
 
 https://paybutton.org
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/fc93e6dd-5767-41e1-882b-5d7eea06554e/deploy-status)](https://app.netlify.com/sites/paybutton-dev/deploys)
+
 ## Developing
 - [Install and configure Docker](https://docs.docker.com/get-docker/)
 - Run the following make command to build the docker image and run the server locally:
