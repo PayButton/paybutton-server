@@ -3,7 +3,7 @@ import { verifySession } from 'supertokens-node/recipe/session/framework/express
 import supertokens from 'supertokens-node'
 import { backendConfig } from '../../config/backendConfig'
 
-supertokens.init(backendConfig())
+supertokens.init(SuperTokensConfig.backendConfig())
 
 export default async function user(req, res) {
   await superTokensNextWrapper(
