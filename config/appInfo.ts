@@ -1,14 +1,10 @@
-const port = process.env.APP_PORT || 3000
-
+import { getAppUrl } from '../utils/helpers'
 const apiBasePath = '/api/auth/'
 
-export const websiteDomain =
-  process.env.APP_URL ||
-  process.env.NEXT_PUBLIC_APP_URL ||
-  `http://localhost:${port}`
+export const websiteDomain = getAppUrl()
 
 export const appInfo = {
-  appName: 'PayButton.io',
+  appName: process.env.APP_NAME,
   websiteDomain,
   apiDomain: websiteDomain,
   apiBasePath,
