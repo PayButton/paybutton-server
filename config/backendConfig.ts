@@ -12,6 +12,10 @@ export let backendConfig = () : TypeInput => {
     recipeList: [
       ThirdPartyEmailPasswordNode.init({
         providers: [
+          ThirdPartyEmailPasswordNode.Github({
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET
+          }),
         ],
       }),
       SessionNode.init(),

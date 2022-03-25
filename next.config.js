@@ -16,7 +16,6 @@ const {
     console.log(`isDev:${isDev}  isProd:${isProd}   isStaging:${isStaging}`)
     const branch = process.env.BRANCH || 'master'
     const base_url = process.env.BASE_URL || 'paybutton.io'
-    console.log(`BRANCH: ${branch}`)
     const env = {
       APP_URL: (() => {
         if (isDev) return 'http://localhost:3000'
@@ -25,6 +24,8 @@ const {
         }
         return 'APP_URL:not (isDev,isProd && !isStaging,isProd && isStaging)'
       })(),
+      GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
+      GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
     }
   
     // next.config.js object
