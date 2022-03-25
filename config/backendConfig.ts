@@ -16,6 +16,10 @@ export let backendConfig = () : TypeInput => {
             clientId: process.env.GITHUB_CLIENT_ID,
             clientSecret: process.env.GITHUB_CLIENT_SECRET
           }),
+          ThirdPartyEmailPasswordNode.Google({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
         ],
       }),
       SessionNode.init(),

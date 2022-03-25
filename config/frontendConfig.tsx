@@ -13,6 +13,7 @@ export let frontendConfig = () => {
         signInAndUpFeature: {
           providers: [
             ThirdPartyEmailPasswordReact.Github.init(),
+            ThirdPartyEmailPasswordReact.Google.init(),
           ],
         },
       }),
