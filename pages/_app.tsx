@@ -10,6 +10,8 @@ if (typeof window !== 'undefined') {
   SuperTokensReact.init(SuperTokensConfig.frontendConfig())
 }
 
+console.log('process.env', process.env)
+
 function App({ Component, pageProps }) {
   useEffect(() => {
     async function doRefresh() {
