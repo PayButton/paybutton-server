@@ -14,6 +14,8 @@ export let frontendConfig = () => {
           providers: [
             ThirdPartyEmailPasswordReact.Github.init(),
             ThirdPartyEmailPasswordReact.Google.init(),
+            ThirdPartyEmailPasswordReact.Facebook.init(),
+            ThirdPartyEmailPasswordReact.Apple.init(),
           ],
         },
       }),
