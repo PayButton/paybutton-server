@@ -1,0 +1,27 @@
+name: Commit Check
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  commit-check:
+    name: Commit Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: webiny/action-conventional-commits@v1.0.3  
+      - uses: gsactions/commit-message-checker@v1
+          # Checks if the commit messages follows the pattern:
+          # Description: <description of the commit>
+        with:
+            pattern: 'Description: '
+            error: 'You need at least one "Description: <description of the changes>" line.'
+            accessToken: ${{ secrets.GITHUB_TOKEN }}
+      - uses: gsactions/commit-message-checker@v1
+          # Checks if the commit messages follows the pattern:
+          # Test Plan: <description of the test plan>
+        with:
+            pattern: 'Test Plan: '
+            error: 'You need at least one "Test Plan: <test plan>" line.'
+            accessToken: ${{ secrets.GITHUB_TOKEN }}
