@@ -34,6 +34,8 @@ const {
       APPLE_KEY_ID: process.env.APPLE_KEY_ID,
       APPLE_PRIVATE_KEY: process.env.APPLE_PRIVATE_KEY,
       APPLE_TEAM_ID: process.env.APPLE_TEAM_ID,
+      SUPERTOKENS_API_KEY: process.env.SUPERTOKENS_API_KEY,
+      SUPERTOKENS_CONNECTION_URI: process.env.SUPERTOKENS_CONNECTION_URI,
     }
   
     // next.config.js object
