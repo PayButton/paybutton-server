@@ -6,7 +6,8 @@ export let backendConfig = () : TypeInput => {
   return {
     framework: 'express',
     supertokens: {
-      connectionURI: 'https://try.supertokens.io',
+      apiKey: process.env.SUPERTOKENS_API_KEY,
+      connectionURI: process.env.SUPERTOKENS_CONNECTION_URI,
     },
     appInfo,
     recipeList: [
