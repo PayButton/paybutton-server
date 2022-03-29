@@ -6,6 +6,9 @@ import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
+import { websiteDomain } from 'config/appInfo'
+
+const FEATURE_ADD_PAYBUTTON = websiteDomain.includes('feat-add-button') || websiteDomain.includes('localhost')
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((res) =>
@@ -49,12 +52,8 @@ function ProtectedPage({ userId }) {
     ThirdPartyEmailPassword.redirectToAuth()
   }
 
-  async function fetchUserData() {
-    const res = await fetch('/api/user')
-    if (res.status === 200) {
-      const json = await res.json()
-      alert(JSON.stringify(json))
-    }
+  async function addPayButton() {
+    return ""
   }
 
   return (
@@ -107,8 +106,9 @@ function ProtectedPage({ userId }) {
             paddingRight: '75px',
           }}
         >
+          {FEATURE_ADD_PAYBUTTON &&
           <div
-            onClick={fetchUserData}
+            onClick={addPayButton}
             style={{
               display: 'flex',
               width: '150px',
@@ -122,8 +122,8 @@ function ProtectedPage({ userId }) {
               fontWeight: 'bold',
             }}
           >
-            FETCH USER API
-          </div>
+            Add a PayButton
+          </div>}
         </div>
 
         <div className={styles.grid}>
