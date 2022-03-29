@@ -5,6 +5,7 @@ import SuperTokensReact from 'supertokens-auth-react'
 import * as SuperTokensConfig from '../config/frontendConfig'
 import Session from 'supertokens-auth-react/recipe/session'
 import { redirectToAuth } from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
+import ErrorBoundary from 'components/ErrorBoundary';
 
 if (typeof window !== 'undefined') {
   SuperTokensReact.init(SuperTokensConfig.frontendConfig())
@@ -27,7 +28,7 @@ function App({ Component, pageProps }) {
   if (pageProps.fromSupertokens === 'needs-refresh') {
     return null
   }
-  return <Component {...pageProps} />
+  return <ErrorBoundary><Component {...pageProps} /></ErrorBoundary>
 }
 
 export default App
