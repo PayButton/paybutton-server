@@ -20,7 +20,7 @@ const {
       APP_URL: (() => {
         if (isDev) return 'http://localhost:3000'
         if (isProd) {
-          return branch === 'master' ? `https://${base_url}` : `https://${branch.replace('/', '-')}.${base_url}`
+          return branch === 'master' ? `https://${base_url}` : `https://${branch.replaceAll('/', '-')}.${base_url}`
         }
         return 'APP_URL:not (isDev,isProd && !isStaging,isProd && isStaging)'
       })(),
