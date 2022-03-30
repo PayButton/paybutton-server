@@ -8,6 +8,12 @@
     "prod": "npm run build && NODE_ENV=production pm2 start dist/index.js"
   },
   "dependencies": {
+    "@data-driven-forms/mui-component-mapper": "^3.16.10",
+    "@data-driven-forms/react-form-renderer": "^3.16.10",
+    "@emotion/react": "^11.8.2",
+    "@emotion/styled": "^11.8.1",
+    "@mui/icons-material": "^5.5.1",
+    "@mui/material": "^5.5.3",
     "@types/cors": "^2.8.10",
     "@types/express": "^4.17.11",
     "@types/helmet": "^4.0.0",
@@ -19,10 +25,10 @@
     "helmet": "^4.4.1",
     "next": "latest",
     "react": "^16.13.1",
-    "supertokens-auth-react": "^0.19.0",
-    "supertokens-node": "^9.0.0",
     "react-dom": "^16.13.1",
-    "socket.io": "^4.4.1"
+    "socket.io": "^4.4.1",
+    "supertokens-auth-react": "^0.19.0",
+    "supertokens-node": "^9.0.0"
   },
   "devDependencies": {
     "@types/node": "^12.0.12",

@@ -7,8 +7,9 @@ import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { websiteDomain } from 'config/appInfo'
+import AddPayButtonForm from 'components/AddPayButtonForm'
 
-const FEATURE_ADD_PAYBUTTON = websiteDomain.includes('feat-add-button') || websiteDomain.includes('localhost')
+const FEATURE_ADD_PAYBUTTON_FORM = websiteDomain.includes('feat-add-button') || websiteDomain.includes('localhost')
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((res) =>
@@ -106,7 +107,6 @@ function ProtectedPage({ userId }) {
             paddingRight: '75px',
           }}
         >
-          {FEATURE_ADD_PAYBUTTON &&
           <div
             onClick={addPayButton}
             style={{
@@ -123,9 +123,9 @@ function ProtectedPage({ userId }) {
             }}
           >
             Add a PayButton
-          </div>}
+          </div>
         </div>
-
+          {FEATURE_ADD_PAYBUTTON_FORM && <AddPayButtonForm />}
         <div className={styles.grid}>
         </div>
       </main>
