@@ -8,8 +8,11 @@ import * as SuperTokensConfig from '../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { websiteDomain } from 'config/appInfo'
 import AddPayButtonForm from 'components/AddPayButtonForm'
+import { PayButtonsList } from 'components/PayButton'
+import { ButtonResource } from 'types'
 
-const FEATURE_ADD_PAYBUTTON_FORM = websiteDomain.includes('feat-add-button') || websiteDomain.includes('localhost')
+const FEATURE_ADD_PAYBUTTON = websiteDomain.includes('feat-add-button')
+                              || websiteDomain.includes('localhost')
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((res) =>
@@ -48,15 +51,45 @@ export default function Home(props) {
 }
 
 function ProtectedPage({ userId }) {
+  const [payButtons, setPayButtons] = React.useState([])
+
   async function logoutClicked() {
     await ThirdPartyEmailPassword.signOut()
     ThirdPartyEmailPassword.redirectToAuth()
   }
 
-  async function addPayButton() {
-    return ""
+  async function fetchPayButtons() {
+    const res = await fetch(`/api/button/${userId}`)
+    if (res.status === 200) {
+      const json = await res.json()
+      console.log('Fetched PayButtons: ', json)
+      return json
+    }
   }
 
+  async function addPayButton() {
+    const res = await fetch('/api/button', {
+      method: 'POST',
+      body: JSON.stringify({ 
+      userId: userId,
+      addresses: ['ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc', 
+                  'bitcoincash:qrw5fzqlxzf639m8s7fq7wn33as7nfw9wg9zphxlxe']
+      })
+    })
+    if (res.status === 200) {
+      const json = await res.json()
+      setPayButtons([...payButtons, json])
+    }
+  }
+
+  React.useEffect(() => {
+    if (FEATURE_ADD_PAYBUTTON) {
+      (async () => {
+        const fetchedPayButtons: ButtonResource[] = await fetchPayButtons()
+        setPayButtons([...payButtons, ...fetchedPayButtons])
+      })()
+    }
+  }, [])
   return (
     <div className={styles.container}>
       <Head>
@@ -68,7 +101,7 @@ function ProtectedPage({ userId }) {
         <h1 className={styles.title}>
           Welcome to <a href="https://nextjs.org">PayButton.io</a>
         </h1>
-
+        {FEATURE_ADD_PAYBUTTON && <PayButtonsList payButtons={payButtons} />}
         <div
           style={{
             display: 'flex',
@@ -125,7 +158,7 @@ function ProtectedPage({ userId }) {
             Add a PayButton
           </div>
         </div>
-          {FEATURE_ADD_PAYBUTTON_FORM && <AddPayButtonForm />}
+          {FEATURE_ADD_PAYBUTTON && <AddPayButtonForm />}
         <div className={styles.grid}>
         </div>
       </main>
