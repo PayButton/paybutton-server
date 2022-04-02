@@ -9,7 +9,7 @@ import Session from 'supertokens-node/recipe/session'
 import { websiteDomain } from 'config/appInfo'
 import AddPayButtonForm from 'components/AddPayButtonForm'
 import { PayButtonsList } from 'components/PayButton'
-import { ButtonResource } from 'types'
+import { PayButton } from 'types'
 
 const FEATURE_ADD_PAYBUTTON = websiteDomain.includes('feat-add-button')
                               || websiteDomain.includes('localhost')
@@ -85,8 +85,8 @@ function ProtectedPage({ userId }) {
   React.useEffect(() => {
     if (FEATURE_ADD_PAYBUTTON) {
       (async () => {
-        const fetchedPayButtons: ButtonResource[] = await fetchPayButtons()
-        setPayButtons([...payButtons, ...fetchedPayButtons])
+        //const fetchedPayButtons: PayButton[] = await fetchPayButtons()
+        //setPayButtons([...payButtons, ...fetchedPayButtons])
       })()
     }
   }, [])
