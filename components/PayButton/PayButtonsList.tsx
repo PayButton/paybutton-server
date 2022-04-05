@@ -1,7 +1,7 @@
 import React from 'react'
-import { ButtonResource } from 'types/index'
+import { PayButton } from 'types/index'
 
-type IProps = { payButtons: ButtonResource[] }
+type IProps = { payButtons: PayButton[] }
 export default ({payButtons}:IProps) => 
 <ul>
 {payButtons.map(payButton => (
