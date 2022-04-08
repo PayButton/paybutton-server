@@ -59,7 +59,7 @@ function ProtectedPage({ userId }) {
   }
 
   async function fetchPayButtons() {
-    const res = await fetch(`/api/button/${userId}`)
+    const res = await fetch(`/api/paybutton/user/${userId}`)
     if (res.status === 200) {
       const json = await res.json()
       console.log('Fetched PayButtons: ', json)
@@ -68,15 +68,15 @@ function ProtectedPage({ userId }) {
   }
 
   async function addPayButton() {
-    const res = await fetch('/api/button', {
+    const res = await fetch('/api/paybutton', {
       method: 'POST',
-      body: JSON.stringify({ 
+      body: JSON.stringify({
       userId: userId,
-      addresses: ['ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc', 
+      addresses: ['ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc',
                   'bitcoincash:qrw5fzqlxzf639m8s7fq7wn33as7nfw9wg9zphxlxe']
       })
     })
-    if (res.status === 200) {
+    if (res.status === 201) {
       const json = await res.json()
       setPayButtons([...payButtons, json])
     }

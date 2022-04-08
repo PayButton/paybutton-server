@@ -1,13 +1,29 @@
 import { NextApiResponse, NextApiRequest } from "next/types"
 import { PayButton } from "types"
+import models from 'db/models/index'
 
-const fetchResource = (payButtonId: string): PayButton => {
-    const id = payButtonId || "test-id"
-    const temp_addresses = ['ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc', 'bitcoincash:qrw5fzqlxzf639m8s7fq7wn33as7nfw9wg9zphxlxe']
-    return { 
-		userId: btoa(payButtonId + Math.random()).slice(10,20),
-		id,
-		addresses: temp_addresses
+const fetchResource = async (payButtonId: string): Promise<PayButton> => {
+    const query = {
+      where: {
+        id: payButtonId
+      },
+      include: [
+        {
+          model: models.paybuttons_addresses,
+          as: 'addresses'
+        },
+        {
+          model: models.users,
+          as: 'users'
+        }
+      ]
+    }
+
+    const payButton = await models.paybuttons.findOne(query)
+    return {
+      userId: payButton.users[0].id,
+      id: payButton.id,
+      addresses: payButton.addresses
     }
 }
 
@@ -17,6 +33,6 @@ export default (
 ) => {
     const payButtonId = req.query.id as string
     const response = fetchResource(payButtonId);
-    if (response && payButtonId) res.status(200).json(response)
+    if (response) res.status(200).json(response)
     if (!response) res.status(404).json({ error: 'Not found' });
 }
