@@ -2,7 +2,7 @@ name: Check Pull Request Dependencies
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
     types: [ opened, syncronize, edited ]
 
 jobs:
