@@ -1,11 +1,14 @@
 import React from 'react'
 import Head from 'next/head'
-import styles from '../styles/Home.module.css'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
+import { Divider, Drawer, 
+				 List, ListItem, ListItemText, 
+				 IconButton, Box, Button, Typography }  from '@mui/material'
+import MenuIcon from '@mui/icons-material/Menu';
 import { websiteDomain } from 'config/appInfo'
 import AddPayButtonForm from 'components/AddPayButtonForm'
 import { PayButtonsList } from 'components/PayButton'
@@ -81,6 +84,15 @@ function ProtectedPage({ userId }) {
       setPayButtons([...payButtons, json])
     }
   }
+  const [open, setOpen] = React.useState(false);
+
+  const handleDrawerOpen = () => {
+    setOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setOpen(false);
+  };
 
   React.useEffect(() => {
     if (FEATURE_ADD_PAYBUTTON) {
@@ -91,16 +103,33 @@ function ProtectedPage({ userId }) {
     }
   }, [])
   return (
-    <div className={styles.container}>
-      <Head>
-        <title>PayButton.io</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">PayButton.io</a>
-        </h1>
+   <Box sx={{ display: 'flex' }}>
+			<Drawer
+				sx={{
+					width: 240,
+						flexShrink: 0,
+						'& .MuiDrawer-paper': {
+							width: 240,
+								boxSizing: 'border-box',
+						},
+				}}
+        variant="permanent"
+        anchor="left"
+        open={open}
+      >
+ 			<IconButton onClick={handleDrawerClose} />
+        <List>
+          {['Dashboard', 'Payments', 'Buttons', 'Wallets'].map((text, index) => (
+            <ListItem button key={text}>
+              <ListItemText primary={text} />
+            </ListItem>
+          ))}
+        </List>
+      </Drawer>
+ 			<Box
+        component="main"
+        sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}
+      >
         {FEATURE_ADD_PAYBUTTON && <PayButtonsList payButtons={payButtons} />}
         <div
           style={{
@@ -112,23 +141,12 @@ function ProtectedPage({ userId }) {
             paddingRight: '75px',
           }}
         >
-          <div
+          <Button
+						variant="outlined"
             onClick={logoutClicked}
-            style={{
-              display: 'flex',
-              width: '116px',
-              height: '42px',
-              backgroundColor: '#000000',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              fontWeight: 'bold',
-            }}
           >
             SIGN OUT
-          </div>
+          </Button>
         </div>
         <div
           style={{
@@ -140,30 +158,15 @@ function ProtectedPage({ userId }) {
             paddingRight: '75px',
           }}
         >
-          <div
+          <Button
+						variant="contained"
             onClick={addPayButton}
-            style={{
-              display: 'flex',
-              width: '150px',
-              height: '42px',
-              backgroundColor: 'rgb(247 54 54)',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              fontWeight: 'bold',
-            }}
           >
             Add a PayButton
-          </div>
+          </Button>
         </div>
           {FEATURE_ADD_PAYBUTTON && <AddPayButtonForm />}
-        <div className={styles.grid}>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-      </footer>
-    </div>
+			</Box>
+    </Box>
   )
 }
