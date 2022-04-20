@@ -1,14 +1,29 @@
 version: "3.9"
 services:
   paybutton:
-    depends_on: 
+    links:
       - mysql
+      - supertokens
+    depends_on: 
+      - supertokens
     build: .
     ports:
       - 3000:3000
     volumes:
       - .:/app/src
     command: sh -c "yarn db:migrate && yarn dev"
+  supertokens:
+    depends_on:
+      - mysql
+    image: registry.supertokens.io/supertokens/supertokens-mysql
+    restart: always
+    ports:
+      - 3567:3567
+    environment:
+      MYSQL_DATABASE_NAME: paybutton
+      MYSQL_USER: paybutton
+      MYSQL_PASSWORD: paybutton
+      MYSQL_PORT: 3306
   mysql:
     image: mariadb
     restart: always
