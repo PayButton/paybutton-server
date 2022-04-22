@@ -3,6 +3,20 @@ import SessionReact from 'supertokens-auth-react/recipe/session'
 import { appInfo } from './appInfo'
 
 export let frontendConfig = () => {
+  const getAvailableSocialProviders = () => {
+    const socialProviderNodes = {
+      'github': process.env.GITHUB_CLIENT_ID && ThirdPartyEmailPasswordReact.Github.init(),
+      'google': process.env.GOOGLE_CLIENT_ID && ThirdPartyEmailPasswordReact.Google.init(),
+      'facebook': process.env.FACEBOOK_CLIENT_ID && ThirdPartyEmailPasswordReact.Facebook.init(),
+      'apple': process.env.APPLE_CLIENT_ID && ThirdPartyEmailPasswordReact.Apple.init(),
+    }
+    const availableSocialProvidersNodes = Object.keys(socialProviderNodes).map(providerKey => {
+      if (socialProviderNodes[providerKey] !== undefined)
+        return socialProviderNodes[providerKey]
+    })
+    return availableSocialProvidersNodes.filter(provider => provider !== undefined)
+  }
+   
   return {
     appInfo,
     recipeList: [
@@ -11,12 +25,7 @@ export let frontendConfig = () => {
           mode: 'REQUIRED',
         },
         signInAndUpFeature: {
-          providers: [
-            ThirdPartyEmailPasswordReact.Github.init(),
-            ThirdPartyEmailPasswordReact.Google.init(),
-            ThirdPartyEmailPasswordReact.Facebook.init(),
-            ThirdPartyEmailPasswordReact.Apple.init(),
-          ],
+          providers: getAvailableSocialProviders()
         },
       }),
       SessionReact.init(),
