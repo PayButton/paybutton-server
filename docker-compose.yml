@@ -23,6 +23,7 @@ services:
       MYSQL_DATABASE_NAME: paybutton
       MYSQL_USER: paybutton
       MYSQL_PASSWORD: paybutton
+      MYSQL_HOST: mysql
       MYSQL_PORT: 3306
   mysql:
     image: mariadb
