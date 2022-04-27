@@ -36,7 +36,6 @@ const getSocialLoginProviders = () => {
     if (getSocialProviderNode) {
       return getSocialProviderNode()
     }
-    return false
   })
 
   return socialProviderNodes.filter(provider => provider !== undefined)
