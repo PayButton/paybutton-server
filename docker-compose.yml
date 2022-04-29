@@ -6,16 +6,4 @@ services:
       - "3000:3000"
     volumes:
       - .:/app/src
-    links: 
-      - db
     command: npm run dev
-  db:
-    image: mysql/mysql-server:latest
-    restart: always
-    volumes:
-      - mysql_data:/var/lib/mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: paybutton
-volumes:
-   mysql_data:
