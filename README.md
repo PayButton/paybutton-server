@@ -4,7 +4,24 @@ https://paybutton.org
 
 ## Developing
 - [Install and configure Docker](https://docs.docker.com/get-docker/)
-- Run the following make command to build the docker image and run the server locally:
+- [Install docker-compose](https://docs.docker.com/compose/install/)
+- Fill up .env or .env.local file with all social provider credentials. You can get testing credentials from [here](https://supertokens.com/docs/thirdpartyemailpassword/quick-setup/backend#2-initialise-supertokens).
+Your .env or .env.local file should look like this:
+````
+APPLE_CLIENT_ID=<insert credentials here>
+APPLE_KEY_ID=<insert credentials here>
+APPLE_PRIVATE_KEY=<insert credentials here>
+APPLE_TEAM_ID=<insert credentials here>
+FACEBOOK_CLIENT_ID=<insert credentials here>
+FACEBOOK_CLIENT_SECRET=<insert credentials here>
+GITHUB_CLIENT_ID=<insert credentials here>
+GITHUB_CLIENT_SECRET=<insert credentials here>
+GOOGLE_CLIENT_SECRET=<insert credentials here>
+SUPERTOKENS_API_KEY=<insert credentials here>
+SUPERTOKENS_CONNECTION_URI=<insert credentials here>
+```
+- **If you run docker as root user, run the following commands with `sudo`** 
+- Run the following make command to build/pull the relevant docker images and run the server locally:
     ```
     make dev
     ```

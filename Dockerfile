@@ -12,7 +12,9 @@ RUN yarn
 FROM node:lts-alpine as app
 
 ## Copy built node modules and binaries without including the toolchain
+RUN mkdir /app
 COPY --from=builder /deps/node_modules /app/node_modules
 ENV PATH /app/node_modules/.bin:$PATH
+USER node
 WORKDIR /app/src/
 EXPOSE 3000
