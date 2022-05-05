@@ -9,7 +9,7 @@ services:
       - "3000:3000"
     volumes:
       - .:/app/src
-    command: npm run dev
+    command: sh -c "yarn db:migrate && yarn dev"
   db:
     image: mariadb
     restart: always
