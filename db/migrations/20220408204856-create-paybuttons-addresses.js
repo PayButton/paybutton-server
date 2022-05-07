@@ -8,7 +8,7 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      paybutton_id: {
+      paybuttonId: {
         type: Sequelize.INTEGER,
         references: {
           model: 'paybuttons',

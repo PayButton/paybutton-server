@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   paybuttons.init({
-    userId: DataTypes.STRING
+    providerUserId: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'paybuttons',
