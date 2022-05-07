@@ -4,7 +4,7 @@ services:
     restart: always
     depends_on: 
       - db
-      - users_service
+      - users-service
     build: .
     ports:
       - "3000:3000"
@@ -22,7 +22,7 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     ports:
       - 3306:3306
-  users_service:
+  users-service:
     depends_on:
       - db
     image: registry.supertokens.io/supertokens/supertokens-mysql

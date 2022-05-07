@@ -11,4 +11,4 @@ check-logs-db:
 	docker logs -f paybutton-server_db_1
 
 check-logs-users:
-	docker logs -f paybutton-server_users_service_1
+	docker logs -f paybutton-server_users-service_1
