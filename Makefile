@@ -9,3 +9,6 @@ check-logs-dev:
 
 check-logs-db:
 	docker logs -f paybutton-server_db_1
+
+check-logs-users:
+	docker logs -f paybutton-server_users-service_1

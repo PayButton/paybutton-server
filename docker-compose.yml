@@ -4,6 +4,7 @@ services:
     restart: always
     depends_on: 
       - db
+      - users-service
     build: .
     ports:
       - "3000:3000"
@@ -21,3 +22,16 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     ports:
       - 3306:3306
+  users-service:
+    depends_on:
+      - db
+    image: registry.supertokens.io/supertokens/supertokens-mysql
+    restart: always
+    ports:
+      - 3567:3567
+    environment:
+      MYSQL_DATABASE_NAME: paybutton
+      MYSQL_USER: paybutton
+      MYSQL_PASSWORD: paybutton
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
