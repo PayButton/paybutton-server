@@ -10,7 +10,8 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-        paybuttons_addresses.paybuttons = paybuttons_addresses.belongsTo(models.paybuttons, { as: 'paybutton' })
+        paybuttons_addresses.paybutton = paybuttons_addresses.belongsTo(models.paybuttons, { as: 'paybutton' })
+        paybuttons_addresses.chain = paybuttons_addresses.belongsTo(models.chains, { as: 'chain' })
     }
   }
   paybuttons_addresses.init({
