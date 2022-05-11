@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      paybuttons.hasMany(models.paybuttons_addresses, { as: 'addresses' })
+      paybuttons.addresses = paybuttons.hasMany(models.paybuttons_addresses, { as: 'addresses' })
     }
   }
   paybuttons.init({
