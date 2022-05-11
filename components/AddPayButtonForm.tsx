@@ -13,7 +13,7 @@ import axios from "axios";
 const schema = {
     fields: [
         {
-            component: "text-field",
+            component: "textarea",
             name: "addresses",
             label: "Addresses",
             helperText: "XEC and/or BCH wallet addresses",
