@@ -1,14 +1,19 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { PayButton } from 'types'
+import models from 'db/models/index'
 
 const generateIdFromUserId = userId => Math.random().toString(16).slice(2)
 
-const createResource = (userId: string, addresses: string[]):PayButton => {
-    return {
-        id: generateIdFromUserId(userId),
-        userId: userId,
-        addresses: addresses
-    }
+const createResource = (userId: string, addresses: string[]): Promise<PayButton> => {
+    return models.paybuttons.create({
+        providerUserId: userId,
+        addresses: addresses.map(
+            function (addr: string) {
+                return { address: addr}
+            })
+    }, {
+        include: [ models.paybuttons.addresses ]
+    })
 }
 
 const fetchResource = (userIdFromQuery: string): PayButton[] => {
@@ -23,15 +28,24 @@ const fetchResource = (userIdFromQuery: string): PayButton[] => {
 
 
 export default (req: NextApiRequest, res: NextApiResponse) => {
-  try {
-    const userId = req.query.id as string
-    const response = fetchResource(userId);
-    if (!response) {
-      throw new Error('Could not fetch resource')
+    if (req.method == 'POST') {
+        const addressesList = req.body.addresses.split('\n')
+        createResource('mocked-user-id', addressesList).then(
+            function (paybutton) {
+                res.status(200).json(paybutton);
+            }).catch(function(err) {
+                res.status(500).json({ statusCode: 500, message: err.message })
+            })
     }
-
-    res.status(200).json(response)
-  } catch (err: any) {
-    res.status(500).json({ statusCode: 500, message: err.message })
-  }
+    else if (req.method == 'GET') {
+        try {
+            const response = fetchResource('mocked-user-id');
+            if (!response) {
+                throw new Error('Could not fetch resource')
+            }
+            res.status(200).json(response)
+        } catch (err: any) {
+            res.status(500).json({ statusCode: 500, message: err.message })
+        }
+    }
 }
