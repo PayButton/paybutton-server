@@ -18,8 +18,10 @@ const fetchResource = (userIdFromQuery: string): PayButton[] => {
 
 export default (req: NextApiRequest, res: NextApiResponse) => {
     if (req.method == 'POST') {
-        const prefixedAddressList = req.body.addresses.trim().split('\n')
-        paybuttonsService.createPaybutton('mocked-user-id', prefixedAddressList).then(
+        const values = JSON.parse(req.body)
+        const userId = values.userId
+        const prefixedAddressList = values.addresses.trim().split('\n')
+        paybuttonsService.createPaybutton(userId, prefixedAddressList).then(
             function (paybutton) {
                 res.status(200).json(paybutton);
             }).catch(function(err) {
