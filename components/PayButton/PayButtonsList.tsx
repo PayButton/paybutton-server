@@ -9,7 +9,7 @@ export default ({payButtons}:IProps) =>
       <section>
         <h3>{payButton.id}</h3>
         <ul>
-          {payButton.addresses.map(address => (<li key={address}>{address}</li>))}
+          {payButton.addresses.map(item => (<li key={item.address}>{item.address}</li>))}
         </ul>
       </section>
     </li>
