@@ -1,21 +1,14 @@
 'use strict';
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('paybuttons_addresses', {
+    await queryInterface.createTable('paybuttons', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      paybuttonId: {
-        type: Sequelize.INTEGER,
-        references: {
-          model: 'paybuttons',
-          key: 'id'
-        }
-      },
-      address: {
+      providerUserId: {
         type: Sequelize.STRING
       },
       createdAt: {
@@ -29,6 +22,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('paybuttons_addresses');
+    await queryInterface.dropTable('paybuttons');
   }
 };

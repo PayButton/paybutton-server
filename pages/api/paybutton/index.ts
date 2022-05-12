@@ -1,20 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { PayButton } from 'types'
-import models from 'db/models/index'
+import * as paybuttonsService from 'db/services/paybuttonsService'
 
 const generateIdFromUserId = userId => Math.random().toString(16).slice(2)
 
-const createResource = (userId: string, addresses: string[]): Promise<PayButton> => {
-    return models.paybuttons.create({
-        providerUserId: userId,
-        addresses: addresses.map(
-            function (addr: string) {
-                return { address: addr}
-            })
-    }, {
-        include: [ models.paybuttons.addresses ]
-    })
-}
 
 const fetchResource = (userIdFromQuery: string): PayButton[] => {
     const userId = userIdFromQuery || "test-user-id"
@@ -31,8 +20,8 @@ export default (req: NextApiRequest, res: NextApiResponse) => {
     if (req.method == 'POST') {
         const values = JSON.parse(req.body)
         const userId = values.userId
-        const addressesList = values.addresses.split('\n')
-        createResource(userId, addressesList).then(
+        const prefixedAddressList = values.addresses.trim().split('\n')
+        paybuttonsService.createPaybutton(userId, prefixedAddressList).then(
             function (paybutton) {
                 res.status(200).json(paybutton);
             }).catch(function(err) {
