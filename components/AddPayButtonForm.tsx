@@ -7,8 +7,6 @@ import {
   componentMapper,
 } from "@data-driven-forms/mui-component-mapper";
 import FormTemplate from "@data-driven-forms/mui-component-mapper/form-template";
-import { websiteDomain } from 'config/appInfo'
-import axios from "axios";
 
 const schema = {
     fields: [
@@ -21,18 +19,12 @@ const schema = {
     ],
 };
 
-const onSubmit = async (formData) => {
-    const res = await axios.post(`${websiteDomain}/api/paybutton`,
-        { addresses: formData.addresses }
-    )
-}
-
-const Form = () => (
+const Form = (props) => (
   <FormRenderer
     schema={schema}
     componentMapper={componentMapper}
     FormTemplate={FormTemplate}
-    onSubmit={onSubmit}
+    onSubmit={props.handleSubmit}
   />
 );
 

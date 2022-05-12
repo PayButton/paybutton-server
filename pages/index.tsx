@@ -67,13 +67,12 @@ function ProtectedPage({ userId }) {
     }
   }
 
-  async function addPayButton() {
-    const res = await fetch('/api/button', {
+  async function handleSubmit(values) {
+    const res = await fetch('/api/paybutton', {
       method: 'POST',
       body: JSON.stringify({ 
       userId: userId,
-      addresses: ['ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc', 
-                  'bitcoincash:qrw5fzqlxzf639m8s7fq7wn33as7nfw9wg9zphxlxe']
+      addresses: values.addresses
       })
     })
     if (res.status === 200) {
@@ -140,25 +139,8 @@ function ProtectedPage({ userId }) {
             paddingRight: '75px',
           }}
         >
-          <div
-            onClick={addPayButton}
-            style={{
-              display: 'flex',
-              width: '150px',
-              height: '42px',
-              backgroundColor: 'rgb(247 54 54)',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              fontWeight: 'bold',
-            }}
-          >
-            Add a PayButton
-          </div>
         </div>
-          {FEATURE_ADD_PAYBUTTON && <AddPayButtonForm />}
+          {FEATURE_ADD_PAYBUTTON && <AddPayButtonForm handleSubmit={handleSubmit} />}
         <div className={styles.grid}>
         </div>
       </main>
