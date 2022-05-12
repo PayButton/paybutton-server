@@ -12,7 +12,7 @@ export async function createPaybutton (userId: string, prefixedAddressList: stri
             let addressWithPrefix = prefixedAddressList[i];
             const [prefix, address] =  addressWithPrefix.split(':');
             const chain = await chainService.getChainFromSlug(prefix)
-            await models.paybuttons_addresses.create({
+            await models.paybutton_addresses.create({
                 address: address,
                 chainId:  chain.id,
                 paybuttonId: paybutton.id
