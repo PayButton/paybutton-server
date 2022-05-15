@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { PayButton } from 'types'
-import * as paybuttonsService from 'db/services/paybuttonsService'
+import * as paybuttonsService from 'services/paybuttonsService'
 
 const generateIdFromUserId = userId => Math.random().toString(16).slice(2)
 
