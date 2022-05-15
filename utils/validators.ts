@@ -10,12 +10,12 @@ export const validateAddresses = function (prefixedAddressList: string[]): boole
     const addressWithPrefix = prefixedAddressList[i];
     const [prefix, address] =  addressWithPrefix.split(':')
     if(
-      !addressWithPrefix.includes(':')
-      || !supportedChains.includes(prefix)
-      || !address.match(supportedAddressesPattern)
+      addressWithPrefix.includes(':')
+      && supportedChains.includes(prefix)
+      && address.match(supportedAddressesPattern)
     ) {
-      return false
+      return true
     }
   }
-  return true
+  return false
 } // WIP unittests
