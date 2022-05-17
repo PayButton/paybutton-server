@@ -1,4 +1,4 @@
-import { supportedChains, supportedAddressesPattern } from 'constants/index'
+import { SUPPORTED_CHAINS, SUPPORTED_ADDRESS_PATTERN } from 'constants/index'
 
 export const validateAddresses = function (prefixedAddressList: string[]): boolean {
   /**
@@ -13,8 +13,8 @@ export const validateAddresses = function (prefixedAddressList: string[]): boole
     const [prefix, address] =  addressWithPrefix.split(':')
     if(
       !addressWithPrefix.includes(':')
-      || !supportedChains.includes(prefix)
-      || !address.match(supportedAddressesPattern)
+      || !SUPPORTED_CHAINS.includes(prefix)
+      || !address.match(SUPPORTED_ADDRESS_PATTERN)
       || seenPrefixes.has(prefix)
     ) {
       return false
