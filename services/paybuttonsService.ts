@@ -34,3 +34,11 @@ export async function createPaybutton (userId: string, prefixedAddressList: stri
         }
     })
 }
+
+export async function fetchPaybuttonById (paybuttonId: string): Promise<PayButton>  {
+  return models.paybuttons.findOne( { where: { id: paybuttonId }} )
+}
+
+export async function fetchPaybuttonListByUserId (userId: string): Promise<PayButton[]>  {
+  return models.paybuttons.findAll( { where: { providerUserId: userId }} )
+}
