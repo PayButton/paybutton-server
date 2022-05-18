@@ -18,9 +18,13 @@ const fetchResource = (userIdFromQuery: string): PayButton[] => {
 
 
 export default (req: NextApiRequest, res: NextApiResponse) => {
+  const values = req.body
+  const userId = values.userId
+  if (!userId) {
+    res.status(400).json(REPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400)
+    return
+  }
   if (req.method == 'POST') {
-    const values = JSON.parse(req.body)
-    const userId = values.userId
     const prefixedAddressList = values.addresses.trim().split('\n')
     if (validateAddresses(prefixedAddressList)) {
       paybuttonsService.createPaybutton(userId, prefixedAddressList).then(
