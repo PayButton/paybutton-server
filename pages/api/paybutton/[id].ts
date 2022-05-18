@@ -1,22 +1,24 @@
 import { NextApiResponse, NextApiRequest } from "next/types"
-import { PayButton } from "types"
+import * as paybuttonsService from 'services/paybuttonsService'
+import { REPONSE_MESSAGES } from 'constants/index'
 
-const fetchResource = (payButtonId: string): PayButton => {
-    const id = payButtonId || "test-id"
-    const temp_addresses = ['ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc', 'bitcoincash:qrw5fzqlxzf639m8s7fq7wn33as7nfw9wg9zphxlxe']
-    return { 
-		userId: btoa(payButtonId + Math.random()).slice(10,20),
-		id,
-		addresses: temp_addresses
-    }
-}
 
 export default (
     req: NextApiRequest,
     res: NextApiResponse
 ) => {
+  if (req.method == 'GET') {
     const payButtonId = req.query.id as string
-    const response = fetchResource(payButtonId);
-    if (response && payButtonId) res.status(200).json(response)
-    if (!response) res.status(404).json({ error: 'Not found' });
+    paybuttonsService.fetchPaybuttonById(payButtonId).then(
+      function (paybutton) {
+        if (!paybutton) {
+          res.status(404).json(REPONSE_MESSAGES.NOT_FOUND_404);
+        }
+        else {
+          res.status(200).json(paybutton);
+        }
+      }).catch(function(err) {
+        res.status(500).json({ statusCode: 500, message: err.message })
+      })
+  }
 }
