@@ -1,14 +1,13 @@
 import * as v from './validators'
 
-// region: test `validateAddresses`
 
+// region: test `validateAddresses`
 test('Accept example addresses', () => {
   expect(v.validateAddresses(
     ['ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc',
      'bitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4',]
   )).toBe(true)
 });
-
 
 test('Accept addresses for testnets', () => {
   expect(v.validateAddresses(
@@ -30,11 +29,12 @@ test('Accept example address one uppercase other lowercase', () => {
      'bitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4',]
   )).toBe(true)
 });
-test('Reject chain uppercase', () => {
+
+test('Accept chain uppercase', () => {
   expect(v.validateAddresses(
     ['ECASH:QPZ274AAJ98XXNNKUS8HZV367ZA28J900C7TV5V8PC',
-     'bitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4',]
-  )).toBe(false)
+     'BiTcoinCash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4',]
+  )).toBe(true)
 });
 
 test('Reject address with disallowed characters', () => {
@@ -61,7 +61,6 @@ test('Reject mixed case address', () => {
     ['bitcoincash:qpz274aaJ98XXNNKUS8HZV367ZA28J900C7tv5v8pc']
   )).toBe(false)
 });
-
 
 test('Reject legacy address', () => {
   expect(v.validateAddresses(
