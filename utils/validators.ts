@@ -10,7 +10,8 @@ export const validateAddresses = function (prefixedAddressList: string[]): boole
   let seenPrefixes = new Set()
   for (let i = 0; i < prefixedAddressList.length; i++) {
     const addressWithPrefix = prefixedAddressList[i];
-    const [prefix, address] =  addressWithPrefix.split(':')
+    let [prefix, address] =  addressWithPrefix.split(':')
+    prefix = prefix.toLowerCase()
     if(
       !addressWithPrefix.includes(':')
       || !SUPPORTED_CHAINS.includes(prefix)
