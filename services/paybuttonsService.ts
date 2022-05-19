@@ -1,6 +1,6 @@
 import models from 'db/models/index'
 import { PayButton } from 'types'
-import * as chainService from 'db/services/chainsService'
+import * as chainService from 'services/chainsService'
 
 export async function createPaybutton (userId: string, prefixedAddressList: string[]): Promise<PayButton>  {
     const result = await models.sequelize.transaction(async (t) => {
@@ -10,10 +10,12 @@ export async function createPaybutton (userId: string, prefixedAddressList: stri
 
         for (let i=0; i < prefixedAddressList.length; i++) {
             let addressWithPrefix = prefixedAddressList[i];
-            const [prefix, address] =  addressWithPrefix.split(':');
+            const [prefix, address] =  addressWithPrefix.split(':').map(
+              (substring) => substring.toLowerCase()
+            );
             const chain = await chainService.getChainFromSlug(prefix)
             await models.paybutton_addresses.create({
-                address: address,
+                address: address.toLowerCase(),
                 chainId:  chain.id,
                 paybuttonId: paybutton.id
             }, { transaction: t } );

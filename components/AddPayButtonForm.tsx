@@ -9,14 +9,15 @@ import {
 import FormTemplate from "@data-driven-forms/mui-component-mapper/form-template";
 
 const schema = {
-    fields: [
-        {
-            component: "textarea",
-            name: "addresses",
-            label: "Addresses",
-            helperText: "XEC and/or BCH wallet addresses",
-        },
-    ],
+  fields: [
+    {
+      component: "textarea",
+      name: "addresses",
+      label: "Addresses",
+      helperText: "XEC and/or BCH wallet addresses",
+      placeholder: "ecash:qr24f8...\nbitcoincash:pz8d20...",
+    },
+  ],
 };
 
 const Form = (props) => (
