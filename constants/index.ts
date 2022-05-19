@@ -1,4 +1,4 @@
-export const supportedChains = [
+export const SUPPORTED_CHAINS = [
   'ecash',
   'bitcoincash',
   'bchtest',
