@@ -12,6 +12,7 @@
   "dependencies": {
     "@data-driven-forms/mui-component-mapper": "^3.16.10",
     "@data-driven-forms/react-form-renderer": "^3.16.10",
+    "@databases/mysql-test": "^4.0.2",
     "@emotion/react": "^11.8.2",
     "@emotion/styled": "^11.8.1",
     "@mui/icons-material": "^5.5.1",
