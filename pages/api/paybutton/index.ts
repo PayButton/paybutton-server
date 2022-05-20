@@ -1,14 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import * as paybuttonsService from 'services/paybuttonsService'
 import { validateAddresses } from 'utils/validators'
-import { REPONSE_MESSAGES } from 'constants/index'
+import { RESPONSE_MESSAGES } from 'constants/index'
 
 
 export default (req: NextApiRequest, res: NextApiResponse) => {
   const values = req.body
   const userId = values.userId
   if (!userId) {
-    res.status(400).json(REPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400)
+    res.status(400).json(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400)
     return
   }
   if (req.method == 'POST') {
@@ -22,7 +22,7 @@ export default (req: NextApiRequest, res: NextApiResponse) => {
         })
     }
     else {
-        res.status(400).json(REPONSE_MESSAGES.INVALID_INPUT_400)
+        res.status(400).json(RESPONSE_MESSAGES.INVALID_INPUT_400)
     }
   }
   else if (req.method == 'GET') {

@@ -1,6 +1,6 @@
 import { NextApiResponse, NextApiRequest } from "next/types"
 import * as paybuttonsService from 'services/paybuttonsService'
-import { REPONSE_MESSAGES } from 'constants/index'
+import { RESPONSE_MESSAGES } from 'constants/index'
 
 
 export default (
@@ -12,7 +12,7 @@ export default (
     paybuttonsService.fetchPaybuttonById(payButtonId).then(
       function (paybutton) {
         if (!paybutton) {
-          res.status(404).json(REPONSE_MESSAGES.NOT_FOUND_404);
+          res.status(404).json(RESPONSE_MESSAGES.NOT_FOUND_404);
         }
         else {
           res.status(200).json(paybutton);
