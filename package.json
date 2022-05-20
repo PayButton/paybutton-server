@@ -46,6 +46,7 @@
     "@types/react": "^16.9.44",
     "@types/react-dom": "^16.9.8",
     "jest": "^28.1.0",
+    "node-mocks-http": "^1.11.0",
     "nodemon": "^2.0.4",
     "sequelize-cli": "^6.4.1",
     "ts-jest": "^28.0.2",
