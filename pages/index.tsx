@@ -70,9 +70,12 @@ function ProtectedPage({ userId }) {
   async function handleSubmit(values) {
     const res = await fetch('/api/paybutton', {
       method: 'POST',
-      body: JSON.stringify({ 
-      userId: userId,
-      addresses: values.addresses
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: userId,
+        addresses: values.addresses
       })
     })
     if (res.status === 200) {
