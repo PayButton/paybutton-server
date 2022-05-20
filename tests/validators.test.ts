@@ -1,4 +1,4 @@
-import * as v from './validators'
+import * as v from 'utils/validators'
 
 
 // region: test `validateAddresses`
