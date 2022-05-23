@@ -4,7 +4,7 @@ import { validateAddresses } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 
-export default (req: NextApiRequest, res: NextApiResponse) => {
+export default async (req: NextApiRequest, res: NextApiResponse) => {
   const values = req.body
   const userId = values.userId
   if (!userId) {
@@ -14,23 +14,25 @@ export default (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method == 'POST') {
     const prefixedAddressList = values.addresses.trim().split('\n')
     if (validateAddresses(prefixedAddressList)) {
-      paybuttonsService.createPaybutton(userId, prefixedAddressList).then(
-        function (paybutton) {
-          res.status(200).json(paybutton);
-        }).catch(function(err) {
-          res.status(500).json({ statusCode: 500, message: err.message })
-        })
+      try {
+        const paybutton = await paybuttonsService.createPaybutton(userId, prefixedAddressList)
+        res.status(200).json(paybutton);
+      }
+      catch (err) {
+        res.status(500).json({ statusCode: 500, message: err.message })
+      }
     }
     else {
         res.status(400).json(RESPONSE_MESSAGES.INVALID_INPUT_400)
     }
   }
   else if (req.method == 'GET') {
-    paybuttonsService.fetchPaybuttonListByUserId(userId).then(
-     function (paybuttonList) {
-       res.status(200).json(paybuttonList);
-     }).catch(function(err) {
+    try {
+      const paybuttonList = await paybuttonsService.fetchPaybuttonListByUserId(userId)
+      res.status(200).json(paybuttonList);
+     }
+    catch (err) {
        res.status(500).json({ statusCode: 500, message: err.message })
-     })
+     }
   }
 }
