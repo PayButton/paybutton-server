@@ -22,6 +22,22 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     ports:
       - 3306:3306
+  test-db:
+    depends_on:
+      - db
+    image: mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: paybutton-test
+      MYSQL_USER: paybutton-test
+      MYSQL_PASSWORD: paybutton-test
+      MYSQL_TCP_PORT: 3307
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - 3307:3307
+    expose:
+      - 3307
   users-service:
     depends_on:
       - db
