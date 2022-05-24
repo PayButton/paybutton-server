@@ -10,5 +10,6 @@ export const SUPPORTED_ADDRESS_PATTERN = /((q|p)[qpzry9x8gf2tvdw0s3jn54khce6mua7
 export const RESPONSE_MESSAGES = {
   INVALID_INPUT_400: { statusCode: 400, message: 'Invalid input.' },
   USER_ID_NOT_PROVIDED_400: { statusCode: 400, message: "'userId' not provided."},
+  ADDRESSES_NOT_PROVIDED_400: { statusCode: 400, message: "'addresses' not provided."},
   NOT_FOUND_404: { statusCode: 404, message: "Not found."}
 }

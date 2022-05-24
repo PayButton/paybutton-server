@@ -7,12 +7,17 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   const values = req.body
   const userId = values.userId
+  const addresses = values.addresses
   if (!userId) {
     res.status(400).json(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400)
     return
   }
+  if (!addresses) {
+    res.status(400).json(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400)
+    return
+  }
   if (req.method == 'POST') {
-    const prefixedAddressList = values.addresses.trim().split('\n')
+    const prefixedAddressList = addresses.trim().split('\n')
     if (validateAddresses(prefixedAddressList)) {
       try {
         const paybutton = await paybuttonsService.createPaybutton(userId, prefixedAddressList)
