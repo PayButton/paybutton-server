@@ -8,7 +8,7 @@
     "prod": "npm run build && NODE_ENV=production pm2 start dist/index.js",
     "db:migrate": "sequelize-cli db:migrate",
     "test": "jest",
-    "prepare": "husky install"
+    "postinstall": "husky install"
   },
   "dependencies": {
     "@data-driven-forms/mui-component-mapper": "^3.16.10",
