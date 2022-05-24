@@ -36,6 +36,7 @@ const {
       APPLE_TEAM_ID: process.env.APPLE_TEAM_ID,
       SUPERTOKENS_API_KEY: process.env.SUPERTOKENS_API_KEY,
       SUPERTOKENS_CONNECTION_URI: process.env.SUPERTOKENS_CONNECTION_URI,
+      GRPC_NODE_URL: process.env.GRPC_NODE_URL
     }
   
     // next.config.js object

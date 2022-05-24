@@ -19,7 +19,6 @@
     "@data-driven-forms/react-form-renderer": "^3.16.10",
     "@emotion/react": "^11.8.2",
     "@emotion/styled": "^11.8.1",
-    "@grpc/grpc-js": "^1.6.7",
     "@mui/icons-material": "^5.5.1",
     "@mui/material": "^5.5.3",
     "@prisma/client": "^3.14.0",
