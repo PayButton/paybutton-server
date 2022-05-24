@@ -11,7 +11,7 @@ module.exports = {
     username: "paybutton-test",
     password: "paybutton-test",
     database: "paybutton-test",
-    host: process.env.DB_HOST || "test-db",
+    host: "test-db",
     port: 3307,
     dialect: "mysql",
     logging: false,
