@@ -16,24 +16,23 @@ describe('POST /api/paybutton/', () => {
     }
   };
 
-  it('should succeed', () => {
+  it('should succeed', async () => {
     const req  = httpMocks.createRequest(baseRequestJSON);
     const res = httpMocks.createResponse();
-    paybuttonEndpoint(req, res).then(() => {
-      const resposeData = res._getJSONData();
-      expect(res.statusCode).toBe(200)
-      expect(resposeData.providerUserId).toBe('test-u-id')
-      expect(resposeData.addresses).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            address: 'qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc'
-          }),
-          expect.objectContaining({
-            address: 'qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
-          }),
-        ])
-      )
-    })
+    const _ = await paybuttonEndpoint(req, res)
+    const resposeData = res._getJSONData();
+    expect(res.statusCode).toBe(200)
+    expect(resposeData.providerUserId).toBe('test-u-id')
+    expect(resposeData.addresses).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          address: 'qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc'
+        }),
+        expect.objectContaining({
+          address: 'qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
+        }),
+      ])
+    )
   });
 
   it('should fail without userId', async () => {
@@ -69,11 +68,8 @@ describe('POST /api/paybutton/', () => {
     expect(res.statusCode).toBe(400)
   });
 
-  /*
   it('should have created only one paybutton with two addresses', async () => {
-    const pbs = await models.paybuttons.findAll()
-    console.log(pbs)
+    //console.log('modelare', models)
   })
-  */
 
-})
+});
