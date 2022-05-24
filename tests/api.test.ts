@@ -65,7 +65,12 @@ describe('POST /api/paybutton/', () => {
     expect(res.statusCode).toBe(400)
   });
 
-  it('should have created only one paybutton with two addresses', async () => {
-    //console.log('modelare', models)
-  })
+  describe('Test database update', () => {
+    it('should have created only one paybutton with two addresses', async () => {
+      const paybuttonList = await models.paybuttons.findAll()
+      const paybuttonAddressList = await models.paybutton_addresses.findAll()
+      expect(paybuttonList.length).toBe(1)
+      expect(paybuttonAddressList.length).toBe(2)
+    })
+  });
 });
