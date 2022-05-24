@@ -1,0 +1,16 @@
+.header {
+  color: #fff;
+  padding-top: 1em;
+  padding-bottom: 0.6em;
+}
+
+.article {
+  background-color: #272727;
+  color: #fff;
+  height: 100vh;
+  display: block;
+  padding: 1em;
+  border-radius: 5px;
+  -webkit-box-shadow: 2px 5px 15px -5px rgba(255,255,255,0.1); 
+  box-shadow: 2px 5px 15px -5px rgba(255,255,255,0.1);
+}

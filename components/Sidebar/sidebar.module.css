@@ -1,0 +1,17 @@
+.aside {
+  display: block;
+  color: #fff;
+  background-color: #272727;
+  padding-top: 1em;
+  padding-left: 1.2em;
+  position: relative;
+  height: 100%;
+}
+
+.ul {
+  padding: 0
+}
+
+.image {
+  cursor: pointer;
+}
