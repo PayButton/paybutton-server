@@ -1,7 +1,7 @@
 // import * as paybuttonsService from 'services/paybuttonsService'
 import models from 'db/models/index'
 import paybuttonEndpoint from 'pages/api/paybutton/index';
-const httpMocks = require('node-mocks-http');
+import { testEndpoint } from './utils'
 
 
 describe('POST /api/paybutton/', () => {
@@ -17,9 +17,7 @@ describe('POST /api/paybutton/', () => {
   };
 
   it('should succeed', async () => {
-    const req  = httpMocks.createRequest(baseRequestJSON);
-    const res = httpMocks.createResponse();
-    const _ = await paybuttonEndpoint(req, res)
+    const res = await testEndpoint(baseRequestJSON, paybuttonEndpoint)
     const resposeData = res._getJSONData();
     expect(res.statusCode).toBe(200)
     expect(resposeData.providerUserId).toBe('test-u-id')
@@ -40,9 +38,7 @@ describe('POST /api/paybutton/', () => {
       userId: undefined,
       addresses:'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
     }
-    const req = httpMocks.createRequest(baseRequestJSON)
-    const res = httpMocks.createResponse();
-    await paybuttonEndpoint(req, res)
+    const res = await testEndpoint(baseRequestJSON, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
   });
 
@@ -51,9 +47,7 @@ describe('POST /api/paybutton/', () => {
       userId: 'test-u-id',
       addresses: undefined,
     }
-    const req = httpMocks.createRequest(baseRequestJSON)
-    const res = httpMocks.createResponse();
-    await paybuttonEndpoint(req, res)
+    const res = await testEndpoint(baseRequestJSON, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
   });
 
@@ -62,14 +56,11 @@ describe('POST /api/paybutton/', () => {
       userId: 'test-u-id',
       addresses:'ecash:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
     }
-    const req = httpMocks.createRequest(baseRequestJSON)
-    const res = httpMocks.createResponse();
-    await paybuttonEndpoint(req, res)
+    const res = await testEndpoint(baseRequestJSON, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
   });
 
   it('should have created only one paybutton with two addresses', async () => {
     //console.log('modelare', models)
   })
-
 });
