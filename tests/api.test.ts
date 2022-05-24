@@ -1,8 +1,13 @@
 // import * as paybuttonsService from 'services/paybuttonsService'
 import models from 'db/models/index'
 import paybuttonEndpoint from 'pages/api/paybutton/index';
-import { testEndpoint } from './utils'
+import { testEndpoint, clearPaybuttons, clearPaybuttonAddresses } from './utils'
 
+
+afterAll(() => {
+  clearPaybuttons()
+  clearPaybuttonAddresses()
+});
 
 describe('POST /api/paybutton/', () => {
   let baseRequestJSON = {
