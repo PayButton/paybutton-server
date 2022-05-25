@@ -12,6 +12,8 @@ services:
     volumes:
       - .:/app/src
     command: sh -c "yarn db:migrate && yarn dev"
+    env_file:
+      - .env
   db:
     container_name: paybutton-db
     image: mariadb
