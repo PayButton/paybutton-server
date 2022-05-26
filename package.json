@@ -59,7 +59,7 @@
   },
   "lint-staged": {
     "*.ts?(x)": [
-      "npx ts-standard"
+      "npx ts-standard --fix"
     ]
   },
   "license": "MIT"
