@@ -1,0 +1,13 @@
+.layout {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 0.2fr 1fr;
+  grid-template-rows: 1fr;
+  grid-column-gap: 2rem;
+  grid-row-gap: 0px;
+}
+
+.layout a, .layout a:active {
+  color: inherit;
+  text-decoration: none;
+}

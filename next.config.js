@@ -2,25 +2,22 @@ const {
     PHASE_DEVELOPMENT_SERVER,
     PHASE_PRODUCTION_BUILD,
   } = require('next/constants')
-  
-  // This uses phases as outlined here: https://nextjs.org/docs/#custom-configuration
-  module.exports = (phase) => {
-    // when started in development mode `next dev` or `npm run dev` regardless of the value of STAGING environmental variable
+
+  module.exports = function phasedCustomConfiguration(phase) {
     const isDev = phase === PHASE_DEVELOPMENT_SERVER
-    // when `next build` or `npm run build` is used
     const isProd = phase === PHASE_PRODUCTION_BUILD && process.env.STAGING !== '1'
-    // when `next build` or `npm run build` is used
     const isStaging =
-      phase === PHASE_PRODUCTION_BUILD && process.env.STAGING === '1'
-  
-    console.log(`isDev:${isDev}  isProd:${isProd}   isStaging:${isStaging}`)
+          phase === PHASE_PRODUCTION_BUILD
+                && process.env.STAGING === '1'
     const branch = process.env.BRANCH || 'master'
     const base_url = process.env.BASE_URL || 'paybutton.io'
     const env = {
       APP_URL: (() => {
         if (isDev) return 'http://localhost:3000'
         if (isProd) {
-          return branch === 'master' ? `https://${base_url}` : `https://${branch.replaceAll('/', '-')}.${base_url}`
+          return branch === 'master' ?
+                `https://${base_url}`:
+                `https://${branch.replaceAll('/', '-')}.${base_url}`
         }
         return 'APP_URL:not (isDev,isProd && !isStaging,isProd && isStaging)'
       })(),
@@ -36,10 +33,12 @@ const {
       APPLE_TEAM_ID: process.env.APPLE_TEAM_ID,
       SUPERTOKENS_API_KEY: process.env.SUPERTOKENS_API_KEY,
       SUPERTOKENS_CONNECTION_URI: process.env.SUPERTOKENS_CONNECTION_URI,
+      GRPC_NODE_URL: process.env.GRPC_NODE_URL,
+      GRPC_NODE_URL_FALLBACK: process.env.GRPC_NODE_URL_FALLBACK,
     }
-  
-    // next.config.js object
+
     return {
       env,
     }
   }
+
