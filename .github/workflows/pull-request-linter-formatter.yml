@@ -13,8 +13,8 @@ jobs:
         with:
           fetch-depth: 0
       - name: Install packages
-        run: npm ci
+        run: yarn install --immutable --immutable-cache --check-cache
       - name: Check format and style
-        run: npm run ci:format-check
+        run: yarn ci:format-check
       - name: Lint
-        run: npm run ci:lint
+        run: yarn ci:lint
