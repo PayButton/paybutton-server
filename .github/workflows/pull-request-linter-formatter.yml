@@ -13,8 +13,8 @@ jobs:
         with:
           fetch-depth: 0
       - name: Install packages
-        run: yarn
+        run: npm ci
       - name: Check format and style
-        run: yarn ci:format-check
+        run: npm run ci:format-check
       - name: Lint
-        run: yarn ci:lint
+        run: npm run ci:lint
