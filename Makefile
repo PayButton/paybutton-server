@@ -1,5 +1,6 @@
 dev:
 	docker-compose up --build -d
+	find .githooks -type f -exec ln -sf ../../{} .git/hooks/ \;
 
 stop-dev:
 	docker-compose down

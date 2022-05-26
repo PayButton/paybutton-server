@@ -1,0 +1,8 @@
+#!/bin/sh
+
+node_container_name="paybutton-server-paybutton-1"
+if [ -n "$(docker container ls | grep  $node_container_name)" ]; then
+  docker exec  "$node_container_name" yarn lint-staged
+else
+  echo Container "$node_container_name" is down, not linting.
+fi
