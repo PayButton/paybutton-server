@@ -2,7 +2,7 @@ name: Lint and check format of source code
 on:
   pull_request:
     branches:
-      - main
+      - master
 jobs:
   test:
     name: Lint and check format of diff
