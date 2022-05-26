@@ -1,4 +1,3 @@
-// import * as paybuttonsService from 'services/paybuttonsService'
 import models from 'db/models/index'
 import paybuttonEndpoint from 'pages/api/paybutton/index';
 import { testEndpoint, clearPaybuttons, clearPaybuttonAddresses } from './utils'
