@@ -1,9 +1,8 @@
 .aside {
   display: block;
-  color: #fff;
-  background-color: #272727;
-  padding-top: 1em;
-  padding-left: 1.2em;
+  color: var(--primary-text-color);
+  background-color: var(--secondary-bg-color);
+  padding: 1em 1.2em;
   position: relative;
   height: 100%;
 }

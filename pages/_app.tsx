@@ -1,4 +1,5 @@
 import 'simpledotcss/simple.min.css'
+import 'styles/variables.css'
 import 'styles/global.css'
 import Layout from 'components/Layout'
 import React from 'react'
