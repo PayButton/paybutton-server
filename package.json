@@ -59,8 +59,8 @@
   },
   "lint-staged": {
     "*.ts?(x)": [
-      "eslint",
-      "prettier --write"
+      "yarn eslint",
+      "yarn prettier --write"
     ]
   },
   "license": "MIT"
