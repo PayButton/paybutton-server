@@ -1,6 +1,8 @@
+git_hook_setup = git config core.hooksPath .githooks
+
 dev:
+	$(git_hook_setup)
 	docker-compose up --build -d
-	find .githooks -type f -exec ln -sf ../../{} .git/hooks/ \;
 
 stop-dev:
 	docker-compose down
@@ -13,3 +15,4 @@ check-logs-db:
 
 check-logs-users:
 	docker logs -f paybutton-server_users-service_1
+
