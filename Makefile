@@ -1,4 +1,4 @@
-git_hook_setup = git config core.hooksPath .githooks
+git_hook_setup = cp .githooks/pre-commit .git/hooks/pre-commit
 
 dev:
 	$(git_hook_setup)
