@@ -44,7 +44,7 @@ export async function fetchPaybuttonById (paybuttonId: string, includeRelated: b
   })
 }
 
-export async function fetchPaybuttonListByUserId (userId: string, includeRelated: boolean = false): Promise<PayButton[]>  {
+export async function fetchPaybuttonArrayByUserId (userId: string, includeRelated: boolean = false): Promise<PayButton[]>  {
   return models.paybuttons.findAll({
     where: { providerUserId: userId },
     include: includeRelated ? { all: true, nested: true } : undefined
