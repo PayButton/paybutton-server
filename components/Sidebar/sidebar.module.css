@@ -1,0 +1,16 @@
+.aside {
+  display: block;
+  color: var(--primary-text-color);
+  background-color: var(--secondary-bg-color);
+  padding: 1em 1.2em;
+  position: relative;
+  height: 100%;
+}
+
+.ul {
+  padding: 0
+}
+
+.image {
+  cursor: pointer;
+}
