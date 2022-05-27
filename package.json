@@ -7,7 +7,6 @@
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "prod": "npm run build && NODE_ENV=production pm2 start dist/index.js",
     "db:migrate": "sequelize-cli db:migrate",
-    "ci:lint-and-format": "npx ts-standard $(git diff --name-only --diff-filter=ACMRTUXB origin/master | grep  -E \"(.ts$|.tsx$)\")",
     "test": "jest"
   },
   "dependencies": {

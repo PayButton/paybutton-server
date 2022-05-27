@@ -13,4 +13,4 @@ jobs:
         with:
           fetch-depth: 0
       - name: Lint and check format
-        run: yarn ci:lint-and-format
+        run: make lint-master
