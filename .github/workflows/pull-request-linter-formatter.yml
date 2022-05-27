@@ -12,9 +12,5 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Install packages
-        run: yarn install --immutable --immutable-cache --check-cache
-      - name: Check format and style
-        run: yarn ci:format-check
-      - name: Lint
-        run: yarn ci:lint
+      - name: Lint and check format
+        run: yarn ci:lint-and-format
