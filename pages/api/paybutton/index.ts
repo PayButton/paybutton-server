@@ -33,7 +33,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   }
   else if (req.method == 'GET') {
     try {
-      const paybuttonList = await paybuttonsService.fetchPaybuttonListByUserId(userId)
+      const paybuttonList = await paybuttonsService.fetchPaybuttonArrayByUserId(userId)
       res.status(200).json(paybuttonList);
      }
     catch (err) {
