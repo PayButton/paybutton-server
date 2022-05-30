@@ -13,7 +13,7 @@ https://paybutton.org
     ```
     make dev
     ```
-_*If you run docker as root user, run the following commands with `sudo`_
+	_*If you run docker as root user, run the command above with `sudo`_
 
 - App will be available at http://localhost:3000.
 - Local changes on source code should trigger a reload immediately.
