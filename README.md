@@ -9,10 +9,12 @@ https://paybutton.org
 
 - Run the following make command* to build/pull the relevant docker images and run the server locally:
 
-  _*If you run docker as root user, run the following commands with `sudo`_
+
     ```
     make dev
     ```
+_*If you run docker as root user, run the following commands with `sudo`_
+
 - App will be available at http://localhost:3000.
 - Local changes on source code should trigger a reload immediately.
 
