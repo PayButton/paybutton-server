@@ -40,18 +40,21 @@ const getSocialLoginProviders = (): array => {
   }
 
   const socialProviderNodes = Object.keys(availableSocialProviders).map(providerKey => {
-    const getSocialProviderNode: string = availableSocialProviders[providerKey]
-    if (getSocialProviderNode !== '') {
-      return getSocialProviderNode()
+    const getSocialProviderNode: Function | boolean = availableSocialProviders[providerKey]
+    if (getSocialProviderNode !== false) {
+      return getSocialProviderNode
     }
-    return undefined
+    return false
   })
-
-  return socialProviderNodes.filter(provider => provider !== undefined)
+  socialProviderNodes.filter(provider => provider !== false)
 }
 export const backendConfig = (): TypeInput => {
   let connectionURI: string = process.env.SUPERTOKENS_CONNECTION_URI
-  if (connectionURI === '') connectionURI = 'http://users-service:3567'
+
+  if (connectionURI === undefined) {
+    connectionURI = 'http://users-service:3567'
+  }
+
   return {
     framework: 'express',
     supertokens: {
