@@ -1,4 +1,7 @@
+git_hook_setup = cp .githooks/pre-commit .git/hooks/pre-commit
+
 dev:
+	$(git_hook_setup)
 	docker-compose up --build -d
 
 stop-dev:
@@ -12,3 +15,4 @@ check-logs-db:
 
 check-logs-users:
 	docker logs -f paybutton-server_users-service_1
+
