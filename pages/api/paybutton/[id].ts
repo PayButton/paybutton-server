@@ -4,8 +4,8 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 
 
 export default async (
-    req: NextApiRequest,
-    res: NextApiResponse
+  req: NextApiRequest,
+  res: NextApiResponse
 ) => {
   if (req.method == 'GET') {
     const payButtonId = req.query.id as string
@@ -20,6 +20,7 @@ export default async (
           res.status(404).json(RESPONSE_MESSAGES.NOT_FOUND_404)
         default:
           res.status(500).json({ statusCode: 500, message: err.message })
+      }
     }
   }
 }
