@@ -11,5 +11,5 @@ export const RESPONSE_MESSAGES = {
   NOT_FOUND_404: { statusCode: 404, message: "Not found."},
   INVALID_INPUT_400: { statusCode: 400, message: 'Invalid input.' },
   USER_ID_NOT_PROVIDED_400: { statusCode: 400, message: "'userId' not provided."},
-  ADDRESSES_NOT_PROVIDED_400: { statusCode: 404, message: "Addresses not provided."},
+  ADDRESSES_NOT_PROVIDED_400: { statusCode: 400, message: "Addresses not provided."},
 }
