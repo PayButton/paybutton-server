@@ -1,15 +1,16 @@
 import { SUPPORTED_CHAINS, SUPPORTED_ADDRESS_PATTERN } from 'constants/index'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
-export const validateAddresses = function (prefixedAddressList: string[]): void {
+export const parseAddresses = function (prefixedAddressString: string): string[] {
   /**
    * Disallow addresses without a 'chain:' prefix
    * Disallow addresses with an unknown prefix
    * Disallow  addresses is in an invalid format
    * Disallow  addresses with repeated prefixes (chains)
    **/
+  if (!prefixedAddressString) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message);
+  const prefixedAddressList = prefixedAddressString.trim().split('\n')
   let seenPrefixes = new Set()
-  if (!prefixedAddressList.length) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message);
   for (let i = 0; i < prefixedAddressList.length; i++) {
     const addressWithPrefix = prefixedAddressList[i];
     let [prefix, address] =  addressWithPrefix.split(':')
@@ -24,4 +25,5 @@ export const validateAddresses = function (prefixedAddressList: string[]): void 
     }
     seenPrefixes.add(prefix)
   }
+  return prefixedAddressList
 }
