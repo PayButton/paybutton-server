@@ -1,6 +1,7 @@
 version: "3.9"
 services:
   paybutton:
+    container_name: paybutton-dev
     restart: always
     depends_on: 
       - db
@@ -12,6 +13,7 @@ services:
       - .:/app/src
     command: sh -c "yarn db:migrate && yarn dev"
   db:
+    container_name: paybutton-db
     image: mariadb
     restart: always
     environment:
@@ -26,6 +28,7 @@ services:
       - ./db/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql
 
   users-service:
+    container_name: paybutton-users-service
     depends_on:
       - db
     image: registry.supertokens.io/supertokens/supertokens-mysql
