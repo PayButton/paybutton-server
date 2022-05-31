@@ -15,9 +15,12 @@ check-logs-db:
 	docker logs -f paybutton-db
 
 check-logs-users:
-	docker logs -f paybutton-users-service
+	docker logs -f paybutton-server_users-service_1
 
 lint-master:
 	$(git_diff_to_master)
 	npx --yes ts-standard --stdin --stdin-filename DIFF
 
+test:
+	make dev
+	docker exec -it paybutton-dev sh -c "CI=true yarn test"
