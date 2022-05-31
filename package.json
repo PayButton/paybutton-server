@@ -32,6 +32,7 @@
     "micro-cors": "^0.1.1",
     "mysql2": "^2.3.3",
     "next": "latest",
+    "prisma": "^3.14.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "sequelize": "^6.18.0",
