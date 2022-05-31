@@ -3,7 +3,7 @@ import { PayButton } from 'types'
 import * as chainService from 'services/chainsService'
 
 export async function createPaybutton (userId: string, prefixedAddressList: string[]): Promise<PayButton>  {
-    const result = await models.sequelize.transaction(async (t) => {
+    const result = await models.sequelize.transaction(async (t: any) => {
         let paybutton = await models.paybuttons.create({
             providerUserId: userId,
         }, { transaction: t } )

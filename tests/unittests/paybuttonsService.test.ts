@@ -2,9 +2,10 @@ import models from 'db/models/index'
 import * as paybuttonsService from 'services/paybuttonsService'
 import * as dbMocks from 'tests/dbMocks'
 
-models.paybuttons.findOne = jest.fn(dbMocks.mockedPaybuttonsFindOne)
-models.paybuttons.findAll = jest.fn(dbMocks.mockedPaybuttonsFindAll)
-models.sequelize.transaction = jest.fn((_) => { return { id: 4 } })
+const mockModels: any = models
+mockModels.paybuttons.findOne = jest.fn(dbMocks.mockedPaybuttonsFindOne)
+mockModels.paybuttons.findAll = jest.fn(dbMocks.mockedPaybuttonsFindAll)
+mockModels.sequelize.transaction = jest.fn((_) => { return { id: 4 } })
 
 describe('Fetch services', () => {
   it('Should fetch paybutton by id', async () => {

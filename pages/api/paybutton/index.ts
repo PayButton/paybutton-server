@@ -34,7 +34,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       const paybuttonList = await paybuttonsService.fetchPaybuttonArrayByUserId(userId)
       res.status(200).json(paybuttonList);
     }
-    catch (err) {
+    catch (err: any) {
       switch (err.message) 
       {
         case RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message:
