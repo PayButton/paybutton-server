@@ -10,8 +10,8 @@ datasource db {
 model paybutton_addresses {
   id          Int        @id @default(autoincrement())
   address     String     @db.VarChar(255)
-  createdAt   DateTime   @db.DateTime(0)
-  updatedAt   DateTime   @db.DateTime(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   chainId     Int
   paybuttonId Int
   chains      chains     @relation(fields: [chainId], references: [id], onUpdate: Restrict, map: "paybutton_addresses_ibfk_1")
@@ -24,8 +24,8 @@ model paybutton_addresses {
 model paybuttons {
   id                  Int                   @id @default(autoincrement())
   providerUserId      String?               @db.VarChar(255)
-  createdAt           DateTime              @db.DateTime(0)
-  updatedAt           DateTime              @db.DateTime(0)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
   paybutton_addresses paybutton_addresses[]
 }
 
@@ -33,8 +33,8 @@ model chains {
   id                  Int                   @id @default(autoincrement())
   slug                String                @db.VarChar(255)
   title               String                @db.VarChar(255)
-  createdAt           DateTime              @db.DateTime(0)
-  updatedAt           DateTime              @db.DateTime(0)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
   paybutton_addresses paybutton_addresses[]
 }
 
