@@ -1,5 +1,10 @@
 import models from 'db/models/index'
+import { Chain } from 'types'
 
-export async function getChainFromSlug (slug: string) {
-    return models.chains.findOne( { where: { slug: slug } })
+export async function getChainFromSlug(slug: string): Promise<Chain> {
+    return await models.chains.findOne( { where: { slug: slug } })
+}
+
+export async function getAllChainSlugs (): Promise<Chain[]> {
+    return await models.chains.findAll( { attributes: [ 'slug' ] })
 }

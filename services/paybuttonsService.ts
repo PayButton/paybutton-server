@@ -36,3 +36,17 @@ export async function createPaybutton (userId: string, prefixedAddressList: stri
         }
     })
 }
+
+export async function fetchPaybuttonById (paybuttonId: number | string, includeRelated: boolean = false): Promise<PayButton>  {
+  return await models.paybuttons.findOne({
+    where: { id: paybuttonId },
+    include: includeRelated ? { all: true, nested: true } : undefined
+  })
+}
+
+export async function fetchPaybuttonArrayByUserId (userId: string, includeRelated: boolean = false): Promise<PayButton[]>  {
+  return await models.paybuttons.findAll({
+    where: { providerUserId: userId },
+    include: includeRelated ? { all: true, nested: true } : undefined
+  })
+}

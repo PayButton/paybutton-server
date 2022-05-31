@@ -3,3 +3,9 @@ export type PayButton = {
         userId: string,
         addresses: any,
 }
+
+export type Chain = {
+        id: string,
+        slug: string,
+        title: string,
+}
