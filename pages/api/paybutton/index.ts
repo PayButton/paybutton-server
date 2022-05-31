@@ -1,48 +1,47 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { PayButton } from 'types'
 import * as paybuttonsService from 'services/paybuttonsService'
-import { validateAddresses } from 'utils/validators'
-
-const generateIdFromUserId = userId => Math.random().toString(16).slice(2)
-
-
-const fetchResource = (userIdFromQuery: string): PayButton[] => {
-  const userId = userIdFromQuery || "test-user-id"
-  const temp_addresses = ['ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc', 'bitcoincash:qrw5fzqlxzf639m8s7fq7wn33as7nfw9wg9zphxlxe']
-  return  [{
-    id: generateIdFromUserId(userId),
-    userId,
-    addresses: temp_addresses
-  }]
-}
+import { parseAddresses } from 'utils/validators'
+import { RESPONSE_MESSAGES } from 'constants/index'
 
 
-export default (req: NextApiRequest, res: NextApiResponse) => {
+export default async (req: NextApiRequest, res: NextApiResponse) => {
+  const values = req.body
+  const userId = values.userId
   if (req.method == 'POST') {
-    const values = JSON.parse(req.body)
-    const userId = values.userId
-    const prefixedAddressList = values.addresses.trim().split('\n')
-    if (validateAddresses(prefixedAddressList)) {
-      paybuttonsService.createPaybutton(userId, prefixedAddressList).then(
-        function (paybutton) {
-          res.status(200).json(paybutton);
-        }).catch(function(err) {
-          res.status(500).json({ statusCode: 500, message: err.message })
-        })
+    try {
+      if (!userId) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+      const parsedAddresses = parseAddresses(values.addresses)
+      const paybutton = await paybuttonsService.createPaybutton(userId, parsedAddresses)
+      res.status(200).json(paybutton);
     }
-    else {
-        res.status(500).json({ statusCode: 500, message: 'Invalid input' })
+    catch (err: any) {
+      switch (err.message) 
+      {
+        case RESPONSE_MESSAGES.INVALID_INPUT_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.INVALID_INPUT_400)
+        case RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400)
+        case RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400)
+        default:
+          res.status(500).json({ statusCode: 500, message: err.message })
+      }
     }
   }
   else if (req.method == 'GET') {
     try {
-      const response = fetchResource('mocked-user-id');
-      if (!response) {
-        throw new Error('Could not fetch resource')
+      if (!userId) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+      const paybuttonList = await paybuttonsService.fetchPaybuttonArrayByUserId(userId)
+      res.status(200).json(paybuttonList);
+    }
+    catch (err) {
+      switch (err.message) 
+      {
+        case RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400)
+        default:
+          res.status(500).json({ statusCode: 500, message: err.message })
       }
-      res.status(200).json(response)
-    } catch (err: any) {
-      res.status(500).json({ statusCode: 500, message: err.message })
     }
   }
 }
