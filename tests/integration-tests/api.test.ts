@@ -19,7 +19,7 @@ describe('POST /api/paybutton/', () => {
     }
   }
 
-  it('should succeed', async () => {
+  it('Should succeed', async () => {
     const res = await testEndpoint(baseRequestJSON, paybuttonEndpoint)
     const resposeData = res._getJSONData()
     expect(res.statusCode).toBe(200)
@@ -36,7 +36,7 @@ describe('POST /api/paybutton/', () => {
     )
   })
 
-  it('should fail without userId', async () => {
+  it('Should fail without userId', async () => {
     baseRequestJSON.body = {
       userId: '',
       addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
@@ -45,7 +45,7 @@ describe('POST /api/paybutton/', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  it('should fail without addresses', async () => {
+  it('Should fail without addresses', async () => {
     baseRequestJSON.body = {
       userId: 'test-u-id',
       addresses: ''
@@ -54,7 +54,7 @@ describe('POST /api/paybutton/', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  it('should fail with invalid addresses', async () => {
+  it('Should fail with invalid addresses', async () => {
     baseRequestJSON.body = {
       userId: 'test-u-id',
       addresses: 'ecash:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
@@ -64,7 +64,7 @@ describe('POST /api/paybutton/', () => {
   })
 
   describe('Test database update', () => {
-    it('should have created only one paybutton with two addresses', async () => {
+    it('Should have created only one paybutton with two addresses', async () => {
       const paybuttonList = await models.paybuttons.findAll()
       const paybuttonAddressList = await models.paybutton_addresses.findAll()
       expect(paybuttonList.length).toBe(1)
