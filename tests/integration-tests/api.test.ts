@@ -38,7 +38,7 @@ describe('POST /api/paybutton/', () => {
 
   it('should fail without userId', async () => {
     baseRequestJSON.body = {
-      userId: undefined,
+      userId: '',
       addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
     }
     const res = await testEndpoint(baseRequestJSON, paybuttonEndpoint)
@@ -48,7 +48,7 @@ describe('POST /api/paybutton/', () => {
   it('should fail without addresses', async () => {
     baseRequestJSON.body = {
       userId: 'test-u-id',
-      addresses: undefined
+      addresses: ''
     }
     const res = await testEndpoint(baseRequestJSON, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
