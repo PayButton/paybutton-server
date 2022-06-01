@@ -21,3 +21,6 @@ lint-master:
 	$(git_diff_to_master)
 	npx --yes ts-standard --stdin --stdin-filename DIFF
 
+deploy-branch-staging:
+	./deploy/staging_branch.sh
+

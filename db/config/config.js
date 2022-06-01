@@ -15,6 +15,10 @@ module.exports = {
     dialect: "mysql",
     logging: false,
   },
+  staging: {
+    dialect: "sqlite",
+    storage: "./database.sqlite3"    
+  },
   production: {
     username: process.env.DB_USER,
     password: process.env.DB_PASS,

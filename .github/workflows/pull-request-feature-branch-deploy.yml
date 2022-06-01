@@ -1,0 +1,18 @@
+name: Deploy feature branch on staging
+on:
+  pull_request:
+    branches:
+    # TODO: change to master when PR ready
+      - ci
+jobs:
+  deploy:
+    name: 
+    runs-on: ubuntu-latest
+    # TODO: add ssh steps, with SSH_HOST and SSH_PRIVATE_KEY secrets as ENV VARS
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Deploy branch to staging
+        run: make deploy

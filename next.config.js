@@ -3,24 +3,19 @@ const {
     PHASE_PRODUCTION_BUILD,
   } = require('next/constants')
 
-  module.exports = function phasedCustomConfiguration(phase) {
+module.exports = function phasedCustomConfiguration(phase) {
     const isDev = phase === PHASE_DEVELOPMENT_SERVER
     const isProd = phase === PHASE_PRODUCTION_BUILD && process.env.STAGING !== '1'
     const isStaging =
           phase === PHASE_PRODUCTION_BUILD
-                && process.env.STAGING === '1'
+                && process.env.PAYBUTTON_ENV === 'staging'
     const branch = process.env.BRANCH || 'master'
-    const base_url = process.env.BASE_URL || 'paybutton.io'
+    const base_url = process.env.PAYBUTTON_BASE_PATH || 'paybutton.io'
+    const port = process.env.PORT || '3000'
     const env = {
-      APP_URL: (() => {
-        if (isDev) return 'http://localhost:3000'
-        if (isProd) {
-          return branch === 'master' ?
-                `https://${base_url}`:
-                `https://${branch.replaceAll('/', '-')}.${base_url}`
-        }
-        return 'APP_URL:not (isDev,isProd && !isStaging,isProd && isStaging)'
-      })(),
+      WEBSITE_DOMAIN: process.env.WEBSITE_DOMAIN ||'localhost',
+        API_DOMAIN: process.env.API_DOMAIN || 'localhost',
+	PAYBUTTON_BASE_PATH: process.env.PAYBUTTON_BASE_PATH || "",
       GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
       GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
       GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
@@ -38,7 +33,11 @@ const {
     }
 
     return {
-      env,
+	env,
+	typescript: {
+	    "ignoreBuildErrors": true
+	},
+	basePath: process.env.PAYBUTTON_BASE_PATH || '',
     }
   }
 
