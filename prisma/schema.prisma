@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model paybutton_addresses {
+  id          Int        @id @default(autoincrement())
+  address     String     @db.VarChar(255)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  chainId     Int
+  paybuttonId Int
+  chains      chains     @relation(fields: [chainId], references: [id], onUpdate: Restrict, map: "paybutton_addresses_ibfk_1")
+  paybuttons  paybuttons @relation(fields: [paybuttonId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "paybutton_addresses_ibfk_2")
+
+  @@index([chainId], map: "chainId")
+  @@index([paybuttonId], map: "paybuttonId")
+}
+
+model paybuttons {
+  id                  Int                   @id @default(autoincrement())
+  providerUserId      String?               @db.VarChar(255)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  paybutton_addresses paybutton_addresses[]
+}
+
+model chains {
+  id                  Int                   @id @default(autoincrement())
+  slug                String                @db.VarChar(255)
+  title               String                @db.VarChar(255)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  paybutton_addresses paybutton_addresses[]
+}
+
+// Region: supertokens models
+model all_auth_recipe_users {
+  user_id     String @id @db.Char(36)
+  recipe_id   String @db.VarChar(128)
+  time_joined BigInt @db.UnsignedBigInt
+
+  @@index([time_joined, user_id], map: "all_auth_recipe_users_pagination_index")
+}
+
+model emailpassword_pswd_reset_tokens {
+  user_id             String              @db.Char(36)
+  token               String              @unique(map: "token") @db.VarChar(128)
+  token_expiry        BigInt              @db.UnsignedBigInt
+  emailpassword_users emailpassword_users @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "emailpassword_pswd_reset_tokens_ibfk_1")
+
+  @@id([user_id, token])
+  @@index([token_expiry], map: "emailpassword_password_reset_token_expiry_index")
+}
+
+model emailpassword_users {
+  user_id                         String                            @id @db.Char(36)
+  email                           String                            @unique(map: "email") @db.VarChar(256)
+  password_hash                   String                            @db.VarChar(128)
+  time_joined                     BigInt                            @db.UnsignedBigInt
+  emailpassword_pswd_reset_tokens emailpassword_pswd_reset_tokens[]
+}
+
+model emailverification_tokens {
+  user_id      String @db.VarChar(128)
+  email        String @db.VarChar(256)
+  token        String @unique(map: "token") @db.VarChar(128)
+  token_expiry BigInt @db.UnsignedBigInt
+
+  @@id([user_id, email, token])
+  @@index([token_expiry], map: "emailverification_tokens_index")
+}
+
+model emailverification_verified_emails {
+  user_id String @db.VarChar(128)
+  email   String @db.VarChar(256)
+
+  @@id([user_id, email])
+}
+
+model jwt_signing_keys {
+  key_id     String  @id @db.VarChar(255)
+  key_string String  @db.Text
+  algorithm  String  @db.VarChar(10)
+  created_at BigInt? @db.UnsignedBigInt
+}
+
+model key_value {
+  name            String  @id @db.VarChar(128)
+  value           String? @db.Text
+  created_at_time BigInt? @db.UnsignedBigInt
+}
+
+model passwordless_codes {
+  code_id              String               @id @db.Char(36)
+  device_id_hash       String               @db.Char(44)
+  link_code_hash       String               @unique(map: "link_code_hash") @db.Char(44)
+  created_at           BigInt               @db.UnsignedBigInt
+  passwordless_devices passwordless_devices @relation(fields: [device_id_hash], references: [device_id_hash], onDelete: Cascade, map: "passwordless_codes_ibfk_1")
+
+  @@index([device_id_hash], map: "device_id_hash")
+  @@index([created_at], map: "passwordless_codes_created_at_index")
+}
+
+model passwordless_devices {
+  device_id_hash     String               @id @db.Char(44)
+  email              String?              @db.VarChar(256)
+  phone_number       String?              @db.VarChar(256)
+  link_code_salt     String               @db.Char(44)
+  failed_attempts    Int                  @db.UnsignedInt
+  passwordless_codes passwordless_codes[]
+
+  @@index([email], map: "passwordless_devices_email_index")
+  @@index([phone_number], map: "passwordless_devices_phone_number_index")
+}
+
+model passwordless_users {
+  user_id      String  @id @db.Char(36)
+  email        String? @unique(map: "email") @db.VarChar(256)
+  phone_number String? @unique(map: "phone_number") @db.VarChar(256)
+  time_joined  BigInt  @db.UnsignedBigInt
+}
+
+model role_permissions {
+  role       String @db.VarChar(255)
+  permission String @db.VarChar(255)
+  roles      roles  @relation(fields: [role], references: [role], onDelete: Cascade, onUpdate: Restrict, map: "role_permissions_ibfk_1")
+
+  @@id([role, permission])
+  @@index([permission], map: "role_permissions_permission_index")
+}
+
+model roles {
+  role             String             @id @db.VarChar(255)
+  role_permissions role_permissions[]
+  user_roles       user_roles[]
+}
+
+model session_access_token_signing_keys {
+  created_at_time BigInt  @id @db.UnsignedBigInt
+  value           String? @db.Text
+}
+
+model session_info {
+  session_handle       String  @id @db.VarChar(255)
+  user_id              String  @db.VarChar(128)
+  refresh_token_hash_2 String  @db.VarChar(128)
+  session_data         String? @db.Text
+  expires_at           BigInt  @db.UnsignedBigInt
+  created_at_time      BigInt  @db.UnsignedBigInt
+  jwt_user_payload     String? @db.Text
+}
+
+model thirdparty_users {
+  third_party_id      String @db.VarChar(28)
+  third_party_user_id String @db.VarChar(128)
+  user_id             String @unique(map: "user_id") @db.Char(36)
+  email               String @db.VarChar(256)
+  time_joined         BigInt @db.UnsignedBigInt
+
+  @@id([third_party_id, third_party_user_id])
+}
+
+model user_metadata {
+  user_id       String @id @db.VarChar(128)
+  user_metadata String @db.Text
+}
+
+model user_roles {
+  user_id String @db.VarChar(128)
+  role    String @db.VarChar(255)
+  roles   roles  @relation(fields: [role], references: [role], onDelete: Cascade, onUpdate: Restrict, map: "user_roles_ibfk_1")
+
+  @@id([user_id, role])
+  @@index([role], map: "user_roles_role_index")
+}
+
+// End region: supertokens models
+
+// To be removed with sequelize
+model SequelizeMeta {
+  name String @id @unique(map: "name") @db.VarChar(255)
+}
+
