@@ -7,35 +7,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model paybutton_addresses {
+model PaybuttonAddress {
   id          Int        @id @default(autoincrement())
   address     String     @db.VarChar(255)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   chainId     Int
   paybuttonId Int
-  chains      chains     @relation(fields: [chainId], references: [id], onUpdate: Restrict, map: "paybutton_addresses_ibfk_1")
-  paybuttons  paybuttons @relation(fields: [paybuttonId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "paybutton_addresses_ibfk_2")
+  chain       Chain     @relation(fields: [chainId], references: [id], onUpdate: Restrict)
+  paybuttons  Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade, onUpdate: Restrict)
 
-  @@index([chainId], map: "chainId")
-  @@index([paybuttonId], map: "paybuttonId")
+  @@map ("paybutton_addresses")
 }
 
-model paybuttons {
+model Paybutton {
   id                  Int                   @id @default(autoincrement())
   providerUserId      String?               @db.VarChar(255)
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
-  paybutton_addresses paybutton_addresses[]
+  paybuttonAddresses  PaybuttonAddress[]
+  @@map("paybuttons")
 }
 
-model chains {
+model Chain {
   id                  Int                   @id @default(autoincrement())
   slug                String                @db.VarChar(255)
   title               String                @db.VarChar(255)
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
-  paybutton_addresses paybutton_addresses[]
+  paybuttonAddresses  PaybuttonAddress[]
+  @@map ("chains")
+
 }
 
 // Region: supertokens models
