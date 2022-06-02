@@ -7,7 +7,7 @@
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "prod": "npm run build && NODE_ENV=production pm2 start dist/index.js",
     "db:migrate": "sequelize-cli db:migrate",
-    "prisma": "dotenv -e .env.development prisma"
+    "prisma": "dotenv -e .env.development prisma",
     "db:reset": "sequelize-cli db:drop && sequelize-cli db:create && sequelize-cli db:migrate && sequelize-cli db:seed:all",
     "test": "cross-env NODE_ENV=test jest",
     "pretest": "cross-env NODE_ENV=test yarn db:reset",
