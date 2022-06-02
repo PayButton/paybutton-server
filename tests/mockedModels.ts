@@ -36,14 +36,7 @@ export const mockedPaybuttonList = [
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
         chainId: 1,
-        paybuttonId: 1,
-        chain: {
-          id: 1,
-          slug: 'bitcoincash',
-          title: 'Bitcoin Cash',
-          createdAt: new Date('2022-05-27T15:18:42.000Z'),
-          updatedAt: new Date('2022-05-27T15:18:42.000Z')
-        }
+        paybuttonId: 1
       },
       {
         id: 2,
@@ -51,14 +44,7 @@ export const mockedPaybuttonList = [
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
         chainId: 2,
-        paybuttonId: 1,
-        chain: {
-          id: 2,
-          slug: 'ecash',
-          title: 'eCash',
-          createdAt: new Date('2022-05-27T15:18:42.000Z'),
-          updatedAt: new Date('2022-05-27T15:18:42.000Z')
-        }
+        paybuttonId: 1
       }
     ]
   },
@@ -74,14 +60,7 @@ export const mockedPaybuttonList = [
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
         chainId: 1,
-        paybuttonId: 2,
-        chain: {
-          id: 1,
-          slug: 'bitcoincash',
-          title: 'Bitcoin Cash',
-          createdAt: new Date('2022-05-27T15:18:42.000Z'),
-          updatedAt: new Date('2022-05-27T15:18:42.000Z')
-        }
+        paybuttonId: 2
       },
       {
         id: 4,
@@ -89,15 +68,16 @@ export const mockedPaybuttonList = [
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
         chainId: 2,
-        paybuttonId: 2,
-        chain: {
-          id: 2,
-          slug: 'ecash',
-          title: 'eCash',
-          createdAt: new Date('2022-05-27T15:18:42.000Z'),
-          updatedAt: new Date('2022-05-27T15:18:42.000Z')
-        }
+        paybuttonId: 2
       }
     ]
   }
 ]
+
+export const mockedChain = {
+  id: 1,
+  slug: 'bitcoincash',
+  title: 'Bitcoin Cash',
+  createdAt: new Date('2022-05-27T15:18:42.000Z'),
+  updatedAt: new Date('2022-05-27T15:18:42.000Z')
+}
