@@ -1,6 +1,7 @@
 import * as chainService from 'services/chainsService'
 import { Paybutton, Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
+import { RESPONSE_MESSAGES } from 'constants/index'
 
 export async function createPaybutton (userId: string, prefixedAddressList: string[]): Promise<Paybutton> {
   const paybuttonAddressesToCreate: Prisma.PaybuttonAddressUncheckedCreateWithoutPaybuttonsInput[] = await Promise.all(
@@ -10,6 +11,7 @@ export async function createPaybutton (userId: string, prefixedAddressList: stri
           (substring) => substring.toLowerCase()
         )
         const chain = await chainService.getChainFromSlug(prefix)
+        if (chain === null) throw new Error(RESPONSE_MESSAGES.INVALID_CHAIN_SLUG_400.message)
         return {
           address: address.toLowerCase(),
           chainId: Number(chain.id)
