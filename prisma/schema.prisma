@@ -31,7 +31,7 @@ model Paybutton {
 
 model Chain {
   id                  Int                   @id @default(autoincrement())
-  slug                String                @db.VarChar(255)
+  slug                String                @unique @db.VarChar(255)
   title               String                @db.VarChar(255)
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
