@@ -7,11 +7,11 @@
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "prod": "npm run build && NODE_ENV=production pm2 start dist/index.js",
     "db:migrate": "sequelize-cli db:migrate",
-    "prisma": "dotenv -e .env.development prisma",
     "db:reset": "sequelize-cli db:drop && sequelize-cli db:create && sequelize-cli db:migrate && sequelize-cli db:seed:all",
     "test": "dotenv -e .env.test jest",
     "pretest": "cross-env NODE_ENV=test yarn db:reset",
-    "db:create:test": "cross-env NODE_ENV=test sequelize-cli db:create"
+    "db:create:test": "cross-env NODE_ENV=test sequelize-cli db:create",
+    "prisma": "dotenv -e .env.development prisma"
   },
   "dependencies": {
     "@data-driven-forms/mui-component-mapper": "^3.16.10",
