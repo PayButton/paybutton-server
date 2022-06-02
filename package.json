@@ -2,12 +2,13 @@
   "name": "custom-server-typescript",
   "version": "1.0.0",
   "scripts": {
-    "dev": "next dev",
+    "dev": "dotenv -e .env.development next dev",
     "build": "next build && tsc --project tsconfig.json",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "prod": "npm run build && NODE_ENV=production pm2 start dist/index.js",
     "db:migrate": "sequelize-cli db:migrate",
-    "test": "jest"
+    "test": "jest",
+    "prisma": "dotenv -e .env.development prisma"
   },
   "dependencies": {
     "@data-driven-forms/mui-component-mapper": "^3.16.10",
@@ -24,6 +25,7 @@
     "axios": "^0.26.1",
     "cors": "^2.8.5",
     "cross-env": "^7.0.2",
+    "dotenv-cli": "^5.1.0",
     "express": "^4.17.1",
     "graphql": "^16.3.0",
     "grpc-bchrpc-node": "^0.15.2",
@@ -32,6 +34,7 @@
     "micro-cors": "^0.1.1",
     "mysql2": "^2.3.3",
     "next": "latest",
+    "prisma": "^3.14.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "sequelize": "^6.18.0",
