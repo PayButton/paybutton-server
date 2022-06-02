@@ -2,6 +2,11 @@ import { PrismaClient } from '@prisma/client'
 
 let prisma: PrismaClient
 
+interface CustomNodeJsGlobal extends NodeJS.Global {
+  prisma: PrismaClient
+}
+declare const global: CustomNodeJsGlobal
+
 if (process.env.NODE_ENV === 'production') {
   prisma = new PrismaClient()
 } else {
