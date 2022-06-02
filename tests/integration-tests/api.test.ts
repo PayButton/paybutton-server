@@ -1,4 +1,4 @@
-import models from 'db/models/index'
+import prisma from 'prisma/clientInstance'
 import paybuttonEndpoint from 'pages/api/paybutton/index'
 import { testEndpoint, clearPaybuttons, clearPaybuttonAddresses } from 'tests/utils'
 
@@ -65,8 +65,8 @@ describe('POST /api/paybutton/', () => {
 
   describe('Test database update', () => {
     it('Should have created only one paybutton with two addresses', async () => {
-      const paybuttonList = await models.paybuttons.findAll()
-      const paybuttonAddressList = await models.paybutton_addresses.findAll()
+      const paybuttonList = await prisma.paybutton.findMany({})
+      const paybuttonAddressList = await prisma.paybuttonAddress.findMany({})
       expect(paybuttonList.length).toBe(1)
       expect(paybuttonAddressList.length).toBe(2)
     })
