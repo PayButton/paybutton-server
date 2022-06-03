@@ -48,30 +48,6 @@ case "$command" in
     "yarnremove" | "yr")
         eval "$base_command_node" yarn remove "$@"
         ;;
-    "prismagenerate" | "pg")
-        eval "$base_command_node" yarn prisma generate
-        ;;
-    "migrate" | "mig")
-        eval "$base_command_node" yarn prisma migrate dev
-        ;;
-    "migrationadd" | "ma")
-        eval "$base_command_node" yarn prisma migrate dev --name "$@"
-        ;;
-    "migrateto" | "mt")
-        eval "$base_command_node" sequelize-cli db:migrate --to "$@"
-        ;;
-    "showmigrations" | "sm")
-        eval "$base_command_node" sequelize-cli db:migrate:status
-        ;;
-    "undolast" | "ul")
-        eval "$base_command_node" sequelize-cli db:migrate:undo
-        ;;
-    "undoto" | "ut")
-        eval "$base_command_node" sequelize-cli db:migrate:undo:all --to "$@"
-        ;;
-    "undoall" | "ua")
-        eval "$base_command_node" sequelize-cli db:migrate:undo:all
-        ;;
     *)
         echo Avaiable commands:
         echo "  shortcut, command           [container_name]    command description"
@@ -89,14 +65,6 @@ case "$command" in
         echo "  ya, yarnadd                 [$node_container_name]     run \`yarn add ARGS\` on the node container"
         echo "  yad, yarnadddev             [$node_container_name]     run \`yarn add -D ARGS\` on the node container"
         echo "  yr, yarnremove              [$node_container_name]     run \`yarn remove ARGS\` on the node container"
-        echo "  pg, prismagenerate          [$node_container_name]     update prisma client from scheme.prisma"
-        echo "  mig, migrate                [$node_container_name]     run migrations"
-        echo "  ma, migrationadd            [$node_container_name]     create migration file with name ARGS"
-        echo "  mt, migrateto               [$node_container_name]     run migrations until ARGS"
-        echo "  sm, showmigrations          [$node_container_name]     show migrations"
-        echo "  ul, undolast                [$node_container_name]     undo last migration"
-        echo "  ut, undoto                  [$node_container_name]     undo to migration ARGS"
-        echo "  ua, undoall                 [$node_container_name]     undo all migrations"
         ;;
 esac
 
