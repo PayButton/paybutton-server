@@ -82,7 +82,7 @@ case "$command" in
         echo "  dbt, databasetest           [$db_container_name]      enter the mariadb command-line using the test db"
         echo "  t, test                     [$node_container_name]     run tests"
         echo "  tw, testwatch               [$node_container_name]     run tests watching it"
-        echo "  tc, testcoverage            [$node_container_name]     test coverate"
+        echo "  tc, testcoverage            [$node_container_name]     test coverage"
         echo "  n, node                     [$node_container_name]     enter the node container"
         echo "  nr, noderoot                [$node_container_name]     enter the node container as root"
         echo "  y, yarn                     [$node_container_name]     run \`yarn\` on the node container"
