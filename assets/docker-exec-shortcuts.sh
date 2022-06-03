@@ -12,9 +12,6 @@ case "$command" in
     "database" | "db")
         eval "$base_command_db" mariadb -u paybutton -ppaybutton -D paybutton "$@"
         ;;
-    "databaseusers" | "dbu")
-        eval "$base_command_db" mariadb -u supertokens -psupertokens -D supertokens "$@"
-        ;;
     "databaseroot" | "dbr")
         eval "$base_command_db" mariadb -u root -proot "$@"
         ;;
@@ -33,10 +30,10 @@ case "$command" in
     "testcoverage" | "tc")
         eval "$base_command_node" yarn test --coverage --verbose  "$@"
         ;;
-    "node" | "n")
+    "nodeshell" | "ns")
         eval "$base_command_node" ash -l
         ;;
-    "noderoot" | "nr")
+    "noderootshell" | "nrs")
         eval "$base_command_node_root" ash -l
         ;;
     "yarn" | "y")
