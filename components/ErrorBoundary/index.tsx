@@ -1,38 +1,36 @@
-import { loadGetInitialProps } from 'next/dist/shared/lib/utils';
-import React from 'react';
+import Error from 'next/error'
+import React, { Component, ErrorInfo, ReactNode } from 'react'
 
 interface IProps {
-    children: React.ReactNode;
+  children: ReactNode
+  error: Error
 }
 
 interface IState {
-    hasError: boolean;
+  hasError: boolean
 }
 
-class ErrorBoundary extends React.Component<IProps, IState> {
-    constructor(props : IProps) {
-      super(props);
-      this.state = { hasError: false };
-    }
-  
-    static getDerivedStateFromError(error) {
-      // Update state so the next render will show the fallback UI.
-      return { hasError: true };
-    }
-  
-    componentDidCatch(error, errorInfo) {
-      // You can also log the error to an error reporting service
-      console.log(error, errorInfo);
-    }
-  
-    render() {
-      if (this.state.hasError) {
-        // You can render any custom fallback UI
-        return <h1>Something went wrong.</h1>;
-      }
-  
-      return this.props.children; 
-    }
+class ErrorBoundary extends Component<IProps, IState> {
+  constructor (props: IProps) {
+    super(props)
+    this.state = { hasError: false }
   }
+
+  static getDerivedStateFromError (): IState {
+    return { hasError: true }
+  }
+
+  componentDidCatch (error: Error, errorInfo: ErrorInfo): void {
+    console.log(error, errorInfo)
+  }
+
+  render (): React.ReactNode {
+    if (this.state.hasError) {
+      return <h1>Something went wrong.</h1>
+    }
+
+    return this.props.children
+  }
+}
 
 export default ErrorBoundary
