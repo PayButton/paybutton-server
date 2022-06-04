@@ -9,7 +9,7 @@
     "db:migrate": "sequelize-cli db:migrate",
     "test": "jest",
     "prisma": "dotenv -e .env.development prisma",
-    "des": "./assets/docker-exec-shortcuts.sh"
+    "docker": "./scripts/docker-exec-shortcuts.sh"
   },
   "dependencies": {
     "@data-driven-forms/mui-component-mapper": "^3.16.10",
