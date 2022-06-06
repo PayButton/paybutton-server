@@ -16,8 +16,6 @@ model PaybuttonAddress {
   paybuttonId Int
   chain       Chain     @relation(fields: [chainId], references: [id], onUpdate: Restrict)
   paybutton  Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade, onUpdate: Restrict)
-
-  @@map ("paybutton_addresses")
 }
 
 model Paybutton {
@@ -26,7 +24,6 @@ model Paybutton {
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   addresses           PaybuttonAddress[]
-  @@map("paybuttons")
 }
 
 model Chain {
@@ -36,6 +33,5 @@ model Chain {
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   paybuttonAddresses  PaybuttonAddress[]
-  @@map ("chains")
 
 }
