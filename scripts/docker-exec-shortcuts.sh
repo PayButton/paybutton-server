@@ -51,9 +51,24 @@ case "$command" in
     "yarnremove" | "yr")
         eval "$base_command_node" yarn remove "$@"
         ;;
+    "migrate" | "m")
+        eval "$base_command_node" yarn prisma migrate dev "$@"
+        ;;
+    "makemigration" | "mm")
+        eval "$base_command_node" yarn prisma migrate dev --create-only --name "$@"
+        ;;
+    "migratereset" | "mr")
+        eval "$base_command_node" yarn prisma migrate reset "$@"
+        ;;
+    "prismadb" | "pd")
+        eval "$base_command_node" yarn prisma db "$@"
+        ;;
+    "prismagenerate" | "pg")
+        eval "$base_command_node" yarn prisma generate "$@"
+        ;;
     *)
         echo Avaiable commands:
-        echo "  shortcut, command           [container_name]    command description"
+        echo "  shortcut, command name      [container_name]    command description"
         echo " --- "
         echo "  db, database                [$db_container_name]      enter the mariadb command-line using the main db"
         echo "  dbr, databaseroot           [$db_container_name]      enter the mariadb command-line as root"
@@ -63,12 +78,17 @@ case "$command" in
         echo "  t, test                     [$node_container_name]     run tests"
         echo "  tw, testwatch               [$node_container_name]     run tests watching it"
         echo "  tc, testcoverage            [$node_container_name]     test coverage"
-        echo "  n, node                     [$node_container_name]     enter the node container"
+        echo "  ns, node                    [$node_container_name]     enter the node container"
         echo "  nr, noderoot                [$node_container_name]     enter the node container as root"
         echo "  y, yarn                     [$node_container_name]     run \`yarn\` on the node container"
         echo "  ya, yarnadd                 [$node_container_name]     run \`yarn add ARGS\` on the node container"
         echo "  yad, yarnadddev             [$node_container_name]     run \`yarn add -D ARGS\` on the node container"
         echo "  yr, yarnremove              [$node_container_name]     run \`yarn remove ARGS\` on the node container"
+        echo "  m, migrate                  [$node_container_name]     run migrations"
+        echo "  mm, makemigration           [$node_container_name]     create a migration with name ARGS"
+        echo "  mr, migratereset            [$node_container_name]     recreate the database"
+        echo "  pd, prismadb                [$node_container_name]     run \`prisma db ARGS\`"
+        echo "  pg, prismagenerate          [$node_container_name]     run \`prisma generate\` to generate client from scheme"
         ;;
 esac
 
