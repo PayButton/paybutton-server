@@ -23,4 +23,4 @@ lint-master:
 
 test:
 	make dev
-	docker exec paybutton-dev sh -c "CI=true yarn test"
+	docker exec paybutton-dev sh -c "yarn test"
