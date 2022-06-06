@@ -21,6 +21,9 @@ case "$command" in
     "databasetest" | "dbt")
         eval "$base_command_db" mariadb -u paybutton-test -ppaybutton-test -D paybutton-test "$@"
         ;;
+    "databaseuser" | "dbu")
+        eval "$base_command_db" mariadb -u supertokens -psupertokens -D supertokens "$@"
+        ;;
     "test" | "t")
         eval "$base_command_node" yarn test "$@"
         ;;
@@ -56,6 +59,7 @@ case "$command" in
         echo "  dbr, databaseroot           [$db_container_name]      enter the mariadb command-line as root"
         echo "  dbs, databaseshell          [$db_container_name]      enter the shell of the mariadb container"
         echo "  dbt, databasetest           [$db_container_name]      enter the mariadb command-line using the test db"
+        echo "  dbu, databaseuser           [$db_container_name]      enter the mariadb command-line using the users db"
         echo "  t, test                     [$node_container_name]     run tests"
         echo "  tw, testwatch               [$node_container_name]     run tests watching it"
         echo "  tc, testcoverage            [$node_container_name]     test coverage"
