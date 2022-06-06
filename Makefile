@@ -8,6 +8,9 @@ dev:
 stop-dev:
 	docker-compose down
 
+reset-dev:
+	make stop-dev && make dev
+
 check-logs-dev:
 	docker logs -f paybutton-dev
 
