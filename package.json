@@ -8,7 +8,8 @@
     "prod": "npm run build && NODE_ENV=production pm2 start dist/index.js",
     "db:migrate": "sequelize-cli db:migrate",
     "test": "jest",
-    "prisma": "dotenv -e .env.development prisma"
+    "prisma": "dotenv -e .env.development prisma",
+    "docker": "./scripts/docker-exec-shortcuts.sh"
   },
   "dependencies": {
     "@data-driven-forms/mui-component-mapper": "^3.16.10",
