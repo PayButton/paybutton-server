@@ -27,6 +27,7 @@ services:
     volumes:
       - ./db/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql
       - ./db/init-supertokens-db.sql:/docker-entrypoint-initdb.d/init-supertokens-db.sql
+      - ./db/prisma-shadow-db-fix.sql:/docker-entrypoint-initdb.d/prisma-shadow-db-fix.sql
 
   users-service:
     container_name: paybutton-users-service
