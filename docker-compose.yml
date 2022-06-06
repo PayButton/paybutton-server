@@ -24,6 +24,9 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     ports:
       - 3306:3306
+    volumes:
+      - ./db/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql
+
   users-service:
     container_name: paybutton-users-service
     depends_on:
