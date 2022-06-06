@@ -1,4 +1,3 @@
-import { NextApiRequest, NextApiResponse } from 'next'
 import { Response } from 'express'
 import { superTokensNextWrapper } from 'supertokens-node/nextjs'
 import { verifySession } from 'supertokens-node/recipe/session/framework/express'
@@ -8,7 +7,7 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 
 supertokens.init(SuperTokensConfig.backendConfig())
 
-export default async function user (req: NextApiRequest & SessionRequest, res: NextApiResponse & Response): Promise<any> {
+export default async function user (req: SessionRequest, res: Response): Promise<Response> {
   await superTokensNextWrapper(
     async (next) => {
       return await verifySession()(req, res, next)
