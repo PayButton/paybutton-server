@@ -21,6 +21,5 @@ lint-master:
 	$(git_diff_to_master)
 	npx --yes ts-standard --stdin --stdin-filename DIFF
 
-test:
-	make dev
-	docker exec paybutton-dev yarn test
+test-unit:
+	npx jest tests/unittests

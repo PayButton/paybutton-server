@@ -1,11 +1,11 @@
-name: Lint and check format of source code
+name: Lint, Check, Format and Unit Test
 on:
   pull_request:
     branches:
       - master
 jobs:
   test:
-    name: Lint, format and test diff
+    name: Lint, Check, Format and Unit Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -14,5 +14,7 @@ jobs:
           fetch-depth: 0
       - name: Lint and check format
         run: make lint-master
-      - name: Run unit and integration tests
-        run: make test
+      - name: Run unit tests
+        run: |
+          make dev
+          make test-unit

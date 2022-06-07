@@ -16,7 +16,7 @@ if (config.use_env_variable) {
 }
 
 fs
-  .readdirSync('/app/src/db/models/')
+  .readdirSync(__dirname)
   .filter(file => {
     return (file.indexOf('.') !== 0) && (file !== 'index.js') && (file.slice(-3) === '.js');
   })
