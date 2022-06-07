@@ -26,6 +26,7 @@ services:
       - 3306:3306
     volumes:
       - ./db/init-supertokens-db.sql:/docker-entrypoint-initdb.d/init-supertokens-db.sql
+      - ./db/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql
 
   users-service:
     container_name: paybutton-users-service
