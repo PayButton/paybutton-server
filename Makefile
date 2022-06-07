@@ -23,4 +23,4 @@ lint-master:
 
 test:
 	make dev
-	docker exec paybutton-dev sh -c "yarn jest tests/unittests"
+	docker exec paybutton-dev yarn test
