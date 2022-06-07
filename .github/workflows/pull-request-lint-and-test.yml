@@ -16,5 +16,5 @@ jobs:
         run: make lint-master
       - name: Run unit tests
         run: |
-          make dev
+          yarn
           make test-unit
