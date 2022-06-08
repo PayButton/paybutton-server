@@ -64,7 +64,7 @@ export const Subscribe = async (
       addresses: addresses,
     });
 
-    txnStream.on('end', async (error) => {
+    txnStream.on('end', async (error: any) => {
       console.log('stream ended', error);
     });
 
