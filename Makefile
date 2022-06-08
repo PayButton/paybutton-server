@@ -24,3 +24,5 @@ lint-master:
 	$(git_diff_to_master)
 	npx --yes ts-standard --stdin --stdin-filename DIFF
 
+test-unit:
+	npx jest tests/unittests
