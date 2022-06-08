@@ -22,4 +22,4 @@ lint-master:
 	npx --yes ts-standard --stdin --stdin-filename DIFF
 
 test-unit:
-	npx jest tests/unittests
+	DATABASE_URL="" npx jest tests/unittests
