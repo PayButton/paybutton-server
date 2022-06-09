@@ -2,6 +2,11 @@ import * as chainService from 'services/chainsService'
 import { Paybutton, Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
+import { v4 as uuidv4 } from 'uuid'
+
+const addUUID = async function (paybuttonId: number): Promise<void> {
+  await prisma.$executeRaw`UPDATE Paybutton SET uuid=${uuidv4()} WHERE id=${paybuttonId}`
+}
 
 export async function createPaybutton (userId: string, prefixedAddressList: string[]): Promise<Paybutton> {
   const paybuttonAddressesToCreate: Prisma.PaybuttonAddressUncheckedCreateWithoutPaybuttonInput[] = await Promise.all(
@@ -18,7 +23,7 @@ export async function createPaybutton (userId: string, prefixedAddressList: stri
         }
       })
   )
-  return await prisma.paybutton.create({
+  const paybutton = await prisma.paybutton.create({
     data: {
       providerUserId: userId,
       addresses: {
@@ -27,6 +32,8 @@ export async function createPaybutton (userId: string, prefixedAddressList: stri
     },
     include: { addresses: true }
   })
+  void addUUID(paybutton.id)
+  return paybutton
 }
 
 export async function fetchPaybuttonById (paybuttonId: number | string): Promise<Paybutton | null> {
