@@ -143,6 +143,16 @@ describe('GET /api/paybutton/', () => {
     const responseData = res._getJSONData()
     expect(responseData.length).toBe(0)
   })
+
+  it('Should fail without userId', async () => {
+    baseRequestOptions.body = {
+      userId: ''
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+  })
 })
 
 describe('GET /api/paybutton/[id]', () => {
