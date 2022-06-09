@@ -28,7 +28,7 @@ describe('Create services', () => {
 
     prismaMock.chain.findUnique.mockResolvedValue(mockedChain)
     prisma.chain.findUnique = prismaMock.chain.findUnique
-    const result = await paybuttonsService.createPaybutton('mocked-uid', ['mockedchain:mockaddress'])
+    const result = await paybuttonsService.createPaybutton('mocked-uid', 'mocked-name', ['mockedchain:mockaddress'])
     expect(result).toEqual(mockedPaybutton)
   })
 })

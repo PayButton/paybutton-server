@@ -1,6 +1,8 @@
 export const mockedPaybutton = {
   id: 4,
   providerUserId: 'mocked-uid',
+  name: 'mocked-name',
+  buttonData: 'mockedData',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   addresses: [
@@ -27,6 +29,8 @@ export const mockedPaybuttonList = [
   {
     id: 1,
     providerUserId: 'mocked-uid',
+    name: 'mocked-name-1',
+    buttonData: 'mockedData',
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     addresses: [
@@ -51,6 +55,8 @@ export const mockedPaybuttonList = [
   {
     id: 2,
     providerUserId: 'mocked-uid',
+    name: 'mocked-name-2',
+    buttonData: 'mockedData',
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     addresses: [
