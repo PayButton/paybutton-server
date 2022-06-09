@@ -1,5 +1,10 @@
 import { SUPPORTED_CHAINS, SUPPORTED_ADDRESS_PATTERN, RESPONSE_MESSAGES } from 'constants/index'
 
+/* The prefix for each function here defined shall be:
+ * - 'parse', if the function validates the input and also uses it to create some other output;
+ * - 'validate', if the function only validates the input
+ */
+
 export const parseAddresses = function (prefixedAddressString: string | undefined): string[] {
   /**
    * Disallow addresses without a 'chain:' prefix
@@ -27,4 +32,14 @@ export const parseAddresses = function (prefixedAddressString: string | undefine
     seenPrefixes.add(prefix)
   }
   return prefixedAddressList
+}
+
+export const validateButtonData = function (buttonDataString: string | undefined): void {
+  if (buttonDataString !== '' && buttonDataString !== undefined) {
+    try {
+      JSON.parse(buttonDataString)
+    } catch (e: any) {
+      throw new Error(RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400.message)
+    }
+  }
 }
