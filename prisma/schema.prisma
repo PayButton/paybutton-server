@@ -1,39 +1,41 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl"]
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model PaybuttonAddress {
-  id          Int        @id @default(autoincrement())
-  address     String     @db.VarChar(255)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id          Int       @id @default(autoincrement())
+  address     String    @db.VarChar(255)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   chainId     Int
   paybuttonId Int
   chain       Chain     @relation(fields: [chainId], references: [id], onUpdate: Restrict)
-  paybutton  Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  paybutton   Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([chainId], map: "PaybuttonAddress_chainId_fkey")
+  @@index([paybuttonId], map: "PaybuttonAddress_paybuttonId_fkey")
 }
 
 model Paybutton {
-  id                  Int                   @id @default(autoincrement())
-  providerUserId      String?               @db.VarChar(255)
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  addresses           PaybuttonAddress[]
+  id             Int                @id @default(autoincrement())
+  providerUserId String?            @db.VarChar(255)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  addresses      PaybuttonAddress[]
 }
 
 model Chain {
-  id                  Int                   @id @default(autoincrement())
-  slug                String                @unique @db.VarChar(255)
-  title               String                @db.VarChar(255)
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  paybuttonAddresses  PaybuttonAddress[]
-
+  id                 Int                @id @default(autoincrement())
+  slug               String             @unique @db.VarChar(255)
+  title              String             @db.VarChar(255)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  paybuttonAddresses PaybuttonAddress[]
 }
