@@ -28,6 +28,14 @@
     ],
     "incremental": true
   },
+  "rules": {
+    "@typescript-eslint/strict-boolean-expressions": [
+      "warn",
+      {
+        "allowNullableString": true
+      }
+    ]
+  },
   "exclude": [
     "dist",
     ".next",
