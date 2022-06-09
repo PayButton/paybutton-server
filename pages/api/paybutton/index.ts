@@ -6,11 +6,13 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   const values = req.body
   const userId: string | undefined = values.userId
+  const name: string | undefined = values.name
   if (req.method === 'POST') {
     try {
       if (userId === '' || userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+      if (name === '' || name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
       const parsedAddresses = parseAddresses(values.addresses)
-      const paybutton = await paybuttonsService.createPaybutton(userId, parsedAddresses)
+      const paybutton = await paybuttonsService.createPaybutton(userId, name, parsedAddresses)
       res.status(200).json(paybutton)
     } catch (err: any) {
       switch (err.message) {
@@ -22,6 +24,9 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
           break
         case RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message:
           res.status(400).json(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400)
+          break
+        case RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400)
           break
         default:
           res.status(500).json({ statusCode: 500, message: err.message })

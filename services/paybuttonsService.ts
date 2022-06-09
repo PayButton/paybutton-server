@@ -8,7 +8,7 @@ const addUUID = async function (paybuttonId: number): Promise<void> {
   await prisma.$executeRaw`UPDATE Paybutton SET uuid=${uuidv4()} WHERE id=${paybuttonId}`
 }
 
-export async function createPaybutton (userId: string, prefixedAddressList: string[]): Promise<Paybutton> {
+export async function createPaybutton (userId: string, name: string, prefixedAddressList: string[]): Promise<Paybutton> {
   const paybuttonAddressesToCreate: Prisma.PaybuttonAddressUncheckedCreateWithoutPaybuttonInput[] = await Promise.all(
     prefixedAddressList.map(
       async (addressWithPrefix) => {
@@ -26,6 +26,7 @@ export async function createPaybutton (userId: string, prefixedAddressList: stri
   const paybutton = await prisma.paybutton.create({
     data: {
       providerUserId: userId,
+      name: name,
       addresses: {
         create: paybuttonAddressesToCreate
       }
