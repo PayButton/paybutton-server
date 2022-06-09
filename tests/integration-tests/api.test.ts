@@ -25,7 +25,8 @@ describe('POST /api/paybutton/', () => {
     },
     body: {
       userId: 'test-u-id',
-      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
+      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4',
+      name: 'test-paybutton'
     }
   }
 
@@ -34,6 +35,7 @@ describe('POST /api/paybutton/', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     expect(responseData.providerUserId).toBe('test-u-id')
+    expect(responseData.name).toBe('test-paybutton')
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -51,17 +53,29 @@ describe('POST /api/paybutton/', () => {
   it('Should fail without userId', async () => {
     baseRequestOptions.body = {
       userId: '',
+      name: 'test-paybutton',
+      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('Should fail without name', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: '',
       addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
-    expect(responseData.message).toBe(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   })
 
   it('Should fail without addresses', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
+      name: 'test-paybutton',
       addresses: ''
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -73,6 +87,7 @@ describe('POST /api/paybutton/', () => {
   it('Should fail with invalid addresses', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
+      name: 'test-paybutton',
       addresses: 'ecash:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
