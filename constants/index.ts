@@ -13,5 +13,6 @@ export const RESPONSE_MESSAGES = {
   USER_ID_NOT_PROVIDED_400: { statusCode: 400, message: "'userId' not provided." },
   NAME_NOT_PROVIDED_400: { statusCode: 400, message: "'name' not provided." },
   ADDRESSES_NOT_PROVIDED_400: { statusCode: 400, message: "'addresses' not provided." },
-  INVALID_CHAIN_SLUG_400: { statusCode: 400, message: 'Invalid chain slug.' }
+  INVALID_CHAIN_SLUG_400: { statusCode: 400, message: 'Invalid chain slug.' },
+  INVALID_BUTTON_DATA_400: { statusCode: 400, message: "'buttonData' is not valid JSON." }
 }

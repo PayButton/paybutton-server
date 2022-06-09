@@ -27,7 +27,7 @@ model Paybutton {
   id             Int                  @id @default(autoincrement())
   name           String               @db.VarChar(255)
   uuid           Unsupported("uuid")?
-  buttonData     String?              @db.Text
+  buttonData     String?              @db.LongText
   providerUserId String?              @db.VarChar(255)
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt

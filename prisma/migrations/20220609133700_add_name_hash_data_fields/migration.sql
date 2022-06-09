@@ -5,6 +5,6 @@ ALTER TABLE `Paybutton`
 ADD COLUMN `uuid` UUID AFTER `name`;
 
 ALTER TABLE `Paybutton`
-ADD COLUMN `buttonData` TEXT AFTER `uuid`;
+ADD COLUMN `buttonData` JSON AFTER `uuid`;
 
 ALTER TABLE `Paybutton` ADD CONSTRAINT `Paybutton_name_providerUserId_unique_constraint` UNIQUE (`name`, `providerUserId`);
