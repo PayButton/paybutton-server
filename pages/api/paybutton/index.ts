@@ -10,7 +10,7 @@ interface POSTParameters {
   addresses?: string
 }
 
-const parsePOSTRequest = function (params: POSTParameters): paybuttonsService.createPaybuttonInput {
+const parsePOSTRequest = function (params: POSTParameters): paybuttonsService.CreatePaybuttonInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   const parsedAddresses = parseAddresses(params.addresses)
