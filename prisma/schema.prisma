@@ -24,11 +24,16 @@ model PaybuttonAddress {
 }
 
 model Paybutton {
-  id             Int                @id @default(autoincrement())
-  providerUserId String?            @db.VarChar(255)
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  id             Int                  @id @default(autoincrement())
+  name           String               @db.VarChar(255)
+  uuid           Unsupported("uuid")?
+  buttonData     String?              @db.Text
+  providerUserId String?              @db.VarChar(255)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
   addresses      PaybuttonAddress[]
+
+  @@unique([name, providerUserId], map: "Paybutton_name_providerUserId_unique_constraint")
 }
 
 model Chain {
