@@ -8,6 +8,7 @@ import {
   countPaybuttons,
   countPaybuttonAddresses
 } from 'tests/utils'
+import { RESPONSE_MESSAGES } from 'constants/index'
 
 afterAll(async () => {
   await clearPaybuttons()
@@ -54,6 +55,8 @@ describe('POST /api/paybutton/', () => {
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   })
 
   it('Should fail without addresses', async () => {
@@ -63,6 +66,8 @@ describe('POST /api/paybutton/', () => {
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
   })
 
   it('Should fail with invalid addresses', async () => {
@@ -72,6 +77,8 @@ describe('POST /api/paybutton/', () => {
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_INPUT_400.message)
   })
 })
 
@@ -186,5 +193,7 @@ describe('GET /api/paybutton/[id]', () => {
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = nextId
     const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
     expect(res.statusCode).toBe(404)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NOT_FOUND_404.message)
   })
 })
