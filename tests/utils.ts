@@ -25,7 +25,8 @@ export const createPaybuttonForUser = async (userId: string): Promise<Paybutton>
     'bitcoincash:' + addressRandexp.gen(),
     'ecash:' + addressRandexp.gen()
   ]
-  return await createPaybutton(userId, prefixedAddressList)
+  const name = Math.random().toString(36).slice(2)
+  return await createPaybutton(userId, name, prefixedAddressList)
 }
 
 export const countPaybuttons = async (): Promise<number> => {
