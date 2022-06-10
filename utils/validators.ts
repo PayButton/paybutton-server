@@ -1,6 +1,8 @@
 import { SUPPORTED_CHAINS, SUPPORTED_ADDRESS_PATTERN, RESPONSE_MESSAGES } from 'constants/index'
 
-/* The prefix for each function here defined shall be:
+/* The functions here defined should validate the data structure / syntax of an input by throwing
+ * an error in case something is different from the expected. The prefix for each function name
+ * here defined shall be:
  * - 'parse', if the function validates the input and also uses it to create some other output;
  * - 'validate', if the function only validates the input
  */
@@ -34,12 +36,17 @@ export const parseAddresses = function (prefixedAddressString: string | undefine
   return prefixedAddressList
 }
 
-export const validateButtonData = function (buttonDataString: string | undefined): void {
-  if (buttonDataString !== '' && buttonDataString !== undefined) {
+export const parseButtonData = function (buttonDataString: string | undefined): string {
+  let parsedButtonData: string
+  if (buttonDataString === '' || buttonDataString === undefined) {
+    parsedButtonData = '{}'
+  } else {
     try {
       JSON.parse(buttonDataString)
+      parsedButtonData = buttonDataString
     } catch (e: any) {
       throw new Error(RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400.message)
     }
   }
+  return parsedButtonData
 }
