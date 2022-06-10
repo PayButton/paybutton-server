@@ -183,6 +183,9 @@ describe('GET /api/paybutton/', () => {
       ])
     )
     expect(responseData[0]).toHaveProperty('providerUserId')
+    expect(responseData[0]).toHaveProperty('name')
+    expect(responseData[0]).toHaveProperty('buttonData')
+    expect(responseData[0]).toHaveProperty('uuid')
   })
 
   it('Should get no paybuttons for unknown user', async () => {
@@ -246,6 +249,9 @@ describe('GET /api/paybutton/[id]', () => {
         ])
       )
       expect(responseData).toHaveProperty('providerUserId')
+      expect(responseData).toHaveProperty('name')
+      expect(responseData).toHaveProperty('buttonData')
+      expect(responseData).toHaveProperty('uuid')
     }
   })
 
