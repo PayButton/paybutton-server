@@ -26,7 +26,8 @@ describe('POST /api/paybutton/', () => {
     body: {
       userId: 'test-u-id',
       addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4',
-      name: 'test-paybutton'
+      name: 'test-paybutton',
+      buttonData: '{"somefield": "somevalue"}'
     }
   }
 
@@ -36,6 +37,8 @@ describe('POST /api/paybutton/', () => {
     expect(res.statusCode).toBe(200)
     expect(responseData.providerUserId).toBe('test-u-id')
     expect(responseData.name).toBe('test-paybutton')
+    expect(responseData.buttonData).toBe('{"somefield": "somevalue"}')
+    expect(responseData.uuid).not.toBeNull()
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
