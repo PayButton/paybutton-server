@@ -18,7 +18,7 @@ describe('POST /api/paybutton/', () => {
   beforeAll(async () => {
     await clearPaybuttons()
   })
-  const baseRequestOptions = {
+  const baseRequestOptions: RequestOptions = {
     method: 'POST' as RequestMethod,
     headers: {
       'Content-Type': 'application/json'
@@ -109,7 +109,7 @@ describe('GET /api/paybutton/', () => {
     }
   })
 
-  const baseRequestOptions = {
+  const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
     headers: {
       'Content-Type': 'application/json'
