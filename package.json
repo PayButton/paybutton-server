@@ -8,7 +8,7 @@
     "prod": "npm run build && NODE_ENV=production pm2 start dist/index.js",
     "db:migrate": "sequelize-cli db:migrate",
     "db:reset": "sequelize-cli db:drop && sequelize-cli db:create && sequelize-cli db:migrate",
-    "test": "dotenv -e .env.test jest",
+    "test": "dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js",
     "pretest": "cross-env NODE_ENV=test yarn db:reset",
     "db:create:test": "cross-env NODE_ENV=test sequelize-cli db:create",
     "prisma": "dotenv -e .env.development prisma",
