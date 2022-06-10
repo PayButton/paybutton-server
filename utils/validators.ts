@@ -1,4 +1,5 @@
 import { SUPPORTED_CHAINS, SUPPORTED_ADDRESS_PATTERN, RESPONSE_MESSAGES } from 'constants/index'
+import { Prisma } from '@prisma/client'
 
 /* The functions here defined should validate the data structure / syntax of an input by throwing
  * an error in case something is different from the expected. The prefix for each function name
@@ -49,4 +50,15 @@ export const parseButtonData = function (buttonDataString: string | undefined): 
     }
   }
   return parsedButtonData
+}
+
+export const parseErrors = function (error: Error): Error {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === 'P2002') {
+      if (error.message.includes('Paybutton_name_providerUserId_unique_constraint')) {
+        return new Error(RESPONSE_MESSAGES.NAME_ALREADY_EXISTS_400.message)
+      }
+    }
+  }
+  return error
 }

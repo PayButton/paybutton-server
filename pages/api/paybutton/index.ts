@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import * as paybuttonsService from 'services/paybuttonsService'
-import { parseAddresses, parseButtonData } from 'utils/validators'
+import { parseAddresses, parseButtonData, parseErrors } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 interface POSTParameters {
@@ -32,7 +32,8 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       const paybutton = await paybuttonsService.createPaybutton(createPaybuttonInput)
       res.status(200).json(paybutton)
     } catch (err: any) {
-      switch (err.message) {
+      const parsedErr = parseErrors(err)
+      switch (parsedErr.message) {
         case RESPONSE_MESSAGES.INVALID_INPUT_400.message:
           res.status(400).json(RESPONSE_MESSAGES.INVALID_INPUT_400)
           break
@@ -45,8 +46,11 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
         case RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message:
           res.status(400).json(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400)
           break
+        case RESPONSE_MESSAGES.NAME_ALREADY_EXISTS_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.NAME_ALREADY_EXISTS_400)
+          break
         default:
-          res.status(500).json({ statusCode: 500, message: err.message })
+          res.status(500).json({ statusCode: 500, message: parsedErr.message })
       }
     }
   } else if (req.method === 'GET') {
