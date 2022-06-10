@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import * as paybuttonsService from 'services/paybuttonsService'
-import { parseAddresses, validateButtonData } from 'utils/validators'
+import { parseAddresses, parseButtonData } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 interface POSTParameters {
@@ -10,15 +10,15 @@ interface POSTParameters {
   addresses?: string
 }
 
-const parsePOSTRequest = function (params: POSTParameters): paybuttonsService.createPaybuttonInput {
+const parsePOSTRequest = function (params: POSTParameters): paybuttonsService.CreatePaybuttonInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   const parsedAddresses = parseAddresses(params.addresses)
-  validateButtonData(params.buttonData)
+  const parsedButtonData = parseButtonData(params.buttonData)
   return {
     userId: params.userId,
     name: params.name,
-    buttonData: params.buttonData === '' ? undefined : params.buttonData,
+    buttonData: parsedButtonData,
     prefixedAddressList: parsedAddresses
   }
 }
