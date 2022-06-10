@@ -11,7 +11,7 @@ const addUUID = async function (paybuttonId: number): Promise<void> {
 export interface CreatePaybuttonInput {
   userId: string
   name: string
-  buttonData?: string
+  buttonData: string
   prefixedAddressList: string[]
 }
 
