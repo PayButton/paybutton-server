@@ -53,6 +53,27 @@ describe('POST /api/paybutton/', () => {
     void expect(countPaybuttonAddresses()).resolves.toBe(2)
   })
 
+  it('Should create a paybutton empty JSON for buttonData', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'test-paybutton-no-button-data',
+      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc'
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(200)
+    expect(responseData.providerUserId).toBe('test-u-id')
+    expect(responseData.name).toBe('test-paybutton-no-button-data')
+    expect(responseData.buttonData).toBe('{}')
+    expect(responseData.addresses).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          address: 'qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc'
+        })
+      ])
+    )
+  })
+
   it('Should fail without userId', async () => {
     baseRequestOptions.body = {
       userId: '',
@@ -61,6 +82,8 @@ describe('POST /api/paybutton/', () => {
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   })
 
   it('Should fail without name', async () => {
@@ -73,6 +96,16 @@ describe('POST /api/paybutton/', () => {
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
+  })
+
+  it('Should fail with repeated name', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'test-paybutton',
+      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    expect(res.statusCode).toBe(400)
   })
 
   it('Should fail without addresses', async () => {
