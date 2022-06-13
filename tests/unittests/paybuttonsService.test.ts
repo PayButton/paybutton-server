@@ -31,7 +31,8 @@ describe('Create services', () => {
     const createPaybuttonInput = {
       userId: 'mocked-uid',
       name: 'mocked-name',
-      prefixedAddressList: ['mockedchain:mockaddress']
+      prefixedAddressList: ['mockedchain:mockaddress'],
+      buttonData: ''
     }
     const result = await paybuttonsService.createPaybutton(createPaybuttonInput)
     expect(result).toEqual(mockedPaybutton)
