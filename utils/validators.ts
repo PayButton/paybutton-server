@@ -1,5 +1,6 @@
 import { SUPPORTED_CHAINS, SUPPORTED_ADDRESS_PATTERN, RESPONSE_MESSAGES } from 'constants/index'
 import { Prisma } from '@prisma/client'
+import { CreatePaybuttonInput } from 'services/paybuttonsService'
 
 /* The functions here defined should validate the data structure / syntax of an input by throwing
  * an error in case something is different from the expected. The prefix for each function name
@@ -61,4 +62,24 @@ export const parseErrors = function (error: Error): Error {
     }
   }
   return error
+}
+
+interface POSTParameters {
+  userId?: string
+  name?: string
+  buttonData?: string
+  addresses?: string
+}
+
+export const parsePaybuttonPOSTRequest = function (params: POSTParameters): CreatePaybuttonInput {
+  if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+  if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
+  const parsedAddresses = parseAddresses(params.addresses)
+  const parsedButtonData = parseButtonData(params.buttonData)
+  return {
+    userId: params.userId,
+    name: params.name,
+    buttonData: parsedButtonData,
+    prefixedAddressList: parsedAddresses
+  }
 }
