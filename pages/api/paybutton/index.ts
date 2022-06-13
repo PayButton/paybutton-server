@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import * as paybuttonsService from 'services/paybuttonsService'
-import { parsePaybuttonPOSTRequest } from 'utils/validators'
+import { parseErrors, parsePaybuttonPOSTRequest } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
