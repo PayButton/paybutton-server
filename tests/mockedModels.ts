@@ -3,6 +3,7 @@ export const mockedPaybutton = {
   providerUserId: 'mocked-uid',
   name: 'mocked-name',
   buttonData: 'mockedData',
+  uuid: '730bfa24-eb57-11ec-b722-0242ac150002',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   addresses: [
@@ -31,6 +32,7 @@ export const mockedPaybuttonList = [
     providerUserId: 'mocked-uid',
     name: 'mocked-name-1',
     buttonData: 'mockedData',
+    uuid: '730bfa24-eb57-11ec-b722-0242ac150002',
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     addresses: [
@@ -57,6 +59,7 @@ export const mockedPaybuttonList = [
     providerUserId: 'mocked-uid',
     name: 'mocked-name-2',
     buttonData: 'mockedData',
+    uuid: '133fb8aa-eb57-11ec-b722-0242ac150002',
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     addresses: [
