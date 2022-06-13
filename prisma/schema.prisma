@@ -26,7 +26,7 @@ model PaybuttonAddress {
 model Paybutton {
   id             Int                  @id @default(autoincrement())
   name           String               @db.VarChar(255)
-  uuid           Unsupported("uuid")?
+  uuid           String               @default(dbgenerated("uuid()"))
   buttonData     String               @db.LongText
   providerUserId String?              @db.VarChar(255)
   createdAt      DateTime             @default(now())
