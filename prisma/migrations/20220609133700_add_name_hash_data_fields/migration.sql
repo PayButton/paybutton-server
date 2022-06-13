@@ -2,7 +2,7 @@ ALTER TABLE `Paybutton`
 ADD COLUMN `name` VARCHAR(255) NOT NULL AFTER `id`;
 
 ALTER TABLE `Paybutton`
-ADD COLUMN `uuid` UUID AFTER `name`; -- Prisma does not support this type, so it must be nullable.
+ADD COLUMN `uuid` VARCHAR(191) NOT NULL DEFAULT UUID() AFTER `name`;
 
 ALTER TABLE `Paybutton`
 ADD COLUMN `buttonData` JSON NOT NULL AFTER `uuid`;
