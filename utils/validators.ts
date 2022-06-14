@@ -53,7 +53,7 @@ export const parseButtonData = function (buttonDataString: string | undefined): 
   return parsedButtonData
 }
 
-export const parseErrors = function (error: Error): Error {
+export const parseError = function (error: Error): Error {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code === 'P2002') {
       if (error.message.includes('Paybutton_name_providerUserId_unique_constraint')) {

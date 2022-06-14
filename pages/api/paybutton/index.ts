@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import * as paybuttonsService from 'services/paybuttonsService'
-import { parseErrors, parsePaybuttonPOSTRequest } from 'utils/validators'
+import { parseError, parsePaybuttonPOSTRequest } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
@@ -12,7 +12,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       const paybutton = await paybuttonsService.createPaybutton(createPaybuttonInput)
       res.status(200).json(paybutton)
     } catch (err: any) {
-      const parsedErr = parseErrors(err)
+      const parsedErr = parseError(err)
       switch (parsedErr.message) {
         case RESPONSE_MESSAGES.INVALID_INPUT_400.message:
           res.status(400).json(RESPONSE_MESSAGES.INVALID_INPUT_400)
