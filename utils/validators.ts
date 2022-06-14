@@ -64,7 +64,7 @@ export const parseError = function (error: Error): Error {
   return error
 }
 
-interface POSTParameters {
+export interface POSTParameters {
   userId?: string
   name?: string
   buttonData?: string
