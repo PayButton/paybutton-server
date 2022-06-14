@@ -25,6 +25,7 @@ services:
     ports:
       - 3306:3306
     volumes:
+      - ./db/init-supertokens-db.sql:/docker-entrypoint-initdb.d/init-supertokens-db.sql
       - ./db/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql
 
   users-service:
@@ -36,8 +37,8 @@ services:
     ports:
       - 3567:3567
     environment:
-      MYSQL_DATABASE_NAME: paybutton
-      MYSQL_USER: paybutton
-      MYSQL_PASSWORD: paybutton
+      MYSQL_DATABASE_NAME: supertokens
+      MYSQL_USER: supertokens
+      MYSQL_PASSWORD: supertokens
       MYSQL_HOST: db
       MYSQL_PORT: 3306
