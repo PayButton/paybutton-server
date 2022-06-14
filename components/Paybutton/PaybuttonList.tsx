@@ -1,17 +1,17 @@
-import React from 'react'
+import React, { FunctionComponent } from 'react'
 import { Paybutton } from '@prisma/client'
 
-type IProps = { paybuttons: Paybutton[] }
-export default ({paybuttons}:IProps) => 
-<ul>
-{paybuttons.map(paybutton => (
-    <li key={paybutton.id}>
-      <section>
-        <h3>{paybutton.id}</h3>
-        <ul>
-          {paybutton.addresses.map(item => (<li key={item.address}>{item.chain.title}: {item.address}</li>))}
-        </ul>
-      </section>
-    </li>
-))}
-</ul>
+interface IProps { paybuttons: Paybutton[] }
+export default ({ paybuttons }: IProps): FunctionComponent<IProps> =>
+  <ul>
+    {paybuttons.map(paybutton => (
+      <li key={paybutton.id}>
+        <section>
+          <h3>{paybutton.id}</h3>
+          <ul>
+            {paybutton.addresses.map(item => (<li key={item.address}>{item.chain.title}: {item.address}</li>))}
+          </ul>
+        </section>
+      </li>
+    ))}
+  </ul>
