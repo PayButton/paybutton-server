@@ -5,7 +5,7 @@ import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import Page from 'components/Page'
-import { PayButton } from 'types'
+import { Paybutton } from 'types'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((res) =>
@@ -44,18 +44,18 @@ export default function Home(props) {
 }
 
 function ProtectedPage({ userId }) {
-  const [paybuttons, setPayButtons] = React.useState([])
+  const [paybuttons, setPaybuttons] = React.useState([])
 
   async function handleLogout() {
     await ThirdPartyEmailPassword.signOut()
     ThirdPartyEmailPassword.redirectToAuth()
   }
 
-  async function fetchPayButtons() {
+  async function fetchPaybuttons() {
     const res = await fetch(`/api/button/${userId}`)
     if (res.status === 200) {
       const json = await res.json()
-      console.log('Fetched PayButtons: ', json)
+      console.log('Fetched Paybuttons: ', json)
       return json
     }
   }
@@ -73,7 +73,7 @@ function ProtectedPage({ userId }) {
     })
     if (res.status === 200) {
       const json = await res.json()
-      setPayButtons([...paybuttons, json])
+      setPaybuttons([...paybuttons, json])
     }
   }
 
