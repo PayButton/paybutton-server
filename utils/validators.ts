@@ -44,8 +44,8 @@ export const parseButtonData = function (buttonDataString: string | undefined): 
     parsedButtonData = '{}'
   } else {
     try {
-      JSON.parse(buttonDataString)
-      parsedButtonData = buttonDataString
+      const jsonObject = JSON.parse(buttonDataString)
+      parsedButtonData = JSON.stringify(jsonObject, null, 0) // remove linebreaks, tabs & spaces.
     } catch (e: any) {
       throw new Error(RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400.message)
     }
