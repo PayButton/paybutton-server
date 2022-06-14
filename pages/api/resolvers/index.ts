@@ -19,11 +19,11 @@ export const resolvers = {
     getPayButton: async (_, args): Promise<PayButton> => {
       try {
         const response = await axios.get<PayButton>(`${websiteDomain}/api/paybutton/1`)
-	const payButton = response.data
+	const paybutton = response.data
         return {
-          id: payButton.id,
-          userId: payButton.userId,
-          addresses: payButton.addresses
+          id: paybutton.id,
+          userId: paybutton.userId,
+          addresses: paybutton.addresses
         };
       } catch (error) {
         throw error;

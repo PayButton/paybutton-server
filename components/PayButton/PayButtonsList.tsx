@@ -1,15 +1,15 @@
 import React from 'react'
 import { PayButton } from 'types/index'
 
-type IProps = { payButtons: PayButton[] }
-export default ({payButtons}:IProps) => 
+type IProps = { paybuttons: PayButton[] }
+export default ({paybuttons}:IProps) => 
 <ul>
-{payButtons.map(payButton => (
-    <li key={payButton.id}>
+{paybuttons.map(paybutton => (
+    <li key={paybutton.id}>
       <section>
-        <h3>{payButton.id}</h3>
+        <h3>{paybutton.id}</h3>
         <ul>
-          {payButton.addresses.map(item => (<li key={item.address}>{item.chain.title}: {item.address}</li>))}
+          {paybutton.addresses.map(item => (<li key={item.address}>{item.chain.title}: {item.address}</li>))}
         </ul>
       </section>
     </li>

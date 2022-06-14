@@ -44,7 +44,7 @@ export default function Home(props) {
 }
 
 function ProtectedPage({ userId }) {
-  const [payButtons, setPayButtons] = React.useState([])
+  const [paybuttons, setPayButtons] = React.useState([])
 
   async function handleLogout() {
     await ThirdPartyEmailPassword.signOut()
@@ -73,7 +73,7 @@ function ProtectedPage({ userId }) {
     })
     if (res.status === 200) {
       const json = await res.json()
-      setPayButtons([...payButtons, json])
+      setPayButtons([...paybuttons, json])
     }
   }
 
