@@ -1,5 +1,5 @@
 import React from 'react'
-import { Paybutton } from 'types/index'
+import { Paybutton } from '@prisma/client'
 
 type IProps = { paybuttons: Paybutton[] }
 export default ({paybuttons}:IProps) => 
