@@ -1,11 +1,11 @@
 import axios from "axios";
-import { PayButton } from "types/index"
+import { Paybutton } from "types/index"
 import { websiteDomain } from 'config/appInfo'
 export const resolvers = {
   Query: {
-    getPayButtons: async (): Promise<PayButton[]> => {
+    getPaybuttons: async (): Promise<Paybutton[]> => {
       try {
-        const response = await axios.get<PayButton[]>(`${websiteDomain}/api/paybutton`)
+        const response = await axios.get<Paybutton[]>(`${websiteDomain}/api/paybutton`)
         return response.data.map(({ userId, id, addresses }) => ({
           userId,
           id,
@@ -16,14 +16,14 @@ export const resolvers = {
         throw error;
       }
     },
-    getPayButton: async (_, args): Promise<PayButton> => {
+    getPaybutton: async (_, args): Promise<Paybutton> => {
       try {
-        const response = await axios.get<PayButton>(`${websiteDomain}/api/paybutton/1`)
-	const payButton = response.data
+        const response = await axios.get<Paybutton>(`${websiteDomain}/api/paybutton/1`)
+	const paybutton = response.data
         return {
-          id: payButton.id,
-          userId: payButton.userId,
-          addresses: payButton.addresses
+          id: paybutton.id,
+          userId: paybutton.userId,
+          addresses: paybutton.addresses
         };
       } catch (error) {
         throw error;
