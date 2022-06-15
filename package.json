@@ -6,12 +6,9 @@
     "build": "next build && tsc --project tsconfig.json",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "prod": "npm run build && NODE_ENV=production pm2 start dist/index.js",
-    "db:migrate": "sequelize-cli db:migrate",
-    "db:reset": "sequelize-cli db:drop && sequelize-cli db:create && sequelize-cli db:migrate",
-    "test": "dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js",
-    "pretest": "cross-env NODE_ENV=test yarn db:reset",
-    "db:create:test": "cross-env NODE_ENV=test sequelize-cli db:create",
-    "prisma": "dotenv -e .env.development prisma",
+    "test": "dotenv -e .env.test jest",
+    "pretest": "dotenv -e .env.test -- prisma migrate reset --force",
+    "prisma": "dotenv -e .env.development -- prisma",
     "docker": "./scripts/docker-exec-shortcuts.sh"
   },
   "dependencies": {
@@ -69,6 +66,9 @@
     "*.ts?(x)": [
       "npx ts-standard --fix"
     ]
+  },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "license": "MIT"
 }
