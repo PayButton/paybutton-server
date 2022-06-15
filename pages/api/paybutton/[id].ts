@@ -8,9 +8,9 @@ export default async (
   res: NextApiResponse
 ) => {
   if (req.method == 'GET') {
-    const payButtonId = req.query.id as string
+    const paybuttonId = req.query.id as string
     try {
-      const paybutton = await paybuttonsService.fetchPaybuttonById(payButtonId)
+      const paybutton = await paybuttonsService.fetchPaybuttonById(paybuttonId)
       if (!paybutton) throw new Error(RESPONSE_MESSAGES.NOT_FOUND_404.message)
       res.status(200).json(paybutton);
     }
