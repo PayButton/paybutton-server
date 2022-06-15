@@ -11,7 +11,7 @@ services:
       - "3000:3000"
     volumes:
       - .:/app/src
-    command: sh -c "yarn db:migrate && yarn dev"
+    command: sh -c "yarn prisma migrate dev && yarn prisma db seed && yarn dev"
   db:
     container_name: paybutton-db
     image: mariadb
@@ -25,8 +25,9 @@ services:
     ports:
       - 3306:3306
     volumes:
-      - ./db/init-supertokens-db.sql:/docker-entrypoint-initdb.d/init-supertokens-db.sql
       - ./db/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql
+      - ./db/init-supertokens-db.sql:/docker-entrypoint-initdb.d/init-supertokens-db.sql
+      - ./db/prisma-shadow-db-fix.sql:/docker-entrypoint-initdb.d/prisma-shadow-db-fix.sql
 
   users-service:
     container_name: paybutton-users-service
