@@ -1,4 +1,4 @@
-export type PayButton = {
+export type Paybutton = {
         id: string,
         userId: string,
         addresses: any,
