@@ -1,6 +1,6 @@
 import { RequestOptions, RequestMethod } from 'node-mocks-http'
 import paybuttonEndpoint from 'pages/api/paybuttons/index'
-import paybuttonIdEndpoint from 'pages/api/paybuttons/[id]'
+import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
 import {
   testEndpoint,
   clearPaybuttons,
@@ -82,7 +82,7 @@ describe('POST /api/paybutton/', () => {
   })
 })
 
-describe('GET /api/paybutton/', () => {
+describe('GET /api/paybuttons/', () => {
   // Create 4 paybuttons, 3 for one user and 1 for another.
   const userA = 'test-u-id'
   const userB = 'test-other-u-id'
