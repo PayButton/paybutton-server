@@ -1,12 +1,13 @@
 import { NextApiResponse, NextApiRequest } from 'next/types'
 import { getTransactionDetails } from 'services/bchdService'
+import { RESPONSE_MESSAGES } from 'constants/index'
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   try {
     const { transactionId } = req.query
 
     if (transactionId === '' || transactionId === undefined) {
-      res.send({ message: 'Missing Transaction ID parameter' })
+      res.status(400).send({ message: RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.message })
     }
 
     const response = await getTransactionDetails(transactionId)
