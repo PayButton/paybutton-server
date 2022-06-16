@@ -1,15 +1,15 @@
-import React from 'react'
+import React, { FunctionComponent } from 'react'
 import style from './page.module.css'
 
-type PageProps = {
-  header: React.ReactNode,
+interface PageProps {
+  header: React.ReactNode
   children: React.ReactNode
 }
 
-const Page = ({ header, children } : PageProps) =>
+const Page = ({ header, children }: PageProps): FunctionComponent<PageProps> =>
   <>
     <header className={style.header}>
-     {header}
+      {header}
     </header>
     <article className={style.article}>
       {children}
@@ -17,4 +17,3 @@ const Page = ({ header, children } : PageProps) =>
   </>
 
 export default Page
-
