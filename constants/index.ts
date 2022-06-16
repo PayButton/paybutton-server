@@ -11,6 +11,7 @@ export const RESPONSE_MESSAGES = {
   NOT_FOUND_404: { statusCode: 404, message: 'Not found.' },
   INVALID_INPUT_400: { statusCode: 400, message: 'Invalid input.' },
   USER_ID_NOT_PROVIDED_400: { statusCode: 400, message: "'userId' not provided." },
+  MULTIPLE_USER_IDS_PROVIDED_400: { statusCode: 400, message: "Multiple 'userId' provided." },
   ADDRESSES_NOT_PROVIDED_400: { statusCode: 400, message: "'addresses' not provided." },
   INVALID_CHAIN_SLUG_400: { statusCode: 400, message: 'Invalid chain slug.' }
 }
