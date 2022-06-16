@@ -1,6 +1,6 @@
 import { RequestOptions, RequestMethod } from 'node-mocks-http'
-import paybuttonEndpoint from 'pages/api/paybutton/index'
-import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
+import paybuttonEndpoint from 'pages/api/paybuttons/index'
+import paybuttonIdEndpoint from 'pages/api/paybuttons/[id]'
 import {
   testEndpoint,
   clearPaybuttons,
@@ -96,10 +96,7 @@ describe('GET /api/paybutton/', () => {
 
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: {
+    query: {
       userId: userA
     }
   }
@@ -113,7 +110,7 @@ describe('GET /api/paybutton/', () => {
   })
 
   it('Get 1 paybuttons for userB', async () => {
-    baseRequestOptions.body = {
+    baseRequestOptions.query = {
       userId: userB
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -135,7 +132,7 @@ describe('GET /api/paybutton/', () => {
   })
 
   it('Get no paybuttons for unknown user', async () => {
-    baseRequestOptions.body = {
+    baseRequestOptions.query = {
       userId: 'unknown-user'
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -145,13 +142,23 @@ describe('GET /api/paybutton/', () => {
   })
 
   it('Fail without userId', async () => {
-    baseRequestOptions.body = {
+    baseRequestOptions.query = {
       userId: ''
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+  })
+
+  it('Fail with multiple userIds', async () => {
+    baseRequestOptions.query = {
+      userId: ['test-u-id', 'test-other-u-id']
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message)
   })
 })
 
@@ -172,9 +179,6 @@ describe('GET /api/paybutton/[id]', () => {
 
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
-    headers: {
-      'Content-Type': 'application/json'
-    },
     query: {}
   }
 
