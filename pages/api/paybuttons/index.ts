@@ -5,11 +5,11 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   if (req.method === 'POST') {
-    const values = req.body
-    const userId: string | undefined = values.userId
+    const body = req.body
+    const userId: string | undefined = body.userId
     try {
       if (userId === '' || userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
-      const parsedAddresses = parseAddresses(values.addresses)
+      const parsedAddresses = parseAddresses(body.addresses)
       const paybutton = await paybuttonsService.createPaybutton(userId, parsedAddresses)
       res.status(200).json(paybutton)
     } catch (err: any) {
@@ -28,8 +28,8 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       }
     }
   } else if (req.method === 'GET') {
-    const params = req.query
-    const userId: string | string[] | undefined = params.userId
+    const query = req.query
+    const userId: string | string[] | undefined = query.userId
     try {
       if (userId === '' || userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
       if (Array.isArray(userId)) throw new Error(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message)
