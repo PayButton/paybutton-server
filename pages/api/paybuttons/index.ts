@@ -4,9 +4,9 @@ import { parseAddresses } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
-  const values = req.body
-  const userId: string | undefined = values.userId
   if (req.method === 'POST') {
+    const values = req.body
+    const userId: string | undefined = values.userId
     try {
       if (userId === '' || userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
       const parsedAddresses = parseAddresses(values.addresses)
@@ -28,6 +28,8 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       }
     }
   } else if (req.method === 'GET') {
+    const params = req.query
+    const userId: string | undefined = params.userId
     try {
       if (userId === '' || userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
       const paybuttonList = await paybuttonsService.fetchPaybuttonArrayByUserId(userId)
