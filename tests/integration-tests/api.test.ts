@@ -1,5 +1,6 @@
 import { RequestOptions, RequestMethod } from 'node-mocks-http'
-import paybuttonEndpoint from 'pages/api/paybuttons/index'
+import paybuttonsEndpoint from 'pages/api/paybuttons/index'
+import paybuttonEndpoint from 'pages/api/paybutton/index'
 import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
 import {
   testEndpoint,
@@ -102,7 +103,7 @@ describe('GET /api/paybuttons/', () => {
   }
 
   it('Get 3 paybuttons for userA', async () => {
-    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    const res = await testEndpoint(baseRequestOptions, paybuttonsEndpoint)
     expect(res.statusCode).toBe(200)
     const responseData = res._getJSONData()
     expect(responseData[0].providerUserId).toBe(userA)
@@ -113,7 +114,7 @@ describe('GET /api/paybuttons/', () => {
     baseRequestOptions.query = {
       userId: userB
     }
-    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    const res = await testEndpoint(baseRequestOptions, paybuttonsEndpoint)
     expect(res.statusCode).toBe(200)
     const responseData = res._getJSONData()
     expect(responseData[0].providerUserId).toBe(userB)
@@ -135,7 +136,7 @@ describe('GET /api/paybuttons/', () => {
     baseRequestOptions.query = {
       userId: 'unknown-user'
     }
-    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    const res = await testEndpoint(baseRequestOptions, paybuttonsEndpoint)
     expect(res.statusCode).toBe(200)
     const responseData = res._getJSONData()
     expect(responseData.length).toBe(0)
@@ -145,7 +146,7 @@ describe('GET /api/paybuttons/', () => {
     baseRequestOptions.query = {
       userId: ''
     }
-    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    const res = await testEndpoint(baseRequestOptions, paybuttonsEndpoint)
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
@@ -155,7 +156,7 @@ describe('GET /api/paybuttons/', () => {
     baseRequestOptions.query = {
       userId: ['test-u-id', 'test-other-u-id']
     }
-    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    const res = await testEndpoint(baseRequestOptions, paybuttonsEndpoint)
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message)
