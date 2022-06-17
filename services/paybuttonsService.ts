@@ -3,6 +3,13 @@ import { Paybutton, Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
+export interface CreatePaybuttonInput {
+  userId: string
+  name: string
+  buttonData: string
+  prefixedAddressList: string[]
+}
+
 export async function createPaybutton (userId: string, prefixedAddressList: string[]): Promise<Paybutton> {
   const paybuttonAddressesToCreate: Prisma.PaybuttonAddressUncheckedCreateWithoutPaybuttonInput[] = await Promise.all(
     prefixedAddressList.map(
