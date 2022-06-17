@@ -46,6 +46,12 @@ export async function fetchPaybuttonById (paybuttonId: number | string): Promise
 export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Paybutton[]> {
   return await prisma.paybutton.findMany({
     where: { providerUserId: userId },
-    include: { addresses: true }
+    include: {
+      addresses: {
+        include: {
+          chain: true
+        }
+      }
+    }
   })
 }
