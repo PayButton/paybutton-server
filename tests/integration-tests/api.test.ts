@@ -1,7 +1,7 @@
 import { RequestOptions, RequestMethod } from 'node-mocks-http'
 import paybuttonEndpoint from 'pages/api/paybutton/index'
 import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
-import transactionsDetailsEndpoint from 'pages/api/transactions/details/[transactionId]'
+import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
 import {
   testEndpoint,
   clearPaybuttons,
@@ -209,7 +209,7 @@ describe('GET /api/paybutton/[id]', () => {
   })
 })
 
-describe('GET /api/transactions/details/[transactionId]', () => {
+describe('GET /api/transaction/[transactionId]', () => {
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
     headers: {
@@ -219,7 +219,7 @@ describe('GET /api/transactions/details/[transactionId]', () => {
   }
 
   it('Should return HTTP 400 (Bad Request) if no transaction id specified', async () => {
-    const res = await testEndpoint(baseRequestOptions, transactionsDetailsEndpoint)
+    const res = await testEndpoint(baseRequestOptions, transactionDetailsEndpoint)
     expect(res.statusCode).toBe(TRANSACTION_ID_NOT_PROVIDED_400.statusCode)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.message)
