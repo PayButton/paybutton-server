@@ -7,8 +7,7 @@ const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   try {
     const { address } = req.query
-
-    if (address !== '' || address === undefined) {
+    if (address === '' || address === undefined) {
       res.status(ADDRESS_NOT_PROVIDED_400.statusCode).send({ message: ADDRESS_NOT_PROVIDED_400 })
     }
 
