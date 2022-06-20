@@ -1,6 +1,8 @@
 import { RequestOptions, RequestMethod } from 'node-mocks-http'
+import paybuttonsEndpoint from 'pages/api/paybuttons/index'
 import paybuttonEndpoint from 'pages/api/paybutton/index'
 import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
+import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
 import {
   testEndpoint,
   clearPaybuttons,
@@ -31,7 +33,7 @@ describe('POST /api/paybutton/', () => {
     }
   }
 
-  it('Should create a paybutton with two addresses', async () => {
+  it('Create a paybutton with two addresses', async () => {
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
@@ -53,7 +55,7 @@ describe('POST /api/paybutton/', () => {
     void expect(countPaybuttonAddresses()).resolves.toBe(2)
   })
 
-  it('Should create a paybutton empty JSON for buttonData', async () => {
+  it('Create a paybutton empty JSON for buttonData', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton-no-button-data',
@@ -74,7 +76,7 @@ describe('POST /api/paybutton/', () => {
     )
   })
 
-  it('Should fail without userId', async () => {
+  it('Fail without userId', async () => {
     baseRequestOptions.body = {
       userId: '',
       name: 'test-paybutton',
@@ -110,7 +112,7 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.message).toBe(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   })
 
-  it('Should fail without addresses', async () => {
+  it('Fail without addresses', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton',
@@ -122,7 +124,7 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
   })
 
-  it('Should fail with invalid addresses', async () => {
+  it('Fail with invalid addresses', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton',
@@ -135,7 +137,7 @@ describe('POST /api/paybutton/', () => {
   })
 })
 
-describe('GET /api/paybutton/', () => {
+describe('GET /api/paybuttons/', () => {
   // Create 4 paybuttons, 3 for one user and 1 for another.
   const userA = 'test-u-id'
   const userB = 'test-other-u-id'
@@ -149,27 +151,24 @@ describe('GET /api/paybutton/', () => {
 
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: {
+    query: {
       userId: userA
     }
   }
 
-  it('Should get 3 paybuttons for userA', async () => {
-    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+  it('Get 3 paybuttons for userA', async () => {
+    const res = await testEndpoint(baseRequestOptions, paybuttonsEndpoint)
     expect(res.statusCode).toBe(200)
     const responseData = res._getJSONData()
     expect(responseData[0].providerUserId).toBe(userA)
     expect(responseData.length).toBe(3)
   })
 
-  it('Should get 1 paybuttons for userB', async () => {
-    baseRequestOptions.body = {
+  it('Get 1 paybuttons for userB', async () => {
+    baseRequestOptions.query = {
       userId: userB
     }
-    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    const res = await testEndpoint(baseRequestOptions, paybuttonsEndpoint)
     expect(res.statusCode).toBe(200)
     const responseData = res._getJSONData()
     expect(responseData[0].providerUserId).toBe(userB)
@@ -190,24 +189,34 @@ describe('GET /api/paybutton/', () => {
     expect(responseData[0]).toHaveProperty('uuid')
   })
 
-  it('Should get no paybuttons for unknown user', async () => {
-    baseRequestOptions.body = {
+  it('Get no paybuttons for unknown user', async () => {
+    baseRequestOptions.query = {
       userId: 'unknown-user'
     }
-    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    const res = await testEndpoint(baseRequestOptions, paybuttonsEndpoint)
     expect(res.statusCode).toBe(200)
     const responseData = res._getJSONData()
     expect(responseData.length).toBe(0)
   })
 
-  it('Should fail without userId', async () => {
-    baseRequestOptions.body = {
+  it('Fail without userId', async () => {
+    baseRequestOptions.query = {
       userId: ''
     }
-    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    const res = await testEndpoint(baseRequestOptions, paybuttonsEndpoint)
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+  })
+
+  it('Fail with multiple userIds', async () => {
+    baseRequestOptions.query = {
+      userId: ['test-u-id', 'test-other-u-id']
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonsEndpoint)
+    expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message)
   })
 })
 
@@ -228,13 +237,10 @@ describe('GET /api/paybutton/[id]', () => {
 
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
-    headers: {
-      'Content-Type': 'application/json'
-    },
     query: {}
   }
 
-  it('Should find paybutton for created ids', async () => {
+  it('Find paybutton for created ids', async () => {
     for (const id of createdPaybuttonsIds) {
       if (baseRequestOptions.query != null) baseRequestOptions.query.id = id
       const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
@@ -257,12 +263,29 @@ describe('GET /api/paybutton/[id]', () => {
     }
   })
 
-  it('Should not find paybutton for next id', async () => {
+  it('Not find paybutton for next id', async () => {
     const nextId = createdPaybuttonsIds[createdPaybuttonsIds.length - 1] + 1
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = nextId
     const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
     expect(res.statusCode).toBe(404)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.NOT_FOUND_404.message)
+  })
+})
+
+describe('GET /api/transaction/[transactionId]', () => {
+  const baseRequestOptions: RequestOptions = {
+    method: 'GET' as RequestMethod,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    query: {}
+  }
+
+  it('Should return HTTP 400 (Bad Request) if no transaction id specified', async () => {
+    const res = await testEndpoint(baseRequestOptions, transactionDetailsEndpoint)
+    expect(res.statusCode).toBe(TRANSACTION_ID_NOT_PROVIDED_400.statusCode)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.message)
   })
 })
