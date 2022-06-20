@@ -77,6 +77,7 @@ export const mockedPaybuttonList = [
 export const mockedChain = {
   id: 1,
   slug: 'bitcoincash',
+  ticker: 'bch',
   title: 'Bitcoin Cash',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z')
