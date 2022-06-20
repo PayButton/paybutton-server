@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Paybutton } from "types/index"
+import { Paybutton } from '@prisma/client'
 import { websiteDomain } from 'config/appInfo'
 export const resolvers = {
   Query: {
