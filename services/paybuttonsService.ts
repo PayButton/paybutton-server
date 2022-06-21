@@ -10,9 +10,9 @@ export interface CreatePaybuttonInput {
   prefixedAddressList: string[]
 }
 
-export async function createPaybutton (userId: string, prefixedAddressList: string[]): Promise<Paybutton> {
+export async function createPaybutton (values: CreatePaybuttonInput): Promise<Paybutton> {
   const paybuttonAddressesToCreate: Prisma.PaybuttonAddressUncheckedCreateWithoutPaybuttonInput[] = await Promise.all(
-    prefixedAddressList.map(
+    values.prefixedAddressList.map(
       async (addressWithPrefix) => {
         const [prefix, address] = addressWithPrefix.split(':').map(
           (substring) => substring.toLowerCase()
@@ -27,7 +27,9 @@ export async function createPaybutton (userId: string, prefixedAddressList: stri
   )
   return await prisma.paybutton.create({
     data: {
-      providerUserId: userId,
+      providerUserId: values.userId,
+      name: values.name,
+      buttonData: values.buttonData,
       addresses: {
         create: paybuttonAddressesToCreate
       }
