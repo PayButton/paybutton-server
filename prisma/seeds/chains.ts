@@ -26,5 +26,12 @@ export const chains = [
     title: 'Bitcoin Cash Regtest',
     createdAt: new Date(),
     updatedAt: new Date()
+  },
+  {
+    slug: 'ectest',
+    ticker: 'xec',
+    title: 'eCash Testnet Faucet',
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ]
