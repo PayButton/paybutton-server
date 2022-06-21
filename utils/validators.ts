@@ -65,19 +65,18 @@ export const parseError = function (error: Error): Error {
 }
 
 export interface POSTParameters {
-  userId?: string
   name?: string
   buttonData?: string
   addresses?: string
 }
 
-export const parsePaybuttonPOSTRequest = function (params: POSTParameters): CreatePaybuttonInput {
-  if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+export const parsePaybuttonPOSTRequest = function (params: POSTParameters, userId: string | undefined): CreatePaybuttonInput {
+  if (userId === '' || userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   const parsedAddresses = parseAddresses(params.addresses)
   const parsedButtonData = parseButtonData(params.buttonData)
   return {
-    userId: params.userId,
+    userId: userId,
     name: params.name,
     buttonData: parsedButtonData,
     prefixedAddressList: parsedAddresses
