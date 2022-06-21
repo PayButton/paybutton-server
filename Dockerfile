@@ -15,7 +15,5 @@ FROM node:lts-alpine as app
 RUN mkdir /app
 COPY --from=builder /deps/node_modules /app/node_modules
 ENV PATH /app/node_modules/.bin:$PATH
-RUN chown -R node:node /app/node_modules/prisma
-USER node
 WORKDIR /app/src/
 EXPOSE 3000
