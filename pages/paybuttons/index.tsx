@@ -1,7 +1,7 @@
 import React from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import Page from 'components/Page'
-import { PaybuttonList } from 'components/Paybutton'
+import { PaybuttonList, PaybuttonForm } from 'components/Paybutton'
 import { Paybutton } from '@prisma/client'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
@@ -102,6 +102,7 @@ class ProtectedPage extends React.Component<PaybuttonsProps, PaybuttonsState> {
       <Page header={<a href='#' onClick={this.handleLogout}>Logout</a>}>
         PayButtons:
         <PaybuttonList paybuttons={this.state.paybuttons} />
+        <PaybuttonForm />
       </Page>
     )
   }
