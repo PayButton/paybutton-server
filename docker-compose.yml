@@ -11,7 +11,6 @@ services:
       - "3000:3000"
     volumes:
       - .:/app/src
-      - /app/src/prisma/migrations
     command: sh -c "yarn prisma migrate dev && yarn prisma db seed && yarn dev"
   db:
     container_name: paybutton-db

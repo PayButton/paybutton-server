@@ -13,6 +13,7 @@ FROM node:lts-alpine as app
 
 ## Copy built node modules and binaries without including the toolchain
 RUN mkdir /app
+USER node
 COPY --from=builder /deps/node_modules /app/node_modules
 ENV PATH /app/node_modules/.bin:$PATH
 WORKDIR /app/src/
