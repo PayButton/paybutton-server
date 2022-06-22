@@ -225,7 +225,7 @@ describe('GET /api/transaction/[transactionId]', () => {
 
   it('Should return HTTP 400 (Bad Request) if no transaction id specified', async () => {
     const res = await testEndpoint(baseRequestOptions, transactionDetailsEndpoint)
-    expect(res.statusCode).toBe(TRANSACTION_ID_NOT_PROVIDED_400.statusCode)
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.statusCode)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.message)
   })
