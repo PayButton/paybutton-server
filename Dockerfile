@@ -4,6 +4,7 @@ FROM node:lts-alpine as builder
 RUN apk add --no-cache python3 make g++
 
 # Install node deps and compile native add-ons
+USER node
 WORKDIR /deps/
 COPY package.json /deps/
 COPY yarn.lock /deps/
@@ -13,7 +14,6 @@ FROM node:lts-alpine as app
 
 ## Copy built node modules and binaries without including the toolchain
 RUN mkdir /app
-USER node
 COPY --from=builder /deps/node_modules /app/node_modules
 ENV PATH /app/node_modules/.bin:$PATH
 WORKDIR /app/src/
