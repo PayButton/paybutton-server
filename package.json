@@ -6,7 +6,7 @@
     "build": "next build && tsc --project tsconfig.json",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "prod": "npm run build && NODE_ENV=production pm2 start dist/index.js",
-    "test": "dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' /app/node_modules/jest/bin/jest.js",
+    "test": "dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js",
     "pretest": "dotenv -e .env.test -- prisma migrate reset --force",
     "prisma": "dotenv -e .env.development -- prisma",
     "docker": "./scripts/docker-exec-shortcuts.sh"

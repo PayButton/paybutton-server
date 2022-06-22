@@ -5,17 +5,16 @@ on:
       - master
 jobs:
   test:
-    name: Run Integration Tests
+    name: Integration Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: executing remote ssh commands using ssh key
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER}}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: whoami
+      - name: Install Dependencies
+        run: yarn
+      - name: Spin up required database containers
+        run: docker-compose up -d db users-service
+      - name: Run integration tests
+        run: make test-integration
