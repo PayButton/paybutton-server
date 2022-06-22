@@ -13,7 +13,7 @@ FROM node:lts-alpine as app
 
 ## Copy built node modules and binaries without including the toolchain
 USER node
-COPY --chown=node --from=builder /deps/node_modules /home/node/node_modules
-ENV PATH /home/node/node_modules/.bin:$PATH
+COPY --chown=node --from=builder /deps/node_modules /home/node/src/node_modules
+ENV PATH /home/node/src/node_modules/.bin:$PATH
 WORKDIR /home/node/src/
 EXPOSE 3000
