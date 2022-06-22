@@ -1,0 +1,21 @@
+name: Integration Test
+on:
+  pull_request:
+    branches:
+      - master
+jobs:
+  test:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: executing remote ssh commands using ssh key
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER}}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: whoami
