@@ -284,7 +284,7 @@ describe('GET /api/transactions/[address]', () => {
     query: {}
   }
 
-  it('Should return HTTP 400 (Bad Request) if no transaction id specified', async () => {
+  it('Should return HTTP 400 (Bad Request) if no address specified', async () => {
     const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
     expect(res.statusCode).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.statusCode)
     const responseData = res._getJSONData()
@@ -301,7 +301,7 @@ describe('GET /api/transaction/[transactionId]', () => {
     query: {}
   }
 
-  it('Should return HTTP 400 (Bad Request) if no address specified', async () => {
+  it('Should return HTTP 400 (Bad Request) if no transaction ID specified', async () => {
     const res = await testEndpoint(baseRequestOptions, transactionDetailsEndpoint)
     expect(res.statusCode).toBe(RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.statusCode)
     const responseData = res._getJSONData()
