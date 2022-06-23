@@ -2,6 +2,8 @@ import { RequestOptions, RequestMethod } from 'node-mocks-http'
 import paybuttonsEndpoint from 'pages/api/paybuttons/index'
 import paybuttonEndpoint from 'pages/api/paybutton/index'
 import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
+import transactionsEndpoint from 'pages/api/transactions/[address]'
+
 import {
   testEndpoint,
   clearPaybuttons,
@@ -210,5 +212,22 @@ describe('GET /api/paybutton/[id]', () => {
     expect(res.statusCode).toBe(404)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.NOT_FOUND_404.message)
+  })
+})
+
+describe('GET /api/transactions/[address]', () => {
+  const baseRequestOptions: RequestOptions = {
+    method: 'GET' as RequestMethod,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    query: {}
+  }
+
+  it('Should return HTTP 400 (Bad Request) if no address specified', async () => {
+    const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.statusCode)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
   })
 })
