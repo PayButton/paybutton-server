@@ -9,7 +9,8 @@
     "test": "dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js",
     "pretest": "dotenv -e .env.test -- prisma migrate reset --force",
     "prisma": "dotenv -e .env.development -- prisma",
-    "docker": "./scripts/docker-exec-shortcuts.sh"
+    "docker": "./scripts/docker-exec-shortcuts.sh",
+    "ci:integration:test": "yarn pretest && dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js tests/integration-tests"
   },
   "dependencies": {
     "@data-driven-forms/mui-component-mapper": "^3.16.10",
@@ -23,6 +24,7 @@
     "@types/express": "^4.17.11",
     "@types/helmet": "^4.0.0",
     "@types/socket.io": "^2.1.13",
+    "@types/uuid": "^8.3.4",
     "apollo-server-micro": "^3.6.7",
     "axios": "^0.26.1",
     "cors": "^2.8.5",
