@@ -60,6 +60,9 @@ case "$command" in
     "migratereset" | "mr")
         eval "$base_command_node" yarn prisma migrate reset "$@"
         ;;
+    "prisma" | "p")
+        eval "$base_command_node" yarn prisma "$@"
+        ;;
     "prismadb" | "pd")
         eval "$base_command_node" yarn prisma db "$@"
         ;;
