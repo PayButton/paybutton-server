@@ -9,9 +9,9 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
     const address = req.query.address as string
     try {
       if (address === '' || address === undefined) {
-          throw new Error(ADDRESS_NOT_PROVIDED_400.message)
+        throw new Error(ADDRESS_NOT_PROVIDED_400.message)
       }
-      const response = await getAddress(address as string)
+      const response = await getAddress(address)
       res.status(200).send(response)
     } catch (err: any) {
       switch (err.message) {
