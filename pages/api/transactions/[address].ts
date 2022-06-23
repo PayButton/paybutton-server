@@ -1,4 +1,4 @@
-import { NextApiResponse, NextApiRequest } from 'next/types'
+import { NextApiResponse, NextApiRequest } from 'next'
 import { getAddress } from 'services/bchdService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
@@ -6,17 +6,21 @@ const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   if (req.method === 'GET') {
+    const address = req.query.address as string
     try {
-      const { address } = req.query
-
       if (address === '' || address === undefined) {
-        res.status(ADDRESS_NOT_PROVIDED_400.statusCode).send({ message: ADDRESS_NOT_PROVIDED_400.message })
+          throw new Error(ADDRESS_NOT_PROVIDED_400.message)
       }
-
-      const response = await getAddress(address)
+      const response = await getAddress(address as string)
       res.status(200).send(response)
-    } catch (e) {
-      res.status(500).send(e.message)
+    } catch (err: any) {
+      switch (err.message) {
+        case ADDRESS_NOT_PROVIDED_400.message:
+          res.status(ADDRESS_NOT_PROVIDED_400.statusCode).json(ADDRESS_NOT_PROVIDED_400)
+          break
+        default:
+          res.status(500).json({ statusCode: 500, message: err.message })
+      }
     }
   }
 }
