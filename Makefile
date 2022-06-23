@@ -31,6 +31,6 @@ test-unit:
 	DATABASE_URL="mysql://paybutton-test:paybutton-test@db:3306/paybutton-test" npx ts-node -O '{"module":"commonjs"}' node_modules/jest/bin/jest.js tests/unittests
 
 test-integration:
-	sleep 15
+	sleep 5
 	sed -i "s/db/localhost/g" .env.test
 	yarn ci:integration:test
