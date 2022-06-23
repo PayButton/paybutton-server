@@ -1,5 +1,5 @@
 # paybutton-server
-![master status](https://github.com/paybutton/paybutton-server/actions/workflows/on-push-master/badge.svg)
+![master status](https://github.com/paybutton/paybutton-server/actions/workflows/on-push-master.yml/badge.svg)
 
 https://paybutton.org
 
