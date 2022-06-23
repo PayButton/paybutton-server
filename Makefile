@@ -20,6 +20,9 @@ check-logs-db:
 check-logs-users:
 	docker logs -f paybutton-users-service
 
+lint:
+	npx --yes ts-standard .
+
 lint-master:
 	$(git_diff_to_master)
 	npx --yes ts-standard --stdin --stdin-filename DIFF

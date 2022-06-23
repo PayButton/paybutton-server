@@ -1,0 +1,24 @@
+name: Lint, Unit and Integration Tests
+on:
+  push:
+    branches:
+      - ci/issue/132
+jobs:
+  test:
+    name: Lint, Unit and Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install Dependencies
+        run: yarn
+      - name: Run linter
+        run: make lint
+      - name: Run unit tests
+        run: make test-unit
+      - name: Spin up required database containers
+        run: docker-compose up -d db users-service
+      - name: Run integration tests
+        run: make test-integration
