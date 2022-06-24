@@ -2,7 +2,9 @@ import { RequestOptions, RequestMethod } from 'node-mocks-http'
 import paybuttonsEndpoint from 'pages/api/paybuttons/index'
 import paybuttonEndpoint from 'pages/api/paybutton/index'
 import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
+import transactionsEndpoint from 'pages/api/transactions/[address]'
 import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
+
 import {
   testEndpoint,
   clearPaybuttons,
@@ -109,7 +111,7 @@ describe('POST /api/paybutton/', () => {
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
-    expect(responseData.message).toBe(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NAME_ALREADY_EXISTS_400.message)
   })
 
   it('Fail without addresses', async () => {
@@ -273,6 +275,23 @@ describe('GET /api/paybutton/[id]', () => {
   })
 })
 
+describe('GET /api/transactions/[address]', () => {
+  const baseRequestOptions: RequestOptions = {
+    method: 'GET' as RequestMethod,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    query: {}
+  }
+
+  it('Should return HTTP 400 (Bad Request) if no address specified', async () => {
+    const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.statusCode)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
+   })
+})
+
 describe('GET /api/transaction/[transactionId]', () => {
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
@@ -282,9 +301,9 @@ describe('GET /api/transaction/[transactionId]', () => {
     query: {}
   }
 
-  it('Should return HTTP 400 (Bad Request) if no transaction id specified', async () => {
+  it('Should return HTTP 400 (Bad Request) if no transaction ID specified', async () => {
     const res = await testEndpoint(baseRequestOptions, transactionDetailsEndpoint)
-    expect(res.statusCode).toBe(TRANSACTION_ID_NOT_PROVIDED_400.statusCode)
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.statusCode)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.message)
   })
