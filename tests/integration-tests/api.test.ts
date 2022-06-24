@@ -137,6 +137,19 @@ describe('POST /api/paybutton/', () => {
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_INPUT_400.message)
   })
+
+  it('Fail with invalid buttonData', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'test-paybutton',
+      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4',
+      buttonData: '{invalidjson'
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400.message)
+  })
 })
 
 describe('GET /api/paybuttons/', () => {
@@ -289,7 +302,7 @@ describe('GET /api/transactions/[address]', () => {
     expect(res.statusCode).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.statusCode)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
-   })
+  })
 })
 
 describe('GET /api/transaction/[transactionId]', () => {
