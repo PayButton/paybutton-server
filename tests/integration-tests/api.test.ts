@@ -2,7 +2,9 @@ import { RequestOptions, RequestMethod } from 'node-mocks-http'
 import paybuttonsEndpoint from 'pages/api/paybuttons/index'
 import paybuttonEndpoint from 'pages/api/paybutton/index'
 import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
+import transactionsEndpoint from 'pages/api/transactions/[address]'
 import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
+
 import {
   testEndpoint,
   clearPaybuttons,
@@ -27,7 +29,9 @@ describe('POST /api/paybutton/', () => {
     },
     body: {
       userId: 'test-u-id',
-      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
+      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4',
+      name: 'test-paybutton',
+      buttonData: '{"somefield":"somevalue"}'
     }
   }
 
@@ -36,6 +40,9 @@ describe('POST /api/paybutton/', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     expect(responseData.providerUserId).toBe('test-u-id')
+    expect(responseData.name).toBe('test-paybutton')
+    expect(responseData.buttonData).toBe('{"somefield":"somevalue"}')
+    expect(responseData.uuid).not.toBeNull()
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -50,9 +57,31 @@ describe('POST /api/paybutton/', () => {
     void expect(countPaybuttonAddresses()).resolves.toBe(2)
   })
 
+  it('Create a paybutton empty JSON for buttonData', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'test-paybutton-no-button-data',
+      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc'
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(200)
+    expect(responseData.providerUserId).toBe('test-u-id')
+    expect(responseData.name).toBe('test-paybutton-no-button-data')
+    expect(responseData.buttonData).toBe('{}')
+    expect(responseData.addresses).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          address: 'qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc'
+        })
+      ])
+    )
+  })
+
   it('Fail without userId', async () => {
     baseRequestOptions.body = {
       userId: '',
+      name: 'test-paybutton',
       addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -61,9 +90,34 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.message).toBe(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   })
 
+  it('Should fail without name', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: '',
+      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
+  })
+
+  it('Should fail with repeated name', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'test-paybutton',
+      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NAME_ALREADY_EXISTS_400.message)
+  })
+
   it('Fail without addresses', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
+      name: 'test-paybutton',
       addresses: ''
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -75,6 +129,7 @@ describe('POST /api/paybutton/', () => {
   it('Fail with invalid addresses', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
+      name: 'test-paybutton',
       addresses: 'ecash:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -131,6 +186,9 @@ describe('GET /api/paybuttons/', () => {
       ])
     )
     expect(responseData[0]).toHaveProperty('providerUserId')
+    expect(responseData[0]).toHaveProperty('name')
+    expect(responseData[0]).toHaveProperty('buttonData')
+    expect(responseData[0]).toHaveProperty('uuid')
   })
 
   it('Get no paybuttons for unknown user', async () => {
@@ -201,6 +259,9 @@ describe('GET /api/paybutton/[id]', () => {
         ])
       )
       expect(responseData).toHaveProperty('providerUserId')
+      expect(responseData).toHaveProperty('name')
+      expect(responseData).toHaveProperty('buttonData')
+      expect(responseData).toHaveProperty('uuid')
     }
   })
 
@@ -214,6 +275,23 @@ describe('GET /api/paybutton/[id]', () => {
   })
 })
 
+describe('GET /api/transactions/[address]', () => {
+  const baseRequestOptions: RequestOptions = {
+    method: 'GET' as RequestMethod,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    query: {}
+  }
+
+  it('Should return HTTP 400 (Bad Request) if no address specified', async () => {
+    const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.statusCode)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
+   })
+})
+
 describe('GET /api/transaction/[transactionId]', () => {
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
@@ -223,9 +301,9 @@ describe('GET /api/transaction/[transactionId]', () => {
     query: {}
   }
 
-  it('Should return HTTP 400 (Bad Request) if no transaction id specified', async () => {
+  it('Should return HTTP 400 (Bad Request) if no transaction ID specified', async () => {
     const res = await testEndpoint(baseRequestOptions, transactionDetailsEndpoint)
-    expect(res.statusCode).toBe(TRANSACTION_ID_NOT_PROVIDED_400.statusCode)
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.statusCode)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.message)
   })

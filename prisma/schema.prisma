@@ -26,7 +26,7 @@ model PaybuttonAddress {
 model Paybutton {
   id             Int                  @id @default(autoincrement())
   name           String               @db.VarChar(255)
-  uuid           String               @default(dbgenerated("uuid()"))
+  uuid           String               @default(dbgenerated("(uuid())"))
   buttonData     String               @db.LongText
   providerUserId String?              @db.VarChar(255)
   createdAt      DateTime             @default(now())
@@ -40,6 +40,7 @@ model Chain {
   id                 Int                @id @default(autoincrement())
   slug               String             @unique @db.VarChar(255)
   title              String             @db.VarChar(255)
+  ticker             String             @db.VarChar(255)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   paybuttonAddresses PaybuttonAddress[]
