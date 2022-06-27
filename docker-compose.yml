@@ -25,10 +25,9 @@ services:
     ports:
       - 3306:3306
     volumes:
-      - ./scripts/db/01-init-test-db.sql:/docker-entrypoint-initdb.d/01-init-test-db.sql
-      - ./scripts/db/02-init-supertokens-db.sql:/docker-entrypoint-initdb.d/02-init-supertokens-db.sql
-      - ./scripts/db/03-prisma-shadow-db-fix.sql:/docker-entrypoint-initdb.d/03-prisma-shadow-db-fix.sql
-      - ./scripts/db/04-create-dev-user.sql:/docker-entrypoint-initdb.d/04-create-dev-user.sql
+      - ./scripts/db/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql
+      - ./scripts/db/init-supertokens-db.sql:/docker-entrypoint-initdb.d/init-supertokens-db.sql
+      - ./scripts/db/prisma-shadow-db-fix.sql:/docker-entrypoint-initdb.d/prisma-shadow-db-fix.sql
 
   users-service:
     container_name: paybutton-users-service
