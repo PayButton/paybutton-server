@@ -3,7 +3,9 @@ import { chains } from './seeds/chains'
 const prisma = new PrismaClient()
 
 async function main (): Promise<void> {
-  await prisma.chain.createMany({ data: chains })
+  if (await prisma.chain.count() === 0) {
+    await prisma.chain.createMany({ data: chains })
+  }
 }
 
 main()
