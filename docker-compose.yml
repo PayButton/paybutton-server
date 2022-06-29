@@ -10,8 +10,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - .:/app/src
-    command: sh -c "yarn db:migrate && yarn dev"
+      - .:/home/node/src
+    command: sh -c "yarn && yarn prisma migrate dev && yarn prisma db seed && yarn dev"
   db:
     container_name: paybutton-db
     image: mariadb
@@ -24,6 +24,11 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     ports:
       - 3306:3306
+    volumes:
+      - ./scripts/db/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql
+      - ./scripts/db/init-supertokens-db.sql:/docker-entrypoint-initdb.d/init-supertokens-db.sql
+      - ./scripts/db/prisma-shadow-db-fix.sql:/docker-entrypoint-initdb.d/prisma-shadow-db-fix.sql
+
   users-service:
     container_name: paybutton-users-service
     depends_on:
@@ -33,8 +38,8 @@ services:
     ports:
       - 3567:3567
     environment:
-      MYSQL_DATABASE_NAME: paybutton
-      MYSQL_USER: paybutton
-      MYSQL_PASSWORD: paybutton
+      MYSQL_DATABASE_NAME: supertokens
+      MYSQL_USER: supertokens
+      MYSQL_PASSWORD: supertokens
       MYSQL_HOST: db
       MYSQL_PORT: 3306

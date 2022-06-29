@@ -1,52 +1,65 @@
-import models from 'db/models/index'
-import { PayButton } from 'types'
 import * as chainService from 'services/chainsService'
+import { Paybutton, Prisma } from '@prisma/client'
+import prisma from 'prisma/clientInstance'
+import { RESPONSE_MESSAGES } from 'constants/index'
 
-export async function createPaybutton (userId: string, prefixedAddressList: string[]): Promise<PayButton>  {
-    const result = await models.sequelize.transaction(async (t) => {
-        let paybutton = await models.paybuttons.create({
-            providerUserId: userId,
-        }, { transaction: t } )
-
-        for (let i=0; i < prefixedAddressList.length; i++) {
-            let addressWithPrefix = prefixedAddressList[i];
-            const [prefix, address] =  addressWithPrefix.split(':').map(
-              (substring) => substring.toLowerCase()
-            );
-            const chain = await chainService.getChainFromSlug(prefix)
-            await models.paybutton_addresses.create({
-                address: address.toLowerCase(),
-                chainId:  chain.id,
-                paybuttonId: paybutton.id
-            }, { transaction: t } );
-        }
-        return paybutton
-    });
-    /* This query is needed to eager load the `paybuttons` object.
-     * If result is returned directly, we won't be able to access 
-     * its addresses.
-     */
-    return await models.paybuttons.findOne({
-        where: {
-            id: result.id
-        },
-        include: {
-            all: true,
-            nested: true
-        }
-    })
+export interface CreatePaybuttonInput {
+  userId: string
+  name: string
+  buttonData: string
+  prefixedAddressList: string[]
 }
 
-export async function fetchPaybuttonById (paybuttonId: number | string, includeRelated: boolean = false): Promise<PayButton>  {
-  return await models.paybuttons.findOne({
-    where: { id: paybuttonId },
-    include: includeRelated ? { all: true, nested: true } : undefined
+export async function createPaybutton (values: CreatePaybuttonInput): Promise<Paybutton> {
+  const paybuttonAddressesToCreate: Prisma.PaybuttonAddressUncheckedCreateWithoutPaybuttonInput[] = await Promise.all(
+    values.prefixedAddressList.map(
+      async (addressWithPrefix) => {
+        const [prefix, address] = addressWithPrefix.split(':').map(
+          (substring) => substring.toLowerCase()
+        )
+        const chain = await chainService.getChainFromSlug(prefix)
+        if (chain === null) throw new Error(RESPONSE_MESSAGES.INVALID_CHAIN_SLUG_400.message)
+        return {
+          address: address.toLowerCase(),
+          chainId: Number(chain.id)
+        }
+      })
+  )
+  return await prisma.paybutton.create({
+    data: {
+      providerUserId: values.userId,
+      name: values.name,
+      buttonData: values.buttonData,
+      addresses: {
+        create: paybuttonAddressesToCreate
+      }
+    },
+    include: {
+      addresses: {
+        include: {
+          chain: true
+        }
+      }
+    }
   })
 }
 
-export async function fetchPaybuttonArrayByUserId (userId: string, includeRelated: boolean = false): Promise<PayButton[]>  {
-  return await models.paybuttons.findAll({
+export async function fetchPaybuttonById (paybuttonId: number | string): Promise<Paybutton | null> {
+  return await prisma.paybutton.findUnique({
+    where: { id: Number(paybuttonId) },
+    include: { addresses: true }
+  })
+}
+
+export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Paybutton[]> {
+  return await prisma.paybutton.findMany({
     where: { providerUserId: userId },
-    include: includeRelated ? { all: true, nested: true } : undefined
+    include: {
+      addresses: {
+        include: {
+          chain: true
+        }
+      }
+    }
   })
 }

@@ -6,3 +6,11 @@ body {
   --bg: var(--primary-bg-color);
 }
 
+input {
+  background: white;
+}
+
+textarea {
+  background: white;
+}
+
