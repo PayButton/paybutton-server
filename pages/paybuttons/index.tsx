@@ -1,8 +1,9 @@
 import React from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import Page from 'components/Page'
-import { PaybuttonList } from 'components/Paybutton'
+import { PaybuttonList, PaybuttonForm } from 'components/Paybutton'
 import { Paybutton } from '@prisma/client'
+import { POSTParameters } from 'utils/validators'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
@@ -80,27 +81,28 @@ class ProtectedPage extends React.Component<PaybuttonsProps, PaybuttonsState> {
     void ThirdPartyEmailPassword.redirectToAuth()
   }
 
-  async handleSubmit (values): Promise<void> {
+  async onSubmit (values: POSTParameters): Promise<void> {
     const res = await fetch('/api/paybutton', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        userId: userId,
-        addresses: values.addresses
-      })
+      body: JSON.stringify(values)
     })
     if (res.status === 200) {
       const json = await res.json()
-      setPaybuttons([...this.paybuttons, json])
+      this.setState({
+        paybuttons: [...this.state.paybuttons, json]
+      })
     }
   }
 
   render (): React.ReactElement {
     return (
       <Page header={<a href='#' onClick={this.handleLogout}>Logout</a>}>
-        PayButtons:
+        <h2> Create PayButton:</h2>
+        <PaybuttonForm onSubmit={this.onSubmit.bind(this)} />
+        <h2>PayButtons:</h2>
         <PaybuttonList paybuttons={this.state.paybuttons} />
       </Page>
     )

@@ -34,7 +34,13 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
         create: paybuttonAddressesToCreate
       }
     },
-    include: { addresses: true }
+    include: {
+      addresses: {
+        include: {
+          chain: true
+        }
+      }
+    }
   })
 }
 
