@@ -1,23 +1,15 @@
 import * as paybuttonsService from 'services/paybuttonsService'
 import { parseError, parsePaybuttonPOSTRequest } from 'utils/validators'
+import { setSession } from 'utils/setSession'
 import { RESPONSE_MESSAGES } from 'constants/index'
-
-import { verifySession } from 'supertokens-node/recipe/session/framework/express'
-import { superTokensNextWrapper } from 'supertokens-node/nextjs'
 
 export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'POST') {
+    await setSession(req, res)
     const values = req.body
 
-    await superTokensNextWrapper(
-      async (next) => await verifySession()(req, res, next),
-      req,
-      res
-    )
-    const userId = req.session.userId
-
     try {
-      const createPaybuttonInput = parsePaybuttonPOSTRequest(values, userId)
+      const createPaybuttonInput = parsePaybuttonPOSTRequest(values, req.session.userId)
       const paybutton = await paybuttonsService.createPaybutton(createPaybuttonInput)
       res.status(200).json(paybutton)
     } catch (err: any) {
