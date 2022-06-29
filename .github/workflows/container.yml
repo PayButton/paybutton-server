@@ -12,7 +12,7 @@ env:
 jobs:
   # Push image to GitHub Packages.
   push:
-    if: startsWith(github.head_ref, 'feat/')
+    if: startsWith(github.head_ref, 'feat/') || startsWith(github.head_Ref, 'ci/')
     runs-on: ubuntu-latest
     permissions:
       packages: write
