@@ -1,9 +1,16 @@
-html { height: 100%; }
+html {
+  height: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
 
 body {
   display: inherit;
   min-height: 100%;
   --bg: var(--primary-bg-color);
+  font-size: 16px;
 }
 
 input {
@@ -13,4 +20,3 @@ input {
 textarea {
   background: white;
 }
-

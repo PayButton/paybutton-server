@@ -9,13 +9,21 @@ import * as SuperTokensConfig from '../config/frontendConfig'
 import Session from 'supertokens-auth-react/recipe/session'
 import { redirectToAuth } from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import ErrorBoundary from 'components/ErrorBoundary'
+import Dashboard from 'assets/dashboard-icon.png'
+import Payments from 'assets/payments-icon.png'
+import PaybuttonsIcon from 'assets/button-icon.png'
+import Wallets from 'assets/wallet-icon.png'
+import Networks from 'assets/network-icon.png'
+import Account from 'assets/account-icon.png'
+import Help from 'assets/help-icon.png'
+import Logout from 'assets/logout-icon.png'
 
 if (typeof window !== 'undefined') {
   SuperTokensReact.init(SuperTokensConfig.frontendConfig())
 }
 
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
-  const MENU_ITEMS = ['PayButtons']
+  const MENU_ITEMS = [{name:'Dashboard', image: Dashboard},{name:'PayButtons', image: PaybuttonsIcon}]
 
   useEffect(() => {
     async function doRefresh (): Promise<void> {

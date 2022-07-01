@@ -2,15 +2,19 @@
   display: block;
   color: var(--primary-text-color);
   background-color: var(--secondary-bg-color);
-  padding: 1em 1.2em;
+  padding: 25px 0;
   position: relative;
-  height: 100%;
+  height: 100vh;
 }
 
 .ul {
-  padding: 0
+  padding: 0;
 }
 
 .image {
   cursor: pointer;
+}
+
+.section {
+  padding-left: 25px;
 }

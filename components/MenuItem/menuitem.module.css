@@ -1,8 +1,37 @@
 .li {
   display: block;
-  padding: 3px 0px;
+  padding: 5px 25px;
 }
 
 .active {
-  background: #e7fcf3;
+  background: var(--green) !important;
+  color: #fff;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.imagectn {
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.active .imagectn img {
+  filter: brightness(0) invert(1);
+}
+
+.li:hover {
+  color: #fff;
+  background: var(--primary-text-color);
+  transition: all ease-in-out 200ms;
+}
+
+.li:hover .imagectn img {
+  filter: brightness(0) invert(1);
+  transition: all ease-in-out 200ms;
 }

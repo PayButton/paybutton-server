@@ -11,15 +11,15 @@ interface SidebarProps {
 
 const Sidebar = ({ menuItems }: SidebarProps): FunctionComponent<SidebarProps> =>
   <aside className={style.aside} role='complementary'>
-    <section>
+    <section className={style.section}>
       <Link href='/'>
-        <Image className={style.image} src={logoImageSource} alt='PayButton' width={130} height={30} />
+        <Image className={style.image} src={logoImageSource} alt='PayButton' width={140} height={26} />
       </Link>
     </section>
     <nav>
       <ul className={style.ul}>
         {menuItems.map(itemName =>
-          <MenuItem key={itemName} name={itemName} />
+          <MenuItem key={itemName.name} name={itemName.name} image={itemName.image} />
         )}
       </ul>
     </nav>
