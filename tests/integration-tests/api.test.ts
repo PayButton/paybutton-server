@@ -4,14 +4,15 @@ import paybuttonEndpoint from 'pages/api/paybutton/index'
 import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
 import transactionsEndpoint from 'pages/api/transactions/[address]'
 import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
-
 import {
+  exampleAddresses,
   testEndpoint,
   clearPaybuttons,
   createPaybuttonForUser,
   countPaybuttons,
   countPaybuttonAddresses
 } from 'tests/utils'
+
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 afterAll(async () => {
@@ -29,7 +30,7 @@ describe('POST /api/paybutton/', () => {
     },
     body: {
       userId: 'test-u-id',
-      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4',
+      addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
       name: 'test-paybutton',
       buttonData: '{"somefield":"somevalue"}'
     }
@@ -46,10 +47,10 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          address: 'qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc'
+          address: exampleAddresses.ecash
         }),
         expect.objectContaining({
-          address: 'qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
+          address: exampleAddresses.bitcoincash
         })
       ])
     )
@@ -61,7 +62,7 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton-no-button-data',
-      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc'
+      addresses: `ectest:${exampleAddresses.ectest}`
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     const responseData = res._getJSONData()
@@ -72,7 +73,7 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          address: 'qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc'
+          address: exampleAddresses.ectest
         })
       ])
     )
@@ -82,7 +83,7 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: '',
       name: 'test-paybutton',
-      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
+      addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
@@ -94,7 +95,7 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: '',
-      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
+      addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
@@ -106,7 +107,7 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton',
-      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
+      addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
@@ -135,14 +136,14 @@ describe('POST /api/paybutton/', () => {
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
-    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_INPUT_400.message)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
   })
 
   it('Fail with invalid buttonData', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton',
-      addresses: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4',
+      addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
       buttonData: '{invalidjson'
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
