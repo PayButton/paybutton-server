@@ -13,8 +13,8 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
     } catch (err: any) {
       const parsedErr = parseError(err)
       switch (parsedErr.message) {
-        case RESPONSE_MESSAGES.INVALID_INPUT_400.message:
-          res.status(400).json(RESPONSE_MESSAGES.INVALID_INPUT_400)
+        case RESPONSE_MESSAGES.INVALID_ADDRESS_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.INVALID_ADDRESS_400)
           break
         case RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message:
           res.status(400).json(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400)
