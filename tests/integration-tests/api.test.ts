@@ -46,10 +46,10 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          address: 'qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc'
+          address: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc'
         }),
         expect.objectContaining({
-          address: 'qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
+          address: 'bitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
         })
       ])
     )
@@ -72,7 +72,7 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          address: 'qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc'
+          address: 'ecash:qpz274aaj98xxnnkus8hzv367za28j900c7tv5v8pc'
         })
       ])
     )
