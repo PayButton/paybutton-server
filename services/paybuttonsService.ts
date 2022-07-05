@@ -14,13 +14,11 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
   const paybuttonAddressesToCreate: Prisma.PaybuttonAddressUncheckedCreateWithoutPaybuttonInput[] = await Promise.all(
     values.prefixedAddressList.map(
       async (addressWithPrefix) => {
-        const [prefix, address] = addressWithPrefix.split(':').map(
-          (substring) => substring.toLowerCase()
-        )
+        const prefix = addressWithPrefix.split(':')[0].toLowerCase()
         const chain = await chainService.getChainFromSlug(prefix)
         if (chain === null) throw new Error(RESPONSE_MESSAGES.INVALID_CHAIN_SLUG_400.message)
         return {
-          address: address.toLowerCase(),
+          address: addressWithPrefix.toLowerCase(),
           chainId: Number(chain.id)
         }
       })
