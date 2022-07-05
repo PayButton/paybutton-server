@@ -79,16 +79,17 @@ export interface POSTParameters {
   name?: string
   buttonData?: string
   addresses?: string
+  userId?: string
 }
 
-export const parsePaybuttonPOSTRequest = function (params: POSTParameters, userId: string | undefined): CreatePaybuttonInput {
-  if (userId === '' || userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+export const parsePaybuttonPOSTRequest = function (params: POSTParameters): CreatePaybuttonInput {
+  if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   if (params.addresses === '' || params.addresses === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
   const parsedAddresses = params.addresses.trim().split('\n').map((addr) => parseAddress(addr))
   const parsedButtonData = parseButtonData(params.buttonData)
   return {
-    userId: userId,
+    userId: params.userId,
     name: params.name,
     buttonData: parsedButtonData,
     prefixedAddressList: parsedAddresses

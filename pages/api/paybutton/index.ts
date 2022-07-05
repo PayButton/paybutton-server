@@ -7,9 +7,9 @@ export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'POST') {
     await setSession(req, res)
     const values = req.body
-
+    values.userId = req.session.userId
     try {
-      const createPaybuttonInput = parsePaybuttonPOSTRequest(values, req.session.userId)
+      const createPaybuttonInput = parsePaybuttonPOSTRequest(values)
       const paybutton = await paybuttonsService.createPaybutton(createPaybuttonInput)
       res.status(200).json(paybutton)
     } catch (err: any) {

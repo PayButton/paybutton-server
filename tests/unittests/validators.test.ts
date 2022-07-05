@@ -150,31 +150,35 @@ describe('parsePaybuttonPOSTRequest', () => {
   const data: v.POSTParameters = {
     name: 'somename',
     buttonData: undefined,
-    addresses: 'ecash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
+    addresses: 'ecash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4',
+    userId: 'test-uid'
   }
   it('Missing userId throws errors', () => {
     expect(() => {
-      v.parsePaybuttonPOSTRequest(data, undefined)
+      data.userId = ''
+      v.parsePaybuttonPOSTRequest(data)
     }).toThrow(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
     expect(() => {
-      v.parsePaybuttonPOSTRequest(data, '')
+      data.userId = undefined
+      v.parsePaybuttonPOSTRequest(data)
     }).toThrow(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   })
   it('Missing name throws errors', () => {
+    data.userId = 'test-uid'
     expect(() => {
       data.name = undefined
-      v.parsePaybuttonPOSTRequest(data, 'some user')
+      v.parsePaybuttonPOSTRequest(data)
     }).toThrow(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
     expect(() => {
       data.name = ''
-      v.parsePaybuttonPOSTRequest(data, 'some user')
+      v.parsePaybuttonPOSTRequest(data)
     }).toThrow(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   })
   it('Missing address throws errors', () => {
+    data.name = 'some name'
     expect(() => {
-      data.name = 'some name'
       data.addresses = ''
-      v.parsePaybuttonPOSTRequest(data, 'some user')
+      v.parsePaybuttonPOSTRequest(data)
     }).toThrow(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
   })
 })
