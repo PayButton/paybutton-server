@@ -30,7 +30,7 @@ describe('POST /api/paybutton/', () => {
     },
     body: {
       userId: 'test-u-id',
-      addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
+      addresses: `${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
       name: 'test-paybutton',
       buttonData: '{"somefield":"somevalue"}'
     }
@@ -47,10 +47,10 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          address: exampleAddresses.ecash
+          address: `ecash:${exampleAddresses.ecash}`
         }),
         expect.objectContaining({
-          address: exampleAddresses.bitcoincash
+          address: `bitcoincash:${exampleAddresses.bitcoincash}`
         })
       ])
     )
@@ -73,7 +73,7 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          address: exampleAddresses.ectest
+          address: `ectest:${exampleAddresses.ectest}`
         })
       ])
     )
