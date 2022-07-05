@@ -1,11 +1,10 @@
 .li {
   display: block;
-  padding: 8px 25px;
 }
 
 .active {
   background: var(--green) !important;
-  color: #fff;
+  color: var(--primary-text-color) !important;
 }
 
 .link {
@@ -13,6 +12,7 @@
   align-items: center;
   cursor: pointer;
   font-weight: 600;
+  padding: 8px 25px;
 }
 
 .imagectn {
@@ -22,7 +22,7 @@
 }
 
 .active .imagectn img {
-  filter: brightness(0) invert(1);
+  filter: none !important;
 }
 
 .li:hover {
