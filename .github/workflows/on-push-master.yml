@@ -14,8 +14,6 @@ jobs:
           fetch-depth: 0
       - name: Install Dependencies
         run: yarn
-      - name: Run linter
-        run: make lint
       - name: Run unit tests
         run: make test-unit
       - name: Spin up required database containers
