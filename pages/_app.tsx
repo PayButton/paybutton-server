@@ -14,7 +14,7 @@ import Payments from 'assets/payments-icon.png'
 import PaybuttonsIcon from 'assets/button-icon.png'
 import Wallets from 'assets/wallet-icon.png'
 import Networks from 'assets/network-icon.png'
-import Account from 'assets/account-icon.png'
+import Account from 'assets/user-icon.png'
 import Help from 'assets/help-icon.png'
 import Logout from 'assets/logout-icon.png'
 
@@ -23,7 +23,40 @@ if (typeof window !== 'undefined') {
 }
 
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
-  const MENU_ITEMS = [{name:'Dashboard', image: Dashboard},{name:'PayButtons', image: PaybuttonsIcon}]
+  const MENU_ITEMS = [
+    {
+      name:'Dashboard',
+      image: Dashboard
+    },
+    {
+      name:'Payments',
+      image: Payments
+    },
+    {
+      name:'PayButtons',
+      image: PaybuttonsIcon
+    },
+    {
+      name:'Wallets',
+      image: Wallets
+    },
+    {
+      name:'Networks',
+      image: Networks
+    },
+    {
+      name:'Account',
+      image: Account
+    },
+    {
+      name:'Help',
+      image: Help
+    },
+    {
+      name:'Logout',
+      image: Logout
+    },
+  ]
 
   useEffect(() => {
     async function doRefresh (): Promise<void> {

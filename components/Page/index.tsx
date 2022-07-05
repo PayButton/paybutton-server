@@ -6,14 +6,9 @@ interface PageProps {
   children: React.ReactNode
 }
 
-const Page = ({ header, children }: PageProps): FunctionComponent<PageProps> =>
-  <>
-    <header className={style.header}>
-      {header}
-    </header>
+const Page = ({ children }: PageProps): FunctionComponent<PageProps> =>
     <article className={style.article}>
       {children}
     </article>
-  </>
 
 export default Page
