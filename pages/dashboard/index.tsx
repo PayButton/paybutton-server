@@ -1,4 +1,5 @@
 import React from 'react'
+import Page from 'components/Page'
 
 
 
@@ -7,7 +8,7 @@ import React from 'react'
 export default function Dashboard (): React.ReactElement {
   return (
    
-    <h2>Dashboard</h2>
+    <Page><h2>Dashboard</h2></Page>
 
   )
 }

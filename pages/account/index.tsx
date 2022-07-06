@@ -1,5 +1,6 @@
 import React from 'react'
+import Page from 'components/Page'
 
 export default function Account (): React.ReactElement {
-  return <h2>Account</h2>
+  return <Page><h2>Account</h2></Page>
 }

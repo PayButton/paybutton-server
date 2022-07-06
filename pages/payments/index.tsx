@@ -1,5 +1,6 @@
 import React from 'react'
+import Page from 'components/Page'
 
 export default function Payments (): React.ReactElement {
-  return <h2>Payments</h2>
+  return <Page><h2>Payments</h2></Page>
 }

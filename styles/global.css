@@ -20,3 +20,8 @@ input {
 textarea {
   background: white;
 }
+
+.login_ctn {
+  text-align: center;
+  margin-top: 100px;
+}

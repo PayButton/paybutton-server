@@ -26,7 +26,10 @@ export const frontendConfig = (): { appInfo: object, recipeList: array } => {
         },
         signInAndUpFeature: {
           providers: getAvailableSocialProviders()
-        }
+        },
+        palette: {
+          primary: '#669cfe'
+      }
       }),
       SessionReact.init()
     ]

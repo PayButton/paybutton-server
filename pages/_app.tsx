@@ -1,7 +1,6 @@
 import 'simpledotcss/simple.min.css'
 import 'styles/variables.css'
 import 'styles/global.css'
-import Layout from 'components/Layout'
 import React, { useEffect } from 'react'
 import type { AppProps } from 'next/app'
 import SuperTokensReact from 'supertokens-auth-react'
@@ -34,9 +33,7 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
   }
   return (
     <ErrorBoundary>
-      <Layout>
         <Component {...pageProps} />
-      </Layout>
     </ErrorBoundary>
   )
 }
