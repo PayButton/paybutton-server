@@ -6,12 +6,56 @@ import Telegram from 'assets/telegram.png'
 import Twitter from 'assets/twitter.png'
 import Image from 'next/image'
 import Link from 'next/link'
+import Dashboard from 'assets/dashboard-icon.png'
+import Payments from 'assets/payments-icon.png'
+import ButtonsIcon from 'assets/button-icon.png'
+import Wallets from 'assets/wallet-icon.png'
+import Networks from 'assets/network-icon.png'
+import Account from 'assets/user-icon.png'
+import Settings from 'assets/settings-icon.png'
+import Help from 'assets/help-icon.png'
+import Logout from 'assets/logout-icon.png'
 
-interface SidebarProps {
-  menuItems: string[]
-}
+const MENU_ITEMS = [
+  {
+    name:'Dashboard',
+    image: Dashboard
+  },
+  {
+    name:'Payments',
+    image: Payments
+  },
+  {
+    name:'Buttons',
+    image: ButtonsIcon
+  },
+  {
+    name:'Wallets',
+    image: Wallets
+  },
+  {
+    name:'Networks',
+    image: Networks
+  },
+  {
+    name:'Account',
+    image: Account
+  },
+  {
+    name:'Settings',
+    image: Settings
+  },
+  {
+    name:'Help',
+    image: Help
+  },
+  {
+    name:'Logout',
+    image: Logout
+  },
+]
 
-const Sidebar = ({ menuItems }: SidebarProps): FunctionComponent<SidebarProps> =>
+const Sidebar = (): FunctionComponent<SidebarProps> =>
   <aside className={style.aside} role='complementary'>
     <div>
       <section className={style.section}>
@@ -21,7 +65,7 @@ const Sidebar = ({ menuItems }: SidebarProps): FunctionComponent<SidebarProps> =
       </section>
       <nav>
         <ul className={style.ul}>
-          {menuItems.map(itemName =>
+          {MENU_ITEMS.map(itemName =>
             <MenuItem key={itemName.name} name={itemName.name} image={itemName.image} />
           )}
         </ul>

@@ -4,12 +4,11 @@ import style from './layout.module.css'
 
 interface LayoutProps {
   children: React.ReactNode
-  menuItems: string[]
 }
 
 const Layout = (props: LayoutProps): FunctionComponent<LayoutProps> =>
   <div className={style.layout}>
-    <Sidebar menuItems={props.menuItems} />
+    <Sidebar />
     <main>
       {props.children}
     </main>

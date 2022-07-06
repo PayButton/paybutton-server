@@ -9,59 +9,12 @@ import * as SuperTokensConfig from '../config/frontendConfig'
 import Session from 'supertokens-auth-react/recipe/session'
 import { redirectToAuth } from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import ErrorBoundary from 'components/ErrorBoundary'
-import Dashboard from 'assets/dashboard-icon.png'
-import Payments from 'assets/payments-icon.png'
-import ButtonsIcon from 'assets/button-icon.png'
-import Wallets from 'assets/wallet-icon.png'
-import Networks from 'assets/network-icon.png'
-import Account from 'assets/user-icon.png'
-import Settings from 'assets/settings-icon.png'
-import Help from 'assets/help-icon.png'
-import Logout from 'assets/logout-icon.png'
 
 if (typeof window !== 'undefined') {
   SuperTokensReact.init(SuperTokensConfig.frontendConfig())
 }
 
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
-  const MENU_ITEMS = [
-    {
-      name:'Dashboard',
-      image: Dashboard
-    },
-    {
-      name:'Payments',
-      image: Payments
-    },
-    {
-      name:'Buttons',
-      image: ButtonsIcon
-    },
-    {
-      name:'Wallets',
-      image: Wallets
-    },
-    {
-      name:'Networks',
-      image: Networks
-    },
-    {
-      name:'Account',
-      image: Account
-    },
-    {
-      name:'Settings',
-      image: Settings
-    },
-    {
-      name:'Help',
-      image: Help
-    },
-    {
-      name:'Logout',
-      image: Logout
-    },
-  ]
 
   useEffect(() => {
     async function doRefresh (): Promise<void> {
@@ -81,7 +34,7 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
   }
   return (
     <ErrorBoundary>
-      <Layout menuItems={MENU_ITEMS} logoImageSource=''>
+      <Layout>
         <Component {...pageProps} />
       </Layout>
     </ErrorBoundary>
