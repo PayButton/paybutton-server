@@ -1,19 +1,13 @@
 import React, { FunctionComponent } from 'react'
-import style from './page.module.css'
+import Layout from 'components/Layout'
 
 interface PageProps {
-  header: React.ReactNode
   children: React.ReactNode
 }
 
-const Page = ({ header, children }: PageProps): FunctionComponent<PageProps> =>
-  <>
-    <header className={style.header}>
-      {header}
-    </header>
-    <article className={style.article}>
+const Page = ({ children }: PageProps): FunctionComponent<PageProps> =>
+    <Layout>
       {children}
-    </article>
-  </>
+    </Layout>
 
 export default Page
