@@ -1,5 +1,7 @@
 .aside {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   color: var(--primary-text-color);
   background-color: var(--secondary-bg-color);
   padding: 25px 0;
@@ -17,4 +19,17 @@
 
 .section {
   padding-left: 25px;
+}
+
+.socialctn {
+  padding: 0 25px;
+}
+
+.socialctn a {
+  margin-right: 15px;
+}
+
+.socialctn a:hover img {
+  filter: invert(60%) sepia(14%) saturate(5479%) hue-rotate(195deg)
+    brightness(100%) contrast(102%);
 }

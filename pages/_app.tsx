@@ -11,10 +11,11 @@ import { redirectToAuth } from 'supertokens-auth-react/recipe/thirdpartyemailpas
 import ErrorBoundary from 'components/ErrorBoundary'
 import Dashboard from 'assets/dashboard-icon.png'
 import Payments from 'assets/payments-icon.png'
-import PaybuttonsIcon from 'assets/button-icon.png'
+import ButtonsIcon from 'assets/button-icon.png'
 import Wallets from 'assets/wallet-icon.png'
 import Networks from 'assets/network-icon.png'
 import Account from 'assets/user-icon.png'
+import Settings from 'assets/settings-icon.png'
 import Help from 'assets/help-icon.png'
 import Logout from 'assets/logout-icon.png'
 
@@ -33,8 +34,8 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
       image: Payments
     },
     {
-      name:'PayButtons',
-      image: PaybuttonsIcon
+      name:'Buttons',
+      image: ButtonsIcon
     },
     {
       name:'Wallets',
@@ -47,6 +48,10 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
     {
       name:'Account',
       image: Account
+    },
+    {
+      name:'Settings',
+      image: Settings
     },
     {
       name:'Help',
