@@ -5,13 +5,13 @@ import SuperTokens from 'supertokens-auth-react'
 import { redirectToAuth } from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 
 const SuperTokensComponentNoSSR = dynamic(
-  new Promise((res) => res(SuperTokens.getRoutingComponent)),
+  new Promise((resolve) => resolve(SuperTokens.getRoutingComponent)),
   { ssr: false }
 )
 
-export default function Auth() {
+export default function Auth () {
   useEffect(() => {
-    if (SuperTokens.canHandleRoute() === false) {
+    if (!SuperTokens.canHandleRoute()) {
       redirectToAuth()
     }
   }, [])

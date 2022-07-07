@@ -1,11 +1,11 @@
-export type Paybutton = {
-        id: string,
-        userId: string,
-        addresses: any,
+export interface Paybutton {
+  id: string
+  userId: string
+  addresses: any
 }
 
-export type Chain = {
-        id: string,
-        slug: string,
-        title: string,
+export interface Chain {
+  id: string
+  slug: string
+  title: string
 }

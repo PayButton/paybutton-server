@@ -3,7 +3,7 @@ import { getTransactionDetails } from 'services/bchdService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
- if (req.method === 'GET') {
+  if (req.method === 'GET') {
     const transactionId = req.query.transactionId as string
     try {
       if (transactionId === '' || transactionId === undefined) {
