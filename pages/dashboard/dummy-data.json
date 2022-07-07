@@ -1,0 +1,77 @@
+{
+  "buttons": 4,
+  "lifetime_revenue_usd": 10235,
+  "lifetime_payments": 732,
+  "usd_revenue_last_30days": [
+    { "total": 1243 },
+    {
+      "labels": ["'Jun'", "'Jul'", "'Aug'"],
+      "datasets": [
+        {
+          "id": 1,
+          "label": "",
+          "data": [5, 6, 7]
+        },
+        {
+          "id": 2,
+          "label": "",
+          "data": [3, 2, 1]
+        }
+      ]
+    }
+  ],
+  "payments_last_30days": [
+    { "total": 1243 },
+    {
+      "labels": ["'Jun'", "'Jul'", "'Aug'"],
+      "datasets": [
+        {
+          "id": 1,
+          "label": "",
+          "data": [5, 6, 7]
+        },
+        {
+          "id": 2,
+          "label": "",
+          "data": [3, 2, 1]
+        }
+      ]
+    }
+  ],
+  "usd_revenue_last_7days": [
+    { "total": 1243 },
+    {
+      "labels": ["'Jun'", "'Jul'", "'Aug'"],
+      "datasets": [
+        {
+          "id": 1,
+          "label": "",
+          "data": [5, 6, 7]
+        },
+        {
+          "id": 2,
+          "label": "",
+          "data": [3, 2, 1]
+        }
+      ]
+    }
+  ],
+  "payments_last_7days": [
+    { "total": 1243 },
+    {
+      "labels": ["'Jun'", "'Jul'", "'Aug'"],
+      "datasets": [
+        {
+          "id": 1,
+          "label": "",
+          "data": [5, 6, 7]
+        },
+        {
+          "id": 2,
+          "label": "",
+          "data": [3, 2, 1]
+        }
+      ]
+    }
+  ]
+}
