@@ -1,7 +1,6 @@
 import React from 'react'
 import {
-  FormRenderer,
-  componentTypes
+  FormRenderer
 } from '@data-driven-forms/react-form-renderer'
 import {
   componentMapper
@@ -20,7 +19,7 @@ const schema = {
   ]
 }
 
-const Form = (props) => (
+const Form = (props): React.ReactElement => (
   <FormRenderer
     schema={schema}
     componentMapper={componentMapper}

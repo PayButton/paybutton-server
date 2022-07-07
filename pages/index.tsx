@@ -5,7 +5,7 @@ import { GetServerSideProps } from 'next'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
-import Page from 'components/Page'
+import Dashboard from 'pages/dashboard'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -40,22 +40,17 @@ interface HomeProps {
 }
 
 function ProtectedPage (props: HomeProps): React.Component {
-  async function handleLogout (): Promise<void> {
-    await ThirdPartyEmailPassword.signOut()
-    void ThirdPartyEmailPassword.redirectToAuth()
-  }
-
   return (
-    <Page header={<a href='#' onClick={handleLogout}>Logout</a>}>
-      PayButton Logged In
-    </Page>
+    <Dashboard />
   )
 }
 
 export default function Home (props: HomeProps): React.Component {
   return (
+
     <ThirdPartyEmailPasswordAuthNoSSR>
       <ProtectedPage userId={props.userId} />
     </ThirdPartyEmailPasswordAuthNoSSR>
+
   )
 }

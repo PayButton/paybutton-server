@@ -1,16 +1,35 @@
 .aside {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   color: var(--primary-text-color);
   background-color: var(--secondary-bg-color);
-  padding: 1em 1.2em;
+  padding: 25px 0;
   position: relative;
-  height: 100%;
+  height: 100vh;
 }
 
 .ul {
-  padding: 0
+  padding: 0;
 }
 
 .image {
   cursor: pointer;
+}
+
+.section {
+  padding-left: 25px;
+}
+
+.socialctn {
+  padding: 0 25px;
+}
+
+.socialctn a {
+  margin-right: 15px;
+}
+
+.socialctn a:hover img {
+  filter: invert(60%) sepia(14%) saturate(5479%) hue-rotate(195deg)
+    brightness(100%) contrast(102%);
 }

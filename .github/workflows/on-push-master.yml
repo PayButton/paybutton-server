@@ -1,11 +1,11 @@
-name: Lint, Unit and Integration Tests
+name: Run Test Suite on Master
 on:
   push:
     branches:
       - master
 jobs:
   test:
-    name: Lint, Unit and Integration Tests
+    name: Unit and Integration Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

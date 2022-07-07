@@ -1,10 +1,3 @@
-export const SUPPORTED_CHAINS = [
-  'ecash',
-  'bitcoincash',
-  'bchtest',
-  'bchreg'
-]
-
 export const SUPPORTED_ADDRESS_PATTERN = /((q|p)[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{41}|(Q|P)[QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L]{41})/
 
 export const RESPONSE_MESSAGES = {
@@ -18,5 +11,6 @@ export const RESPONSE_MESSAGES = {
   TRANSACTION_ID_NOT_PROVIDED_400: { statusCode: 400, message: "'transactionId' not provided." },
   INVALID_CHAIN_SLUG_400: { statusCode: 400, message: 'Invalid chain slug.' },
   INVALID_BUTTON_DATA_400: { statusCode: 400, message: "'buttonData' is not valid JSON." },
-  ADDRESS_NOT_PROVIDED_400: { statusCode: 400, message: "'address' not provided." }
+  ADDRESS_NOT_PROVIDED_400: { statusCode: 400, message: "'address' not provided." },
+  INVALID_ADDRESS_400: { statusCode: 400, message: 'Invalid address.' }
 }

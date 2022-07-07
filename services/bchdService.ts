@@ -36,7 +36,7 @@ export const getBCHBalance = async (address: string): Promise<number> => {
   const { outputsList } = await getUtxos(address)
 
   let satoshis: number = 0
-  outputsList.map((x) => {
+  outputsList.forEach((x) => {
     satoshis += x.value
   })
 
@@ -55,8 +55,8 @@ export const getTransactionDetails = async (
 export const Subscribe = async (
   addresses: string[],
   onTransactionNotification: (txn: Transaction.AsObject) => any
-) => {
-  const createTxnStream = async () => {
+): void => {
+  const createTxnStream = async (): void => {
     const txnStream = await grpc.subscribeTransactions({
       includeMempoolAcceptance: true,
       includeBlockAcceptance: false,

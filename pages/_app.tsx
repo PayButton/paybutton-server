@@ -1,7 +1,6 @@
 import 'simpledotcss/simple.min.css'
 import 'styles/variables.css'
 import 'styles/global.css'
-import Layout from 'components/Layout'
 import React, { useEffect } from 'react'
 import type { AppProps } from 'next/app'
 import SuperTokensReact from 'supertokens-auth-react'
@@ -15,8 +14,6 @@ if (typeof window !== 'undefined') {
 }
 
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
-  const MENU_ITEMS = ['PayButtons']
-
   useEffect(() => {
     async function doRefresh (): Promise<void> {
       if (pageProps.fromSupertokens === 'needs-refresh') {
@@ -35,9 +32,7 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
   }
   return (
     <ErrorBoundary>
-      <Layout menuItems={MENU_ITEMS} logoImageSource=''>
         <Component {...pageProps} />
-      </Layout>
     </ErrorBoundary>
   )
 }

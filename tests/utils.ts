@@ -39,3 +39,10 @@ export const countPaybuttonAddresses = async (): Promise<number> => {
   const paybuttonAddressList = await prisma.paybuttonAddress.findMany({})
   return paybuttonAddressList.length
 }
+
+export const exampleAddresses = {
+  bitcoincash: 'qrju9pgzn3m84q57ldjvxph30zrm8q7dlc8r8a3eyp',
+  bchtest: 'qrcn673f42dl4z8l3xpc0gr5kpxg7ea5mqhj3atxd3',
+  ecash: 'qz3ye4namaqlca8zgvdju8uqa2wwx8twd5y8wjd9ru',
+  ectest: 'qrfekq9s0c8tcuh75wpcxqnyl5e7dhqk4gq6pjct44'
+}
