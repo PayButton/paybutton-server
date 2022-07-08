@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 import style from './dashboard.module.css'
 import Page from 'components/Page'
 import data from './dummy-data.json'
 import Chart from "./Chart"
+import moment from 'moment'
 
 const NumberBlock = ({value, text}) => {
   return (
@@ -13,11 +14,11 @@ const NumberBlock = ({value, text}) => {
     )
 }
 
-const thirtyDayRevenueLabels = [9, 12, 4, 8, 12, 4, 9, 6, 12, 6, 4, 8, 6, 9, 11, 6, 2, 5, 9, 7, 6, 12,
-  2, 6, 12, 7, 10, 8, 11, 4];
+const thirtyDayLabels = [...new Array(30)].map((i, idx) => moment().startOf("day").subtract(idx, "days").format('M/D'));
+const sevenDayLabels = [...new Array(7)].map((i, idx) => moment().startOf("day").subtract(idx, "days").format('M/D'));
 
 const thirtyDayRevenue = {
-  labels: thirtyDayRevenueLabels,
+  labels: thirtyDayLabels.reverse(),
   datasets: [
     {
       data: data.usd_revenue_last_30days[1].data,
@@ -26,7 +27,39 @@ const thirtyDayRevenue = {
   ],
 };
 
+const sevenDayRevenue = {
+  labels: sevenDayLabels.reverse(),
+  datasets: [
+    {
+      data: data.usd_revenue_last_7days[1].data,
+      borderColor: '#669cfe',
+    }
+  ],
+};
+
+const thirtyDayPayments = {
+  labels: thirtyDayLabels,
+  datasets: [
+    {
+      data: data.payments_last_30days[1].data,
+      borderColor: '#66fe91',
+    }
+  ],
+};
+
+const sevenDayPayments = {
+  labels: sevenDayLabels,
+  datasets: [
+    {
+      data: data.payments_last_7days[1].data,
+      borderColor: '#66fe91',
+    }
+  ],
+};
+
 export default function Dashboard (): React.ReactElement {
+  const [revenue, setRevenue] = useState(thirtyDayRevenue)
+  const [payments, setPayments] = useState(thirtyDayPayments)
   return (
     <Page>
       <h2>Dashboard</h2>
@@ -37,14 +70,26 @@ export default function Dashboard (): React.ReactElement {
       </div>
       <div className={style.chart_outer_ctn}>
         <div className={style.chart_inner_ctn}>
+          <div className={style.chart_title_ctn}>
+            <h4>Revenue</h4>
+            <h5>{revenue === thirtyDayRevenue ? '30 Day':'7 Day'} Total: ${revenue === thirtyDayRevenue ? data.usd_revenue_last_30days[0].total:data.usd_revenue_last_7days[0].total}</h5>
+          </div>
           <div className={style.chart_ctn}>
-          <Chart data={thirtyDayRevenue} />
+            <Chart data={revenue} usd />
           </div>
         </div>
         <div className={style.chart_inner_ctn}>
-          <div className={style.chart_ctn}></div>
+          <div className={style.chart_title_ctn}>
+            <h4>Payments</h4>
+            <h5>{payments === thirtyDayPayments ? '30 Day':'7 Day'} Total: {payments === thirtyDayPayments ? data.payments_last_30days[0].total:data.payments_last_7days[0].total}</h5>
+          </div>
+          <div className={style.chart_ctn}>
+            <Chart data={payments} />
+          </div>
         </div>
       </div>
+      <button className={revenue === thirtyDayRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(thirtyDayRevenue);setPayments(thirtyDayPayments)}}>30 Day</button>
+      <button className={revenue === sevenDayRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(sevenDayRevenue);setPayments(sevenDayPayments)}}>7 Day</button>
     </Page>
 
   )

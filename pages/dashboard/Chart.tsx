@@ -21,41 +21,52 @@ ChartJS.register(
   Legend
 );
 
-const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip : {
-        displayColors: false,
-    },
-    },
-    scales: {
-      x: {
-        grid: {
-          display: false,
-          drawBorder: true,
-          drawOnChartArea: true,
-          drawTicks: true,
+export default function Chart ({data, usd}): React.ReactElement {
+    
+    const options = {
+        responsive: true,
+        lineTension: 0.4,
+        plugins: {
+            legend: {
+            display: false,
+            },
+            tooltip : {
+            displayColors: false,
+            // callbacks: {
+            //     label: function(value) { 
+            //         return value + ' €';
+            //     }
+            // }
+            },
         },
-        ticks: {
-          color: '#231f20',
+        scales: {
+            x: {
+            grid: {
+                display: false,
+                drawBorder: true,
+                drawOnChartArea: true,
+                drawTicks: true,
+            },
+            ticks: {
+                color: '#231f20',
+            },
+            },
+            y: {
+            grid: {
+                drawBorder: false,
+                color: '#231f201f',
+            },
+            grace: '10%',
+            ticks: {
+                color: '#231f20',
+                callback: function(value) {
+                return usd ? '$'+ value: value;
+            }
+            },
+            position: 'right',
+            },
         },
-      },
-      y: {
-        grid: {
-          drawBorder: false,
-          color: '#231f201f',
-        },
-        ticks: {
-          color: '#231f20',
-        },
-        position: 'right',
-      },
-    },
-  };
+        };
 
-export default function Chart ({data}): React.ReactElement {
   return <Line options={options} data={data} />
 }

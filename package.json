@@ -37,6 +37,7 @@
     "helmet": "^4.4.1",
     "micro": "^9.3.4",
     "micro-cors": "^0.1.1",
+    "moment": "^2.29.4",
     "mysql2": "^2.3.3",
     "next": "latest",
     "node-mocks-http": "^1.11.0",
