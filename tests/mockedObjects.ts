@@ -120,6 +120,28 @@ const unspentOutputFromObject = (obj: UnspentOutput.AsObject): UnspentOutput => 
   return uo
 }
 
+const outputFromObject = (obj: Transaction.Output.AsObject): Transaction.Output => {
+  const out = new Transaction.Output()
+  out.setIndex(obj.index)
+  out.setValue(obj.value)
+  out.setPubkeyScript(obj.pubkeyScript)
+  out.setAddress(obj.address)
+  out.setScriptClass(obj.scriptClass)
+  out.setDisassembledScript(obj.disassembledScript)
+  return out
+}
+
+const inputFromObject = (obj: Transaction.Input.AsObject): Transaction.Input => {
+  const inp = new Transaction.Input()
+  inp.setIndex(obj.index)
+  inp.setSignatureScript(obj.signatureScript)
+  inp.setSequence(obj.sequence)
+  inp.setValue(obj.value)
+  inp.setPreviousScript(obj.previousScript)
+  inp.setAddress(obj.address)
+  return inp
+}
+
 const transactionFromObject = (obj: Transaction.AsObject): Transaction => {
   const t = new Transaction()
   t.setHash(obj.hash)
@@ -130,6 +152,8 @@ const transactionFromObject = (obj: Transaction.AsObject): Transaction => {
   t.setConfirmations(obj.confirmations)
   t.setBlockHeight(obj.blockHeight)
   t.setBlockHash(obj.blockHash)
+  t.setOutputsList(obj.outputsList.map((out) => outputFromObject(out)))
+  t.setInputsList(obj.inputsList.map((inp) => inputFromObject(inp)))
   return t
 }
 
@@ -146,7 +170,21 @@ export const mockedGrpc = {
       blockHeight: 741620,
       blockHash: 'jzSPV4kkI3x5Fdoow/ei3f7Zit+oGMYCAAAAAAAAAAA=',
       inputsList: [],
-      outputsList: []
+      outputsList: [{
+        index: 0,
+        value: 431247724,
+        pubkeyScript: 'dqkUeCxnbWKveaKpCSRhJC/poE+saL+IrA==',
+        address: 'qpuzcemdv2hhng4fpyjxzfp0axsyltrghutla9rfnm',
+        scriptClass: 'pubkeyhash',
+        disassembledScript: 'OP_DUP OP_HASH160 782c676d62af79a2a9092461242fe9a04fac68bf OP_EQUALVERIFY OP_CHECKSIG'
+      }, {
+        index: 1,
+        value: 227413293,
+        pubkeyScript: 'dqkUokKnAjaab8AVlPxzrrxk1aRq4BOIrA==',
+        address: 'qz3y9fczx6dxlsq4jn788t4uvn26g6hqzvrczjuzz2',
+        scriptClass: 'pubkeyhash',
+        disassembledScript: 'OP_DUP OP_HASH160 a242a702369a6fc01594fc73aebc64d5a46ae013 OP_EQUALVERIFY OP_CHECKSIG'
+      }]
     })
     const t2 = transactionFromObject({
       hash: 'jiZHfE+AohEJglMO29nQ5aTR6F/n4Om2whzEZUiXcHk=',

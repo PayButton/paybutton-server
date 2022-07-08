@@ -13,7 +13,21 @@ describe('Test service returned objects consistency', () => {
           hash: 'LUZSpMOab+ZYlyQNxF0XasKpArgQAX633LoA5CBPGgE=',
           version: 1,
           inputsList: [],
-          outputsList: [],
+          outputsList: [{
+            index: 0,
+            value: 431247724,
+            pubkeyScript: 'dqkUeCxnbWKveaKpCSRhJC/poE+saL+IrA==',
+            address: 'qpuzcemdv2hhng4fpyjxzfp0axsyltrghutla9rfnm',
+            scriptClass: 'pubkeyhash',
+            disassembledScript: 'OP_DUP OP_HASH160 782c676d62af79a2a9092461242fe9a04fac68bf OP_EQUALVERIFY OP_CHECKSIG'
+          }, {
+            index: 1,
+            value: 227413293,
+            pubkeyScript: 'dqkUokKnAjaab8AVlPxzrrxk1aRq4BOIrA==',
+            address: 'qz3y9fczx6dxlsq4jn788t4uvn26g6hqzvrczjuzz2',
+            scriptClass: 'pubkeyhash',
+            disassembledScript: 'OP_DUP OP_HASH160 a242a702369a6fc01594fc73aebc64d5a46ae013 OP_EQUALVERIFY OP_CHECKSIG'
+          }],
           lockTime: 0,
           size: 219,
           timestamp: 1653460454,
