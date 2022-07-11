@@ -30,13 +30,15 @@ export default function Chart ({data, usd}): React.ReactElement {
             legend: {
             display: false,
             },
-            tooltip : {
+            tooltip: {
             displayColors: false,
             // callbacks: {
-            //     label: function(value) { 
-            //         return value + ' €';
+            //     title: function () {
+            //       return "my tittle";
             //     }
-            // }
+            //   }
+            mode: 'nearest',
+            intersect: false,
             },
         },
         scales: {
@@ -52,18 +54,19 @@ export default function Chart ({data, usd}): React.ReactElement {
             },
             },
             y: {
-            grid: {
-                drawBorder: false,
-                color: '#231f201f',
-            },
-            grace: '10%',
-            ticks: {
-                color: '#231f20',
-                callback: function(value) {
-                return usd ? '$'+ value: value;
-            }
-            },
-            position: 'right',
+                grid: {
+                    drawBorder: false,
+                    color: '#231f201f',
+                },
+                grace: '10%',
+                ticks: {
+                    color: '#231f20',
+                    callback: function(value) {
+                    return usd ? '$'+ value: value;
+                }
+                },
+                position: 'right',
+                // beginAtZero: true,
             },
         },
         };

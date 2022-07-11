@@ -14,6 +14,7 @@ const NumberBlock = ({value, text}) => {
     )
 }
 
+const yearLabels = [...new Array(12)].map((i, idx) => moment().startOf("day").subtract(idx, "months").format("MMM"));
 const thirtyDayLabels = [...new Array(30)].map((i, idx) => moment().startOf("day").subtract(idx, "days").format('M/D'));
 const sevenDayLabels = [...new Array(7)].map((i, idx) => moment().startOf("day").subtract(idx, "days").format('M/D'));
 
@@ -33,6 +34,26 @@ const sevenDayRevenue = {
     {
       data: data.usd_revenue_last_7days[1].data,
       borderColor: '#669cfe',
+    }
+  ],
+};
+
+const yearRevenue = {
+  labels: yearLabels,
+  datasets: [
+    {
+      data: data.usd_revenue_last_year[1].data,
+      borderColor: '#669cfe',
+    }
+  ],
+};
+
+const yearPayments = {
+  labels: yearLabels.reverse(),
+  datasets: [
+    {
+      data: data.payments_last_year[1].data,
+      borderColor: '#66fe91',
     }
   ],
 };
@@ -88,8 +109,9 @@ export default function Dashboard (): React.ReactElement {
           </div>
         </div>
       </div>
-      <button className={revenue === thirtyDayRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(thirtyDayRevenue);setPayments(thirtyDayPayments)}}>30 Day</button>
-      <button className={revenue === sevenDayRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(sevenDayRevenue);setPayments(sevenDayPayments)}}>7 Day</button>
+      <button className={revenue === sevenDayRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(sevenDayRevenue);setPayments(sevenDayPayments)}}>1W</button>
+      <button className={revenue === thirtyDayRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(thirtyDayRevenue);setPayments(thirtyDayPayments)}}>1M</button>
+      <button className={revenue === yearRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(yearRevenue);setPayments(yearPayments)}}>1Y</button>
     </Page>
 
   )

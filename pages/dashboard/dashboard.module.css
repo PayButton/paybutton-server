@@ -78,11 +78,10 @@
 .toggle_btn,
 .toggle_btn:active {
   background: none;
-  border: 1px solid var(--primary-text-color);
   border-radius: 100px;
   color: var(--primary-text-color);
   font-size: 14px;
-  padding: 6px 20px;
+  padding: 10px 12px;
   margin: 0;
   margin-left: 6px;
   margin-top: 2px;
@@ -91,9 +90,8 @@
 }
 
 .active_btn {
-  background: var(--accent-color) !important;
-  border: 1px solid var(--accent-color) !important;
-  color: var(--secondary-bg-color) !important;
+  background: var(--secondary-bg-color) !important;
+  color: var(--accent-color) !important;
   filter: none !important;
 }
 
@@ -103,9 +101,8 @@
 }
 
 .toggle_btn:hover {
-  background: var(--primary-text-color);
-  color: var(--secondary-bg-color);
-  filter: none;
+  color: var(--accent-color);
+  filter: none !important;
 }
 
 .chart_inner_ctn h5 {
