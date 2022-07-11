@@ -89,6 +89,11 @@ export default function Dashboard (): React.ReactElement {
         <NumberBlock value={data.lifetime_payments} text='Payments (lifetime)' />
         <NumberBlock value={data.buttons} text='Buttons' />
       </div>
+      <div className={style.btn_ctn}>
+        <button className={revenue === sevenDayRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(sevenDayRevenue);setPayments(sevenDayPayments)}}>1W</button>
+        <button className={revenue === thirtyDayRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(thirtyDayRevenue);setPayments(thirtyDayPayments)}}>1M</button>
+        <button className={revenue === yearRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(yearRevenue);setPayments(yearPayments)}}>1Y</button>
+      </div>
       <div className={style.chart_outer_ctn}>
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
@@ -109,9 +114,6 @@ export default function Dashboard (): React.ReactElement {
           </div>
         </div>
       </div>
-      <button className={revenue === sevenDayRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(sevenDayRevenue);setPayments(sevenDayPayments)}}>1W</button>
-      <button className={revenue === thirtyDayRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(thirtyDayRevenue);setPayments(thirtyDayPayments)}}>1M</button>
-      <button className={revenue === yearRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(yearRevenue);setPayments(yearPayments)}}>1Y</button>
     </Page>
 
   )

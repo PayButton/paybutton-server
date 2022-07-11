@@ -38,10 +38,13 @@
   line-height: 1em;
 }
 
+.btn_ctn {
+  margin: 15px 0;
+}
+
 .chart_outer_ctn {
   width: 100%;
   display: flex;
-  margin-top: 25px;
 }
 
 .chart_inner_ctn {
@@ -63,7 +66,7 @@
   padding: 25px;
   border-radius: 10px;
   position: relative;
-  height: 350px;
+  height: 380px;
 }
 
 .chart_inner_ctn h4 {
@@ -87,9 +90,7 @@
   padding: 10px 12px;
   margin: 0;
   margin-left: 6px;
-  margin-top: 2px;
   filter: none;
-  margin-top: 12px;
 }
 
 .active_btn {
