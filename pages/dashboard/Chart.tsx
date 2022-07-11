@@ -26,6 +26,7 @@ export default function Chart ({data, usd}): React.ReactElement {
     const options = {
         responsive: true,
         lineTension: 0.4,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
             display: false,

@@ -93,7 +93,7 @@ export default function Dashboard (): React.ReactElement {
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Revenue</h4>
-            <h5>{revenue === thirtyDayRevenue ? '30 Day':'7 Day'} Total: ${revenue === thirtyDayRevenue ? data.usd_revenue_last_30days[0].total:data.usd_revenue_last_7days[0].total}</h5>
+            <h5>{revenue === yearRevenue ? 'Year' : revenue === thirtyDayRevenue ? '30 Day':'7 Day'} Total: ${revenue === yearRevenue ? data.usd_revenue_last_year[0].total:revenue === thirtyDayRevenue ? data.usd_revenue_last_30days[0].total:data.usd_revenue_last_7days[0].total}</h5>
           </div>
           <div className={style.chart_ctn}>
             <Chart data={revenue} usd />
@@ -102,7 +102,7 @@ export default function Dashboard (): React.ReactElement {
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Payments</h4>
-            <h5>{payments === thirtyDayPayments ? '30 Day':'7 Day'} Total: {payments === thirtyDayPayments ? data.payments_last_30days[0].total:data.payments_last_7days[0].total}</h5>
+            <h5>{payments === yearPayments ? 'Year': payments === thirtyDayPayments ? '30 Day':'7 Day'} Total: {payments === thirtyDayPayments ? data.payments_last_30days[0].total:data.payments_last_7days[0].total}</h5>
           </div>
           <div className={style.chart_ctn}>
             <Chart data={payments} />

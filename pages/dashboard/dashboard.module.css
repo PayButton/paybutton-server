@@ -46,6 +46,7 @@
 
 .chart_inner_ctn {
   width: 50%;
+  position: relative;
 }
 
 .chart_inner_ctn:first-child {
@@ -58,9 +59,11 @@
 
 .chart_ctn {
   background-color: var(--secondary-bg-color);
-  width: 100%;
+  width: 99%;
   padding: 25px;
   border-radius: 10px;
+  position: relative;
+  height: 350px;
 }
 
 .chart_inner_ctn h4 {
@@ -112,4 +115,27 @@
   flex-grow: 2;
   text-align: right;
   margin-right: 10px;
+}
+
+@media (max-width: 1150px) {
+  .chart_outer_ctn {
+    flex-direction: column;
+  }
+
+  .chart_inner_ctn {
+    width: 100%;
+  }
+
+  .chart_inner_ctn:first-child {
+    padding-right: 0;
+  }
+
+  .chart_inner_ctn:last-child {
+    padding-left: 0;
+    margin-top: 25px;
+  }
+
+  .chart_ctn {
+    padding: 10px;
+  }
 }
