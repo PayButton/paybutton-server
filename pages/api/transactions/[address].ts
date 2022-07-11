@@ -1,12 +1,31 @@
 import { NextApiResponse, NextApiRequest } from 'next'
 import { getAddress } from 'services/bchdService'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import Cors from "micro-cors";
+import Cors from 'cors'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
-const cors = Cors();
+const cors = Cors({
+  methods: ['GET', 'HEAD'],
+})
 
-export default cors(async (req, res) => {
+function runMiddleware(
+  req: NextApiRequest,
+  res: NextApiResponse,
+  fn: Function
+) {
+  return new Promise((resolve, reject) => {
+    fn(req, res, (result: any) => {
+      if (result instanceof Error) {
+        return reject(result)
+      }
+
+      return resolve(result)
+    })
+  })
+}
+
+export default async (req, res) => {
+    await runMiddleware(req, res, cors)
   if (req.method === 'GET') {
     const address = req.query.address as string
     try {
@@ -25,4 +44,4 @@ export default cors(async (req, res) => {
       }
     }
   }
-})
+}
