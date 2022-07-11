@@ -1,10 +1,12 @@
 import { NextApiResponse, NextApiRequest } from 'next'
 import { getAddress } from 'services/bchdService'
 import { RESPONSE_MESSAGES } from 'constants/index'
+import Cors from "micro-cors";
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
+const cors = Cors();
 
-export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
+export default cors(async (req, res) => {
   if (req.method === 'GET') {
     const address = req.query.address as string
     try {
@@ -23,4 +25,4 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       }
     }
   }
-}
+})
