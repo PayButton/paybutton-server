@@ -36,6 +36,15 @@ export const mockedPaybutton = {
   ]
 }
 
+export const mockedPaybuttonAddress = {
+  id: 1,
+  address: 'qpuzcemdv2hhng4fpyjxzfp0axsyltrghutla9rfnm',
+  createdAt: new Date('2022-05-27T15:18:42.000Z'),
+  updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+  chainId: 1,
+  paybuttonId: 1
+}
+
 export const mockedPaybuttonList = [
   {
     id: 1,
@@ -107,10 +116,12 @@ export const mockedChain = {
 export const mockedTransaction = {
   id: 1,
   hash: 'Yh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
+  paybuttonAddressId: 1,
   amount: '431247724',
   timestamp: 1657130467
 }
 
+// BCH GRPC
 const unspentOutputFromObject = (obj: UnspentOutput.AsObject): UnspentOutput => {
   const uo = new UnspentOutput()
   uo.setPubkeyScript(obj.pubkeyScript)
@@ -158,47 +169,47 @@ const transactionFromObject = (obj: Transaction.AsObject): Transaction => {
 }
 
 export const mockedGrpc = {
+  transaction1: transactionFromObject({
+    hash: 'LUZSpMOab+ZYlyQNxF0XasKpArgQAX633LoA5CBPGgE=',
+    version: 1,
+    lockTime: 0,
+    size: 219,
+    timestamp: 1653460454,
+    confirmations: 60,
+    blockHeight: 741620,
+    blockHash: 'jzSPV4kkI3x5Fdoow/ei3f7Zit+oGMYCAAAAAAAAAAA=',
+    inputsList: [],
+    outputsList: [{
+      index: 0,
+      value: 431247724,
+      pubkeyScript: 'dqkUeCxnbWKveaKpCSRhJC/poE+saL+IrA==',
+      address: mockedPaybuttonAddress.address,
+      scriptClass: 'pubkeyhash',
+      disassembledScript: 'OP_DUP OP_HASH160 782c676d62af79a2a9092461242fe9a04fac68bf OP_EQUALVERIFY OP_CHECKSIG'
+    }, {
+      index: 1,
+      value: 227413293,
+      pubkeyScript: 'dqkUokKnAjaab8AVlPxzrrxk1aRq4BOIrA==',
+      address: 'qz3y9fczx6dxlsq4jn788t4uvn26g6hqzvrczjuzz2',
+      scriptClass: 'pubkeyhash',
+      disassembledScript: 'OP_DUP OP_HASH160 a242a702369a6fc01594fc73aebc64d5a46ae013 OP_EQUALVERIFY OP_CHECKSIG'
+    }]
+  }),
+  transaction2: transactionFromObject({
+    hash: 'jiZHfE+AohEJglMO29nQ5aTR6F/n4Om2whzEZUiXcHk=',
+    version: 2,
+    lockTime: 0,
+    size: 225,
+    timestamp: 1653459437,
+    confirmations: 61,
+    blockHeight: 741619,
+    blockHash: 'A6kjJsl4gaVrY0Z15k0SoRzfKv0Fis8EAAAAAAAAAAA=',
+    inputsList: [],
+    outputsList: []
+  }),
   getAddressTransactions: (_: object) => {
     const res = new GetAddressTransactionsResponse()
-    const t1 = transactionFromObject({
-      hash: 'LUZSpMOab+ZYlyQNxF0XasKpArgQAX633LoA5CBPGgE=',
-      version: 1,
-      lockTime: 0,
-      size: 219,
-      timestamp: 1653460454,
-      confirmations: 60,
-      blockHeight: 741620,
-      blockHash: 'jzSPV4kkI3x5Fdoow/ei3f7Zit+oGMYCAAAAAAAAAAA=',
-      inputsList: [],
-      outputsList: [{
-        index: 0,
-        value: 431247724,
-        pubkeyScript: 'dqkUeCxnbWKveaKpCSRhJC/poE+saL+IrA==',
-        address: 'qpuzcemdv2hhng4fpyjxzfp0axsyltrghutla9rfnm',
-        scriptClass: 'pubkeyhash',
-        disassembledScript: 'OP_DUP OP_HASH160 782c676d62af79a2a9092461242fe9a04fac68bf OP_EQUALVERIFY OP_CHECKSIG'
-      }, {
-        index: 1,
-        value: 227413293,
-        pubkeyScript: 'dqkUokKnAjaab8AVlPxzrrxk1aRq4BOIrA==',
-        address: 'qz3y9fczx6dxlsq4jn788t4uvn26g6hqzvrczjuzz2',
-        scriptClass: 'pubkeyhash',
-        disassembledScript: 'OP_DUP OP_HASH160 a242a702369a6fc01594fc73aebc64d5a46ae013 OP_EQUALVERIFY OP_CHECKSIG'
-      }]
-    })
-    const t2 = transactionFromObject({
-      hash: 'jiZHfE+AohEJglMO29nQ5aTR6F/n4Om2whzEZUiXcHk=',
-      version: 2,
-      lockTime: 0,
-      size: 225,
-      timestamp: 1653459437,
-      confirmations: 61,
-      blockHeight: 741619,
-      blockHash: 'A6kjJsl4gaVrY0Z15k0SoRzfKv0Fis8EAAAAAAAAAAA=',
-      inputsList: [],
-      outputsList: []
-    })
-    res.setConfirmedTransactionsList([t1, t2])
+    res.setConfirmedTransactionsList([mockedGrpc.transaction1, mockedGrpc.transaction2])
     return res
   },
   getAddressUtxos: (_: object) => {
