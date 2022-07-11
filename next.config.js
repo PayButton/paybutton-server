@@ -52,7 +52,7 @@ const {
         return [
           {
             source: '/api/:path*',
-            destination: `${env.API_BASE_PATH}/:path*`,
+            destination: `${env.API_DOMAIN}${env.API_BASE_PATH}/:path*`,
           },
         ]
       },
