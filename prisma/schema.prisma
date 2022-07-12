@@ -50,7 +50,7 @@ model Chain {
 model Transaction {
   id                 Int                @id @default(autoincrement())
   hash               String             @unique @db.VarChar(255)
-  amount             Int
+  amount             Decimal            @db.Decimal(24,8)
   timestamp          Int
   paybuttonAddressId Int
   paybuttonAddress   PaybuttonAddress   @relation(fields: [paybuttonAddressId], references: [id], onDelete: Cascade, onUpdate: Restrict)
