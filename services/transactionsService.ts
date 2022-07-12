@@ -22,7 +22,7 @@ export async function saveTransaction (transaction: BCHTransaction.AsObject, rec
   const paybuttonAddress = await fetchPaybuttonAddressBySubstring(receivingAddress)
   const transactionParams = {
     hash: transaction.hash as string,
-    amount: receivedAmount.toString(),
+    amount: receivedAmount,
     paybuttonAddressId: paybuttonAddress.id,
     timestamp: transaction.timestamp
   }
