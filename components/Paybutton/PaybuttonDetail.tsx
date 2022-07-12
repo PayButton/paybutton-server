@@ -4,7 +4,6 @@ import { Paybutton } from '@prisma/client'
 interface IProps {
   paybutton: Paybutton
 }
-
 export default ({ paybutton }: IProps): FunctionComponent => {
   return (
     <section>
