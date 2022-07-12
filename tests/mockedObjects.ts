@@ -8,6 +8,8 @@ import {
   GetAddressUnspentOutputsResponse
 } from 'grpc-bchrpc-node'
 
+import { Prisma } from '@prisma/client'
+
 export const mockedPaybutton = {
   id: 4,
   providerUserId: 'mocked-uid',
@@ -117,7 +119,7 @@ export const mockedTransaction = {
   id: 1,
   hash: 'Yh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
   paybuttonAddressId: 1,
-  amount: 431247724,
+  amount: new Prisma.Decimal('4.31247724'),
   timestamp: 1657130467
 }
 
