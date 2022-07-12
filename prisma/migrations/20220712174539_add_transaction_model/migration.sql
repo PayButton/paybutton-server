@@ -2,7 +2,7 @@
 CREATE TABLE `Transaction` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `hash` VARCHAR(255) NOT NULL,
-    `amount` VARCHAR(255) NOT NULL,
+    `amount` DECIMAL(16, 2) NOT NULL,
     `timestamp` INTEGER NOT NULL,
     `paybuttonAddressId` INTEGER NOT NULL,
 
