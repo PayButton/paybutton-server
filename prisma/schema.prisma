@@ -18,6 +18,7 @@ model PaybuttonAddress {
   paybuttonId Int
   chain       Chain     @relation(fields: [chainId], references: [id], onUpdate: Restrict)
   paybutton   Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  receivedTransactions Transaction[]
 
   @@index([chainId], map: "PaybuttonAddress_chainId_fkey")
   @@index([paybuttonId], map: "PaybuttonAddress_paybuttonId_fkey")
@@ -44,4 +45,13 @@ model Chain {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   paybuttonAddresses PaybuttonAddress[]
+}
+
+model Transaction {
+  id                 Int                @id @default(autoincrement())
+  hash               String             @unique @db.VarChar(255)
+  amount             Decimal            @db.Decimal(24,8)
+  timestamp          Int
+  paybuttonAddressId Int
+  paybuttonAddress   PaybuttonAddress   @relation(fields: [paybuttonAddressId], references: [id], onDelete: Cascade, onUpdate: Restrict)
 }
