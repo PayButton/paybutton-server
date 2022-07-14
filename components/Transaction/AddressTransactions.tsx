@@ -12,7 +12,7 @@ export default ({ addressTransactions }: IProps): FunctionComponent => {
     <section>
       {Object.keys(addressTransactions).map(transactionAddress => (
         <li key={transactionAddress}>
-          <TransactionList transactions={transactions[transactionAddress].confirmedTransactionsList} />
+          <TransactionList transactions={addressTransactions[transactionAddress]} />
         </li>
       ))}
     </section>

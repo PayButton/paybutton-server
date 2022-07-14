@@ -105,8 +105,6 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
     void ThirdPartyEmailPassword.redirectToAuth()
   }
 
-  // <h2>Transaction list:</h2>
-  // <PaybuttonList transactions={this.state.transactions} />
   render (): React.ReactElement {
     if (this.state.paybutton !== undefined && Object.keys(this.state.transactions).length !== 0) {
       return (
@@ -114,14 +112,12 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
           <h2>PayButton:</h2>
           <PaybuttonDetail paybutton={this.state.paybutton} />
           <h4> Transactions: </h4>
-          <AddressTransactions transactions={this.state.transactions} />
+          <AddressTransactions addressTransactions={this.state.transactions} />
         </Page>
       )
     }
     return (
-      <Page header={<a href='#' onClick={this.handleLogout}>Logout</a>}>
-        <h2>not found</h2>
-      </Page>
+      <Page header={<a href='#' onClick={this.handleLogout}>Logout</a>} />
     )
   }
 }

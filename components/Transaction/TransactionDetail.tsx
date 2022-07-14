@@ -7,15 +7,15 @@ interface IProps {
 export default ({ transaction }: IProps): FunctionComponent => {
   return (
     <section>
-      <h3> {transaction.hash}</h3>
+      <h3>hash: {transaction.hash}</h3>
       <li>
-        {transaction.id}
+        id: {transaction.id}
       </li>
       <li>
-        {transaction.amount}
+        amount: {transaction.amount}
       </li>
       <li>
-        {transaction.timestamp}
+        ts: {transaction.timestamp}
       </li>
     </section>
   )
