@@ -10,7 +10,7 @@ describe('Create services', () => {
     prismaMock.paybuttonAddress.findMany.mockResolvedValue([mockedPaybuttonAddress])
     prisma.paybuttonAddress.findMany = prismaMock.paybuttonAddress.findMany
 
-    const result = await transactionsService.saveTransaction(
+    const result = await transactionsService.upsertTransaction(
       mockedGrpc.transaction1.toObject(),
       mockedPaybuttonAddress.address
     )
