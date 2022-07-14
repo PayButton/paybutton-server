@@ -1,22 +1,22 @@
 import { Transaction as BCHTransaction } from 'grpc-bchrpc-node'
 import prisma from 'prisma/clientInstance'
-import { Transaction } from '@prisma/client'
+import { Prisma, Transaction } from '@prisma/client'
 import bchdService from 'services/bchdService'
 import { fetchPaybuttonAddressBySubstring } from 'services/paybuttonAddressesService'
 
-async function getReceivedAmount (transaction: BCHTransaction.AsObject, receivingAddress: string): Promise<number> {
+async function getReceivedAmount (transaction: BCHTransaction.AsObject, receivingAddress: string): Promise<Prisma.Decimal> {
   let totalOutput = 0
   transaction.outputsList.forEach((output) => {
     if (output.address === receivingAddress) {
       totalOutput += output.value
     }
   })
-  return totalOutput
+  return new Prisma.Decimal(totalOutput).dividedBy(10e8)
 }
 
 export async function saveTransaction (transaction: BCHTransaction.AsObject, receivingAddress: string): Promise<Transaction | undefined> {
   const receivedAmount = await getReceivedAmount(transaction, receivingAddress)
-  if (receivedAmount === 0) { // out transactions
+  if (receivedAmount === new Prisma.Decimal(0)) { // out transactions
     return
   }
   const paybuttonAddress = await fetchPaybuttonAddressBySubstring(receivingAddress)
