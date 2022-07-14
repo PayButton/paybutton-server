@@ -7,11 +7,11 @@ import { fetchPaybuttonAddressBySubstring } from 'services/paybuttonAddressesSer
 async function getReceivedAmount (transaction: BCHTransaction.AsObject, receivingAddress: string): Promise<Prisma.Decimal> {
   let totalOutput = 0
   transaction.outputsList.forEach((output) => {
-    if (output.address === receivingAddress) {
+    if (receivingAddress.includes(output.address)) {
       totalOutput += output.value
     }
   })
-  return new Prisma.Decimal(totalOutput).dividedBy(10e8)
+  return new Prisma.Decimal(totalOutput).dividedBy(1e8)
 }
 
 export async function saveTransaction (transaction: BCHTransaction.AsObject, receivingAddress: string): Promise<Transaction | undefined> {
