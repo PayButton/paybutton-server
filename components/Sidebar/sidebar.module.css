@@ -6,7 +6,8 @@
   background-color: var(--secondary-bg-color);
   padding: 25px 0;
   position: relative;
-  height: 100vh;
+  min-height: 100vh;
+  width: 220px;
 }
 
 .ul {
@@ -32,4 +33,107 @@
 .socialctn a:hover img {
   filter: invert(60%) sepia(14%) saturate(5479%) hue-rotate(195deg)
     brightness(100%) contrast(102%);
+}
+
+@media (max-width: 900px) {
+
+  .topmenu {
+    background-color: var(--secondary-bg-color);
+    height: 50px;
+    width: 100%;
+    z-index: 9999;
+    position: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 15px;
+  }
+
+  .ul {
+    margin: 0;
+  }
+
+  .section {
+    padding-left: 15px;
+  }
+
+  .aside {
+    position: absolute;
+    position: fixed;
+    z-index: 999;
+    box-shadow: 5px 1px 4px -1px rgba(0,0,0,0.24);
+    -webkit-box-shadow: 5px 1px 4px -1px rgba(0,0,0,0.24);
+    -moz-box-shadow: 5px 1px 4px -1px rgba(0,0,0,0.24);
+    left: -230px;
+    top: 50px;
+    padding: 0 0 15px 0;
+    min-height: calc(100vh - 50px);
+    transition: all ease-in-out 200ms;
+  }
+
+  .show_menu {
+    left: 0 !important;
+  }
+
+  /****************************************  HAMBURGER  ****************************************/
+
+.menu_ctn_outer {
+  position: relative;
+  height: 100%;
+  width: 40px;
+}
+
+.menu_ctn {
+  opacity: 0;
+  top: 0px;
+  right: 0px;
+  width: 40px !important;
+  height: 50px !important;
+  margin: 0 !important;
+  border: none !important;
+  background-color: transparent;
+  padding: 0 !important;
+}
+.menu_ctn:checked + .menu_btn > span {
+  transform: rotate(45deg);
+}
+.menu_ctn:checked + .menu_btn > span::before {
+  top: 0;
+  transform: rotate(0deg);
+}
+.menu_ctn:checked + .menu_btn > span::after {
+  top: 0;
+  transform: rotate(90deg);
+}
+
+.menu_btn {
+  position: absolute;
+  top: 5px;
+  right: 0px;
+  width: 30px;
+  height: 40px;
+  cursor: pointer;
+  z-index: 99999;
+}
+.menu_btn > span,
+.menu_btn > span::before,
+.menu_btn > span::after {
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background-color: var(--primary-text-color);
+  transition-duration: .25s;
+  top: 19px;
+  border-radius: 4px;
+}
+.menu_btn > span::before {
+  content: '';
+  top: -8px;
+}
+.menu_btn > span::after {
+  content: '';
+  top: 8px;
+}
+
 }

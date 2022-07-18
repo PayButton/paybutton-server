@@ -140,3 +140,19 @@
     padding: 10px;
   }
 }
+
+@media (max-width: 900px) {
+
+.number_block {
+  padding: 0px 10px 0 10px;
+}
+
+.number_block h4 {
+  font-size: 24px;
+}
+
+.number_block h5 {
+  font-size: 16px;
+}
+
+}
