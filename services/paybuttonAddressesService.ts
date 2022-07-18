@@ -15,5 +15,5 @@ export async function fetchPaybuttonAddressesBySubstring (substring: string): Pr
     }
   })
   if (results.length === 0) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
-  return results
+  return results[0]
 }
