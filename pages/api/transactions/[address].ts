@@ -24,7 +24,7 @@ function runMiddleware(
   })
 }
 
-export default async (req, res) => {
+export default async (req: NextApiRequest, res: NextApiResponse) => {
     await runMiddleware(req, res, cors)
   if (req.method === 'GET') {
     const address = req.query.address as string
