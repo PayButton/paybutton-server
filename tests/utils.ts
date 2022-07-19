@@ -36,7 +36,7 @@ export const countPaybuttons = async (): Promise<number> => {
   return paybuttonList.length
 }
 
-export const countPaybuttonAddresses = async (): Promise<number> => {
+export const countAddresses = async (): Promise<number> => {
   const addressList = await prisma.address.findMany({})
   return addressList.length
 }

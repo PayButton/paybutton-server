@@ -38,7 +38,7 @@ export const mockedPaybutton = {
   ]
 }
 
-export const mockedPaybuttonAddress = {
+export const mockedAddress = {
   id: 1,
   address: 'qpuzcemdv2hhng4fpyjxzfp0axsyltrghutla9rfnm',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
@@ -185,7 +185,7 @@ export const mockedGrpc = {
       index: 0,
       value: 431247724,
       pubkeyScript: 'dqkUeCxnbWKveaKpCSRhJC/poE+saL+IrA==',
-      address: mockedPaybuttonAddress.address,
+      address: mockedAddress.address,
       scriptClass: 'pubkeyhash',
       disassembledScript: 'OP_DUP OP_HASH160 782c676d62af79a2a9092461242fe9a04fac68bf OP_EQUALVERIFY OP_CHECKSIG'
     }, {

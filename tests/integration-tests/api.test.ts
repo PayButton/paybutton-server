@@ -10,7 +10,7 @@ import {
   clearPaybuttonsAndAddresses,
   createPaybuttonForUser,
   countPaybuttons,
-  countPaybuttonAddresses
+  countAddresses
 } from 'tests/utils'
 
 import { RESPONSE_MESSAGES } from 'constants/index'
@@ -60,7 +60,7 @@ describe('POST /api/paybutton/', () => {
       ])
     )
     void expect(countPaybuttons()).resolves.toBe(1)
-    void expect(countPaybuttonAddresses()).resolves.toBe(2)
+    void expect(countAddresses()).resolves.toBe(2)
   })
 
   it('Create a paybutton empty JSON for buttonData', async () => {
