@@ -8,10 +8,10 @@ const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   if (req.method === 'GET') {
     try {
-      const address = parseAddress(req.query.address as string)
-      if (address === '' || address === undefined) {
+      if (req.query.address === '' || req.query.address === undefined) {
         throw new Error(ADDRESS_NOT_PROVIDED_400.message)
       }
+      const address = parseAddress(req.query.address as string)
       const paybuttonAddress = await fetchPaybuttonAddressesBySubstring(address)
       res.status(200).send(paybuttonAddress.receivedTransactions)
     } catch (err: any) {
