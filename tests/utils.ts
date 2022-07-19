@@ -14,7 +14,7 @@ export const testEndpoint = async (requestOptions: httpMocks.RequestOptions, end
 
 export const clearPaybuttonsAndAddresses = async (): Promise<void> => {
   const x = prisma.addressesOnButtons.deleteMany({})
-  const y = prisma.paybuttonAddress.deleteMany({})
+  const y = prisma.address.deleteMany({})
   const z = prisma.paybutton.deleteMany({})
   await prisma.$transaction([x, y, z])
 }
@@ -37,8 +37,8 @@ export const countPaybuttons = async (): Promise<number> => {
 }
 
 export const countPaybuttonAddresses = async (): Promise<number> => {
-  const paybuttonAddressList = await prisma.paybuttonAddress.findMany({})
-  return paybuttonAddressList.length
+  const addressList = await prisma.address.findMany({})
+  return addressList.length
 }
 
 export const exampleAddresses = {

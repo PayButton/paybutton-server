@@ -11,7 +11,7 @@ export interface CreatePaybuttonInput {
 }
 
 export async function createPaybutton (values: CreatePaybuttonInput): Promise<Paybutton> {
-  const paybuttonAddresses = await Promise.all(
+  const addresses = await Promise.all(
     values.prefixedAddressList.map(
       async (addressWithPrefix) => {
         const prefix = addressWithPrefix.split(':')[0].toLowerCase()
@@ -29,12 +29,12 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
       name: values.name,
       buttonData: values.buttonData,
       addresses: {
-        create: paybuttonAddresses.map((paybuttonAddress) => {
+        create: addresses.map((address) => {
           return {
-            paybuttonAddress: {
+            address: {
               connectOrCreate: {
-                where: { address: paybuttonAddress.address },
-                create: paybuttonAddress
+                where: { address: address.address },
+                create: address
               }
             }
           }
@@ -44,7 +44,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
     include: {
       addresses: {
         select: {
-          paybuttonAddress: true
+          address: true
         }
       }
     }
@@ -57,7 +57,7 @@ export async function fetchPaybuttonById (paybuttonId: number | string): Promise
     include: {
       addresses: {
         select: {
-          paybuttonAddress: true
+          address: true
         }
       }
     }
@@ -70,7 +70,7 @@ export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Payb
     include: {
       addresses: {
         select: {
-          paybuttonAddress: true
+          address: true
         }
       }
     }

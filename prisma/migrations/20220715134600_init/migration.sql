@@ -28,11 +28,11 @@ CREATE TABLE `Paybutton` (
 -- CreateTable
 CREATE TABLE `AddressesOnButtons` (
     `paybuttonId` INTEGER NOT NULL,
-    `paybuttonAddressId` INTEGER NOT NULL,
+    `addressId` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
-    PRIMARY KEY (`paybuttonId`, `paybuttonAddressId`)
+    PRIMARY KEY (`paybuttonId`, `addressId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -54,7 +54,7 @@ CREATE TABLE `Transaction` (
     `hash` VARCHAR(255) NOT NULL,
     `amount` DECIMAL(24, 8) NOT NULL,
     `timestamp` INTEGER NOT NULL,
-    `paybuttonAddressId` INTEGER NOT NULL,
+    `addressId` INTEGER NOT NULL,
 
     UNIQUE INDEX `Transaction_hash_key`(`hash`),
     PRIMARY KEY (`id`)
@@ -64,10 +64,10 @@ CREATE TABLE `Transaction` (
 ALTER TABLE `PaybuttonAddress` ADD CONSTRAINT `PaybuttonAddress_chainId_fkey` FOREIGN KEY (`chainId`) REFERENCES `Chain`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
 
 -- AddForeignKey
-ALTER TABLE `AddressesOnButtons` ADD CONSTRAINT `AddressesOnButtons_paybuttonAddressId_fkey` FOREIGN KEY (`paybuttonAddressId`) REFERENCES `PaybuttonAddress`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `AddressesOnButtons` ADD CONSTRAINT `AddressesOnButtons_addressId_fkey` FOREIGN KEY (`addressId`) REFERENCES `PaybuttonAddress`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `AddressesOnButtons` ADD CONSTRAINT `AddressesOnButtons_paybuttonId_fkey` FOREIGN KEY (`paybuttonId`) REFERENCES `Paybutton`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_paybuttonAddressId_fkey` FOREIGN KEY (`paybuttonAddressId`) REFERENCES `PaybuttonAddress`(`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
+ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_addressId_fkey` FOREIGN KEY (`addressId`) REFERENCES `PaybuttonAddress`(`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
