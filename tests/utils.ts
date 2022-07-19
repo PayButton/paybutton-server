@@ -13,7 +13,7 @@ export const testEndpoint = async (requestOptions: httpMocks.RequestOptions, end
 }
 
 export const clearPaybuttonsAndAddresses = async (): Promise<void> => {
-  const x = prisma.paybuttonAddressOnPaybutton.deleteMany({})
+  const x = prisma.addressesOnButtons.deleteMany({})
   const y = prisma.paybuttonAddress.deleteMany({})
   const z = prisma.paybutton.deleteMany({})
   await prisma.$transaction([x, y, z])

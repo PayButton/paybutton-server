@@ -16,7 +16,7 @@ model PaybuttonAddress {
   updatedAt   DateTime  @updatedAt
   chainId     Int
   chain       Chain     @relation(fields: [chainId], references: [id], onUpdate: Restrict)
-  paybuttons  PaybuttonAddressOnPaybutton[]
+  paybuttons  AddressesOnButtons[]
   receivedTransactions Transaction[]
 
   @@index([chainId], map: "PaybuttonAddress_chainId_fkey")
@@ -30,12 +30,12 @@ model Paybutton {
   providerUserId String?              @db.VarChar(255)
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
-  addresses      PaybuttonAddressOnPaybutton[]
+  addresses      AddressesOnButtons[]
 
   @@unique([name, providerUserId], map: "Paybutton_name_providerUserId_unique_constraint")
 }
 
-model PaybuttonAddressOnPaybutton {
+model AddressesOnButtons {
   paybutton       Paybutton     @relation(fields: [paybuttonId], references: [id])
     paybuttonId     Int
     paybuttonAddress   PaybuttonAddress @relation(fields: [paybuttonAddressId], references: [id])
