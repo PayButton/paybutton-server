@@ -9,14 +9,14 @@ describe('Find by substring', () => {
     prismaMock.paybuttonAddress.findMany.mockResolvedValue([mockedPaybuttonAddress])
     prisma.paybuttonAddress.findMany = prismaMock.paybuttonAddress.findMany
 
-    const result = await paybuttonAddressesService.fetchPaybuttonAddressesBySubstring('mock')
+    const result = await paybuttonAddressesService.fetchPaybuttonAddressBySubstring('mock')
     expect(result).toEqual(mockedPaybuttonAddress)
   })
   it('Throw no addresses found error', async () => {
     prismaMock.paybuttonAddress.findMany.mockResolvedValue([])
     prisma.paybuttonAddress.findMany = prismaMock.paybuttonAddress.findMany
 
-    await expect(paybuttonAddressesService.fetchPaybuttonAddressesBySubstring('mock')).rejects.toThrow(
+    await expect(paybuttonAddressesService.fetchPaybuttonAddressBySubstring('mock')).rejects.toThrow(
       RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message
     )
   })

@@ -1,7 +1,7 @@
 import { NextApiResponse, NextApiRequest } from 'next'
 import { parseAddress } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import { fetchPaybuttonAddressesBySubstring } from 'services/paybuttonAddressesService'
+import { fetchPaybuttonAddressBySubstring } from 'services/paybuttonAddressesService'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
 
@@ -12,7 +12,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
         throw new Error(ADDRESS_NOT_PROVIDED_400.message)
       }
       const address = parseAddress(req.query.address as string)
-      const paybuttonAddress = await fetchPaybuttonAddressesBySubstring(address)
+      const paybuttonAddress = await fetchPaybuttonAddressBySubstring(address)
       res.status(200).send(paybuttonAddress.receivedTransactions)
     } catch (err: any) {
       switch (err.message) {

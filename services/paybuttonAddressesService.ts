@@ -8,7 +8,7 @@ const paybuttonAddressFullType = Prisma.validator<Prisma.PaybuttonAddressArgs>()
 
 type PaybuttonAddressFullType = Prisma.PaybuttonAddressGetPayload<typeof paybuttonAddressFullType>
 
-export async function fetchPaybuttonAddressesBySubstring (substring: string): Promise<PaybuttonAddressFullType> {
+export async function fetchPaybuttonAddressBySubstring (substring: string): Promise<PaybuttonAddressFullType> {
   const results = await prisma.paybuttonAddress.findMany({
     where: {
       address: {
