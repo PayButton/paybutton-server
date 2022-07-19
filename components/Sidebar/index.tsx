@@ -5,7 +5,6 @@ import logoImageSource from 'assets/logo.png'
 import Telegram from 'assets/telegram.png'
 import Twitter from 'assets/twitter.png'
 import Image from 'next/image'
-import Link from 'next/link'
 import Dashboard from 'assets/dashboard-icon.png'
 import Payments from 'assets/payments-icon.png'
 import ButtonsIcon from 'assets/button-icon.png'
@@ -87,12 +86,10 @@ const Sidebar = () => {
   <>
   {isBreakpoint &&
     <div className={style.topmenu}>
-      <Link href='/'>
-        <Image className={style.image} src={logoImageSource} alt='PayButton' width={120} height={22} />
-      </Link>
+      <Image className={style.image} src={logoImageSource} alt='PayButton' width={120} height={22} />
       <div className={style.menu_ctn_outer}>
         <input id="menu__toggle" className={style.menu_ctn} type="checkbox" onClick={()=>setMenu(!menu)}/>
-        <label className={style.menu_btn} for="menu__toggle">
+        <label className={style.menu_btn} htmlFor="menu__toggle">
           <span></span>
         </label>
       </div>
@@ -102,9 +99,7 @@ const Sidebar = () => {
       <div>
         {!isBreakpoint &&
         <section className={style.section}>
-          <Link href='/'>
-            <Image className={style.image} src={logoImageSource} alt='PayButton' width={140} height={26} />
-          </Link>
+          <Image className={style.image} src={logoImageSource} alt='PayButton' width={140} height={26} />
         </section>
         }
      
