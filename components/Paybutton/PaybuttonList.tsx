@@ -9,7 +9,7 @@ export default ({ paybuttons }: IProps): FunctionComponent<IProps> =>
         <section>
           <h3><a href={'button/' + (paybutton.id as string)}>{paybutton.id} {paybutton.name}</a></h3>
           <ul>
-            {paybutton.addresses.map(item => (<li key={item.address}> {item.address}</li>))}
+            {paybutton.addresses.map(item => (<li key={item.paybuttonAddress.address}> {item.paybuttonAddress.address}</li>))}
             {paybutton.buttonData}
           </ul>
         </section>
