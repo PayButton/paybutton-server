@@ -1,8 +1,14 @@
-import { PaybuttonAddress } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
-export async function fetchPaybuttonAddressesBySubstring (substring: string): Promise<PaybuttonAddress> {
+const paybuttonAddressFullType = Prisma.validator<Prisma.PaybuttonAddressArgs>()({
+  include: { receivedTransactions: true, chain: true }
+})
+
+type PaybuttonAddressFullType = Prisma.PaybuttonAddressGetPayload<typeof paybuttonAddressFullType>
+
+export async function fetchPaybuttonAddressesBySubstring (substring: string): Promise<PaybuttonAddressFullType> {
   const results = await prisma.paybuttonAddress.findMany({
     where: {
       address: {
