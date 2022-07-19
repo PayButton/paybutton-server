@@ -5,8 +5,8 @@ import { mockedTransaction, mockedGrpc, mockedPaybuttonAddress } from '../mocked
 
 describe('Create services', () => {
   it('Return created transaction', async () => {
-    prismaMock.transaction.create.mockResolvedValue(mockedTransaction)
-    prisma.transaction.create = prismaMock.transaction.create
+    prismaMock.transaction.upsert.mockResolvedValue(mockedTransaction)
+    prisma.transaction.upsert = prismaMock.transaction.upsert
     prismaMock.paybuttonAddress.findMany.mockResolvedValue([mockedPaybuttonAddress])
     prisma.paybuttonAddress.findMany = prismaMock.paybuttonAddress.findMany
 
