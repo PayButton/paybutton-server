@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react'
+import dynamic from "next/dynamic";
 import MenuItem from '../MenuItem'
 import style from './sidebar.module.css'
 import logoImageSource from 'assets/logo.png'
@@ -14,6 +15,9 @@ import Account from 'assets/user-icon.png'
 import Settings from 'assets/settings-icon.png'
 import Help from 'assets/help-icon.png'
 import Logout from 'assets/logout-icon.png'
+const ThemeToggle = dynamic(() => import("./themetoggle"), {
+  ssr: false,
+});
 
 const MENU_ITEMS = [
   {
@@ -112,6 +116,7 @@ const Sidebar = () => {
         </nav>
       </div>
       <div className={style.socialctn}>
+        <ThemeToggle />
         <a href='https://t.me/paybutton' target="_blank" rel="noreferrer noopener">
           <Image src={Telegram} alt='telegram' width={20} height={20} />
         </a>
