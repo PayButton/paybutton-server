@@ -33,7 +33,7 @@
     "dotenv-cli": "^5.1.0",
     "express": "^4.17.1",
     "graphql": "^16.3.0",
-    "grpc-bchrpc-node": "^0.15.2",
+    "grpc-bchrpc-node": "git+https://github.com/alcipir/grpc-bchrpc-node.git",
     "helmet": "^4.4.1",
     "micro": "^9.3.4",
     "micro-cors": "^0.1.1",
