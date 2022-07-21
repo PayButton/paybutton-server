@@ -11,14 +11,15 @@ body {
   min-height: 100%;
   --bg: var(--primary-bg-color);
   font-size: 16px;
+  color: var(--primary-text-color);
 }
 
 input {
-  background: white;
+  background: var(--secondary-bg-color);
 }
 
 textarea {
-  background: white;
+  background: var(--secondary-bg-color);
 }
 
 .login_ctn {

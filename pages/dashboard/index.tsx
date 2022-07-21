@@ -2,8 +2,11 @@ import React, { useState } from 'react'
 import style from './dashboard.module.css'
 import Page from 'components/Page'
 import data from './dummy-data.json'
-import Chart from "./Chart"
+import dynamic from "next/dynamic";
 import moment from 'moment'
+const Chart = dynamic(() => import("./Chart"), {
+  ssr: false,
+});
 
 const NumberBlock = ({value, text}) => {
   return (

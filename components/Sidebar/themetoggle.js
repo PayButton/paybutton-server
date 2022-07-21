@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import style from './sidebar.module.css'
 
 const ThemeToggle = () => {
 
@@ -8,11 +9,18 @@ const ThemeToggle = () => {
     useEffect(() => {
         document.body.dataset.theme = activeTheme;
         window.localStorage.setItem("theme", activeTheme);
-        console.log('click')
       }, [activeTheme]);
     
     return (
-      <button onClick={() => setActiveTheme(inactiveTheme)}>{activeTheme}</button>
+        <button 
+            aria-label={`Change to ${inactiveTheme} mode`}
+            title={`Change to ${inactiveTheme} mode`}
+            type="button"
+            onClick={() => setActiveTheme(inactiveTheme)}
+            className={style.darkmode_btn}
+        >
+            <span className={activeTheme === "dark" ? `${style.switch}`:null}></span>
+        </button>
     );
   };
   

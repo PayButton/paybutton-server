@@ -22,6 +22,10 @@ ChartJS.register(
 );
 
 export default function Chart ({data, usd}): React.ReactElement {
+
+    function cssvar(name) {
+        return getComputedStyle(document.body).getPropertyValue(name);
+      }
     
     const options = {
         responsive: true,
@@ -51,17 +55,17 @@ export default function Chart ({data, usd}): React.ReactElement {
                 drawTicks: true,
             },
             ticks: {
-                color: '#231f20',
+                color: cssvar('--primary-text-color'),
             },
             },
             y: {
                 grid: {
                     drawBorder: false,
-                    color: '#231f201f',
+                    color: cssvar('--chart-line-color'),
                 },
                 grace: '10%',
                 ticks: {
-                    color: '#231f20',
+                    color: cssvar('--primary-text-color'),
                     callback: function(value) {
                     return usd ? '$'+ value: value;
                 }
