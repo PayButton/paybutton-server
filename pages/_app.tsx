@@ -8,6 +8,7 @@ import * as SuperTokensConfig from '../config/frontendConfig'
 import Session from 'supertokens-auth-react/recipe/session'
 import { redirectToAuth } from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import ErrorBoundary from 'components/ErrorBoundary'
+import Head from 'next/head'
 
 if (typeof window !== 'undefined') {
   SuperTokensReact.init(SuperTokensConfig.frontendConfig())
@@ -32,9 +33,15 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
     return null
   }
   return (
-    <ErrorBoundary>
-        <Component {...pageProps} />
-    </ErrorBoundary>
+    <>
+      <Head>
+        <title>Paybutton</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <ErrorBoundary>
+          <Component {...pageProps} />
+      </ErrorBoundary>
+    </>
   )
 }
 

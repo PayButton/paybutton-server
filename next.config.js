@@ -36,12 +36,33 @@ const {
       APPLE_TEAM_ID: process.env.APPLE_TEAM_ID,
       SUPERTOKENS_API_KEY: process.env.SUPERTOKENS_API_KEY,
       SUPERTOKENS_CONNECTION_URI: process.env.SUPERTOKENS_CONNECTION_URI,
-      GRPC_NODE_URL: process.env.GRPC_NODE_URL
+      GRPC_NODE_URL: process.env.GRPC_NODE_URL,
+      WEBSITE_DOMAIN: process.env.WEBSITE_DOMAIN,
+      WEBSITE_BASE_PATH: process.env.WEBSITE_BASE_PATH,
+      API_DOMAIN: process.env.API_DOMAIN,
+      API_BASE_PATH: process.env.API_BASE_PATH,
+      APP_NAME: process.env.APP_NAME
     }
   
-    // next.config.js object
     return {
       env,
-      outputFileTracing: true
+      outputFileTracing: true,
+      basePath: process.env.WEBSITE_BASE_PATH,
+      async rewrites() {
+        return [
+          {
+            source: '/address/transactions/:address',
+            destination: `${env.API_BASE_PATH}/transactions/:address`,
+          },
+          {
+            source: '/:path*',
+            destination: '/:path*',
+          },
+          {
+            source: '/:path*',
+            destination: `${env.API_BASE_PATH}/:path*`,
+          },
+        ]
+      },
     }
   }
