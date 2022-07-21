@@ -13,10 +13,6 @@ body {
   font-size: 16px;
 }
 
-main {
-  padding-top: 25px;
-}
-
 input {
   background: white;
 }
@@ -27,7 +23,7 @@ textarea {
 
 .login_ctn {
   text-align: center;
-  margin-top: 100px;
+  padding-top: 100px;
 }
 
 h2 {
