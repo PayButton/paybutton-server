@@ -4,14 +4,20 @@ import { Prisma, Transaction } from '@prisma/client'
 import bchdService from 'services/bchdService'
 import { fetchAddressBySubstring } from 'services/addressesService'
 
-async function getReceivedAmount (transaction: BCHTransaction.AsObject, receivingAddress: string): Promise<Prisma.Decimal> {
+async function getTransactionAmount (transaction: BCHTransaction.AsObject, receivingAddress: string): Promise<Prisma.Decimal> {
   let totalOutput = 0
+  let totalInput = 0
   transaction.outputsList.forEach((output) => {
     if (receivingAddress.includes(output.address)) {
       totalOutput += output.value
     }
   })
-  return new Prisma.Decimal(totalOutput).dividedBy(1e8)
+  transaction.inputsList.forEach((input) => {
+    if (receivingAddress.includes(input.address)) {
+      totalInput += input.value
+    }
+  })
+  return new Prisma.Decimal(totalOutput).minus(totalInput).dividedBy(1e8)
 }
 
 export async function fetchAddressTransactions (address: string): Promise<Transaction[]> {
@@ -24,7 +30,7 @@ export async function fetchAddressTransactions (address: string): Promise<Transa
 }
 
 export async function upsertTransaction (transaction: BCHTransaction.AsObject, receivingAddress: string): Promise<Transaction | undefined> {
-  const receivedAmount = await getReceivedAmount(transaction, receivingAddress)
+  const receivedAmount = await getTransactionAmount(transaction, receivingAddress)
   if (receivedAmount === new Prisma.Decimal(0)) { // out transactions
     return
   }
