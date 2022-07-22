@@ -14,6 +14,15 @@ async function getReceivedAmount (transaction: BCHTransaction.AsObject, receivin
   return new Prisma.Decimal(totalOutput).dividedBy(1e8)
 }
 
+export async function fetchAddressTransactions (address: string): Promise<Transaction[]> {
+  const paybuttonAddress = await fetchPaybuttonAddressBySubstring(address)
+  return paybuttonAddress.receivedTransactions.sort(function (a, b) {
+    const ta = a.timestamp
+    const tb = b.timestamp
+    return ((ta < tb) ? 1 : ((ta > tb) ? -1 : 0))
+  })
+}
+
 export async function upsertTransaction (transaction: BCHTransaction.AsObject, receivingAddress: string): Promise<Transaction | undefined> {
   const receivedAmount = await getReceivedAmount(transaction, receivingAddress)
   if (receivedAmount === new Prisma.Decimal(0)) { // out transactions
