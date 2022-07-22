@@ -4,7 +4,7 @@ import { Prisma, Transaction } from '@prisma/client'
 import bchdService from 'services/bchdService'
 import { fetchAddressBySubstring } from 'services/addressesService'
 
-async function getTransactionAmount (transaction: BCHTransaction.AsObject, addressString: string): Promise<Prisma.Decimal> {
+export async function getTransactionAmount (transaction: BCHTransaction.AsObject, addressString: string): Promise<Prisma.Decimal> {
   let totalOutput = 0
   let totalInput = 0
   transaction.outputsList.forEach((output) => {
