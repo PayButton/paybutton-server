@@ -1,11 +1,10 @@
-import React, { FunctionComponent } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import MenuItem from '../MenuItem'
 import style from './sidebar.module.css'
 import logoImageSource from 'assets/logo.png'
 import Telegram from 'assets/telegram.png'
 import Twitter from 'assets/twitter.png'
 import Image from 'next/image'
-import Link from 'next/link'
 import Dashboard from 'assets/dashboard-icon.png'
 import Payments from 'assets/payments-icon.png'
 import ButtonsIcon from 'assets/button-icon.png'
@@ -55,30 +54,73 @@ const MENU_ITEMS = [
   }
 ]
 
-const Sidebar = (): FunctionComponent<SidebarProps> =>
-  <aside className={style.aside} role='complementary'>
-    <div>
-      <section className={style.section}>
-        <Link href='/'>
+const Sidebar = () => {
+  const [menu, setMenu] = useState(false);
+  const useMediaQuery = (width) => {
+    const [targetReached, setTargetReached] = useState(false);
+    const updateTarget = useCallback((e) => {
+      if (e.matches) {
+        setTargetReached(true);
+      } else {
+        setTargetReached(false);
+      }
+    }, []);
+  
+    useEffect(() => {
+      const media = window.matchMedia(`(max-width: ${width}px)`)
+      media.addEventListener('change', e => updateTarget(e))
+
+      if (media.matches) {
+        setTargetReached(true)
+      }
+  
+      return () => media.removeEventListener('change', e => updateTarget(e))
+    }, [])
+  
+    return targetReached;
+  };
+
+  const isBreakpoint = useMediaQuery(900)
+
+  return (
+  <>
+  {isBreakpoint &&
+    <div className={style.topmenu}>
+      <Image className={style.image} src={logoImageSource} alt='PayButton' width={120} height={22} />
+      <div className={style.menu_ctn_outer}>
+        <input id="menu__toggle" className={style.menu_ctn} type="checkbox" onClick={()=>setMenu(!menu)}/>
+        <label className={style.menu_btn} htmlFor="menu__toggle">
+          <span></span>
+        </label>
+      </div>
+    </div>
+  }
+    <aside className={menu ? `${style.aside} ${style.show_menu}`:style.aside} role='complementary'>
+      <div>
+        {!isBreakpoint &&
+        <section className={style.section}>
           <Image className={style.image} src={logoImageSource} alt='PayButton' width={140} height={26} />
-        </Link>
-      </section>
-      <nav>
-        <ul className={style.ul}>
-          {MENU_ITEMS.map(itemName =>
-            <MenuItem key={itemName.name} name={itemName.name} image={itemName.image} />
-          )}
-        </ul>
-      </nav>
-    </div>
-    <div className={style.socialctn}>
-      <a href='https://t.me/paybutton' target="_blank" rel="noreferrer noopener">
-        <Image src={Telegram} alt='telegram' width={20} height={20} />
-      </a>
-      <a href='https://twitter.com/thepaybutton' target="_blank" rel="noreferrer noopener">
-        <Image src={Twitter} alt='twitter' width={20} height={20} />
-      </a>
-    </div>
-  </aside>
+        </section>
+        }
+     
+        <nav>
+          <ul className={style.ul}>
+            {MENU_ITEMS.map(itemName =>
+              <MenuItem key={itemName.name} name={itemName.name} image={itemName.image} />
+            )}
+          </ul>
+        </nav>
+      </div>
+      <div className={style.socialctn}>
+        <a href='https://t.me/paybutton' target="_blank" rel="noreferrer noopener">
+          <Image src={Telegram} alt='telegram' width={20} height={20} />
+        </a>
+        <a href='https://twitter.com/thepaybutton' target="_blank" rel="noreferrer noopener">
+          <Image src={Twitter} alt='twitter' width={20} height={20} />
+        </a>
+      </div>
+    </aside>
+  </>
+)}
 
 export default Sidebar

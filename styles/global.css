@@ -23,5 +23,10 @@ textarea {
 
 .login_ctn {
   text-align: center;
-  margin-top: 100px;
+  padding-top: 100px;
+}
+
+h2 {
+  font-size: 30px;
+  margin: 0;
 }

@@ -12,10 +12,11 @@ export const testEndpoint = async (requestOptions: httpMocks.RequestOptions, end
   return res
 }
 
-export const clearPaybuttons = async (): Promise<void> => {
-  const x = prisma.paybuttonAddress.deleteMany({})
-  const y = prisma.paybutton.deleteMany({})
-  await prisma.$transaction([x, y])
+export const clearPaybuttonsAndAddresses = async (): Promise<void> => {
+  const x = prisma.addressesOnButtons.deleteMany({})
+  const y = prisma.paybuttonAddress.deleteMany({})
+  const z = prisma.paybutton.deleteMany({})
+  await prisma.$transaction([x, y, z])
 }
 
 const addressRandexp = new RandExp(SUPPORTED_ADDRESS_PATTERN)

@@ -21,7 +21,7 @@ export default function Auth (): React.ReactElement {
   return (
     <div>
       <Head>
-        <title>PayButton.io</title>
+        <title>PayButton</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 

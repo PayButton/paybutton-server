@@ -28,8 +28,10 @@ export const frontendConfig = (): { appInfo: object, recipeList: array } => {
           providers: getAvailableSocialProviders()
         },
         palette: {
-          primary: '#669cfe'
-        }
+          primary: '#669cfe',
+          superTokensBrandingBackground: 'transparent',
+          superTokensBrandingText: 'transparent'
+      	}
       }),
       SessionReact.init()
     ]

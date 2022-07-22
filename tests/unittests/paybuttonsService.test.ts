@@ -1,7 +1,7 @@
 import prisma from 'prisma/clientInstance'
 import * as paybuttonsService from 'services/paybuttonsService'
 import { prismaMock } from 'prisma/mockedClient'
-import { mockedPaybutton, mockedPaybuttonList, mockedChain } from '../mockedModels'
+import { mockedPaybutton, mockedPaybuttonList, mockedChain } from '../mockedObjects'
 
 describe('Fetch services', () => {
   it('Should fetch paybutton by id', async () => {

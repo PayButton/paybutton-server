@@ -1,15 +1,9 @@
-const port: number = (process.env.APP_PORT !== 0 as number || 3000)
-
-const apiBasePath = '/api/auth/'
-
-export const websiteDomain: string =
-    (process.env.APP_URL as boolean && process.env.APP_URL as string) ||
-    (process.env.NEXT_PUBLIC_APP_URL as boolean && process.env.NEXT_PUBLIC_APP_URL as string) ||
-  `http://localhost:${port}`
-
+const websiteBasePath: string = (process.env.WEBSITE_BASE_PATH as boolean) && (process.env.WEBSITE_BASE_PATH as string)
+const apiBasePath: string = (process.env.API_BASE_PATH as boolean) && (process.env.API_BASE_PATH as string)
 export const appInfo = {
-  appName: 'PayButton.io',
-  websiteDomain,
-  apiDomain: websiteDomain,
-  apiBasePath
+  appName: process.env.APP_NAME,
+  apiBasePath: `${apiBasePath}/auth`,
+  apiDomain: process.env.API_DOMAIN,
+  websiteBasePath: `${websiteBasePath}/auth`,
+  websiteDomain: process.env.WEBSITE_DOMAIN
 }

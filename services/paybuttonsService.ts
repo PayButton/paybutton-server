@@ -1,5 +1,5 @@
 import * as chainService from 'services/chainsService'
-import { Paybutton, Prisma } from '@prisma/client'
+import { Paybutton } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
@@ -11,7 +11,7 @@ export interface CreatePaybuttonInput {
 }
 
 export async function createPaybutton (values: CreatePaybuttonInput): Promise<Paybutton> {
-  const paybuttonAddressesToCreate: Prisma.PaybuttonAddressUncheckedCreateWithoutPaybuttonInput[] = await Promise.all(
+  const paybuttonAddresses = await Promise.all(
     values.prefixedAddressList.map(
       async (addressWithPrefix) => {
         const prefix = addressWithPrefix.split(':')[0].toLowerCase()
@@ -29,13 +29,22 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
       name: values.name,
       buttonData: values.buttonData,
       addresses: {
-        create: paybuttonAddressesToCreate
+        create: paybuttonAddresses.map((paybuttonAddress) => {
+          return {
+            paybuttonAddress: {
+              connectOrCreate: {
+                where: { address: paybuttonAddress.address },
+                create: paybuttonAddress
+              }
+            }
+          }
+        })
       }
     },
     include: {
       addresses: {
-        include: {
-          chain: true
+        select: {
+          paybuttonAddress: true
         }
       }
     }
@@ -45,7 +54,13 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
 export async function fetchPaybuttonById (paybuttonId: number | string): Promise<Paybutton | null> {
   return await prisma.paybutton.findUnique({
     where: { id: Number(paybuttonId) },
-    include: { addresses: true }
+    include: {
+      addresses: {
+        select: {
+          paybuttonAddress: true
+        }
+      }
+    }
   })
 }
 
@@ -54,8 +69,8 @@ export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Payb
     where: { providerUserId: userId },
     include: {
       addresses: {
-        include: {
-          chain: true
+        select: {
+          paybuttonAddress: true
         }
       }
     }
