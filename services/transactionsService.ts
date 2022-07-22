@@ -16,7 +16,7 @@ async function getReceivedAmount (transaction: BCHTransaction.AsObject, receivin
 
 export async function fetchAddressTransactions (address: string): Promise<Transaction[]> {
   const paybuttonAddress = await fetchPaybuttonAddressBySubstring(address)
-  return paybuttonAddress.receivedTransactions.sort(function (a, b) {
+  return paybuttonAddress.transactions.sort(function (a, b) {
     const ta = a.timestamp
     const tb = b.timestamp
     return ((ta < tb) ? 1 : ((ta > tb) ? -1 : 0))

@@ -17,7 +17,7 @@ model Address {
   chainId     Int
   chain       Chain     @relation(fields: [chainId], references: [id], onUpdate: Restrict)
   paybuttons  AddressesOnButtons[]
-  receivedTransactions Transaction[]
+  transactions Transaction[]
 
   @@index([chainId], map: "Address_chainId_fkey")
 }
