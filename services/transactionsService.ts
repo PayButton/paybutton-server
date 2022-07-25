@@ -2,6 +2,7 @@ import { Transaction as BCHTransaction } from 'grpc-bchrpc-node'
 import prisma from 'prisma/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
 import bchdService from 'services/bchdService'
+import _ from 'lodash'
 import { fetchPaybuttonAddressBySubstring } from 'services/paybuttonAddressesService'
 
 async function getReceivedAmount (transaction: BCHTransaction.AsObject, receivingAddress: string): Promise<Prisma.Decimal> {
@@ -16,11 +17,7 @@ async function getReceivedAmount (transaction: BCHTransaction.AsObject, receivin
 
 export async function fetchAddressTransactions (address: string): Promise<Transaction[]> {
   const paybuttonAddress = await fetchPaybuttonAddressBySubstring(address)
-  return paybuttonAddress.receivedTransactions.sort(function (a, b) {
-    const ta = a.timestamp
-    const tb = b.timestamp
-    return ((ta < tb) ? 1 : ((ta > tb) ? -1 : 0))
-  })
+  return _.orderBy(paybuttonAddress.receivedTransactions, ['timestamp'], ['desc'])
 }
 
 export async function upsertTransaction (transaction: BCHTransaction.AsObject, receivingAddress: string): Promise<Transaction | undefined> {
