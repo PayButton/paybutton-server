@@ -20,12 +20,4 @@ describe('Find by substring', () => {
       RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message
     )
   })
-  it('Throw multiple addresses found error', async () => {
-    prismaMock.paybuttonAddress.findMany.mockResolvedValue([mockedPaybuttonAddress, mockedPaybuttonAddress])
-    prisma.paybuttonAddress.findMany = prismaMock.paybuttonAddress.findMany
-
-    await expect(paybuttonAddressesService.fetchPaybuttonAddressBySubstring('mock')).rejects.toThrow(
-      RESPONSE_MESSAGES.MULTIPLE_ADDRESSES_FOUND_400.message
-    )
-  })
 })
