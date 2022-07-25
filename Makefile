@@ -1,9 +1,12 @@
 git_hook_setup = cp .githooks/pre-commit .git/hooks/pre-commit
 git_diff_to_master = git diff --name-only --diff-filter=ACMRTUXB origin/master > DIFF
 
+build:
+	docker build -f Dockerfile -t paybutton-server .
 dev:
 	$(git_hook_setup)
-	docker-compose up --build -d
+	make build
+	docker-compose up -d
 
 stop-dev:
 	docker-compose down

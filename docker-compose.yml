@@ -1,17 +1,17 @@
-version: "3.9"
+version: "3.3"
 services:
   paybutton:
     container_name: paybutton-dev
+    image: paybutton-server
     restart: always
     depends_on: 
       - db
       - users-service
-    build: .
     ports:
       - "3000:3000"
     volumes:
+      - /home/node/src/node_modules
       - .:/home/node/src
-    command: sh -c "yarn && yarn prisma migrate dev && yarn prisma db seed && yarn dev"
   db:
     container_name: paybutton-db
     image: mariadb
