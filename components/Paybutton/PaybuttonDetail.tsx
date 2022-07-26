@@ -10,7 +10,7 @@ export default ({ paybutton }: IProps): FunctionComponent => {
       <h3>{paybutton.id} {paybutton.name}</h3>
       <ul>
         {paybutton.addresses.map(item => (
-          <li key={item.address}> {item.address}</li>
+          <li key={item.address.address}> {item.address.address}</li>
         ))}
         {paybutton.buttonData}
       </ul>
