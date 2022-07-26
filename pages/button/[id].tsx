@@ -72,8 +72,8 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
 
   async componentDidMount (): Promise<void> {
     await this.fetchPaybutton()
-    for (const address of this.state.paybutton.addresses) {
-      await this.fetchTransactions(address.address)
+    for (const connector of this.state.paybutton.addresses) {
+      await this.fetchTransactions(connector.address.address)
     }
   }
 

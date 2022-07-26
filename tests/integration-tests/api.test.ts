@@ -10,7 +10,7 @@ import {
   clearPaybuttonsAndAddresses,
   createPaybuttonForUser,
   countPaybuttons,
-  countPaybuttonAddresses
+  countAddresses
 } from 'tests/utils'
 
 import { RESPONSE_MESSAGES } from 'constants/index'
@@ -47,12 +47,12 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         {
-          paybuttonAddress: expect.objectContaining({
+          address: expect.objectContaining({
             address: `ecash:${exampleAddresses.ecash}`
           })
         },
         {
-          paybuttonAddress:
+          address:
           expect.objectContaining({
             address: `bitcoincash:${exampleAddresses.bitcoincash}`
           })
@@ -60,7 +60,7 @@ describe('POST /api/paybutton/', () => {
       ])
     )
     void expect(countPaybuttons()).resolves.toBe(1)
-    void expect(countPaybuttonAddresses()).resolves.toBe(2)
+    void expect(countAddresses()).resolves.toBe(2)
   })
 
   it('Create a paybutton empty JSON for buttonData', async () => {
@@ -78,7 +78,7 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         {
-          paybuttonAddress: expect.objectContaining({
+          address: expect.objectContaining({
             address: `ectest:${exampleAddresses.ectest}`
           })
         }
@@ -199,12 +199,12 @@ describe('GET /api/paybuttons/', () => {
     expect(responseData[0].addresses).toEqual(
       expect.arrayContaining([
         {
-          paybuttonAddress: expect.objectContaining({
+          address: expect.objectContaining({
             address: expect.any(String)
           })
         },
         {
-          paybuttonAddress: expect.objectContaining({
+          address: expect.objectContaining({
             address: expect.any(String)
           })
         }
@@ -276,12 +276,12 @@ describe('GET /api/paybutton/[id]', () => {
       expect(responseData.addresses).toEqual(
         expect.arrayContaining([
           {
-            paybuttonAddress: expect.objectContaining({
+            address: expect.objectContaining({
               address: expect.any(String)
             })
           },
           {
-            paybuttonAddress: expect.objectContaining({
+            address: expect.objectContaining({
               address: expect.any(String)
             })
           }
