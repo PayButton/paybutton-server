@@ -1,5 +1,5 @@
 import { NextApiResponse, NextApiRequest } from 'next'
-import { getAddress } from 'services/bchdService'
+import { getBCHBalance } from 'services/bchdService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import Cors from 'cors'
 
@@ -24,7 +24,7 @@ function runMiddleware(
   })
 }
 
-export default async (req: NextApiRequest, res: NextApiResponse) => {
+export default async (req: NextApiRequest, res: NextApiResponse): Promise<void>  => {
     await runMiddleware(req, res, cors)
   if (req.method === 'GET') {
     const address = req.query.address as string
