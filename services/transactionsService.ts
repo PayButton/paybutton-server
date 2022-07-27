@@ -23,7 +23,7 @@ export async function getTransactionAmount (transaction: BCHTransaction.AsObject
 
 export async function fetchAddressTransactions (addressString: string): Promise<Transaction[]> {
   const address = await fetchAddressBySubstring(addressString)
-  return _.orderBy(address.receivedTransactions, ['timestamp'], ['desc'])
+  return _.orderBy(address.transactions, ['timestamp'], ['desc'])
 }
 
 export async function upsertTransaction (transaction: BCHTransaction.AsObject, addressString: string): Promise<Transaction | undefined> {
