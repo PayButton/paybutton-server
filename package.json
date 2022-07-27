@@ -29,6 +29,7 @@
     "apollo-server-micro": "^3.6.7",
     "axios": "^0.26.1",
     "chart.js": "^3.8.0",
+    "chronik-client": "^0.8.0",
     "cors": "^2.8.5",
     "cross-env": "^7.0.2",
     "dotenv-cli": "^5.1.0",
