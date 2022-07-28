@@ -3,10 +3,11 @@ import Layout from 'components/Layout'
 
 interface PageProps {
   children: React.ReactNode
+  chart: boolean
 }
 
-const Page = ({ children }: PageProps): FunctionComponent<PageProps> =>
-    <Layout>
+const Page = ({ children, chart, setChart }: PageProps): FunctionComponent<PageProps> =>
+    <Layout chart={chart} setChart={setChart}>
       {children}
     </Layout>
 

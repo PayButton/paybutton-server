@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import style from './dashboard.module.css'
-import Page from 'components/Page'
 import data from './dummy-data.json'
 import dynamic from "next/dynamic";
 import moment from 'moment'
@@ -85,7 +84,7 @@ export default function Dashboard (): React.ReactElement {
   const [revenue, setRevenue] = useState(thirtyDayRevenue)
   const [payments, setPayments] = useState(thirtyDayPayments)
   return (
-    <Page>
+    <>
       <h2>Dashboard</h2>
       <div className={style.number_ctn}>
         <NumberBlock value={'$' + data.lifetime_revenue_usd.toLocaleString()} text='Revenue (lifetime)' />
@@ -117,7 +116,7 @@ export default function Dashboard (): React.ReactElement {
           </div>
         </div>
       </div>
-    </Page>
+    </>
 
   )
 }

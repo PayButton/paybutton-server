@@ -28,6 +28,9 @@ interface Props {
 
 const Chart: NextPage<Props> = ({ data, usd }) => {
 
+  const chartData = data
+  
+
 function cssvar(name) {
     return getComputedStyle(document.body).getPropertyValue(name);
   }
@@ -81,7 +84,7 @@ const options = {
     },
     };
 
-  return <Line options={options} data={data} />
+  return <Line options={options} data={chartData} />
 }
 
 export default Chart

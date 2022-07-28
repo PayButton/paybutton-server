@@ -58,7 +58,7 @@ const MENU_ITEMS = [
   },
 ]
 
-const Sidebar = () => {
+const Sidebar = ({chart, setChart}) => {
   const [menu, setMenu] = useState(false);
   const useMediaQuery = (width) => {
     const [targetReached, setTargetReached] = useState(false);
@@ -116,7 +116,7 @@ const Sidebar = () => {
         </nav>
       </div>
       <div className={style.socialctn}>
-        <ThemeToggle />
+        <ThemeToggle chart={chart} setChart={setChart} />
         <a href='https://t.me/paybutton' target="_blank" rel="noreferrer noopener">
           <Image src={Telegram} alt='telegram' width={20} height={20} />
         </a>
