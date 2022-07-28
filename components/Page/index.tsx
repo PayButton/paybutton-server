@@ -6,8 +6,8 @@ interface PageProps {
   chart: boolean
 }
 
-const Page = ({ children, chart, setChart }: PageProps): FunctionComponent<PageProps> =>
-    <Layout chart={chart} setChart={setChart}>
+const Page = ({ children, chart, setChart, loggedin }: PageProps): FunctionComponent<PageProps> =>
+    <Layout chart={chart} setChart={setChart} loggedin={loggedin}>
       {children}
     </Layout>
 

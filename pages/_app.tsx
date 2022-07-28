@@ -36,7 +36,7 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
   }
   return (
     <ErrorBoundary>
-        <Page chart={chart} setChart={setChart}>
+        <Page chart={chart} setChart={setChart} loggedin={pageProps.userId}>
           <Component {...pageProps} />
         </Page>
     </ErrorBoundary>

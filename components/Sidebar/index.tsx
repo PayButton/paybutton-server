@@ -58,7 +58,7 @@ const MENU_ITEMS = [
   },
 ]
 
-const Sidebar = ({chart, setChart}) => {
+const Sidebar = ({chart, setChart, loggedin}) => {
   const [menu, setMenu] = useState(false);
   const useMediaQuery = (width) => {
     const [targetReached, setTargetReached] = useState(false);
@@ -87,6 +87,8 @@ const Sidebar = ({chart, setChart}) => {
   const isBreakpoint = useMediaQuery(900)
 
   return (
+  <>
+  {loggedin === undefined ? null :
   <>
   {isBreakpoint &&
     <div className={style.topmenu}>
@@ -125,6 +127,8 @@ const Sidebar = ({chart, setChart}) => {
         </a>
       </div>
     </aside>
+    </>
+    }
   </>
 )}
 
