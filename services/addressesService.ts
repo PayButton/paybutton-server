@@ -3,7 +3,7 @@ import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 const addressFullType = Prisma.validator<Prisma.AddressArgs>()({
-  include: { receivedTransactions: true, chain: true }
+  include: { transactions: true, chain: true }
 })
 
 type AddressFullType = Prisma.AddressGetPayload<typeof addressFullType>
@@ -17,7 +17,7 @@ export async function fetchAddressBySubstring (substring: string): Promise<Addre
     },
     include: {
       chain: true,
-      receivedTransactions: true
+      transactions: true
     }
   })
   if (results.length === 0) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)

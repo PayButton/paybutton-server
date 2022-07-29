@@ -5,19 +5,25 @@ import bchdService from 'services/bchdService'
 import { fetchAddressBySubstring } from 'services/addressesService'
 import _ from 'lodash'
 
-async function getReceivedAmount (transaction: BCHTransaction.AsObject, receivingAddress: string): Promise<Prisma.Decimal> {
+export async function getTransactionAmount (transaction: BCHTransaction.AsObject, addressString: string): Promise<Prisma.Decimal> {
   let totalOutput = 0
+  let totalInput = 0
   transaction.outputsList.forEach((output) => {
-    if (receivingAddress.includes(output.address)) {
+    if (addressString.includes(output.address)) {
       totalOutput += output.value
     }
   })
-  return new Prisma.Decimal(totalOutput).dividedBy(1e8)
+  transaction.inputsList.forEach((input) => {
+    if (addressString.includes(input.address)) {
+      totalInput += input.value
+    }
+  })
+  return new Prisma.Decimal(totalOutput).minus(totalInput).dividedBy(1e8)
 }
 
 export async function fetchAddressTransactions (addressString: string): Promise<Transaction[]> {
   const address = await fetchAddressBySubstring(addressString)
-  return _.orderBy(address.receivedTransactions, ['timestamp'], ['desc'])
+  return _.orderBy(address.transactions, ['timestamp'], ['desc'])
 }
 
 export async function base64HashToHex (base64Hash: string): Promise<string> {
@@ -32,12 +38,12 @@ export async function base64HashToHex (base64Hash: string): Promise<string> {
   )
 }
 
-export async function upsertTransaction (transaction: BCHTransaction.AsObject, receivingAddress: string): Promise<Transaction | undefined> {
-  const receivedAmount = await getReceivedAmount(transaction, receivingAddress)
+export async function upsertTransaction (transaction: BCHTransaction.AsObject, addressString: string): Promise<Transaction | undefined> {
+  const receivedAmount = await getTransactionAmount(transaction, addressString)
   if (receivedAmount === new Prisma.Decimal(0)) { // out transactions
     return
   }
-  const address = await fetchAddressBySubstring(receivingAddress)
+  const address = await fetchAddressBySubstring(addressString)
   const hash = await base64HashToHex(transaction.hash as string)
   const transactionParams = {
     hash: hash,

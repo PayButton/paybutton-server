@@ -24,3 +24,20 @@ describe('Create services', () => {
     expect(result).toEqual('ed89a510deaf9dae6023238878e72c78d91abc5b53fa205c9de6e17b0e8b18e3')
   })
 })
+
+describe('Amount transactioned', () => {
+  it('Negative transaction', async () => {
+    const amount = await transactionsService.getTransactionAmount(
+      mockedGrpc.transaction2.toObject(),
+      mockedAddress.address
+    )
+    expect(amount.toString()).toBe('-0.00000546')
+  })
+  it('Positive transaction', async () => {
+    const amount = await transactionsService.getTransactionAmount(
+      mockedGrpc.transaction1.toObject(),
+      mockedAddress.address
+    )
+    expect(amount.toString()).toBe('4.31247724')
+  })
+})

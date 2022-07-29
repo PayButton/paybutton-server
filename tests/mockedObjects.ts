@@ -180,7 +180,36 @@ export const mockedGrpc = {
     confirmations: 60,
     blockHeight: 741620,
     blockHash: 'jzSPV4kkI3x5Fdoow/ei3f7Zit+oGMYCAAAAAAAAAAA=',
-    inputsList: [],
+    inputsList: [
+      {
+        index: 0,
+        outpoint: { hash: 'NTkmyHCk82XbV43ew+Ev8mSN6hSF1SNPv2q+9MEVQNw=', index: 2 },
+        signatureScript: 'RzBEAiATvPHhB2XZSDBh4qPKGbpZnthiP7b6F5nNq0jl9e9segIgQb/p7YKnBcAkXrn1ePKRQOCb3CS2TqjLl55Q46xLA7FBIQI+0YnB1MWonyW6U8ydXQbD46v80yMEO61nvbuLGgeMlA==',
+        sequence: 4294967295,
+        value: 5179951,
+        previousScript: 'dqkUsDxLgAuwV19sDxHhVVQcwGYaj5qIrA==',
+        address: 'qzcrcjuqpwc9whmvpug7z425rnqxvx50ngl60rrjst',
+        slpToken: undefined
+      },
+      {
+        index: 1,
+        outpoint: { hash: 'cnPvSV4O12UwKBSyPX9RoD+xem14XBlcUFhklAowLjE=', index: 1 },
+        signatureScript: 'RzBEAiBVcKX1SZ08kwIvKt+CJCFcq2AMPuJh9xNoZPbFCBtO8AIgDcTg6dy/l8+Se0hD5Fb6zXhaVLZi9JyShl3qlChlCF5BIQNVw6/pYXrkj4YXjrHuzGDWysHPUCvUVptjbOmlkVmamA==',
+        sequence: 4294967295,
+        value: 546,
+        previousScript: 'dqkUi4A+rsJZAKFsCtIAF8coYnYGLEqIrA==',
+        address: 'qz9cq04wcfvspgtvptfqq9789p38vp3vfgt3y66gue',
+        slpToken: {
+          tokenId: 'MS4wCpRkWFBcGVx4bXqxP6BRfz2yFCgwZdcOXknvc3I=',
+          amount: '1',
+          isMintBaton: false,
+          address: 'qz9cq04wcfvspgtvptfqq9789p38vp3vfg820p0gz8',
+          decimals: 0,
+          slpAction: 10,
+          tokenType: 65
+        }
+      }
+    ],
     outputsList: [{
       index: 0,
       value: 431247724,
@@ -206,7 +235,36 @@ export const mockedGrpc = {
     confirmations: 61,
     blockHeight: 741619,
     blockHash: 'A6kjJsl4gaVrY0Z15k0SoRzfKv0Fis8EAAAAAAAAAAA=',
-    inputsList: [],
+    inputsList: [
+      {
+        index: 0,
+        outpoint: { hash: 'NTkmyHCk82XbV43ew+Ev8mSN6hSF1SNPv2q+9MEVQNw=', index: 2 },
+        signatureScript: 'RzBEAiATvPHhB2XZSDBh4qPKGbpZnthiP7b6F5nNq0jl9e9segIgQb/p7YKnBcAkXrn1ePKRQOCb3CS2TqjLl55Q46xLA7FBIQI+0YnB1MWonyW6U8ydXQbD46v80yMEO61nvbuLGgeMlA==',
+        sequence: 4294967295,
+        value: 5179951,
+        previousScript: 'dqkUsDxLgAuwV19sDxHhVVQcwGYaj5qIrA==',
+        address: 'qzcrcjuqpwc9whmvpug7z425rnqxvx50ngl60rrjst',
+        slpToken: undefined
+      },
+      {
+        index: 1,
+        outpoint: { hash: 'cnPvSV4O12UwKBSyPX9RoD+xem14XBlcUFhklAowLjE=', index: 1 },
+        signatureScript: 'RzBEAiBVcKX1SZ08kwIvKt+CJCFcq2AMPuJh9xNoZPbFCBtO8AIgDcTg6dy/l8+Se0hD5Fb6zXhaVLZi9JyShl3qlChlCF5BIQNVw6/pYXrkj4YXjrHuzGDWysHPUCvUVptjbOmlkVmamA==',
+        sequence: 4294967295,
+        value: 546,
+        previousScript: 'dqkUi4A+rsJZAKFsCtIAF8coYnYGLEqIrA==',
+        address: mockedAddress.address,
+        slpToken: {
+          tokenId: 'MS4wCpRkWFBcGVx4bXqxP6BRfz2yFCgwZdcOXknvc3I=',
+          amount: '1',
+          isMintBaton: false,
+          address: 'qz9cq04wcfvspgtvptfqq9789p38vp3vfg820p0gz8',
+          decimals: 0,
+          slpAction: 10,
+          tokenType: 65
+        }
+      }
+    ],
     outputsList: []
   }),
   getAddressTransactions: (_: object) => {
