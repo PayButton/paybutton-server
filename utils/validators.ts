@@ -10,7 +10,7 @@ import xecaddr from 'xecaddrjs'
  * - 'validate', if the function only validates the input and returns `true` or `false`.
 --------------------------------------------------------------------------------------- */
 
-const getAddressPrefix = function (addressString: string): string {
+export const getAddressPrefix = function (addressString: string): string {
   const format = xecaddr.detectAddressFormat(addressString)
   const network = xecaddr.detectAddressNetwork(addressString)
   if (format === xecaddr.Format.Xecaddr) {
