@@ -26,14 +26,27 @@ export async function fetchAddressTransactions (addressString: string): Promise<
   return _.orderBy(address.transactions, ['timestamp'], ['desc'])
 }
 
+export async function base64HashToHex (base64Hash: string): Promise<string> {
+  return (
+    atob(base64Hash)
+      .split('')
+      .reverse()
+      .map(function (aChar) {
+        return ('0' + aChar.charCodeAt(0).toString(16)).slice(-2)
+      })
+      .join('')
+  )
+}
+
 export async function upsertTransaction (transaction: BCHTransaction.AsObject, addressString: string): Promise<Transaction | undefined> {
   const receivedAmount = await getTransactionAmount(transaction, addressString)
   if (receivedAmount === new Prisma.Decimal(0)) { // out transactions
     return
   }
   const address = await fetchAddressBySubstring(addressString)
+  const hash = await base64HashToHex(transaction.hash as string)
   const transactionParams = {
-    hash: transaction.hash as string,
+    hash: hash,
     amount: receivedAmount,
     addressId: address.id,
     timestamp: transaction.timestamp

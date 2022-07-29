@@ -16,6 +16,13 @@ describe('Create services', () => {
     )
     expect(result).toEqual(mockedTransaction)
   })
+
+  it('Convert hash from base64 to hex', async () => {
+    const result = await transactionsService.base64HashToHex(
+      '4xiLDnvh5p1cIPpTW7wa2Xgs53iIIyNgrp2v3hClie0='
+    )
+    expect(result).toEqual('ed89a510deaf9dae6023238878e72c78d91abc5b53fa205c9de6e17b0e8b18e3')
+  })
 })
 
 describe('Amount transactioned', () => {
