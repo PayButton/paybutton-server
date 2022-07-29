@@ -121,7 +121,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
   const [revenue, setRevenue] = useState(thirtyDayRevenue)
   const [payments, setPayments] = useState(thirtyDayPayments)
   return (
-    <>
+    <ThirdPartyEmailPasswordAuthNoSSR>
       <h2>Dashboard</h2>
       <div className={style.number_ctn}>
         <NumberBlock value={'$' + data.lifetime_revenue_usd.toLocaleString()} text='Revenue (lifetime)' />
@@ -153,7 +153,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
           </div>
         </div>
       </div>
-    </>
+    </ThirdPartyEmailPasswordAuthNoSSR>
 
   )
 }
