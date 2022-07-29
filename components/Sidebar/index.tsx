@@ -12,8 +12,8 @@ import ButtonsIcon from 'assets/button-icon.png'
 import Wallets from 'assets/wallet-icon.png'
 import Networks from 'assets/network-icon.png'
 import Account from 'assets/user-icon.png'
-import Settings from 'assets/settings-icon.png'
-import Help from 'assets/help-icon.png'
+// import Settings from 'assets/settings-icon.png'
+// import Help from 'assets/help-icon.png'
 import Logout from 'assets/logout-icon.png'
 const ThemeToggle = dynamic(() => import("./themetoggle"), {
   ssr: false,
@@ -44,14 +44,14 @@ const MENU_ITEMS = [
     name:'Account',
     image: Account
   },
-  {
-    name:'Settings',
-    image: Settings
-  },
-  {
-    name:'Help',
-    image: Help
-  },
+  // {
+  //   name:'Settings',
+  //   image: Settings
+  // },
+  // {
+  //   name:'Help',
+  //   image: Help
+  // },
   {
     name:'Logout',
     image: Logout
