@@ -14,8 +14,9 @@ body {
   color: var(--primary-text-color);
 }
 
-input {
+input, textarea {
   background: var(--secondary-bg-color);
+  color: var(--primary-text-color);
 }
 
 textarea {
@@ -30,4 +31,17 @@ textarea {
 h2 {
   font-size: 30px;
   margin: 0;
+}
+
+body[data-theme="dark"] input, textarea {
+  border-color: var(--secondary-bg-color)
+}
+
+button {
+  background: var(--accent-color);
+  color: var(--primary-text-color);
+}
+
+body[data-theme="dark"] button {
+  color: var(--primary-bg-color);
 }
