@@ -8,7 +8,7 @@ interface LayoutProps {
 
 const Layout = (props: LayoutProps): FunctionComponent<LayoutProps> =>
   <div className={style.layout}>
-    <Sidebar />
+    <Sidebar chart={props.chart} setChart={props.setChart} loggedin={props.loggedin} />
     <main>
       {props.children}
     </main>
