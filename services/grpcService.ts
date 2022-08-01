@@ -30,7 +30,7 @@ export const getClientForChainSlug = (chainSlug: string): GrpcClient => {
   } else if (chainSlug === 'bitcoincash' ) {
     return grpcBCH
   } else {
-    throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
+    throw new Error(RESPONSE_MESSAGES.INVALID_CHAIN_SLUG_400.message)
   }
 }
 
