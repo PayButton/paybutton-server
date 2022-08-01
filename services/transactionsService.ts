@@ -1,9 +1,13 @@
 import { Transaction as BCHTransaction } from 'grpc-bchrpc-node'
 import prisma from 'prisma/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
-import bchdService from 'services/bchdService'
+import grpcService from 'services/grpcService'
+import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring } from 'services/addressesService'
 import _ from 'lodash'
+import { RESPONSE_MESSAGES } from 'constants/index'
+
+const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
 
 export async function getTransactionAmount (transaction: BCHTransaction.AsObject, addressString: string): Promise<Prisma.Decimal> {
   let totalOutput = 0
@@ -60,8 +64,12 @@ export async function upsertTransaction (transaction: BCHTransaction.AsObject, a
   })
 }
 
-export async function syncTransactions (address: string): Promise<void> {
-  const transactions = await bchdService.getAddress(address)
+export async function syncTransactions (addressString: string): Promise<void> {
+  const address = parseAddress(addressString)
+  if (address === '' || address === undefined) {
+    throw new Error(ADDRESS_NOT_PROVIDED_400.message)
+  }
+  const transactions = await grpcService.getAddress(address)
   for (const t of transactions.confirmedTransactionsList) {
     void upsertTransaction(t, address)
   }
