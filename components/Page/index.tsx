@@ -1,19 +1,14 @@
 import React, { FunctionComponent } from 'react'
-import style from './page.module.css'
+import Layout from 'components/Layout'
 
 interface PageProps {
-  header: React.ReactNode
   children: React.ReactNode
+  chart: boolean
 }
 
-const Page = ({ header, children }: PageProps): FunctionComponent<PageProps> =>
-  <>
-    <header className={style.header}>
-      {header}
-    </header>
-    <article className={style.article}>
+const Page = ({ children, chart, setChart, loggedin }: PageProps): FunctionComponent<PageProps> =>
+    <Layout chart={chart} setChart={setChart} loggedin={loggedin}>
       {children}
-    </article>
-  </>
+    </Layout>
 
 export default Page

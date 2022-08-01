@@ -1,13 +1,30 @@
 .layout {
   height: 100%;
-  display: grid;
-  grid-template-columns: 0.2fr 1fr;
+  /* display: grid;
+  grid-template-columns: 220px 1fr;
   grid-template-rows: 1fr;
-  grid-column-gap: 2rem;
+  grid-column-gap: 25px;
   grid-row-gap: 0px;
+  padding-right: 25px; */
+  display: flex;
+  position: relative;
 }
 
-.layout a, .layout a:active {
+.layout main {
+  flex-grow: 2;
+  padding: 25px;
+}
+
+.layout a,
+.layout a:active {
   color: inherit;
   text-decoration: none;
+}
+
+@media (max-width: 900px) {
+
+  .layout main {
+    width: 100%;
+    padding: 65px 15px 15px 15px;
+  }
 }

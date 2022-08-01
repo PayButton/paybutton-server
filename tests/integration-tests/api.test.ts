@@ -7,21 +7,21 @@ import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
 import {
   exampleAddresses,
   testEndpoint,
-  clearPaybuttons,
+  clearPaybuttonsAndAddresses,
   createPaybuttonForUser,
   countPaybuttons,
-  countPaybuttonAddresses
+  countAddresses
 } from 'tests/utils'
 
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 afterAll(async () => {
-  await clearPaybuttons()
+  await clearPaybuttonsAndAddresses()
 })
 
 describe('POST /api/paybutton/', () => {
   beforeAll(async () => {
-    await clearPaybuttons()
+    await clearPaybuttonsAndAddresses()
   })
   const baseRequestOptions: RequestOptions = {
     method: 'POST' as RequestMethod,
@@ -46,16 +46,21 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.uuid).not.toBeNull()
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          address: `ecash:${exampleAddresses.ecash}`
-        }),
-        expect.objectContaining({
-          address: `bitcoincash:${exampleAddresses.bitcoincash}`
-        })
+        {
+          address: expect.objectContaining({
+            address: `ecash:${exampleAddresses.ecash}`
+          })
+        },
+        {
+          address:
+          expect.objectContaining({
+            address: `bitcoincash:${exampleAddresses.bitcoincash}`
+          })
+        }
       ])
     )
     void expect(countPaybuttons()).resolves.toBe(1)
-    void expect(countPaybuttonAddresses()).resolves.toBe(2)
+    void expect(countAddresses()).resolves.toBe(2)
   })
 
   it('Create a paybutton empty JSON for buttonData', async () => {
@@ -72,9 +77,11 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.buttonData).toBe('{}')
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          address: `ectest:${exampleAddresses.ectest}`
-        })
+        {
+          address: expect.objectContaining({
+            address: `ectest:${exampleAddresses.ectest}`
+          })
+        }
       ])
     )
   })
@@ -158,7 +165,7 @@ describe('GET /api/paybuttons/', () => {
   const userA = 'test-u-id'
   const userB = 'test-other-u-id'
   beforeAll(async () => {
-    await clearPaybuttons()
+    await clearPaybuttonsAndAddresses()
     for (let i = 0; i < 4; i++) {
       const userId = i === 3 ? userB : userA
       await createPaybuttonForUser(userId)
@@ -191,12 +198,16 @@ describe('GET /api/paybuttons/', () => {
     expect(responseData.length).toBe(1)
     expect(responseData[0].addresses).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          address: expect.any(String)
-        }),
-        expect.objectContaining({
-          address: expect.any(String)
-        })
+        {
+          address: expect.objectContaining({
+            address: expect.any(String)
+          })
+        },
+        {
+          address: expect.objectContaining({
+            address: expect.any(String)
+          })
+        }
       ])
     )
     expect(responseData[0]).toHaveProperty('providerUserId')
@@ -242,7 +253,7 @@ describe('GET /api/paybutton/[id]', () => {
   const userB = 'test-other-u-id'
   let createdPaybuttonsIds: number[]
   beforeAll(async () => {
-    await clearPaybuttons()
+    await clearPaybuttonsAndAddresses()
     createdPaybuttonsIds = []
     for (let i = 0; i < 4; i++) {
       const userId = i === 3 ? userB : userA
@@ -264,12 +275,16 @@ describe('GET /api/paybutton/[id]', () => {
       expect(res.statusCode).toBe(200)
       expect(responseData.addresses).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({
-            address: expect.any(String)
-          }),
-          expect.objectContaining({
-            address: expect.any(String)
-          })
+          {
+            address: expect.objectContaining({
+              address: expect.any(String)
+            })
+          },
+          {
+            address: expect.objectContaining({
+              address: expect.any(String)
+            })
+          }
         ])
       )
       expect(responseData).toHaveProperty('providerUserId')

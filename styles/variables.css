@@ -1,5 +1,18 @@
-:root {
-  --primary-bg-color: #1b1b1b;
-  --secondary-bg-color: #272727;
-  --primary-text-color: #fff;
+body,
+body[data-theme="light"] {
+  --primary-bg-color: #ececec;
+  --secondary-bg-color: #ffffff;
+  --primary-text-color: #231f20;
+  --secondary-text-color: #7f7f7f;
+  --accent-color: #669cfe;
+  --chart-line-color: #231f201f;
+}
+
+body[data-theme="dark"] {
+  --primary-bg-color: #231f20;
+  --secondary-bg-color: #2f2f2f;
+  --primary-text-color: #ffffff;
+  --secondary-text-color: #cacaca;
+  --accent-color: #669cfe;
+  --chart-line-color: #87858635;
 }

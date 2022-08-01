@@ -1,0 +1,22 @@
+name: Run Test Suite on Master
+on:
+  push:
+    branches:
+      - master
+jobs:
+  test:
+    name: Unit and Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install Dependencies
+        run: yarn
+      - name: Run unit tests
+        run: make test-unit
+      - name: Spin up required database containers
+        run: docker-compose up -d db users-service
+      - name: Run integration tests
+        run: make test-integration
