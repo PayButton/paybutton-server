@@ -7,7 +7,7 @@ import {
   GetAddressUnspentOutputsResponse,
 } from 'grpc-bchrpc-node';
 
-let grpc = new GrpcClient({ url: process.env.GRPC_NODE_URL });
+let grpc = new GrpcClient({ url: process.env.GRPC_BCH_NODE_URL });
 
 export interface OutputsList {
   outpoint: object;
