@@ -1,6 +1,6 @@
-import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN } from 'constants/index'
+import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN } from '../constants/index'
 import { Prisma } from '@prisma/client'
-import { CreatePaybuttonInput } from 'services/paybuttonsService'
+import { CreatePaybuttonInput } from '../services/paybuttonsService'
 import xecaddr from 'xecaddrjs'
 
 /* The functions exported here should validate the data structure / syntax of an
