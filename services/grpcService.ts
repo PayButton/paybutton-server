@@ -11,13 +11,23 @@ import { getAddressPrefix } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 let grpcXEC = new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL });
-let grpcBCH = new GrpcClient({ url: process.env.GRPC_NODE_URL });
+let grpcBCH = new GrpcClient({ url: process.env.GRPC_BCH_NODE_URL });
 
 export const getClientForAddress = (addressString: string): GrpcClient => {
   const prefix = getAddressPrefix(addressString)
   if (prefix === 'ecash') {
     return grpcXEC
   } else if (prefix === 'bitcoincash' ) {
+    return grpcBCH
+  } else {
+    throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
+  }
+}
+
+export const getClientForChainSlug = (chainSlug: string): GrpcClient => {
+  if (chainSlug === 'ecash') {
+    return grpcXEC
+  } else if (chainSlug === 'bitcoincash' ) {
     return grpcBCH
   } else {
     throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
@@ -43,7 +53,8 @@ export const getAddress = async (
 export const getUtxos = async (
   address: string
 ): Promise<GetAddressUnspentOutputsResponse.AsObject> => {
-  const res = await (await grpc.getAddressUtxos({ address })).toObject();
+  const client = getClientForAddress(address)
+  const res = (await client.getAddressUtxos({ address })).toObject();
   return res;
 };
 
@@ -51,7 +62,7 @@ export const getBCHBalance = async (address: string): Promise<number> => {
   const { outputsList } = await getUtxos(address);
 
   let satoshis: number = 0;
-  outputsList.map((x) => {
+  outputsList.forEach((x) => {
     satoshis += x.value;
   });
 
@@ -59,20 +70,24 @@ export const getBCHBalance = async (address: string): Promise<number> => {
 };
 
 export const getTransactionDetails = async (
-  hash: string
+  hash: string,
+  chainSlug: string,
 ): Promise<GetTransactionResponse.AsObject> => {
-  const res = await (
-    await grpc.getTransaction({ hash, reversedHashOrder: true })
+  const client = getClientForChainSlug(chainSlug)
+  const res = (
+    await client.getTransaction({ hash, reversedHashOrder: true })
   ).toObject();
   return res;
 };
 
 export const Subscribe = async (
   addresses: string[],
-  onTransactionNotification: (txn: Transaction.AsObject) => any
-) => {
-  const createTxnStream = async () => {
-    const txnStream = await grpc.subscribeTransactions({
+  onTransactionNotification: (txn: Transaction.AsObject) => any,
+  chainSlug: string,
+): Promise<void> => {
+  const createTxnStream = async (): Promise<void> => {
+    const client = getClientForChainSlug(chainSlug)
+    const txnStream = await client.subscribeTransactions({
       includeMempoolAcceptance: true,
       includeBlockAcceptance: false,
       includeSerializedTxn: false,
