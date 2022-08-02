@@ -76,10 +76,10 @@ export const parseError = function (error: Error): Error {
 }
 
 export interface POSTParameters {
+  userId?: string
   name?: string
   buttonData?: string
   addresses?: string
-  userId?: string
 }
 
 export const parsePaybuttonPOSTRequest = function (params: POSTParameters): CreatePaybuttonInput {
