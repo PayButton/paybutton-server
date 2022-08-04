@@ -1,11 +1,11 @@
-import { Chain } from '@prisma/client'
+import { Network } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 
-export async function getChainFromSlug (slug: string): Promise<Chain | null> {
+export async function getNetworkFromSlug (slug: string): Promise<Network | null> {
   return await prisma.network.findUnique({ where: { slug: slug } })
 }
 
-export async function getAllChainSlugs (): Promise<string[] | null> {
+export async function getAllNetworkSlugs (): Promise<string[] | null> {
   const networks = await prisma.network.findMany({
     select: {
       slug: true

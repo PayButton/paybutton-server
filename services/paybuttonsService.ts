@@ -15,7 +15,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
     values.prefixedAddressList.map(
       async (addressWithPrefix) => {
         const prefix = addressWithPrefix.split(':')[0].toLowerCase()
-        const network = await networkService.getChainFromSlug(prefix)
+        const network = await networkService.getNetworkFromSlug(prefix)
         if (network === null) throw new Error(RESPONSE_MESSAGES.INVALID_CHAIN_SLUG_400.message)
         return {
           address: addressWithPrefix.toLowerCase(),

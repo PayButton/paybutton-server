@@ -15,7 +15,7 @@ model Address {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   networkId     Int
-  network       Chain     @relation(fields: [networkId], references: [id], onUpdate: Restrict)
+  network       Network     @relation(fields: [networkId], references: [id], onUpdate: Restrict)
   paybuttons  AddressesOnButtons[]
   transactions Transaction[]
 
@@ -46,7 +46,7 @@ model AddressesOnButtons {
     @@id([paybuttonId, addressId])
 }
 
-model Chain {
+model Network {
   id                 Int                @id @default(autoincrement())
   slug               String             @unique @db.VarChar(255)
   title              String             @db.VarChar(255)

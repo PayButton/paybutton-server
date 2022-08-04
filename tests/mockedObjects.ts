@@ -104,8 +104,8 @@ export const mockedPaybuttonList = [
   }
 ]
 
-// Chain
-export const mockedChain = {
+// Network
+export const mockedNetwork = {
   id: 1,
   slug: 'bitcoincash',
   ticker: 'bch',

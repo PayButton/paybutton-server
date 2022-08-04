@@ -1,7 +1,7 @@
 import prisma from 'prisma/clientInstance'
 import * as paybuttonsService from 'services/paybuttonsService'
 import { prismaMock } from 'prisma/mockedClient'
-import { mockedPaybutton, mockedPaybuttonList, mockedChain } from '../mockedObjects'
+import { mockedPaybutton, mockedPaybuttonList, mockedNetwork } from '../mockedObjects'
 
 describe('Fetch services', () => {
   it('Should fetch paybutton by id', async () => {
@@ -26,7 +26,7 @@ describe('Create services', () => {
     prismaMock.paybutton.create.mockResolvedValue(mockedPaybutton)
     prisma.paybutton.create = prismaMock.paybutton.create
 
-    prismaMock.network.findUnique.mockResolvedValue(mockedChain)
+    prismaMock.network.findUnique.mockResolvedValue(mockedNetwork)
     prisma.network.findUnique = prismaMock.network.findUnique
     const createPaybuttonInput = {
       userId: 'mocked-uid',
