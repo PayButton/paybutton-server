@@ -1,4 +1,4 @@
-export const chains = [
+export const networks = [
   {
     slug: 'bitcoincash',
     ticker: 'bch',

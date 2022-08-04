@@ -14,12 +14,12 @@ model Address {
   address     String    @unique @db.VarChar(255)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  chainId     Int
-  chain       Chain     @relation(fields: [chainId], references: [id], onUpdate: Restrict)
+  networkId     Int
+  network       Chain     @relation(fields: [networkId], references: [id], onUpdate: Restrict)
   paybuttons  AddressesOnButtons[]
   transactions Transaction[]
 
-  @@index([chainId], map: "Address_chainId_fkey")
+  @@index([networkId], map: "Address_networkId_fkey")
 }
 
 model Paybutton {

@@ -24,7 +24,7 @@ export const mockedPaybutton = {
       address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
       createdAt: new Date('2022-05-27T15:18:42.000Z'),
       updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-      chainId: 1,
+      networkId: 1,
       paybuttonId: 1
     },
     {
@@ -32,7 +32,7 @@ export const mockedPaybutton = {
       address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
       createdAt: new Date('2022-05-27T15:18:42.000Z'),
       updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-      chainId: 2,
+      networkId: 2,
       paybuttonId: 1
     }
   ]
@@ -43,7 +43,7 @@ export const mockedAddress = {
   address: 'qpuzcemdv2hhng4fpyjxzfp0axsyltrghutla9rfnm',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-  chainId: 1,
+  networkId: 1,
   paybuttonId: 1
 }
 
@@ -62,7 +62,7 @@ export const mockedPaybuttonList = [
         address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-        chainId: 1,
+        networkId: 1,
         paybuttonId: 1
       },
       {
@@ -70,7 +70,7 @@ export const mockedPaybuttonList = [
         address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-        chainId: 2,
+        networkId: 2,
         paybuttonId: 1
       }
     ]
@@ -89,7 +89,7 @@ export const mockedPaybuttonList = [
         address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-        chainId: 1,
+        networkId: 1,
         paybuttonId: 2
       },
       {
@@ -97,7 +97,7 @@ export const mockedPaybuttonList = [
         address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-        chainId: 2,
+        networkId: 2,
         paybuttonId: 2
       }
     ]

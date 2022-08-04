@@ -26,12 +26,12 @@ describe('Create services', () => {
     prismaMock.paybutton.create.mockResolvedValue(mockedPaybutton)
     prisma.paybutton.create = prismaMock.paybutton.create
 
-    prismaMock.chain.findUnique.mockResolvedValue(mockedChain)
-    prisma.chain.findUnique = prismaMock.chain.findUnique
+    prismaMock.network.findUnique.mockResolvedValue(mockedChain)
+    prisma.network.findUnique = prismaMock.network.findUnique
     const createPaybuttonInput = {
       userId: 'mocked-uid',
       name: 'mocked-name',
-      prefixedAddressList: ['mockedchain:mockaddress'],
+      prefixedAddressList: ['mockednetwork:mockaddress'],
       buttonData: ''
     }
     const result = await paybuttonsService.createPaybutton(createPaybuttonInput)
