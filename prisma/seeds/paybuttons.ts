@@ -19,11 +19,11 @@ export const paybuttons = [
 export const addresses = [
   {
     address: 'ecash:qrmm7edwuj4jf7tnvygjyztyy0a0qxvl7quss2vxek',
-    chainId: 1
+    networkId: 1
   },
   {
     address: 'bitcoincash:qzqh7ej2vz26a9xaxq7capzfwgxt5gem9g8rvfxc5t',
-    chainId: 1
+    networkId: 1
   }
 ]
 
