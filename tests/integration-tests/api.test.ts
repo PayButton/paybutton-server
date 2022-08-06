@@ -15,6 +15,14 @@ import {
 
 import { RESPONSE_MESSAGES } from 'constants/index'
 
+jest.mock('../../utils/setSession', () => {
+  return {
+    setSession: (req: any, res: any) => {
+      req.session = { userId: 'test-u-id' }
+    }
+  }
+})
+
 afterAll(async () => {
   await clearPaybuttonsAndAddresses()
 })
@@ -29,7 +37,6 @@ describe('POST /api/paybutton/', () => {
       'Content-Type': 'application/json'
     },
     body: {
-      userId: 'test-u-id',
       addresses: `${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
       name: 'test-paybutton',
       buttonData: '{"somefield":"somevalue"}'
@@ -65,7 +72,6 @@ describe('POST /api/paybutton/', () => {
 
   it('Create a paybutton empty JSON for buttonData', async () => {
     baseRequestOptions.body = {
-      userId: 'test-u-id',
       name: 'test-paybutton-no-button-data',
       addresses: `ectest:${exampleAddresses.ectest}`
     }
@@ -84,18 +90,6 @@ describe('POST /api/paybutton/', () => {
         }
       ])
     )
-  })
-
-  it('Fail without userId', async () => {
-    baseRequestOptions.body = {
-      userId: '',
-      name: 'test-paybutton',
-      addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
-    }
-    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
-    expect(res.statusCode).toBe(400)
-    const responseData = res._getJSONData()
-    expect(responseData.message).toBe(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   })
 
   it('Should fail without name', async () => {

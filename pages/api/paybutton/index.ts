@@ -1,11 +1,13 @@
-import { NextApiRequest, NextApiResponse } from 'next'
 import * as paybuttonsService from 'services/paybuttonsService'
 import { parseError, parsePaybuttonPOSTRequest } from 'utils/validators'
+import { setSession } from 'utils/setSession'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
-export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
+export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'POST') {
+    await setSession(req, res)
     const values = req.body
+    values.userId = req.session.userId
     try {
       const createPaybuttonInput = parsePaybuttonPOSTRequest(values)
       const paybutton = await paybuttonsService.createPaybutton(createPaybuttonInput)

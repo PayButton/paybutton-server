@@ -23,10 +23,6 @@ export default function PaybuttonForm ({ onSubmit }: IProps): ReactElement {
       <textarea {...register('addresses')} id='addresses' name='addresses' required />
       <br />
 
-      <label htmlFor='userId'>userId</label> <br />
-      <input {...register('userId')} type='text' id='userId' name='userId' required />
-
-      <br />
       <button type='submit'>Submit</button>
     </form>
   )
