@@ -5,12 +5,12 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   if (req.method === 'GET') {
     const transactionId = req.query.transactionId as string
-    const chainSlug = req.query.chainSlug as string
+    const networkSlug = req.query.networkSlug as string
     try {
       if (transactionId === '' || transactionId === undefined) {
         throw new Error(RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.message)
       }
-      const response = await getTransactionDetails(transactionId, chainSlug)
+      const response = await getTransactionDetails(transactionId, networkSlug)
       res.status(200).json(response)
     } catch (err: any) {
       switch (err.message) {

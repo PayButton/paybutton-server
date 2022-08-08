@@ -43,7 +43,7 @@ export const mockedBCHAddress = {
   address: 'bitcoincash:qzqh7ej2vz26a9xaxq7capzfwgxt5gem9g8rvfxc5t',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-  chainId: 1,
+  networkId: 2,
   paybuttonId: 1
 }
 

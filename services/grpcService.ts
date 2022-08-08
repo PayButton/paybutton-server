@@ -24,13 +24,13 @@ export const getClientForAddress = (addressString: string): GrpcClient => {
   }
 }
 
-export const getClientForChainSlug = (chainSlug: string): GrpcClient => {
-  if (chainSlug === 'ecash') {
+export const getClientForNetworkSlug = (networkSlug: string): GrpcClient => {
+  if (networkSlug === 'ecash') {
     return grpcXEC
-  } else if (chainSlug === 'bitcoincash' ) {
+  } else if (networkSlug === 'bitcoincash' ) {
     return grpcBCH
   } else {
-    throw new Error(RESPONSE_MESSAGES.INVALID_CHAIN_SLUG_400.message)
+    throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
   }
 }
 
@@ -71,9 +71,9 @@ export const getBCHBalance = async (address: string): Promise<number> => {
 
 export const getTransactionDetails = async (
   hash: string,
-  chainSlug: string,
+  networkSlug: string,
 ): Promise<GetTransactionResponse.AsObject> => {
-  const client = getClientForChainSlug(chainSlug)
+  const client = getClientForNetworkSlug(networkSlug)
   const res = (
     await client.getTransaction({ hash, reversedHashOrder: true })
   ).toObject();
@@ -83,10 +83,10 @@ export const getTransactionDetails = async (
 export const Subscribe = async (
   addresses: string[],
   onTransactionNotification: (txn: Transaction.AsObject) => any,
-  chainSlug: string,
+  networkSlug: string,
 ): Promise<void> => {
   const createTxnStream = async (): Promise<void> => {
-    const client = getClientForChainSlug(chainSlug)
+    const client = getClientForNetworkSlug(networkSlug)
     const txnStream = await client.subscribeTransactions({
       includeMempoolAcceptance: true,
       includeBlockAcceptance: false,
