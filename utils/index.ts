@@ -1,6 +1,6 @@
 import xecaddr from 'xecaddrjs'
+import { Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES } from '../constants/index'
-
 
 export const getAddressPrefix = function (addressString: string): string {
   try {
@@ -25,3 +25,11 @@ export const getAddressPrefix = function (addressString: string): string {
   throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
 }
 
+export async function satoshisToUnit (satoshis: Prisma.Decimal, networkFormat: string): Promise<Prisma.Decimal> {
+  if (networkFormat === xecaddr.Format.Xecaddr) {
+    return satoshis.dividedBy(1e2)
+  } else if (networkFormat === xecaddr.Format.Cashaddr) {
+    return satoshis.dividedBy(1e8)
+  }
+  throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
+}

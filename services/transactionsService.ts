@@ -3,9 +3,11 @@ import prisma from 'prisma/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
 import grpcService from 'services/grpcService'
 import { parseAddress } from 'utils/validators'
+import { satoshisToUnit } from 'utils/index'
 import { fetchAddressBySubstring } from 'services/addressesService'
 import _ from 'lodash'
 import { RESPONSE_MESSAGES } from 'constants/index'
+import xecaddr from 'xecaddrjs'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
 
@@ -22,7 +24,11 @@ export async function getTransactionAmount (transaction: BCHTransaction.AsObject
       totalInput += input.value
     }
   })
-  return new Prisma.Decimal(totalOutput).minus(totalInput).dividedBy(1e8)
+  const satoshis = new Prisma.Decimal(totalOutput).minus(totalInput)
+  return await satoshisToUnit(
+    satoshis,
+    xecaddr.detectAddressFormat(addressString)
+  )
 }
 
 export async function fetchAddressTransactions (addressString: string): Promise<Transaction[]> {
