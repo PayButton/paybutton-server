@@ -3,7 +3,7 @@ import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 const addressFullType = Prisma.validator<Prisma.AddressArgs>()({
-  include: { transactions: true, chain: true }
+  include: { transactions: true, network: true }
 })
 
 type AddressFullType = Prisma.AddressGetPayload<typeof addressFullType>
@@ -16,7 +16,7 @@ export async function fetchAddressBySubstring (substring: string): Promise<Addre
       }
     },
     include: {
-      chain: true,
+      network: true,
       transactions: true
     }
   })

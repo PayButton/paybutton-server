@@ -1,4 +1,4 @@
-import * as chainService from 'services/chainsService'
+import * as networkService from 'services/networksService'
 import { Paybutton } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
@@ -15,11 +15,11 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
     values.prefixedAddressList.map(
       async (addressWithPrefix) => {
         const prefix = addressWithPrefix.split(':')[0].toLowerCase()
-        const chain = await chainService.getChainFromSlug(prefix)
-        if (chain === null) throw new Error(RESPONSE_MESSAGES.INVALID_CHAIN_SLUG_400.message)
+        const network = await networkService.getNetworkFromSlug(prefix)
+        if (network === null) throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
         return {
           address: addressWithPrefix.toLowerCase(),
-          chainId: Number(chain.id)
+          networkId: Number(network.id)
         }
       })
   )
