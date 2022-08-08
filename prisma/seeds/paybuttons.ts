@@ -23,7 +23,7 @@ export const addresses = [
   },
   {
     address: 'bitcoincash:qzqh7ej2vz26a9xaxq7capzfwgxt5gem9g8rvfxc5t',
-    networkId: 1
+    networkId: 2
   }
 ]
 
