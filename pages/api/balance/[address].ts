@@ -1,5 +1,5 @@
 import { NextApiResponse, NextApiRequest } from 'next'
-import { getBCHBalance } from 'services/bchdService'
+import { getBCHBalance } from 'services/grpcService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { parseAddress } from 'utils/validators'
 import Cors from 'cors'
