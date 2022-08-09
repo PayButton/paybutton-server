@@ -32,7 +32,7 @@ const getAddressPrefix = function (addressString: string): string {
 /* Validates the address and adds a prefix to it, if it does not have it already.
  */
 export const parseAddress = function (addressString: string): string {
-  if (addressString === '') throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
+  if (addressString === '' || addressString === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
   let parsedAddress: string
   if (
     addressString.match(SUPPORTED_ADDRESS_PATTERN) != null &&
