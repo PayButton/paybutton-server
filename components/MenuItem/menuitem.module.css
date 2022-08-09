@@ -26,12 +26,30 @@
 }
 
 .li:hover {
-  color: #fff;
+  color: var(--secondary-bg-color);
   background: var(--primary-text-color);
   transition: all ease-in-out 200ms;
 }
 
 .li:hover .imagectn img {
   filter: brightness(0) invert(1);
+  transition: all ease-in-out 200ms;
+}
+
+body[data-theme="dark"] .li .imagectn img {
+  filter: brightness(0) invert(1);
+}
+
+body[data-theme="dark"] .li:hover .imagectn img {
+  filter: none;
+}
+
+body[data-theme="dark"] .active {
+  color: var(--primary-bg-color) !important;
+}
+
+body[data-theme="dark"] .li:hover {
+  color: var(--secondary-bg-color);
+  background: var(--primary-text-color);
   transition: all ease-in-out 200ms;
 }

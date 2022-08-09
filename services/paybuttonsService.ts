@@ -1,4 +1,4 @@
-import * as chainService from 'services/chainsService'
+import * as networkService from 'services/networksService'
 import { Paybutton } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
@@ -11,15 +11,15 @@ export interface CreatePaybuttonInput {
 }
 
 export async function createPaybutton (values: CreatePaybuttonInput): Promise<Paybutton> {
-  const paybuttonAddresses = await Promise.all(
+  const addresses = await Promise.all(
     values.prefixedAddressList.map(
       async (addressWithPrefix) => {
         const prefix = addressWithPrefix.split(':')[0].toLowerCase()
-        const chain = await chainService.getChainFromSlug(prefix)
-        if (chain === null) throw new Error(RESPONSE_MESSAGES.INVALID_CHAIN_SLUG_400.message)
+        const network = await networkService.getNetworkFromSlug(prefix)
+        if (network === null) throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
         return {
           address: addressWithPrefix.toLowerCase(),
-          chainId: Number(chain.id)
+          networkId: Number(network.id)
         }
       })
   )
@@ -29,12 +29,12 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
       name: values.name,
       buttonData: values.buttonData,
       addresses: {
-        create: paybuttonAddresses.map((paybuttonAddress) => {
+        create: addresses.map((address) => {
           return {
-            paybuttonAddress: {
+            address: {
               connectOrCreate: {
-                where: { address: paybuttonAddress.address },
-                create: paybuttonAddress
+                where: { address: address.address },
+                create: address
               }
             }
           }
@@ -44,7 +44,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
     include: {
       addresses: {
         select: {
-          paybuttonAddress: true
+          address: true
         }
       }
     }
@@ -57,7 +57,7 @@ export async function fetchPaybuttonById (paybuttonId: number | string): Promise
     include: {
       addresses: {
         select: {
-          paybuttonAddress: true
+          address: true
         }
       }
     }
@@ -70,7 +70,7 @@ export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Payb
     include: {
       addresses: {
         select: {
-          paybuttonAddress: true
+          address: true
         }
       }
     }

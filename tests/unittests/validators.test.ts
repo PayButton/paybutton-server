@@ -21,7 +21,7 @@ describe('parseAddress', () => {
     ).toStrictEqual('ecash:' + exampleAddresses.ecash)
   })
 
-  it('Accept example address with uppercase characters in chain', () => {
+  it('Accept example address with uppercase characters in network', () => {
     expect(
       v.parseAddress('eCaSh:' + exampleAddresses.ecash)
     ).toStrictEqual('ecash:' + exampleAddresses.ecash)
@@ -57,7 +57,7 @@ describe('parseAddress', () => {
     }).toThrow(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
   })
 
-  it('Reject address with wrong chain prefix', () => {
+  it('Reject address with wrong network prefix', () => {
     expect(() => {
       v.parseAddress('bitcoincash:' + exampleAddresses.ecash)
     }).toThrow(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
@@ -95,7 +95,7 @@ describe('parseAddress', () => {
     }).toThrow(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
   })
 
-  it('Reject non-supported chain', () => {
+  it('Reject non-supported network', () => {
     expect(() => {
       v.parseAddress((
         'bitcoin:qrju9pgzn3m84q57ldjvxph30zrm8q7dlc8r8a3eyp'

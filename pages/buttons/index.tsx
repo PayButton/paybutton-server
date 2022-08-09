@@ -1,6 +1,5 @@
 import React from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
-import Page from 'components/Page'
 import { PaybuttonList, PaybuttonForm } from 'components/Paybutton'
 import { Paybutton } from '@prisma/client'
 import { POSTParameters } from 'utils/validators'
@@ -94,12 +93,12 @@ class ProtectedPage extends React.Component<PaybuttonsProps, PaybuttonsState> {
 
   render (): React.ReactElement {
     return (
-      <Page>
+      <>
         <h2> Create PayButton:</h2>
         <PaybuttonForm onSubmit={this.onSubmit.bind(this)} />
         <h2>PayButtons:</h2>
         <PaybuttonList paybuttons={this.state.paybuttons} />
-      </Page>
+      </>
     )
   }
 }
