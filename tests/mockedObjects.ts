@@ -38,9 +38,18 @@ export const mockedPaybutton = {
   ]
 }
 
-export const mockedAddress = {
+export const mockedBCHAddress = {
   id: 1,
-  address: 'qpuzcemdv2hhng4fpyjxzfp0axsyltrghutla9rfnm',
+  address: 'bitcoincash:qzqh7ej2vz26a9xaxq7capzfwgxt5gem9g8rvfxc5t',
+  createdAt: new Date('2022-05-27T15:18:42.000Z'),
+  updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+  networkId: 2,
+  paybuttonId: 1
+}
+
+export const mockedXECAddress = {
+  id: 1,
+  address: 'ecash:qrmm7edwuj4jf7tnvygjyztyy0a0qxvl7quss2vxek',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   networkId: 1,
@@ -214,7 +223,7 @@ export const mockedGrpc = {
       index: 0,
       value: 431247724,
       pubkeyScript: 'dqkUeCxnbWKveaKpCSRhJC/poE+saL+IrA==',
-      address: mockedAddress.address,
+      address: mockedBCHAddress.address,
       scriptClass: 'pubkeyhash',
       disassembledScript: 'OP_DUP OP_HASH160 782c676d62af79a2a9092461242fe9a04fac68bf OP_EQUALVERIFY OP_CHECKSIG'
     }, {
@@ -253,7 +262,7 @@ export const mockedGrpc = {
         sequence: 4294967295,
         value: 546,
         previousScript: 'dqkUi4A+rsJZAKFsCtIAF8coYnYGLEqIrA==',
-        address: mockedAddress.address,
+        address: mockedBCHAddress.address,
         slpToken: {
           tokenId: 'MS4wCpRkWFBcGVx4bXqxP6BRfz2yFCgwZdcOXknvc3I=',
           amount: '1',

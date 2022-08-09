@@ -1,12 +1,13 @@
 import rewire from 'rewire'
-import { mockedGrpc } from '../mockedObjects'
-const bchdService = rewire('../../services/bchdService')
+import { mockedGrpc, mockedBCHAddress, mockedXECAddress } from '../mockedObjects'
+const grpcService = rewire('../../services/grpcService')
 
-bchdService.__set__('grpc', mockedGrpc)
+grpcService.__set__('grpcBCH', mockedGrpc)
+grpcService.__set__('grpcXEC', mockedGrpc)
 
 describe('Test service returned objects consistency', () => {
-  it('test getAddress', async () => {
-    const res = await bchdService.getAddress('mockaddress')
+  it('test getAddress for real address', async () => {
+    const res = await grpcService.getAddress(mockedBCHAddress.address)
     expect(res).toEqual(expect.objectContaining({
       confirmedTransactionsList: [
         mockedGrpc.transaction1.toObject(),
@@ -15,7 +16,7 @@ describe('Test service returned objects consistency', () => {
     }))
   })
   it('test getUtxos', async () => {
-    const res = await bchdService.getUtxos('mockaddress')
+    const res = await grpcService.getUtxos(mockedXECAddress.address)
     expect(res).toEqual(expect.objectContaining({
       outputsList: expect.arrayContaining([
         {
@@ -41,11 +42,11 @@ describe('Test service returned objects consistency', () => {
     }))
   })
   it('test getBCHBalance', async () => {
-    const res = await bchdService.getBCHBalance('mockaddress')
+    const res = await grpcService.getBCHBalance(mockedBCHAddress.address)
     expect(res).toBe(1780)
   })
   it('test getTransactionDetails', async () => {
-    const res = await bchdService.getTransactionDetails('mockaddress')
+    const res = await grpcService.getTransactionDetails(mockedBCHAddress.address, 'bitcoincash')
     expect(res).toEqual(expect.objectContaining({
       transaction: {
         hash: 'hu9m3BZg/zlxis7ehc0x/+9qELXC8dkbimOtc5v598s=',

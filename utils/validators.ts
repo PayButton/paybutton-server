@@ -1,6 +1,6 @@
-import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN } from 'constants/index'
+import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN } from '../constants/index'
 import { Prisma } from '@prisma/client'
-import { CreatePaybuttonInput } from 'services/paybuttonsService'
+import { CreatePaybuttonInput } from '../services/paybuttonsService'
 import xecaddr from 'xecaddrjs'
 
 /* The functions exported here should validate the data structure / syntax of an
@@ -10,23 +10,26 @@ import xecaddr from 'xecaddrjs'
  * - 'validate', if the function only validates the input and returns `true` or `false`.
 --------------------------------------------------------------------------------------- */
 
-const getAddressPrefix = function (addressString: string): string {
-  const format = xecaddr.detectAddressFormat(addressString)
-  const network = xecaddr.detectAddressNetwork(addressString)
-  if (format === xecaddr.Format.Xecaddr) {
-    if (network === xecaddr.Network.Mainnet) {
-      return 'ecash'
-    } else if (network === xecaddr.Network.Testnet) {
-      return 'ectest'
+export const getAddressPrefix = function (addressString: string): string | undefined {
+  try {
+    const format = xecaddr.detectAddressFormat(addressString)
+    const network = xecaddr.detectAddressNetwork(addressString)
+    if (format === xecaddr.Format.Xecaddr) {
+      if (network === xecaddr.Network.Mainnet) {
+        return 'ecash'
+      } else if (network === xecaddr.Network.Testnet) {
+        return 'ectest'
+      }
+    } else if (format === xecaddr.Format.Cashaddr) {
+      if (network === xecaddr.Network.Mainnet) {
+        return 'bitcoincash'
+      } else if (network === xecaddr.Network.Testnet) {
+        return 'bchtest'
+      }
     }
-  } else if (format === xecaddr.Format.Cashaddr) {
-    if (network === xecaddr.Network.Mainnet) {
-      return 'bitcoincash'
-    } else if (network === xecaddr.Network.Testnet) {
-      return 'bchtest'
-    }
+  } catch {
+    throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
   }
-  throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
 }
 
 /* Validates the address and adds a prefix to it, if it does not have it already.
