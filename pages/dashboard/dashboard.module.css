@@ -85,7 +85,7 @@
 .toggle_btn:active {
   background: none;
   border-radius: 100px;
-  color: var(--primary-text-color);
+  color: var(--primary-text-color) !important;
   font-size: 14px;
   padding: 10px 12px;
   margin: 0;
@@ -105,7 +105,7 @@
 }
 
 .toggle_btn:hover {
-  color: var(--accent-color);
+  color: var(--accent-color) !important;
   filter: none !important;
 }
 
