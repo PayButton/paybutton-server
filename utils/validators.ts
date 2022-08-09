@@ -1,6 +1,7 @@
 import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN } from '../constants/index'
 import { Prisma } from '@prisma/client'
 import { CreatePaybuttonInput } from '../services/paybuttonsService'
+import { getAddressPrefix } from './index'
 import xecaddr from 'xecaddrjs'
 
 /* The functions exported here should validate the data structure / syntax of an
@@ -9,28 +10,6 @@ import xecaddr from 'xecaddrjs'
  * - 'parse', if the function validates the input and transforms it into another output;
  * - 'validate', if the function only validates the input and returns `true` or `false`.
 --------------------------------------------------------------------------------------- */
-
-export const getAddressPrefix = function (addressString: string): string | undefined {
-  try {
-    const format = xecaddr.detectAddressFormat(addressString)
-    const network = xecaddr.detectAddressNetwork(addressString)
-    if (format === xecaddr.Format.Xecaddr) {
-      if (network === xecaddr.Network.Mainnet) {
-        return 'ecash'
-      } else if (network === xecaddr.Network.Testnet) {
-        return 'ectest'
-      }
-    } else if (format === xecaddr.Format.Cashaddr) {
-      if (network === xecaddr.Network.Mainnet) {
-        return 'bitcoincash'
-      } else if (network === xecaddr.Network.Testnet) {
-        return 'bchtest'
-      }
-    }
-  } catch {
-    throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
-  }
-}
 
 /* Validates the address and adds a prefix to it, if it does not have it already.
  */
@@ -44,7 +23,8 @@ export const parseAddress = function (addressString: string): string {
     if (addressString.includes(':')) {
       parsedAddress = addressString
     } else {
-      parsedAddress = getAddressPrefix(addressString.toLowerCase()) + ':' + addressString
+      const prefix = getAddressPrefix(addressString.toLowerCase())
+      parsedAddress = `${prefix}:${addressString}` 
     }
   } else {
     throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)

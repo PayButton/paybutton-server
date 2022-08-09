@@ -7,7 +7,7 @@ import {
   GetAddressUnspentOutputsResponse,
 } from 'grpc-bchrpc-node'
 
-import { getAddressPrefix } from '../utils/validators'
+import { getAddressPrefix } from '../utils/index'
 import { RESPONSE_MESSAGES } from '../constants/index'
 
 let grpcXEC = new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL });
