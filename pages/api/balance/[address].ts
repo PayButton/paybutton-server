@@ -3,6 +3,9 @@ import { getBCHBalance } from 'services/grpcService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { parseAddress } from 'utils/validators'
 import Cors from 'cors'
+import { satoshisToUnit } from 'utils'
+import xecaddr from 'xecaddrjs'
+import { Decimal } from '@prisma/client/runtime'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
 const cors = Cors({
@@ -31,7 +34,8 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
     try {
       const address = parseAddress(req.query.address as string)
       const response = await getBCHBalance(address)
-      res.status(200).send(response)
+      const balance = satoshisToUnit(new Decimal(response), xecaddr.Format.Cashaddr)
+      res.status(200).send(balance)
     } catch (err: any) {
       switch (err.message) {
         case ADDRESS_NOT_PROVIDED_400.message:
