@@ -34,7 +34,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
     try {
       const address = parseAddress(req.query.address as string)
       const response = await getBCHBalance(address)
-      const balance = satoshisToUnit(new Decimal(response), xecaddr.Format.Cashaddr)
+      const balance = await satoshisToUnit(new Decimal(response), xecaddr.Format.Cashaddr)
       res.status(200).send(balance)
     } catch (err: any) {
       switch (err.message) {
