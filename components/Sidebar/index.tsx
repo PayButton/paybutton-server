@@ -122,12 +122,15 @@ const Sidebar = ({chart, setChart, loggedin}) => {
         <ThemeToggle chart={chart} setChart={setChart} />
         <a href='https://t.me/paybutton' target="_blank" rel="noreferrer noopener">
           <Image src={Telegram} alt='telegram' width={20} height={20} />
+          <span className={style.tooltiptext}>Telegram</span>
         </a>
         <a href='https://twitter.com/thepaybutton' target="_blank" rel="noreferrer noopener">
           <Image src={Twitter} alt='twitter' width={20} height={20} />
+          <span className={style.tooltiptext}>Twitter</span>
         </a>
         <a href='https://docs.paybutton.org' target="_blank" rel="noreferrer noopener">
           <Image src={Docs} alt='twitter' width={20} height={20} />
+          <span className={style.tooltiptext}>Docs</span>
         </a>
       </div>
     </aside>
