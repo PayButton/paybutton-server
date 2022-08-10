@@ -10,13 +10,12 @@ import {
 import { getAddressPrefix } from '../utils/index'
 import { RESPONSE_MESSAGES } from '../constants/index'
 
-let grpcXEC = new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL });
 let grpcBCH = new GrpcClient({ url: process.env.GRPC_BCH_NODE_URL });
 
 export const getClientForAddress = (addressString: string): GrpcClient => {
   const prefix = getAddressPrefix(addressString)
   if (prefix === 'ecash') {
-    return grpcXEC
+    return new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL });
   } else if (prefix === 'bitcoincash' ) {
     return grpcBCH
   } else {
@@ -26,7 +25,7 @@ export const getClientForAddress = (addressString: string): GrpcClient => {
 
 export const getClientForNetworkSlug = (networkSlug: string): GrpcClient => {
   if (networkSlug === 'ecash') {
-    return grpcXEC
+    return new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL });
   } else if (networkSlug === 'bitcoincash' ) {
     return grpcBCH
   } else {
