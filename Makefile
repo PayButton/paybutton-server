@@ -21,7 +21,7 @@ check-logs-users:
 	docker logs -f paybutton-users-service
 
 lint:
-	npx --yes ts-standard .
+	yarn eslint .
 
 lint-master:
 	$(git_diff_to_master)
