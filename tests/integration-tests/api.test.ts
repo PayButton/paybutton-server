@@ -4,6 +4,7 @@ import paybuttonEndpoint from 'pages/api/paybutton/index'
 import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
 import transactionsEndpoint from 'pages/api/transactions/[address]'
 import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
+import balanceEndpoint from 'pages/api/balance/[address]'
 import {
   exampleAddresses,
   testEndpoint,
@@ -331,3 +332,21 @@ describe('GET /api/transaction/[transactionId]', () => {
     expect(responseData.message).toBe(RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.message)
   })
 })
+
+describe('GET /api/balance/[address]', () => {
+  const baseRequestOptions: RequestOptions = {
+    method: 'GET' as RequestMethod,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    query: {}
+  }
+
+  it('Should return HTTP 400 (Bad Request) if no address specified', async () => {
+    const res = await testEndpoint(baseRequestOptions, balanceEndpoint)
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.statusCode)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
+  })
+})
+

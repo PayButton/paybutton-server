@@ -19,12 +19,12 @@ const ThemeToggle = ({chart, setChart}) => {
     return (
         <button 
             aria-label={`Change to ${inactiveTheme} mode`}
-            title={`Change to ${inactiveTheme} mode`}
             type="button"
             onClick={() => {setActiveTheme(inactiveTheme); setChildChart(!childchart)}}
             className={style.darkmode_btn}
         >
-            <span className={activeTheme === "dark" ? `${style.switch}`:null}></span>
+            <span className={activeTheme === "dark" ? `${style.switchdot} ${style.switch}`:`${style.switchdot}`}></span>
+            <div className={style.tooltiptext}>{activeTheme === "dark" ? 'Light mode':'Dark mode'}</div>
         </button>
     );
   };

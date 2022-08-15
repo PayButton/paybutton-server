@@ -66,7 +66,7 @@ body[data-theme="dark"] .socialctn .moon {
   margin-right: 15px;
 }
 
-.darkmode_btn span {
+.darkmode_btn .switchdot {
   position: absolute;
   top: var(--toggle-padding);
   left: var(--toggle-padding);
@@ -77,12 +77,65 @@ body[data-theme="dark"] .socialctn .moon {
   transition: all ease-in-out 200ms;
 }
 
-.darkmode_btn:hover span {
+.darkmode_btn:hover .switchdot {
   background: var(--accent-color);
 }
 
 .darkmode_btn .switch {
   transform: translate3d(calc(var(--toggle-width) - var(--toggle-height)), 0, 0);
+}
+
+.socialctn a, .socialctn button {
+  position: relative;
+}
+
+.socialctn button {
+  margin: 0;
+  margin-right: 15px;
+  line-height: unset;
+}
+
+.tooltiptext {
+  visibility: hidden;
+  opacity: 0;
+  background-color: var(--primary-bg-color);
+  color: var(--primary-text-color);
+  text-align: center;
+  padding: 2px 0px;
+  border-radius: 5px;
+  position: absolute;
+  z-index: 1;
+  top: -10px;
+  width: 70px;
+  left:50%;
+  transform:translate(-50%, -80%);
+  font-size: 12px;
+  z-index:99999999;
+  box-sizing:border-box;
+  transition: all 100ms ease-in-out;
+}
+
+.tooltiptext::before {
+  content:'';
+  position:absolute;
+  left:50%;
+  width: 0; 
+  height: 0; 
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  transform:translate(-50%,20px);
+  border-top: 7px solid var(--primary-bg-color);
+}
+
+.socialctn a:hover .tooltiptext,
+.socialctn button:hover .tooltiptext {
+  visibility: visible;
+  transform:translate(-50%, -100%);
+  opacity: 1;
+}
+
+.socialctn button:hover {
+  filter: none !important;
 }
 
 @media (max-width: 900px) {

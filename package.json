@@ -13,12 +13,8 @@
     "ci:integration:test": "yarn pretest && dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js tests/integration-tests --forceExit"
   },
   "dependencies": {
-    "@data-driven-forms/mui-component-mapper": "^3.16.10",
-    "@data-driven-forms/react-form-renderer": "^3.16.10",
     "@emotion/react": "^11.8.2",
     "@emotion/styled": "^11.8.1",
-    "@mui/icons-material": "^5.5.1",
-    "@mui/material": "^5.5.3",
     "@prisma/client": "^3.14.0",
     "@types/cors": "^2.8.10",
     "@types/express": "^4.17.11",

@@ -1,12 +1,5 @@
 import { mockedGrpc, mockedBCHAddress, mockedXECAddress } from '../mockedObjects'
-
-import * as grpcService from '../../services/grpcService'
-import { GrpcClient } from 'grpc-bchrpc-node'
-
-const getClientForAddressSpy = jest.spyOn(grpcService, 'getClientForAddress')
-getClientForAddressSpy.mockReturnValue(mockedGrpc as unknown as GrpcClient)
-const getClientForNetworkSlugSpy = jest.spyOn(grpcService, 'getClientForNetworkSlug')
-getClientForNetworkSlugSpy.mockReturnValue(mockedGrpc as unknown as GrpcClient)
+import grpcService from '../../services/grpcService'
 
 describe('Test service returned objects consistency', () => {
   it('test getAddress for real address', async () => {
