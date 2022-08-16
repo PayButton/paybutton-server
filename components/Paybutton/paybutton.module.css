@@ -1,0 +1,105 @@
+.paybutton_list_ctn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-top: 25px;
+}
+
+.paybutton_card,
+.paybutton_nocard {
+  background-color: var(--secondary-bg-color);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 15px;
+  border: 1px solid var(--secondary-bg-color);
+  transition: all ease-in-out 200ms;
+  position: relative;
+}
+
+.paybutton_card h5 {
+  margin: 0;
+}
+
+.address {
+  color: var(--secondary-text-color);
+}
+
+.paybutton_card:hover {
+  border-color: var(--secondary-text-color);
+}
+
+.arrow {
+  position: absolute;
+  right: 0;
+  top: calc(50% - 13px);
+  opacity: 0;
+  transition: all ease-in-out 200ms;
+}
+
+.paybutton_card:hover .arrow {
+  opacity: 1;
+  right: 30px;
+}
+
+.create_button_ctn {
+  justify-content: flex-end;
+  display: flex;
+  position: relative;
+}
+
+.create_button {
+  background-color: var(--secondary-bg-color);
+  font-size: 44px;
+  display: inline-block;
+  border-radius: 100px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all ease-in-out 200ms;
+  position: relative;
+}
+
+.create_button:hover {
+  background-color: var(--accent-color);
+}
+
+.tooltiptext {
+  visibility: hidden;
+  opacity: 0;
+  background-color: var(--secondary-bg-color);
+  color: var(--primary-text-color);
+  text-align: center;
+  padding: 2px 0px;
+  border-radius: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: -30px;
+  width: 80px;
+  right: -5px;
+  flex-basis: 1;
+  font-size: 12px;
+  z-index: 99999999;
+  box-sizing: border-box;
+  transition: all 100ms ease-in-out;
+}
+
+.tooltiptext::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  transform: translate(-50%, -9px);
+  border-bottom: 7px solid var(--secondary-bg-color);
+}
+
+.create_buttonn:hover .tooltiptext,
+.create_button:hover .tooltiptext {
+  visibility: visible;
+  bottom: -35px;
+  opacity: 1;
+}
