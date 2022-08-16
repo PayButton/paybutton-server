@@ -93,11 +93,11 @@ export const Subscribe = async (
       addresses: addresses,
     });
 
-    void txnStream.on('end', async (error: any) => {
+    txnStream.on('end', async (error: any) => {
       console.log('stream ended', error);
     });
 
-    void txnStream.on('data', async (data: TransactionNotification) => {
+    txnStream.on('data', async (data: TransactionNotification) => {
       let txn = data.getUnconfirmedTransaction()!.getTransaction()!;
       onTransactionNotification(txn.toObject());
     });
