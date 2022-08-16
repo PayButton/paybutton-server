@@ -1,5 +1,5 @@
 import { NextApiResponse, NextApiRequest } from 'next'
-import { getBCHBalance } from 'services/grpcService'
+import { getBalance } from 'services/grpcService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { parseAddress } from 'utils/validators'
 import Cors from 'cors'
@@ -33,7 +33,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
   if (req.method === 'GET') {
     try {
       const address = parseAddress(req.query.address as string)
-      const response = await getBCHBalance(address)
+      const response = await getBalance(address)
       const balance = await satoshisToUnit(new Decimal(response), xecaddr.Format.Cashaddr)
       res.status(200).send(balance)
     } catch (err: any) {

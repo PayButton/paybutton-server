@@ -58,7 +58,7 @@ export const getUtxos = async (
   return res;
 };
 
-export const getBCHBalance = async (address: string): Promise<number> => {
+export const getBalance = async (address: string): Promise<number> => {
   const { outputsList } = await getUtxos(address);
 
   let satoshis: number = 0;
@@ -94,11 +94,11 @@ export const Subscribe = async (
       addresses: addresses,
     });
 
-    txnStream.on('end', async (error: any) => {
+    void txnStream.on('end', async (error: any) => {
       console.log('stream ended', error);
     });
 
-    txnStream.on('data', async (data: TransactionNotification) => {
+    void txnStream.on('data', async (data: TransactionNotification) => {
       let txn = data.getUnconfirmedTransaction()!.getTransaction()!;
       onTransactionNotification(txn.toObject());
     });
@@ -111,6 +111,6 @@ export default {
   getAddress,
   getUtxos,
   Subscribe,
-  getBCHBalance,
+  getBalance,
   getTransactionDetails,
 };
