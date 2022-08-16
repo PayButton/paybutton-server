@@ -13,6 +13,7 @@
 .layout main {
   flex-grow: 2;
   padding: 25px;
+  position: relative;
 }
 
 .layout a,
@@ -22,7 +23,6 @@
 }
 
 @media (max-width: 900px) {
-
   .layout main {
     width: 100%;
     padding: 65px 15px 15px 15px;
