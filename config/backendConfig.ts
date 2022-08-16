@@ -2,6 +2,8 @@ import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemail
 import SessionNode from 'supertokens-node/recipe/session'
 import { appInfo } from './appInfo'
 import { TypeInput } from 'supertokens-node/types'
+import * as addressesService from 'services/addressesService'
+import { syncTransactions } from 'services/transactionsService'
 
 const getSocialLoginProviders = (): array => {
   const availableSocialProviders = {
@@ -64,7 +66,70 @@ export const backendConfig = (): TypeInput => {
     appInfo,
     recipeList: [
       ThirdPartyEmailPasswordNode.init({
-        providers: getSocialLoginProviders()
+        providers: getSocialLoginProviders(),
+        override: {
+          apis: (originalImplementation) => {
+            return {
+              ...originalImplementation,
+
+              // override the email password sign up API
+              emailPasswordSignUpPOST: async function (input) {
+                if (originalImplementation.emailPasswordSignUpPOST === undefined) {
+                  throw Error('Should never come here')
+                }
+                // pre sign up logic goes here
+
+                const response = await originalImplementation.emailPasswordSignUpPOST(input)
+
+                if (response.status === 'OK') {
+                  // post sign up logic goes here
+                }
+
+                return response
+              },
+
+              // override the email password sign in API
+              emailPasswordSignInPOST: async function (input) {
+                if (originalImplementation.emailPasswordSignInPOST === undefined) {
+                  throw Error('Should never come here')
+                }
+                // pre sign in logic goes here
+
+                const response = await originalImplementation.emailPasswordSignInPOST(input)
+
+                if (response.status === 'OK') {
+                  // post sign in logic goes here
+                  (await addressesService.fetchAllUserAddresses(response.user.id)).forEach((addr) => {
+                    void syncTransactions(addr.address)
+                  })
+                  return response
+                }
+              },
+
+              // override the thirdparty sign in / up API
+              thirdPartySignInUpPOST: async function (input) {
+                if (originalImplementation.thirdPartySignInUpPOST === undefined) {
+                  throw Error('Should never come here')
+                }
+                // pre sign up logic goes here
+                const response = await originalImplementation.thirdPartySignInUpPOST(input)
+
+                if (response.status === 'OK') {
+                  if (response.createdNewUser) {
+                    // post sign up logic goes here
+                  } else {
+                    // post sign in logic goes here
+                    (await addressesService.fetchAllUserAddresses(response.user.id)).forEach((addr) => {
+                      void syncTransactions(addr.address)
+                    })
+                  }
+                }
+
+                return response
+              }
+            }
+          }
+        }
       }),
       SessionNode.init()
     ],
