@@ -37,8 +37,8 @@ describe('Test service returned objects consistency', () => {
       ])
     }))
   })
-  it('test getBCHBalance', async () => {
-    const res = await grpcService.getBCHBalance(mockedBCHAddress.address)
+  it('test getBalance', async () => {
+    const res = await grpcService.getBalance(mockedBCHAddress.address)
     expect(res).toBe(1780)
   })
   it('test getTransactionDetails', async () => {
