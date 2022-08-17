@@ -57,7 +57,7 @@ export const getUtxos = async (
   return res;
 };
 
-export const getBCHBalance = async (address: string): Promise<number> => {
+export const getBalance = async (address: string): Promise<number> => {
   const { outputsList } = await getUtxos(address);
 
   let satoshis: number = 0;
@@ -110,6 +110,6 @@ export default {
   getAddress,
   getUtxos,
   Subscribe,
-  getBCHBalance,
+  getBalance,
   getTransactionDetails,
 };
