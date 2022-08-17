@@ -14,6 +14,7 @@
   border: 1px solid var(--secondary-bg-color);
   transition: all ease-in-out 200ms;
   position: relative;
+  word-break: break-all;
 }
 
 .paybutton_card h5 {
@@ -26,6 +27,10 @@
 
 .paybutton_card:hover {
   border-color: var(--secondary-text-color);
+}
+
+.paybutton_card_no_hover {
+  border-color: var(--secondary-bg-color) !important;
 }
 
 .arrow {
@@ -179,4 +184,10 @@ body[data-theme='dark'] .create_button:hover img {
 
 body[data-theme='dark'] .form_ctn_outer {
   background-color: rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 900px) {
+  .arrow {
+    display: none;
+  }
 }

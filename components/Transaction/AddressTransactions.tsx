@@ -1,6 +1,7 @@
 import React, { FunctionComponent } from 'react'
 import { Transaction } from '@prisma/client'
 import { TransactionList } from 'components/Transaction'
+import style from './transaction.module.css'
 
 interface IProps {
   addressTransactions: {
@@ -9,12 +10,12 @@ interface IProps {
 }
 export default ({ addressTransactions }: IProps): FunctionComponent => {
   return (
-    <section>
+    <>
       {Object.keys(addressTransactions).map(transactionAddress => (
-        <li key={transactionAddress}>
+        <div key={transactionAddress} className={style.transaction_ctn}>
           <TransactionList transactions={addressTransactions[transactionAddress]} />
-        </li>
+        </div>
       ))}
-    </section>
+    </>
   )
 }

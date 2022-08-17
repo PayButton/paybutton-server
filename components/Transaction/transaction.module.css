@@ -1,0 +1,46 @@
+.transaction_ctn {
+  background-color: var(--secondary-bg-color);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.transactiontable_header {
+  display: flex;
+  width: 100%;
+  border-bottom: 1px solid var(--primary-text-color);
+}
+
+.transactiontable_header div {
+  flex-grow: 1;
+  padding: 4px 10px;
+  overflow: hidden;
+}
+
+.transactiontable_header div:first-child,
+.transaction_row div:first-child {
+  width: 200px;
+  flex-grow: unset;
+}
+
+.transactiontable_header div:last-child,
+.transaction_row div:last-child {
+  text-align: right;
+}
+
+.transaction_row {
+  display: flex;
+  font-size: 16px;
+  /* border-bottom: 1px solid var(--primary-bg-color); */
+}
+
+.transaction_row:nth-child(even) {
+  background-color: var(--primary-bg-color);
+}
+
+.transaction_row div {
+  flex-grow: 1;
+  padding: 6px 10px;
+  overflow: hidden;
+}

@@ -108,12 +108,12 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
   render (): React.ReactElement {
     if (this.state.paybutton !== undefined && Object.keys(this.state.transactions).length !== 0) {
       return (
-        <Page header={<a href='#' onClick={this.handleLogout}>Logout</a>}>
-          <h2>PayButton:</h2>
+        <>
+          <h2>Button</h2>
           <PaybuttonDetail paybutton={this.state.paybutton} />
-          <h4> Transactions: </h4>
+          <h4>Transactions</h4>
           <AddressTransactions addressTransactions={this.state.transactions} />
-        </Page>
+        </>
       )
     }
     return (
