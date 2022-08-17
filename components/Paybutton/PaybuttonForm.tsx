@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react'
+import React, { ReactElement, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { POSTParameters } from 'utils/validators'
 import Image from 'next/image'
@@ -7,16 +7,16 @@ import Plus from 'assets/plus.png'
 
 interface IProps {
   onSubmit: Function
+  paybuttons: []
 }
 
-export default function PaybuttonForm ({ onSubmit }: IProps): ReactElement {
+export default function PaybuttonForm ({ onSubmit, paybuttons }: IProps): ReactElement {
   const { register, handleSubmit } = useForm<POSTParameters>()
   const [modal, setModal] = useState(false)
 
-  // const formSubmit = ({data}) => {
-  //   handleSubmit(data)
-  //   setModal(false)
-  // }
+  useEffect(() => {
+    setModal(false)
+  }, [paybuttons])
 
   return (
     <>

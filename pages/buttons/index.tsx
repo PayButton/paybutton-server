@@ -96,7 +96,7 @@ class ProtectedPage extends React.Component<PaybuttonsProps, PaybuttonsState> {
       <>
         <h2>Buttons</h2>
         <PaybuttonList paybuttons={this.state.paybuttons} />
-        <PaybuttonForm onSubmit={this.onSubmit.bind(this)} />
+        <PaybuttonForm onSubmit={this.onSubmit.bind(this)} paybuttons={this.state.paybuttons} />
       </>
     )
   }
