@@ -51,3 +51,16 @@ button {
 body[data-theme='dark'] button {
   color: var(--primary-bg-color);
 }
+
+.back_btn {
+  border-radius: 100px;
+  padding: 5px 25px;
+  margin-top: 20px;
+  background-color: var(--secondary-bg-color);
+  display: inline-block;
+}
+
+.back_btn:hover {
+  background-color: var(--accent-color);
+  color: var(--secondary-bg-color) !important;
+}

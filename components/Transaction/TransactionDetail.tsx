@@ -10,7 +10,7 @@ export default ({ transaction }: IProps): FunctionComponent => {
     <div className={style.transaction_row}>
       <div>{transaction.timestamp}</div>
       <div>{transaction.id}</div>
-      <div>{transaction.amount}</div>
+      <div>{transaction.amount.toLocaleString()}</div>
     </div>
   )
 }

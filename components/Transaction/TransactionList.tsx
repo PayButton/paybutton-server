@@ -11,9 +11,13 @@ export default ({ transactions }: IProps): FunctionComponent => {
   return (
     <div>
       <div className={style.transactiontable_header}>
-        <div>Timestamp</div>
-        <div>ID</div>
-        <div>Amount</div>
+        { transactions.length === 0 ? "No transactions yet" :
+        <>
+          <div>Timestamp</div>
+          <div>ID</div>
+          <div>Amount</div>
+        </>
+        }
       </div>
       {transactions.map(transaction => (
         <TransactionDetail key={transaction.hash} transaction={transaction} />
