@@ -13,7 +13,7 @@ export default ({ addressTransactions }: IProps): FunctionComponent => {
     <>
       {Object.keys(addressTransactions).map(transactionAddress => (
         <div key={transactionAddress} className={style.transaction_ctn}>
-          <TransactionList transactions={addressTransactions[transactionAddress]} />
+          <TransactionList transactions={addressTransactions[transactionAddress]} address={transactionAddress} />
         </div>
       ))}
     </>

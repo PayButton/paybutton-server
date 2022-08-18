@@ -44,3 +44,11 @@
   padding: 6px 10px;
   overflow: hidden;
 }
+
+.explorer_link {
+  color: var(--accent-color) !important;
+}
+
+.explorer_link:hover {
+  text-decoration: underline;
+}

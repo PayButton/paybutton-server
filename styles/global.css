@@ -55,7 +55,7 @@ body[data-theme='dark'] button {
 .back_btn {
   border-radius: 100px;
   padding: 5px 25px;
-  margin-top: 20px;
+  margin-bottom: 0px;
   background-color: var(--secondary-bg-color);
   display: inline-block;
 }
