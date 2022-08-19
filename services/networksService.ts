@@ -5,6 +5,16 @@ export async function getNetworkFromSlug (slug: string): Promise<Network | null>
   return await prisma.network.findUnique({ where: { slug } })
 }
 
+export async function getAllMainNetworks (): Promise<Network[] | null> {
+  return await prisma.network.findMany({
+    where: {
+      slug: {
+        in: ['ecash', 'bitcoincash']
+      }
+    }
+  })
+}
+
 export async function getAllNetworks (): Promise<Network[] | null> {
   return await prisma.network.findMany({ })
 }
