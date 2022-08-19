@@ -85,7 +85,7 @@ const Sidebar = ({chart, setChart, loggedin}) => {
     return targetReached;
   };
 
-  const isBreakpoint = useMediaQuery(900)
+  const isBreakpoint = useMediaQuery(1200)
 
   return (
   <>
