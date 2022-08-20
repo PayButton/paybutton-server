@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react'
+import dynamic from "next/dynamic";
 import MenuItem from '../MenuItem'
 import style from './sidebar.module.css'
 import logoImageSource from 'assets/logo.png'
@@ -11,9 +12,13 @@ import ButtonsIcon from 'assets/button-icon.png'
 import Wallets from 'assets/wallet-icon.png'
 import Networks from 'assets/network-icon.png'
 import Account from 'assets/user-icon.png'
-import Settings from 'assets/settings-icon.png'
-import Help from 'assets/help-icon.png'
+import Docs from 'assets/docs.png'
+// import Settings from 'assets/settings-icon.png'
+// import Help from 'assets/help-icon.png'
 import Logout from 'assets/logout-icon.png'
+const ThemeToggle = dynamic(() => import("./themetoggle"), {
+  ssr: false,
+});
 
 const MENU_ITEMS = [
   {
@@ -40,21 +45,21 @@ const MENU_ITEMS = [
     name:'Account',
     image: Account
   },
-  {
-    name:'Settings',
-    image: Settings
-  },
-  {
-    name:'Help',
-    image: Help
-  },
+  // {
+  //   name:'Settings',
+  //   image: Settings
+  // },
+  // {
+  //   name:'Help',
+  //   image: Help
+  // },
   {
     name:'Logout',
     image: Logout
   },
 ]
 
-const Sidebar = () => {
+const Sidebar = ({chart, setChart, loggedin}) => {
   const [menu, setMenu] = useState(false);
   const useMediaQuery = (width) => {
     const [targetReached, setTargetReached] = useState(false);
@@ -80,9 +85,11 @@ const Sidebar = () => {
     return targetReached;
   };
 
-  const isBreakpoint = useMediaQuery(900)
+  const isBreakpoint = useMediaQuery(1200)
 
   return (
+  <>
+  {loggedin === undefined ? null :
   <>
   {isBreakpoint &&
     <div className={style.topmenu}>
@@ -112,14 +119,23 @@ const Sidebar = () => {
         </nav>
       </div>
       <div className={style.socialctn}>
+        <ThemeToggle chart={chart} setChart={setChart} />
         <a href='https://t.me/paybutton' target="_blank" rel="noreferrer noopener">
           <Image src={Telegram} alt='telegram' width={20} height={20} />
+          <span className={style.tooltiptext}>Telegram</span>
         </a>
         <a href='https://twitter.com/thepaybutton' target="_blank" rel="noreferrer noopener">
           <Image src={Twitter} alt='twitter' width={20} height={20} />
+          <span className={style.tooltiptext}>Twitter</span>
+        </a>
+        <a href='https://docs.paybutton.org' target="_blank" rel="noreferrer noopener">
+          <Image src={Docs} alt='twitter' width={20} height={20} />
+          <span className={style.tooltiptext}>Docs</span>
         </a>
       </div>
     </aside>
+    </>
+    }
   </>
 )}
 

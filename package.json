@@ -13,16 +13,13 @@
     "ci:integration:test": "yarn pretest && dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js tests/integration-tests --forceExit"
   },
   "dependencies": {
-    "@data-driven-forms/mui-component-mapper": "^3.16.10",
-    "@data-driven-forms/react-form-renderer": "^3.16.10",
     "@emotion/react": "^11.8.2",
     "@emotion/styled": "^11.8.1",
-    "@mui/icons-material": "^5.5.1",
-    "@mui/material": "^5.5.3",
     "@prisma/client": "^3.14.0",
     "@types/cors": "^2.8.10",
     "@types/express": "^4.17.11",
     "@types/helmet": "^4.0.0",
+    "@types/lodash": "^4.14.182",
     "@types/socket.io": "^2.1.13",
     "@types/uuid": "^8.3.4",
     "apollo-server-micro": "^3.6.7",
@@ -35,6 +32,7 @@
     "graphql": "^16.3.0",
     "grpc-bchrpc-node": "^0.15.2",
     "helmet": "^4.4.1",
+    "lodash": "^4.17.21",
     "micro": "^9.3.4",
     "micro-cors": "^0.1.1",
     "moment": "^2.29.4",
@@ -58,19 +56,23 @@
     "@types/node": "^12.0.12",
     "@types/react": "^16.9.44",
     "@types/react-dom": "^16.9.8",
-    "@types/rewire": "^2.5.28",
+    "@typescript-eslint/eslint-plugin": "^5.30.5",
+    "eslint": "^8.0.1",
+    "eslint-config-standard-with-typescript": "^22.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.0.0",
+    "eslint-plugin-promise": "^6.0.0",
     "jest": "^28.1.0",
     "jest-mock-extended": "^2.0.6",
     "lint-staged": "^12.4.1",
     "nodemon": "^2.0.4",
-    "rewire": "^6.0.0",
     "ts-jest": "^28.0.2",
     "ts-node": "^8.10.2",
     "typescript": "^4.6.4"
   },
   "lint-staged": {
     "*.ts?(x)": [
-      "npx ts-standard --fix"
+      "yarn eslint --fix"
     ]
   },
   "prisma": {

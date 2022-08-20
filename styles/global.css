@@ -11,14 +11,17 @@ body {
   min-height: 100%;
   --bg: var(--primary-bg-color);
   font-size: 16px;
+  color: var(--primary-text-color);
 }
 
-input {
-  background: white;
+input,
+textarea {
+  background: var(--secondary-bg-color);
+  color: var(--primary-text-color);
 }
 
 textarea {
-  background: white;
+  background: var(--secondary-bg-color);
 }
 
 .login_ctn {
@@ -29,4 +32,35 @@ textarea {
 h2 {
   font-size: 30px;
   margin: 0;
+}
+
+h4 {
+  margin: 20px 0 10px 0;
+}
+
+body[data-theme='dark'] input,
+textarea {
+  border-color: var(--secondary-bg-color);
+}
+
+button {
+  background: var(--accent-color);
+  color: var(--primary-text-color);
+}
+
+body[data-theme='dark'] button {
+  color: var(--primary-bg-color);
+}
+
+.back_btn {
+  border-radius: 100px;
+  padding: 5px 25px;
+  margin-bottom: 0px;
+  background-color: var(--secondary-bg-color);
+  display: inline-block;
+}
+
+.back_btn:hover {
+  background-color: var(--accent-color);
+  color: var(--secondary-bg-color) !important;
 }

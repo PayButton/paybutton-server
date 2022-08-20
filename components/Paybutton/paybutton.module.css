@@ -1,0 +1,193 @@
+.paybutton_list_ctn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-top: 25px;
+}
+
+.paybutton_card,
+.paybutton_nocard {
+  background-color: var(--secondary-bg-color);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 15px;
+  border: 1px solid var(--secondary-bg-color);
+  transition: all ease-in-out 100ms;
+  position: relative;
+  word-break: break-all;
+}
+
+.paybutton_card h5 {
+  margin: 0;
+}
+
+.address {
+  color: var(--secondary-text-color);
+}
+
+.paybutton_card:hover {
+  border-color: var(--secondary-text-color);
+}
+
+.paybutton_card_no_hover {
+  border-color: var(--secondary-bg-color) !important;
+}
+
+.arrow {
+  position: absolute;
+  right: 0;
+  top: calc(50% - 13px);
+  opacity: 0;
+  transition: all ease-in-out 100ms;
+}
+
+.paybutton_card:hover .arrow {
+  opacity: 1;
+  right: 30px;
+}
+
+.create_button_ctn {
+  justify-content: flex-end;
+  display: flex;
+  position: relative;
+}
+
+.create_button {
+  background-color: var(--secondary-bg-color);
+  font-size: 44px;
+  display: inline-block;
+  border-radius: 100px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all ease-in-out 100ms;
+  position: relative;
+}
+
+.create_button:hover {
+  background-color: var(--accent-color) !important;
+}
+
+.tooltiptext {
+  visibility: hidden;
+  opacity: 0;
+  background-color: var(--secondary-bg-color);
+  color: var(--primary-text-color);
+  text-align: center;
+  padding: 2px 0px;
+  border-radius: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: -30px;
+  width: 80px;
+  right: -5px;
+  flex-basis: 1;
+  font-size: 12px;
+  z-index: 99999999;
+  box-sizing: border-box;
+  transition: all 100ms ease-in-out;
+}
+
+.tooltiptext::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  transform: translate(-50%, -9px);
+  border-bottom: 7px solid var(--secondary-bg-color);
+}
+
+.create_buttonn:hover .tooltiptext,
+.create_button:hover .tooltiptext {
+  visibility: visible;
+  bottom: -35px;
+  opacity: 1;
+}
+
+.form_ctn_outer {
+  background-color: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(5px);
+  position: absolute;
+  top: 0;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form_ctn_inner {
+  width: 100%;
+  max-width: 600px;
+  position: sticky;
+  align-self: flex-start;
+  top: 0;
+  margin-top: 200px;
+}
+
+.form_ctn_inner h4 {
+  margin: 0;
+  margin-left: 5px;
+  margin-bottom: 5px;
+}
+
+.form_ctn {
+  background-color: var(--secondary-bg-color);
+  width: 100%;
+  padding: 25px;
+  border-radius: 10px;
+  border: 1px solid var(--secondary-text-color);
+}
+
+.form_ctn input,
+.form_ctn textarea {
+  border: 1px solid var(--secondary-text-color) !important;
+  width: 100%;
+}
+
+.form_ctn button,
+.form_ctn .cancel_btn {
+  border-radius: 100px;
+  padding-left: 20px;
+  padding-right: 20px;
+  border: 1px solid var(--accent-color);
+}
+
+.form_ctn .cancel_btn {
+  background-color: var(--secondary-bg-color);
+  border: 1px solid var(--primary-text-color);
+  margin-right: 10px;
+  color: var(--primary-text-color);
+}
+
+.btn_row {
+  text-align: right;
+}
+
+body[data-theme='dark'] .arrow img {
+  filter: invert(1);
+}
+
+body[data-theme='dark'] .create_button img {
+  filter: invert(1);
+}
+
+body[data-theme='dark'] .create_button:hover img {
+  filter: invert(0);
+}
+
+body[data-theme='dark'] .form_ctn_outer {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 1200px) {
+  .arrow {
+    display: none;
+  }
+}

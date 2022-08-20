@@ -21,7 +21,7 @@ https://paybutton.org
 
 ### Optional configuration
 - Enable _social login_ by filling up `.env` or `.env.local` file with your social provider credentials. You can get testing credentials and more detailed instructions [here](https://supertokens.com/docs/thirdpartyemailpassword/quick-setup/backend#2-initialise-supertokens).
-- Set `GRPC_NODE_URL` environment variable in `.env.local` or `.env` to a **BCHD** node to get access to its API.
+- Set `GRPC_BCH_NODE_URL` and `GRPC_XEC_NODE_URL` environment variables in `.env.local` or `.env` to a **BCHD** and **XECD** node, respectively, to get access to their API.
 
 ## Want to join the team?
 

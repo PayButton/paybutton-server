@@ -4,7 +4,7 @@ export type Paybutton = {
         addresses: any,
 }
 
-export type Chain = {
+export type Network = {
         id: string,
         slug: string,
         title: string,

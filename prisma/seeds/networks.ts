@@ -1,4 +1,11 @@
-export const chains = [
+export const networks = [
+  {
+    slug: 'ecash',
+    ticker: 'xec',
+    title: 'eCash',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
   {
     slug: 'bitcoincash',
     ticker: 'bch',
@@ -7,9 +14,9 @@ export const chains = [
     updatedAt: new Date()
   },
   {
-    slug: 'ecash',
+    slug: 'ectest',
     ticker: 'xec',
-    title: 'eCash',
+    title: 'eCash Testnet Faucet',
     createdAt: new Date(),
     updatedAt: new Date()
   },
@@ -24,13 +31,6 @@ export const chains = [
     slug: 'bchreg',
     ticker: 'bch',
     title: 'Bitcoin Cash Regtest',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    slug: 'ectest',
-    ticker: 'xec',
-    title: 'eCash Testnet Faucet',
     createdAt: new Date(),
     updatedAt: new Date()
   }

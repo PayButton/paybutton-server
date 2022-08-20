@@ -9,17 +9,17 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
-model PaybuttonAddress {
+model Address {
   id          Int       @id @default(autoincrement())
   address     String    @unique @db.VarChar(255)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  chainId     Int
-  chain       Chain     @relation(fields: [chainId], references: [id], onUpdate: Restrict)
+  networkId     Int
+  network       Network     @relation(fields: [networkId], references: [id], onUpdate: Restrict)
   paybuttons  AddressesOnButtons[]
-  receivedTransactions Transaction[]
+  transactions Transaction[]
 
-  @@index([chainId], map: "PaybuttonAddress_chainId_fkey")
+  @@index([networkId], map: "Address_networkId_fkey")
 }
 
 model Paybutton {
@@ -38,22 +38,22 @@ model Paybutton {
 model AddressesOnButtons {
   paybutton       Paybutton     @relation(fields: [paybuttonId], references: [id])
     paybuttonId     Int
-    paybuttonAddress   PaybuttonAddress @relation(fields: [paybuttonAddressId], references: [id])
-    paybuttonAddressId Int
+    address   Address @relation(fields: [addressId], references: [id])
+    addressId Int
     createdAt DateTime @default(now())
     updatedAt      DateTime             @updatedAt
 
-    @@id([paybuttonId, paybuttonAddressId])
+    @@id([paybuttonId, addressId])
 }
 
-model Chain {
+model Network {
   id                 Int                @id @default(autoincrement())
   slug               String             @unique @db.VarChar(255)
   title              String             @db.VarChar(255)
   ticker             String             @db.VarChar(255)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  paybuttonAddresses PaybuttonAddress[]
+  addresses Address[]
 }
 
 model Transaction {
@@ -61,6 +61,6 @@ model Transaction {
   hash               String             @unique @db.VarChar(255)
   amount             Decimal            @db.Decimal(24,8)
   timestamp          Int
-  paybuttonAddressId Int
-  paybuttonAddress   PaybuttonAddress   @relation(fields: [paybuttonAddressId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  addressId Int
+  address   Address   @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Restrict)
 }
