@@ -14,7 +14,8 @@ body {
   color: var(--primary-text-color);
 }
 
-input, textarea {
+input,
+textarea {
   background: var(--secondary-bg-color);
   color: var(--primary-text-color);
 }
@@ -33,8 +34,13 @@ h2 {
   margin: 0;
 }
 
-body[data-theme="dark"] input, textarea {
-  border-color: var(--secondary-bg-color)
+h4 {
+  margin: 20px 0 10px 0;
+}
+
+body[data-theme='dark'] input,
+textarea {
+  border-color: var(--secondary-bg-color);
 }
 
 button {
@@ -42,6 +48,19 @@ button {
   color: var(--primary-text-color);
 }
 
-body[data-theme="dark"] button {
+body[data-theme='dark'] button {
   color: var(--primary-bg-color);
+}
+
+.back_btn {
+  border-radius: 100px;
+  padding: 5px 25px;
+  margin-bottom: 0px;
+  background-color: var(--secondary-bg-color);
+  display: inline-block;
+}
+
+.back_btn:hover {
+  background-color: var(--accent-color);
+  color: var(--secondary-bg-color) !important;
 }

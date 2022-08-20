@@ -1,18 +1,26 @@
 import React, { FunctionComponent } from 'react'
 import { Paybutton } from '@prisma/client'
+import Image from 'next/image'
+import style from './paybutton.module.css'
+import Arrow from 'assets/right-arrow.png'
 
 interface IProps { paybuttons: Paybutton[] }
 export default ({ paybuttons }: IProps): FunctionComponent<IProps> =>
-  <ul>
+  <div className={style.paybutton_list_ctn}>
+    {paybuttons.length === 0 && <div className={style.paybutton_nocard}>No buttons yet! Use the button below to create one</div>}
     {paybuttons.map(paybutton => (
-      <li key={paybutton.id}>
-        <section>
-          <h3><a href={'button/' + (paybutton.id as string)}>{paybutton.id} {paybutton.name}</a></h3>
-          <ul>
-            {paybutton.addresses.map(item => (<li key={item.address.address}> {item.address.address}</li>))}
-            {paybutton.buttonData}
-          </ul>
-        </section>
-      </li>
+      <a key={paybutton.id} href={'button/' + (paybutton.id as string)} className={style.paybutton_card}>
+        <h5>{paybutton.name}</h5>
+        <div>
+          {paybutton.addresses.map(item => (
+            <div className={style.address} key={item.address.address}>
+              {item.address.address}
+            </div>
+          ))}
+        </div>
+        <div className={style.arrow}>
+          <Image src={Arrow} alt='arrow' width={15} height={26} />
+        </div>
+      </a>
     ))}
-  </ul>
+  </div>

@@ -1,0 +1,120 @@
+.transaction_ctn {
+  background-color: var(--secondary-bg-color);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.transactiontable_header {
+  display: flex;
+  width: 100%;
+  /* border-bottom: 1px solid var(--primary-text-color); */
+  font-weight: bold;
+}
+
+.transactiontable_header span {
+  font-weight: normal;
+}
+
+.transactiontable_header > div {
+  flex-grow: 1;
+  padding: 4px 10px;
+  overflow: hidden;
+}
+
+.transactiontable_header > div:first-child,
+.transaction_row > div:first-child {
+  width: 220px;
+  flex-grow: unset;
+}
+
+.transactiontable_header > div:last-child,
+.transaction_row > div:last-child {
+  text-align: right;
+}
+
+.transaction_row {
+  display: flex;
+  font-size: 14px;
+  /* border-bottom: 1px solid var(--primary-bg-color); */
+}
+
+.transaction_row:nth-child(even) {
+  background-color: var(--primary-bg-color);
+}
+
+.transaction_row > div {
+  flex-grow: 1;
+  padding: 6px 10px;
+}
+
+.explorer_link {
+  color: var(--accent-color) !important;
+}
+
+.explorer_link:hover {
+  text-decoration: underline;
+}
+
+.hash_cell {
+  display: flex;
+  align-items: center;
+}
+
+/*********************** COPY BUTTON  **************************/
+
+.copy_btn {
+  position: relative;
+  display: inline-block;
+  margin-left: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.copy_btn img {
+  border-radius: 0 !important;
+  opacity: 0.5;
+ }
+
+.copy_btn:hover img {
+ opacity: 1;
+}
+
+.tooltiptext2 {
+  visibility: hidden;
+  opacity: 0;
+  background-color: var(--secondary-bg-color);
+  color: var(--primary-text-color);
+  text-align: center;
+  padding: 2px 0px;
+  border-radius: 5px;
+  position: absolute;
+  z-index: 1;
+  width: 110px;
+  left: 100%;
+  flex-basis: 1;
+  font-size: 12px;
+  z-index: 99999999;
+  box-sizing: border-box;
+  transition: all 100ms ease-in-out;
+  /* transform: translate(-50%, -80%); */
+}
+
+.copy_btn:hover .tooltiptext2,
+.copy_btn:hover .tooltiptext2 {
+  visibility: visible;
+  transform: translateX(6px);
+  opacity: 1;
+}
+
+@media (max-width: 600px) {
+  .transactiontable_header > div:first-child,
+.transaction_row > div:first-child {
+ display: none;
+}
+.transaction_row {
+  font-size: 12px;
+}
+}
