@@ -5,6 +5,9 @@ import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
+import { NetworkList } from 'components/Network'
+import Page from 'components/Page'
+import { Network } from '@prisma/client'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -30,18 +33,60 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 
   return {
-    props: { userId: session.getUserId() }
+    props: {
+      userId: session.getUserId()
+    }
   }
 }
 
-interface PaybuttonsProps {
+interface NetworksProps {
   userId: string
 }
 
-export default function Networks ({ userId }: PaybuttonsProps): React.ReactElement {
+interface NetworksState {
+  networks: Network[]
+}
+
+class ProtectedPage extends React.Component<NetworksProps, NetworksState> {
+  constructor (props: NetworksProps) {
+    super(props)
+    this.props = props
+    this.state = {
+      networks: []
+    }
+  }
+
+  async componentDidMount (): Promise<void> {
+    await this.fetchNetworks()
+  }
+
+  async fetchNetworks (): Promise<void> {
+    const res = await fetch('/api/networks/', {
+      method: 'GET'
+    })
+    if (res.status === 200) {
+      this.setState({
+        networks: await res.json()
+      })
+    }
+  }
+
+  render (): React.ReactElement {
+    if (this.state.networks !== []) {
+      return (
+        <Page header={<a href='#' onClick={this.handleLogout}>Logout</a>}>
+          <h2>Networks</h2>
+          <NetworkList networks={this.state.networks} />
+        </Page>
+      )
+    }
+  }
+}
+
+export default function Networks ({ userId }: NetworksProps): React.ReactElement {
   return (
     <ThirdPartyEmailPasswordAuthNoSSR>
-      <h2>Networks</h2>
+    <ProtectedPage userId={userId} />
     </ThirdPartyEmailPasswordAuthNoSSR>
   )
 }

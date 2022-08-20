@@ -21,11 +21,11 @@ check-logs-users:
 	docker logs -f paybutton-users-service
 
 lint:
-	npx --yes ts-standard .
+	yarn eslint .
 
 lint-master:
 	$(git_diff_to_master)
-	npx --yes ts-standard --stdin --stdin-filename DIFF
+	yarn eslint --stdin --stdin-filename DIFF
 
 test-unit:
 	DATABASE_URL="mysql://paybutton-test:paybutton-test@db:3306/paybutton-test" npx ts-node -O '{"module":"commonjs"}' node_modules/jest/bin/jest.js tests/unittests --forceExit

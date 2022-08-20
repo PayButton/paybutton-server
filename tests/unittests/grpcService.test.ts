@@ -1,9 +1,5 @@
-import rewire from 'rewire'
 import { mockedGrpc, mockedBCHAddress, mockedXECAddress } from '../mockedObjects'
-const grpcService = rewire('../../services/grpcService')
-
-grpcService.__set__('grpcBCH', mockedGrpc)
-grpcService.__set__('grpcXEC', mockedGrpc)
+import grpcService from '../../services/grpcService'
 
 describe('Test service returned objects consistency', () => {
   it('test getAddress for real address', async () => {
@@ -41,8 +37,8 @@ describe('Test service returned objects consistency', () => {
       ])
     }))
   })
-  it('test getBCHBalance', async () => {
-    const res = await grpcService.getBCHBalance(mockedBCHAddress.address)
+  it('test getBalance', async () => {
+    const res = await grpcService.getBalance(mockedBCHAddress.address)
     expect(res).toBe(1780)
   })
   it('test getTransactionDetails', async () => {

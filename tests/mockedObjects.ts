@@ -2,10 +2,7 @@
 // GRPC-BCHRPC
 import {
   Transaction,
-  UnspentOutput,
-  GetTransactionResponse,
-  GetAddressTransactionsResponse,
-  GetAddressUnspentOutputsResponse
+  UnspentOutput
 } from 'grpc-bchrpc-node'
 
 import { Prisma } from '@prisma/client'
@@ -133,7 +130,7 @@ export const mockedTransaction = {
 }
 
 // BCH GRPC
-const unspentOutputFromObject = (obj: UnspentOutput.AsObject): UnspentOutput => {
+export const unspentOutputFromObject = (obj: UnspentOutput.AsObject): UnspentOutput => {
   const uo = new UnspentOutput()
   uo.setPubkeyScript(obj.pubkeyScript)
   uo.setValue(obj.value)
@@ -164,7 +161,7 @@ const inputFromObject = (obj: Transaction.Input.AsObject): Transaction.Input => 
   return inp
 }
 
-const transactionFromObject = (obj: Transaction.AsObject): Transaction => {
+export const transactionFromObject = (obj: Transaction.AsObject): Transaction => {
   const t = new Transaction()
   t.setHash(obj.hash)
   t.setVersion(obj.version)
@@ -275,50 +272,5 @@ export const mockedGrpc = {
       }
     ],
     outputsList: []
-  }),
-  getAddressTransactions: (_: object) => {
-    const res = new GetAddressTransactionsResponse()
-    res.setConfirmedTransactionsList([mockedGrpc.transaction1, mockedGrpc.transaction2])
-    return res
-  },
-  getAddressUtxos: (_: object) => {
-    const res = new GetAddressUnspentOutputsResponse()
-    res.setOutputsList([
-      unspentOutputFromObject({
-        pubkeyScript: 'dqkUYF1GSq6KqSQSKPbQtcOJWRBPEFaIrA==',
-        value: 547,
-        isCoinbase: false,
-        blockHeight: 684161
-      }),
-      unspentOutputFromObject({
-        pubkeyScript: 'dqkUYF1GSq6KqSQSKPbQtcOJWRBPEFaIrA==',
-        value: 122,
-        isCoinbase: false,
-        blockHeight: 657711
-      }),
-      unspentOutputFromObject({
-        pubkeyScript: 'dqkUYF1GSq6KqSQSKPbQtcOJWRBPEFaIrA==',
-        value: 1111,
-        isCoinbase: false,
-        blockHeight: 596627
-      })
-    ])
-    return res
-  },
-  getTransaction: (_: object) => {
-    const res = new GetTransactionResponse()
-    res.setTransaction(transactionFromObject({
-      hash: 'hu9m3BZg/zlxis7ehc0x/+9qELXC8dkbimOtc5v598s=',
-      version: 2,
-      lockTime: 0,
-      size: 518,
-      timestamp: 1653653100,
-      confirmations: 0,
-      blockHeight: 0,
-      blockHash: '',
-      inputsList: [],
-      outputsList: []
-    }))
-    return res
-  }
+  })
 }

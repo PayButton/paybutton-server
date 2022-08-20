@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client'
+import { Prisma, Address } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
@@ -22,4 +22,18 @@ export async function fetchAddressBySubstring (substring: string): Promise<Addre
   })
   if (results.length === 0) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
   return results[0]
+}
+
+export async function fetchAllUserAddresses (userId: string): Promise<Address[]> {
+  return await prisma.address.findMany({
+    where: {
+      paybuttons: {
+        some: {
+          paybutton: {
+            providerUserId: userId
+          }
+        }
+      }
+    }
+  })
 }
