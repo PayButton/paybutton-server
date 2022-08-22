@@ -29,7 +29,7 @@ const thirtyDayRevenue = {
   labels: thirtyDayLabels.reverse(),
   datasets: [
     {
-      data: data.usd_revenue_last_30days[1].data,
+      data: data.usdRevenueLast30days[1].data,
       borderColor: '#669cfe',
     }
   ],
@@ -39,7 +39,7 @@ const sevenDayRevenue = {
   labels: sevenDayLabels.reverse(),
   datasets: [
     {
-      data: data.usd_revenue_last_7days[1].data,
+      data: data.usdRevenueLast7days[1].data,
       borderColor: '#669cfe',
     }
   ],
@@ -49,7 +49,7 @@ const yearRevenue = {
   labels: yearLabels,
   datasets: [
     {
-      data: data.usd_revenue_last_year[1].data,
+      data: data.usdRevenueLastYear[1].data,
       borderColor: '#669cfe',
     }
   ],
@@ -59,7 +59,7 @@ const yearPayments = {
   labels: yearLabels.reverse(),
   datasets: [
     {
-      data: data.payments_last_year[1].data,
+      data: data.paymentsLastYear[1].data,
       borderColor: '#66fe91',
     }
   ],
@@ -69,7 +69,7 @@ const thirtyDayPayments = {
   labels: thirtyDayLabels,
   datasets: [
     {
-      data: data.payments_last_30days[1].data,
+      data: data.paymentsLast30days[1].data,
       borderColor: '#66fe91',
     }
   ],
@@ -79,7 +79,7 @@ const sevenDayPayments = {
   labels: sevenDayLabels,
   datasets: [
     {
-      data: data.payments_last_7days[1].data,
+      data: data.paymentsLast7days[1].data,
       borderColor: '#66fe91',
     }
   ],
@@ -124,9 +124,9 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
     <ThirdPartyEmailPasswordAuthNoSSR>
       <h2>Dashboard</h2>
       <div className={style.number_ctn}>
-        <NumberBlock value={'$' + data.lifetime_revenue_usd.toLocaleString()} text='Revenue (lifetime)' />
-        <NumberBlock value={data.lifetime_payments} text='Payments (lifetime)' />
-        <NumberBlock value={data.buttons} text='Buttons' />
+        <NumberBlock value={'$' + data.lifetimeRevenueUsd.toLocaleString()} text='Revenue (lifetime)' />
+        <NumberBlock value={data.lifetimePayments} text='Payments (lifetime)' />
+        <NumberBlock value={data.buttonsCount} text='Buttons' />
       </div>
       <div className={style.btn_ctn}>
         <button className={revenue === sevenDayRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(sevenDayRevenue);setPayments(sevenDayPayments)}}>1W</button>
@@ -137,7 +137,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Revenue</h4>
-            <h5>{revenue === yearRevenue ? 'Year' : revenue === thirtyDayRevenue ? '30 Day':'7 Day'} Total: ${revenue === yearRevenue ? data.usd_revenue_last_year[0].total:revenue === thirtyDayRevenue ? data.usd_revenue_last_30days[0].total:data.usd_revenue_last_7days[0].total}</h5>
+            <h5>{revenue === yearRevenue ? 'Year' : revenue === thirtyDayRevenue ? '30 Day':'7 Day'} Total: ${revenue === yearRevenue ? data.usdRevenueLastYear[0].total:revenue === thirtyDayRevenue ? data.usdRevenueLast30days[0].total:data.usdRevenueLast7days[0].total}</h5>
           </div>
           <div className={style.chart_ctn}>
             <Chart data={revenue} usd />
@@ -146,7 +146,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Payments</h4>
-            <h5>{payments === yearPayments ? 'Year': payments === thirtyDayPayments ? '30 Day':'7 Day'} Total: {payments === thirtyDayPayments ? data.payments_last_30days[0].total:data.payments_last_7days[0].total}</h5>
+            <h5>{payments === yearPayments ? 'Year': payments === thirtyDayPayments ? '30 Day':'7 Day'} Total: {payments === thirtyDayPayments ? data.paymentsLast30days[0].total:data.paymentsLast7days[0].total}</h5>
           </div>
           <div className={style.chart_ctn}>
             <Chart data={payments} />

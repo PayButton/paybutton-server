@@ -1,20 +1,20 @@
 {
-  "buttons": 4,
-  "lifetime_revenue_usd": 10235,
-  "lifetime_payments": 732,
-  "usd_revenue_last_year": [
+  "buttonsCount": 4,
+  "lifetimeRevenueUsd": 10235,
+  "lifetimePayments": 732,
+  "usdRevenueLastYear": [
     { "total": 1440.23 },
     {
       "data": [15, 12, 12, 12, 14, 12, 15, 15, 15, 14, 15, 13]
     }
   ],
-  "payments_last_year": [
+  "paymentsLastYear": [
     { "total": 1023 },
     {
       "data": [34, 34, 33, 20, 32, 36, 27, 31, 20, 35, 30, 27]
     }
   ],
-  "usd_revenue_last_30days": [
+  "usdRevenueLast30days": [
     { "total": 440.23 },
     {
       "data": [
@@ -23,7 +23,7 @@
       ]
     }
   ],
-  "payments_last_30days": [
+  "paymentsLast30days": [
     { "total": 443 },
     {
       "data": [
@@ -32,13 +32,13 @@
       ]
     }
   ],
-  "usd_revenue_last_7days": [
+  "usdRevenueLast7days": [
     { "total": 114.32 },
     {
       "data": [18, 15, 15, 14, 12, 10, 13]
     }
   ],
-  "payments_last_7days": [
+  "paymentsLast7days": [
     { "total": 112 },
     {
       "data": [32, 21, 26, 35, 29, 26, 36]
