@@ -87,6 +87,10 @@ const Sidebar = ({chart, setChart, loggedin}) => {
 
   const isBreakpoint = useMediaQuery(1200)
 
+  const setCheckBox = () => {
+    document.getElementById("menu__toggle").checked = false
+  }
+
   return (
   <>
   {loggedin === undefined ? null :
@@ -109,9 +113,9 @@ const Sidebar = ({chart, setChart, loggedin}) => {
           <Image className={style.image} src={logoImageSource} alt='PayButton' width={140} height={26} />
         </section>
         }
-     
+
         <nav>
-          <ul className={style.ul}>
+          <ul className={style.ul} onClick={isBreakpoint ? () => { setMenu(!menu); setCheckBox() } : null}>
             {MENU_ITEMS.map(itemName =>
               <MenuItem key={itemName.name} name={itemName.name} image={itemName.image} />
             )}
