@@ -6,7 +6,6 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import { NetworkList } from 'components/Network'
-import Page from 'components/Page'
 import { Network } from '@prisma/client'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
@@ -74,10 +73,10 @@ class ProtectedPage extends React.Component<NetworksProps, NetworksState> {
   render (): React.ReactElement {
     if (this.state.networks !== []) {
       return (
-        <Page header={<a href='#' onClick={this.handleLogout}>Logout</a>}>
+        <>
           <h2>Networks</h2>
           <NetworkList networks={this.state.networks} />
-        </Page>
+        </>
       )
     }
   }
