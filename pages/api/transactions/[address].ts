@@ -3,8 +3,9 @@ import { parseAddress } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { fetchAddressTransactions } from 'services/transactionsService'
 import Cors from 'cors'
+import grpcService from 'services/grpcService'
 
-const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
+const { ADDRESS_NOT_PROVIDED_400, NO_ADDRESS_FOUND_404 } = RESPONSE_MESSAGES
 const cors = Cors({
   methods: ['GET', 'HEAD']
 })
@@ -40,6 +41,11 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
         case ADDRESS_NOT_PROVIDED_400.message:
           res.status(ADDRESS_NOT_PROVIDED_400.statusCode).json(ADDRESS_NOT_PROVIDED_400)
           break
+        case NO_ADDRESS_FOUND_404.message:
+          const address = parseAddress(req.query.address as string)
+          const transactions = await grpcService.getAddress(address)
+          res.status(200).send(transactions)
+          break;
         default:
           res.status(500).json({ statusCode: 500, message: err.message })
       }

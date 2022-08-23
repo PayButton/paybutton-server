@@ -314,6 +314,20 @@ describe('GET /api/transactions/[address]', () => {
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
   })
+
+  it('Should return HTTP 200 in case address is valid but not yet on the system', async () => {
+    const baseRequestOptions: RequestOptions = {
+      method: 'GET' as RequestMethod,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      query: {
+          address: `ecash:${exampleAddresses.ecash}`
+      }
+    }
+    const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
+    expect(res.statusCode).toBe(200)
+  })
 })
 
 describe('GET /api/transaction/[transactionId]', () => {
