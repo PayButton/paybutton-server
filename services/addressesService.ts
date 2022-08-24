@@ -24,7 +24,7 @@ export async function fetchAddressBySubstring (substring: string): Promise<Addre
   return results[0]
 }
 
-export async function fetchAllUserAddresses (userId: string): Promise<Address[]> {
+export async function fetchAllUserAddresses (userId: string, includeTransactions = false): Promise<Address[]> {
   return await prisma.address.findMany({
     where: {
       paybuttons: {
@@ -34,6 +34,9 @@ export async function fetchAllUserAddresses (userId: string): Promise<Address[]>
           }
         }
       }
+    },
+    include: {
+      transactions: includeTransactions
     }
   })
 }
