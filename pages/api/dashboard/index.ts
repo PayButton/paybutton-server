@@ -35,7 +35,7 @@ interface DashboardData {
 }
 
 const getChartLabels = function (n: number, periodString: string, formatString = 'M/D'): string[] {
-  return [...new Array(n)].map((i, idx) => moment().startOf('day').subtract(idx, periodString as DurationInputArg2).format(formatString))
+  return [...new Array(n)].map((i, idx) => moment().startOf('day').subtract(idx, periodString as DurationInputArg2).format(formatString)).reverse()
 }
 
 const getChartRevenuePaymentData = function (n: number, periodString: string, transactions: Transaction[]): any {
@@ -54,8 +54,8 @@ const getChartRevenuePaymentData = function (n: number, periodString: string, tr
     paymentsArray.push(paymentCount)
   })
   return {
-    revenue: revenueArray,
-    payments: paymentsArray
+    revenue: revenueArray.reverse(),
+    payments: paymentsArray.reverse()
   }
 }
 
