@@ -1,7 +1,7 @@
 import * as paybuttonsService from 'services/paybuttonsService'
 import * as addressesService from 'services/addressesService'
 import { Prisma, Transaction } from '@prisma/client'
-import moment from 'moment'
+import moment, { DurationInputArg2 } from 'moment'
 
 const DUMMY_XEC_PRICE = 0.00003918
 const DUMMY_BCH_PRICE = 132
@@ -35,7 +35,7 @@ interface DashboardData {
 }
 
 const getChartLabels = function (n: number, periodString: string, formatString = 'M/D'): string[] {
-  return [...new Array(n)].map((i, idx) => moment().startOf('day').subtract(idx, periodString).format(formatString))
+  return [...new Array(n)].map((i, idx) => moment().startOf('day').subtract(idx, periodString as DurationInputArg2).format(formatString))
 }
 
 const getChartRevenuePaymentData = function (n: number, periodString: string, transactions: Transaction[]): any {
@@ -43,8 +43,8 @@ const getChartRevenuePaymentData = function (n: number, periodString: string, tr
   const paymentsArray: number[] = []
   const _ = [...new Array(n)]
   _.forEach((i, idx) => {
-    const lowerThreshold = moment().startOf('day').subtract(idx + 1, periodString)
-    const upperThreshold = moment().startOf('day').subtract(idx, periodString)
+    const lowerThreshold = moment().startOf('day').subtract(idx + 1, periodString as DurationInputArg2)
+    const upperThreshold = moment().startOf('day').subtract(idx, periodString as DurationInputArg2)
     const periodTransactionAmountArray = filterLastTransactions(lowerThreshold, upperThreshold, transactions).map((t) => t.amount)
     const revenue = periodTransactionAmountArray.reduce((a, b) => {
       return a.plus(b)
