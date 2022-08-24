@@ -19,7 +19,7 @@ interface ChartData {
 interface PeriodData {
   revenue: ChartData
   payments: ChartData
-  totalRevenue: number
+  totalRevenue: Prisma.Decimal
   totalPayments: number
 }
 
@@ -82,11 +82,12 @@ const getPeriodData = function (n: number, periodString: string, transactions: T
   const revenuePaymentData = getChartRevenuePaymentData(n, periodString, transactions)
   const revenue = getChartData(n, periodString, revenuePaymentData.revenue, borderColor, formatString)
   const payments = getChartData(n, periodString, revenuePaymentData.payments, borderColor, formatString)
+
   return {
     revenue,
     payments,
-    totalRevenue: 3, // revenue.datasets[0].data, //.reduce((a, b) => a.plus(b))
-    totalPayments: 4 // revenue.datasets[0].data, //.reduce((a, b) => a.plus(b))
+    totalRevenue: (revenue.datasets[0].data as any).reduce((a: Prisma.Decimal, b: Prisma.Decimal) => a.plus(b)),
+    totalPayments: (payments.datasets[0].data as any).reduce((a: number, b: number) => a + b)
   }
 }
 
@@ -105,7 +106,7 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
     return t
   }))
 
-  const totalRevenue = transactionsInUSD.map((t) => t.amount).reduce((a, b) => a.plus(b))
+  const totalRevenue = transactionsInUSD.map((t) => t.amount).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
 
   const thirtyDays: PeriodData = getPeriodData(30, 'days', transactionsInUSD, '#66fe91')
   const sevenDays: PeriodData = getPeriodData(7, 'days', transactionsInUSD, '#66fe91')
