@@ -11,7 +11,10 @@ export default ({ networks }: IProps): FunctionComponent<IProps> => {
             <div className={style.network_card_text}>
               <div className={style.cardTitle}>{network.title}</div>
               <div>Last block: X time ago</div>
-              <div>Status: Connected</div>
+                {network.title === 'eCash' ? 
+                  <div className={style.cardStatus} style={{ color: '#04b504' }}>Connected</div> :
+                  <div className={style.cardStatus}>Disconnected</div>
+                }
             </div>
         </div>
       ))}
