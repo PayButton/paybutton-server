@@ -56,14 +56,17 @@ export async function upsertTransaction (transaction: BCHTransaction.AsObject, a
   const address = await fetchAddressBySubstring(addressString)
   const hash = await base64HashToHex(transaction.hash as string)
   const transactionParams = {
-    hash: hash,
+    hash,
     amount: receivedAmount,
     addressId: address.id,
     timestamp: transaction.timestamp
   }
   return await prisma.transaction.upsert({
     where: {
-      hash: transactionParams.hash
+      Transaction_hash_addressId_unique_constraint: {
+        hash: transactionParams.hash,
+        addressId: address.id
+      }
     },
     update: transactionParams,
     create: transactionParams

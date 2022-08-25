@@ -58,9 +58,11 @@ model Network {
 
 model Transaction {
   id                 Int                @id @default(autoincrement())
-  hash               String             @unique @db.VarChar(255)
+  hash               String             @db.VarChar(255)
   amount             Decimal            @db.Decimal(24,8)
   timestamp          Int
   addressId Int
   address   Address   @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@unique([hash, addressId], name: "Transaction_hash_addressId_unique_constraint")
 }
