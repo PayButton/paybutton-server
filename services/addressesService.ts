@@ -1,4 +1,4 @@
-import { Prisma, Address } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
@@ -24,7 +24,13 @@ export async function fetchAddressBySubstring (substring: string): Promise<Addre
   return results[0]
 }
 
-export async function fetchAllUserAddresses (userId: string): Promise<Address[]> {
+const addressWithTransactions = Prisma.validator<Prisma.AddressArgs>()({
+  include: { transactions: true }
+})
+
+type AddressWithTransactions = Prisma.AddressGetPayload<typeof addressWithTransactions>
+
+export async function fetchAllUserAddresses (userId: string, includeTransactions = false): Promise<AddressWithTransactions[]> {
   return await prisma.address.findMany({
     where: {
       paybuttons: {
@@ -34,6 +40,9 @@ export async function fetchAllUserAddresses (userId: string): Promise<Address[]>
           }
         }
       }
+    },
+    include: {
+      transactions: includeTransactions
     }
   })
 }
