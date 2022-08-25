@@ -5,6 +5,7 @@ import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
 import transactionsEndpoint from 'pages/api/transactions/[address]'
 import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
 import balanceEndpoint from 'pages/api/balance/[address]'
+import dashboardEndpoint from 'pages/api/dashboard/index'
 import {
   exampleAddresses,
   testEndpoint,
@@ -322,7 +323,7 @@ describe('GET /api/transactions/[address]', () => {
         'Content-Type': 'application/json'
       },
       query: {
-          address: `ecash:${exampleAddresses.ecash}`
+        address: `ecash:${exampleAddresses.ecash}`
       }
     }
     const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
@@ -364,3 +365,42 @@ describe('GET /api/balance/[address]', () => {
   })
 })
 
+describe('GET /api/dashboard', () => {
+  const baseRequestOptions: RequestOptions = {
+    method: 'GET' as RequestMethod,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    query: {}
+  }
+
+  const expectedPeriodData = expect.objectContaining({
+    revenue: expect.objectContaining({
+      labels: expect.any(Array),
+      datasets: expect.arrayContaining([
+        expect.objectContaining({
+          data: expect.any(Array),
+          borderColor: expect.any(String)
+        })
+      ])
+    })
+  })
+
+  it('Should return HTTP 200', async () => {
+    const res = await testEndpoint(baseRequestOptions, dashboardEndpoint)
+    expect(res.statusCode).toBe(200)
+    const responseData = res._getJSONData()
+    expect(responseData).toEqual({
+      thirtyDays: expectedPeriodData,
+      sevenDays: expectedPeriodData,
+      year: expectedPeriodData,
+      total: {
+        revenue: expect.any(String),
+        payments: expect.any(Number),
+        buttons: expect.any(Number)
+      }
+    }
+    )
+    console.log(JSON.stringify(responseData))
+  })
+})
