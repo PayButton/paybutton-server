@@ -2,6 +2,7 @@ import * as paybuttonsService from 'services/paybuttonsService'
 import * as addressesService from 'services/addressesService'
 import { Prisma, Transaction } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
+import { setSession } from 'utils/setSession'
 
 const DUMMY_XEC_PRICE = 0.00003918
 const DUMMY_BCH_PRICE = 132
@@ -126,9 +127,8 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
 
 export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'GET') {
-    // await setSession(req, res)
-    // let userId = req.session.userId
-    const userId = 'dev-uid'
+    await setSession(req, res)
+    const userId = req.session.userId
 
     res.status(200).json(await getUserDashboardData(userId))
   }
