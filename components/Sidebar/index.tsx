@@ -41,10 +41,10 @@ const MENU_ITEMS = [
     name:'Networks',
     image: Networks
   },
-  {
-    name:'Account',
-    image: Account
-  },
+  // {
+  //   name:'Account',
+  //   image: Account
+  // },
   // {
   //   name:'Settings',
   //   image: Settings
