@@ -58,18 +58,18 @@ interface PaybuttonsProps {
 
 export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElement {
   const [dashboardData, setDashboardData] = useState()
-  const [period, setPeriod] = useState()
+  const [activePeriod, setActivePeriod] = useState()
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
       const res = await fetch('api/dashboard')
       const json = await res.json()
       setDashboardData(json)
-      setPeriod(json.thirtyDays)
+      setActivePeriod(json.thirtyDays)
     }
     fetchData().catch(console.error)
   }, [])
 
-  if (dashboardData === undefined || period === undefined) return <></>
+  if (dashboardData === undefined || activePeriod === undefined) return <></>
 
   return (
     <ThirdPartyEmailPasswordAuthNoSSR>
@@ -80,27 +80,27 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <NumberBlock value={dashboardData.total.buttons} text='Buttons' />
       </div>
       <div className={style.btn_ctn}>
-        <button className={period === dashboardData.sevenDays ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setPeriod(dashboardData.sevenDays) }}>1W</button>
-        <button className={period === dashboardData.thirtyDays ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setPeriod(dashboardData.thirtyDays) }}>1M</button>
-        <button className={period === dashboardData.year ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setPeriod(dashboardData.year) }}>1Y</button>
+        <button className={activePeriod === dashboardData.sevenDays ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.sevenDays) }}>1W</button>
+        <button className={activePeriod === dashboardData.thirtyDays ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.thirtyDays) }}>1M</button>
+        <button className={activePeriod === dashboardData.year ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.year) }}>1Y</button>
       </div>
       <div className={style.chart_outer_ctn}>
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Revenue</h4>
-            <h5>{period === dashboardData.year ? 'Year' : period === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${period.totalRevenue}</h5>
+            <h5>{activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${activePeriod.totalRevenue}</h5>
           </div>
           <div className={style.chart_ctn}>
-            <Chart data={period.revenue} usd />
+            <Chart data={activePeriod.revenue} usd />
           </div>
         </div>
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Payments</h4>
-            <h5>{period === dashboardData.year ? 'Year' : period === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: {period.totalPayments}</h5>
+            <h5>{activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: {activePeriod.totalPayments}</h5>
           </div>
           <div className={style.chart_ctn}>
-            <Chart data={period.payments} />
+            <Chart data={activePeriod.payments} />
           </div>
         </div>
       </div>
