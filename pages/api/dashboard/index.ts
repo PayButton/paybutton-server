@@ -100,10 +100,10 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
   const BCHTransactions = Array.prototype.concat.apply([], BCHAddresses.map((addr) => addr.transactions))
   const XECTransactions = Array.prototype.concat.apply([], XECAddresses.map((addr) => addr.transactions))
   const incomingTransactionsInUSD = BCHTransactions.map((t) => {
-    t.amount = t.amount.times(DUMMY_BCH_PRICE)
+    t.amount = t.amount.times(DUMMY_BCH_PRICE).toFixed(2)
     return t
   }).concat(XECTransactions.map((t) => {
-    t.amount = t.amount.times(DUMMY_XEC_PRICE)
+    t.amount = t.amount.times(DUMMY_XEC_PRICE).toFixed(2)
     return t
   })).filter((t) => {
     return t.amount > 0
