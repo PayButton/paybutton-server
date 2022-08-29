@@ -99,19 +99,21 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
   const BCHAddresses = addresses.filter((addr) => addr.id === 2)
   const BCHTransactions = Array.prototype.concat.apply([], BCHAddresses.map((addr) => addr.transactions))
   const XECTransactions = Array.prototype.concat.apply([], XECAddresses.map((addr) => addr.transactions))
-  const transactionsInUSD = BCHTransactions.map((t) => {
+  const incomingTransactionsInUSD = BCHTransactions.map((t) => {
     t.amount = t.amount.times(DUMMY_BCH_PRICE)
     return t
   }).concat(XECTransactions.map((t) => {
     t.amount = t.amount.times(DUMMY_XEC_PRICE)
     return t
-  }))
+  })).filter((t) => {
+    return t.amount > 0
+  })
 
-  const totalRevenue = transactionsInUSD.map((t) => t.amount).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
+  const totalRevenue = incomingTransactionsInUSD.map((t) => t.amount).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
 
-  const thirtyDays: PeriodData = getPeriodData(30, 'days', transactionsInUSD, '#66fe91')
-  const sevenDays: PeriodData = getPeriodData(7, 'days', transactionsInUSD, '#66fe91')
-  const year: PeriodData = getPeriodData(12, 'months', transactionsInUSD, '#66fe91', 'MMM')
+  const thirtyDays: PeriodData = getPeriodData(30, 'days', incomingTransactionsInUSD, '#66fe91')
+  const sevenDays: PeriodData = getPeriodData(7, 'days', incomingTransactionsInUSD, '#66fe91')
+  const year: PeriodData = getPeriodData(12, 'months', incomingTransactionsInUSD, '#66fe91', 'MMM')
 
   return {
     thirtyDays,
@@ -119,7 +121,7 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
     year,
     total: {
       revenue: totalRevenue,
-      payments: transactionsInUSD.length,
+      payments: incomingTransactionsInUSD.length,
       buttons: buttonsCount
     }
   }
