@@ -79,10 +79,15 @@ const getChartData = function (n: number, periodString: string, dataArray: numbe
   }
 }
 
-const getPeriodData = function (n: number, periodString: string, transactions: Transaction[], borderColor: string, formatString = 'M/D'): PeriodData {
+interface ChartColor {
+  revenue: string
+  payments: string
+}
+
+const getPeriodData = function (n: number, periodString: string, transactions: Transaction[], borderColor: ChartColor, formatString = 'M/D'): PeriodData {
   const revenuePaymentData = getChartRevenuePaymentData(n, periodString, transactions)
-  const revenue = getChartData(n, periodString, revenuePaymentData.revenue, borderColor, formatString)
-  const payments = getChartData(n, periodString, revenuePaymentData.payments, borderColor, formatString)
+  const revenue = getChartData(n, periodString, revenuePaymentData.revenue, borderColor.revenue, formatString)
+  const payments = getChartData(n, periodString, revenuePaymentData.payments, borderColor.payments, formatString)
 
   return {
     revenue,
@@ -111,9 +116,9 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
 
   const totalRevenue = incomingTransactionsInUSD.map((t) => t.amount).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
 
-  const thirtyDays: PeriodData = getPeriodData(30, 'days', incomingTransactionsInUSD, '#66fe91')
-  const sevenDays: PeriodData = getPeriodData(7, 'days', incomingTransactionsInUSD, '#66fe91')
-  const year: PeriodData = getPeriodData(12, 'months', incomingTransactionsInUSD, '#66fe91', 'MMM')
+  const thirtyDays: PeriodData = getPeriodData(30, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
+  const sevenDays: PeriodData = getPeriodData(7, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
+  const year: PeriodData = getPeriodData(12, 'months', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM')
 
   return {
     thirtyDays,
