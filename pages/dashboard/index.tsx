@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, FunctionComponent } from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
@@ -6,84 +6,23 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import style from './dashboard.module.css'
-import data from './dummy-data.json'
-import moment from 'moment'
-const Chart = dynamic(() => import("./Chart"), {
-  ssr: false,
-});
+const Chart = dynamic(async () => await import('./Chart'), {
+  ssr: false
+})
 
-const NumberBlock = ({value, text}) => {
+interface NumberBlockProps {
+  value: number
+  text: string
+}
+
+const NumberBlock = ({ value, text }: NumberBlockProps): FunctionComponent<NumberBlockProps> => {
   return (
     <div className={style.number_block}>
       <h4>{value}</h4>
       <h5>{text}</h5>
     </div>
-    )
+  )
 }
-
-const yearLabels = [...new Array(12)].map((i, idx) => moment().startOf("day").subtract(idx, "months").format("MMM"));
-const thirtyDayLabels = [...new Array(30)].map((i, idx) => moment().startOf("day").subtract(idx, "days").format('M/D'));
-const sevenDayLabels = [...new Array(7)].map((i, idx) => moment().startOf("day").subtract(idx, "days").format('M/D'));
-
-const thirtyDayRevenue = {
-  labels: thirtyDayLabels.reverse(),
-  datasets: [
-    {
-      data: data.usd_revenue_last_30days[1].data,
-      borderColor: '#669cfe',
-    }
-  ],
-};
-
-const sevenDayRevenue = {
-  labels: sevenDayLabels.reverse(),
-  datasets: [
-    {
-      data: data.usd_revenue_last_7days[1].data,
-      borderColor: '#669cfe',
-    }
-  ],
-};
-
-const yearRevenue = {
-  labels: yearLabels,
-  datasets: [
-    {
-      data: data.usd_revenue_last_year[1].data,
-      borderColor: '#669cfe',
-    }
-  ],
-};
-
-const yearPayments = {
-  labels: yearLabels.reverse(),
-  datasets: [
-    {
-      data: data.payments_last_year[1].data,
-      borderColor: '#66fe91',
-    }
-  ],
-};
-
-const thirtyDayPayments = {
-  labels: thirtyDayLabels,
-  datasets: [
-    {
-      data: data.payments_last_30days[1].data,
-      borderColor: '#66fe91',
-    }
-  ],
-};
-
-const sevenDayPayments = {
-  labels: sevenDayLabels,
-  datasets: [
-    {
-      data: data.payments_last_7days[1].data,
-      borderColor: '#66fe91',
-    }
-  ],
-};
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -118,38 +57,50 @@ interface PaybuttonsProps {
 }
 
 export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElement {
-  const [revenue, setRevenue] = useState(thirtyDayRevenue)
-  const [payments, setPayments] = useState(thirtyDayPayments)
+  const [dashboardData, setDashboardData] = useState()
+  const [activePeriod, setActivePeriod] = useState()
+  useEffect(() => {
+    const fetchData = async (): Promise<void> => {
+      const res = await fetch('api/dashboard')
+      const json = await res.json()
+      setDashboardData(json)
+      setActivePeriod(json.thirtyDays)
+    }
+    fetchData().catch(console.error)
+  }, [])
+
+  if (dashboardData === undefined || activePeriod === undefined) return <></>
+
   return (
     <ThirdPartyEmailPasswordAuthNoSSR>
       <h2>Dashboard</h2>
       <div className={style.number_ctn}>
-        <NumberBlock value={'$' + data.lifetime_revenue_usd.toLocaleString()} text='Revenue (lifetime)' />
-        <NumberBlock value={data.lifetime_payments} text='Payments (lifetime)' />
-        <NumberBlock value={data.buttons} text='Buttons' />
+        <NumberBlock value={'$'.concat(dashboardData.total.revenue) } text='Revenue (lifetime)' />
+        <NumberBlock value={dashboardData.total.payments} text='Payments (lifetime)' />
+        <NumberBlock value={dashboardData.total.buttons} text='Buttons' />
       </div>
       <div className={style.btn_ctn}>
-        <button className={revenue === sevenDayRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(sevenDayRevenue);setPayments(sevenDayPayments)}}>1W</button>
-        <button className={revenue === thirtyDayRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(thirtyDayRevenue);setPayments(thirtyDayPayments)}}>1M</button>
-        <button className={revenue === yearRevenue ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => {setRevenue(yearRevenue);setPayments(yearPayments)}}>1Y</button>
+        <button className={activePeriod === dashboardData.sevenDays ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.sevenDays) }}>1W</button>
+        <button className={activePeriod === dashboardData.thirtyDays ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.thirtyDays) }}>1M</button>
+        <button className={activePeriod === dashboardData.year ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.year) }}>1Y</button>
       </div>
       <div className={style.chart_outer_ctn}>
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Revenue</h4>
-            <h5>{revenue === yearRevenue ? 'Year' : revenue === thirtyDayRevenue ? '30 Day':'7 Day'} Total: ${revenue === yearRevenue ? data.usd_revenue_last_year[0].total:revenue === thirtyDayRevenue ? data.usd_revenue_last_30days[0].total:data.usd_revenue_last_7days[0].total}</h5>
+            <h5>{activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${activePeriod.totalRevenue}</h5>
           </div>
           <div className={style.chart_ctn}>
-            <Chart data={revenue} usd />
+            <Chart data={activePeriod.revenue} usd />
           </div>
         </div>
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Payments</h4>
-            <h5>{payments === yearPayments ? 'Year': payments === thirtyDayPayments ? '30 Day':'7 Day'} Total: {payments === thirtyDayPayments ? data.payments_last_30days[0].total:data.payments_last_7days[0].total}</h5>
+            <h5>{activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: {activePeriod.totalPayments}</h5>
           </div>
           <div className={style.chart_ctn}>
-            <Chart data={payments} />
+            <Chart data={activePeriod.payments} />
           </div>
         </div>
       </div>

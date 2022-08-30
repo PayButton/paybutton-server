@@ -2,6 +2,7 @@ import * as paybuttonsService from 'services/paybuttonsService'
 import * as addressesService from 'services/addressesService'
 import { Prisma, Transaction } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
+import { setSession } from 'utils/setSession'
 
 const DUMMY_XEC_PRICE = 0.00003918
 const DUMMY_BCH_PRICE = 132
@@ -78,10 +79,15 @@ const getChartData = function (n: number, periodString: string, dataArray: numbe
   }
 }
 
-const getPeriodData = function (n: number, periodString: string, transactions: Transaction[], borderColor: string, formatString = 'M/D'): PeriodData {
+interface ChartColor {
+  revenue: string
+  payments: string
+}
+
+const getPeriodData = function (n: number, periodString: string, transactions: Transaction[], borderColor: ChartColor, formatString = 'M/D'): PeriodData {
   const revenuePaymentData = getChartRevenuePaymentData(n, periodString, transactions)
-  const revenue = getChartData(n, periodString, revenuePaymentData.revenue, borderColor, formatString)
-  const payments = getChartData(n, periodString, revenuePaymentData.payments, borderColor, formatString)
+  const revenue = getChartData(n, periodString, revenuePaymentData.revenue, borderColor.revenue, formatString)
+  const payments = getChartData(n, periodString, revenuePaymentData.payments, borderColor.payments, formatString)
 
   return {
     revenue,
@@ -98,19 +104,21 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
   const BCHAddresses = addresses.filter((addr) => addr.id === 2)
   const BCHTransactions = Array.prototype.concat.apply([], BCHAddresses.map((addr) => addr.transactions))
   const XECTransactions = Array.prototype.concat.apply([], XECAddresses.map((addr) => addr.transactions))
-  const transactionsInUSD = BCHTransactions.map((t) => {
-    t.amount = t.amount.times(DUMMY_BCH_PRICE)
+  const incomingTransactionsInUSD = BCHTransactions.map((t) => {
+    t.amount = t.amount.times(DUMMY_BCH_PRICE).toFixed(2)
     return t
   }).concat(XECTransactions.map((t) => {
-    t.amount = t.amount.times(DUMMY_XEC_PRICE)
+    t.amount = t.amount.times(DUMMY_XEC_PRICE).toFixed(2)
     return t
-  }))
+  })).filter((t) => {
+    return t.amount > 0
+  })
 
-  const totalRevenue = transactionsInUSD.map((t) => t.amount).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
+  const totalRevenue = incomingTransactionsInUSD.map((t) => t.amount).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
 
-  const thirtyDays: PeriodData = getPeriodData(30, 'days', transactionsInUSD, '#66fe91')
-  const sevenDays: PeriodData = getPeriodData(7, 'days', transactionsInUSD, '#66fe91')
-  const year: PeriodData = getPeriodData(12, 'months', transactionsInUSD, '#66fe91', 'MMM')
+  const thirtyDays: PeriodData = getPeriodData(30, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
+  const sevenDays: PeriodData = getPeriodData(7, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
+  const year: PeriodData = getPeriodData(12, 'months', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM')
 
   return {
     thirtyDays,
@@ -118,7 +126,7 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
     year,
     total: {
       revenue: totalRevenue,
-      payments: transactionsInUSD.length,
+      payments: incomingTransactionsInUSD.length,
       buttons: buttonsCount
     }
   }
@@ -126,9 +134,8 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
 
 export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'GET') {
-    // await setSession(req, res)
-    // let userId = req.session.userId
-    const userId = 'dev-uid'
+    await setSession(req, res)
+    const userId = req.session.userId
 
     res.status(200).json(await getUserDashboardData(userId))
   }
