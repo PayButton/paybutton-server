@@ -100,8 +100,8 @@ const getPeriodData = function (n: number, periodString: string, transactions: T
 const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
   const buttonsCount = (await paybuttonsService.fetchPaybuttonArrayByUserId(userId)).length
   const addresses = await addressesService.fetchAllUserAddresses(userId, true)
-  const XECAddresses = addresses.filter((addr) => addr.id === 1)
-  const BCHAddresses = addresses.filter((addr) => addr.id === 2)
+  const XECAddresses = addresses.filter((addr) => addr.networkId === 1)
+  const BCHAddresses = addresses.filter((addr) => addr.networkId === 2)
   const BCHTransactions = Array.prototype.concat.apply([], BCHAddresses.map((addr) => addr.transactions))
   const XECTransactions = Array.prototype.concat.apply([], XECAddresses.map((addr) => addr.transactions))
   const incomingTransactionsInUSD = BCHTransactions.map((t) => {
