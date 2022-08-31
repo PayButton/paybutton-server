@@ -42,11 +42,20 @@ export interface OutputsList {
   slpToken: string | undefined;
 }
 
-export const getAddress = async (
+interface GetAddressParameters {
   address: string
+  nbSkip?: number
+  nbFetch?: number
+  height?: number
+  hash?: string
+  reversedHashOrder?: boolean
+}
+
+export const getAddress = async (
+  parameters: GetAddressParameters
 ): Promise<GetAddressTransactionsResponse.AsObject> => {
-  const client = getClientForAddress(address)
-  return (await client.getAddressTransactions({ address })).toObject();
+  const client = getClientForAddress(parameters.address)
+  return (await client.getAddressTransactions(parameters)).toObject();
 };
 
 export const getUtxos = async (
