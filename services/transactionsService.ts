@@ -59,7 +59,8 @@ export async function upsertTransaction (transaction: BCHTransaction.AsObject, a
     hash,
     amount: receivedAmount,
     addressId: address.id,
-    timestamp: transaction.timestamp
+    timestamp: transaction.timestamp,
+    blockHeight: transaction.blockHeight
   }
   return await prisma.transaction.upsert({
     where: {
