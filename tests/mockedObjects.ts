@@ -126,8 +126,7 @@ export const mockedTransaction = {
   hash: 'Yh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
   addressId: 1,
   amount: new Prisma.Decimal('4.31247724'),
-  timestamp: 1657130467,
-  blockHeight: 23847
+  timestamp: 1657130467
 }
 
 // BCH GRPC
