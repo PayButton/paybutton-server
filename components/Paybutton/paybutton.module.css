@@ -145,10 +145,26 @@
   border: 1px solid var(--secondary-text-color);
 }
 
+.form_ctn form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form_ctn label {
+  margin-bottom: 5px;
+}
+
 .form_ctn input,
 .form_ctn textarea {
   border: 1px solid var(--secondary-text-color) !important;
   width: 100%;
+}
+
+.labelMargin {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .form_ctn button,
@@ -156,18 +172,50 @@
   border-radius: 100px;
   padding-left: 20px;
   padding-right: 20px;
-  border: 1px solid var(--accent-color);
+  border: 1px solid var(--primary-text-color);
+  margin-right: 10px;
 }
 
 .form_ctn .cancel_btn {
   background-color: var(--secondary-bg-color);
   border: 1px solid var(--primary-text-color);
-  margin-right: 10px;
+  margin-right: 0px;
   color: var(--primary-text-color);
+}
+
+.multiple_address {
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-block;
+  opacity: 0.5;
+  text-decoration: underline;
+}
+
+.multiple_address:hover {
+  color: var(--accent-color);
+  opacity: 1;
 }
 
 .btn_row {
   text-align: right;
+  margin-top: 30px;
+  position: relative;
+}
+
+.error_message {
+  color: red;
+  font-size: 14px;
+  position: absolute;
+  top: -20px;
+  left: 0;
+  background-color: rgba(255, 0, 0, 0.1);
+  padding: 1px 10px;
+  border-radius: 5px;
+}
+
+.tip {
+  opacity: 0.5;
+  font-size: 14px;
 }
 
 body[data-theme='dark'] .arrow img {
