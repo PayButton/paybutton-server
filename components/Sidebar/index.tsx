@@ -85,7 +85,7 @@ const Sidebar = ({chart, setChart, loggedin}) => {
     return targetReached;
   };
 
-  const isBreakpoint = useMediaQuery(1200)
+  const isBreakpoint = useMediaQuery(960)
 
   const setCheckBox = () => {
     document.getElementById("menu__toggle").checked = false

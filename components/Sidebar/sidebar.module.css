@@ -143,7 +143,7 @@ body[data-theme='dark'] .socialctn .moon {
   filter: none !important;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 960px) {
   .topmenu {
     background-color: var(--secondary-bg-color);
     height: 50px;
