@@ -22,7 +22,7 @@
   text-decoration: none;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 960px) {
   .layout main {
     width: 100%;
     padding: 65px 15px 15px 15px;

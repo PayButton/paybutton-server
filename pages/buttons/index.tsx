@@ -43,6 +43,7 @@ interface PaybuttonsProps {
 
 interface PaybuttonsState {
   paybuttons: Paybutton[]
+  error: String
 }
 
 export default function Home ({ userId }: PaybuttonsProps): React.ReactElement {
@@ -57,7 +58,7 @@ class ProtectedPage extends React.Component<PaybuttonsProps, PaybuttonsState> {
   constructor (props: PaybuttonsProps) {
     super(props)
     this.props = props
-    this.state = { paybuttons: [] }
+    this.state = { paybuttons: [], error: '' }
   }
 
   async componentDidMount (): Promise<void> {
@@ -88,6 +89,19 @@ class ProtectedPage extends React.Component<PaybuttonsProps, PaybuttonsState> {
       this.setState({
         paybuttons: [...this.state.paybuttons, json]
       })
+      this.setState({
+        error: ''
+      })
+    } else {
+      const json = await res.json()
+      this.setState({
+        error: json.message
+      })
+      setTimeout(() => {
+        this.setState({
+          error: ''
+        })
+      }, 2500)
     }
   }
 
@@ -96,7 +110,7 @@ class ProtectedPage extends React.Component<PaybuttonsProps, PaybuttonsState> {
       <>
         <h2>Buttons</h2>
         <PaybuttonList paybuttons={this.state.paybuttons} />
-        <PaybuttonForm onSubmit={this.onSubmit.bind(this)} paybuttons={this.state.paybuttons} />
+        <PaybuttonForm onSubmit={this.onSubmit.bind(this)} paybuttons={this.state.paybuttons} error={this.state.error} />
       </>
     )
   }

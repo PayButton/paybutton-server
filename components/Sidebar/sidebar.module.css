@@ -18,6 +18,10 @@
   padding-left: 25px;
 }
 
+.section img {
+  cursor: pointer;
+}
+
 body[data-theme='dark'] .section img,
 body[data-theme='dark'] .topmenu img,
 body[data-theme='dark'] .socialctn img {
@@ -143,7 +147,7 @@ body[data-theme='dark'] .socialctn .moon {
   filter: none !important;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 960px) {
   .topmenu {
     background-color: var(--secondary-bg-color);
     height: 50px;
