@@ -18,6 +18,10 @@
   padding-left: 25px;
 }
 
+.section img {
+  cursor: pointer;
+}
+
 body[data-theme='dark'] .section img,
 body[data-theme='dark'] .topmenu img,
 body[data-theme='dark'] .socialctn img {

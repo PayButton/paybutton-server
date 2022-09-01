@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react'
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import MenuItem from '../MenuItem'
 import style from './sidebar.module.css'
 import logoImageSource from 'assets/logo.png'
@@ -11,12 +12,12 @@ import Payments from 'assets/payments-icon.png'
 import ButtonsIcon from 'assets/button-icon.png'
 import Wallets from 'assets/wallet-icon.png'
 import Networks from 'assets/network-icon.png'
-import Account from 'assets/user-icon.png'
+// import Account from 'assets/user-icon.png'
 import Docs from 'assets/docs.png'
 // import Settings from 'assets/settings-icon.png'
 // import Help from 'assets/help-icon.png'
 import Logout from 'assets/logout-icon.png'
-const ThemeToggle = dynamic(() => import("./themetoggle"), {
+const ThemeToggle = dynamic(() => import('./themetoggle'), {
   ssr: false,
 });
 
@@ -70,7 +71,7 @@ const Sidebar = ({chart, setChart, loggedin}) => {
         setTargetReached(false);
       }
     }, []);
-  
+
     useEffect(() => {
       const media = window.matchMedia(`(max-width: ${width}px)`)
       media.addEventListener('change', e => updateTarget(e))
@@ -78,10 +79,10 @@ const Sidebar = ({chart, setChart, loggedin}) => {
       if (media.matches) {
         setTargetReached(true)
       }
-  
+
       return () => media.removeEventListener('change', e => updateTarget(e))
     }, [])
-  
+
     return targetReached;
   };
 
@@ -97,7 +98,9 @@ const Sidebar = ({chart, setChart, loggedin}) => {
   <>
   {isBreakpoint &&
     <div className={style.topmenu}>
-      <Image className={style.image} src={logoImageSource} alt='PayButton' width={120} height={22} />
+      <Link href='/dashboard'>
+        <Image className={style.image} src={logoImageSource} alt='PayButton' width={120} height={22} />
+      </Link>
       <div className={style.menu_ctn_outer}>
         <input id="menu__toggle" className={style.menu_ctn} type="checkbox" onClick={()=>setMenu(!menu)}/>
         <label className={style.menu_btn} htmlFor="menu__toggle">
@@ -110,7 +113,9 @@ const Sidebar = ({chart, setChart, loggedin}) => {
       <div>
         {!isBreakpoint &&
         <section className={style.section}>
-          <Image className={style.image} src={logoImageSource} alt='PayButton' width={140} height={26} />
+          <Link href='/dashboard'>
+            <Image className={style.image} src={logoImageSource} alt='PayButton' width={140} height={26} />
+          </Link>
         </section>
         }
 
