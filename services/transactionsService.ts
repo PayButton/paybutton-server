@@ -73,18 +73,19 @@ export async function upsertTransaction (transaction: BCHTransaction.AsObject, a
   })
 }
 
-export async function getAllTransactions (addressString: string): Promise<void> {
+export async function getAllTransactions (addressString: string): Promise<BCHTransaction.AsObject[]> {
   let newTransactionsCount = -1
-  let totalFetched = 0
+  let transactions: BCHTransaction.AsObject[] = []
   while (newTransactionsCount !== 0) {
     const nextTransactions = (await grpcService.getAddress({
       address: addressString,
       nbFetch: 50,
-      nbSkip: totalFetched
+      nbSkip: transactions.length
     })).confirmedTransactionsList
+    transactions = transactions.concat(nextTransactions)
     newTransactionsCount = nextTransactions.length
-    totalFetched += newTransactionsCount
   }
+  return transactions
 }
 
 export async function syncTransactions (addressString: string): Promise<void> {
