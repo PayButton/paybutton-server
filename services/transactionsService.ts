@@ -93,8 +93,8 @@ export async function syncTransactions (addressString: string): Promise<void> {
   if (address === '' || address === undefined) {
     throw new Error(ADDRESS_NOT_PROVIDED_400.message)
   }
-  const transactions = await grpcService.getAddress({ address })
-  for (const t of transactions.confirmedTransactionsList) {
+  const transactions = await getAllTransactions(address)
+  for (const t of transactions) {
     void upsertTransaction(t, address)
   }
 }
