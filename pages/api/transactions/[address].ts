@@ -41,11 +41,12 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
         case ADDRESS_NOT_PROVIDED_400.message:
           res.status(ADDRESS_NOT_PROVIDED_400.statusCode).json(ADDRESS_NOT_PROVIDED_400)
           break
-        case NO_ADDRESS_FOUND_404.message:
+        case NO_ADDRESS_FOUND_404.message: {
           const address = parseAddress(req.query.address as string)
-          const transactions = await grpcService.getAddress(address)
+          const transactions = await grpcService.getAddress({ address })
           res.status(200).send(transactions)
-          break;
+          break
+        }
         default:
           res.status(500).json({ statusCode: 500, message: err.message })
       }
