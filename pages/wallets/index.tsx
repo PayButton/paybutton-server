@@ -6,7 +6,7 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import WalletCard from 'components/Wallet/WalletCard'
-import { Network } from '@prisma/client'
+import WalletForm from 'components/Wallet/WalletForm'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -80,6 +80,7 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
         {this.state.wallets.map(wallets =>
               <WalletCard key={wallets.name} walletInfo={wallets} />
         )}
+        <WalletForm />
         </div>
       </>
     )
