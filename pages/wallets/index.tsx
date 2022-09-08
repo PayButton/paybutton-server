@@ -5,6 +5,8 @@ import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
+import WalletCard from 'components/Wallet/WalletCard'
+import { Network } from '@prisma/client'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -34,14 +36,52 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 }
 
-interface PaybuttonsProps {
+interface WalletsProps {
   userId: string
 }
 
-export default function Wallets ({ userId }: PaybuttonsProps): React.ReactElement {
+interface WalletsState {
+  wallets: [{name: string, network: string, paybuttons: any[], balance: string, payments: string}]
+}
+
+export default function Wallets ({ userId }: WalletsProps): React.ReactElement {
   return (
     <ThirdPartyEmailPasswordAuthNoSSR>
-      <h2>Wallets</h2>
+      <ProtectedPage userId={userId} />
     </ThirdPartyEmailPasswordAuthNoSSR>
   )
+}
+
+class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
+  constructor (props: WalletsProps) {
+    super(props)
+    this.state = {
+      wallets: [
+        {
+          name: 'Default Wallet',
+          network: 'eCash',
+          balance: '103742123.05',
+          payments: '453',
+          paybuttons: [
+            { name: 'Paybutton XEC', id: 1 },
+            { name: 'CoinDance BCH', id: 3 },
+            { name: 'Paybutton XEC & CoinDance BCH', id: 3 }
+          ]
+        }
+      ]
+    }
+  }
+
+  render (): React.ReactElement {
+    return (
+      <>
+        <h2>Wallets</h2>
+        <div>
+        {this.state.wallets.map(wallets =>
+              <WalletCard key={wallets.name} walletInfo={wallets} />
+        )}
+        </div>
+      </>
+    )
+  }
 }
