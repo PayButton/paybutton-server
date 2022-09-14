@@ -41,7 +41,7 @@ interface WalletsProps {
 }
 
 interface WalletsState {
-  wallets: [{name: string, network: string, paybuttons: any[], balance: string, payments: string}]
+  wallets: [{name: string, paybuttons: any[], xec_balance: string, bch_balance: string, payments: string}]
 }
 
 export default function Wallets ({ userId }: WalletsProps): React.ReactElement {
@@ -59,8 +59,8 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
       wallets: [
         {
           name: 'Default Wallet',
-          network: 'eCash',
-          balance: '103742123.05',
+          xec_balance: '103742123.05',
+          bch_balance: '41.36',
           payments: '453',
           paybuttons: [
             { name: 'Paybutton XEC', id: 1 },

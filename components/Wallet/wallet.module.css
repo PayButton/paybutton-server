@@ -13,6 +13,24 @@
   margin: 0;
 }
 
+.walletcard_icons {
+  display: flex;
+  align-items: center;
+  border-left: 1px solid var(--secondary-text-color);
+  margin-left: 10px;
+}
+
+.walletcard_icons div:first-child {
+  margin-left: 10px;
+}
+
+.walletcard_icons div {
+  margin-left: 5px;
+  width: 30px;
+  display: flex;
+  align-items: center;
+}
+
 .wallet_card_header_ctn {
   display: flex;
   align-items: center;
@@ -46,7 +64,8 @@
 }
 
 .edit_button:hover img {
-  filter: invert(68%) sepia(56%) saturate(4291%) hue-rotate(195deg) brightness(101%) contrast(99%) !important;
+  filter: invert(68%) sepia(56%) saturate(4291%) hue-rotate(195deg)
+    brightness(101%) contrast(99%) !important;
 }
 
 .edit_button img {
@@ -87,9 +106,33 @@
 }
 
 @media (max-width: 960px) {
+  .wallet_card_header {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
 
+  .walletcard_icons {
+    border-left: none;
+    margin-left: 0px;
+    margin-bottom: 10px;
+  }
+
+  .walletcard_icons div:first-child {
+    margin-left: 0px;
+  }
+
+  .walletcard_icons div {
+    margin-left: 5px;
+    width: 20px;
+  }
+
+  .edit_button {
+    min-width: 16px;
+  }
 }
 
 body[data-theme='dark'] .edit_button img {
-  filter: invert(99%) sepia(74%) saturate(236%) hue-rotate(166deg) brightness(120%) contrast(100%);
+  filter: invert(99%) sepia(74%) saturate(236%) hue-rotate(166deg)
+    brightness(120%) contrast(100%);
 }
