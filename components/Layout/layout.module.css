@@ -11,9 +11,20 @@
 }
 
 .layout main {
-  flex-grow: 2;
   padding: 25px;
   position: relative;
+  max-height: 100vh;
+  overflow-y: scroll;
+  width: calc(100% - 220px);
+}
+
+.layout main::-webkit-scrollbar {
+  display: none;
+}
+
+.layout main {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .layout a,
@@ -26,5 +37,10 @@
   .layout main {
     width: 100%;
     padding: 65px 15px 15px 15px;
+  }
+
+  .layout main {
+    max-height: unset;
+    overflow-y: unset;
   }
 }
