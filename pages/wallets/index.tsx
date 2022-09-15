@@ -41,7 +41,7 @@ interface WalletsProps {
 }
 
 interface WalletsState {
-  wallets: [{name: string, paybuttons: any[], xec_balance: string, bch_balance: string, payments: string}]
+  wallets: [{default_wallet: boolean, name: string, paybuttons: any[], xec_balance: string, bch_balance: string, payments: string}]
 }
 
 export default function Wallets ({ userId }: WalletsProps): React.ReactElement {
@@ -58,7 +58,8 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
     this.state = {
       wallets: [
         {
-          name: 'Default Wallet',
+          default_wallet: true,
+          name: 'My Wallet',
           xec_balance: '103742123.05',
           bch_balance: '41.36',
           payments: '453',
@@ -66,6 +67,26 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
             { name: 'Paybutton XEC', id: 1 },
             { name: 'CoinDance BCH', id: 3 },
             { name: 'Paybutton XEC & CoinDance BCH', id: 3 }
+          ]
+        },
+        {
+          default_wallet: false,
+          name: 'XEC Wallet',
+          xec_balance: '103742123.05',
+          bch_balance: '0',
+          payments: '234',
+          paybuttons: [
+            { name: 'Paybutton XEC', id: 1 }
+          ]
+        },
+        {
+          default_wallet: false,
+          name: 'BCH Wallet',
+          xec_balance: '0',
+          bch_balance: '41.36',
+          payments: '198',
+          paybuttons: [
+            { name: 'CoinDance BCH', id: 3 }
           ]
         }
       ]
@@ -77,7 +98,7 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
       <>
         <h2>Wallets</h2>
         <div>
-        {this.state.wallets.map(wallets =>
+        {this.state.wallets.sort((a, b) => Number(b.default_wallet) - Number(a.default_wallet)).map(wallets =>
               <WalletCard key={wallets.name} walletInfo={wallets} />
         )}
         <WalletForm />

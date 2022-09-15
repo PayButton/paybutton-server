@@ -2,9 +2,9 @@ import React, { FunctionComponent } from 'react'
 import style from './wallet.module.css'
 import Link from 'next/link'
 import Image from 'next/image'
-import EditIcon from 'assets/edit-icon.png'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
+import EditWalletForm from './EditWalletForm'
 
 interface IProps {
   walletInfo: {}
@@ -20,8 +20,9 @@ export default ({ walletInfo }: IProps): FunctionComponent => {
             {walletInfo.bch_balance > 0 && <div><Image src={BCHIcon} alt='BCH' /></div>}
           </div>
         </div>
-        <div className={style.edit_button}>
-          <Image src={EditIcon} alt='edit' />
+        <div className={style.edit_button_ctn}>
+          {walletInfo.default_wallet === true && <div className={style.default_wallet}>Default Wallet</div>}
+          <EditWalletForm walletInfo={walletInfo} />
         </div>
       </div>
 
