@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client'
 import { networks } from './seeds/networks'
-import { paybuttons, addresses, connectors } from './seeds/paybuttons'
+import { paybuttons } from './seeds/paybuttons'
+import { addresses } from './seeds/addresses'
+import { connectors } from './seeds/connectors'
 import { createDevUserRawQueryList } from './seeds/devUser'
 const prisma = new PrismaClient()
 
