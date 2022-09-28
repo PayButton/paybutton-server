@@ -1,6 +1,6 @@
 import { Transaction as BCHTransaction } from 'grpc-bchrpc-node'
 import prisma from 'prisma/clientInstance'
-import { Prisma, Transaction } from '@prisma/client'
+import { Prisma, Transaction, Address } from '@prisma/client'
 import grpcService from 'services/grpcService'
 import { parseAddress } from 'utils/validators'
 import { satoshisToUnit } from 'utils/index'
@@ -48,12 +48,11 @@ export async function base64HashToHex (base64Hash: string): Promise<string> {
   )
 }
 
-export async function upsertTransaction (transaction: BCHTransaction.AsObject, addressString: string): Promise<Transaction | undefined> {
-  const receivedAmount = await getTransactionAmount(transaction, addressString)
+export async function upsertTransaction (transaction: BCHTransaction.AsObject, address: Address): Promise<Transaction | undefined> {
+  const receivedAmount = await getTransactionAmount(transaction, address.address)
   if (receivedAmount === new Prisma.Decimal(0)) { // out transactions
     return
   }
-  const address = await fetchAddressBySubstring(addressString)
   const hash = await base64HashToHex(transaction.hash as string)
   const transactionParams = {
     hash,
@@ -73,19 +72,35 @@ export async function upsertTransaction (transaction: BCHTransaction.AsObject, a
   })
 }
 
-export async function getAllTransactions (addressString: string): Promise<BCHTransaction.AsObject[]> {
+export async function upsertManyTransactions (transactions: BCHTransaction.AsObject[], address: Address): Promise<Transaction[]> {
+  const ret: Transaction[] = []
+  await prisma.$transaction(async (_) => {
+    transactions.map(async (transaction) => {
+      const t = await upsertTransaction(transaction, address)
+      if (t !== undefined) {
+        ret.push(t)
+      }
+    })
+  })
+  return ret
+}
+
+export async function fetchAllTransactions (addressString: string): Promise<boolean> {
+  const address = await fetchAddressBySubstring(addressString)
   let newTransactionsCount = -1
-  let transactions: BCHTransaction.AsObject[] = []
+  let seenTransactionsCount = 0
   while (newTransactionsCount !== 0) {
     const nextTransactions = (await grpcService.getAddress({
-      address: addressString,
-      nbFetch: 50,
-      nbSkip: transactions.length
+      address: address.address,
+      nbFetch: 100,
+      nbSkip: seenTransactionsCount
     })).confirmedTransactionsList
-    transactions = transactions.concat(nextTransactions)
     newTransactionsCount = nextTransactions.length
+    seenTransactionsCount += newTransactionsCount
+    await upsertManyTransactions(nextTransactions, address)
+    await new Promise(resolve => setTimeout(resolve, 1000))
   }
-  return transactions
+  return true
 }
 
 export async function syncTransactions (addressString: string): Promise<void> {
@@ -93,8 +108,5 @@ export async function syncTransactions (addressString: string): Promise<void> {
   if (address === '' || address === undefined) {
     throw new Error(ADDRESS_NOT_PROVIDED_400.message)
   }
-  const transactions = await getAllTransactions(address)
-  for (const t of transactions) {
-    void upsertTransaction(t, address)
-  }
+  await fetchAllTransactions(address)
 }
