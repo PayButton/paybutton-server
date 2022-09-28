@@ -5,6 +5,7 @@ CREATE TABLE `Address` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     `networkId` INTEGER NOT NULL,
+    `walletId` INTEGER NULL,
 
     UNIQUE INDEX `Address_address_key`(`address`),
     INDEX `Address_networkId_fkey`(`networkId`),
@@ -18,6 +19,7 @@ CREATE TABLE `Paybutton` (
     `uuid` VARCHAR(191) NOT NULL DEFAULT (uuid()),
     `buttonData` LONGTEXT NOT NULL,
     `providerUserId` VARCHAR(255) NULL,
+    `walletId` INTEGER NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -60,6 +62,19 @@ CREATE TABLE `Transaction` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `Wallet` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `providerUserId` VARCHAR(255) NULL,
+
+    UNIQUE INDEX `Paybutton_name_providerUserId_unique_constraint`(`name`, `providerUserId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
 -- AddForeignKey
 ALTER TABLE `Address` ADD CONSTRAINT `Address_networkId_fkey` FOREIGN KEY (`networkId`) REFERENCES `Network`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
 
@@ -71,3 +86,9 @@ ALTER TABLE `AddressesOnButtons` ADD CONSTRAINT `AddressesOnButtons_paybuttonId_
 
 -- AddForeignKey
 ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_addressId_fkey` FOREIGN KEY (`addressId`) REFERENCES `Address`(`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `Paybutton` ADD CONSTRAINT `Paybutton_walletId_fkey` FOREIGN KEY (`walletId`) REFERENCES `Wallet`(`id`) ON DELETE SET NULL ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `Address` ADD CONSTRAINT `Address_walletId_fkey` FOREIGN KEY (`walletId`) REFERENCES `Wallet`(`id`) ON DELETE SET NULL ON UPDATE RESTRICT;
