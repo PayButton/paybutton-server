@@ -15,7 +15,9 @@ model Address {
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
   networkId    Int
+  walletId     Int?
   network      Network              @relation(fields: [networkId], references: [id], onUpdate: Restrict)
+  Wallet       Wallet?              @relation(fields: [walletId], references: [id], onUpdate: Restrict)
   paybuttons   AddressesOnButtons[]
   transactions Transaction[]
 
@@ -28,8 +30,10 @@ model Paybutton {
   uuid           String               @default(dbgenerated("(uuid())"))
   buttonData     String               @db.LongText
   providerUserId String?              @db.VarChar(255)
+  walletId       Int?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
+  Wallet         Wallet?              @relation(fields: [walletId], references: [id], onUpdate: Restrict)
   addresses      AddressesOnButtons[]
 
   @@unique([name, providerUserId], map: "Paybutton_name_providerUserId_unique_constraint")
@@ -67,4 +71,16 @@ model Transaction {
 
   @@unique([hash, addressId], name: "Transaction_hash_addressId_unique_constraint")
   @@index([addressId], map: "Transaction_addressId_fkey")
+}
+
+model Wallet {
+  id             Int         @id @default(autoincrement())
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime
+  name           String      @db.VarChar(255)
+  providerUserId String?     @db.VarChar(255)
+  addresses      Address[]
+  paybuttons     Paybutton[]
+
+  @@unique([name, providerUserId], map: "Paybutton_name_providerUserId_unique_constraint")
 }
