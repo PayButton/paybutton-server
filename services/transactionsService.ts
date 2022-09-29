@@ -6,7 +6,7 @@ import { parseAddress } from 'utils/validators'
 import { satoshisToUnit } from 'utils/index'
 import { fetchAddressBySubstring } from 'services/addressesService'
 import _ from 'lodash'
-import { RESPONSE_MESSAGES } from 'constants/index'
+import { RESPONSE_MESSAGES, FETCH_N, FETCH_DELAY } from 'constants/index'
 import xecaddr from 'xecaddrjs'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
@@ -92,13 +92,13 @@ export async function fetchAllTransactions (addressString: string): Promise<bool
   while (newTransactionsCount !== 0) {
     const nextTransactions = (await grpcService.getAddress({
       address: address.address,
-      nbFetch: 100,
+      nbFetch: FETCH_N,
       nbSkip: seenTransactionsCount
     })).confirmedTransactionsList
     newTransactionsCount = nextTransactions.length
     seenTransactionsCount += newTransactionsCount
     await upsertManyTransactions(nextTransactions, address)
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
   }
   return true
 }
