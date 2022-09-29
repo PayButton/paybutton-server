@@ -31,8 +31,8 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, error }: IProps):
       </div>
 
   {modal
-    ? (<div className={style.form_ctn_outer} onClick={() => setModal(false)}>
-          <div className={style.form_ctn_inner} onClick={e => e.stopPropagation()}>
+    ? (<div className={style.form_ctn_outer}>
+          <div className={style.form_ctn_inner}>
             <h4>Create Button</h4>
             <div className={style.form_ctn}>
               <form onSubmit={handleSubmit(onSubmit)} method='post'>

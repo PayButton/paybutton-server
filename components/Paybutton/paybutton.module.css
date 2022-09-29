@@ -184,6 +184,60 @@
   color: var(--primary-text-color);
 }
 
+.form_ctn .delete_btn {
+  background-color: unset;
+  border: none;
+  margin-right: 0px;
+  margin-left: 10px;
+  color: var(--primary-text-color);
+  border-radius: 0px;
+  padding-left: 0px;
+  padding-right: 0px;
+  opacity: 0.6;
+  position: relative;
+  transition: all ease-in-out 100ms;
+}
+
+.form_ctn .delete_btn:hover {
+  color: red;
+  opacity: 1;
+}
+
+.form_ctn .delete_btn div {
+  width: 15px;
+  border-radius: 0px !important;
+  position: absolute;
+  right: 0px;
+  top: 12px;
+  opacity: -10;
+  transition: all ease-in-out 100ms;
+}
+
+.form_ctn .delete_btn:hover div {
+  right: -18px;
+  opacity: 1;
+}
+
+.form_ctn .delete_confirm_btn {
+  padding-left: 20px;
+  padding-right: 20px;
+  border: 1px solid var(--primary-text-color);
+  background-color: var(--primary-bg-color);
+  color: red;
+  transition: all ease-in-out 100ms;
+  font-weight: 600;
+}
+
+.delete_button_form_ctn {
+  word-break: normal;
+}
+
+.form_ctn .delete_confirm_btn:hover {
+  border: 1px solid var(--primary-text-color);
+  background-color: rgb(149, 0, 0);
+  color: var(--secondary-bg-color);
+}
+
 .multiple_address {
   font-size: 12px;
   cursor: pointer;
@@ -201,6 +255,15 @@
   text-align: right;
   margin-top: 30px;
   position: relative;
+}
+
+.btn_row2 {
+  text-align: right;
+  margin-top: 30px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between
 }
 
 .error_message {
@@ -233,6 +296,12 @@ body[data-theme='dark'] .create_button:hover img {
 
 body[data-theme='dark'] .form_ctn_outer {
   background-color: rgba(0, 0, 0, 0.3);
+}
+
+.button_detail_header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 @media (max-width: 960px) {
