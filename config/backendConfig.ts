@@ -2,7 +2,7 @@ import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemail
 import SessionNode from 'supertokens-node/recipe/session'
 import { appInfo } from './appInfo'
 import { TypeInput } from 'supertokens-node/types'
-import * as addressesService from 'services/addressesService'
+import * as addressService from 'services/addressService'
 import { syncTransactions } from 'services/transactionsService'
 
 const getSocialLoginProviders = (): array => {
@@ -99,7 +99,7 @@ export const backendConfig = (): TypeInput => {
 
                 if (response.status === 'OK') {
                   // post sign in logic goes here
-                  (await addressesService.fetchAllUserAddresses(response.user.id)).forEach((addr) => {
+                  (await addressService.fetchAllUserAddresses(response.user.id)).forEach((addr) => {
                     void syncTransactions(addr.address)
                   })
                   return response
@@ -119,7 +119,7 @@ export const backendConfig = (): TypeInput => {
                     // post sign up logic goes here
                   } else {
                     // post sign in logic goes here
-                    (await addressesService.fetchAllUserAddresses(response.user.id)).forEach((addr) => {
+                    (await addressService.fetchAllUserAddresses(response.user.id)).forEach((addr) => {
                       void syncTransactions(addr.address)
                     })
                   }
