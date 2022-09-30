@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import * as networksService from 'services/networksService'
+import * as networkService from 'services/networkService'
 import { appInfo } from 'config/appInfo'
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
@@ -7,9 +7,9 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
     try {
       let networkList
       if (appInfo.showTestNetworks === true) {
-        networkList = await networksService.getAllNetworks()
+        networkList = await networkService.getAllNetworks()
       } else {
-        networkList = await networksService.getAllMainNetworks()
+        networkList = await networkService.getAllMainNetworks()
       }
       res.status(200).json(networkList)
     } catch (err: any) {

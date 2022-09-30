@@ -1,6 +1,6 @@
 import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN } from '../constants/index'
 import { Prisma } from '@prisma/client'
-import { CreatePaybuttonInput } from '../services/paybuttonsService'
+import { CreatePaybuttonInput } from '../services/paybuttonService'
 import { getAddressPrefix } from './index'
 import xecaddr from 'xecaddrjs'
 
@@ -24,7 +24,7 @@ export const parseAddress = function (addressString: string | undefined): string
       parsedAddress = addressString
     } else {
       const prefix = getAddressPrefix(addressString.toLowerCase())
-      parsedAddress = `${prefix}:${addressString}` 
+      parsedAddress = `${prefix}:${addressString}`
     }
   } else {
     throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)

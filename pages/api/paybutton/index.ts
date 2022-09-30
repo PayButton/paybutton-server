@@ -1,4 +1,4 @@
-import * as paybuttonsService from 'services/paybuttonsService'
+import * as paybuttonService from 'services/paybuttonService'
 import { parseError, parsePaybuttonPOSTRequest } from 'utils/validators'
 import { setSession } from 'utils/setSession'
 import { RESPONSE_MESSAGES } from 'constants/index'
@@ -10,7 +10,7 @@ export default async (req: any, res: any): Promise<void> => {
     values.userId = req.session.userId
     try {
       const createPaybuttonInput = parsePaybuttonPOSTRequest(values)
-      const paybutton = await paybuttonsService.createPaybutton(createPaybuttonInput)
+      const paybutton = await paybuttonService.createPaybutton(createPaybuttonInput)
       res.status(200).json(paybutton)
     } catch (err: any) {
       const parsedErr = parseError(err)

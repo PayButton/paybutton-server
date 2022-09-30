@@ -1,7 +1,7 @@
 import { NextApiResponse, NextApiRequest } from 'next'
 import { parseAddress } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import { fetchAddressTransactions } from 'services/transactionsService'
+import { fetchAddressTransactions } from 'services/transactionService'
 import Cors from 'cors'
 import grpcService from 'services/grpcService'
 

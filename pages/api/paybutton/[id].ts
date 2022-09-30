@@ -1,5 +1,5 @@
 import { NextApiResponse, NextApiRequest } from 'next/types'
-import * as paybuttonsService from 'services/paybuttonsService'
+import * as paybuttonService from 'services/paybuttonService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 export default async (
@@ -9,7 +9,7 @@ export default async (
   if (req.method === 'GET') {
     const paybuttonId = req.query.id as string
     try {
-      const paybutton = await paybuttonsService.fetchPaybuttonById(paybuttonId)
+      const paybutton = await paybuttonService.fetchPaybuttonById(paybuttonId)
       if (paybutton == null) throw new Error(RESPONSE_MESSAGES.NOT_FOUND_404.message)
       res.status(200).json(paybutton)
     } catch (err: any) {
