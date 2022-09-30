@@ -1,5 +1,5 @@
 import prisma from 'prisma/clientInstance'
-import * as addressesService from 'services/addressesService'
+import * as addressService from 'services/addressService'
 import { prismaMock } from 'prisma/mockedClient'
 import { mockedBCHAddress } from '../mockedObjects'
 import { RESPONSE_MESSAGES } from 'constants/index'
@@ -9,14 +9,14 @@ describe('Find by substring', () => {
     prismaMock.address.findMany.mockResolvedValue([mockedBCHAddress])
     prisma.address.findMany = prismaMock.address.findMany
 
-    const result = await addressesService.fetchAddressBySubstring('mock')
+    const result = await addressService.fetchAddressBySubstring('mock')
     expect(result).toEqual(mockedBCHAddress)
   })
   it('Throw no addresses found error', async () => {
     prismaMock.address.findMany.mockResolvedValue([])
     prisma.address.findMany = prismaMock.address.findMany
 
-    await expect(addressesService.fetchAddressBySubstring('mock')).rejects.toThrow(
+    await expect(addressService.fetchAddressBySubstring('mock')).rejects.toThrow(
       RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message
     )
   })

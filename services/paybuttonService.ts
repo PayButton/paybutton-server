@@ -1,4 +1,4 @@
-import * as networkService from 'services/networksService'
+import * as networkService from 'services/networkService'
 import { Paybutton } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
