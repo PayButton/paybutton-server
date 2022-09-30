@@ -3,7 +3,7 @@ import SessionNode from 'supertokens-node/recipe/session'
 import { appInfo } from './appInfo'
 import { TypeInput } from 'supertokens-node/types'
 import * as addressService from 'services/addressService'
-import { syncTransactions } from 'services/transactionsService'
+import { syncTransactions } from 'services/transactionService'
 
 const getSocialLoginProviders = (): array => {
   const availableSocialProviders = {
