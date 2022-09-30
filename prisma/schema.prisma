@@ -11,13 +11,15 @@ datasource db {
 }
 
 model Address {
-  id          Int       @id @default(autoincrement())
-  address     String    @unique @db.VarChar(255)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  networkId     Int
-  network       Network     @relation(fields: [networkId], references: [id], onUpdate: Restrict)
-  paybuttons  AddressesOnButtons[]
+  id           Int                  @id @default(autoincrement())
+  address      String               @unique @db.VarChar(255)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  networkId    Int
+  walletId     Int?
+  network      Network              @relation(fields: [networkId], references: [id], onUpdate: Restrict)
+  Wallet       Wallet?              @relation(fields: [walletId], references: [id], onUpdate: Restrict)
+  paybuttons   AddressesOnButtons[]
   transactions Transaction[]
 
   @@index([networkId], map: "Address_networkId_fkey")
@@ -29,41 +31,57 @@ model Paybutton {
   uuid           String               @default(dbgenerated("(uuid())"))
   buttonData     String               @db.LongText
   providerUserId String?              @db.VarChar(255)
+  walletId       Int?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
+  Wallet         Wallet?              @relation(fields: [walletId], references: [id], onUpdate: Restrict)
   addresses      AddressesOnButtons[]
 
   @@unique([name, providerUserId], map: "Paybutton_name_providerUserId_unique_constraint")
 }
 
 model AddressesOnButtons {
-  paybutton       Paybutton     @relation(fields: [paybuttonId], references: [id])
-    paybuttonId     Int
-    address   Address @relation(fields: [addressId], references: [id])
-    addressId Int
-    createdAt DateTime @default(now())
-    updatedAt      DateTime             @updatedAt
+  paybuttonId Int
+  addressId   Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  address     Address   @relation(fields: [addressId], references: [id])
+  paybutton   Paybutton @relation(fields: [paybuttonId], references: [id])
 
-    @@id([paybuttonId, addressId])
+  @@id([paybuttonId, addressId])
+  @@index([addressId], map: "AddressesOnButtons_addressId_fkey")
 }
 
 model Network {
-  id                 Int                @id @default(autoincrement())
-  slug               String             @unique @db.VarChar(255)
-  title              String             @db.VarChar(255)
-  ticker             String             @db.VarChar(255)
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  id        Int       @id @default(autoincrement())
+  slug      String    @unique @db.VarChar(255)
+  title     String    @db.VarChar(255)
+  ticker    String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   addresses Address[]
 }
 
 model Transaction {
-  id                 Int                @id @default(autoincrement())
-  hash               String             @db.VarChar(255)
-  amount             Decimal            @db.Decimal(24,8)
-  timestamp          Int
+  id        Int     @id @default(autoincrement())
+  hash      String  @db.VarChar(255)
+  amount    Decimal @db.Decimal(24, 8)
+  timestamp Int
   addressId Int
-  address   Address   @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Restrict)
 
   @@unique([hash, addressId], name: "Transaction_hash_addressId_unique_constraint")
+  @@index([addressId], map: "Transaction_addressId_fkey")
+}
+
+model Wallet {
+  id             Int         @id @default(autoincrement())
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  name           String      @db.VarChar(255)
+  providerUserId String?     @db.VarChar(255)
+  addresses      Address[]
+  paybuttons     Paybutton[]
+
+  @@unique([name, providerUserId], map: "Paybutton_name_providerUserId_unique_constraint")
 }

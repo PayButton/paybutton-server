@@ -15,6 +15,7 @@ export const mockedPaybutton = {
   uuid: '730bfa24-eb57-11ec-b722-0242ac150002',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+  walletId: null,
   addresses: [
     {
       id: 1,
@@ -41,7 +42,8 @@ export const mockedBCHAddress = {
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   networkId: 2,
-  paybuttonId: 1
+  paybuttonId: 1,
+  walletId: null
 }
 
 export const mockedXECAddress = {
@@ -50,7 +52,8 @@ export const mockedXECAddress = {
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   networkId: 1,
-  paybuttonId: 1
+  paybuttonId: 1,
+  walletId: null
 }
 
 export const mockedPaybuttonList = [
@@ -62,6 +65,7 @@ export const mockedPaybuttonList = [
     uuid: '730bfa24-eb57-11ec-b722-0242ac150002',
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+    walletId: null,
     addresses: [
       {
         id: 1,
@@ -89,6 +93,7 @@ export const mockedPaybuttonList = [
     uuid: '133fb8aa-eb57-11ec-b722-0242ac150002',
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+    walletId: null,
     addresses: [
       {
         id: 3,
