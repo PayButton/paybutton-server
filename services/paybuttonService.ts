@@ -57,6 +57,7 @@ export async function fetchPaybuttonById (paybuttonId: number | string): Promise
     include: {
       addresses: {
         select: {
+          addressId: true,
           address: true
         }
       }
@@ -70,6 +71,7 @@ export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Payb
     include: {
       addresses: {
         select: {
+          addressId: true,
           address: true
         }
       }
