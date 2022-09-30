@@ -12,15 +12,15 @@ async function main (): Promise<void> {
   if (await prisma.network.count() === 0) {
     await prisma.network.createMany({ data: networks })
   }
+  // create wallets
+  if (await prisma.wallet.count() === 0) {
+    await prisma.wallet.createMany({ data: wallets })
+  }
   // create paybuttons
   if (await prisma.paybutton.count() === 0) {
     await prisma.paybutton.createMany({ data: paybuttons })
     await prisma.address.createMany({ data: addresses })
     await prisma.addressesOnButtons.createMany({ data: connectors })
-  }
-  // create wallets
-  if (await prisma.wallets.count() === 0) {
-    await prisma.wallets.createMany({ data: wallets })
   }
   // create default dev user
   for (const q of createDevUserRawQueryList) {
