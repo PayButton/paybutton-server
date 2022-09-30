@@ -401,6 +401,5 @@ describe('GET /api/dashboard', () => {
       }
     }
     )
-    console.log(JSON.stringify(responseData))
   })
 })

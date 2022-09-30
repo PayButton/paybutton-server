@@ -3,7 +3,7 @@ import grpcService from '../../services/grpcService'
 
 describe('Test service returned objects consistency', () => {
   it('test getAddress for real address', async () => {
-    const res = await grpcService.getAddress(mockedBCHAddress.address)
+    const res = await grpcService.getAddress({ address: mockedBCHAddress.address })
     expect(res).toEqual(expect.objectContaining({
       confirmedTransactionsList: [
         mockedGrpc.transaction1.toObject(),

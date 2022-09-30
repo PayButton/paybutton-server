@@ -17,3 +17,9 @@ export const RESPONSE_MESSAGES = {
   NO_ADDRESS_FOUND_404: { statusCode: 404, message: 'No address found.' },
   MULTIPLE_ADDRESSES_FOUND_400: { statusCode: 400, message: 'Multiple addresses found.' }
 }
+
+// When fetching some address transactions, number of transactions to fetch at a time.
+export const FETCH_N = 100
+
+// When fetching some address transactions, delay (in ms) between each fetch.
+export const FETCH_DELAY = 100
