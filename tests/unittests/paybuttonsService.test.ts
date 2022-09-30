@@ -1,5 +1,5 @@
 import prisma from 'prisma/clientInstance'
-import * as paybuttonsService from 'services/paybuttonsService'
+import * as paybuttonService from 'services/paybuttonService'
 import { prismaMock } from 'prisma/mockedClient'
 import { mockedPaybutton, mockedPaybuttonList, mockedNetwork } from '../mockedObjects'
 
@@ -8,7 +8,7 @@ describe('Fetch services', () => {
     prismaMock.paybutton.findUnique.mockResolvedValue(mockedPaybutton)
     prisma.paybutton.findUnique = prismaMock.paybutton.findUnique
 
-    const result = await paybuttonsService.fetchPaybuttonById(4)
+    const result = await paybuttonService.fetchPaybuttonById(4)
     expect(result).toEqual(mockedPaybutton)
   })
 
@@ -16,7 +16,7 @@ describe('Fetch services', () => {
     prismaMock.paybutton.findMany.mockResolvedValue(mockedPaybuttonList)
     prisma.paybutton.findMany = prismaMock.paybutton.findMany
 
-    const result = await paybuttonsService.fetchPaybuttonArrayByUserId('mocked-uid')
+    const result = await paybuttonService.fetchPaybuttonArrayByUserId('mocked-uid')
     expect(result).toEqual(mockedPaybuttonList)
   })
 })
@@ -34,7 +34,7 @@ describe('Create services', () => {
       prefixedAddressList: ['mockednetwork:mockaddress'],
       buttonData: ''
     }
-    const result = await paybuttonsService.createPaybutton(createPaybuttonInput)
+    const result = await paybuttonService.createPaybutton(createPaybuttonInput)
     expect(result).toEqual(mockedPaybutton)
   })
 })

@@ -1,6 +1,6 @@
 import * as httpMocks from 'node-mocks-http'
 import prisma from 'prisma/clientInstance'
-import { createPaybutton } from 'services/paybuttonsService'
+import { createPaybutton } from 'services/paybuttonService'
 import { SUPPORTED_ADDRESS_PATTERN } from 'constants/index'
 import { Paybutton } from '@prisma/client'
 import RandExp from 'randexp'

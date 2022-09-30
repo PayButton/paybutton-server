@@ -1,4 +1,4 @@
-import * as paybuttonsService from 'services/paybuttonsService'
+import * as paybuttonService from 'services/paybuttonService'
 import * as addressService from 'services/addressService'
 import { Prisma, Transaction } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
@@ -98,7 +98,7 @@ const getPeriodData = function (n: number, periodString: string, transactions: T
 }
 
 const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
-  const buttonsCount = (await paybuttonsService.fetchPaybuttonArrayByUserId(userId)).length
+  const buttonsCount = (await paybuttonService.fetchPaybuttonArrayByUserId(userId)).length
   const addresses = await addressService.fetchAllUserAddresses(userId, true)
   const XECAddresses = addresses.filter((addr) => addr.networkId === 1)
   const BCHAddresses = addresses.filter((addr) => addr.networkId === 2)
