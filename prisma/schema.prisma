@@ -77,7 +77,7 @@ model Transaction {
 model Wallet {
   id             Int         @id @default(autoincrement())
   createdAt      DateTime    @default(now())
-  updatedAt      DateTime
+  updatedAt      DateTime    @updatedAt
   name           String      @db.VarChar(255)
   providerUserId String?     @db.VarChar(255)
   addresses      Address[]
