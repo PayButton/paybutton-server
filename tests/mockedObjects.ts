@@ -18,7 +18,6 @@ export const mockedPaybutton = {
   walletId: null,
   addresses: [
     {
-      addressId: 1,
       address: {
         id: 1,
         address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
@@ -29,7 +28,6 @@ export const mockedPaybutton = {
       }
     },
     {
-      addressId: 2,
       address: {
         id: 2,
         address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
@@ -74,7 +72,6 @@ export const mockedPaybuttonList = [
     walletId: null,
     addresses: [
       {
-        addressId: 1,
         address: {
           id: 1,
           address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
@@ -85,7 +82,6 @@ export const mockedPaybuttonList = [
         }
       },
       {
-        addressId: 2,
         address: {
           id: 2,
           address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
@@ -108,7 +104,6 @@ export const mockedPaybuttonList = [
     walletId: null,
     addresses: [
       {
-        addressId: 3,
         address: {
           id: 3,
           address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
@@ -119,7 +114,6 @@ export const mockedPaybuttonList = [
         }
       },
       {
-        addressId: 4,
         address: {
           id: 4,
           address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',

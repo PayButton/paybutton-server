@@ -13,7 +13,6 @@ export interface CreatePaybuttonInput {
 const includeAddresses = {
   addresses: {
     select: {
-      addressId: true,
       address: true
     }
   }
