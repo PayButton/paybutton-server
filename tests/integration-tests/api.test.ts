@@ -56,11 +56,13 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         {
+          addressId: expect.any(Number),
           address: expect.objectContaining({
             address: `ecash:${exampleAddresses.ecash}`
           })
         },
         {
+          addressId: expect.any(Number),
           address:
           expect.objectContaining({
             address: `bitcoincash:${exampleAddresses.bitcoincash}`
@@ -86,6 +88,7 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         {
+          addressId: expect.any(Number),
           address: expect.objectContaining({
             address: `ectest:${exampleAddresses.ectest}`
           })
@@ -197,12 +200,14 @@ describe('GET /api/paybuttons/', () => {
         {
           address: expect.objectContaining({
             address: expect.any(String)
-          })
+          }),
+          addressId: expect.any(Number)
         },
         {
           address: expect.objectContaining({
             address: expect.any(String)
-          })
+          }),
+          addressId: expect.any(Number)
         }
       ])
     )
@@ -274,12 +279,14 @@ describe('GET /api/paybutton/[id]', () => {
           {
             address: expect.objectContaining({
               address: expect.any(String)
-            })
+            }),
+            addressId: expect.any(Number)
           },
           {
             address: expect.objectContaining({
               address: expect.any(String)
-            })
+            }),
+            addressId: expect.any(Number)
           }
         ])
       )

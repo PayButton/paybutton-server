@@ -1,5 +1,5 @@
 import * as networkService from 'services/networkService'
-import { Paybutton } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
@@ -10,7 +10,22 @@ export interface CreatePaybuttonInput {
   prefixedAddressList: string[]
 }
 
-export async function createPaybutton (values: CreatePaybuttonInput): Promise<Paybutton> {
+const includeAddresses = {
+  addresses: {
+    select: {
+      addressId: true,
+      address: true
+    }
+  }
+}
+
+const paybuttonWithAddresses = Prisma.validator<Prisma.PaybuttonArgs>()(
+  { include: includeAddresses }
+)
+
+type PaybuttonWithAddresses = Prisma.PaybuttonGetPayload<typeof paybuttonWithAddresses>
+
+export async function createPaybutton (values: CreatePaybuttonInput): Promise<PaybuttonWithAddresses> {
   const addresses = await Promise.all(
     values.prefixedAddressList.map(
       async (addressWithPrefix) => {
@@ -41,38 +56,20 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
         })
       }
     },
-    include: {
-      addresses: {
-        select: {
-          address: true
-        }
-      }
-    }
+    include: includeAddresses
   })
 }
 
-export async function fetchPaybuttonById (paybuttonId: number | string): Promise<Paybutton | null> {
+export async function fetchPaybuttonById (paybuttonId: number | string): Promise<PaybuttonWithAddresses | null> {
   return await prisma.paybutton.findUnique({
     where: { id: Number(paybuttonId) },
-    include: {
-      addresses: {
-        select: {
-          address: true
-        }
-      }
-    }
+    include: includeAddresses
   })
 }
 
-export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Paybutton[]> {
+export async function fetchPaybuttonArrayByUserId (userId: string): Promise<PaybuttonWithAddresses[]> {
   return await prisma.paybutton.findMany({
     where: { providerUserId: userId },
-    include: {
-      addresses: {
-        select: {
-          address: true
-        }
-      }
-    }
+    include: includeAddresses
   })
 }
