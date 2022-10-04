@@ -59,6 +59,17 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
   })
 }
 
+export async function fetchPaybuttonArrayByIds (paybuttonIdList: number[]): Promise<PaybuttonWithAddresses[]> {
+  return await prisma.paybutton.findMany({
+    where: {
+      id: {
+        in: paybuttonIdList
+      }
+    },
+    include: includeAddresses
+  })
+}
+
 export async function fetchPaybuttonById (paybuttonId: number | string): Promise<PaybuttonWithAddresses | null> {
   return await prisma.paybutton.findUnique({
     where: { id: Number(paybuttonId) },
