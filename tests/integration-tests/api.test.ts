@@ -197,14 +197,12 @@ describe('GET /api/paybuttons/', () => {
         {
           address: expect.objectContaining({
             address: expect.any(String)
-          }),
-          addressId: expect.any(Number)
+          })
         },
         {
           address: expect.objectContaining({
             address: expect.any(String)
-          }),
-          addressId: expect.any(Number)
+          })
         }
       ])
     )
@@ -276,14 +274,12 @@ describe('GET /api/paybutton/[id]', () => {
           {
             address: expect.objectContaining({
               address: expect.any(String)
-            }),
-            addressId: expect.any(Number)
+            })
           },
           {
             address: expect.objectContaining({
               address: expect.any(String)
-            }),
-            addressId: expect.any(Number)
+            })
           }
         ])
       )
