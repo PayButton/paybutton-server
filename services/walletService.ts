@@ -42,9 +42,7 @@ export async function createWallet (values: CreateWalletInput): Promise<Wallet> 
       })
       for (const connector of paybutton.addresses) {
         if (connector.address.walletId !== null) {
-          void (async () => {
-            throw Error(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
-          })()
+          throw Error(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
         }
         await prisma.address.update({
           data: {
