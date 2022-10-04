@@ -1,5 +1,5 @@
 import * as networkService from 'services/networkService'
-import { Paybutton } from '@prisma/client'
+import { Paybutton, Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
@@ -9,6 +9,21 @@ export interface CreatePaybuttonInput {
   buttonData: string
   prefixedAddressList: string[]
 }
+
+const includeAddresses = {
+  addresses: {
+    select: {
+      addressId: true,
+      address: true
+    }
+  }
+}
+
+const paybuttonWithAddresses = Prisma.validator<Prisma.PaybuttonArgs>()(
+  { include: includeAddresses }
+)
+
+type PaybuttonWithAddresses = Prisma.PaybuttonGetPayload<typeof paybuttonWithAddresses>
 
 export async function createPaybutton (values: CreatePaybuttonInput): Promise<Paybutton> {
   const addresses = await Promise.all(
@@ -51,30 +66,27 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
   })
 }
 
+export async function fetchPaybuttonArrayByIds (paybuttonIdList: number[]): Promise<PaybuttonWithAddresses[]> {
+  return await prisma.paybutton.findMany({
+    where: {
+      id: {
+        in: paybuttonIdList
+      }
+    },
+    include: includeAddresses
+  })
+}
+
 export async function fetchPaybuttonById (paybuttonId: number | string): Promise<Paybutton | null> {
   return await prisma.paybutton.findUnique({
     where: { id: Number(paybuttonId) },
-    include: {
-      addresses: {
-        select: {
-          addressId: true,
-          address: true
-        }
-      }
-    }
+    include: includeAddresses
   })
 }
 
 export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Paybutton[]> {
   return await prisma.paybutton.findMany({
     where: { providerUserId: userId },
-    include: {
-      addresses: {
-        select: {
-          addressId: true,
-          address: true
-        }
-      }
-    }
+    include: includeAddresses
   })
 }
