@@ -42,6 +42,10 @@ describe('Create services', () => {
   beforeEach(() => {
     prismaMock.wallet.create.mockResolvedValue(mockedWallet)
     prisma.wallet.create = prismaMock.wallet.create
+    prismaMock.$transaction.mockImplementation(
+      (fn: (prisma: any) => any) => fn('')
+    )
+    prisma.$transaction = prismaMock.$transaction
     prismaMock.paybutton.update.mockResolvedValue(mockedPaybuttonList[0])
     prisma.paybutton.update = prismaMock.paybutton.update
     prismaMock.address.update.mockResolvedValue(data.address)
