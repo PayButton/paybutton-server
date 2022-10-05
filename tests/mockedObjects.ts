@@ -18,20 +18,24 @@ export const mockedPaybutton = {
   walletId: null,
   addresses: [
     {
-      id: 1,
-      address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
-      createdAt: new Date('2022-05-27T15:18:42.000Z'),
-      updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-      networkId: 1,
-      paybuttonId: 1
+      address: {
+        id: 1,
+        address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
+        createdAt: new Date('2022-05-27T15:18:42.000Z'),
+        updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+        networkId: 1,
+        walletId: null
+      }
     },
     {
-      id: 2,
-      address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
-      createdAt: new Date('2022-05-27T15:18:42.000Z'),
-      updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-      networkId: 2,
-      paybuttonId: 1
+      address: {
+        id: 2,
+        address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
+        createdAt: new Date('2022-05-27T15:18:42.000Z'),
+        updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+        networkId: 2,
+        walletId: null
+      }
     }
   ]
 }
@@ -68,20 +72,24 @@ export const mockedPaybuttonList = [
     walletId: null,
     addresses: [
       {
-        id: 1,
-        address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
-        createdAt: new Date('2022-05-27T15:18:42.000Z'),
-        updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-        networkId: 1,
-        paybuttonId: 1
+        address: {
+          id: 1,
+          address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
+          createdAt: new Date('2022-05-27T15:18:42.000Z'),
+          updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+          networkId: 1,
+          walletId: null
+        }
       },
       {
-        id: 2,
-        address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
-        createdAt: new Date('2022-05-27T15:18:42.000Z'),
-        updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-        networkId: 2,
-        paybuttonId: 1
+        address: {
+          id: 2,
+          address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
+          createdAt: new Date('2022-05-27T15:18:42.000Z'),
+          updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+          networkId: 2,
+          walletId: null
+        }
       }
     ]
   },
@@ -96,20 +104,24 @@ export const mockedPaybuttonList = [
     walletId: null,
     addresses: [
       {
-        id: 3,
-        address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
-        createdAt: new Date('2022-05-27T15:18:42.000Z'),
-        updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-        networkId: 1,
-        paybuttonId: 2
+        address: {
+          id: 3,
+          address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
+          createdAt: new Date('2022-05-27T15:18:42.000Z'),
+          updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+          networkId: 1,
+          walletId: null
+        }
       },
       {
-        id: 4,
-        address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
-        createdAt: new Date('2022-05-27T15:18:42.000Z'),
-        updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-        networkId: 2,
-        paybuttonId: 2
+        address: {
+          id: 4,
+          address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
+          createdAt: new Date('2022-05-27T15:18:42.000Z'),
+          updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+          networkId: 2,
+          walletId: null
+        }
       }
     ]
   }
