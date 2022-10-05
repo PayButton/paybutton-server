@@ -147,7 +147,7 @@ describe('parseButtonData', () => {
 })
 
 describe('parsePaybuttonPOSTRequest', () => {
-  const data: v.POSTParameters = {
+  const data: v.paybuttonPOSTParameters = {
     userId: undefined,
     name: 'somename',
     buttonData: undefined,
