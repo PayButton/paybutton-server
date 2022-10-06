@@ -5,5 +5,19 @@ export const wallets = [
     updatedAt: new Date(),
     name: 'My Wallet',
     providerUserId: 'dev-uid'
+  },
+  {
+    id: 2,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    name: 'Foo Wallet',
+    providerUserId: 'dev-uid'
+  },
+  {
+    id: 3,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    name: 'Bar Wallet',
+    providerUserId: 'dev-uid'
   }
 ]

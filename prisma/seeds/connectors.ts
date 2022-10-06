@@ -14,5 +14,13 @@ export const connectors = [
   {
     addressId: 1,
     paybuttonId: 3
+  },
+  {
+    addressId: 3,
+    paybuttonId: 4
+  },
+  {
+    addressId: 4,
+    paybuttonId: 5
   }
 ]
