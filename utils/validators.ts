@@ -51,7 +51,7 @@ export const parseError = function (error: Error): Error {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code === 'P2002') {
       if (error.message.includes('Paybutton_name_providerUserId_unique_constraint')) {
-        return new Error(RESPONSE_MESSAGES.NAME_ALREADY_EXISTS_400.message)
+        return new Error(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message)
       }
     }
   }
