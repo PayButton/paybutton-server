@@ -1,8 +1,9 @@
 import * as httpMocks from 'node-mocks-http'
 import prisma from 'prisma/clientInstance'
 import { createPaybutton } from 'services/paybuttonService'
+import { createWallet } from 'services/walletService'
 import { SUPPORTED_ADDRESS_PATTERN } from 'constants/index'
-import { Paybutton } from '@prisma/client'
+import { Paybutton, Wallet } from '@prisma/client'
 import RandExp from 'randexp'
 
 export const testEndpoint = async (requestOptions: httpMocks.RequestOptions, endpoint: Function): Promise<httpMocks.MockResponse<any>> => {
@@ -10,6 +11,10 @@ export const testEndpoint = async (requestOptions: httpMocks.RequestOptions, end
   const res = httpMocks.createResponse()
   await endpoint(req, res)
   return res
+}
+
+export const clearWallets = async (): Promise<void> => {
+  await prisma.wallet.deleteMany({})
 }
 
 export const clearPaybuttonsAndAddresses = async (): Promise<void> => {
@@ -20,6 +25,11 @@ export const clearPaybuttonsAndAddresses = async (): Promise<void> => {
 }
 
 const addressRandexp = new RandExp(SUPPORTED_ADDRESS_PATTERN)
+
+export const createWalletForUser = async (userId: string, paybuttonIdList: number[]): Promise<Wallet> => {
+  const name = Math.random().toString(36).slice(2)
+  return await createWallet({ userId, name, paybuttonIdList })
+}
 
 export const createPaybuttonForUser = async (userId: string): Promise<Paybutton> => {
   const prefixedAddressList = [

@@ -1,5 +1,6 @@
 import { RequestOptions, RequestMethod } from 'node-mocks-http'
 import paybuttonsEndpoint from 'pages/api/paybuttons/index'
+import walletsEndpoint from 'pages/api/wallets/index'
 import paybuttonEndpoint from 'pages/api/paybutton/index'
 import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
 import transactionsEndpoint from 'pages/api/transactions/[address]'
@@ -10,7 +11,9 @@ import {
   exampleAddresses,
   testEndpoint,
   clearPaybuttonsAndAddresses,
+  clearWallets,
   createPaybuttonForUser,
+  createWalletForUser,
   countPaybuttons,
   countAddresses
 } from 'tests/utils'
@@ -237,6 +240,91 @@ describe('GET /api/paybuttons/', () => {
       userId: ['test-u-id', 'test-other-u-id']
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonsEndpoint)
+    expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message)
+  })
+})
+
+describe('GET /api/wallets/', () => {
+  // Create 4 wallets, 3 for one user and 1 for another.
+  const userA = 'test-u-id'
+  const userB = 'test-other-u-id'
+  beforeAll(async () => {
+    await clearPaybuttonsAndAddresses()
+    await clearWallets()
+    for (let i = 0; i < 4; i++) {
+      const userId = i === 3 ? userB : userA
+      const pb = await createPaybuttonForUser(userId)
+      await createWalletForUser(userId, [pb.id])
+    }
+  })
+  const baseRequestOptions: RequestOptions = {
+    method: 'GET' as RequestMethod,
+    query: {
+      userId: userA
+    }
+  }
+
+  it('Get 3 wallets for userA', async () => {
+    const res = await testEndpoint(baseRequestOptions, walletsEndpoint)
+    expect(res.statusCode).toBe(200)
+    const responseData = res._getJSONData()
+    expect(responseData[0].providerUserId).toBe(userA)
+    expect(responseData.length).toBe(3)
+  })
+
+  it('Get 1 wallets for userB', async () => {
+    baseRequestOptions.query = {
+      userId: userB
+    }
+    const res = await testEndpoint(baseRequestOptions, walletsEndpoint)
+    expect(res.statusCode).toBe(200)
+    const responseData = res._getJSONData()
+    expect(responseData[0].providerUserId).toBe(userB)
+    expect(responseData.length).toBe(1)
+    expect(responseData[0].addresses).toEqual(
+      expect.arrayContaining([
+        {
+          address: expect.any(String),
+          id: expect.any(Number)
+        },
+        {
+          address: expect.any(String),
+          id: expect.any(Number)
+        }
+      ])
+    )
+    expect(responseData[0]).toHaveProperty('providerUserId')
+    expect(responseData[0]).toHaveProperty('name')
+    expect(responseData[0]).toHaveProperty('paybuttons')
+  })
+
+  it('Get no wallets for unknown user', async () => {
+    baseRequestOptions.query = {
+      userId: 'unknown-user'
+    }
+    const res = await testEndpoint(baseRequestOptions, walletsEndpoint)
+    expect(res.statusCode).toBe(200)
+    const responseData = res._getJSONData()
+    expect(responseData.length).toBe(0)
+  })
+
+  it('Fail without userId', async () => {
+    baseRequestOptions.query = {
+      userId: ''
+    }
+    const res = await testEndpoint(baseRequestOptions, walletsEndpoint)
+    expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+  })
+
+  it('Fail with multiple userIds', async () => {
+    baseRequestOptions.query = {
+      userId: ['test-u-id', 'test-other-u-id']
+    }
+    const res = await testEndpoint(baseRequestOptions, walletsEndpoint)
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message)
