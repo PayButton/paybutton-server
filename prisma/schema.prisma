@@ -83,5 +83,5 @@ model Wallet {
   addresses      Address[]
   paybuttons     Paybutton[]
 
-  @@unique([name, providerUserId], map: "Paybutton_name_providerUserId_unique_constraint")
+  @@unique([name, providerUserId], map: "Wallet_name_providerUserId_unique_constraint")
 }
