@@ -1,6 +1,6 @@
 import React, { ReactElement, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { POSTParameters } from 'utils/validators'
+import { paybuttonPOSTParameters } from 'utils/validators'
 import Image from 'next/image'
 import style from './paybutton.module.css'
 import Plus from 'assets/plus.png'
@@ -12,7 +12,7 @@ interface IProps {
 }
 
 export default function PaybuttonForm ({ onSubmit, paybuttons, error }: IProps): ReactElement {
-  const { register, handleSubmit, reset } = useForm<POSTParameters>()
+  const { register, handleSubmit, reset } = useForm<paybuttonPOSTParameters>()
   const [modal, setModal] = useState(false)
   const [multipleAddresses, setMultipleAddresses] = useState(false)
 
