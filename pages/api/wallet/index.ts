@@ -15,6 +15,9 @@ export default async (req: any, res: any): Promise<void> => {
         case RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message:
           res.status(400).json(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400)
           break
+        case RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message:
+          res.status(404).json(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404)
+          break
         case RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message:
           res.status(400).json(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400)
           break

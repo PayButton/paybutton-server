@@ -325,6 +325,19 @@ describe('POST /api/wallets/', () => {
     expect(responseData.message).toBe(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message)
   })
 
+  it('Fail with non-existent paybutton', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'test-wallet2',
+      paybuttonIdList: [1, 99999999999]
+
+    }
+    const res = await testEndpoint(baseRequestOptions, walletEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(404)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
+  })
+
   it('Fail with paybutton that already belongs to other wallet', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
