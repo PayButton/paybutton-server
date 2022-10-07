@@ -249,7 +249,7 @@ describe('GET /api/paybuttons/', () => {
   })
 })
 
-describe.only('POST /api/wallets/', () => {
+describe('POST /api/wallets/', () => {
   const buttonIds: number[] = []
   beforeAll(async () => {
     await clearPaybuttonsAndAddresses()
@@ -437,7 +437,7 @@ describe('GET /api/wallets/', () => {
   })
 })
 
-describe.only('GET /api/wallet/[id]', () => {
+describe('GET /api/wallet/[id]', () => {
   // Create 4 wallets
   let createdWalletsIds: number[]
   beforeAll(async () => {
