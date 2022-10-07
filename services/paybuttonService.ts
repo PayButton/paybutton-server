@@ -22,7 +22,7 @@ const paybuttonWithAddresses = Prisma.validator<Prisma.PaybuttonArgs>()(
   { include: includeAddresses }
 )
 
-type PaybuttonWithAddresses = Prisma.PaybuttonGetPayload<typeof paybuttonWithAddresses>
+export type PaybuttonWithAddresses = Prisma.PaybuttonGetPayload<typeof paybuttonWithAddresses>
 
 export async function createPaybutton (values: CreatePaybuttonInput): Promise<PaybuttonWithAddresses> {
   const addresses = await Promise.all(
