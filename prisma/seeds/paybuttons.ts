@@ -22,12 +22,14 @@ export const paybuttons = [
   {
     id: 4,
     providerUserId: 'dev-uid',
+    walletId: 2,
     name: 'Foo XEC',
     buttonData: '{}'
   },
   {
     id: 5,
     providerUserId: 'dev-uid',
+    walletId: 3,
     name: 'Bar XEC',
     buttonData: '{}'
   }
