@@ -1,6 +1,7 @@
 import { RequestOptions, RequestMethod } from 'node-mocks-http'
 import paybuttonsEndpoint from 'pages/api/paybuttons/index'
 import walletsEndpoint from 'pages/api/wallets/index'
+import walletEndpoint from 'pages/api/wallet/index'
 import paybuttonEndpoint from 'pages/api/paybutton/index'
 import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
 import transactionsEndpoint from 'pages/api/transactions/[address]'
@@ -15,7 +16,8 @@ import {
   createPaybuttonForUser,
   createWalletForUser,
   countPaybuttons,
-  countAddresses
+  countAddresses,
+  countWallets
 } from 'tests/utils'
 
 import { RESPONSE_MESSAGES } from 'constants/index'
@@ -243,6 +245,109 @@ describe('GET /api/paybuttons/', () => {
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message)
+  })
+})
+
+describe.only('POST /api/wallets/', () => {
+  const buttonIds: number[] = []
+  beforeAll(async () => {
+    await clearPaybuttonsAndAddresses()
+    await clearWallets()
+    let lastAddress = ''
+    for (let i = 0; i < 4; i++) {
+      let button
+      if (i === 2) {
+        button = await createPaybuttonForUser('test-u-id', [lastAddress])
+      } else {
+        button = await createPaybuttonForUser('test-u-id')
+      }
+      buttonIds.push(button.id)
+      lastAddress = button.addresses.map((conn) => conn.address.address)[0]
+    }
+  })
+  const baseRequestOptions: RequestOptions = {
+    method: 'POST' as RequestMethod,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: {
+      name: 'test-wallet'
+    }
+  }
+
+  it('Create a wallet with two paybuttons', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'test-wallet',
+      paybuttonIdList: [buttonIds[0], buttonIds[1]]
+    }
+    const res = await testEndpoint(baseRequestOptions, walletEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(200)
+    expect(responseData.providerUserId).toBe('test-u-id')
+    expect(responseData.name).toBe('test-wallet')
+    void expect(countWallets()).resolves.toBe(1)
+  })
+
+  it('Fail without name', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: '',
+      paybuttonIdList: [buttonIds[2]]
+    }
+    const res = await testEndpoint(baseRequestOptions, walletEndpoint)
+    expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
+  })
+
+  it('Fail with repeated name', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'test-wallet',
+      paybuttonIdList: [buttonIds[2]]
+    }
+    const res = await testEndpoint(baseRequestOptions, walletEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400.message)
+  })
+
+  it('Fail without paybuttonIdList', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'test-wallet'
+    }
+    const res = await testEndpoint(baseRequestOptions, walletEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message)
+  })
+
+  it('Fail with paybutton that already belongs to other wallet', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'test-wallet2',
+      paybuttonIdList: [buttonIds[0]]
+
+    }
+    const res = await testEndpoint(baseRequestOptions, walletEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400.message)
+  })
+
+  it('Fail with address that already belongs to other wallet', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'test-wallet2',
+      paybuttonIdList: [buttonIds[2]]
+
+    }
+    const res = await testEndpoint(baseRequestOptions, walletEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
   })
 })
 

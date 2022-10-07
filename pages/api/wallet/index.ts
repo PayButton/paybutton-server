@@ -12,14 +12,14 @@ export default async (req: any, res: any): Promise<void> => {
     } catch (err: any) {
       const parsedErr = parseError(err)
       switch (parsedErr.message) {
-        case RESPONSE_MESSAGES.INVALID_ADDRESS_400.message:
-          res.status(400).json(RESPONSE_MESSAGES.INVALID_ADDRESS_400)
-          break
-        case RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message:
-          res.status(400).json(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400)
-          break
         case RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message:
           res.status(400).json(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400)
+          break
+        case RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400)
+          break
+        case RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400)
           break
         case RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message:
           res.status(400).json(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400)
@@ -27,8 +27,8 @@ export default async (req: any, res: any): Promise<void> => {
         case RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400.message:
           res.status(400).json(RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400)
           break
-        case RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400.message:
-          res.status(400).json(RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400)
+        case RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400)
           break
         default:
           res.status(500).json({ statusCode: 500, message: parsedErr.message })
