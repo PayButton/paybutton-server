@@ -51,21 +51,21 @@ export const parseError = function (error: Error): Error {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code === 'P2002') {
       if (error.message.includes('Paybutton_name_providerUserId_unique_constraint')) {
-        return new Error(RESPONSE_MESSAGES.NAME_ALREADY_EXISTS_400.message)
+        return new Error(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message)
       }
     }
   }
   return error
 }
 
-export interface POSTParameters {
+export interface paybuttonPOSTParameters {
   userId?: string
   name?: string
   buttonData?: string
   addresses?: string
 }
 
-export const parsePaybuttonPOSTRequest = function (params: POSTParameters): CreatePaybuttonInput {
+export const parsePaybuttonPOSTRequest = function (params: paybuttonPOSTParameters): CreatePaybuttonInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   if (params.addresses === '' || params.addresses === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)

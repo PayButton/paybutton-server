@@ -127,6 +127,33 @@ export const mockedPaybuttonList = [
   }
 ]
 
+// Wallet
+export const mockedWallet = {
+  id: 1,
+  createdAt: new Date('2022-09-30T18:01:32.456Z'),
+  updatedAt: new Date('2022-09-30T18:01:32.456Z'),
+  name: 'mockedWallet',
+  providerUserId: 'mocked-uid'
+  // "paybuttons": [],
+  // "addresses": []
+}
+
+export const mockedWalletList = [
+  {
+    id: 1,
+    createdAt: new Date('2022-09-30T18:01:32.456Z'),
+    updatedAt: new Date('2022-09-30T18:01:32.456Z'),
+    name: 'mockedWallet',
+    providerUserId: 'mocked-uid'
+  },
+  {
+    id: 2,
+    createdAt: new Date('2022-09-30T18:01:32.456Z'),
+    updatedAt: new Date('2022-09-30T18:01:32.456Z'),
+    name: 'mockedWallet2',
+    providerUserId: 'mocked-uid'
+  }
+]
 // Network
 export const mockedNetwork = {
   id: 1,

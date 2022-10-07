@@ -117,7 +117,7 @@ describe('parseError', () => {
       'P2002',
       'foo'
     )
-    expect(v.parseError(error)).toStrictEqual(new Error(RESPONSE_MESSAGES.NAME_ALREADY_EXISTS_400.message))
+    expect(v.parseError(error)).toStrictEqual(new Error(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message))
   })
 })
 
@@ -147,7 +147,7 @@ describe('parseButtonData', () => {
 })
 
 describe('parsePaybuttonPOSTRequest', () => {
-  const data: v.POSTParameters = {
+  const data: v.paybuttonPOSTParameters = {
     userId: undefined,
     name: 'somename',
     buttonData: undefined,
