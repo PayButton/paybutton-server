@@ -43,7 +43,9 @@ describe('Create services', () => {
     prismaMock.wallet.create.mockResolvedValue(mockedWallet)
     prisma.wallet.create = prismaMock.wallet.create
     prismaMock.$transaction.mockImplementation(
-      (fn: (prisma: any) => any) => fn('')
+      (fn: (prisma: any) => any) => {
+        return fn(prisma)
+      }
     )
     prisma.$transaction = prismaMock.$transaction
     prismaMock.paybutton.update.mockResolvedValue(mockedPaybuttonList[0])

@@ -70,7 +70,7 @@ CREATE TABLE `Wallet` (
     `name` VARCHAR(255) NOT NULL,
     `providerUserId` VARCHAR(255) NULL,
 
-    UNIQUE INDEX `Paybutton_name_providerUserId_unique_constraint`(`name`, `providerUserId`),
+    UNIQUE INDEX `Wallet_name_providerUserId_unique_constraint`(`name`, `providerUserId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
