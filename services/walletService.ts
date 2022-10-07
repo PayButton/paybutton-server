@@ -1,6 +1,6 @@
 // import * as networkService from 'services/networkService'
 import * as paybuttonService from 'services/paybuttonService'
-import { Wallet } from '@prisma/client'
+import { Prisma, Wallet } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
@@ -10,6 +10,22 @@ export interface CreateWalletInput {
   paybuttonIdList: number[]
 }
 
+const includeAddressesAndPaybuttons = {
+  paybuttons: true,
+  addresses: {
+    select: {
+      id: true,
+      address: true
+    }
+  }
+}
+
+const walletWithAddressesAndPaybuttons = Prisma.validator<Prisma.WalletArgs>()(
+  { include: includeAddressesAndPaybuttons }
+)
+
+type WalletWithAddressesAndPaybuttons = Prisma.WalletGetPayload<typeof walletWithAddressesAndPaybuttons>
+
 export async function createWallet (values: CreateWalletInput): Promise<Wallet> {
   const paybuttonList = await paybuttonService.fetchPaybuttonArrayByIds(values.paybuttonIdList)
   let wallet: Wallet
@@ -18,13 +34,6 @@ export async function createWallet (values: CreateWalletInput): Promise<Wallet> 
       data: {
         providerUserId: values.userId,
         name: values.name
-      },
-      include: {
-        addresses: {
-          select: {
-            address: true
-          }
-        }
       }
     })
     for (const paybutton of paybuttonList) {
@@ -58,31 +67,16 @@ export async function createWallet (values: CreateWalletInput): Promise<Wallet> 
   })
 }
 
-export async function fetchWalletById (walletId: number | string): Promise<Wallet | null> {
+export async function fetchWalletById (walletId: number | string): Promise<WalletWithAddressesAndPaybuttons | null> {
   return await prisma.wallet.findUnique({
     where: { id: Number(walletId) },
-    include: {
-      addresses: {
-        select: {
-          id: true,
-          address: true
-        }
-      }
-    }
+    include: includeAddressesAndPaybuttons
   })
 }
 
-export async function fetchWalletArrayByUserId (userId: string): Promise<Wallet[]> {
+export async function fetchWalletArrayByUserId (userId: string): Promise<WalletWithAddressesAndPaybuttons[]> {
   return await prisma.wallet.findMany({
     where: { providerUserId: userId },
-    include: {
-      paybuttons: true,
-      addresses: {
-        select: {
-          id: true,
-          address: true
-        }
-      }
-    }
+    include: includeAddressesAndPaybuttons
   })
 }
