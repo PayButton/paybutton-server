@@ -20,6 +20,7 @@ export const RESPONSE_MESSAGES = {
   ADDRESS_NOT_PROVIDED_400: { statusCode: 400, message: "'address' not provided." },
   INVALID_ADDRESS_400: { statusCode: 400, message: 'Invalid address.' },
   NO_ADDRESS_FOUND_404: { statusCode: 404, message: 'No address found.' },
+  NO_BUTTON_FOUND_404: { statusCode: 404, message: 'No button found.' },
   MULTIPLE_ADDRESSES_FOUND_400: { statusCode: 400, message: 'Multiple addresses found.' }
 }
 
