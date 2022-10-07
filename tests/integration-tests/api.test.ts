@@ -1,9 +1,10 @@
 import { RequestOptions, RequestMethod } from 'node-mocks-http'
 import paybuttonsEndpoint from 'pages/api/paybuttons/index'
-import walletsEndpoint from 'pages/api/wallets/index'
-import walletEndpoint from 'pages/api/wallet/index'
 import paybuttonEndpoint from 'pages/api/paybutton/index'
 import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
+import walletsEndpoint from 'pages/api/wallets/index'
+import walletEndpoint from 'pages/api/wallet/index'
+import walletIdEndpoint from 'pages/api/wallet/[id]'
 import transactionsEndpoint from 'pages/api/transactions/[address]'
 import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
 import balanceEndpoint from 'pages/api/balance/[address]'
@@ -433,6 +434,72 @@ describe('GET /api/wallets/', () => {
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message)
+  })
+})
+
+describe.only('GET /api/wallet/[id]', () => {
+  // Create 4 wallets
+  let createdWalletsIds: number[]
+  beforeAll(async () => {
+    await clearPaybuttonsAndAddresses()
+    await clearWallets()
+    createdWalletsIds = []
+    for (let i = 0; i < 4; i++) {
+      const pb = await createPaybuttonForUser('test-u-id')
+      const wallet = await createWalletForUser('test-u-id', [pb.id])
+      createdWalletsIds.push(wallet.id)
+    }
+  })
+
+  const baseRequestOptions: RequestOptions = {
+    method: 'GET' as RequestMethod,
+    query: {}
+  }
+
+  it('Find wallet for created ids', async () => {
+    for (const id of createdWalletsIds) {
+      if (baseRequestOptions.query != null) baseRequestOptions.query.id = id
+      const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
+      const responseData = res._getJSONData()
+      expect(res.statusCode).toBe(200)
+      expect(responseData.addresses).toEqual(
+        expect.arrayContaining([
+          {
+            id: expect.any(Number),
+            address: expect.any(String)
+          },
+          {
+            id: expect.any(Number),
+            address: expect.any(String)
+          }
+        ])
+      )
+      expect(responseData.paybuttons).toEqual(
+        expect.arrayContaining([
+          {
+            id: expect.any(Number),
+            providerUserId: expect.any(String),
+            walletId: expect.any(Number),
+            name: expect.any(String),
+            uuid: expect.any(String),
+            createdAt: expect.any(String),
+            updatedAt: expect.any(String),
+            buttonData: expect.any(String)
+          }
+        ])
+      )
+      expect(responseData).toHaveProperty('providerUserId')
+      expect(responseData).toHaveProperty('name')
+    }
+  })
+
+  it('Not find wallet for next id', async () => {
+    const nextId = createdWalletsIds[createdWalletsIds.length - 1] + 1
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = nextId
+    const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
+    expect(res.statusCode).toBe(404)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NOT_FOUND_404.message)
   })
 })
 
