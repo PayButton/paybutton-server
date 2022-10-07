@@ -115,7 +115,7 @@ describe('POST /api/paybutton/', () => {
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
-    expect(responseData.message).toBe(RESPONSE_MESSAGES.NAME_ALREADY_EXISTS_400.message)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message)
   })
 
   it('Fail without addresses', async () => {

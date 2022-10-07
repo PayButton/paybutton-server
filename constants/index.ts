@@ -7,7 +7,7 @@ export const RESPONSE_MESSAGES = {
   USER_ID_NOT_PROVIDED_400: { statusCode: 400, message: "'userId' not provided." },
   MULTIPLE_USER_IDS_PROVIDED_400: { statusCode: 400, message: "Multiple 'userId' provided." },
   NAME_NOT_PROVIDED_400: { statusCode: 400, message: "'name' not provided." },
-  NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Button name already exists for this user.' },
+  PAYBUTTON_NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Button name already exists for this user.' },
   ADDRESSES_NOT_PROVIDED_400: { statusCode: 400, message: "'addresses' not provided." },
   TRANSACTION_ID_NOT_PROVIDED_400: { statusCode: 400, message: "'transactionId' not provided." },
   INVALID_NETWORK_SLUG_400: { statusCode: 400, message: 'Invalid network slug.' },
