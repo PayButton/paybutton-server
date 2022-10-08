@@ -1,6 +1,7 @@
 import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN } from '../constants/index'
 import { Prisma } from '@prisma/client'
 import { CreatePaybuttonInput } from '../services/paybuttonService'
+import { CreateWalletInput } from '../services/walletService'
 import { getAddressPrefix } from './index'
 import xecaddr from 'xecaddrjs'
 
@@ -52,6 +53,10 @@ export const parseError = function (error: Error): Error {
     if (error.code === 'P2002') {
       if (error.message.includes('Paybutton_name_providerUserId_unique_constraint')) {
         return new Error(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message)
+      } else if (
+        error.message.includes('Wallet_name_providerUserId_unique_constraint')
+      ) {
+        return new Error(RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400.message)
       }
     }
   }
@@ -76,5 +81,22 @@ export const parsePaybuttonPOSTRequest = function (params: paybuttonPOSTParamete
     name: params.name,
     buttonData: parsedButtonData,
     prefixedAddressList: parsedAddresses
+  }
+}
+
+export interface WalletPOSTParameters {
+  userId?: string
+  name?: string
+  paybuttonIdList?: number[]
+}
+
+export const parseWalletPOSTRequest = function (params: WalletPOSTParameters): CreateWalletInput {
+  if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+  if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
+  if (params.paybuttonIdList === undefined) throw new Error(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message)
+  return {
+    userId: params.userId,
+    name: params.name,
+    paybuttonIdList: params.paybuttonIdList
   }
 }

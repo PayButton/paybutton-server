@@ -22,7 +22,7 @@ const paybuttonWithAddresses = Prisma.validator<Prisma.PaybuttonArgs>()(
   { include: includeAddresses }
 )
 
-type PaybuttonWithAddresses = Prisma.PaybuttonGetPayload<typeof paybuttonWithAddresses>
+export type PaybuttonWithAddresses = Prisma.PaybuttonGetPayload<typeof paybuttonWithAddresses>
 
 export async function createPaybutton (values: CreatePaybuttonInput): Promise<PaybuttonWithAddresses> {
   const addresses = await Promise.all(
@@ -60,7 +60,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
 }
 
 export async function fetchPaybuttonArrayByIds (paybuttonIdList: number[]): Promise<PaybuttonWithAddresses[]> {
-  return await prisma.paybutton.findMany({
+  const paybuttonArray = await prisma.paybutton.findMany({
     where: {
       id: {
         in: paybuttonIdList
@@ -68,6 +68,10 @@ export async function fetchPaybuttonArrayByIds (paybuttonIdList: number[]): Prom
     },
     include: includeAddresses
   })
+  if (paybuttonIdList.length !== paybuttonArray.length) {
+    throw new Error(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
+  }
+  return paybuttonArray
 }
 
 export async function fetchPaybuttonById (paybuttonId: number | string): Promise<PaybuttonWithAddresses | null> {

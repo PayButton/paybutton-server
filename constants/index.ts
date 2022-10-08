@@ -8,6 +8,7 @@ export const RESPONSE_MESSAGES = {
   MULTIPLE_USER_IDS_PROVIDED_400: { statusCode: 400, message: "Multiple 'userId' provided." },
   NAME_NOT_PROVIDED_400: { statusCode: 400, message: "'name' not provided." },
   PAYBUTTON_NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Button name already exists for this user.' },
+  WALLET_NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Wallet name already exists for this user.' },
   ADDRESSES_NOT_PROVIDED_400: { statusCode: 400, message: "'addresses' not provided." },
   BUTTON_IDS_NOT_PROVIDED_400: { statusCode: 400, message: "'paybuttonIdList' not provided." },
   TRANSACTION_ID_NOT_PROVIDED_400: { statusCode: 400, message: "'transactionId' not provided." },
@@ -19,6 +20,7 @@ export const RESPONSE_MESSAGES = {
   ADDRESS_NOT_PROVIDED_400: { statusCode: 400, message: "'address' not provided." },
   INVALID_ADDRESS_400: { statusCode: 400, message: 'Invalid address.' },
   NO_ADDRESS_FOUND_404: { statusCode: 404, message: 'No address found.' },
+  NO_BUTTON_FOUND_404: { statusCode: 404, message: 'No button found.' },
   MULTIPLE_ADDRESSES_FOUND_400: { statusCode: 400, message: 'Multiple addresses found.' }
 }
 
