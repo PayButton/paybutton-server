@@ -13,14 +13,15 @@ interface IProps {
 }
 
 export default ({ wallet, paymentInfo }: IProps): FunctionComponent => {
+  const networks = wallet.addresses.map((addr) => addr.networkId)
   return (
     <div className={style.wallet_card}>
       <div className={style.wallet_card_header_ctn}>
         <div className={style.wallet_card_header}>
           <h4>{wallet.name}</h4>
           <div className={style.walletcard_icons}>
-            {paymentInfo.XECBalance > 0 && <div><Image src={XECIcon} alt='XEC' /></div>}
-            {paymentInfo.BCHBalance > 0 && <div><Image src={BCHIcon} alt='BCH' /></div>}
+            {networks.includes(1) && <div><Image src={XECIcon} alt='XEC' /></div>}
+            {networks.includes(2) && <div><Image src={BCHIcon} alt='BCH' /></div>}
           </div>
         </div>
         <div className={style.edit_button_ctn}>
