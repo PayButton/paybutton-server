@@ -1,5 +1,6 @@
 // import * as networkService from 'services/networkService'
 import * as paybuttonService from 'services/paybuttonService'
+import * as addressService from 'services/addressService'
 import { Prisma, Wallet } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
@@ -15,7 +16,8 @@ const includeAddressesAndPaybuttons = {
   addresses: {
     select: {
       id: true,
-      address: true
+      address: true,
+      networkId: true
     }
   }
 }
@@ -24,7 +26,7 @@ const walletWithAddressesAndPaybuttons = Prisma.validator<Prisma.WalletArgs>()(
   { include: includeAddressesAndPaybuttons }
 )
 
-type WalletWithAddressesAndPaybuttons = Prisma.WalletGetPayload<typeof walletWithAddressesAndPaybuttons>
+export type WalletWithAddressesAndPaybuttons = Prisma.WalletGetPayload<typeof walletWithAddressesAndPaybuttons>
 
 export async function createWallet (values: CreateWalletInput): Promise<Wallet> {
   const paybuttonList = await paybuttonService.fetchPaybuttonArrayByIds(values.paybuttonIdList)
@@ -72,6 +74,31 @@ export async function fetchWalletById (walletId: number | string): Promise<Walle
     where: { id: Number(walletId) },
     include: includeAddressesAndPaybuttons
   })
+}
+
+export interface WalletPaymentInfo {
+  XECBalance: Prisma.Decimal
+  BCHBalance: Prisma.Decimal
+  paymentCount: number
+}
+
+export async function getWalletBalance (wallet: WalletWithAddressesAndPaybuttons): Promise<WalletPaymentInfo> {
+  const ret: WalletPaymentInfo = {
+    XECBalance: new Prisma.Decimal(0),
+    BCHBalance: new Prisma.Decimal(0),
+    paymentCount: 0
+  }
+  for (const addr of wallet.addresses) {
+    const addrBalance = await addressService.getAddressPaymentInfo(addr.address)
+    if (addr.networkId === 1) {
+      ret.XECBalance = ret.XECBalance.plus(addrBalance.balance)
+    }
+    if (addr.networkId === 2) {
+      ret.BCHBalance = ret.BCHBalance.plus(addrBalance.balance)
+    }
+    ret.paymentCount += addrBalance.paymentCount
+  }
+  return ret
 }
 
 export async function fetchWalletArrayByUserId (userId: string): Promise<WalletWithAddressesAndPaybuttons[]> {
