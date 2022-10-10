@@ -5,50 +5,53 @@ import Image from 'next/image'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EditWalletForm from './EditWalletForm'
+import { WalletWithAddressesAndPaybuttons, WalletPaymentInfo } from 'services/walletService'
 
 interface IProps {
-  walletInfo: {}
+  wallet: WalletWithAddressesAndPaybuttons
+  paymentInfo: WalletPaymentInfo
 }
-export default ({ walletInfo }: IProps): FunctionComponent => {
+
+export default ({ wallet, paymentInfo }: IProps): FunctionComponent => {
   return (
     <div className={style.wallet_card}>
       <div className={style.wallet_card_header_ctn}>
         <div className={style.wallet_card_header}>
-          <h4>{walletInfo.name}</h4>
+          <h4>{wallet.name}</h4>
           <div className={style.walletcard_icons}>
-            {walletInfo.xec_balance > 0 && <div><Image src={XECIcon} alt='XEC' /></div>}
-            {walletInfo.bch_balance > 0 && <div><Image src={BCHIcon} alt='BCH' /></div>}
+            {paymentInfo.XECBalance > 0 && <div><Image src={XECIcon} alt='XEC' /></div>}
+            {paymentInfo.BCHBalance > 0 && <div><Image src={BCHIcon} alt='BCH' /></div>}
           </div>
         </div>
         <div className={style.edit_button_ctn}>
-          {walletInfo.default_wallet === true && <div className={style.default_wallet}>Default Wallet</div>}
-          <EditWalletForm walletInfo={walletInfo} />
+          {wallet.default_wallet === true && <div className={style.default_wallet}>Default Wallet</div>}
+          <EditWalletForm wallet={wallet} />
         </div>
       </div>
 
       <div className={style.info_ctn}>
-      {walletInfo.xec_balance > 0 &&
+      {paymentInfo.XECBalance > 0 &&
         <div className={style.info_item}>
           <h6>XEC Balance</h6>
-          <h5>{Number(walletInfo.xec_balance).toLocaleString()} XEC</h5>
+          <h5>{Number(paymentInfo.XECBalance).toLocaleString()} XEC</h5>
         </div>
       }
-      {walletInfo.bch_balance > 0 &&
+      {paymentInfo.BCHBalance > 0 &&
         <div className={style.info_item}>
           <h6>BCH Balance</h6>
-          <h5>{Number(walletInfo.bch_balance).toLocaleString()} BCH</h5>
+          <h5>{Number(paymentInfo.BCHBalance).toLocaleString()} BCH</h5>
         </div>
       }
         <div className={style.info_item}>
           <h6>Payments</h6>
-          <h5>{walletInfo.payments}</h5>
+          <h5>{paymentInfo.paymentCount}</h5>
         </div>
 
         <div className={style.info_item}>
           <h6>Buttons</h6>
           <div className={style.buttons_list_ctn}>
-            {walletInfo.paybuttons.map(button =>
-                <Link href={`/button/` + button.id}>{button.name}</Link>
+            {wallet.paybuttons.map(button =>
+                <Link href={`/button/${button.id}`}>{button.name}</Link>
             )}
           </div>
         </div>

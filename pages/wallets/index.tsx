@@ -7,6 +7,7 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import WalletCard from 'components/Wallet/WalletCard'
 import WalletForm from 'components/Wallet/WalletForm'
+import { WalletWithAddressesAndPaybuttons, WalletPaymentInfo } from 'services/walletService'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -41,7 +42,7 @@ interface WalletsProps {
 }
 
 interface WalletsState {
-  wallets: [{default_wallet: boolean, name: string, paybuttons: any[], xec_balance: string, bch_balance: string, payments: string}]
+  walletsWithPaymentInfo: [{wallet: WalletWithAddressesAndPaybuttons, paymentInfo: WalletPaymentInfo}]
 }
 
 export default function Wallets ({ userId }: WalletsProps): React.ReactElement {
@@ -56,40 +57,22 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
   constructor (props: WalletsProps) {
     super(props)
     this.state = {
-      wallets: [
-        {
-          default_wallet: true,
-          name: 'My Wallet',
-          xec_balance: '103742123.05',
-          bch_balance: '41.36',
-          payments: '453',
-          paybuttons: [
-            { name: 'Paybutton XEC', id: 1 },
-            { name: 'CoinDance BCH', id: 3 },
-            { name: 'Paybutton XEC & CoinDance BCH', id: 3 }
-          ]
-        },
-        {
-          default_wallet: false,
-          name: 'XEC Wallet',
-          xec_balance: '103742123.05',
-          bch_balance: '0',
-          payments: '234',
-          paybuttons: [
-            { name: 'Paybutton XEC', id: 1 }
-          ]
-        },
-        {
-          default_wallet: false,
-          name: 'BCH Wallet',
-          xec_balance: '0',
-          bch_balance: '41.36',
-          payments: '198',
-          paybuttons: [
-            { name: 'CoinDance BCH', id: 3 }
-          ]
-        }
-      ]
+      walletsWithPaymentInfo: []
+    }
+  }
+
+  async componentDidMount (): Promise<void> {
+    await this.fetchWallets()
+  }
+
+  async fetchWallets (): Promise<void> {
+    const res = await fetch(`/api/wallets?userId=${this.props.userId}`, {
+      method: 'GET'
+    })
+    if (res.status === 200) {
+      this.setState({
+        walletsWithPaymentInfo: await res.json()
+      })
     }
   }
 
@@ -98,8 +81,9 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
       <>
         <h2>Wallets</h2>
         <div>
-        {this.state.wallets.sort((a, b) => Number(b.default_wallet) - Number(a.default_wallet)).map(wallets =>
-              <WalletCard key={wallets.name} walletInfo={wallets} />
+        {this.state.walletsWithPaymentInfo.sort((a, b) => Number(b.wallet.default_wallet) - Number(a.wallet.default_wallet)).map(walletWithPaymentInfo => {
+          return <WalletCard wallet={walletWithPaymentInfo.wallet} paymentInfo={walletWithPaymentInfo.paymentInfo} />
+        }
         )}
         <WalletForm />
         </div>
