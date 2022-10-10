@@ -389,7 +389,7 @@ describe('GET /api/wallets/', () => {
     const res = await testEndpoint(baseRequestOptions, walletsEndpoint)
     expect(res.statusCode).toBe(200)
     const responseData = res._getJSONData()
-    expect(responseData[0].providerUserId).toBe(userA)
+    expect(responseData[0].wallet.providerUserId).toBe(userA)
     expect(responseData.length).toBe(3)
   })
 
@@ -400,9 +400,9 @@ describe('GET /api/wallets/', () => {
     const res = await testEndpoint(baseRequestOptions, walletsEndpoint)
     expect(res.statusCode).toBe(200)
     const responseData = res._getJSONData()
-    expect(responseData[0].providerUserId).toBe(userB)
+    expect(responseData[0].wallet.providerUserId).toBe(userB)
     expect(responseData.length).toBe(1)
-    expect(responseData[0].addresses).toEqual(
+    expect(responseData[0].wallet.addresses).toEqual(
       expect.arrayContaining([
         {
           address: expect.any(String),
@@ -416,10 +416,14 @@ describe('GET /api/wallets/', () => {
         }
       ])
     )
-    expect(responseData[0]).toHaveProperty('providerUserId', 'test-other-u-id')
-    expect(responseData[0]).toHaveProperty('name')
-    expect(responseData[0]).toHaveProperty('paybuttons')
-    expect(responseData[0]).toHaveProperty('userProfile')
+    expect(responseData[0]).toHaveProperty('wallet')
+    expect(responseData[0]).toHaveProperty('paymentInfo')
+    expect(responseData[0].wallet).toHaveProperty('providerUserId')
+    expect(responseData[0].wallet).toHaveProperty('name')
+    expect(responseData[0].wallet).toHaveProperty('paybuttons')
+    expect(responseData[0].paymentInfo).toHaveProperty('XECBalance')
+    expect(responseData[0].paymentInfo).toHaveProperty('BCHBalance')
+    expect(responseData[0].paymentInfo).toHaveProperty('paymentCount')
   })
 
   it('Get no wallets for unknown user', async () => {
