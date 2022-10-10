@@ -406,10 +406,12 @@ describe('GET /api/wallets/', () => {
       expect.arrayContaining([
         {
           address: expect.any(String),
+          networkId: expect.any(Number),
           id: expect.any(Number)
         },
         {
           address: expect.any(String),
+          networkId: expect.any(Number),
           id: expect.any(Number)
         }
       ])
@@ -479,10 +481,12 @@ describe('GET /api/wallet/[id]', () => {
         expect.arrayContaining([
           {
             id: expect.any(Number),
+            networkId: expect.any(Number),
             address: expect.any(String)
           },
           {
             id: expect.any(Number),
+            networkId: expect.any(Number),
             address: expect.any(String)
           }
         ])
