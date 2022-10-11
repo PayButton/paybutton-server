@@ -74,6 +74,18 @@ CREATE TABLE `Wallet` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `UserProfile` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `userId` VARCHAR(255) NOT NULL,
+    `defaultWalletId` INTEGER NULL,
+
+    UNIQUE INDEX `UserProfile_userId_key`(`userId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 
 -- AddForeignKey
 ALTER TABLE `Address` ADD CONSTRAINT `Address_networkId_fkey` FOREIGN KEY (`networkId`) REFERENCES `Network`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
@@ -92,3 +104,6 @@ ALTER TABLE `Paybutton` ADD CONSTRAINT `Paybutton_walletId_fkey` FOREIGN KEY (`w
 
 -- AddForeignKey
 ALTER TABLE `Address` ADD CONSTRAINT `Address_walletId_fkey` FOREIGN KEY (`walletId`) REFERENCES `Wallet`(`id`) ON DELETE SET NULL ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `UserProfile` ADD CONSTRAINT `UserProfile_defaultWalletId_fkey` FOREIGN KEY (`defaultWalletId`) REFERENCES `Wallet`(`id`) ON DELETE SET NULL ON UPDATE RESTRICT;
