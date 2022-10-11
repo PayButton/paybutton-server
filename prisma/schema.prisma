@@ -82,12 +82,12 @@ model Wallet {
   providerUserId String?     @db.VarChar(255)
   addresses      Address[]
   paybuttons     Paybutton[]
-  userProfile    WalletOnUserProfiles?
+  userProfile    WalletsOnUserProfile?
 
   @@unique([name, providerUserId], map: "Wallet_name_providerUserId_unique_constraint")
 }
 
-model WalletOnUserProfiles {
+model WalletsOnUserProfile {
   walletId              Int         @unique
   userProfileId         Int
   isDefaultForNetworkId Int?
@@ -97,7 +97,7 @@ model WalletOnUserProfiles {
   userProfile           UserProfile @relation(fields: [userProfileId], references: [id], onUpdate: Cascade, onDelete: Cascade)
 
   @@id([walletId, userProfileId])
-  @@unique([userProfileId, isDefaultForNetworkId], name: "WalletOnUserProfiles_userProfileId_isDefaultForNetworkId_unique_constraint")
+  @@unique([userProfileId, isDefaultForNetworkId], name: "WalletsOnUserProfile_userProfileId_isDefaultForNetworkId_unique_constraint")
 }
 
 model UserProfile {
@@ -105,5 +105,5 @@ model UserProfile {
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
   userId          String                 @unique @db.VarChar(255)
-  wallets         WalletOnUserProfiles[]
+  wallets         WalletsOnUserProfile[]
 }

@@ -32,8 +32,8 @@ async function main (): Promise<void> {
     await prisma.userProfile.createMany({ data: userProfiles })
   }
   // create wallet user profiles connectors
-  if (await prisma.walletOnUserProfiles.count() === 0) {
-    await prisma.walletOnUserProfiles.createMany({ data: walletUserConnectors })
+  if (await prisma.walletsOnUserProfile.count() === 0) {
+    await prisma.walletsOnUserProfile.createMany({ data: walletUserConnectors })
   }
 }
 
