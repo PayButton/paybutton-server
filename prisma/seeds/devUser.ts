@@ -9,3 +9,20 @@ export const createDevUserRawQueryList = [
   'INSERT INTO emailverification_verified_emails VALUES (\'dev2-uid\', \'dev2@paybutton.org\') ON DUPLICATE KEY UPDATE user_id=user_id;',
   'INSERT INTO all_auth_recipe_users VALUES (\'dev2-uid\', \'emailpassword\', 1652220489244) ON DUPLICATE KEY UPDATE user_id=user_id;'
 ]
+
+export const userProfiles = [
+  {
+    id: 1,
+    userId: 'dev-uid',
+    defaultWalletId: 1,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: 2,
+    userId: 'dev2-uid',
+    defaultWalletId: null,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
+]
