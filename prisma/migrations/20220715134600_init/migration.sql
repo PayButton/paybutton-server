@@ -80,12 +80,23 @@ CREATE TABLE `UserProfile` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     `userId` VARCHAR(255) NOT NULL,
-    `defaultWalletId` INTEGER NULL,
 
     UNIQUE INDEX `UserProfile_userId_key`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `WalletOnUserProfiles` (
+    `walletId` INTEGER NOT NULL,
+    `userProfileId` INTEGER NOT NULL,
+    `isDefaultForNetworkId` INTEGER NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `WalletOnUserProfiles_walletId_key`(`walletId`),
+    UNIQUE INDEX `WalletOnUserProfiles_userProfileId_isDefaultForNetworkId_key`(`userProfileId`, `isDefaultForNetworkId`),
+    PRIMARY KEY (`walletId`, `userProfileId`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
 ALTER TABLE `Address` ADD CONSTRAINT `Address_networkId_fkey` FOREIGN KEY (`networkId`) REFERENCES `Network`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
@@ -106,4 +117,7 @@ ALTER TABLE `Paybutton` ADD CONSTRAINT `Paybutton_walletId_fkey` FOREIGN KEY (`w
 ALTER TABLE `Address` ADD CONSTRAINT `Address_walletId_fkey` FOREIGN KEY (`walletId`) REFERENCES `Wallet`(`id`) ON DELETE SET NULL ON UPDATE RESTRICT;
 
 -- AddForeignKey
-ALTER TABLE `UserProfile` ADD CONSTRAINT `UserProfile_defaultWalletId_fkey` FOREIGN KEY (`defaultWalletId`) REFERENCES `Wallet`(`id`) ON DELETE SET NULL ON UPDATE RESTRICT;
+ALTER TABLE `WalletOnUserProfiles` ADD CONSTRAINT `WalletOnUserProfiles_walletId_fkey` FOREIGN KEY (`walletId`) REFERENCES `Wallet`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `WalletOnUserProfiles` ADD CONSTRAINT `WalletOnUserProfiles_userProfileId_fkey` FOREIGN KEY (`userProfileId`) REFERENCES `UserProfile`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
