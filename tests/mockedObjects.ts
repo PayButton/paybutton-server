@@ -173,6 +173,30 @@ export const mockedTransaction = {
   timestamp: 1657130467
 }
 
+export const mockedTransactionList = [
+  {
+    id: 1,
+    hash: 'Yh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
+    addressId: 1,
+    amount: new Prisma.Decimal('4.31247724'),
+    timestamp: 1657130467
+  },
+  {
+    id: 2,
+    hash: 'hh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
+    addressId: 1,
+    amount: new Prisma.Decimal('1.5'),
+    timestamp: 1657130467
+  },
+  {
+    id: 3,
+    hash: '5h5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
+    addressId: 1,
+    amount: new Prisma.Decimal('0.2'),
+    timestamp: 1657130467
+  }
+]
+
 // BCH GRPC
 export const unspentOutputFromObject = (obj: UnspentOutput.AsObject): UnspentOutput => {
   const uo = new UnspentOutput()
