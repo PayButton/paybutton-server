@@ -14,14 +14,12 @@ export const userProfiles = [
   {
     id: 1,
     userId: 'dev-uid',
-    defaultWalletId: 1,
     createdAt: new Date(),
     updatedAt: new Date()
   },
   {
     id: 2,
     userId: 'dev2-uid',
-    defaultWalletId: null,
     createdAt: new Date(),
     updatedAt: new Date()
   }

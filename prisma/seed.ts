@@ -3,6 +3,7 @@ import { networks } from './seeds/networks'
 import { paybuttons } from './seeds/paybuttons'
 import { addresses } from './seeds/addresses'
 import { connectors } from './seeds/connectors'
+import { walletUserConnectors } from './seeds/walletUserConnectors'
 import { wallets } from './seeds/wallets'
 import { createDevUserRawQueryList, userProfiles } from './seeds/devUser'
 const prisma = new PrismaClient()
@@ -29,6 +30,10 @@ async function main (): Promise<void> {
   // create user profiles
   if (await prisma.userProfile.count() === 0) {
     await prisma.userProfile.createMany({ data: userProfiles })
+  }
+  // create wallet user profiles connectors
+  if (await prisma.walletOnUserProfiles.count() === 0) {
+    await prisma.walletOnUserProfiles.createMany({ data: walletUserConnectors })
   }
 }
 
