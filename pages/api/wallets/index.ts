@@ -14,10 +14,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       for (const wallet of walletList) {
         ret.push(
           {
-            wallet: {
-              default_wallet: false,
-              ...wallet
-            },
+            wallet,
             paymentInfo: await walletService.getWalletBalance(wallet)
           }
         )
