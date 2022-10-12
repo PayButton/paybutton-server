@@ -11,6 +11,12 @@ export interface CreateWalletInput {
 }
 
 const includeAddressesAndPaybuttons = {
+  userProfile: {
+    select: {
+      userProfileId: true,
+      isDefaultForNetworkId: true
+    }
+  },
   paybuttons: true,
   addresses: {
     select: {
