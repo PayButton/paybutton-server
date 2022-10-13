@@ -1,9 +1,10 @@
 import prisma from 'prisma/clientInstance'
+import { Prisma, Paybutton, Address } from '@prisma/client'
 import * as walletService from 'services/walletService'
-import { Paybutton, Address } from '@prisma/client'
+import * as addressService from 'services/addressService'
 import { prismaMock } from 'prisma/mockedClient'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import { mockedWallet, mockedWalletList, mockedPaybuttonList, mockedNetwork } from '../mockedObjects'
+import { mockedWallet, mockedWalletList, mockedPaybuttonList, mockedNetwork, mockedBCHAddress } from '../mockedObjects'
 
 describe('Fetch services', () => {
   it('Should fetch wallet by id', async () => {
@@ -20,6 +21,24 @@ describe('Fetch services', () => {
 
     const result = await walletService.fetchWalletArrayByUserId('mocked-uid')
     expect(result).toEqual(mockedWalletList)
+  })
+
+  it('Wallet balance', async () => {
+    jest.spyOn(addressService, 'getAddressPaymentInfo').mockImplementation(async (_: string) => {
+      return {
+        balance: new Prisma.Decimal('17.5'),
+        paymentCount: 3
+      }
+    })
+    const params: walletService.WalletWithAddressesAndPaybuttons = {
+      ...mockedWallet,
+      addresses: [mockedBCHAddress],
+      paybuttons: []
+    }
+    const result = await walletService.getWalletBalance(params)
+    expect(result).toHaveProperty('XECBalance', new Prisma.Decimal('0'))
+    expect(result).toHaveProperty('BCHBalance', new Prisma.Decimal('17.5'))
+    expect(result).toHaveProperty('paymentCount', 3)
   })
 })
 
