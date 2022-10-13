@@ -29,3 +29,6 @@ export const FETCH_N = 100
 
 // When fetching some address transactions, delay (in ms) between each fetch.
 export const FETCH_DELAY = 100
+
+export const XEC_NETWORK_ID = 1
+export const BCH_NETWORK_ID = 2

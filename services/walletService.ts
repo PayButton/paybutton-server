@@ -3,7 +3,7 @@ import * as paybuttonService from 'services/paybuttonService'
 import * as addressService from 'services/addressService'
 import { Prisma, Wallet } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
-import { RESPONSE_MESSAGES } from 'constants/index'
+import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 export interface CreateWalletInput {
   userId: string
@@ -90,10 +90,10 @@ export async function getWalletBalance (wallet: WalletWithAddressesAndPaybuttons
   }
   for (const addr of wallet.addresses) {
     const addrBalance = await addressService.getAddressPaymentInfo(addr.address)
-    if (addr.networkId === 1) {
+    if (addr.networkId === XEC_NETWORK_ID) {
       ret.XECBalance = ret.XECBalance.plus(addrBalance.balance)
     }
-    if (addr.networkId === 2) {
+    if (addr.networkId === BCH_NETWORK_ID) {
       ret.BCHBalance = ret.BCHBalance.plus(addrBalance.balance)
     }
     ret.paymentCount += addrBalance.paymentCount
