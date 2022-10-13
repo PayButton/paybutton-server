@@ -1,6 +1,6 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl"]
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "linux-musl"]
   previewFeatures = ["interactiveTransactions"]
 }
 
@@ -18,7 +18,7 @@ model Address {
   networkId    Int
   walletId     Int?
   network      Network              @relation(fields: [networkId], references: [id], onUpdate: Restrict)
-  Wallet       Wallet?              @relation(fields: [walletId], references: [id], onUpdate: Restrict)
+  wallet       Wallet?              @relation(fields: [walletId], references: [id], onUpdate: Restrict)
   paybuttons   AddressesOnButtons[]
   transactions Transaction[]
 
@@ -34,7 +34,7 @@ model Paybutton {
   walletId       Int?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
-  Wallet         Wallet?              @relation(fields: [walletId], references: [id], onUpdate: Restrict)
+  wallet         Wallet?              @relation(fields: [walletId], references: [id], onUpdate: Restrict)
   addresses      AddressesOnButtons[]
 
   @@unique([name, providerUserId], map: "Paybutton_name_providerUserId_unique_constraint")
@@ -82,6 +82,28 @@ model Wallet {
   providerUserId String?     @db.VarChar(255)
   addresses      Address[]
   paybuttons     Paybutton[]
+  userProfile    WalletsOnUserProfile?
 
   @@unique([name, providerUserId], map: "Wallet_name_providerUserId_unique_constraint")
+}
+
+model WalletsOnUserProfile {
+  walletId              Int         @unique
+  userProfileId         Int
+  isDefaultForNetworkId Int?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  wallet                Wallet      @relation(fields: [walletId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  userProfile           UserProfile @relation(fields: [userProfileId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@id([walletId, userProfileId])
+  @@unique([userProfileId, isDefaultForNetworkId], name: "WalletsOnUserProfile_userProfileId_isDefaultForNetworkId_unique_constraint")
+}
+
+model UserProfile {
+  id              Int                    @id @default(autoincrement())
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  userId          String                 @unique @db.VarChar(255)
+  wallets         WalletsOnUserProfile[]
 }

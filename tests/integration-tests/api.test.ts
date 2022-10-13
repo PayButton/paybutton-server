@@ -416,9 +416,10 @@ describe('GET /api/wallets/', () => {
         }
       ])
     )
-    expect(responseData[0]).toHaveProperty('providerUserId')
+    expect(responseData[0]).toHaveProperty('providerUserId', 'test-other-u-id')
     expect(responseData[0]).toHaveProperty('name')
     expect(responseData[0]).toHaveProperty('paybuttons')
+    expect(responseData[0]).toHaveProperty('userProfile')
   })
 
   it('Get no wallets for unknown user', async () => {
