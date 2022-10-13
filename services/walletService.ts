@@ -21,7 +21,8 @@ const includeAddressesAndPaybuttons = {
   addresses: {
     select: {
       id: true,
-      address: true
+      address: true,
+      networkId: true
     }
   }
 }
