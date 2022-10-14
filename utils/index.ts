@@ -1,6 +1,7 @@
 import xecaddr from 'xecaddrjs'
 import { Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES } from '../constants/index'
+import * as bitcoinjs from 'bitcoinjs-lib'
 
 export const getAddressPrefix = function (addressString: string): string {
   try {
@@ -32,4 +33,22 @@ export async function satoshisToUnit (satoshis: Prisma.Decimal, networkFormat: s
     return satoshis.dividedBy(1e8)
   }
   throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
+}
+
+export async function pubkeyToAddress (pubkeyString: string, networkFormat: string): Promise<string> {
+  const pubkey = Buffer.from(pubkeyString, 'hex')
+  const legacyAddress = bitcoinjs.payments.p2pkh({ pubkey })?.address
+
+  let address: string
+  switch (networkFormat) {
+    case xecaddr.Format.Xecaddr:
+      address = await xecaddr.toXecAddress(legacyAddress)
+      break
+    case xecaddr.Format.Cashaddr:
+      address = await xecaddr.toCashAddress(legacyAddress)
+      break
+    default:
+      throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
+  }
+  return address
 }
