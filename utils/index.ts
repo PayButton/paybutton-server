@@ -3,6 +3,13 @@ import { Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES } from '../constants/index'
 import * as bitcoinjs from 'bitcoinjs-lib'
 
+export const removeAddressPrefix = function (addressString: string): string {
+  if (addressString.includes(':')) {
+    return addressString.split(':')[1]
+  }
+  return addressString
+}
+
 export const getAddressPrefix = function (addressString: string): string {
   try {
     const format = xecaddr.detectAddressFormat(addressString)
@@ -35,9 +42,14 @@ export async function satoshisToUnit (satoshis: Prisma.Decimal, networkFormat: s
   throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
 }
 
-export async function pubkeyToAddress (pubkeyString: string, networkFormat: string): Promise<string> {
+export async function pubkeyToAddress (pubkeyString: string, networkFormat: string): Promise<string | undefined> {
   const pubkey = Buffer.from(pubkeyString, 'hex')
-  const legacyAddress = bitcoinjs.payments.p2pkh({ pubkey })?.address
+  let legacyAddress: string | undefined
+  try {
+    legacyAddress = bitcoinjs.payments.p2pkh({ pubkey })?.address
+  } catch (err) {
+    return undefined
+  }
 
   let address: string
   switch (networkFormat) {
