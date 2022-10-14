@@ -3,7 +3,7 @@ import prisma from 'prisma/clientInstance'
 import { Prisma, Transaction, Address } from '@prisma/client'
 import grpcService from 'services/grpcService'
 import { parseAddress } from 'utils/validators'
-import { satoshisToUnit, pubkeyToAddress } from 'utils/index'
+import { satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from 'utils/index'
 import { fetchAddressBySubstring } from 'services/addressService'
 import _ from 'lodash'
 import { RESPONSE_MESSAGES, FETCH_N, FETCH_DELAY } from 'constants/index'
@@ -15,20 +15,25 @@ export async function getTransactionAmount (transaction: BCHTransaction.AsObject
   let totalOutput = 0
   let totalInput = 0
   const addressFormat = xecaddr.detectAddressFormat(addressString)
+  const unprefixedAddress = removeAddressPrefix(addressString)
+
   for (const output of transaction.outputsList) {
-    let outAddress = output.address
+    let outAddress: string | undefined = removeAddressPrefix(output.address)
     if (output.scriptClass === 'pubkey') {
       outAddress = await pubkeyToAddress(outAddress, addressFormat)
+      if (outAddress !== undefined) outAddress = removeAddressPrefix(outAddress)
     }
-    if (addressString.includes(outAddress)) {
+    if (unprefixedAddress === outAddress) {
       totalOutput += output.value
     }
   }
-  transaction.inputsList.forEach((input) => {
-    if (addressString.includes(input.address)) {
+  for (const input of transaction.inputsList) {
+    let addressFromPkey = await pubkeyToAddress(input.address, addressFormat)
+    if (addressFromPkey !== undefined) addressFromPkey = removeAddressPrefix(addressFromPkey)
+    if (unprefixedAddress === removeAddressPrefix(input.address) || unprefixedAddress === addressFromPkey) {
       totalInput += input.value
     }
-  })
+  }
   const satoshis = new Prisma.Decimal(totalOutput).minus(totalInput)
   return await satoshisToUnit(
     satoshis,
