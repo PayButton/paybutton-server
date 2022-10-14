@@ -133,7 +133,8 @@ export const mockedWallet = {
   createdAt: new Date('2022-09-30T18:01:32.456Z'),
   updatedAt: new Date('2022-09-30T18:01:32.456Z'),
   name: 'mockedWallet',
-  providerUserId: 'mocked-uid'
+  providerUserId: 'mocked-uid',
+  userProfile: null
   // "paybuttons": [],
   // "addresses": []
 }
