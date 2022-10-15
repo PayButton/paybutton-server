@@ -32,6 +32,7 @@ describe('Fetch services', () => {
     })
     const params: walletService.WalletWithAddressesAndPaybuttons = {
       ...mockedWallet,
+      userProfile: null,
       addresses: [mockedBCHAddress],
       paybuttons: []
     }

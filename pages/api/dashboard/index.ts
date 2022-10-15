@@ -1,5 +1,6 @@
 import * as paybuttonService from 'services/paybuttonService'
 import * as addressService from 'services/addressService'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { Prisma, Transaction } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
@@ -100,8 +101,8 @@ const getPeriodData = function (n: number, periodString: string, transactions: T
 const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
   const buttonsCount = (await paybuttonService.fetchPaybuttonArrayByUserId(userId)).length
   const addresses = await addressService.fetchAllUserAddresses(userId, true)
-  const XECAddresses = addresses.filter((addr) => addr.networkId === 1)
-  const BCHAddresses = addresses.filter((addr) => addr.networkId === 2)
+  const XECAddresses = addresses.filter((addr) => addr.networkId === XEC_NETWORK_ID)
+  const BCHAddresses = addresses.filter((addr) => addr.networkId === BCH_NETWORK_ID)
   const BCHTransactions = Array.prototype.concat.apply([], BCHAddresses.map((addr) => addr.transactions))
   const XECTransactions = Array.prototype.concat.apply([], XECAddresses.map((addr) => addr.transactions))
   const incomingTransactionsInUSD = BCHTransactions.map((t) => {
