@@ -2,7 +2,7 @@ import React, { FunctionComponent, useState } from 'react'
 import { Transaction } from '@prisma/client'
 import style from './transaction.module.css'
 import moment from 'moment'
-import { copyText } from 'utils/copyText.js'
+import { copyText } from 'utils/general'
 import CopyIcon from 'assets/copy.png'
 import Image from 'next/image'
 

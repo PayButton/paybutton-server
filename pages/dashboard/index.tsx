@@ -6,6 +6,7 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import style from './dashboard.module.css'
+import { FormatNumber } from 'utils/general'
 const Chart = dynamic(async () => await import('./Chart'), {
   ssr: false
 })
@@ -75,8 +76,8 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
     <ThirdPartyEmailPasswordAuthNoSSR>
       <h2>Dashboard</h2>
       <div className={style.number_ctn}>
-        <NumberBlock value={'$'.concat(dashboardData.total.revenue) } text='Revenue (lifetime)' />
-        <NumberBlock value={dashboardData.total.payments} text='Payments (lifetime)' />
+        <NumberBlock value={'$'.concat(FormatNumber(dashboardData.total.revenue, 'dollars')) } text='Revenue (lifetime)' />
+        <NumberBlock value={FormatNumber(dashboardData.total.payments)} text='Payments (lifetime)' />
         <NumberBlock value={dashboardData.total.buttons} text='Buttons' />
       </div>
       <div className={style.btn_ctn}>
@@ -88,16 +89,16 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Revenue</h4>
-            <h5>{activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${activePeriod.totalRevenue}</h5>
+            <h5>{activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${FormatNumber(activePeriod.totalRevenue, 'dollars')}</h5>
           </div>
           <div className={style.chart_ctn}>
-            <Chart data={activePeriod.revenue} usd />
+            <Chart data={activePeriod.revenue} usd={true} />
           </div>
         </div>
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Payments</h4>
-            <h5>{activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: {activePeriod.totalPayments}</h5>
+            <h5>{activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: {FormatNumber(activePeriod.totalPayments)}</h5>
           </div>
           <div className={style.chart_ctn}>
             <Chart data={activePeriod.payments} />
