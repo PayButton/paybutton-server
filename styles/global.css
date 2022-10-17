@@ -29,6 +29,10 @@ textarea {
   padding-top: 100px;
 }
 
+body[data-theme='dark'] .login_ctn img {
+  filter: brightness(100);
+}
+
 h2 {
   font-size: 30px;
   margin: 0;

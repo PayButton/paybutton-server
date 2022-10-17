@@ -25,10 +25,10 @@ export default function Auth() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className='login_ctn'>
+      <div className='login_ctn'>
       <Image src={logoImageSource} alt='PayButton' width={200} height={37} />
         <SuperTokensComponentNoSSR />
-      </main>
+      </div>
     </div>
   )
 }
