@@ -1,5 +1,5 @@
-import type { NextPage } from "next"
-import React from "react"
+import type { NextPage } from 'next'
+import React from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -8,9 +8,9 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend,
-} from "chart.js"
-import { Line } from "react-chartjs-2"
+  Legend
+} from 'chart.js'
+import { Line } from 'react-chartjs-2'
 
 ChartJS.register(
   CategoryScale,
@@ -24,65 +24,64 @@ ChartJS.register(
 
 interface Props {
   data: object
+  usd: boolean
 }
 
 const Chart: NextPage<Props> = ({ data, usd }) => {
-
   const chartData = data
-  
 
-function cssvar(name) {
-    return getComputedStyle(document.body).getPropertyValue(name);
+  function cssvar (name) {
+    return getComputedStyle(document.body).getPropertyValue(name)
   }
 
-const options = {
+  const options = {
     responsive: true,
     lineTension: 0.4,
     maintainAspectRatio: false,
     plugins: {
-        legend: {
-        display: false,
-        },
-        tooltip: {
+      legend: {
+        display: false
+      },
+      tooltip: {
         displayColors: false,
-        // callbacks: {
-        //     title: function () {
-        //       return "my tittle";
-        //     }
-        //   }
-        mode: 'nearest',
-        intersect: false,
+        callbacks: {
+          label: function (context) {
+            return usd ? '$' + context.formattedValue : context.formattedValue
+          }
         },
+        mode: 'nearest',
+        intersect: false
+      }
     },
     scales: {
-        x: {
+      x: {
         grid: {
-            display: false,
-            drawBorder: true,
-            drawOnChartArea: true,
-            drawTicks: true,
+          display: false,
+          drawBorder: true,
+          drawOnChartArea: true,
+          drawTicks: true
         },
         ticks: {
-            color: cssvar('--primary-text-color'),
+          color: cssvar('--primary-text-color')
+        }
+      },
+      y: {
+        grid: {
+          drawBorder: false,
+          color: cssvar('--chart-line-color')
         },
+        grace: '0%',
+        ticks: {
+          color: cssvar('--primary-text-color'),
+          callback: function (value) {
+            return usd ? '$' + value : value
+          }
         },
-        y: {
-            grid: {
-                drawBorder: false,
-                color: cssvar('--chart-line-color'),
-            },
-            grace: '10%',
-            ticks: {
-                color: cssvar('--primary-text-color'),
-                callback: function(value) {
-                return usd ? '$'+ value: value;
-            }
-            },
-            position: 'right',
-            // beginAtZero: true,
-        },
-    },
-    };
+        position: 'right'
+        // beginAtZero: true,
+      }
+    }
+  }
 
   return <Line options={options} data={chartData} />
 }
