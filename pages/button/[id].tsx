@@ -1,7 +1,7 @@
 import React from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import Page from 'components/Page'
-import Link from 'next/link'
+import Router from 'next/router'
 import { PaybuttonDetail } from 'components/Paybutton'
 import { AddressTransactions } from 'components/Transaction'
 import { Transaction, Paybutton } from '@prisma/client'
@@ -110,9 +110,7 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
     if (this.state.paybutton !== undefined && Object.keys(this.state.transactions).length !== 0) {
       return (
         <>
-          <Link href='/buttons'>
-            <a className='back_btn'>Back</a>
-          </Link>
+          <div className='back_btn' onClick={() => Router.back()}>Back</div>
           <PaybuttonDetail paybutton={this.state.paybutton} />
           <h4>Transactions</h4>
           <AddressTransactions addressTransactions={this.state.transactions} />
