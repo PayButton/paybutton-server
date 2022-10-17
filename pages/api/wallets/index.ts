@@ -10,7 +10,16 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       if (userId === '' || userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
       if (Array.isArray(userId)) throw new Error(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message)
       const walletList = await walletService.fetchWalletArrayByUserId(userId)
-      res.status(200).json(walletList)
+      const ret = []
+      for (const wallet of walletList) {
+        ret.push(
+          {
+            wallet,
+            paymentInfo: await walletService.getWalletBalance(wallet)
+          }
+        )
+      }
+      res.status(200).json(ret)
     } catch (err: any) {
       switch (err.message) {
         case RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message:
