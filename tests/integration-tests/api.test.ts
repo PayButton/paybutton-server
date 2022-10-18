@@ -418,7 +418,7 @@ describe('GET /api/wallets/', () => {
     )
     expect(responseData[0]).toHaveProperty('wallet')
     expect(responseData[0]).toHaveProperty('paymentInfo')
-    expect(responseData[0].wallet).toHaveProperty('providerUserId')
+    expect(responseData[0].wallet).toHaveProperty('providerUserId', 'test-other-u-id')
     expect(responseData[0].wallet).toHaveProperty('name')
     expect(responseData[0].wallet).toHaveProperty('paybuttons')
     expect(responseData[0].wallet).toHaveProperty('userProfile')

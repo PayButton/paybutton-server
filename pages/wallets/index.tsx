@@ -81,7 +81,21 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
       <>
         <h2>Wallets</h2>
         <div>
-        {this.state.walletsWithPaymentInfo.sort((a, b) => Number(b.wallet.default_wallet) - Number(a.wallet.default_wallet)).map(walletWithPaymentInfo => {
+        {this.state.walletsWithPaymentInfo.sort((a, b) => {
+          /* Sorts in the following order, from first to last, if they exist:
+           * Default XEC Wallet, Default BCH Wallet, other wallets.
+           */
+          const aNetworkId = Number(a.wallet.userProfile?.isDefaultForNetworkId)
+          const bNetworkId = Number(b.wallet.userProfile?.isDefaultForNetworkId)
+          switch (aNetworkId | bNetworkId) {
+            case 1 | 2:
+              return 1
+            case 2 | 1:
+              return -1
+            default:
+              return (bNetworkId - aNetworkId)
+          }
+        }).map(walletWithPaymentInfo => {
           return <WalletCard wallet={walletWithPaymentInfo.wallet} paymentInfo={walletWithPaymentInfo.paymentInfo} />
         }
         )}

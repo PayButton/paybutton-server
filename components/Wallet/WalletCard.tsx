@@ -26,7 +26,8 @@ export default ({ wallet, paymentInfo }: IProps): FunctionComponent => {
           </div>
         </div>
         <div className={style.edit_button_ctn}>
-          {wallet.default_wallet === true && <div className={style.default_wallet}>Default Wallet</div>}
+          {wallet.userProfile?.isDefaultForNetworkId === 1 && <div className={style.default_wallet}>Default XEC Wallet</div>}
+          {wallet.userProfile?.isDefaultForNetworkId === 2 && <div className={style.default_wallet}>Default BCH Wallet</div>}
           <EditWalletForm wallet={wallet} />
         </div>
       </div>
