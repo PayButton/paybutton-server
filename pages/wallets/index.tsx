@@ -1,6 +1,7 @@
 import React from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import dynamic from 'next/dynamic'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
@@ -88,9 +89,9 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
           const aNetworkId = Number(a.wallet.userProfile?.isDefaultForNetworkId)
           const bNetworkId = Number(b.wallet.userProfile?.isDefaultForNetworkId)
           switch (aNetworkId | bNetworkId) {
-            case 1 | 2:
+            case XEC_NETWORK_ID | BCH_NETWORK_ID:
               return 1
-            case 2 | 1:
+            case BCH_NETWORK_ID | XEC_NETWORK_ID:
               return -1
             default:
               return (bNetworkId - aNetworkId)
