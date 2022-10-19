@@ -29,6 +29,10 @@ textarea {
   padding-top: 100px;
 }
 
+body[data-theme='dark'] .login_ctn img {
+  filter: brightness(100);
+}
+
 h2 {
   font-size: 30px;
   margin: 0;
@@ -58,6 +62,8 @@ body[data-theme='dark'] button {
   margin-bottom: 0px;
   background-color: var(--secondary-bg-color);
   display: inline-block;
+  cursor: pointer;
+  user-select: none;
 }
 
 .back_btn:hover {
