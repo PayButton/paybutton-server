@@ -1,4 +1,4 @@
-export const copyText = (id) => {
+export const copyText = function (id: string): string {
   if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
     const textToCopy = document.getElementById(id).textContent
     return navigator.clipboard.writeText(textToCopy)
