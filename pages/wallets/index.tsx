@@ -5,6 +5,7 @@ import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
+import { Paybutton } from '@prisma/client'
 import { GetServerSideProps } from 'next'
 import WalletCard from 'components/Wallet/WalletCard'
 import WalletForm from 'components/Wallet/WalletForm'
@@ -44,6 +45,7 @@ interface WalletsProps {
 
 interface WalletsState {
   walletsWithPaymentInfo: [{wallet: WalletWithAddressesAndPaybuttons, paymentInfo: WalletPaymentInfo}]
+  userPaybuttons: Paybutton[]
 }
 
 export default function Wallets ({ userId }: WalletsProps): React.ReactElement {
@@ -58,7 +60,8 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
   constructor (props: WalletsProps) {
     super(props)
     this.state = {
-      walletsWithPaymentInfo: []
+      walletsWithPaymentInfo: [],
+      userPaybuttons: []
     }
   }
 
@@ -67,12 +70,20 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
   }
 
   async fetchWallets (): Promise<void> {
-    const res = await fetch(`/api/wallets?userId=${this.props.userId}`, {
+    const walletsResponse = await fetch(`/api/wallets?userId=${this.props.userId}`, {
       method: 'GET'
     })
-    if (res.status === 200) {
+    const paybuttonsResponse = await fetch(`/api/paybuttons?userId=${this.props.userId}`, {
+      method: 'GET'
+    })
+    if (walletsResponse.status === 200) {
       this.setState({
-        walletsWithPaymentInfo: await res.json()
+        walletsWithPaymentInfo: await walletsResponse.json()
+      })
+    }
+    if (paybuttonsResponse.status === 200) {
+      this.setState({
+        userPaybuttons: await paybuttonsResponse.json()
       })
     }
   }
@@ -97,7 +108,7 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
               return (bNetworkId - aNetworkId)
           }
         }).map(walletWithPaymentInfo => {
-          return <WalletCard wallet={walletWithPaymentInfo.wallet} paymentInfo={walletWithPaymentInfo.paymentInfo} />
+          return <WalletCard wallet={walletWithPaymentInfo.wallet} paymentInfo={walletWithPaymentInfo.paymentInfo} userPaybuttons={this.state.userPaybuttons} />
         }
         )}
         <WalletForm />

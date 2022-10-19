@@ -1,4 +1,5 @@
 import React, { FunctionComponent } from 'react'
+import { Paybutton } from '@prisma/client'
 import style from './wallet.module.css'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -11,9 +12,10 @@ import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 interface IProps {
   wallet: WalletWithAddressesAndPaybuttons
   paymentInfo: WalletPaymentInfo
+  userPaybuttons: Paybutton[]
 }
 
-export default ({ wallet, paymentInfo }: IProps): FunctionComponent => {
+export default ({ wallet, paymentInfo, userPaybuttons }: IProps): FunctionComponent => {
   const networks = wallet.addresses.map((addr) => addr.networkId)
   return (
     <div className={style.wallet_card}>
@@ -28,7 +30,7 @@ export default ({ wallet, paymentInfo }: IProps): FunctionComponent => {
         <div className={style.edit_button_ctn}>
           {wallet.userProfile?.isDefaultForNetworkId === XEC_NETWORK_ID && <div className={style.default_wallet}>Default XEC Wallet</div>}
           {wallet.userProfile?.isDefaultForNetworkId === BCH_NETWORK_ID && <div className={style.default_wallet}>Default BCH Wallet</div>}
-          <EditWalletForm wallet={wallet} />
+          <EditWalletForm wallet={wallet} userPaybuttons={userPaybuttons}/>
         </div>
       </div>
 
