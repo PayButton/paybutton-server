@@ -13,10 +13,6 @@ interface IProps {
   userPaybuttons: Paybutton[]
 }
 
-function onSubmit (params: IForm): void {
-  console.log('edit wallet params', params)
-}
-
 interface IForm {
     newName: string,
     makeDefaultXEC: boolean,
@@ -32,6 +28,13 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
     setModal(false)
     reset()
   }, [wallet, userPaybuttons])
+
+  function onSubmit (params: IForm): void {
+    if (params.newName === '' || params.newName === undefined) {
+      params.newName = wallet.name
+    }
+    console.log('edit wallet params', params)
+  }
 
   return (
     <>
@@ -52,7 +55,6 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
                     type='text'
                     id='newName'
                     name='newName'
-                    required
                     placeholder={wallet.name}
                 />
                 <div className={s.makedefault_ctn} key={wallet.id}>
