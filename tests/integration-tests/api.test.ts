@@ -425,7 +425,6 @@ describe('GET /api/wallets/', () => {
     expect(responseData[0].paymentInfo).toHaveProperty('XECBalance')
     expect(responseData[0].paymentInfo).toHaveProperty('BCHBalance')
     expect(responseData[0].paymentInfo).toHaveProperty('paymentCount')
-    expect(responseData[0].wallet).toHaveProperty('userProfile')
   })
 
   it('Get no wallets for unknown user', async () => {

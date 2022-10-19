@@ -6,6 +6,7 @@ import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EditWalletForm from './EditWalletForm'
 import { WalletWithAddressesAndPaybuttons, WalletPaymentInfo } from 'services/walletService'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 interface IProps {
   wallet: WalletWithAddressesAndPaybuttons
@@ -20,13 +21,13 @@ export default ({ wallet, paymentInfo }: IProps): FunctionComponent => {
         <div className={style.wallet_card_header}>
           <h4>{wallet.name}</h4>
           <div className={style.walletcard_icons}>
-            {networks.includes(1) && <div><Image src={XECIcon} alt='XEC' /></div>}
-            {networks.includes(2) && <div><Image src={BCHIcon} alt='BCH' /></div>}
+            {networks.includes(XEC_NETWORK_ID) && <div><Image src={XECIcon} alt='XEC' /></div>}
+            {networks.includes(BCH_NETWORK_ID) && <div><Image src={BCHIcon} alt='BCH' /></div>}
           </div>
         </div>
         <div className={style.edit_button_ctn}>
-          {wallet.userProfile?.isDefaultForNetworkId === 1 && <div className={style.default_wallet}>Default XEC Wallet</div>}
-          {wallet.userProfile?.isDefaultForNetworkId === 2 && <div className={style.default_wallet}>Default BCH Wallet</div>}
+          {wallet.userProfile?.isDefaultForNetworkId === XEC_NETWORK_ID && <div className={style.default_wallet}>Default XEC Wallet</div>}
+          {wallet.userProfile?.isDefaultForNetworkId === BCH_NETWORK_ID && <div className={style.default_wallet}>Default BCH Wallet</div>}
           <EditWalletForm wallet={wallet} />
         </div>
       </div>
