@@ -1,7 +1,7 @@
 import React, { ReactElement, useState, useEffect } from 'react'
 import { Paybutton } from '@prisma/client'
 import { useForm } from 'react-hook-form'
-import {XEC_NETWORK_ID , BCH_NETWORK_ID} from 'constants/index'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import Image from 'next/image'
 import style from '../Paybutton/paybutton.module.css'
 import s from '../Wallet/wallet.module.css'
@@ -14,10 +14,10 @@ interface IProps {
 }
 
 interface IForm {
-    newName: string,
-    makeDefaultXEC: boolean,
-    makeDefaultBCH: boolean,
-    selectedPaybuttons: {id: number, checked: boolean}[]
+  newName: string
+  makeDefaultXEC: boolean
+  makeDefaultBCH: boolean
+  selectedPaybuttons: Array<{id: number, checked: boolean}>
 }
 
 export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): ReactElement {
@@ -58,37 +58,39 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
                     placeholder={wallet.name}
                 />
                 <div className={s.makedefault_ctn} key={wallet.id}>
-                  <input
-                      {...register('makeDefaultXEC')}
-                      defaultChecked={wallet.userProfile?.isDefaultForNetworkId === XEC_NETWORK_ID}
-                      type="checkbox"
-                      name='makeDefaultXEC'
-                  />
-                  <label htmlFor='xec-default'>Make Default XEC Wallet</label>
-                  <input
-                      {...register('makeDefaultBCH')}
-                      defaultChecked={wallet.userProfile?.isDefaultForNetworkId === BCH_NETWORK_ID}
-                      type="checkbox"
-                      name='makeDefaultBCH'
-                  />
-                  <label htmlFor='bch-default'>Make Default BCH Wallet</label>
+                  <div className={s.input_field}>
+                    <input
+                        {...register('makeDefaultXEC')}
+                        defaultChecked={wallet.userProfile?.isDefaultForNetworkId === XEC_NETWORK_ID}
+                        type="checkbox"
+                        name='makeDefaultXEC'
+                    />
+                    <label htmlFor='xec-default' className={s.makedefault_margin}>Make Default XEC Wallet</label>
+                  </div>
+                  <div className={s.input_field}>
+                    <input
+                        {...register('makeDefaultBCH')}
+                        defaultChecked={wallet.userProfile?.isDefaultForNetworkId === BCH_NETWORK_ID}
+                        type="checkbox"
+                        name='makeDefaultBCH'
+                    />
+                    <label htmlFor='bch-default'>Make Default BCH Wallet</label>
+                  </div>
                 </div>
 
-
-      
       <h4>Paybuttons</h4>
+      <div className={s.buttonlist_ctn}>
       {userPaybuttons.map((pb, index) => (
-        <div key={pb.id} className={s.makedefault_ctn}>
-          <input {...register(`selectedPaybuttons.${index}`)}
-          name={`selectedPaybuttons.${index}`}
-          type='checkbox'
-          defaultChecked={pb.walletId === wallet.id}
-          />
-          <label htmlFor={`selectedPaybuttons.${index}`}>{pb.name}</label>
-        </div>
+          <div className={s.input_field} key={pb.id}>
+            <input {...register(`selectedPaybuttons.${index}`)}
+            name={`selectedPaybuttons.${index}`}
+            type='checkbox'
+            defaultChecked={pb.walletId === wallet.id}
+            />
+            <label htmlFor={`selectedPaybuttons.${index}`}>{pb.name}</label>
+          </div>
       ))}
-
-
+      </div>
 
                 <div className={style.btn_row}>
                   <button type='submit'>Submit</button>
