@@ -120,19 +120,43 @@
 }
 
 .makedefault_ctn {
-  margin-top: 20px;
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.buttonlist_ctn {
+  display: flex;
+  margin-top: 10px;
+  flex-direction: column;
+}
+
+.input_field {
   display: flex;
   align-items: center;
 }
 
 .makedefault_ctn label,
-.makedefault_ctn input {
+.makedefault_ctn input,
+.buttonlist_ctn label,
+.buttonlist_ctn input {
   margin: 0 !important;
   width: unset !important;
 }
 
-.makedefault_ctn input {
+.makedefault_ctn input,
+.buttonlist_ctn input {
   margin-right: 5px !important;
+}
+
+.makedefault_ctn input:checked,
+.buttonlist_ctn input:checked {
+  background-color: var(--accent-color) !important;
+}
+
+.makedefault_ctn input:checked::after,
+.buttonlist_ctn input:checked::after {
+  border-color: #231f20 !important;
 }
 
 @media (max-width: 960px) {
