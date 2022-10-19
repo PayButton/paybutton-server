@@ -25,10 +25,15 @@ interface PeriodData {
   totalPayments: number
 }
 
+interface AllMonths {
+  months: number
+}
+
 interface DashboardData {
   thirtyDays: PeriodData
   year: PeriodData
   sevenDays: PeriodData
+  all: PeriodData
   total: {
     revenue: Prisma.Decimal
     payments: number
@@ -98,6 +103,17 @@ const getPeriodData = function (n: number, periodString: string, transactions: T
   }
 }
 
+const getAllMonths = function (n: any[]): AllMonths {
+  const oldestdate = n.reduce((r, o) => o.timestamp < r.timestamp ? o : r)
+  const currentDate = Date.now() / 1000
+  const diff = currentDate - oldestdate.timestamp
+  const min = diff / 60
+  const hours = min / 60
+  const days = hours / 24
+  const months = Math.ceil(days / 30)
+  return { months }
+}
+
 const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
   const buttonsCount = (await paybuttonService.fetchPaybuttonArrayByUserId(userId)).length
   const addresses = await addressService.fetchAllUserAddresses(userId, true)
@@ -116,15 +132,18 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
   })
 
   const totalRevenue = incomingTransactionsInUSD.map((t) => t.amount).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
+  const allmonths = getAllMonths(incomingTransactionsInUSD)
 
   const thirtyDays: PeriodData = getPeriodData(30, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
   const sevenDays: PeriodData = getPeriodData(7, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
   const year: PeriodData = getPeriodData(12, 'months', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM')
+  const all: PeriodData = getPeriodData(allmonths.months, 'months', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM YY')
 
   return {
     thirtyDays,
     sevenDays,
     year,
+    all,
     total: {
       revenue: totalRevenue,
       payments: incomingTransactionsInUSD.length,

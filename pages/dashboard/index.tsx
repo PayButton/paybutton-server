@@ -84,12 +84,13 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <button className={activePeriod === dashboardData.sevenDays ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.sevenDays) }}>1W</button>
         <button className={activePeriod === dashboardData.thirtyDays ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.thirtyDays) }}>1M</button>
         <button className={activePeriod === dashboardData.year ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.year) }}>1Y</button>
+        {dashboardData.all.revenue.labels.length > 12 && <button className={activePeriod === dashboardData.all ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.all) }}>All</button>}
       </div>
       <div className={style.chart_outer_ctn}>
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Revenue</h4>
-            <h5>{activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${FormatNumber(activePeriod.totalRevenue, 'dollars')}</h5>
+            <h5>{activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${FormatNumber(activePeriod.totalRevenue, 'dollars')}</h5>
           </div>
           <div className={style.chart_ctn}>
             <Chart data={activePeriod.revenue} usd={true} />
@@ -98,7 +99,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Payments</h4>
-            <h5>{activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: {FormatNumber(activePeriod.totalPayments)}</h5>
+            <h5>{activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: {FormatNumber(activePeriod.totalPayments)}</h5>
           </div>
           <div className={style.chart_ctn}>
             <Chart data={activePeriod.payments} />
