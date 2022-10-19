@@ -421,10 +421,10 @@ describe('GET /api/wallets/', () => {
     expect(responseData[0].wallet).toHaveProperty('providerUserId', 'test-other-u-id')
     expect(responseData[0].wallet).toHaveProperty('name')
     expect(responseData[0].wallet).toHaveProperty('paybuttons')
+    expect(responseData[0].wallet).toHaveProperty('userProfile')
     expect(responseData[0].paymentInfo).toHaveProperty('XECBalance')
     expect(responseData[0].paymentInfo).toHaveProperty('BCHBalance')
     expect(responseData[0].paymentInfo).toHaveProperty('paymentCount')
-    expect(responseData[0].wallet).toHaveProperty('userProfile')
   })
 
   it('Get no wallets for unknown user', async () => {
