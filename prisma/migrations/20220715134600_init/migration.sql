@@ -89,14 +89,22 @@ CREATE TABLE `UserProfile` (
 CREATE TABLE `WalletsOnUserProfile` (
     `walletId` INTEGER NOT NULL,
     `userProfileId` INTEGER NOT NULL,
-    `isDefaultForNetworkId` INTEGER NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `WalletsOnUserProfile_walletId_key`(`walletId`),
-    UNIQUE INDEX `WalletsOnUserProfile_userProfileId_isDefaultForNetworkId_key`(`userProfileId`, `isDefaultForNetworkId`),
     PRIMARY KEY (`walletId`, `userProfileId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `NetworksOnUserProfile` (
+    `networkId` INTEGER NOT NULL,
+    `userProfileId` INTEGER NOT NULL,
+    `defaultWalletId` INTEGER NULL,
+
+    PRIMARY KEY (`networkId`, `userProfileId`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 
 -- AddForeignKey
 ALTER TABLE `Address` ADD CONSTRAINT `Address_networkId_fkey` FOREIGN KEY (`networkId`) REFERENCES `Network`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
@@ -121,3 +129,15 @@ ALTER TABLE `WalletsOnUserProfile` ADD CONSTRAINT `WalletsOnUserProfile_walletId
 
 -- AddForeignKey
 ALTER TABLE `WalletsOnUserProfile` ADD CONSTRAINT `WalletsOnUserProfile_userProfileId_fkey` FOREIGN KEY (`userProfileId`) REFERENCES `UserProfile`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+/*
+  Warnings:
+
+  - You are about to drop the column `isDefaultForNetworkId` on the `WalletsOnUserProfile` table. All the data in the column will be lost.
+
+*/
+-- AddForeignKey
+ALTER TABLE `NetworksOnUserProfile` ADD CONSTRAINT `NetworksOnUserProfile_networkId_fkey` FOREIGN KEY (`networkId`) REFERENCES `Network`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `NetworksOnUserProfile` ADD CONSTRAINT `NetworksOnUserProfile_userProfileId_fkey` FOREIGN KEY (`userProfileId`) REFERENCES `UserProfile`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
