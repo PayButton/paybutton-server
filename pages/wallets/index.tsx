@@ -1,7 +1,6 @@
 import React from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import dynamic from 'next/dynamic'
-import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
@@ -97,16 +96,15 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
           /* Sorts in the following order, from first to last, if they exist:
            * Default XEC Wallet, Default BCH Wallet, other wallets.
            */
-          const aNetworkId = Number(a.wallet.userProfile?.isDefaultForNetworkId)
-          const bNetworkId = Number(b.wallet.userProfile?.isDefaultForNetworkId)
-          switch (aNetworkId | bNetworkId) {
-            case XEC_NETWORK_ID | BCH_NETWORK_ID:
-              return 1
-            case BCH_NETWORK_ID | XEC_NETWORK_ID:
-              return -1
-            default:
-              return (bNetworkId - aNetworkId)
+          if (a.wallet.userProfile?.isXECDefault === true ) {
+            return -1;
+          } else if (a.wallet.userProfile?.isBCHDefault === true ) {
+            if (b.wallet.userProfile?.isXECDefault === true ) {
+              return 1;
+            }
+            return -1
           }
+          return a.wallet.name.localeCompare(b.wallet.name)
         }).map(walletWithPaymentInfo => {
           return <WalletCard wallet={walletWithPaymentInfo.wallet} paymentInfo={walletWithPaymentInfo.paymentInfo} userPaybuttons={this.state.userPaybuttons} />
         }
