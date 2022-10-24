@@ -60,7 +60,6 @@ model Network {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   addresses Address[]
-  userProfile    NetworksOnUserProfile[]
 }
 
 model Transaction {
@@ -88,16 +87,6 @@ model Wallet {
   @@unique([name, providerUserId], map: "Wallet_name_providerUserId_unique_constraint")
 }
 
-model NetworksOnUserProfile {
-  networkId              Int
-  userProfileId          Int
-  defaultWalletId        Int?
-  network                Network      @relation(fields: [networkId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  userProfile            UserProfile @relation(fields: [userProfileId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-
-  @@id([networkId, userProfileId])
-}
-
 model WalletsOnUserProfile {
   walletId              Int         @unique
   userProfileId         Int
@@ -119,5 +108,4 @@ model UserProfile {
   updatedAt       DateTime               @updatedAt
   userId          String                 @unique @db.VarChar(255)
   wallets         WalletsOnUserProfile[]
-  networks        NetworksOnUserProfile[]
 }
