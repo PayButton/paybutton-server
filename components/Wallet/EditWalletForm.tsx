@@ -28,7 +28,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
     reset()
   }, [wallet, userPaybuttons])
 
-  async function onSubmit (params: IForm): Promise<void> {
+  function onSubmit (params: IForm): void {
     if (params.newName === '' || params.newName === undefined) {
       params.newName = wallet.name
     }
