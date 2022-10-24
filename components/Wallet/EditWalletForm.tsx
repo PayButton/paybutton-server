@@ -1,7 +1,6 @@
 import React, { ReactElement, useState, useEffect } from 'react'
 import { Paybutton } from '@prisma/client'
 import { useForm } from 'react-hook-form'
-import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import Image from 'next/image'
 import style from '../Paybutton/paybutton.module.css'
 import s from '../Wallet/wallet.module.css'
@@ -58,20 +57,24 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
                     placeholder={wallet.name}
                 />
                 <div className={s.makedefault_ctn} key={wallet.id}>
-                  <input
-                      {...register('isXECDefault')}
-                      defaultChecked={wallet.userProfile?.isDefaultForNetworkId === XEC_NETWORK_ID}
-                      type="checkbox"
-                      name='isXECDefault'
-                  />
-                  <label htmlFor='xec-default'>Make Default XEC Wallet</label>
-                  <input
-                      {...register('isBCHDefault')}
-                      defaultChecked={wallet.userProfile?.isDefaultForNetworkId === BCH_NETWORK_ID}
-                      type="checkbox"
-                      name='isBCHDefault'
-                  />
-                  <label htmlFor='bch-default'>Make Default BCH Wallet</label>
+                  <div className={s.input_field}>
+                    <input
+                        {...register('makeDefaultXEC')}
+                        defaultChecked={wallet.userProfile?.isXECDefault === true}
+                        type="checkbox"
+                        name='makeDefaultXEC'
+                    />
+                    <label htmlFor='xec-default' className={s.makedefault_margin}>Make Default XEC Wallet</label>
+                  </div>
+                  <div className={s.input_field}>
+                    <input
+                        {...register('makeDefaultBCH')}
+                        defaultChecked={wallet.userProfile?.isBCHDefault === true}
+                        type="checkbox"
+                        name='makeDefaultBCH'
+                    />
+                    <label htmlFor='bch-default'>Make Default BCH Wallet</label>
+                  </div>
                 </div>
 
       <h4>Paybuttons</h4>

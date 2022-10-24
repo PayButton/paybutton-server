@@ -15,7 +15,8 @@ const includeAddressesAndPaybuttons = {
   userProfile: {
     select: {
       userProfileId: true,
-      isDefaultForNetworkId: true
+      isXECDefault: true,
+      isBCHDefault: true
     }
   },
   paybuttons: true,
