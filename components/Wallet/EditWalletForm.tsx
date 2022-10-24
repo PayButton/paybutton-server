@@ -80,7 +80,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
       <h4>Paybuttons</h4>
       <div className={s.buttonlist_ctn}>
       {userPaybuttons.map((pb, index) => (
-        <div key={pb.id} className={s.makedefault_ctn}>
+        <div key={pb.id} className={s.input_field}>
           <input {...register(`paybuttons.${index}`)}
           name={`paybuttons.${index}`}
           type='checkbox'
