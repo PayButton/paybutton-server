@@ -101,12 +101,16 @@ model NetworksOnUserProfile {
 model WalletsOnUserProfile {
   walletId              Int         @unique
   userProfileId         Int
+  isXECDefault          Boolean?
+  isBCHDefault          Boolean?
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
   wallet                Wallet      @relation(fields: [walletId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   userProfile           UserProfile @relation(fields: [userProfileId], references: [id], onUpdate: Cascade, onDelete: Cascade)
 
   @@id([walletId, userProfileId])
+  @@unique([userProfileId, isBCHDefault], name: "WalletsOnUserProfile_userProfileId_isBCHDefault_unique_constraint")
+  @@unique([userProfileId, isXECDefault], name: "WalletsOnUserProfile_userProfileId_isXECDefault_unique_constraint")
 }
 
 model UserProfile {

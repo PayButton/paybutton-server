@@ -89,10 +89,14 @@ CREATE TABLE `UserProfile` (
 CREATE TABLE `WalletsOnUserProfile` (
     `walletId` INTEGER NOT NULL,
     `userProfileId` INTEGER NOT NULL,
+    `isXECDefault` BOOLEAN NULL,
+    `isBCHDefault` BOOLEAN NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `WalletsOnUserProfile_walletId_key`(`walletId`),
+    UNIQUE INDEX `WalletsOnUserProfile_userProfileId_isXECDefault_key`(`userProfileId`, `isXECDefault`),
+    UNIQUE INDEX `WalletsOnUserProfile_userProfileId_isBCHDefault_key`(`userProfileId`, `isBCHDefault`),
     PRIMARY KEY (`walletId`, `userProfileId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

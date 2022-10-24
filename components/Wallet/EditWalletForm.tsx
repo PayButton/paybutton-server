@@ -1,7 +1,6 @@
 import React, { ReactElement, useState, useEffect } from 'react'
 import { Paybutton } from '@prisma/client'
 import { useForm } from 'react-hook-form'
-import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import Image from 'next/image'
 import style from '../Paybutton/paybutton.module.css'
 import s from '../Wallet/wallet.module.css'
@@ -29,7 +28,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
     reset()
   }, [wallet, userPaybuttons])
 
-  function onSubmit (params: IForm): void {
+  async function onSubmit (params: IForm): Promise<void> {
     if (params.newName === '' || params.newName === undefined) {
       params.newName = wallet.name
     }
@@ -61,7 +60,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
                   <div className={s.input_field}>
                     <input
                         {...register('makeDefaultXEC')}
-                        defaultChecked={wallet.userProfile?.isDefaultForNetworkId === XEC_NETWORK_ID}
+                        defaultChecked={wallet.userProfile?.isXECDefault === true}
                         type="checkbox"
                         name='makeDefaultXEC'
                     />
@@ -70,7 +69,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
                   <div className={s.input_field}>
                     <input
                         {...register('makeDefaultBCH')}
-                        defaultChecked={wallet.userProfile?.isDefaultForNetworkId === BCH_NETWORK_ID}
+                        defaultChecked={wallet.userProfile?.isBCHDefault === true}
                         type="checkbox"
                         name='makeDefaultBCH'
                     />

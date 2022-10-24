@@ -28,8 +28,8 @@ export default ({ wallet, paymentInfo, userPaybuttons }: IProps): FunctionCompon
           </div>
         </div>
         <div className={style.edit_button_ctn}>
-          {wallet.userProfile?.isDefaultForNetworkId === XEC_NETWORK_ID && <div className={style.default_wallet}>Default XEC Wallet</div>}
-          {wallet.userProfile?.isDefaultForNetworkId === BCH_NETWORK_ID && <div className={style.default_wallet}>Default BCH Wallet</div>}
+          {wallet.userProfile?.isXECDefault === true && <div className={style.default_wallet}>Default XEC Wallet</div>}
+          {wallet.userProfile?.isBCHDefault === true && <div className={style.default_wallet}>Default BCH Wallet</div>}
           <EditWalletForm wallet={wallet} userPaybuttons={userPaybuttons}/>
         </div>
       </div>
