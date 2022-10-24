@@ -13,10 +13,10 @@ interface IProps {
 }
 
 interface IForm {
-  newName: string
-  makeDefaultXEC: boolean
-  makeDefaultBCH: boolean
-  selectedPaybuttons: Array<{id: number, checked: boolean}>
+  name: string
+  isXECDefault: boolean
+  isBCHDefault: boolean
+  paybuttons: Array<{id: number, checked: boolean}>
 }
 
 export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): ReactElement {
@@ -59,21 +59,21 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
                 <div className={s.makedefault_ctn} key={wallet.id}>
                   <div className={s.input_field}>
                     <input
-                        {...register('makeDefaultXEC')}
+                        {...register('isXECDefault')}
                         defaultChecked={wallet.userProfile?.isXECDefault === true}
                         type="checkbox"
-                        name='makeDefaultXEC'
+                        name='isXECDefault'
                     />
                     <label htmlFor='xec-default' className={s.makedefault_margin}>Make Default XEC Wallet</label>
                   </div>
                   <div className={s.input_field}>
                     <input
-                        {...register('makeDefaultBCH')}
+                        {...register('isBCHDefault')}
                         defaultChecked={wallet.userProfile?.isBCHDefault === true}
                         type="checkbox"
-                        name='makeDefaultBCH'
+                        name='isBCHDefault'
                     />
-                    <label htmlFor='bch-default'>Make Default BCH Wallet</label>
+                    <label htmlFor='bch-default' className={s.makedefault_margin}>Make Default BCH Wallet</label>
                   </div>
                 </div>
 
