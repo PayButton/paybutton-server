@@ -53,8 +53,13 @@ export async function createWallet (values: CreateWalletInput): Promise<Wallet> 
         userProfile: {
           create: {
             userProfile: {
-              connect: {
-                userId: values.userId
+              connectOrCreate: {
+                where: {
+                  userId: values.userId
+                },
+                create: {
+                  userId: values.userId
+                }
               }
             }
           }
