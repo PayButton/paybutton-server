@@ -42,12 +42,24 @@ export async function createWallet (values: CreateWalletInput): Promise<Wallet> 
     wallet = await prisma.wallet.create({
       data: {
         providerUserId: values.userId,
-        name: values.name
+        name: values.name,
+        userProfile: {
+          create: {
+            userProfile: {
+              connect: {
+                userId: values.userId
+              }
+            }
+          }
+        }
       }
     })
     for (const paybutton of paybuttonList) {
       if (paybutton.walletId !== null) {
         throw new Error(RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400.message)
+      }
+      if (paybutton.providerUserId !== values.userId) {
+        throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
       }
 
       await prisma.paybutton.update({
