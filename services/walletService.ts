@@ -11,6 +11,13 @@ export interface CreateWalletInput {
   paybuttonIdList: number[]
 }
 
+export interface UpdateWalletInput {
+  name: string
+  isXECDefault?: boolean
+  isBCHDefault?: boolean
+  paybuttonIdList: number[]
+}
+
 const includeAddressesAndPaybuttons = {
   userProfile: {
     select: {
@@ -93,6 +100,145 @@ export async function fetchWalletById (walletId: number | string): Promise<Walle
     where: { id: Number(walletId) },
     include: includeAddressesAndPaybuttons
   })
+}
+
+export async function setDefaultWallet (wallet: WalletWithAddressesAndPaybuttons, networkIds: number[]): Promise<void> {
+  if (networkIds.length === 0) return
+  if (wallet.userProfile === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
+  }
+  for (const networkId of networkIds) {
+    switch (networkId) {
+      case XEC_NETWORK_ID: {
+        if (!wallet.addresses.some((addr) => addr.networkId === XEC_NETWORK_ID)) {
+          throw new Error(RESPONSE_MESSAGES.DEFAULT_XEC_WALLET_MUST_HAVE_SOME_XEC_ADDRESS_400.message)
+        }
+        // see if any wallet is already the default
+        const prevXECDefault = await prisma.walletsOnUserProfile.findUnique({
+          where: {
+            WalletsOnUserProfile_userProfileId_isXECDefault_unique_constraint: {
+              isXECDefault: true,
+              userProfileId: wallet.userProfile.userProfileId
+            }
+          }
+        })
+        await prisma.$transaction(async (prisma) => {
+          // remove previous default if it exists
+          if (prevXECDefault !== null) {
+            await prisma.walletsOnUserProfile.update({
+              where: {
+                walletId: prevXECDefault.walletId
+              },
+              data: {
+                isXECDefault: null
+              }
+            })
+          }
+
+          // set new default
+          await prisma.walletsOnUserProfile.update({
+            where: {
+              walletId: wallet.id
+            },
+            data: {
+              isXECDefault: true
+            }
+          })
+        })
+        break
+      }
+      case BCH_NETWORK_ID: {
+        if (!wallet.addresses.some((addr) => addr.networkId === BCH_NETWORK_ID)) {
+          throw new Error(RESPONSE_MESSAGES.DEFAULT_BCH_WALLET_MUST_HAVE_SOME_BCH_ADDRESS_400.message)
+        }
+        // see if any wallet is already the default
+        const prevBCHDefault = await prisma.walletsOnUserProfile.findUnique({
+          where: {
+            WalletsOnUserProfile_userProfileId_isBCHDefault_unique_constraint: {
+              isBCHDefault: true,
+              userProfileId: wallet.userProfile.userProfileId
+            }
+          }
+        })
+        await prisma.$transaction(async (prisma) => {
+          // remove previous default if it exists
+          if (prevBCHDefault !== null) {
+            await prisma.walletsOnUserProfile.update({
+              where: {
+                walletId: prevBCHDefault.walletId
+              },
+              data: {
+                isBCHDefault: null
+              }
+            })
+          }
+          // set new default
+          await prisma.walletsOnUserProfile.update({
+            where: {
+              walletId: wallet.id
+            },
+            data: {
+              isBCHDefault: true
+            }
+          })
+        })
+        break
+      }
+      default:
+        throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_ID_400.message)
+    }
+  }
+}
+
+export async function updateWallet (walletId: number, params: any): Promise<WalletWithAddressesAndPaybuttons> {
+  const paybuttonList = await paybuttonService.fetchPaybuttonArrayByIds(params.paybuttonIdList.map((id: string) => Number(id)))
+
+  // enforce that added paybuttons & addresses don't already belong to a wallet
+  paybuttonList.forEach((pb) => {
+    if (pb.walletId !== null && pb.walletId !== walletId) {
+      throw new Error(RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400.message)
+    }
+    pb.addresses.forEach((conn) => {
+      if (conn.address.walletId !== null && conn.address.walletId !== walletId) {
+        throw new Error(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
+      }
+    })
+  })
+
+  const wallet = await fetchWalletById(walletId)
+  if (wallet === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_WALLET_FOUND_404.message)
+  }
+  // set default
+  const defaultForNetworkIds: number[] = []
+  if (params.isXECDefault === true) {
+    defaultForNetworkIds.push(XEC_NETWORK_ID)
+  }
+  if (params.isBCHDefault === true) {
+    defaultForNetworkIds.push(BCH_NETWORK_ID)
+  }
+  return await prisma.$transaction(async (prisma) => {
+    void await setDefaultWallet(wallet, defaultForNetworkIds)
+    // wip: update paybuttons
+    // wip: update wallet name
+    return await fetchWalletById(walletId) // wip
+  })
+
+  /*
+  return await prisma.wallet.update({
+    where: {
+      id: walletId
+    },
+    data: {
+      userProfile: {
+        update: {
+            isDefaultForNetworkId: 2
+        }
+      },
+      name: params.name,
+      }
+    })
+    */
 }
 
 export interface WalletPaymentInfo {
