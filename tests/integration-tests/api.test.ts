@@ -259,6 +259,8 @@ describe('POST /api/wallets/', () => {
       let button
       if (i === 2) {
         button = await createPaybuttonForUser('test-u-id', [lastAddress])
+      } else if (i === 3) {
+        button = await createPaybuttonForUser('test-other-u-id')
       } else {
         button = await createPaybuttonForUser('test-u-id')
       }
@@ -287,6 +289,11 @@ describe('POST /api/wallets/', () => {
     expect(res.statusCode).toBe(200)
     expect(responseData.providerUserId).toBe('test-u-id')
     expect(responseData.name).toBe('test-wallet')
+    expect(responseData.userProfile).toStrictEqual({
+      isXECDefault: null,
+      isBCHDefault: null,
+      userProfileId: 3
+    })
     void expect(countWallets()).resolves.toBe(1)
   })
 
@@ -312,6 +319,18 @@ describe('POST /api/wallets/', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(400)
     expect(responseData.message).toBe(RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400.message)
+  })
+
+  it('Fail with paybutton of other user', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'test-other-wallet',
+      paybuttonIdList: [buttonIds[3]]
+    }
+    const res = await testEndpoint(baseRequestOptions, walletEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
   })
 
   it('Fail without paybuttonIdList', async () => {

@@ -53,13 +53,19 @@ export async function createWallet (values: CreateWalletInput): Promise<Wallet> 
         userProfile: {
           create: {
             userProfile: {
-              connect: {
-                userId: values.userId
+              connectOrCreate: {
+                where: {
+                  userId: values.userId
+                },
+                create: {
+                  userId: values.userId
+                }
               }
             }
           }
         }
-      }
+      },
+      include: includeAddressesAndPaybuttons
     })
     for (const paybutton of paybuttonList) {
       if (paybutton.walletId !== null) {
