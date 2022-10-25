@@ -11,6 +11,13 @@ export interface CreateWalletInput {
   paybuttonIdList: number[]
 }
 
+export interface UpdateWalletInput {
+  name: string
+  isXECDefault?: boolean
+  isBCHDefault?: boolean
+  paybuttonIdList: number[]
+}
+
 const includeAddressesAndPaybuttons = {
   userProfile: {
     select: {
