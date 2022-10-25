@@ -64,7 +64,8 @@ export async function createWallet (values: CreateWalletInput): Promise<Wallet> 
             }
           }
         }
-      }
+      },
+      include: includeAddressesAndPaybuttons
     })
     for (const paybutton of paybuttonList) {
       if (paybutton.walletId !== null) {

@@ -289,6 +289,11 @@ describe('POST /api/wallets/', () => {
     expect(res.statusCode).toBe(200)
     expect(responseData.providerUserId).toBe('test-u-id')
     expect(responseData.name).toBe('test-wallet')
+    expect(responseData.userProfile).toStrictEqual({
+      isXECDefault: null,
+      isBCHDefault: null,
+      userProfileId: 3
+    })
     void expect(countWallets()).resolves.toBe(1)
   })
 
