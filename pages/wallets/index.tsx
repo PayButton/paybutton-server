@@ -87,6 +87,12 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
     }
   }
 
+  refreshWalletList = (): void => {
+    this.setState(()=>{
+      void this.fetchWallets()
+    });
+  }
+
   render (): React.ReactElement {
     return (
       <>
@@ -106,7 +112,7 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
           }
           return a.wallet.name.localeCompare(b.wallet.name)
         }).map(walletWithPaymentInfo => {
-          return <WalletCard wallet={walletWithPaymentInfo.wallet} paymentInfo={walletWithPaymentInfo.paymentInfo} userPaybuttons={this.state.userPaybuttons} />
+          return <WalletCard wallet={walletWithPaymentInfo.wallet} paymentInfo={walletWithPaymentInfo.paymentInfo} userPaybuttons={this.state.userPaybuttons} refreshWalletList={this.refreshWalletList}/>
         }
         )}
         <WalletForm />

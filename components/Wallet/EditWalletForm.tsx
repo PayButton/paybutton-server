@@ -11,9 +11,10 @@ import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
 interface IProps {
   wallet: WalletWithAddressesAndPaybuttons
   userPaybuttons: Paybutton[]
+  refreshWalletList: Function
 }
 
-export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): ReactElement {
+export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletList }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<WalletPATCHParameters>()
   const [modal, setModal] = useState(false)
 
@@ -33,6 +34,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
       },
       body: JSON.stringify(params)
     })
+    refreshWalletList()
   }
 
   return (
