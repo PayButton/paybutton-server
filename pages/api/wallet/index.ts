@@ -33,6 +33,9 @@ export default async (req: any, res: any): Promise<void> => {
         case RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message:
           res.status(400).json(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400)
           break
+        case RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400)
+          break
         default:
           res.status(500).json({ statusCode: 500, message: parsedErr.message })
       }

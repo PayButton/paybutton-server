@@ -1,7 +1,7 @@
 import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN } from '../constants/index'
 import { Prisma } from '@prisma/client'
 import { CreatePaybuttonInput } from '../services/paybuttonService'
-import { CreateWalletInput } from '../services/walletService'
+import { CreateWalletInput, UpdateWalletInput } from '../services/walletService'
 import { getAddressPrefix } from './index'
 import xecaddr from 'xecaddrjs'
 
@@ -90,6 +90,13 @@ export interface WalletPOSTParameters {
   paybuttonIdList?: number[]
 }
 
+export interface WalletPATCHParameters {
+  name: string
+  isXECDefault?: boolean
+  isBCHDefault?: boolean
+  paybuttonIdList: number[]
+}
+
 export const parseWalletPOSTRequest = function (params: WalletPOSTParameters): CreateWalletInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
@@ -98,5 +105,16 @@ export const parseWalletPOSTRequest = function (params: WalletPOSTParameters): C
     userId: params.userId,
     name: params.name,
     paybuttonIdList: params.paybuttonIdList
+  }
+}
+
+export const parseWalletPATCHRequest = function (params: WalletPATCHParameters): UpdateWalletInput {
+  if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
+  if (params.paybuttonIdList === undefined || params.paybuttonIdList === []) throw new Error(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message)
+  return {
+    name: params.name,
+    paybuttonIdList: params.paybuttonIdList,
+    isXECDefault: params.isXECDefault,
+    isBCHDefault: params.isBCHDefault
   }
 }
