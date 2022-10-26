@@ -132,7 +132,7 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
   })
 
   const totalRevenue = incomingTransactionsInUSD.map((t) => t.amount).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
-  const allmonths = getAllMonths(incomingTransactionsInUSD)
+  const allmonths: AllMonths = getAllMonths(incomingTransactionsInUSD)
 
   const thirtyDays: PeriodData = getPeriodData(30, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
   const sevenDays: PeriodData = getPeriodData(7, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
