@@ -50,8 +50,8 @@ const getChartRevenuePaymentData = function (n: number, periodString: string, tr
   const paymentsArray: number[] = []
   const _ = [...new Array(n)]
   _.forEach((i, idx) => {
-    const lowerThreshold = moment().startOf('day').subtract(idx + 1, periodString as DurationInputArg2)
-    const upperThreshold = moment().startOf('day').subtract(idx, periodString as DurationInputArg2)
+    const lowerThreshold = moment().startOf(periodString === 'months' ? 'month' : 'day').subtract(idx, periodString as DurationInputArg2)
+    const upperThreshold = moment().endOf(periodString === 'months' ? 'month' : 'day').subtract(idx, periodString as DurationInputArg2)
     const periodTransactionAmountArray = filterLastTransactions(lowerThreshold, upperThreshold, transactions).map((t) => t.amount)
     const revenue = periodTransactionAmountArray.reduce((a, b) => {
       return a.plus(b)
@@ -122,10 +122,10 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
   const BCHTransactions = Array.prototype.concat.apply([], BCHAddresses.map((addr) => addr.transactions))
   const XECTransactions = Array.prototype.concat.apply([], XECAddresses.map((addr) => addr.transactions))
   const incomingTransactionsInUSD = BCHTransactions.map((t) => {
-    t.amount = t.amount.times(DUMMY_BCH_PRICE).toFixed(2)
+    t.amount = t.amount.times(DUMMY_BCH_PRICE)
     return t
   }).concat(XECTransactions.map((t) => {
-    t.amount = t.amount.times(DUMMY_XEC_PRICE).toFixed(2)
+    t.amount = t.amount.times(DUMMY_XEC_PRICE)
     return t
   })).filter((t) => {
     return t.amount > 0

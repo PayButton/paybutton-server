@@ -1,5 +1,6 @@
 import type { NextPage } from 'next'
 import React from 'react'
+import { FormatNumber } from 'utils/general'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -46,7 +47,7 @@ const Chart: NextPage<Props> = ({ data, usd }) => {
         displayColors: false,
         callbacks: {
           label: function (context) {
-            return usd ? '$' + context.formattedValue : context.formattedValue
+            return usd ? '$' + FormatNumber(context.raw, 'dollars') : FormatNumber(context.raw)
           }
         },
         mode: 'nearest',
