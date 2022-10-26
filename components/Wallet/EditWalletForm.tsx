@@ -13,10 +13,10 @@ interface IProps {
 }
 
 interface IForm {
-  newName: string
-  makeDefaultXEC: boolean
-  makeDefaultBCH: boolean
-  selectedPaybuttons: Array<{id: number, checked: boolean}>
+  name: string
+  isXECDefault: boolean
+  isBCHDefault: boolean
+  paybuttons: Array<{id: number, checked: boolean}>
 }
 
 export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): ReactElement {
@@ -29,8 +29,8 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
   }, [wallet, userPaybuttons])
 
   function onSubmit (params: IForm): void {
-    if (params.newName === '' || params.newName === undefined) {
-      params.newName = wallet.name
+    if (params.name === '' || params.name === undefined) {
+      params.name = wallet.name
     }
     console.log('edit wallet params', params)
   }
@@ -48,46 +48,46 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
             <h4>Edit {wallet.name}</h4>
             <div className={style.form_ctn}>
               <form onSubmit={handleSubmit(onSubmit)} method='post'>
-                <label htmlFor='newName'>Wallet Name</label>
+                <label htmlFor='name'>Wallet Name</label>
                 <input
-                    {...register('newName')}
+                    {...register('name')}
                     type='text'
-                    id='newName'
-                    name='newName'
+                    id='name'
+                    name='name'
                     placeholder={wallet.name}
                 />
                 <div className={s.makedefault_ctn} key={wallet.id}>
                   <div className={s.input_field}>
                     <input
-                        {...register('makeDefaultXEC')}
+                        {...register('isXECDefault')}
                         defaultChecked={wallet.userProfile?.isXECDefault === true}
                         type="checkbox"
-                        name='makeDefaultXEC'
+                        name='isXECDefault'
                     />
                     <label htmlFor='xec-default' className={s.makedefault_margin}>Make Default XEC Wallet</label>
                   </div>
                   <div className={s.input_field}>
                     <input
-                        {...register('makeDefaultBCH')}
+                        {...register('isBCHDefault')}
                         defaultChecked={wallet.userProfile?.isBCHDefault === true}
                         type="checkbox"
-                        name='makeDefaultBCH'
+                        name='isBCHDefault'
                     />
-                    <label htmlFor='bch-default'>Make Default BCH Wallet</label>
+                    <label htmlFor='bch-default' className={s.makedefault_margin}>Make Default BCH Wallet</label>
                   </div>
                 </div>
 
       <h4>Paybuttons</h4>
       <div className={s.buttonlist_ctn}>
       {userPaybuttons.map((pb, index) => (
-          <div className={s.input_field} key={pb.id}>
-            <input {...register(`selectedPaybuttons.${index}`)}
-            name={`selectedPaybuttons.${index}`}
-            type='checkbox'
-            defaultChecked={pb.walletId === wallet.id}
-            />
-            <label htmlFor={`selectedPaybuttons.${index}`}>{pb.name}</label>
-          </div>
+        <div className={s.input_field} key={pb.id}>
+          <input {...register(`paybuttons.${index}`)}
+          name={`paybuttons.${index}`}
+          type='checkbox'
+          defaultChecked={pb.walletId === wallet.id}
+          />
+          <label htmlFor={`paybuttons.${index}`}>{pb.name}</label>
+        </div>
       ))}
       </div>
 
