@@ -1,6 +1,7 @@
 import React, { ReactElement, useState, useEffect } from 'react'
 import { Paybutton } from '@prisma/client'
 import { useForm } from 'react-hook-form'
+import { WalletPATCHParameters } from 'utils/validators'
 import Image from 'next/image'
 import style from '../Paybutton/paybutton.module.css'
 import s from '../Wallet/wallet.module.css'
@@ -10,17 +11,11 @@ import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
 interface IProps {
   wallet: WalletWithAddressesAndPaybuttons
   userPaybuttons: Paybutton[]
+  refreshWalletList: Function
 }
 
-interface IForm {
-  name: string
-  isXECDefault: boolean
-  isBCHDefault: boolean
-  paybuttons: Array<{id: number, checked: boolean}>
-}
-
-export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): ReactElement {
-  const { register, handleSubmit, reset } = useForm<IForm>()
+export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletList }: IProps): ReactElement {
+  const { register, handleSubmit, reset } = useForm<WalletPATCHParameters>()
   const [modal, setModal] = useState(false)
 
   useEffect(() => {
@@ -28,11 +23,12 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
     reset()
   }, [wallet, userPaybuttons])
 
-  function onSubmit (params: IForm): void {
+  function onSubmit (params: WalletPATCHParameters): void {
     if (params.name === '' || params.name === undefined) {
       params.name = wallet.name
     }
     console.log('edit wallet params', params)
+    refreshWalletList()
   }
 
   return (
@@ -80,13 +76,14 @@ export default function EditWalletForm ({ wallet, userPaybuttons }: IProps): Rea
       <h4>Paybuttons</h4>
       <div className={s.buttonlist_ctn}>
       {userPaybuttons.map((pb, index) => (
-        <div className={s.input_field} key={pb.id}>
-          <input {...register(`paybuttons.${index}`)}
-          name={`paybuttons.${index}`}
+        <div className={s.input_field} key={`pb-${pb.id}`}>
+          <input {...register(`paybuttonIdList`)}
           type='checkbox'
+          value={pb.id}
+          id={`paybuttonIdList.${index}`}
           defaultChecked={pb.walletId === wallet.id}
           />
-          <label htmlFor={`paybuttons.${index}`}>{pb.name}</label>
+          <label htmlFor={`paybuttonIdList.${index}`}>{pb.name}</label>
         </div>
       ))}
       </div>
