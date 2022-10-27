@@ -106,7 +106,7 @@ const getPeriodData = function (n: number, periodString: string, transactions: T
 const getAllMonths = function (transactions: any[]): AllMonths {
   const oldestdate = transactions.reduce(
     (prev, cur) => (prev?.timestamp < cur.timestamp ? prev : cur),
-    null
+    { timestamp: Date.now() / 1000 }
   )
   const currentDate = Date.now() / 1000
   const diff = currentDate - oldestdate.timestamp
