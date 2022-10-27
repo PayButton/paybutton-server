@@ -88,9 +88,9 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
   }
 
   refreshWalletList = (): void => {
-    this.setState(()=>{
+    this.setState(() => {
       void this.fetchWallets()
-    });
+    })
   }
 
   render (): React.ReactElement {
@@ -102,11 +102,11 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
           /* Sorts in the following order, from first to last, if they exist:
            * Default XEC Wallet, Default BCH Wallet, other wallets.
            */
-          if (a.wallet.userProfile?.isXECDefault === true ) {
-            return -1;
-          } else if (a.wallet.userProfile?.isBCHDefault === true ) {
-            if (b.wallet.userProfile?.isXECDefault === true ) {
-              return 1;
+          if (a.wallet.userProfile?.isXECDefault === true) {
+            return -1
+          } else if (a.wallet.userProfile?.isBCHDefault === true) {
+            if (b.wallet.userProfile?.isXECDefault === true) {
+              return 1
             }
             return -1
           }

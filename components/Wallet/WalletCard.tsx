@@ -16,7 +16,6 @@ interface IProps {
   refreshWalletList: Function
 }
 
-
 export default ({ wallet, paymentInfo, userPaybuttons, refreshWalletList }: IProps): FunctionComponent => {
   const networks = wallet.addresses.map((addr) => addr.networkId)
   return (
