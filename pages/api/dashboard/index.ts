@@ -103,8 +103,11 @@ const getPeriodData = function (n: number, periodString: string, transactions: T
   }
 }
 
-const getAllMonths = function (n: any[]): AllMonths {
-  const oldestdate = n.reduce((r, o) => o.timestamp < r.timestamp ? o : r)
+const getAllMonths = function (transactions: any[]): AllMonths {
+  const oldestdate = transactions.reduce(
+    (prev, cur) => (prev?.timestamp < cur.timestamp ? prev : cur),
+    null
+  )
   const currentDate = Date.now() / 1000
   const diff = currentDate - oldestdate.timestamp
   const min = diff / 60
@@ -137,7 +140,7 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
   const thirtyDays: PeriodData = getPeriodData(30, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
   const sevenDays: PeriodData = getPeriodData(7, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
   const year: PeriodData = getPeriodData(12, 'months', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM')
-  const all: PeriodData = getPeriodData(allmonths.months, 'months', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM YY')
+  const all: PeriodData = getPeriodData(allmonths.months, 'months', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM YYYY')
 
   return {
     thirtyDays,
