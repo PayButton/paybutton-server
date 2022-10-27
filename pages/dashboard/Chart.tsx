@@ -72,6 +72,7 @@ const Chart: NextPage<Props> = ({ data, usd }) => {
           color: cssvar('--chart-line-color')
         },
         grace: '0%',
+        beginAtZero: true,
         ticks: {
           color: cssvar('--primary-text-color'),
           callback: function (value) {
