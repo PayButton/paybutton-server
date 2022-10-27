@@ -98,8 +98,8 @@ const getPeriodData = function (n: number, periodString: string, transactions: T
   return {
     revenue,
     payments,
-    totalRevenue: (revenue.datasets[0].data as any).reduce((a: Prisma.Decimal, b: Prisma.Decimal) => a.plus(b)),
-    totalPayments: (payments.datasets[0].data as any).reduce((a: number, b: number) => a + b)
+    totalRevenue: (revenue.datasets[0].data as any).reduce((a: Prisma.Decimal, b: Prisma.Decimal) => a.plus(b), new Prisma.Decimal(0)),
+    totalPayments: (payments.datasets[0].data as any).reduce((a: number, b: number) => a + b, 0)
   }
 }
 
