@@ -7,6 +7,7 @@ import style from '../Paybutton/paybutton.module.css'
 import s from '../Wallet/wallet.module.css'
 import EditIcon from 'assets/edit-icon.png'
 import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 interface IProps {
   wallet: WalletWithAddressesAndPaybuttons
@@ -65,6 +66,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                         defaultChecked={wallet.userProfile?.isXECDefault === true}
                         type="checkbox"
                         name='isXECDefault'
+                        disabled={wallet.addresses.every((addr) => addr.networkId !== XEC_NETWORK_ID)}
                     />
                     <label htmlFor='xec-default' className={s.makedefault_margin}>Make Default XEC Wallet</label>
                   </div>
@@ -74,6 +76,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                         defaultChecked={wallet.userProfile?.isBCHDefault === true}
                         type="checkbox"
                         name='isBCHDefault'
+                        disabled={wallet.addresses.every((addr) => addr.networkId !== BCH_NETWORK_ID)}
                     />
                     <label htmlFor='bch-default' className={s.makedefault_margin}>Make Default BCH Wallet</label>
                   </div>
