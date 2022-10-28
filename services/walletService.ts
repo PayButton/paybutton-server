@@ -1,7 +1,7 @@
 // import * as networkService from 'services/networkService'
 import * as paybuttonService from 'services/paybuttonService'
 import * as addressService from 'services/addressService'
-import { Prisma, Wallet } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
@@ -42,9 +42,9 @@ const walletWithAddressesAndPaybuttons = Prisma.validator<Prisma.WalletArgs>()(
 
 export type WalletWithAddressesAndPaybuttons = Prisma.WalletGetPayload<typeof walletWithAddressesAndPaybuttons>
 
-export async function createWallet (values: CreateWalletInput): Promise<Wallet> {
+export async function createWallet (values: CreateWalletInput): Promise<WalletWithAddressesAndPaybuttons> {
   const paybuttonList = await paybuttonService.fetchPaybuttonArrayByIds(values.paybuttonIdList)
-  let wallet: Wallet
+  let wallet: WalletWithAddressesAndPaybuttons
   return await prisma.$transaction(async (prisma) => {
     wallet = await prisma.wallet.create({
       data: {
@@ -75,7 +75,7 @@ export async function createWallet (values: CreateWalletInput): Promise<Wallet> 
         throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
       }
 
-      await prisma.paybutton.update({
+      const updatedPaybutton = await prisma.paybutton.update({
         data: {
           walletId: wallet.id
         },
@@ -83,11 +83,12 @@ export async function createWallet (values: CreateWalletInput): Promise<Wallet> 
           id: paybutton.id
         }
       })
+      wallet.paybuttons.push(updatedPaybutton)
       for (const connector of paybutton.addresses) {
         if (connector.address.walletId !== null) {
           throw new Error(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
         }
-        await prisma.address.update({
+        const updatedAddress = await prisma.address.update({
           data: {
             walletId: wallet.id
           },
@@ -95,6 +96,12 @@ export async function createWallet (values: CreateWalletInput): Promise<Wallet> 
             id: connector.address.id
           }
         })
+        wallet.addresses.push({
+          id: updatedAddress.id,
+          address: updatedAddress.address,
+          networkId: updatedAddress.networkId
+        }
+        )
       }
     }
     return wallet

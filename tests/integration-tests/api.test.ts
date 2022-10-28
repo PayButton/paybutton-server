@@ -541,7 +541,7 @@ describe('GET /api/wallet/[id]', () => {
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     expect(res.statusCode).toBe(404)
     const responseData = res._getJSONData()
-    expect(responseData.message).toBe(RESPONSE_MESSAGES.NOT_FOUND_404.message)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NO_WALLET_FOUND_404.message)
   })
 })
 

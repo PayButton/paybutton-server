@@ -23,7 +23,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
     reset()
   }, [wallet, userPaybuttons])
 
-  function onSubmit (params: WalletPATCHParameters): void {
+  async function onSubmit (params: WalletPATCHParameters): Promise<void> {
     if (params.name === '' || params.name === undefined) {
       params.name = wallet.name
     }
