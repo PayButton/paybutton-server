@@ -6,8 +6,10 @@ import {
 } from 'grpc-bchrpc-node'
 
 import { Prisma } from '@prisma/client'
+import { PaybuttonWithAddresses } from 'services/paybuttonService'
+import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
 
-export const mockedPaybutton = {
+export const mockedPaybutton: PaybuttonWithAddresses = {
   id: 4,
   providerUserId: 'mocked-uid',
   name: 'mocked-name',
@@ -15,7 +17,7 @@ export const mockedPaybutton = {
   uuid: '730bfa24-eb57-11ec-b722-0242ac150002',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-  walletId: null,
+  walletId: 1,
   addresses: [
     {
       address: {
@@ -24,7 +26,7 @@ export const mockedPaybutton = {
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
         networkId: 1,
-        walletId: null
+        walletId: 1
       }
     },
     {
@@ -34,7 +36,7 @@ export const mockedPaybutton = {
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
         networkId: 2,
-        walletId: null
+        walletId: 1
       }
     }
   ]
@@ -128,13 +130,39 @@ export const mockedPaybuttonList = [
 ]
 
 // Wallet
-export const mockedWallet = {
+export const mockedWallet: WalletWithAddressesAndPaybuttons = {
   id: 1,
   createdAt: new Date('2022-09-30T18:01:32.456Z'),
   updatedAt: new Date('2022-09-30T18:01:32.456Z'),
   name: 'mockedWallet',
   providerUserId: 'mocked-uid',
-  userProfile: null
+  userProfile: {
+    isXECDefault: null,
+    isBCHDefault: null,
+    userProfileId: 1
+  },
+  paybuttons: [{
+    id: 4,
+    providerUserId: 'mocked-uid',
+    name: 'mocked-name',
+    buttonData: 'mockedData',
+    uuid: '730bfa24-eb57-11ec-b722-0242ac150002',
+    createdAt: new Date('2022-05-27T15:18:42.000Z'),
+    updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+    walletId: 1
+  }],
+  addresses: [
+    {
+      id: 1,
+      address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
+      networkId: 1
+    },
+    {
+      id: 2,
+      address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
+      networkId: 2
+    }
+  ]
   // "paybuttons": [],
   // "addresses": []
 }
