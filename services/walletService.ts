@@ -226,6 +226,11 @@ export async function setDefaultWallet (wallet: WalletWithAddressesAndPaybuttons
 }
 
 export async function updateWallet (walletId: number, params: any): Promise<WalletWithAddressesAndPaybuttons> {
+  const wallet = await fetchWalletById(walletId)
+  if (wallet === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_WALLET_FOUND_404.message)
+  }
+
   const paybuttonList = await paybuttonService.fetchPaybuttonArrayByIds(params.paybuttonIdList.map((id: string) => Number(id)))
 
   // enforce that added paybuttons & addresses don't already belong to a wallet
@@ -239,11 +244,6 @@ export async function updateWallet (walletId: number, params: any): Promise<Wall
       }
     })
   })
-
-  const wallet = await fetchWalletById(walletId)
-  if (wallet === null) {
-    throw new Error(RESPONSE_MESSAGES.NO_WALLET_FOUND_404.message)
-  }
   if (wallet.userProfile === null) {
     throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
   }
@@ -258,6 +258,7 @@ export async function updateWallet (walletId: number, params: any): Promise<Wall
     defaultForNetworkIds.push(BCH_NETWORK_ID)
   }
 
+  if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   return await prisma.$transaction(async (prisma) => {
     const updatedWallet = await setDefaultWallet(wallet, defaultForNetworkIds)
     // wip: update paybuttons

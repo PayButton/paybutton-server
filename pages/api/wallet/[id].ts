@@ -1,5 +1,5 @@
 import * as walletService from 'services/walletService'
-import { parseWalletPATCHRequest } from 'utils/validators'
+import { parseWalletPATCHRequest, parseError } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { setSession } from 'utils/setSession'
 
@@ -30,7 +30,8 @@ export default async (
       const wallet = await walletService.updateWallet(Number(walletId), updateWalletInput)
       res.status(200).json(wallet)
     } catch (err: any) {
-      switch (err.message) {
+      const parsedError = parseError(err)
+      switch (parsedError.message) {
         case RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message:
           res.status(404).json(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404)
           break
@@ -51,6 +52,15 @@ export default async (
           break
         case RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message:
           res.status(400).json(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400)
+          break
+        case RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400)
+          break
+        case RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400)
+          break
+        case RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400)
           break
         default:
           res.status(500).json({ statusCode: 500, message: err.message })
