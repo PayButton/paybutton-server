@@ -587,8 +587,42 @@ describe('PATCH /api/wallet/[id]', () => {
     }
   })
 
-  it('Update wallet as XEC default', async () => {
+  it('Update wallet name', async () => {
     const wallet = createdWallets[0]
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
+    if (baseRequestOptions.body != null) {
+      baseRequestOptions.body.name = wallet.name + '-new'
+      baseRequestOptions.body.paybuttonIdList = wallet.paybuttons.map((pb) => pb.id)
+    }
+    const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(200)
+    // avoid comparing `Date` with `string`
+    responseData.paybuttons[0].updatedAt = new Date(responseData.paybuttons[0].updatedAt)
+    responseData.paybuttons[0].createdAt = new Date(responseData.paybuttons[0].createdAt)
+    expect(responseData).toMatchObject({
+      ...wallet,
+      name: wallet.name + '-new',
+      createdAt: expect.anything(),
+      updatedAt: expect.anything()
+    })
+  })
+
+  it('Fail for repeated wallet name', async () => {
+    const wallet = createdWallets[0]
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
+    if (baseRequestOptions.body != null) {
+      baseRequestOptions.body.name = createdWallets[1].name
+      baseRequestOptions.body.paybuttonIdList = wallet.paybuttons.map((pb) => pb.id)
+    }
+    const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400.message)
+  })
+
+  it('Update wallet as XEC default', async () => {
+    const wallet = createdWallets[1]
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name
@@ -599,8 +633,6 @@ describe('PATCH /api/wallet/[id]', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     // avoid comparing `Date` with `string`
-    responseData.updatedAt = new Date(responseData.updatedAt)
-    responseData.createdAt = new Date(responseData.createdAt)
     responseData.paybuttons[0].updatedAt = new Date(responseData.paybuttons[0].updatedAt)
     responseData.paybuttons[0].createdAt = new Date(responseData.paybuttons[0].createdAt)
     expect(responseData).toMatchObject({
@@ -608,12 +640,14 @@ describe('PATCH /api/wallet/[id]', () => {
       userProfile: {
         ...wallet.userProfile,
         isXECDefault: true
-      }
+      },
+      createdAt: expect.anything(),
+      updatedAt: expect.anything()
     })
   })
 
   it('Update wallet as BCH default', async () => {
-    const wallet = createdWallets[1]
+    const wallet = createdWallets[2]
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name
@@ -624,8 +658,6 @@ describe('PATCH /api/wallet/[id]', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     // avoid comparing `Date` with `string`
-    responseData.updatedAt = new Date(responseData.updatedAt)
-    responseData.createdAt = new Date(responseData.createdAt)
     responseData.paybuttons[0].updatedAt = new Date(responseData.paybuttons[0].updatedAt)
     responseData.paybuttons[0].createdAt = new Date(responseData.paybuttons[0].createdAt)
     expect(responseData).toMatchObject({
@@ -633,7 +665,9 @@ describe('PATCH /api/wallet/[id]', () => {
       userProfile: {
         ...wallet.userProfile,
         isBCHDefault: true
-      }
+      },
+      createdAt: expect.anything(),
+      updatedAt: expect.anything()
     })
   })
 })
