@@ -100,8 +100,7 @@ export async function createWallet (values: CreateWalletInput): Promise<WalletWi
           id: updatedAddress.id,
           address: updatedAddress.address,
           networkId: updatedAddress.networkId
-        }
-        )
+        })
       }
     }
     return wallet
@@ -159,17 +158,6 @@ export async function setDefaultWallet (wallet: WalletWithAddressesAndPaybuttons
       })
       wallet.userProfile.isXECDefault = true
     })
-  } else if (wallet.userProfile.isXECDefault === true) {
-    // unset default for XEC
-    await prisma.walletsOnUserProfile.update({
-      where: {
-        walletId: wallet.id
-      },
-      data: {
-        isXECDefault: null
-      }
-    })
-    wallet.userProfile.isXECDefault = null
   }
   if (networkIds.includes(BCH_NETWORK_ID)) {
     if (!wallet.addresses.some((addr) => addr.networkId === BCH_NETWORK_ID)) {
@@ -210,17 +198,6 @@ export async function setDefaultWallet (wallet: WalletWithAddressesAndPaybuttons
       })
       wallet.userProfile.isBCHDefault = true
     })
-  } else if (wallet.userProfile.isBCHDefault === true) {
-    // unset default for BCH
-    await prisma.walletsOnUserProfile.update({
-      where: {
-        walletId: wallet.id
-      },
-      data: {
-        isBCHDefault: null
-      }
-    })
-    wallet.userProfile.isBCHDefault = null
   }
   return wallet
 }
