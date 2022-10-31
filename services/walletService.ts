@@ -260,9 +260,17 @@ export async function updateWallet (walletId: number, params: any): Promise<Wall
 
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   return await prisma.$transaction(async (prisma) => {
-    const updatedWallet = await setDefaultWallet(wallet, defaultForNetworkIds)
+    let updatedWallet = await prisma.wallet.update({
+      where: {
+        id: wallet.id
+      },
+      data: {
+        name: params.name
+      },
+      include: includeAddressesAndPaybuttons
+    })
+    updatedWallet = await setDefaultWallet(updatedWallet, defaultForNetworkIds)
     // wip: update paybuttons
-    // wip: update wallet name
     return updatedWallet
   })
 }
