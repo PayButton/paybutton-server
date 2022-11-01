@@ -8,6 +8,8 @@ import s from '../Wallet/wallet.module.css'
 import EditIcon from 'assets/edit-icon.png'
 import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
+import axios from 'axios'
+import { appInfo } from 'config/appInfo'
 
 interface IProps {
   wallet: WalletWithAddressesAndPaybuttons
@@ -28,13 +30,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
     if (params.name === '' || params.name === undefined) {
       params.name = wallet.name
     }
-    void await fetch(`/api/wallet/${wallet.id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(params)
-    })
+    void await axios.patch(`${appInfo.websiteDomain}/api/wallet/${wallet.id}`, params)
     refreshWalletList()
   }
 

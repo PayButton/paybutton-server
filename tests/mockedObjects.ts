@@ -183,6 +183,16 @@ export const mockedWalletList = [
     providerUserId: 'mocked-uid'
   }
 ]
+
+export const mockedWalletsOnUserProfile = {
+  walletId: 1,
+  userProfileId: 1,
+  isXECDefault: null,
+  isBCHDefault: null,
+  createdAt: new Date('2022-05-27T15:18:42.000Z'),
+  updatedAt: new Date('2022-05-27T15:18:42.000Z')
+}
+
 // Network
 export const mockedNetwork = {
   id: 1,
