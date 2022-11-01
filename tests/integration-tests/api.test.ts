@@ -9,6 +9,7 @@ import transactionsEndpoint from 'pages/api/transactions/[address]'
 import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
 import balanceEndpoint from 'pages/api/balance/[address]'
 import dashboardEndpoint from 'pages/api/dashboard/index'
+import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
 import {
   exampleAddresses,
   testEndpoint,
@@ -542,6 +543,98 @@ describe('GET /api/wallet/[id]', () => {
     expect(res.statusCode).toBe(404)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.NO_WALLET_FOUND_404.message)
+  })
+})
+
+describe('PATCH /api/wallet/[id]', () => {
+  // Create 4 wallets
+  let createdWallets: WalletWithAddressesAndPaybuttons[]
+  let baseRequestOptions: RequestOptions = {
+    method: 'PATCH' as RequestMethod,
+    query: {
+      id: null
+    },
+    body: {
+      name: '',
+      isXECDefault: null,
+      isBCHDefault: null,
+      paybuttonIdList: []
+    }
+  }
+
+  beforeAll(async () => {
+    await clearPaybuttonsAndAddresses()
+    await clearWallets()
+    createdWallets = []
+    for (let i = 0; i < 4; i++) {
+      const pb = await createPaybuttonForUser('test-u-id')
+      const wallet = await createWalletForUser('test-u-id', [pb.id])
+      createdWallets.push(wallet)
+    }
+  })
+  beforeEach(async () => {
+    baseRequestOptions = {
+      method: 'PATCH' as RequestMethod,
+      query: {
+        id: null
+      },
+      body: {
+        name: '',
+        isXECDefault: null,
+        isBCHDefault: null,
+        paybuttonIdList: []
+      }
+    }
+  })
+
+  it('Update wallet as XEC default', async () => {
+    const wallet = createdWallets[0]
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
+    if (baseRequestOptions.body != null) {
+      baseRequestOptions.body.name = wallet.name
+      baseRequestOptions.body.paybuttonIdList = wallet.paybuttons.map((pb) => pb.id)
+      baseRequestOptions.body.isXECDefault = true
+    }
+    const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(200)
+    // avoid comparing `Date` with `string`
+    responseData.updatedAt = new Date(responseData.updatedAt)
+    responseData.createdAt = new Date(responseData.createdAt)
+    responseData.paybuttons[0].updatedAt = new Date(responseData.paybuttons[0].updatedAt)
+    responseData.paybuttons[0].createdAt = new Date(responseData.paybuttons[0].createdAt)
+    expect(responseData).toMatchObject({
+      ...wallet,
+      userProfile: {
+        ...wallet.userProfile,
+        isXECDefault: true
+      }
+    })
+  })
+
+  it('Update wallet as BCH default', async () => {
+    const wallet = createdWallets[1]
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
+    if (baseRequestOptions.body != null) {
+      baseRequestOptions.body.name = wallet.name
+      baseRequestOptions.body.paybuttonIdList = wallet.paybuttons.map((pb) => pb.id)
+      baseRequestOptions.body.isBCHDefault = true
+    }
+    const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(200)
+    // avoid comparing `Date` with `string`
+    responseData.updatedAt = new Date(responseData.updatedAt)
+    responseData.createdAt = new Date(responseData.createdAt)
+    responseData.paybuttons[0].updatedAt = new Date(responseData.paybuttons[0].updatedAt)
+    responseData.paybuttons[0].createdAt = new Date(responseData.paybuttons[0].createdAt)
+    expect(responseData).toMatchObject({
+      ...wallet,
+      userProfile: {
+        ...wallet.userProfile,
+        isBCHDefault: true
+      }
+    })
   })
 })
 

@@ -4,7 +4,7 @@ import * as walletService from 'services/walletService'
 import * as addressService from 'services/addressService'
 import { prismaMock } from 'prisma/mockedClient'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import { mockedWallet, mockedWalletList, mockedPaybuttonList, mockedNetwork, mockedBCHAddress } from '../mockedObjects'
+import { mockedWallet, mockedWalletList, mockedPaybuttonList, mockedPaybutton, mockedNetwork, mockedBCHAddress } from '../mockedObjects'
 
 describe('Fetch services', () => {
   it('Should fetch wallet by id', async () => {
@@ -102,6 +102,134 @@ describe('Create services', () => {
       await walletService.createWallet(data.createWalletInput)
     } catch (e: any) {
       expect(e.message).toMatch(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
+    }
+  })
+})
+
+describe('Update services', () => {
+  interface Data {
+    updateWalletInput: walletService.UpdateWalletInput
+  }
+  let data: Data = {
+    updateWalletInput: {
+      name: '',
+      isXECDefault: undefined,
+      isBCHDefault: undefined,
+      paybuttonIdList: [1]
+    }
+  }
+
+  beforeEach(() => {
+    data = {
+      updateWalletInput: {
+        name: '',
+        isXECDefault: undefined,
+        isBCHDefault: undefined,
+        paybuttonIdList: [1]
+      }
+    }
+    prismaMock.wallet.update.mockResolvedValue(mockedWallet)
+    prisma.wallet.update = prismaMock.wallet.update
+    prismaMock.wallet.findUnique.mockResolvedValue(mockedWallet)
+    prisma.wallet.findUnique = prismaMock.wallet.findUnique
+    prismaMock.$transaction.mockImplementation(
+      (fn: (prisma: any) => any) => {
+        return fn(prisma)
+      }
+    )
+    prisma.$transaction = prismaMock.$transaction
+    prismaMock.paybutton.findMany.mockResolvedValue(mockedPaybuttonList)
+    prisma.paybutton.findMany = prismaMock.paybutton.findMany
+
+    prismaMock.network.findUnique.mockResolvedValue(mockedNetwork)
+    prisma.network.findUnique = prismaMock.network.findUnique
+    prismaMock.paybutton.findMany.mockResolvedValue([mockedPaybuttonList[0]])
+    prisma.paybutton.findMany = prismaMock.paybutton.findMany
+  })
+
+  it('Update wallet', async () => {
+    const result = await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
+    expect(result).toEqual(mockedWallet)
+  })
+
+  it('Fail for paybutton that is already on another wallet', async () => {
+    const otherWalletButton = {
+      ...mockedPaybutton,
+      walletId: 2
+    }
+    prismaMock.paybutton.findMany.mockResolvedValue([otherWalletButton])
+    prisma.paybutton.findMany = prismaMock.paybutton.findMany
+    expect.assertions(1)
+    try {
+      await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
+    } catch (e: any) {
+      expect(e.message).toMatch(RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400.message)
+    }
+  })
+  it('Fail for address that is already on another wallet', async () => {
+    const otherWalletButton = {
+      ...mockedPaybutton
+    }
+    otherWalletButton.addresses[0].address.walletId = 2
+    prismaMock.paybutton.findMany.mockResolvedValue([otherWalletButton])
+    prisma.paybutton.findMany = prismaMock.paybutton.findMany
+    expect.assertions(1)
+    try {
+      await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
+    } catch (e: any) {
+      expect(e.message).toMatch(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
+    }
+  })
+  it('Fail if wallet does not exist', async () => {
+    prismaMock.wallet.findUnique.mockResolvedValue(null)
+    prisma.wallet.findUnique = prismaMock.wallet.findUnique
+    expect.assertions(1)
+    try {
+      await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
+    } catch (e: any) {
+      expect(e.message).toMatch(RESPONSE_MESSAGES.NO_WALLET_FOUND_404.message)
+    }
+  })
+  it('Fail if wallet has no userProfile associated', async () => {
+    const otherWallet = {
+      ...mockedWallet
+    }
+    otherWallet.userProfile = null
+    prismaMock.wallet.findUnique.mockResolvedValue(otherWallet)
+    prisma.wallet.findUnique = prismaMock.wallet.findUnique
+    expect.assertions(1)
+    try {
+      await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
+    } catch (e: any) {
+      expect(e.message).toMatch(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
+    }
+  })
+  it('Fail if trying to set as BCH Default with no BCH addresses', async () => {
+    data.updateWalletInput.isBCHDefault = true
+    const otherWallet = {
+      ...mockedWallet,
+      addresses: [mockedPaybutton.addresses[0].address]
+    }
+    prismaMock.wallet.findUnique.mockResolvedValue(otherWallet)
+    expect.assertions(1)
+    try {
+      await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
+    } catch (e: any) {
+      expect(e.message).toMatch(RESPONSE_MESSAGES.DEFAULT_BCH_WALLET_MUST_HAVE_SOME_BCH_ADDRESS_400.message)
+    }
+  })
+  it('Fail if trying to set as XEC Default with no XEC addresses', async () => {
+    data.updateWalletInput.isXECDefault = true
+    const otherWallet = {
+      ...mockedWallet,
+      addresses: [mockedBCHAddress]
+    }
+    prismaMock.wallet.findUnique.mockResolvedValue(otherWallet)
+    expect.assertions(1)
+    try {
+      await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
+    } catch (e: any) {
+      expect(e.message).toMatch(RESPONSE_MESSAGES.DEFAULT_XEC_WALLET_MUST_HAVE_SOME_XEC_ADDRESS_400.message)
     }
   })
 })
