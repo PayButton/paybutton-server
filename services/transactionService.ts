@@ -95,7 +95,7 @@ export async function upsertManyTransactions (transactions: BCHTransaction.AsObj
   return ret
 }
 
-export async function fetchAllTransactions (addressString: string): Promise<boolean> {
+export async function syncTransactionsForAddress (addressString: string): Promise<boolean> {
   const address = await fetchAddressBySubstring(addressString)
   let newTransactionsCount = -1
   let seenTransactionsCount = 0
@@ -118,5 +118,5 @@ export async function syncTransactions (addressString: string): Promise<void> {
   if (address === '' || address === undefined) {
     throw new Error(ADDRESS_NOT_PROVIDED_400.message)
   }
-  await fetchAllTransactions(address)
+  await syncTransactionsForAddress(address)
 }
