@@ -60,6 +60,7 @@ model Network {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   addresses Address[]
+  prices    Price[]
 }
 
 model Transaction {
@@ -69,6 +70,7 @@ model Transaction {
   timestamp Int
   addressId Int
   address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  prices     PricesOnTransactions[]
 
   @@unique([hash, addressId], name: "Transaction_hash_addressId_unique_constraint")
   @@index([addressId], map: "Transaction_addressId_fkey")
@@ -85,6 +87,42 @@ model Wallet {
   userProfile    WalletsOnUserProfile?
 
   @@unique([name, providerUserId], map: "Wallet_name_providerUserId_unique_constraint")
+}
+
+model Quote {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique @db.VarChar(255)
+  title     String   @db.VarChar(255)
+  ticker    String   @db.VarChar(255)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  prices    Price[]
+}
+
+model Price {
+  id           Int                    @id @default(autoincrement())
+  value        Decimal                @db.Decimal(64, 16)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  timestamp    Int
+  network      Network                @relation(fields: [networkId], references: [id], onUpdate: Restrict)
+  networkId    Int
+  quote        Quote                  @relation(fields: [quoteId], references: [id], onUpdate: Restrict)
+  quoteId      Int
+  transactions PricesOnTransactions[]
+
+  @@unique([timestamp, quoteId, networkId], name: "Price_timestamp_quoteId_networkId_unique_constraint")
+}
+
+model PricesOnTransactions {
+  priceId       Int
+  transactionId Int
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  price         Price       @relation(fields: [priceId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@id([priceId, transactionId])
 }
 
 model WalletsOnUserProfile {

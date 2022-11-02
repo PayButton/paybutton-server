@@ -100,6 +100,43 @@ CREATE TABLE `WalletsOnUserProfile` (
     PRIMARY KEY (`walletId`, `userProfileId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `Price` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `value` DECIMAL(64, 16) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `timestamp` INTEGER NOT NULL,
+    `networkId` INTEGER NOT NULL,
+    `quoteId` INTEGER NOT NULL,
+
+    UNIQUE INDEX `Price_timestamp_quoteId_networkId_key`(`timestamp`, `quoteId`, `networkId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `PricesOnTransactions` (
+    `priceId` INTEGER NOT NULL,
+    `transactionId` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    PRIMARY KEY (`priceId`, `transactionId`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Quote` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `slug` VARCHAR(255) NOT NULL,
+    `title` VARCHAR(255) NOT NULL,
+    `ticker` VARCHAR(255) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `Quote_slug_key`(`slug`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- AddForeignKey
 ALTER TABLE `Address` ADD CONSTRAINT `Address_networkId_fkey` FOREIGN KEY (`networkId`) REFERENCES `Network`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
 
@@ -123,3 +160,15 @@ ALTER TABLE `WalletsOnUserProfile` ADD CONSTRAINT `WalletsOnUserProfile_walletId
 
 -- AddForeignKey
 ALTER TABLE `WalletsOnUserProfile` ADD CONSTRAINT `WalletsOnUserProfile_userProfileId_fkey` FOREIGN KEY (`userProfileId`) REFERENCES `UserProfile`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Price` ADD CONSTRAINT `Price_networkId_fkey` FOREIGN KEY (`networkId`) REFERENCES `Network`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `PricesOnTransactions` ADD CONSTRAINT `PricesOnTransactions_transactionId_fkey` FOREIGN KEY (`transactionId`) REFERENCES `Transaction`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `PricesOnTransactions` ADD CONSTRAINT `PricesOnTransactions_priceId_fkey` FOREIGN KEY (`priceId`) REFERENCES `Price`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Price` ADD CONSTRAINT `Price_quoteId_fkey` FOREIGN KEY (`quoteId`) REFERENCES `Quote`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
