@@ -22,6 +22,8 @@ describe('Find by substring', () => {
     )
   })
   it('Get address payment info', async () => {
+    prismaMock.transaction.findMany.mockResolvedValue(mockedTransactionList)
+    prisma.transaction.findMany = prismaMock.transaction.findMany
     jest.spyOn(addressService, 'fetchAddressBySubstring').mockImplementation(async (_: string) => {
       return {
         network: mockedNetwork,
