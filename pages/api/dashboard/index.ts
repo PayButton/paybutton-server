@@ -1,12 +1,11 @@
 import * as paybuttonService from 'services/paybuttonService'
 import * as addressService from 'services/addressService'
-import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
+import * as transactionService from 'services/transactionService'
+import * as priceService from 'services/priceService'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID } from 'constants/index'
 import { Prisma, Transaction } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
-
-const DUMMY_XEC_PRICE = 0.00003918
-const DUMMY_BCH_PRICE = 132
 
 interface ChartData {
   labels: string[]
@@ -120,27 +119,31 @@ const getAllMonths = function (transactions: any[]): AllMonths {
 const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
   const buttonsCount = (await paybuttonService.fetchPaybuttonArrayByUserId(userId)).length
   const addresses = await addressService.fetchAllUserAddresses(userId, true)
-  const XECAddresses = addresses.filter((addr) => addr.networkId === XEC_NETWORK_ID)
-  const BCHAddresses = addresses.filter((addr) => addr.networkId === BCH_NETWORK_ID)
-  const BCHTransactions = Array.prototype.concat.apply([], BCHAddresses.map((addr) => addr.transactions))
-  const XECTransactions = Array.prototype.concat.apply([], XECAddresses.map((addr) => addr.transactions))
-  const incomingTransactionsInUSD = BCHTransactions.map((t) => {
-    t.amount = t.amount.times(DUMMY_BCH_PRICE)
+  const XECAddressIds = addresses.filter((addr) => addr.networkId === XEC_NETWORK_ID).map((addr) => addr.id)
+  const BCHAddressIds = addresses.filter((addr) => addr.networkId === BCH_NETWORK_ID).map((addr) => addr.id)
+  const XECTransactions = await transactionService.fetchAddressListTransactions(XECAddressIds)
+  const BCHTransactions = await transactionService.fetchAddressListTransactions(BCHAddressIds)
+  const prices = await priceService.getCurrentPrices()
+  const BCHPrice = prices.filter((price) => price.quoteId === USD_QUOTE_ID && price.networkId === BCH_NETWORK_ID)[0].value
+  const XECPrice = prices.filter((price) => price.quoteId === USD_QUOTE_ID && price.networkId === XEC_NETWORK_ID)[0].value
+
+  const incomingTransactionsValue = BCHTransactions.map((t) => {
+    t.amount = t.amount.times(BCHPrice)
     return t
   }).concat(XECTransactions.map((t) => {
-    t.amount = t.amount.times(DUMMY_XEC_PRICE)
+    t.amount = t.amount.times(XECPrice)
     return t
   })).filter((t) => {
     return t.amount > 0
   })
 
-  const totalRevenue = incomingTransactionsInUSD.map((t) => t.amount).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
-  const allmonths: AllMonths = getAllMonths(incomingTransactionsInUSD)
+  const totalRevenue = incomingTransactionsValue.map((t) => t.amount).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
+  const allmonths: AllMonths = getAllMonths(incomingTransactionsValue)
 
-  const thirtyDays: PeriodData = getPeriodData(30, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
-  const sevenDays: PeriodData = getPeriodData(7, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
-  const year: PeriodData = getPeriodData(12, 'months', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM')
-  const all: PeriodData = getPeriodData(allmonths.months, 'months', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM YYYY')
+  const thirtyDays: PeriodData = getPeriodData(30, 'days', incomingTransactionsValue, { revenue: '#66fe91', payments: '#669cfe' })
+  const sevenDays: PeriodData = getPeriodData(7, 'days', incomingTransactionsValue, { revenue: '#66fe91', payments: '#669cfe' })
+  const year: PeriodData = getPeriodData(12, 'months', incomingTransactionsValue, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM')
+  const all: PeriodData = getPeriodData(allmonths.months, 'months', incomingTransactionsValue, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM YYYY')
 
   return {
     thirtyDays,
@@ -149,7 +152,7 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
     all,
     total: {
       revenue: totalRevenue,
-      payments: incomingTransactionsInUSD.length,
+      payments: incomingTransactionsValue.length,
       buttons: buttonsCount
     }
   }
