@@ -1,15 +1,15 @@
 import { Prisma } from '@prisma/client'
 export const prices = [
   { // XECUSD
-    value: new Prisma.Decimal('0.00004095051166'),
+    value: new Prisma.Decimal('0.00004095'),
     createdAt: new Date(),
     updatedAt: new Date(),
     timestamp: 166459320,
     networkId: 1,
     quoteId: 1
   },
-  { // XECBTC
-    value: new Prisma.Decimal('0.00000000211572'),
+  { // XECCAD
+    value: new Prisma.Decimal('0.00005663'),
     createdAt: new Date(),
     updatedAt: new Date(),
     timestamp: 166459320,
@@ -17,15 +17,15 @@ export const prices = [
     quoteId: 2
   },
   { // BCHUSD
-    value: new Prisma.Decimal('117.90816992278000'),
+    value: new Prisma.Decimal('117.9081'),
     createdAt: new Date(),
     updatedAt: new Date(),
     timestamp: 166459320,
     networkId: 2,
     quoteId: 1
   },
-  { // BCHBTC
-    value: new Prisma.Decimal('0.00609597812323'),
+  { // BCHCAD
+    value: new Prisma.Decimal('163.0735'),
     createdAt: new Date(),
     updatedAt: new Date(),
     timestamp: 166459320,

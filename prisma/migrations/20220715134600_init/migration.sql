@@ -103,7 +103,7 @@ CREATE TABLE `WalletsOnUserProfile` (
 -- CreateTable
 CREATE TABLE `Price` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `value` DECIMAL(64, 16) NOT NULL,
+    `value` DECIMAL(36, 8) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     `timestamp` INTEGER NOT NULL,

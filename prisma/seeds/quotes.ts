@@ -9,9 +9,9 @@ export const quotes = [
   },
   {
     id: 2,
-    slug: 'bitcoin',
-    ticker: 'BTC',
-    title: 'Bitcoin',
+    slug: 'cad',
+    ticker: 'CAD',
+    title: 'Canadian Dollars',
     createdAt: new Date(),
     updatedAt: new Date()
   }
