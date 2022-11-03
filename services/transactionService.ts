@@ -1,6 +1,6 @@
 import { Transaction as BCHTransaction } from 'grpc-bchrpc-node'
 import prisma from 'prisma/clientInstance'
-import { Prisma, Transaction, Address } from '@prisma/client'
+import { Prisma, Address } from '@prisma/client'
 import grpcService from 'services/grpcService'
 import { parseAddress } from 'utils/validators'
 import { satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from 'utils/index'
@@ -83,7 +83,7 @@ export async function base64HashToHex (base64Hash: string): Promise<string> {
   )
 }
 
-export async function upsertTransaction (transaction: BCHTransaction.AsObject, address: Address): Promise<Transaction | undefined> {
+export async function upsertTransaction (transaction: BCHTransaction.AsObject, address: Address): Promise<TransactionWithAddressAndPrices | undefined> {
   const receivedAmount = await getTransactionAmount(transaction, address.address)
   if (receivedAmount === new Prisma.Decimal(0)) { // out transactions
     return
@@ -103,21 +103,21 @@ export async function upsertTransaction (transaction: BCHTransaction.AsObject, a
       }
     },
     update: transactionParams,
-    create: transactionParams
+    create: transactionParams,
+    include: includeAddressAndPrices
   })
 }
 
-export async function upsertManyTransactions (transactions: BCHTransaction.AsObject[], address: Address): Promise<Transaction[]> {
-  const ret: Transaction[] = []
-  await prisma.$transaction(async (_) => {
-    transactions.map(async (transaction) => {
-      const t = await upsertTransaction(transaction, address)
-      if (t !== undefined) {
-        ret.push(t)
-      }
-    })
+export async function upsertManyTransactions (transactions: BCHTransaction.AsObject[], address: Address): Promise<TransactionWithAddressAndPrices[]> {
+  const ret = await prisma.$transaction(async (_) => {
+    const insertedTransactions: Array<TransactionWithAddressAndPrices | undefined> = await Promise.all(
+      transactions.map(async (transaction) => {
+        return await upsertTransaction(transaction, address)
+      })
+    )
+    return insertedTransactions
   })
-  return ret
+  return ret.filter((t) => t !== undefined) as TransactionWithAddressAndPrices[]
 }
 
 export async function syncTransactionsForAddress (addressString: string): Promise<boolean> {
