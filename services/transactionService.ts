@@ -41,9 +41,30 @@ export async function getTransactionAmount (transaction: BCHTransaction.AsObject
   )
 }
 
-export async function fetchAddressTransactions (addressString: string): Promise<Transaction[]> {
+const includeAddressAndPrices = {
+  address: true,
+  prices: {
+    include: {
+      price: true
+    }
+  }
+}
+
+const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionArgs>()(
+  { include: includeAddressAndPrices }
+)
+
+export type TransactionWithAddressAndPrices = Prisma.TransactionGetPayload<typeof transactionWithAddressAndPrices>
+
+export async function fetchAddressTransactions (addressString: string): Promise<TransactionWithAddressAndPrices[]> {
   const address = await fetchAddressBySubstring(addressString)
-  return _.orderBy(address.transactions, ['timestamp'], ['desc'])
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      addressId: address.id
+    },
+    include: includeAddressAndPrices
+  })
+  return _.orderBy(transactions, ['timestamp'], ['desc'])
 }
 
 export async function base64HashToHex (base64Hash: string): Promise<string> {
