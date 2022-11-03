@@ -27,7 +27,8 @@ export const RESPONSE_MESSAGES = {
   MULTIPLE_ADDRESSES_FOUND_400: { statusCode: 400, message: 'Multiple addresses found.' },
   RESOURCE_DOES_NOT_BELONG_TO_USER_400: { statusCode: 400, message: 'Resource does not belong to user.' },
   DEFAULT_XEC_WALLET_MUST_HAVE_SOME_XEC_ADDRESS_400: { statusCode: 400, message: 'Default XEC wallet must have some XEC address.' },
-  DEFAULT_BCH_WALLET_MUST_HAVE_SOME_BCH_ADDRESS_400: { statusCode: 400, message: 'Default BCH wallet must have some BCH address.' }
+  DEFAULT_BCH_WALLET_MUST_HAVE_SOME_BCH_ADDRESS_400: { statusCode: 400, message: 'Default BCH wallet must have some BCH address.' },
+  MISSING_PRICE_API_URL_400: { statusCode: 400, message: 'Missing PRICE_API_URL environment variable.' }
 }
 
 // When fetching some address transactions, number of transactions to fetch at a time.
@@ -38,3 +39,6 @@ export const FETCH_DELAY = 100
 
 export const XEC_NETWORK_ID = 1
 export const BCH_NETWORK_ID = 2
+
+export const USD_QUOTE_ID = 1
+export const CAD_QUOTE_ID = 2
