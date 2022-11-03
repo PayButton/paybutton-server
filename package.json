@@ -20,7 +20,6 @@
     "@types/express": "^4.17.11",
     "@types/helmet": "^4.0.0",
     "@types/lodash": "^4.14.182",
-    "@types/react-table": "^7.8.0",
     "@types/socket.io": "^2.1.13",
     "@types/uuid": "^8.3.4",
     "apollo-server-micro": "^3.6.7",

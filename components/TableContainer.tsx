@@ -21,14 +21,14 @@ const TableContainer = ({ columns, data }) => {
     {
       columns,
       data,
-      initialState: { pageIndex: 0, pageSize: 20 }
+      initialState: { pageIndex: 0, pageSize: 10 }
     },
     useSortBy,
     usePagination
   )
 
   const generateSortingIndicator = column => {
-    return column.isSorted ? (column.isSortedDesc ? ' 🔽' : ' 🔼') : ''
+    return column.isSorted ? (column.isSortedDesc ? <div className='table-sort-arrow-down' /> : <div className='table-sort-arrow-up' />) : null
   }
 
   const onChangeInSelect = event => {
@@ -37,33 +37,36 @@ const TableContainer = ({ columns, data }) => {
 
   return (
     <>
-    <table {...getTableProps()}>
-      <thead>
-        {headerGroups.map((headerGroup) => (
-          <tr {...headerGroup.getHeaderGroupProps()}>
-            {headerGroup.headers.map((column) => (
-              <th {...column.getHeaderProps(column.getSortByToggleProps())}>
-                {column.render('Header')}
-                {generateSortingIndicator(column)}
-              </th>
-            ))}
-          </tr>
-        ))}
-      </thead>
-
-      <tbody {...getTableBodyProps()}>
-        {page.map((row) => {
-          prepareRow(row)
-          return (
-            <tr {...row.getRowProps()}>
-              {row.cells.map((cell) => {
-                return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
-              })}
+    <div className="paybutton-table-ctn">
+      <table {...getTableProps()}>
+        <thead>
+          {headerGroups.map((headerGroup) => (
+            <tr {...headerGroup.getHeaderGroupProps()}>
+              {headerGroup.headers.map((column) => (
+                <th {...column.getHeaderProps(column.getSortByToggleProps())}>
+                  {column.render('Header')}
+                  {generateSortingIndicator(column)}
+                </th>
+              ))}
             </tr>
-          )
-        })}
-      </tbody>
-    </table>
+          ))}
+          <tr className='header-spacer'></tr>
+        </thead>
+
+        <tbody {...getTableBodyProps()}>
+          {page.map((row) => {
+            prepareRow(row)
+            return (
+              <tr {...row.getRowProps()}>
+                {row.cells.map((cell) => {
+                  return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                })}
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
 
 <div>
  
