@@ -3,7 +3,14 @@ import axios from 'axios'
 import { appInfo } from 'config/appInfo'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
+import moment from 'moment'
 import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID } from 'constants/index'
+
+function flattenTimestamp (timestamp: number): number {
+  const date = moment((timestamp * 1000))
+  const dateStart = date.startOf('day')
+  return dateStart.unix()
+}
 
 function dateStringFromTimestamp (timestamp: number): string {
   const isoString = (new Date(timestamp * 1000)).toISOString()
@@ -133,9 +140,9 @@ export async function syncPriceForTransaction (transaction: TransactionWithAddre
   const cadPriceString = responseData.Price_in_CAD
 
   void await createAllPricesFromTransaction({
-    timestamp: transaction.timestamp,
     networkId,
     transactionId: transaction.id,
+    timestamp: flattenTimestamp(params.timestamp),
     values: {
       usd: new Prisma.Decimal(usdPriceString),
       cad: new Prisma.Decimal(cadPriceString)
