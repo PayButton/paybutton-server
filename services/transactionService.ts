@@ -67,6 +67,10 @@ export async function fetchAddressTransactions (addressString: string): Promise<
   return _.orderBy(transactions, ['timestamp'], ['desc'])
 }
 
+export async function fetchAllTransactions (): Promise<TransactionWithAddressAndPrices[]> {
+  return await prisma.transaction.findMany({ include: includeAddressAndPrices })
+}
+
 export async function base64HashToHex (base64Hash: string): Promise<string> {
   return (
     atob(base64Hash)
