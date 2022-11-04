@@ -208,8 +208,33 @@ export const mockedTransaction = {
   id: 1,
   hash: 'Yh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
   addressId: 1,
+  address: {
+    id: 1,
+    address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
+    createdAt: new Date('2022-11-02T15:18:42.000Z'),
+    updatedAt: new Date('2022-11-02T15:18:42.000Z'),
+    networkId: 1,
+    walletId: 1
+  },
   amount: new Prisma.Decimal('4.31247724'),
-  timestamp: 1657130467
+  timestamp: 1657130467,
+  prices: [
+    {
+      priceId: 1,
+      transactionId: 1,
+      createdAt: new Date('2022-11-02T15:18:42.000Z'),
+      updatedAt: new Date('2022-11-02T15:18:42.000Z'),
+      price: {
+        id: 1,
+        value: new Prisma.Decimal('0.00001759'),
+        createdAt: new Date('2022-11-02T15:18:42.000Z'),
+        updatedAt: new Date('2022-11-02T15:18:42.000Z'),
+        timestamp: 1606632380,
+        networkId: 1,
+        quoteId: 1
+      }
+    }
+  ]
 }
 
 export const mockedTransactionList = [

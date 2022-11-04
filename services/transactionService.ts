@@ -5,6 +5,7 @@ import grpcService from 'services/grpcService'
 import { parseAddress } from 'utils/validators'
 import { satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from 'utils/index'
 import { fetchAddressBySubstring } from 'services/addressService'
+import { syncTransactionPrices, SyncTransactionPricesInput } from 'services/priceService'
 import _ from 'lodash'
 import { RESPONSE_MESSAGES, FETCH_N, FETCH_DELAY } from 'constants/index'
 import xecaddr from 'xecaddrjs'
@@ -120,6 +121,7 @@ export async function syncTransactionsForAddress (addressString: string): Promis
   const address = await fetchAddressBySubstring(addressString)
   let newTransactionsCount = -1
   let seenTransactionsCount = 0
+  let priceSyncDataArray: SyncTransactionPricesInput[] = []
   while (newTransactionsCount !== 0) {
     const nextTransactions = (await grpcService.getAddress({
       address: address.address,
@@ -128,9 +130,19 @@ export async function syncTransactionsForAddress (addressString: string): Promis
     })).confirmedTransactionsList
     newTransactionsCount = nextTransactions.length
     seenTransactionsCount += newTransactionsCount
-    await upsertManyTransactions(nextTransactions, address)
+    const insertedTransactions = await upsertManyTransactions(nextTransactions, address)
+    priceSyncDataArray = [...priceSyncDataArray, ...insertedTransactions.map((t: TransactionWithAddressAndPrices) => {
+      return {
+        networkId: t.address.networkId,
+        timestamp: t.timestamp,
+        transactionId: t.id
+      }
+    })]
     await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
   }
+  await Promise.all(priceSyncDataArray.map(async (syncTransactionPricesInput) => {
+    return await syncTransactionPrices(syncTransactionPricesInput)
+  }))
   return true
 }
 
