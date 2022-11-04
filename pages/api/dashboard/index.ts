@@ -3,7 +3,7 @@ import * as addressService from 'services/addressService'
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID } from 'constants/index'
-import { Prisma, Transaction } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
 
@@ -44,14 +44,14 @@ const getChartLabels = function (n: number, periodString: string, formatString =
   return [...new Array(n)].map((i, idx) => moment().startOf('day').subtract(idx, periodString as DurationInputArg2).format(formatString)).reverse()
 }
 
-const getChartRevenuePaymentData = function (n: number, periodString: string, transactions: Transaction[]): any {
+const getChartRevenuePaymentData = function (n: number, periodString: string, paymentList: Payment[]): any {
   const revenueArray: Prisma.Decimal[] = []
   const paymentsArray: number[] = []
   const _ = [...new Array(n)]
-  _.forEach((i, idx) => {
+  _.forEach((_, idx) => {
     const lowerThreshold = moment().startOf(periodString === 'months' ? 'month' : 'day').subtract(idx, periodString as DurationInputArg2)
     const upperThreshold = moment().endOf(periodString === 'months' ? 'month' : 'day').subtract(idx, periodString as DurationInputArg2)
-    const periodTransactionAmountArray = filterLastTransactions(lowerThreshold, upperThreshold, transactions).map((t) => t.amount)
+    const periodTransactionAmountArray = filterLastPayments(lowerThreshold, upperThreshold, paymentList).map((p) => p.value)
     const revenue = periodTransactionAmountArray.reduce((a, b) => {
       return a.plus(b)
     }, new Prisma.Decimal(0))
@@ -65,9 +65,9 @@ const getChartRevenuePaymentData = function (n: number, periodString: string, tr
   }
 }
 
-const filterLastTransactions = function (lowerThreshold: moment.Moment, upperThreshold: moment.Moment, transactions: Transaction[]): Transaction[] {
-  return transactions.filter((t) => {
-    const tMoment = moment(t.timestamp * 1000)
+const filterLastPayments = function (lowerThreshold: moment.Moment, upperThreshold: moment.Moment, paymentList: Payment[]): Payment[] {
+  return paymentList.filter((p) => {
+    const tMoment = moment(p.timestamp * 1000)
     return lowerThreshold < tMoment && tMoment < upperThreshold
   })
 }
@@ -89,8 +89,8 @@ interface ChartColor {
   payments: string
 }
 
-const getPeriodData = function (n: number, periodString: string, transactions: Transaction[], borderColor: ChartColor, formatString = 'M/D'): PeriodData {
-  const revenuePaymentData = getChartRevenuePaymentData(n, periodString, transactions)
+const getPeriodData = function (n: number, periodString: string, paymentList: Payment[], borderColor: ChartColor, formatString = 'M/D'): PeriodData {
+  const revenuePaymentData = getChartRevenuePaymentData(n, periodString, paymentList)
   const revenue = getChartData(n, periodString, revenuePaymentData.revenue, borderColor.revenue, formatString)
   const payments = getChartData(n, periodString, revenuePaymentData.payments, borderColor.payments, formatString)
 
@@ -102,8 +102,8 @@ const getPeriodData = function (n: number, periodString: string, transactions: T
   }
 }
 
-const getAllMonths = function (transactions: any[]): AllMonths {
-  const oldestdate = transactions.reduce(
+const getAllMonths = function (paymentList: Payment[]): AllMonths {
+  const oldestdate = paymentList.reduce(
     (prev, cur) => (prev?.timestamp < cur.timestamp ? prev : cur),
     { timestamp: Date.now() / 1000 }
   )
@@ -114,6 +114,11 @@ const getAllMonths = function (transactions: any[]): AllMonths {
   const days = hours / 24
   const months = Math.ceil(days / 30)
   return { months }
+}
+
+interface Payment {
+  timestamp: number
+  value: Prisma.Decimal
 }
 
 const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
@@ -127,23 +132,28 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
   const BCHPrice = prices.filter((price) => price.quoteId === USD_QUOTE_ID && price.networkId === BCH_NETWORK_ID)[0].value
   const XECPrice = prices.filter((price) => price.quoteId === USD_QUOTE_ID && price.networkId === XEC_NETWORK_ID)[0].value
 
-  const incomingTransactionsValue = BCHTransactions.map((t) => {
-    t.amount = t.amount.times(BCHPrice)
-    return t
-  }).concat(XECTransactions.map((t) => {
-    t.amount = t.amount.times(XECPrice)
-    return t
-  })).filter((t) => {
-    return t.amount > 0
+  let paymentList: Payment[] = []
+  BCHTransactions.forEach((t) => {
+    paymentList.push({
+      timestamp: t.timestamp,
+      value: t.amount.times(BCHPrice)
+    })
   })
+  XECTransactions.forEach((t) => {
+    paymentList.push({
+      timestamp: t.timestamp,
+      value: t.amount.times(XECPrice)
+    })
+  })
+  paymentList = paymentList.filter((p) => p.value > new Prisma.Decimal(0))
 
-  const totalRevenue = incomingTransactionsValue.map((t) => t.amount).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
-  const allmonths: AllMonths = getAllMonths(incomingTransactionsValue)
+  const totalRevenue = paymentList.map((p) => p.value).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
+  const allmonths: AllMonths = getAllMonths(paymentList)
 
-  const thirtyDays: PeriodData = getPeriodData(30, 'days', incomingTransactionsValue, { revenue: '#66fe91', payments: '#669cfe' })
-  const sevenDays: PeriodData = getPeriodData(7, 'days', incomingTransactionsValue, { revenue: '#66fe91', payments: '#669cfe' })
-  const year: PeriodData = getPeriodData(12, 'months', incomingTransactionsValue, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM')
-  const all: PeriodData = getPeriodData(allmonths.months, 'months', incomingTransactionsValue, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM YYYY')
+  const thirtyDays: PeriodData = getPeriodData(30, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
+  const sevenDays: PeriodData = getPeriodData(7, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
+  const year: PeriodData = getPeriodData(12, 'months', paymentList, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM')
+  const all: PeriodData = getPeriodData(allmonths.months, 'months', paymentList, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM YYYY')
 
   return {
     thirtyDays,
@@ -152,7 +162,7 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
     all,
     total: {
       revenue: totalRevenue,
-      payments: incomingTransactionsValue.length,
+      payments: paymentList.length,
       buttons: buttonsCount
     }
   }
