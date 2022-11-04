@@ -159,7 +159,6 @@ body[data-theme='dark'] button {
 }
 
 .table-button a {
-  /* background-color: var(--primary-bg-color); */
   border: 1px solid var(--primary-bg-color);
   padding: 2px 10px;
   border-radius: 100px;
@@ -203,4 +202,72 @@ body[data-theme='dark'] .table-button a {
 
 body[data-theme='dark'] .table-eye {
   filter: invert(1);
+}
+
+.no-payments {
+  background-color: var(--secondary-bg-color);
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 25px;
+}
+
+.table-navigation-ctn {
+  width: 100%;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.table-navigation-ctn button {
+  padding: 4px 8px;
+  background-color: var(--secondary-bg-color);
+  margin: 0 2px;
+  font-size: 14px;
+}
+
+.table-navigation-ctn button:hover {
+  background-color: var(--accent-color);
+  filter: none;
+}
+
+.pageof-table {
+  margin: 0 10px;
+  font-size: 14px;
+}
+
+.table-select-ctn {
+  margin-left: 10px;
+  width: 90px;
+}
+
+.table-select-ctn select {
+  width: 100%;
+  font-size: 14px;
+  margin: 0;
+  padding: 4px 10px;
+  border: none;
+  background-color: var(--secondary-bg-color);
+}
+
+@media (max-width: 960px) {
+  .paybutton-table-ctn {
+    padding: 5px;
+    overflow-x: scroll;
+  }
+
+  .paybutton-table-ctn td {
+    font-size: 11px !important;
+    padding: 4px 4px;
+  }
+
+  .table-button a {
+    padding: 2px 6px;
+    font-size: 8px;
+  }
+
+  .paybutton-table-ctn td:first-child {
+    min-width: 100px;
+  }
 }

@@ -68,49 +68,20 @@ const TableContainer = ({ columns, data }) => {
       </table>
     </div>
 
-<div>
- 
+<div className='table-navigation-ctn'>
     <button
-      color="primary"
       onClick={() => gotoPage(0)}
       disabled={!canPreviousPage}
     >
       {"<<"}
     </button>
     <button
-      color="primary"
       onClick={previousPage}
       disabled={!canPreviousPage}
     >
       {"<"}
     </button>
-
-  <div>
-    Page{" "}
-    <strong>
-      {pageIndex + 1} of {pageOptions.length}
-    </strong>
-  </div>
-  {/* <div>
-    <input
-      type="number"
-      min={1}
-      style={{ width: 70 }}
-      max={pageOptions.length}
-      defaultValue={pageIndex + 1}
-      onChange={onChangeInInput}
-    />
-  </div> */}
-  <div>
-    <select value={pageSize} onChange={onChangeInSelect}>
-      {[10, 20, 30, 40, 50].map(pageSize => (
-        <option key={pageSize} value={pageSize}>
-          Show {pageSize}
-        </option>
-      ))}
-    </select>
-  </div>
-  <div>
+    <div className='pageof-table'>Page {pageIndex + 1} of {pageOptions.length}</div>
     <button color="primary" onClick={nextPage} disabled={!canNextPage}>
       {">"}
     </button>
@@ -121,7 +92,16 @@ const TableContainer = ({ columns, data }) => {
     >
       {">>"}
     </button>
-  </div>
+
+   <div className='table-select-ctn'>
+      <select value={pageSize} onChange={onChangeInSelect}>
+        {[10, 20, 30, 40, 50].map(pageSize => (
+          <option key={pageSize} value={pageSize}>
+            Show {pageSize}
+          </option>
+        ))}
+      </select>
+    </div>
   </div>
   </>
   )

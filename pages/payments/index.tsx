@@ -48,18 +48,13 @@ interface PaybuttonsProps {
 
 export default function Payments ({ userId }: PaybuttonsProps): React.ReactElement {
   const [data, setData] = useState([])
-  const [buttons, setButtons] = useState([])
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
       const response = await fetch('api/dashboard')
-      const buttons = await fetch(`/api/paybuttons?userId=${userId}`)
-      const buttonsbody = await buttons.json()
-      console.log(buttonsbody.reduce((addr) => addr.name))
       const body = await response.json()
       const payments = body.alltransactions
       setData(payments)
-      setButtons(buttonsbody)
     }
     fetchData().catch(console.error)
   }, [])
@@ -70,7 +65,7 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
         Header: 'Date',
         accessor: 'timestamp',
         Cell: (cellProps) => {
-          return <div style={{ fontSize: '12px' }}>{moment(cellProps.cell.value * 1000).format('lll')}</div>
+          return <div className='table-date'>{moment(cellProps.cell.value * 1000).format('lll')}</div>
         }
       },
       {
@@ -95,12 +90,11 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
       },
       {
         Header: () => (<div style={{ textAlign: 'center' }}>Button</div>),
-        accessor: 'addressId',
+        accessor: 'button',
         Cell: (cellProps) => {
-          console.log(cellProps.value)
           return (
             <div style={{ textAlign: 'center' }} className="table-button">
-              <Link href={`/button/1`}>Button Name</Link>
+              <Link href={`/button/${cellProps.cell.value.id}`}>{cellProps.cell.value.name}</Link>
             </div>
 
           )
@@ -128,7 +122,7 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
   return (
     <ThirdPartyEmailPasswordAuthNoSSR>
       <h2>Payments</h2>
-      <TableContainer columns={columns} data={data} />
+      {data.length === 0 ? <div className='no-payments'>No Payments to show yet</div> : <TableContainer columns={columns} data={data} />}
     </ThirdPartyEmailPasswordAuthNoSSR>
   )
 }

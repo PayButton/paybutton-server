@@ -119,7 +119,7 @@ const getAllMonths = function (transactions: any[]): AllMonths {
 }
 
 const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
-  const buttonsCount = (await paybuttonService.fetchPaybuttonArrayByUserId(userId)).length
+  const buttonsCount = (await paybuttonService.fetchPaybuttonArrayByUserId(userId))
   const addresses = await addressService.fetchAllUserAddresses(userId, true)
   const XECAddresses = addresses.filter((addr) => addr.networkId === XEC_NETWORK_ID)
   const BCHAddresses = addresses.filter((addr) => addr.networkId === BCH_NETWORK_ID)
@@ -128,10 +128,12 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
   const incomingTransactionsInUSD = BCHTransactions.map((t) => {
     t.amount = t.amount.times(DUMMY_BCH_PRICE)
     t.network = 'BCH'
+    t.button = buttonsCount.find(buttons => buttons.addresses.find(add => add.address.id === t.addressId))
     return t
   }).concat(XECTransactions.map((t) => {
     t.amount = t.amount.times(DUMMY_XEC_PRICE)
     t.network = 'XEC'
+    t.button = buttonsCount.find(buttons => buttons.addresses.find(add => add.address.id === t.addressId))
     return t
   })).filter((t) => {
     return t.amount > 0
@@ -155,7 +157,7 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
     total: {
       revenue: totalRevenue,
       payments: incomingTransactionsInUSD.length,
-      buttons: buttonsCount
+      buttons: buttonsCount.length
     }
   }
 }
