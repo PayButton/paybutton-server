@@ -225,6 +225,7 @@ body[data-theme='dark'] .table-eye {
   background-color: var(--secondary-bg-color);
   margin: 0 2px;
   font-size: 14px;
+  color: var(--primary-text-color) !important;
 }
 
 .table-navigation-ctn button:hover {
@@ -249,12 +250,25 @@ body[data-theme='dark'] .table-eye {
   padding: 4px 10px;
   border: none;
   background-color: var(--secondary-bg-color);
+  color: var(--primary-text-color) !important;
+  background-image: linear-gradient(
+      45deg,
+      transparent 49%,
+      var(--primary-text-color) 51%
+    ),
+    linear-gradient(135deg, var(--primary-text-color) 51%, transparent 49%);
 }
 
 @media (max-width: 960px) {
   .paybutton-table-ctn {
     padding: 5px;
     overflow-x: scroll;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .paybutton-table-ctn::-webkit-scrollbar {
+    display: none;
   }
 
   .paybutton-table-ctn td {
