@@ -16,7 +16,7 @@ describe('', () => {
     })
   })
   it('Ignore price API fail response', async () => {
-    appInfo.priceAPIURL = undefined
+    appInfo.priceAPIURL = ''
     expect.assertions(1)
     try {
       await priceService.syncTransactionPrices({
