@@ -1,8 +1,7 @@
 import * as paybuttonService from 'services/paybuttonService'
 import * as addressService from 'services/addressService'
 import * as transactionService from 'services/transactionService'
-import * as priceService from 'services/priceService'
-import { XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID } from 'constants/index'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
@@ -41,7 +40,7 @@ interface DashboardData {
 }
 
 const getChartLabels = function (n: number, periodString: string, formatString = 'M/D'): string[] {
-  return [...new Array(n)].map((i, idx) => moment().startOf('day').subtract(idx, periodString as DurationInputArg2).format(formatString)).reverse()
+  return [...new Array(n)].map((_, idx) => moment().startOf('day').subtract(idx, periodString as DurationInputArg2).format(formatString)).reverse()
 }
 
 const getChartRevenuePaymentData = function (n: number, periodString: string, paymentList: Payment[]): any {
@@ -128,23 +127,22 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
   const BCHAddressIds = addresses.filter((addr) => addr.networkId === BCH_NETWORK_ID).map((addr) => addr.id)
   const XECTransactions = await transactionService.fetchAddressListTransactions(XECAddressIds)
   const BCHTransactions = await transactionService.fetchAddressListTransactions(BCHAddressIds)
-  const prices = await priceService.getCurrentPrices()
-  const BCHPrice = prices.filter((price) => price.quoteId === USD_QUOTE_ID && price.networkId === BCH_NETWORK_ID)[0].value
-  const XECPrice = prices.filter((price) => price.quoteId === USD_QUOTE_ID && price.networkId === XEC_NETWORK_ID)[0].value
 
   let paymentList: Payment[] = []
-  BCHTransactions.forEach((t) => {
+  for (const t of BCHTransactions) {
+    const BCHValue = (await transactionService.getTransactionValue(t)).usd
     paymentList.push({
       timestamp: t.timestamp,
-      value: t.amount.times(BCHPrice)
+      value: BCHValue
     })
-  })
-  XECTransactions.forEach((t) => {
+  }
+  for (const t of XECTransactions) {
+    const XECValue = (await transactionService.getTransactionValue(t)).usd
     paymentList.push({
       timestamp: t.timestamp,
-      value: t.amount.times(XECPrice)
+      value: XECValue
     })
-  })
+  }
   paymentList = paymentList.filter((p) => p.value > new Prisma.Decimal(0))
 
   const totalRevenue = paymentList.map((p) => p.value).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
