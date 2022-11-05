@@ -32,6 +32,7 @@ interface DashboardData {
   year: PeriodData
   sevenDays: PeriodData
   all: PeriodData
+  paymentList: Payment[]
   total: {
     revenue: Prisma.Decimal
     payments: number
@@ -115,13 +116,19 @@ const getAllMonths = function (paymentList: Payment[]): AllMonths {
   return { months }
 }
 
+interface ButtonDisplayData {
+  name: string
+  id: number,
+}
+
 interface Payment {
   timestamp: number
   value: Prisma.Decimal
+  buttonDisplayDataList: ButtonDisplayData[]
 }
 
 const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
-  const buttonsCount = (await paybuttonService.fetchPaybuttonArrayByUserId(userId)).length
+  const buttons = await paybuttonService.fetchPaybuttonArrayByUserId(userId)
   const addresses = await addressService.fetchAllUserAddresses(userId, true)
   const XECAddressIds = addresses.filter((addr) => addr.networkId === XEC_NETWORK_ID).map((addr) => addr.id)
   const BCHAddressIds = addresses.filter((addr) => addr.networkId === BCH_NETWORK_ID).map((addr) => addr.id)
@@ -133,14 +140,27 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
     const BCHValue = (await transactionService.getTransactionValue(t)).usd
     paymentList.push({
       timestamp: t.timestamp,
-      value: BCHValue
+      value: BCHValue,
+      buttonDisplayDataList: buttons.filter(button => button.addresses.some(add => add.address.id === t.addressId)).map(
+        (b) => { return {
+          name: b.name,
+          id: b.id
+        }}
+      )
+
     })
   }
   for (const t of XECTransactions) {
     const XECValue = (await transactionService.getTransactionValue(t)).usd
     paymentList.push({
       timestamp: t.timestamp,
-      value: XECValue
+      value: XECValue,
+      buttonDisplayDataList: buttons.filter(button => button.addresses.some(add => add.address.id === t.addressId)).map(
+        (b) => { return {
+          name: b.name,
+          id: b.id
+        }}
+      )
     })
   }
   paymentList = paymentList.filter((p) => p.value > new Prisma.Decimal(0))
@@ -158,10 +178,11 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
     sevenDays,
     year,
     all,
+    paymentList,
     total: {
       revenue: totalRevenue,
       payments: paymentList.length,
-      buttons: buttonsCount
+      buttons: buttons.length
     }
   }
 }

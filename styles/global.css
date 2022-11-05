@@ -70,3 +70,218 @@ body[data-theme='dark'] button {
   background-color: var(--accent-color);
   color: var(--secondary-bg-color) !important;
 }
+
+.paybutton-table-ctn {
+  background-color: var(--secondary-bg-color);
+  width: 100%;
+  padding: 25px;
+  border-radius: 10px;
+  margin-top: 25px;
+  max-width: 1400px;
+}
+
+.paybutton-table-ctn table {
+  width: 100%;
+  display: table;
+  margin: 0;
+}
+
+.paybutton-table-ctn td,
+.paybutton-table-ctn th {
+  border: none;
+  font-size: 15px;
+}
+
+.paybutton-table-ctn thead {
+  padding: 20px 0;
+}
+
+.paybutton-table-ctn thead th {
+  position: relative;
+  background-color: var(--primary-bg-color);
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.paybutton-table-ctn tr:nth-child(even) {
+  background: none;
+}
+
+.paybutton-table-ctn thead th:first-child,
+.paybutton-table-ctn tbody td:first-child {
+  border-radius: 10px 0 0 10px;
+  padding-left: 15px;
+}
+
+.paybutton-table-ctn thead th:last-child,
+.paybutton-table-ctn tbody td:last-child {
+  border-radius: 0 10px 10px 0;
+  text-align: right;
+  padding-right: 15px;
+}
+
+.paybutton-table-ctn .header-spacer {
+  height: 10px;
+}
+
+.paybutton-table-ctn tr:hover {
+  background: #f4f4f4;
+}
+
+.table-sort-arrow-down,
+.table-sort-arrow-up {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 5px 4px 0 4px;
+  border-color: var(--primary-text-color) transparent transparent transparent;
+  position: absolute;
+  right: 0px;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  opacity: 0.5;
+}
+
+.table-sort-arrow-up {
+  transform: rotate(180deg);
+}
+
+.table-icon-ctn {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.table-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.table-button a {
+  border: 1px solid var(--primary-bg-color);
+  padding: 2px 10px;
+  border-radius: 100px;
+  display: inline-block;
+  font-size: 12px;
+  word-break: keep-all;
+  margin: 0;
+  box-sizing: border-box;
+  transition: all ease-in-out 200ms;
+}
+
+.table-button a:hover {
+  background-color: var(--accent-color);
+}
+
+.table-eye-ctn {
+  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.table-eye {
+  width: 20px;
+  opacity: 0.6;
+}
+
+.table-eye-ctn:hover .table-eye {
+  opacity: 1;
+  filter: invert(60%) sepia(14%) saturate(5479%) hue-rotate(195deg)
+    brightness(100%) contrast(102%);
+}
+
+body[data-theme='dark'] .paybutton-table-ctn tr:hover {
+  background: #383838;
+}
+
+body[data-theme='dark'] .table-button a {
+  border-color: #515050;
+}
+
+body[data-theme='dark'] .table-eye {
+  filter: invert(1);
+}
+
+.no-payments {
+  background-color: var(--secondary-bg-color);
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 25px;
+}
+
+.table-navigation-ctn {
+  width: 100%;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.table-navigation-ctn button {
+  padding: 4px 8px;
+  background-color: var(--secondary-bg-color);
+  margin: 0 2px;
+  font-size: 14px;
+  color: var(--primary-text-color) !important;
+}
+
+.table-navigation-ctn button:hover {
+  background-color: var(--accent-color);
+  filter: none;
+}
+
+.pageof-table {
+  margin: 0 10px;
+  font-size: 14px;
+}
+
+.table-select-ctn {
+  margin-left: 10px;
+  width: 90px;
+}
+
+.table-select-ctn select {
+  width: 100%;
+  font-size: 14px;
+  margin: 0;
+  padding: 4px 10px;
+  border: none;
+  background-color: var(--secondary-bg-color);
+  color: var(--primary-text-color) !important;
+  background-image: linear-gradient(
+      45deg,
+      transparent 49%,
+      var(--primary-text-color) 51%
+    ),
+    linear-gradient(135deg, var(--primary-text-color) 51%, transparent 49%);
+}
+
+@media (max-width: 960px) {
+  .paybutton-table-ctn {
+    padding: 5px;
+    overflow-x: scroll;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .paybutton-table-ctn::-webkit-scrollbar {
+    display: none;
+  }
+
+  .paybutton-table-ctn td {
+    font-size: 11px !important;
+    padding: 4px 4px;
+  }
+
+  .table-button a {
+    padding: 2px 6px;
+    font-size: 8px;
+  }
+
+  .paybutton-table-ctn td:first-child {
+    min-width: 100px;
+  }
+}
