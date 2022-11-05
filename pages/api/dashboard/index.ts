@@ -34,6 +34,7 @@ interface DashboardData {
   year: PeriodData
   sevenDays: PeriodData
   all: PeriodData
+  alltransactions: any[]
   total: {
     revenue: Prisma.Decimal
     payments: number
@@ -118,7 +119,7 @@ const getAllMonths = function (transactions: any[]): AllMonths {
 }
 
 const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
-  const buttonsCount = (await paybuttonService.fetchPaybuttonArrayByUserId(userId)).length
+  const buttons = (await paybuttonService.fetchPaybuttonArrayByUserId(userId))
   const addresses = await addressService.fetchAllUserAddresses(userId, true)
   const XECAddresses = addresses.filter((addr) => addr.networkId === XEC_NETWORK_ID)
   const BCHAddresses = addresses.filter((addr) => addr.networkId === BCH_NETWORK_ID)
@@ -126,9 +127,13 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
   const XECTransactions = Array.prototype.concat.apply([], XECAddresses.map((addr) => addr.transactions))
   const incomingTransactionsInUSD = BCHTransactions.map((t) => {
     t.amount = t.amount.times(DUMMY_BCH_PRICE)
+    t.network = 'BCH'
+    t.button = buttons.find(button => button.addresses.find(add => add.address.id === t.addressId))
     return t
   }).concat(XECTransactions.map((t) => {
     t.amount = t.amount.times(DUMMY_XEC_PRICE)
+    t.network = 'XEC'
+    t.button = buttons.find(button => button.addresses.find(add => add.address.id === t.addressId))
     return t
   })).filter((t) => {
     return t.amount > 0
@@ -136,6 +141,7 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
 
   const totalRevenue = incomingTransactionsInUSD.map((t) => t.amount).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
   const allmonths: AllMonths = getAllMonths(incomingTransactionsInUSD)
+  const alltransactions = incomingTransactionsInUSD
 
   const thirtyDays: PeriodData = getPeriodData(30, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
   const sevenDays: PeriodData = getPeriodData(7, 'days', incomingTransactionsInUSD, { revenue: '#66fe91', payments: '#669cfe' })
@@ -147,10 +153,11 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
     sevenDays,
     year,
     all,
+    alltransactions,
     total: {
       revenue: totalRevenue,
       payments: incomingTransactionsInUSD.length,
-      buttons: buttonsCount
+      buttons: buttons.length
     }
   }
 }
