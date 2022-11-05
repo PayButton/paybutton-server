@@ -9,7 +9,7 @@ const mockedAxios = axios as jest.Mocked<typeof axios>
 describe('', () => {
   it('Ignore price API fail response', async () => {
     mockedAxios.get.mockResolvedValue({ data: { success: false } })
-    await priceService.syncTransactionPrices({
+    await priceService.syncTransactionPriceValues({
       networkId: 1,
       transactionId: 1,
       timestamp: 1
@@ -19,7 +19,7 @@ describe('', () => {
     appInfo.priceAPIURL = ''
     expect.assertions(1)
     try {
-      await priceService.syncTransactionPrices({
+      await priceService.syncTransactionPriceValues({
         networkId: 1,
         transactionId: 1,
         timestamp: 1

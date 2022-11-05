@@ -5,9 +5,10 @@ import grpcService from 'services/grpcService'
 import { parseAddress } from 'utils/validators'
 import { satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from 'utils/index'
 import { fetchAddressBySubstring } from 'services/addressService'
-import { syncTransactionPrices, SyncTransactionPricesInput } from 'services/priceService'
+import { syncPricesFromTransactionList, QuoteValues } from 'services/priceService'
 import _ from 'lodash'
-import { RESPONSE_MESSAGES, FETCH_N, FETCH_DELAY } from 'constants/index'
+
+import { RESPONSE_MESSAGES, FETCH_N, FETCH_DELAY, USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, BCH_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD, BCH_TIMESTAMP_THRESHOLD } from 'constants/index'
 import xecaddr from 'xecaddrjs'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
@@ -40,6 +41,23 @@ export async function getTransactionAmount (transaction: BCHTransaction.AsObject
     satoshis,
     addressFormat
   )
+}
+
+export async function getTransactionValue (transaction: TransactionWithAddressAndPrices): Promise<QuoteValues> {
+  const ret: QuoteValues = {
+    usd: new Prisma.Decimal(0),
+    cad: new Prisma.Decimal(0)
+  }
+  if (transaction.prices.length !== 2) throw new Error(`txid${transaction.id}, ts${transaction.timestamp} ${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}`)
+  for (const p of transaction.prices) {
+    if (p.price.quoteId === USD_QUOTE_ID) {
+      ret.usd = ret.usd.plus(p.price.value.times(transaction.amount))
+    }
+    if (p.price.quoteId === CAD_QUOTE_ID) {
+      ret.cad = ret.cad.plus(p.price.value.times(transaction.amount))
+    }
+  }
+  return ret
 }
 
 const includeAddressAndPrices = {
@@ -131,28 +149,27 @@ export async function syncTransactionsForAddress (addressString: string): Promis
   const address = await fetchAddressBySubstring(addressString)
   let newTransactionsCount = -1
   let seenTransactionsCount = 0
-  let priceSyncDataArray: SyncTransactionPricesInput[] = []
+  let insertedTransactions: TransactionWithAddressAndPrices[] = []
   while (newTransactionsCount !== 0) {
-    const nextTransactions = (await grpcService.getAddress({
+    let nextTransactions = (await grpcService.getAddress({
       address: address.address,
       nbFetch: FETCH_N,
       nbSkip: seenTransactionsCount
     })).confirmedTransactionsList
+    // remove transactions older than the networks
+    nextTransactions = nextTransactions.filter((t) => {
+      return (
+        (t.timestamp >= XEC_TIMESTAMP_THRESHOLD && address.networkId === XEC_NETWORK_ID) ||
+        (t.timestamp >= BCH_TIMESTAMP_THRESHOLD && address.networkId === BCH_NETWORK_ID)
+      )
+    })
     newTransactionsCount = nextTransactions.length
     seenTransactionsCount += newTransactionsCount
-    const insertedTransactions = await upsertManyTransactions(nextTransactions, address)
-    priceSyncDataArray = [...priceSyncDataArray, ...insertedTransactions.map((t: TransactionWithAddressAndPrices) => {
-      return {
-        networkId: t.address.networkId,
-        timestamp: t.timestamp,
-        transactionId: t.id
-      }
-    })]
+    const newInsertedTransactions = await upsertManyTransactions(nextTransactions, address)
+    insertedTransactions = [...insertedTransactions, ...newInsertedTransactions]
     await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
   }
-  await Promise.all(priceSyncDataArray.map(async (syncTransactionPricesInput) => {
-    return await syncTransactionPrices(syncTransactionPricesInput)
-  }))
+  await syncPricesFromTransactionList(insertedTransactions)
   return true
 }
 
