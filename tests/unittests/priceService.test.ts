@@ -15,7 +15,7 @@ describe('', () => {
       timestamp: 1
     })
   })
-  it('Ignore price API fail response', async () => {
+  it('Fail if no PRICE_API_URL', async () => {
     appInfo.priceAPIURL = ''
     expect.assertions(1)
     try {
