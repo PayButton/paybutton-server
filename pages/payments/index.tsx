@@ -6,12 +6,14 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import TableContainer from '../../components/TableContainer'
+import { ButtonDisplayData } from '../api/dashboard/index'
 import Image from 'next/image'
 import Link from 'next/link'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import { FormatNumber } from 'utils/general'
+import { XEC_NETWORK_ID } from 'constants/index'
 import moment from 'moment'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
@@ -53,7 +55,7 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
     const fetchData = async (): Promise<void> => {
       const response = await fetch('api/dashboard')
       const body = await response.json()
-      const payments = body.alltransactions
+      const payments = body.paymentList
       setData(payments)
     }
     fetchData().catch(console.error)
@@ -70,32 +72,34 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
       },
       {
         Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
-        accessor: 'amount',
+        accessor: 'value',
         Cell: (cellProps) => {
           return <div style={{ textAlign: 'right', fontWeight: '600' }}>${FormatNumber(cellProps.cell.value, 'dollars')}</div>
         }
       },
       {
         Header: () => (<div style={{ textAlign: 'center' }}>Network</div>),
-        accessor: 'network',
+        accessor: 'networkId',
         Cell: (cellProps) => {
           return (
             <div className='table-icon-ctn'>
               <div className='table-icon'>
-              {cellProps.cell.value === 'XEC' ? <Image src={XECIcon} alt='XEC' /> : <Image src={BCHIcon} alt='BCH' />}
+              {cellProps.cell.value === XEC_NETWORK_ID ? <Image src={XECIcon} alt='XEC' /> : <Image src={BCHIcon} alt='BCH' />}
               </div>
             </div>
           )
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'center' }}>Button</div>),
-        accessor: 'button',
+        Header: () => (<div style={{ textAlign: 'center' }}>Buttons</div>),
+        accessor: 'buttonDisplayDataList',
         Cell: (cellProps) => {
           return (
-            <div style={{ textAlign: 'center' }} className="table-button">
-              <Link href={`/button/${cellProps.cell.value.id}`}>{cellProps.cell.value.name}</Link>
-            </div>
+            <> {cellProps.cell.value.map((buttonDisplayData: ButtonDisplayData) =>
+              <div style={{ textAlign: 'center' }} className="table-button">
+              <Link href={`/button/${buttonDisplayData.id}`}>{buttonDisplayData.name}</Link>
+              </div>
+            )} </>
 
           )
         }
@@ -105,9 +109,9 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
         accessor: 'hash',
         disableSortBy: true,
         Cell: (cellProps) => {
-          const url = cellProps.cell.row.values.network === 'XEC' ? 'https://explorer.e.cash/tx/' : 'https://blockchair.com/bitcoin-cash/transaction/'
+          const url = cellProps.cell.row.values.networkId === XEC_NETWORK_ID ? 'https://explorer.e.cash/tx/' : 'https://blockchair.com/bitcoin-cash/transaction/'
           return (
-            <a href={url + cellProps.cell.value} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
+            <a href={url.concat(cellProps.cell.value)} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
               <div className="table-eye">
                 <Image src={EyeIcon} alt='View on explorer' />
               </div>

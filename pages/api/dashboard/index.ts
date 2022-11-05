@@ -116,14 +116,16 @@ const getAllMonths = function (paymentList: Payment[]): AllMonths {
   return { months }
 }
 
-interface ButtonDisplayData {
+export interface ButtonDisplayData {
   name: string
-  id: number,
+  id: number
 }
 
 interface Payment {
   timestamp: number
   value: Prisma.Decimal
+  networkId: number
+  hash: string
   buttonDisplayDataList: ButtonDisplayData[]
 }
 
@@ -141,11 +143,15 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
     paymentList.push({
       timestamp: t.timestamp,
       value: BCHValue,
+      networkId: t.address.networkId,
+      hash: t.hash,
       buttonDisplayDataList: buttons.filter(button => button.addresses.some(add => add.address.id === t.addressId)).map(
-        (b) => { return {
-          name: b.name,
-          id: b.id
-        }}
+        (b) => {
+          return {
+            name: b.name,
+            id: b.id
+          }
+        }
       )
 
     })
@@ -155,11 +161,15 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
     paymentList.push({
       timestamp: t.timestamp,
       value: XECValue,
+      networkId: t.address.networkId,
+      hash: t.hash,
       buttonDisplayDataList: buttons.filter(button => button.addresses.some(add => add.address.id === t.addressId)).map(
-        (b) => { return {
-          name: b.name,
-          id: b.id
-        }}
+        (b) => {
+          return {
+            name: b.name,
+            id: b.id
+          }
+        }
       )
     })
   }
