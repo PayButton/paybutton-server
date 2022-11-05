@@ -125,7 +125,7 @@ export async function createTransactionPrices (params: CreateAllPricesFromTransa
 }
 
 export async function syncTransactionPrices (params: SyncTransactionPricesInput): Promise<void> {
-  if (appInfo.priceAPIURL === undefined) {
+  if (appInfo.priceAPIURL === '') {
     throw new Error(RESPONSE_MESSAGES.MISSING_PRICE_API_URL_400.message)
   }
 
