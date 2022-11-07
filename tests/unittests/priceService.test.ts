@@ -10,9 +10,9 @@ jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
 
 describe('Sync price from transaction', () => {
-  beforeAll(async () => {
+  beforeEach(async () => {
     prismaMock.price.findMany.mockResolvedValue([])
-    prisma.price.findUnique = prismaMock.price.findUnique
+    prisma.price.findMany = prismaMock.price.findMany
   })
   it('Ignore price API fail response', async () => {
     mockedAxios.get.mockResolvedValue({ data: { success: false } })
@@ -40,7 +40,7 @@ describe('Sync price from transaction', () => {
   it('Undefined if price already exists', async () => {
     mockedAxios.get.mockResolvedValue({ data: { success: false } })
     prismaMock.price.findMany.mockResolvedValue([mockedUSDPrice, mockedCADPrice])
-    prisma.price.findUnique = prismaMock.price.findUnique
+    prisma.price.findMany = prismaMock.price.findMany
     const res = await priceService.syncTransactionPriceValues({
       networkId: 1,
       transactionId: 1,
