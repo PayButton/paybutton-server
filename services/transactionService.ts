@@ -145,7 +145,7 @@ export async function upsertManyTransactions (transactions: BCHTransaction.AsObj
   return ret.filter((t) => t !== undefined) as TransactionWithAddressAndPrices[]
 }
 
-export async function syncTransactionsForAddress (addressString: string): Promise<boolean> {
+export async function syncTransactionsForAddress (addressString: string): Promise<TransactionWithAddressAndPrices[]> {
   const address = await fetchAddressBySubstring(addressString)
   let newTransactionsCount = -1
   let seenTransactionsCount = 0
@@ -169,8 +169,7 @@ export async function syncTransactionsForAddress (addressString: string): Promis
     insertedTransactions = [...insertedTransactions, ...newInsertedTransactions]
     await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
   }
-  await syncPricesFromTransactionList(insertedTransactions)
-  return true
+  return insertedTransactions
 }
 
 export async function syncTransactions (addressString: string): Promise<void> {
@@ -178,5 +177,6 @@ export async function syncTransactions (addressString: string): Promise<void> {
   if (address === '' || address === undefined) {
     throw new Error(ADDRESS_NOT_PROVIDED_400.message)
   }
-  await syncTransactionsForAddress(address)
+  const insertedTransactions = await syncTransactionsForAddress(address)
+  await syncPricesFromTransactionList(insertedTransactions)
 }
