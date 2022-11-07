@@ -3,7 +3,7 @@ import axios from 'axios'
 import { appInfo } from 'config/appInfo'
 import { Prisma, Price } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
-import { PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID } from 'constants/index'
+import { PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import moment from 'moment'
 
 function flattenTimestamp (timestamp: number): number {
@@ -84,21 +84,28 @@ export async function getCurrentPrices (): Promise<Price[]> {
 }
 
 export async function syncPricesFromTransactionList (transactions: TransactionWithAddressAndPrices[]): Promise<void> {
-  const createPricesInputList: CreateAllPricesFromTransactionInput[] = []
+  const promisedValuesList: Array<Promise<QuoteValues | undefined>> = []
+  const syncParamsList: SyncTransactionPricesInput[] = []
+  // create promises to request prices
   for (const transaction of transactions) {
     const syncParams: SyncTransactionPricesInput = {
       networkId: transaction.address.networkId,
       timestamp: flattenTimestamp(transaction.timestamp),
       transactionId: transaction.id
     }
-    const values = await syncTransactionPriceValues(syncParams)
-    if (values !== undefined) {
-      createPricesInputList.push({
-        values,
-        ...syncParams
-      })
-    }
+    syncParamsList.push(syncParams)
+    promisedValuesList.push(syncTransactionPriceValues(syncParams))
   }
+  // send the requests
+  const valuesResult = await Promise.all(promisedValuesList)
+  const valuesList: QuoteValues[] = valuesResult.filter((v) => v !== undefined) as QuoteValues[]
+  // save it on the database
+  const createPricesInputList: CreateAllPricesFromTransactionInput[] = syncParamsList.map((syncParams, idx) => {
+    return {
+      ...syncParams,
+      values: valuesList[idx]
+    }
+  })
   for (const createPricesInput of createPricesInputList) {
     await createTransactionPrices(createPricesInput)
   }
@@ -211,6 +218,16 @@ export async function syncTransactionPriceValues (params: SyncTransactionPricesI
   }
 
   const dateString = dateStringFromTimestamp(params.timestamp)
+  const existantPrices = await prisma.price.findMany({
+    where: {
+      networkId: params.networkId,
+      timestamp: flattenTimestamp(params.timestamp)
+    }
+  })
+
+  if (existantPrices.length === N_OF_QUOTES) {
+    return undefined
+  }
 
   let res
 

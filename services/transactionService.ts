@@ -8,7 +8,7 @@ import { fetchAddressBySubstring } from 'services/addressService'
 import { syncPricesFromTransactionList, QuoteValues } from 'services/priceService'
 import _ from 'lodash'
 
-import { RESPONSE_MESSAGES, FETCH_N, FETCH_DELAY, USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, BCH_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD, BCH_TIMESTAMP_THRESHOLD } from 'constants/index'
+import { RESPONSE_MESSAGES, FETCH_N, FETCH_DELAY, USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, BCH_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD, BCH_TIMESTAMP_THRESHOLD, N_OF_QUOTES } from 'constants/index'
 import xecaddr from 'xecaddrjs'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
@@ -48,7 +48,7 @@ export async function getTransactionValue (transaction: TransactionWithAddressAn
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
   }
-  if (transaction.prices.length !== 2) throw new Error(`txid${transaction.id}, ts${transaction.timestamp} ${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}`)
+  if (transaction.prices.length !== N_OF_QUOTES) throw new Error(`txid${transaction.id}, ts${transaction.timestamp} ${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}`)
   for (const p of transaction.prices) {
     if (p.price.quoteId === USD_QUOTE_ID) {
       ret.usd = ret.usd.plus(p.price.value.times(transaction.amount))
@@ -145,7 +145,7 @@ export async function upsertManyTransactions (transactions: BCHTransaction.AsObj
   return ret.filter((t) => t !== undefined) as TransactionWithAddressAndPrices[]
 }
 
-export async function syncTransactionsForAddress (addressString: string): Promise<boolean> {
+export async function syncTransactionsForAddress (addressString: string): Promise<TransactionWithAddressAndPrices[]> {
   const address = await fetchAddressBySubstring(addressString)
   let newTransactionsCount = -1
   let seenTransactionsCount = 0
@@ -169,8 +169,7 @@ export async function syncTransactionsForAddress (addressString: string): Promis
     insertedTransactions = [...insertedTransactions, ...newInsertedTransactions]
     await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
   }
-  await syncPricesFromTransactionList(insertedTransactions)
-  return true
+  return insertedTransactions
 }
 
 export async function syncTransactions (addressString: string): Promise<void> {
@@ -178,5 +177,6 @@ export async function syncTransactions (addressString: string): Promise<void> {
   if (address === '' || address === undefined) {
     throw new Error(ADDRESS_NOT_PROVIDED_400.message)
   }
-  await syncTransactionsForAddress(address)
+  const insertedTransactions = await syncTransactionsForAddress(address)
+  await syncPricesFromTransactionList(insertedTransactions)
 }

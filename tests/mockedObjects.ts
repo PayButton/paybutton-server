@@ -8,6 +8,7 @@ import {
 import { Prisma } from '@prisma/client'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
+import { USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID } from 'constants/index'
 
 export const mockedPaybutton: PaybuttonWithAddresses = {
   id: 4,
@@ -405,4 +406,24 @@ export const mockedGrpc = {
     ],
     outputsList: []
   })
+}
+
+export const mockedUSDPrice = {
+  id: 1,
+  value: new Prisma.Decimal(10),
+  createdAt: new Date('2022-05-27T15:18:42.000Z'),
+  updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+  timestamp: 1653459437,
+  networkId: XEC_NETWORK_ID,
+  quoteId: USD_QUOTE_ID
+}
+
+export const mockedCADPrice = {
+  id: 1,
+  value: new Prisma.Decimal(18),
+  createdAt: new Date('2022-05-27T15:18:42.000Z'),
+  updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+  timestamp: 1653459437,
+  networkId: XEC_NETWORK_ID,
+  quoteId: CAD_QUOTE_ID
 }
