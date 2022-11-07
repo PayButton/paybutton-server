@@ -17,7 +17,13 @@ function dateStringFromTimestamp (timestamp: number): string {
   return isoString.split('T')[0].replace(/-/g, '') // YYYYMMDD
 }
 
-async function syncCurrentPricesForNetworkId (responseData: any, networkId: number): Promise<void> {
+// price data comes as string
+interface IResponseData {
+  Price_in_CAD: string
+  Price_in_USD: string
+}
+
+async function syncCurrentPricesForNetworkId (responseData: IResponseData, networkId: number): Promise<void> {
   await prisma.price.upsert({
     where: {
       Price_timestamp_quoteId_networkId_unique_constraint: {
