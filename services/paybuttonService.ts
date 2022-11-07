@@ -58,6 +58,14 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
     include: includeAddresses
   })
 }
+export async function deletePaybutton (paybuttonId: number | string): Promise<PaybuttonWithAddresses> {
+  return await prisma.paybutton.delete({
+    where: {
+      id: Number(paybuttonId)
+    },
+    include: includeAddresses
+  })
+}
 
 export async function fetchPaybuttonArrayByIds (paybuttonIdList: number[]): Promise<PaybuttonWithAddresses[]> {
   const paybuttonArray = await prisma.paybutton.findMany({
