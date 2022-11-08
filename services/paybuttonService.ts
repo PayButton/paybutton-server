@@ -10,6 +10,11 @@ export interface CreatePaybuttonInput {
   prefixedAddressList: string[]
 }
 
+export interface DeletePaybuttonInput {
+  userId: string
+  paybuttonId: number | string
+}
+
 const includeAddresses = {
   addresses: {
     select: {
@@ -58,10 +63,14 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
     include: includeAddresses
   })
 }
-export async function deletePaybutton (paybuttonId: number | string): Promise<PaybuttonWithAddresses> {
+export async function deletePaybutton (values: DeletePaybuttonInput): Promise<PaybuttonWithAddresses> {
+  const paybutton = await fetchPaybuttonById(values.paybuttonId)
+  if (paybutton !== null && paybutton.providerUserId !== values.userId) {
+    throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
+  }
   return await prisma.paybutton.delete({
     where: {
-      id: Number(paybuttonId)
+      id: Number(values.paybuttonId)
     },
     include: includeAddresses
   })
