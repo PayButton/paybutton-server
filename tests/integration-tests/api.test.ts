@@ -729,6 +729,64 @@ describe('GET /api/paybutton/[id]', () => {
   })
 })
 
+describe('DELETE /api/paybutton/[id]', () => {
+  // Create 4 paybuttons, 3 for one user and 1 for another.
+  const userA = 'test-u-id'
+  const userB = 'test-other-u-id'
+  let createdPaybuttonsIds: number[]
+  beforeAll(async () => {
+    await clearPaybuttonsAndAddresses()
+    createdPaybuttonsIds = []
+    for (let i = 0; i < 4; i++) {
+      const userId = i === 3 ? userB : userA
+      const paybutton = await createPaybuttonForUser(userId)
+      createdPaybuttonsIds.push(paybutton.id)
+    }
+  })
+
+  const baseRequestOptions: RequestOptions = {
+    method: 'DELETE' as RequestMethod,
+    query: {}
+  }
+
+  it('Delete paybutton', async () => {
+    console.log('heya', createdPaybuttonsIds)
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = createdPaybuttonsIds[0]
+    const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(200)
+    expect(responseData.addresses).toEqual(
+      expect.arrayContaining([
+        {
+          address: expect.objectContaining({
+            address: expect.any(String)
+          })
+        }
+      ])
+    )
+    expect(responseData).toHaveProperty('providerUserId')
+    expect(responseData).toHaveProperty('name')
+    expect(responseData).toHaveProperty('buttonData')
+    expect(responseData).toHaveProperty('uuid')
+  })
+
+  it('Fail to delete non-existent paybutton', async () => {
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 999999
+    const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(404)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
+  })
+
+  it("Fail to delete another user's paybutton", async () => {
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = createdPaybuttonsIds[3]
+    const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
+  })
+})
+
 describe('GET /api/transactions/[address]', () => {
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
