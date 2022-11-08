@@ -64,24 +64,24 @@ model Network {
 }
 
 model Transaction {
-  id        Int     @id @default(autoincrement())
-  hash      String  @db.VarChar(255)
-  amount    Decimal @db.Decimal(24, 8)
+  id        Int                    @id @default(autoincrement())
+  hash      String                 @db.VarChar(255)
+  amount    Decimal                @db.Decimal(24, 8)
   timestamp Int
   addressId Int
-  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Restrict)
-  prices     PricesOnTransactions[]
+  address   Address                @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  prices    PricesOnTransactions[]
 
   @@unique([hash, addressId], name: "Transaction_hash_addressId_unique_constraint")
   @@index([addressId], map: "Transaction_addressId_fkey")
 }
 
 model Wallet {
-  id             Int         @id @default(autoincrement())
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  name           String      @db.VarChar(255)
-  providerUserId String?     @db.VarChar(255)
+  id             Int                   @id @default(autoincrement())
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  name           String                @db.VarChar(255)
+  providerUserId String?               @db.VarChar(255)
   addresses      Address[]
   paybuttons     Paybutton[]
   userProfile    WalletsOnUserProfile?
@@ -126,14 +126,14 @@ model PricesOnTransactions {
 }
 
 model WalletsOnUserProfile {
-  walletId              Int         @unique
-  userProfileId         Int
-  isXECDefault          Boolean?
-  isBCHDefault          Boolean?
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
-  wallet                Wallet      @relation(fields: [walletId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  userProfile           UserProfile @relation(fields: [userProfileId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  walletId      Int         @unique
+  userProfileId Int
+  isXECDefault  Boolean?
+  isBCHDefault  Boolean?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  wallet        Wallet      @relation(fields: [walletId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onUpdate: Cascade, onDelete: Cascade)
 
   @@id([walletId, userProfileId])
   @@unique([userProfileId, isBCHDefault], name: "WalletsOnUserProfile_userProfileId_isBCHDefault_unique_constraint")
@@ -141,9 +141,9 @@ model WalletsOnUserProfile {
 }
 
 model UserProfile {
-  id              Int                    @id @default(autoincrement())
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
-  userId          String                 @unique @db.VarChar(255)
-  wallets         WalletsOnUserProfile[]
+  id        Int                    @id @default(autoincrement())
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+  userId    String                 @unique @db.VarChar(255)
+  wallets   WalletsOnUserProfile[]
 }
