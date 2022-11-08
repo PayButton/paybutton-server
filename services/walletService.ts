@@ -107,6 +107,16 @@ export async function createWallet (values: CreateWalletInput): Promise<WalletWi
   })
 }
 
+export async function createDefaultWalletForUser (userId: string): Promise<WalletWithAddressesAndPaybuttons> {
+  const wallet = await createWallet({
+    userId,
+    name: 'Default Wallet',
+    paybuttonIdList: []
+  })
+  await setDefaultWallet(wallet, [XEC_NETWORK_ID, BCH_NETWORK_ID])
+  return wallet
+}
+
 export async function fetchWalletById (walletId: number | string): Promise<WalletWithAddressesAndPaybuttons | null> {
   return await prisma.wallet.findUnique({
     where: { id: Number(walletId) },
