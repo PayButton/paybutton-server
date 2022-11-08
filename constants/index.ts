@@ -43,6 +43,7 @@ export const BCH_NETWORK_ID = 2
 
 export const USD_QUOTE_ID = 1
 export const CAD_QUOTE_ID = 2
+export const N_OF_QUOTES = 2 // USD and CAD for now
 
 export const PRICE_API_DATE_FORMAT = 'YYYYMMDD'
 
