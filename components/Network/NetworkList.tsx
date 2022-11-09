@@ -10,10 +10,12 @@ export default ({ networks }: IProps): FunctionComponent<IProps> => {
         <div key={network.id} className={style.card_wrapper}>
             <div className={style.network_card_text}>
               <div className={style.cardTitle}>{network.title}</div>
-              <div>Last block: {network.minutesSinceLastBlock ?? '-'} time ago</div>
-                {network.connected === true ? 
-                  <div className={style.cardStatus} style={{ color: '#04b504' }}>Connected</div> :
-                  <div className={style.cardStatus}>Disconnected</div>
+                {network.connected
+                  ? <>
+                    <div className={style.cardStatus} style={{ color: '#04b504' }}>Connected</div>
+                    <div>Last block: {network.minutesSinceLastBlock ?? '-'} time ago</div>
+                  </>
+                  : <div className={style.cardStatus}>Disconnected</div>
                 }
             </div>
         </div>
