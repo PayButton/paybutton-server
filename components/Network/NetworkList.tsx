@@ -13,7 +13,7 @@ export default ({ networks }: IProps): FunctionComponent<IProps> => {
                 {network.connected
                   ? <>
                     <div className={style.cardStatus} style={{ color: '#04b504' }}>Connected</div>
-                    <div>Last block: {network.minutesSinceLastBlock ?? '-'} time ago</div>
+                    <div>Last block: {network.minutesSinceLastBlock ?? '-'} {network.minutesSinceLastBlock === 1 ? 'minute' : 'minutes'} ago</div>
                   </>
                   : <div className={style.cardStatus}>Disconnected</div>
                 }
