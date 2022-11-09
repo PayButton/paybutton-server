@@ -102,8 +102,8 @@ export const backendConfig = (): TypeInput => {
                   // post sign in logic goes here
                   (await addressService.fetchAllUserAddresses(response.user.id)).forEach((addr) => {
                     void syncTransactions(addr.address)
-                    void syncCurrentPrices()
                   })
+                  void syncCurrentPrices()
                   return response
                 }
               },
@@ -124,6 +124,7 @@ export const backendConfig = (): TypeInput => {
                     (await addressService.fetchAllUserAddresses(response.user.id)).forEach((addr) => {
                       void syncTransactions(addr.address)
                     })
+                    void syncCurrentPrices()
                   }
                 }
 
