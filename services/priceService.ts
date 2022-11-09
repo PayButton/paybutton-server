@@ -103,10 +103,9 @@ export async function syncPricesFromTransactionList (transactions: TransactionWi
     promisedValuesList.push(syncTransactionPriceValues(syncParams))
   }
   // send the requests
-  const valuesResult = await Promise.all(promisedValuesList)
-  const valuesList: QuoteValues[] = valuesResult.filter((v) => v !== undefined) as QuoteValues[]
+  const valuesList = await Promise.all(promisedValuesList)
   // save it on the database
-  const createPricesInputList: CreateAllPricesFromTransactionInput[] = syncParamsList.map((syncParams, idx) => {
+  const createPricesInputList: CreatePricesFromTransactionInput[] = syncParamsList.map((syncParams, idx) => {
     return {
       ...syncParams,
       values: valuesList[idx]
@@ -121,11 +120,11 @@ export interface QuoteValues {
   'usd': Prisma.Decimal
   'cad': Prisma.Decimal
 }
-export interface CreateAllPricesFromTransactionInput {
+export interface CreatePricesFromTransactionInput {
   timestamp: number
   networkId: number
   transactionId: number
-  values: QuoteValues
+  values?: QuoteValues
 }
 
 export interface SyncTransactionPricesInput {
@@ -134,9 +133,10 @@ export interface SyncTransactionPricesInput {
   transactionId: number
 }
 
-export async function createTransactionPrices (params: CreateAllPricesFromTransactionInput): Promise<void> {
+export async function createTransactionPrices (params: CreatePricesFromTransactionInput): Promise<void> {
   // Create USD price, if it does not already exist
   return await prisma.$transaction(async (prisma) => {
+    if (params.values === undefined) return
     const usdPrice = await prisma.price.upsert({
       where: {
         Price_timestamp_quoteId_networkId_unique_constraint: {
