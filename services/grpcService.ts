@@ -5,6 +5,8 @@ import {
   GetTransactionResponse,
   GetAddressTransactionsResponse,
   GetAddressUnspentOutputsResponse,
+  GetBlockchainInfoResponse,
+  GetBlockInfoResponse
 } from 'grpc-bchrpc-node'
 
 import { getAddressPrefix } from '../utils/index'
@@ -50,6 +52,16 @@ interface GetAddressParameters {
   hash?: string
   reversedHashOrder?: boolean
 }
+
+export const getBlockchainInfo = async (networkSlug: string): Promise<GetBlockchainInfoResponse.AsObject> => {
+  const client = getClientForNetworkSlug(networkSlug)
+  return (await client.getBlockchainInfo()).toObject();
+};
+
+export const getBlockInfo = async (networkSlug: string, height: number): Promise<GetBlockInfoResponse.AsObject> => {
+  const client = getClientForNetworkSlug(networkSlug)
+  return (await client.getBlockInfo({index: height})).toObject();
+};
 
 export const getAddress = async (
   parameters: GetAddressParameters
