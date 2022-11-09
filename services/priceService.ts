@@ -224,14 +224,14 @@ export async function syncTransactionPriceValues (params: SyncTransactionPricesI
   }
 
   const dateString = dateStringFromTimestamp(params.timestamp)
-  const existantPrices = await prisma.price.findMany({
+  const existentPrices = await prisma.price.findMany({
     where: {
       networkId: params.networkId,
       timestamp: flattenTimestamp(params.timestamp)
     }
   })
 
-  if (existantPrices.length === N_OF_QUOTES) {
+  if (existentPrices.length === N_OF_QUOTES) {
     return undefined
   }
 
