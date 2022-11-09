@@ -1,4 +1,5 @@
 import React, { ReactElement, useState, useEffect } from 'react'
+import  { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { useForm } from 'react-hook-form'
 import { paybuttonPOSTParameters } from 'utils/validators'
 import Image from 'next/image'
@@ -9,12 +10,13 @@ import TrashIcon from 'assets/trash-icon.png'
 
 interface IProps {
   onSubmit: Function
-  paybutton: {}
+  onDelete: Function
+  paybutton: PaybuttonWithAddresses
   error: String
   editname: boolean
 }
 
-export default function EditButtonForm ({ onSubmit, paybutton, error }: IProps): ReactElement {
+export default function EditButtonForm ({ onSubmit, paybutton, error, onDelete }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<paybuttonPOSTParameters>()
   const [modal, setModal] = useState(false)
   const [buttonname, setButtonName] = useState(paybutton.name)
