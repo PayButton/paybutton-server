@@ -8,8 +8,6 @@ import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
-import { appInfo } from 'config/appInfo'
-import axios from 'axios'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -107,19 +105,11 @@ class ProtectedPage extends React.Component<PaybuttonsProps, PaybuttonsState> {
     }
   }
 
-  async onDelete (paybuttonId: number): Promise<void> {
-    const res = await axios.delete<PaybuttonWithAddresses>(`${appInfo.websiteDomain}/api/paybutton/${paybuttonId}`)
-    const responseData = res.data
-    this.setState({
-      paybuttons: this.state.paybuttons.filter((pb: PaybuttonWithAddresses) => pb.id !== responseData.id)
-    })
-  }
-
   render (): React.ReactElement {
     return (
       <>
         <h2>Buttons</h2>
-        <PaybuttonList paybuttons={this.state.paybuttons} onDelete={this.onDelete.bind(this)} />
+        <PaybuttonList paybuttons={this.state.paybuttons} />
         <PaybuttonForm onSubmit={this.onSubmit.bind(this)} paybuttons={this.state.paybuttons} error={this.state.error} />
       </>
     )
