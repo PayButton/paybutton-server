@@ -9,8 +9,8 @@ export default async (
 ): Promise<void> => {
   await setSession(req, res)
   const userId = req.session.userId
+  const paybuttonId = req.query.id as string
   if (req.method === 'GET') {
-    const paybuttonId = req.query.id as string
     try {
       const paybutton = await paybuttonService.fetchPaybuttonById(paybuttonId)
       if (paybutton == null) throw new Error(RESPONSE_MESSAGES.NOT_FOUND_404.message)
@@ -26,7 +26,6 @@ export default async (
     }
   }
   if (req.method === 'DELETE') {
-    const paybuttonId = req.query.id as string
     try {
       const deletedPaybutton = await paybuttonService.deletePaybutton({ paybuttonId, userId })
       res.status(200).json(deletedPaybutton)
