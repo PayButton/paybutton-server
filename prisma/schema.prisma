@@ -46,7 +46,7 @@ model AddressesOnButtons {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   address     Address   @relation(fields: [addressId], references: [id])
-  paybutton   Paybutton @relation(fields: [paybuttonId], references: [id])
+  paybutton   Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade)
 
   @@id([paybuttonId, addressId])
   @@index([addressId], map: "AddressesOnButtons_addressId_fkey")

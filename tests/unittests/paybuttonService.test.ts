@@ -38,3 +38,20 @@ describe('Create services', () => {
     expect(result).toEqual(mockedPaybutton)
   })
 })
+
+describe('Delete services', () => {
+  it('Should delete paybutton', async () => {
+    prismaMock.paybutton.delete.mockResolvedValue(mockedPaybutton)
+    prisma.paybutton.delete = prismaMock.paybutton.delete
+
+    prismaMock.paybutton.findUnique.mockResolvedValue(mockedPaybutton)
+    prisma.paybutton.findUnique = prismaMock.paybutton.findUnique
+
+    const deletePaybuttonInput = {
+      userId: 'mocked-uid',
+      paybuttonId: 3
+    }
+    const result = await paybuttonService.deletePaybutton(deletePaybuttonInput)
+    expect(result).toEqual(mockedPaybutton)
+  })
+})
