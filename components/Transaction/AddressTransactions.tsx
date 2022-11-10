@@ -15,7 +15,6 @@ interface IProps {
   }
 }
 export default ({ addressTransactions }: IProps): FunctionComponent => {
-  console.log(addressTransactions['ecash:qrmm7edwuj4jf7tnvygjyztyy0a0qxvl7quss2vxek'])
   const columns = useMemo(
     () => [
       {
@@ -29,7 +28,6 @@ export default ({ addressTransactions }: IProps): FunctionComponent => {
         Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
         accessor: 'amount',
         Cell: (cellProps) => {
-          console.log(cellProps)
           return <div style={{ textAlign: 'right', fontWeight: '600' }}>{FormatNumber(cellProps.cell.value)} {cellProps.row.values.address.networkId === 1 ? 'XEC' : 'BCH' }</div>
         }
       },
