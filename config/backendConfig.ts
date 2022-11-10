@@ -3,6 +3,7 @@ import SessionNode from 'supertokens-node/recipe/session'
 import { appInfo } from './appInfo'
 import { TypeInput } from 'supertokens-node/types'
 import * as addressService from 'services/addressService'
+import * as walletService from 'services/walletService'
 import { syncTransactions } from 'services/transactionService'
 import { syncCurrentPrices } from 'services/priceService'
 
@@ -83,6 +84,7 @@ export const backendConfig = (): TypeInput => {
                 const response = await originalImplementation.emailPasswordSignUpPOST(input)
 
                 if (response.status === 'OK') {
+                  void walletService.createDefaultWalletForUser(response.user.id)
                   // post sign up logic goes here
                 }
 
@@ -119,6 +121,7 @@ export const backendConfig = (): TypeInput => {
                 if (response.status === 'OK') {
                   if (response.createdNewUser) {
                     // post sign up logic goes here
+                    void walletService.createDefaultWalletForUser(response.user.id)
                   } else {
                     // post sign in logic goes here
                     (await addressService.fetchAllUserAddresses(response.user.id)).forEach((addr) => {

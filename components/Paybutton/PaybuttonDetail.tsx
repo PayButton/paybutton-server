@@ -1,19 +1,20 @@
 import React, { FunctionComponent } from 'react'
-import { Paybutton } from '@prisma/client'
+import  { PaybuttonWithAddresses } from 'services/paybuttonService'
 import style from './paybutton.module.css'
 import EditButtonForm from './EditButtonForm'
 
 interface IProps {
-  paybutton: Paybutton
+  paybutton: PaybuttonWithAddresses
+  onDelete: Function
 }
-export default ({ paybutton }: IProps): FunctionComponent => {
+export default ({ paybutton, onDelete }: IProps): FunctionComponent => {
   return (
     <div className={style.paybutton_list_ctn}>
       <div className={`${style.paybutton_card} ${style.paybutton_card_no_hover}`}>
         <div className={style.button_detail_header}>
           <h5>{paybutton.name}</h5>
           <div>
-            <EditButtonForm paybutton={paybutton} />
+            <EditButtonForm paybutton={paybutton} onDelete={onDelete} />
           </div>
         </div>
           <div>

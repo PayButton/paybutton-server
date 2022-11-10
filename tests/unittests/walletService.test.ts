@@ -4,7 +4,7 @@ import * as walletService from 'services/walletService'
 import * as addressService from 'services/addressService'
 import { prismaMock } from 'prisma/mockedClient'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import { mockedWallet, mockedWalletsOnUserProfile, mockedWalletList, mockedPaybuttonList, mockedPaybutton, mockedNetwork, mockedBCHAddress } from '../mockedObjects'
+import { mockedWallet, mockedWalletList, mockedPaybuttonList, mockedPaybutton, mockedNetwork, mockedBCHAddress } from '../mockedObjects'
 
 describe('Fetch services', () => {
   it('Should fetch wallet by id', async () => {
@@ -202,58 +202,6 @@ describe('Update services', () => {
       await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
     } catch (e: any) {
       expect(e.message).toMatch(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
-    }
-  })
-  it('Fail if trying to set as BCH Default with no BCH addresses', async () => {
-    data.updateWalletInput.isBCHDefault = true
-    prismaMock.walletsOnUserProfile.update.mockResolvedValue(mockedWalletsOnUserProfile)
-    prisma.walletsOnUserProfile.update = prismaMock.walletsOnUserProfile.update
-    const noBCHAddressWallet = {
-      ...mockedWallet,
-      addresses: [
-        {
-          id: 2,
-          address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
-          networkId: 1
-        }
-      ]
-    }
-
-    prismaMock.wallet.findUnique.mockResolvedValue(noBCHAddressWallet)
-    prisma.wallet.findUnique = prismaMock.wallet.findUnique
-    prismaMock.wallet.update.mockResolvedValue(noBCHAddressWallet)
-    prisma.wallet.update = prismaMock.wallet.update
-    expect.assertions(1)
-    try {
-      await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
-    } catch (e: any) {
-      expect(e.message).toMatch(RESPONSE_MESSAGES.DEFAULT_BCH_WALLET_MUST_HAVE_SOME_BCH_ADDRESS_400.message)
-    }
-  })
-  it('Fail if trying to set as XEC Default with no XEC addresses', async () => {
-    data.updateWalletInput.isXECDefault = true
-    prismaMock.walletsOnUserProfile.update.mockResolvedValue(mockedWalletsOnUserProfile)
-    prisma.walletsOnUserProfile.update = prismaMock.walletsOnUserProfile.update
-    const noXECAddressWallet = {
-      ...mockedWallet,
-      addresses: [
-        {
-          id: 2,
-          address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
-          networkId: 2
-        }
-      ]
-    }
-
-    prismaMock.wallet.findUnique.mockResolvedValue(noXECAddressWallet)
-    prisma.wallet.findUnique = prismaMock.wallet.findUnique
-    prismaMock.wallet.update.mockResolvedValue(noXECAddressWallet)
-    prisma.wallet.update = prismaMock.wallet.update
-    expect.assertions(1)
-    try {
-      await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
-    } catch (e: any) {
-      expect(e.message).toMatch(RESPONSE_MESSAGES.DEFAULT_XEC_WALLET_MUST_HAVE_SOME_XEC_ADDRESS_400.message)
     }
   })
   it('Fail for empty name', async () => {

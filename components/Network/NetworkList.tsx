@@ -1,8 +1,9 @@
 import React, { FunctionComponent } from 'react'
-import { Network } from '@prisma/client'
+import { NetworkWithConnectionInfo } from 'services/networkService'
 import style from './network.module.css'
+import moment from 'moment'
 
-interface IProps { networks: Network[] }
+interface IProps { networks: NetworkWithConnectionInfo[] }
 export default ({ networks }: IProps): FunctionComponent<IProps> => {
   return (
     <div className={style.network_ctn}>
@@ -10,10 +11,12 @@ export default ({ networks }: IProps): FunctionComponent<IProps> => {
         <div key={network.id} className={style.card_wrapper}>
             <div className={style.network_card_text}>
               <div className={style.cardTitle}>{network.title}</div>
-              <div>Last block: X time ago</div>
-                {network.title === 'eCash' ? 
-                  <div className={style.cardStatus} style={{ color: '#04b504' }}>Connected</div> :
-                  <div className={style.cardStatus}>Disconnected</div>
+                {network.connected
+                  ? <>
+                    <div className={style.cardStatus} style={{ color: '#04b504' }}>Connected</div>
+                    <div>Last block: {network.lastBlockTimestamp !== undefined ? moment.unix(network.lastBlockTimestamp).fromNow() : '-'}</div>
+                  </>
+                  : <div className={style.cardStatus}>Disconnected</div>
                 }
             </div>
         </div>

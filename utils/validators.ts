@@ -50,14 +50,18 @@ export const parseButtonData = function (buttonDataString: string | undefined): 
 
 export const parseError = function (error: Error): Error {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    if (error.code === 'P2002') {
-      if (error.message.includes('Paybutton_name_providerUserId_unique_constraint')) {
-        return new Error(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message)
-      } else if (
-        error.message.includes('Wallet_name_providerUserId_unique_constraint')
-      ) {
-        return new Error(RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400.message)
-      }
+    switch (error.code) {
+      case 'P2002':
+        if (error.message.includes('Paybutton_name_providerUserId_unique_constraint')) {
+          return new Error(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message)
+        } else if (error.message.includes('Wallet_name_providerUserId_unique_constraint')) {
+          return new Error(RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400.message)
+        }
+        break
+      case 'P2025':
+        if (error.message.includes('prisma.paybutton.delete')) {
+          return new Error(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
+        }
     }
   }
   return error

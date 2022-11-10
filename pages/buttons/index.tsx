@@ -1,7 +1,7 @@
 import React from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import { PaybuttonList, PaybuttonForm } from 'components/Paybutton'
-import { Paybutton } from '@prisma/client'
+import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { paybuttonPOSTParameters } from 'utils/validators'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
@@ -42,7 +42,7 @@ interface PaybuttonsProps {
 }
 
 interface PaybuttonsState {
-  paybuttons: Paybutton[]
+  paybuttons: PaybuttonWithAddresses[]
   error: String
 }
 

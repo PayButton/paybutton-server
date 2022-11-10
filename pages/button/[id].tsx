@@ -3,13 +3,16 @@ import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyema
 import Page from 'components/Page'
 import Router from 'next/router'
 import { PaybuttonDetail } from 'components/Paybutton'
+import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { AddressTransactions } from 'components/Transaction'
-import { Transaction, Paybutton } from '@prisma/client'
+import { Transaction } from '@prisma/client'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
+import { appInfo } from 'config/appInfo'
+import axios from 'axios'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -50,7 +53,7 @@ interface PaybuttonState {
   transactions: {
     [address: string]: Transaction
   }
-  paybutton: Paybutton | undefined
+  paybutton: PaybuttonWithAddresses | undefined
 }
 
 export default function Home ({ paybuttonId }: PaybuttonProps): React.ReactElement {
@@ -106,12 +109,19 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
     void ThirdPartyEmailPassword.redirectToAuth()
   }
 
+  async onDelete (paybuttonId: number): Promise<void> {
+    let res = await axios.delete<PaybuttonWithAddresses>(`${appInfo.websiteDomain}/api/paybutton/${paybuttonId}`)
+    if (res.status === 200) {
+      void Router.push(`${appInfo.websiteDomain}/buttons/`)
+    }
+  }
+
   render (): React.ReactElement {
     if (this.state.paybutton !== undefined && Object.keys(this.state.transactions).length !== 0) {
       return (
         <>
           <div className='back_btn' onClick={() => Router.back()}>Back</div>
-          <PaybuttonDetail paybutton={this.state.paybutton} />
+          <PaybuttonDetail paybutton={this.state.paybutton} onDelete={this.onDelete}/>
           <h4>Transactions</h4>
           <AddressTransactions addressTransactions={this.state.transactions} />
         </>
