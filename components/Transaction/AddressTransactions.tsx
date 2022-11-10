@@ -29,7 +29,8 @@ export default ({ addressTransactions }: IProps): FunctionComponent => {
         Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
         accessor: 'amount',
         Cell: (cellProps) => {
-          return <div style={{ textAlign: 'right', fontWeight: '600' }}>${FormatNumber(cellProps.cell.value, 'dollars')}</div>
+          console.log(cellProps)
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}>{FormatNumber(cellProps.cell.value)} {cellProps.row.values.address.networkId === 1 ? 'XEC' : 'BCH' }</div>
         }
       },
       {

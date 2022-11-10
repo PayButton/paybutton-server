@@ -218,6 +218,7 @@ body[data-theme='dark'] .table-eye {
   align-items: center;
   justify-content: center;
   position: relative;
+  max-width: 1400px;
 }
 
 .table-navigation-ctn button {
