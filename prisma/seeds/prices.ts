@@ -4,7 +4,7 @@ export const prices = [
     value: new Prisma.Decimal('0.00004095'),
     createdAt: new Date(),
     updatedAt: new Date(),
-    timestamp: 166459320,
+    timestamp: 1664593200,
     networkId: 1,
     quoteId: 1
   },
@@ -12,7 +12,7 @@ export const prices = [
     value: new Prisma.Decimal('0.00005663'),
     createdAt: new Date(),
     updatedAt: new Date(),
-    timestamp: 166459320,
+    timestamp: 1664593200,
     networkId: 1,
     quoteId: 2
   },
@@ -20,7 +20,7 @@ export const prices = [
     value: new Prisma.Decimal('117.9081'),
     createdAt: new Date(),
     updatedAt: new Date(),
-    timestamp: 166459320,
+    timestamp: 1664593200,
     networkId: 2,
     quoteId: 1
   },
@@ -28,7 +28,7 @@ export const prices = [
     value: new Prisma.Decimal('163.0735'),
     createdAt: new Date(),
     updatedAt: new Date(),
-    timestamp: 166459320,
+    timestamp: 1664593200,
     networkId: 2,
     quoteId: 2
   }
