@@ -1,10 +1,10 @@
 import React, { FunctionComponent } from 'react'
-import { Paybutton } from '@prisma/client'
+import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import Image from 'next/image'
 import style from './paybutton.module.css'
 import Arrow from 'assets/right-arrow.png'
 
-interface IProps { paybuttons: Paybutton[] }
+interface IProps { paybuttons: PaybuttonWithAddresses[] }
 export default ({ paybuttons }: IProps): FunctionComponent<IProps> =>
   <div className={style.paybutton_list_ctn}>
     {paybuttons.length === 0 && <div className={style.paybutton_nocard}>No buttons yet! Use the button below to create one</div>}
