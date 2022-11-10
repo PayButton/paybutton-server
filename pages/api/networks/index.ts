@@ -5,12 +5,7 @@ import { appInfo } from 'config/appInfo'
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   if (req.method === 'GET') {
     try {
-      let networkList
-      if (appInfo.showTestNetworks === true) {
-        networkList = await networkService.getAllNetworks()
-      } else {
-        networkList = await networkService.getAllMainNetworks()
-      }
+      const networkList = await networkService.getNetworks(appInfo.showTestNetworks)
       res.status(200).json(networkList)
     } catch (err: any) {
       switch (err.message) {
