@@ -1,6 +1,7 @@
 import React, { FunctionComponent } from 'react'
 import { NetworkWithConnectionInfo } from 'services/networkService'
 import style from './network.module.css'
+import moment from 'moment'
 
 interface IProps { networks: NetworkWithConnectionInfo[] }
 export default ({ networks }: IProps): FunctionComponent<IProps> => {
@@ -13,7 +14,7 @@ export default ({ networks }: IProps): FunctionComponent<IProps> => {
                 {network.connected
                   ? <>
                     <div className={style.cardStatus} style={{ color: '#04b504' }}>Connected</div>
-                    <div>Last block: {network.minutesSinceLastBlock ?? '-'} {network.minutesSinceLastBlock === 1 ? 'minute' : 'minutes'} ago</div>
+                    <div>Last block: {network.lastBlockTimestamp !== undefined ? moment.unix(network.lastBlockTimestamp).fromNow() : '-'}</div>
                   </>
                   : <div className={style.cardStatus}>Disconnected</div>
                 }
