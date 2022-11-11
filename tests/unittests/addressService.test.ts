@@ -36,3 +36,23 @@ describe('Find by substring', () => {
     expect(result).toHaveProperty('paymentCount', 3)
   })
 })
+
+describe('Create by substring', () => {
+  it('Fail to create address with invalid address', async () => {
+    prismaMock.address.upsert.mockResolvedValue(mockedBCHAddress)
+    prisma.address.upsert = prismaMock.address.upsert
+
+    await expect(addressService.upsertAddress('mock')).rejects.toThrow(
+      RESPONSE_MESSAGES.INVALID_ADDRESS_400.message
+    )
+  })
+  it('Create single address', async () => {
+    prismaMock.address.upsert.mockResolvedValue(mockedBCHAddress)
+    prisma.address.upsert = prismaMock.address.upsert
+    prismaMock.network.findUnique.mockResolvedValue(mockedNetwork)
+    prisma.network.findUnique = prismaMock.network.findUnique
+
+    const result = await addressService.upsertAddress(mockedBCHAddress.address)
+    expect(result).toEqual(mockedBCHAddress)
+  })
+})
