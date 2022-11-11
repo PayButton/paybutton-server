@@ -1,9 +1,9 @@
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import axios from 'axios'
 import { appInfo } from 'config/appInfo'
-import { Prisma } from '@prisma/client'
+import { Prisma, Price } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
-import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import moment from 'moment'
 
 function flattenTimestamp (timestamp: number): number {
@@ -15,6 +15,78 @@ function flattenTimestamp (timestamp: number): number {
 function dateStringFromTimestamp (timestamp: number): string {
   const isoString = (new Date(timestamp * 1000)).toISOString()
   return isoString.split('T')[0].replace(/-/g, '') // YYYYMMDD
+}
+
+// price data comes as string
+interface IResponseData {
+  Price_in_CAD: string
+  Price_in_USD: string
+}
+
+async function syncCurrentPricesForNetworkId (responseData: IResponseData, networkId: number): Promise<void> {
+  await prisma.price.upsert({
+    where: {
+      Price_timestamp_quoteId_networkId_unique_constraint: {
+        quoteId: USD_QUOTE_ID,
+        networkId,
+        timestamp: 0
+      }
+    },
+    create: {
+      quoteId: USD_QUOTE_ID,
+      networkId,
+      timestamp: 0,
+      value: new Prisma.Decimal(responseData.Price_in_USD)
+    },
+    update: {
+      value: new Prisma.Decimal(responseData.Price_in_USD)
+    }
+  })
+  await prisma.price.upsert({
+    where: {
+      Price_timestamp_quoteId_networkId_unique_constraint: {
+        quoteId: CAD_QUOTE_ID,
+        networkId,
+        timestamp: 0
+      }
+    },
+    create: {
+      quoteId: CAD_QUOTE_ID,
+      networkId,
+      timestamp: 0,
+      value: new Prisma.Decimal(responseData.Price_in_CAD)
+    },
+    update: {
+      value: new Prisma.Decimal(responseData.Price_in_CAD)
+    }
+  })
+}
+
+export async function syncCurrentPrices (): Promise<boolean> {
+  const todayString = moment().format(PRICE_API_DATE_FORMAT)
+  let success = true
+
+  let res = await axios.get(`${appInfo.priceAPIURL}/BCH+${todayString}`)
+  let responseData = res.data
+  if (responseData.success !== false) {
+    void syncCurrentPricesForNetworkId(responseData, BCH_NETWORK_ID)
+  } else success = false
+
+  res = await axios.get(`${appInfo.priceAPIURL}/XEC+${todayString}`)
+  responseData = res.data
+  if (responseData.success !== false) {
+    void syncCurrentPricesForNetworkId(responseData, XEC_NETWORK_ID)
+  } else success = false
+
+  return success
+}
+
+export async function getCurrentPrices (): Promise<Price[]> {
+  return await prisma.price.findMany({
+    where: {
+      timestamp: 0
+    }
+  })
 }
 
 export async function syncPricesFromTransactionList (transactions: TransactionWithAddressAndPrices[]): Promise<void> {
@@ -31,10 +103,9 @@ export async function syncPricesFromTransactionList (transactions: TransactionWi
     promisedValuesList.push(syncTransactionPriceValues(syncParams))
   }
   // send the requests
-  const valuesResult = await Promise.all(promisedValuesList)
-  const valuesList: QuoteValues[] = valuesResult.filter((v) => v !== undefined) as QuoteValues[]
+  const valuesList = await Promise.all(promisedValuesList)
   // save it on the database
-  const createPricesInputList: CreateAllPricesFromTransactionInput[] = syncParamsList.map((syncParams, idx) => {
+  const createPricesInputList: CreatePricesFromTransactionInput[] = syncParamsList.map((syncParams, idx) => {
     return {
       ...syncParams,
       values: valuesList[idx]
@@ -49,11 +120,11 @@ export interface QuoteValues {
   'usd': Prisma.Decimal
   'cad': Prisma.Decimal
 }
-export interface CreateAllPricesFromTransactionInput {
+export interface CreatePricesFromTransactionInput {
   timestamp: number
   networkId: number
   transactionId: number
-  values: QuoteValues
+  values?: QuoteValues
 }
 
 export interface SyncTransactionPricesInput {
@@ -62,9 +133,10 @@ export interface SyncTransactionPricesInput {
   transactionId: number
 }
 
-export async function createTransactionPrices (params: CreateAllPricesFromTransactionInput): Promise<void> {
+export async function createTransactionPrices (params: CreatePricesFromTransactionInput): Promise<void> {
   // Create USD price, if it does not already exist
   return await prisma.$transaction(async (prisma) => {
+    if (params.values === undefined) return
     const usdPrice = await prisma.price.upsert({
       where: {
         Price_timestamp_quoteId_networkId_unique_constraint: {
@@ -152,14 +224,14 @@ export async function syncTransactionPriceValues (params: SyncTransactionPricesI
   }
 
   const dateString = dateStringFromTimestamp(params.timestamp)
-  const existantPrices = await prisma.price.findMany({
+  const existentPrices = await prisma.price.findMany({
     where: {
       networkId: params.networkId,
       timestamp: flattenTimestamp(params.timestamp)
     }
   })
 
-  if (existantPrices.length === N_OF_QUOTES) {
+  if (existentPrices.length === N_OF_QUOTES) {
     return undefined
   }
 
