@@ -6,6 +6,7 @@ import walletsEndpoint from 'pages/api/wallets/index'
 import walletEndpoint from 'pages/api/wallet/index'
 import walletIdEndpoint from 'pages/api/wallet/[id]'
 import transactionsEndpoint from 'pages/api/transactions/[address]'
+import transactionsSyncEndpoint from 'pages/api/transactions/sync/[address]'
 import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
 import balanceEndpoint from 'pages/api/balance/[address]'
 import dashboardEndpoint from 'pages/api/dashboard/index'
@@ -750,7 +751,6 @@ describe('DELETE /api/paybutton/[id]', () => {
   }
 
   it('Delete paybutton', async () => {
-    console.log('heya', createdPaybuttonsIds)
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = createdPaybuttonsIds[0]
     const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
     const responseData = res._getJSONData()
@@ -803,7 +803,21 @@ describe('GET /api/transactions/[address]', () => {
     expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
   })
 
-  it('Should return HTTP 200 in case address is valid but not yet on the system', async () => {
+  it('Should return HTTP 400 in case address is invalid', async () => {
+    const baseRequestOptions: RequestOptions = {
+      method: 'GET' as RequestMethod,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      query: {
+        address: 'lkdasjfçlajdsfl'
+      }
+    }
+    const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('Should return HTTP 404 in case address is valid but not yet on the system', async () => {
     const baseRequestOptions: RequestOptions = {
       method: 'GET' as RequestMethod,
       headers: {
@@ -814,6 +828,53 @@ describe('GET /api/transactions/[address]', () => {
       }
     }
     const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
+    expect(res.statusCode).toBe(404)
+  })
+})
+
+describe('GET /api/transactions/sync/[address]', () => {
+  const baseRequestOptions: RequestOptions = {
+    method: 'GET' as RequestMethod,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    query: {}
+  }
+
+  it('Should return HTTP 400 (Bad Request) if no address specified', async () => {
+    const res = await testEndpoint(baseRequestOptions, transactionsSyncEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
+  })
+
+  it('Should return HTTP 400 in case address is invalid', async () => {
+    const baseRequestOptions: RequestOptions = {
+      method: 'GET' as RequestMethod,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      query: {
+        address: 'ulkjas8hfn29-hnro123ihj42890h'
+      }
+    }
+    const res = await testEndpoint(baseRequestOptions, transactionsSyncEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
+  })
+
+  it('Should return HTTP 200 in case address is valid but not yet on the system', async () => {
+    const baseRequestOptions: RequestOptions = {
+      method: 'GET' as RequestMethod,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      query: {
+        address: `ecash:${exampleAddresses.ecash}`
+      }
+    }
+    const res = await testEndpoint(baseRequestOptions, transactionsSyncEndpoint)
     expect(res.statusCode).toBe(200)
   })
 })

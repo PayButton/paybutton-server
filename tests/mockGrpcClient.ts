@@ -16,9 +16,13 @@ export default class MockGrpcClient {
     this._checkNetworkIntegrity = value
   }
 
-  getAddressTransactions (_: object): GetAddressTransactionsResponse {
+  getAddressTransactions (_: any): GetAddressTransactionsResponse {
     const res = new GetAddressTransactionsResponse()
-    res.setConfirmedTransactionsList([mockedGrpc.transaction1, mockedGrpc.transaction2])
+    if (_.nbSkip > 0) {
+      res.setConfirmedTransactionsList([])
+    } else {
+      res.setConfirmedTransactionsList([mockedGrpc.transaction1, mockedGrpc.transaction2])
+    }
     return res
   }
 
