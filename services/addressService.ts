@@ -2,6 +2,8 @@ import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { fetchAddressTransactions } from 'services/transactionService'
+import { parseAddress } from 'utils/validators'
+import { getNetworkFromSlug } from 'services/networkService'
 
 const addressFullType = Prisma.validator<Prisma.AddressArgs>()({
   include: { transactions: true, network: true }
@@ -45,6 +47,24 @@ export async function fetchAllUserAddresses (userId: string, includeTransactions
     include: {
       transactions: includeTransactions
     }
+  })
+}
+
+export async function upsertAddress (addressString: string): Promise<AddressWithTransactions> {
+  const prefixedAddress = parseAddress(addressString)
+  const prefix = prefixedAddress.split(':')[0].toLowerCase()
+  const network = await getNetworkFromSlug(prefix)
+  if (network === null) throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
+  return await prisma.address.upsert({
+    where: {
+      address: prefixedAddress
+    },
+    create: {
+      address: prefixedAddress.toLowerCase(),
+      networkId: Number(network.id)
+    },
+    update: {},
+    include: { transactions: true }
   })
 }
 
