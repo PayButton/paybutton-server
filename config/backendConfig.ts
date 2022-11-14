@@ -4,7 +4,7 @@ import { appInfo } from './appInfo'
 import { TypeInput } from 'supertokens-node/types'
 import * as addressService from 'services/addressService'
 import * as walletService from 'services/walletService'
-import { syncTransactions } from 'services/transactionService'
+import { syncTransactionsAndPricesForAddress } from 'services/transactionService'
 import { syncCurrentPrices } from 'services/priceService'
 
 const getSocialLoginProviders = (): array => {
@@ -103,7 +103,7 @@ export const backendConfig = (): TypeInput => {
                 if (response.status === 'OK') {
                   // post sign in logic goes here
                   (await addressService.fetchAllUserAddresses(response.user.id)).forEach((addr) => {
-                    void syncTransactions(addr.address)
+                    void syncTransactionsAndPricesForAddress(addr.address)
                   })
                   void syncCurrentPrices()
                   return response
@@ -125,7 +125,7 @@ export const backendConfig = (): TypeInput => {
                   } else {
                     // post sign in logic goes here
                     (await addressService.fetchAllUserAddresses(response.user.id)).forEach((addr) => {
-                      void syncTransactions(addr.address)
+                      void syncTransactionsAndPricesForAddress(addr.address)
                     })
                     void syncCurrentPrices()
                   }
