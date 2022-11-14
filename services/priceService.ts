@@ -232,7 +232,10 @@ export async function syncTransactionPriceValues (params: SyncTransactionPricesI
   })
 
   if (existentPrices.length === N_OF_QUOTES) {
-    return undefined
+    return {
+      usd: new Prisma.Decimal(existentPrices.filter((price) => price.quoteId === USD_QUOTE_ID)[0].value),
+      cad: new Prisma.Decimal(existentPrices.filter((price) => price.quoteId === CAD_QUOTE_ID)[0].value)
+    }
   }
 
   let res
