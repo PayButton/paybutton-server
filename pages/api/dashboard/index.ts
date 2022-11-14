@@ -132,6 +132,7 @@ interface Payment {
 const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
   const buttons = await paybuttonService.fetchPaybuttonArrayByUserId(userId)
   const addresses = await addressService.fetchAllUserAddresses(userId, true)
+  void await transactionService.syncTransactionsAndPricesForAddressList(addresses.map(addr => addr.address))
   const XECAddressIds = addresses.filter((addr) => addr.networkId === XEC_NETWORK_ID).map((addr) => addr.id)
   const BCHAddressIds = addresses.filter((addr) => addr.networkId === BCH_NETWORK_ID).map((addr) => addr.id)
   const XECTransactions = await transactionService.fetchAddressListTransactions(XECAddressIds)

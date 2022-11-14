@@ -180,3 +180,9 @@ export async function syncTransactionsAndPricesForAddress (addressString: string
   const insertedTransactions = await syncTransactionsForAddress(address)
   await syncPricesFromTransactionList(insertedTransactions)
 }
+
+export async function syncTransactionsAndPricesForAddressList (addressStringList: string[]): Promise<void> {
+  for (const addr of addressStringList) {
+    void await syncTransactionsAndPricesForAddress(addr)
+  }
+}
