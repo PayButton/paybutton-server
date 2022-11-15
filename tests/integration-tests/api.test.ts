@@ -6,6 +6,7 @@ import walletsEndpoint from 'pages/api/wallets/index'
 import walletEndpoint from 'pages/api/wallet/index'
 import walletIdEndpoint from 'pages/api/wallet/[id]'
 import transactionsEndpoint from 'pages/api/transactions/[address]'
+import * as transactionService from 'services/transactionService'
 import transactionsSyncEndpoint from 'pages/api/transactions/sync/[address]'
 import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
 import balanceEndpoint from 'pages/api/balance/[address]'
@@ -935,6 +936,7 @@ describe('GET /api/dashboard', () => {
   })
 
   it('Should return HTTP 200', async () => {
+    jest.spyOn(transactionService, 'syncTransactionsAndPricesForAddressList').mockReturnValue(Promise.resolve())
     const res = await testEndpoint(baseRequestOptions, dashboardEndpoint)
     expect(res.statusCode).toBe(200)
     const responseData = res._getJSONData()
