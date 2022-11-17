@@ -92,6 +92,12 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
     }
   }
 
+  refreshPaybutton = (): void => {
+    this.setState(() => {
+      void this.fetchPaybutton()
+    })
+  }
+
   async fetchTransactions (address: string): Promise<void> {
     const res = await fetch(`/api/transactions/${address}`, {
       method: 'GET'
@@ -110,7 +116,7 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
   }
 
   async onDelete (paybuttonId: number): Promise<void> {
-    let res = await axios.delete<PaybuttonWithAddresses>(`${appInfo.websiteDomain}/api/paybutton/${paybuttonId}`)
+    const res = await axios.delete<PaybuttonWithAddresses>(`${appInfo.websiteDomain}/api/paybutton/${paybuttonId}`)
     if (res.status === 200) {
       void Router.push(`${appInfo.websiteDomain}/buttons/`)
     }
@@ -121,7 +127,7 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
       return (
         <>
           <div className='back_btn' onClick={() => Router.back()}>Back</div>
-          <PaybuttonDetail paybutton={this.state.paybutton} onDelete={this.onDelete}/>
+          <PaybuttonDetail paybutton={this.state.paybutton} onDelete={this.onDelete} refreshPaybutton={this.refreshPaybutton}/>
           <h4>Transactions</h4>
           <AddressTransactions addressTransactions={this.state.transactions} />
         </>
