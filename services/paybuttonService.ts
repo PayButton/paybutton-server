@@ -3,6 +3,11 @@ import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
+export interface UpdatePaybuttonInput {
+  name?: string
+  buttonData?: string
+}
+
 export interface CreatePaybuttonInput {
   userId: string
   name: string
@@ -101,6 +106,20 @@ export async function fetchPaybuttonById (paybuttonId: number | string): Promise
 export async function fetchPaybuttonArrayByUserId (userId: string): Promise<PaybuttonWithAddresses[]> {
   return await prisma.paybutton.findMany({
     where: { providerUserId: userId },
+    include: includeAddresses
+  })
+}
+
+export async function updatePaybutton (paybuttonId: number, params: UpdatePaybuttonInput): Promise<PaybuttonWithAddresses> {
+  // (parsed)params = parseparams...
+  return await prisma.paybutton.update({
+    where: {
+      id: paybuttonId
+    },
+    data: {
+      name: params.name,
+      buttonData: params.buttonData
+    },
     include: includeAddresses
   })
 }

@@ -1,5 +1,5 @@
 import * as paybuttonService from 'services/paybuttonService'
-import { parseError } from 'utils/validators'
+import { parseError, parsePaybuttonPATCHRequest } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { setSession } from 'utils/setSession'
 
@@ -40,6 +40,22 @@ export default async (
           break
         default:
           res.status(500).json({ statusCode: 500, message: parsedError.message })
+      }
+    }
+  }
+  if (req.method === 'PATCH') {
+    try {
+      const values = req.body
+      const updatePaybuttonInput = parsePaybuttonPATCHRequest(values)
+      console.log('inputs', updatePaybuttonInput)
+      const paybutton = await paybuttonService.updatePaybutton(Number(paybuttonId), updatePaybuttonInput)
+      res.status(200).json(paybutton)
+    } catch (err: any) {
+      const parsedError = parseError(err)
+      switch (parsedError.message) {
+        case RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message:
+          res.status(404).json(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404)
+          break
       }
     }
   }

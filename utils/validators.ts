@@ -1,6 +1,6 @@
 import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN } from '../constants/index'
 import { Prisma } from '@prisma/client'
-import { CreatePaybuttonInput } from '../services/paybuttonService'
+import { CreatePaybuttonInput, UpdatePaybuttonInput } from '../services/paybuttonService'
 import { CreateWalletInput, UpdateWalletInput } from '../services/walletService'
 import { getAddressPrefix } from './index'
 import xecaddr from 'xecaddrjs'
@@ -94,6 +94,11 @@ export interface WalletPOSTParameters {
   paybuttonIdList?: number[]
 }
 
+export interface PaybuttonPATCHParameters {
+  name?: string
+  buttonData?: boolean
+}
+
 export interface WalletPATCHParameters {
   name: string
   isXECDefault?: boolean
@@ -121,4 +126,8 @@ export const parseWalletPATCHRequest = function (params: WalletPATCHParameters):
     isXECDefault: params.isXECDefault,
     isBCHDefault: params.isBCHDefault
   }
+}
+
+export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters): UpdatePaybuttonInput {
+  return params as UpdatePaybuttonInput
 }
