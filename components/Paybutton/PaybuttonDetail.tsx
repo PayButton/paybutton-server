@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from 'react'
-import  { PaybuttonWithAddresses } from 'services/paybuttonService'
+import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import style from './paybutton.module.css'
 import EditButtonForm from './EditButtonForm'
 
@@ -23,6 +23,12 @@ export default ({ paybutton, onDelete }: IProps): FunctionComponent => {
                 {item.address.address}
               </div>
             ))}
+          </div>
+          <h6>
+            Associated data:
+          </h6>
+          <div>
+            {paybutton.buttonData}
           </div>
       </div>
     </div>
