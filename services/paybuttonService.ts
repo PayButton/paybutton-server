@@ -2,6 +2,7 @@ import * as networkService from 'services/networkService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
+import { parsePaybuttonPATCHRequest } from 'utils/validators'
 
 export interface UpdatePaybuttonInput {
   name?: string
@@ -111,14 +112,14 @@ export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Payb
 }
 
 export async function updatePaybutton (paybuttonId: number, params: UpdatePaybuttonInput): Promise<PaybuttonWithAddresses> {
-  // (parsed)params = parseparams...
+  const parsedParams = parsePaybuttonPATCHRequest(params)
   return await prisma.paybutton.update({
     where: {
       id: paybuttonId
     },
     data: {
-      name: params.name,
-      buttonData: params.buttonData
+      name: parsedParams.name,
+      buttonData: parsedParams.buttonData
     },
     include: includeAddresses
   })
