@@ -2,11 +2,11 @@ import * as networkService from 'services/networkService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import { parsePaybuttonPATCHRequest } from 'utils/validators'
 
 export interface UpdatePaybuttonInput {
   name?: string
   buttonData?: string
+  prefixedAddressList?: string[]
 }
 
 export interface CreatePaybuttonInput {
@@ -35,9 +35,9 @@ const paybuttonWithAddresses = Prisma.validator<Prisma.PaybuttonArgs>()(
 
 export type PaybuttonWithAddresses = Prisma.PaybuttonGetPayload<typeof paybuttonWithAddresses>
 
-export async function createPaybutton (values: CreatePaybuttonInput): Promise<PaybuttonWithAddresses> {
-  const addresses = await Promise.all(
-    values.prefixedAddressList.map(
+async function getAddressObjectsToCreateOrConnect (prefixedAddressList: string[]): Promise<Prisma.AddressUncheckedCreateWithoutPaybuttonsInput[]> {
+  return await Promise.all(
+    prefixedAddressList.map(
       async (addressWithPrefix) => {
         const prefix = addressWithPrefix.split(':')[0].toLowerCase()
         const network = await networkService.getNetworkFromSlug(prefix)
@@ -48,13 +48,17 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
         }
       })
   )
+}
+
+export async function createPaybutton (values: CreatePaybuttonInput): Promise<PaybuttonWithAddresses> {
+  const addressesToCreateOrConnect = await getAddressObjectsToCreateOrConnect(values.prefixedAddressList)
   return await prisma.paybutton.create({
     data: {
       providerUserId: values.userId,
       name: values.name,
       buttonData: values.buttonData,
       addresses: {
-        create: addresses.map((address) => {
+        create: addressesToCreateOrConnect.map((address) => {
           return {
             address: {
               connectOrCreate: {
@@ -112,15 +116,31 @@ export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Payb
 }
 
 export async function updatePaybutton (paybuttonId: number, params: UpdatePaybuttonInput): Promise<PaybuttonWithAddresses> {
-  const parsedParams = parsePaybuttonPATCHRequest(params)
+  const updateData: Prisma.PaybuttonUpdateInput = {
+    name: params.name,
+    buttonData: params.buttonData
+  }
+  if (params.prefixedAddressList !== undefined && params.prefixedAddressList.length !== 0) {
+    const addressesToCreateOrConnect = await getAddressObjectsToCreateOrConnect(params.prefixedAddressList)
+    updateData.addresses = {
+      create: addressesToCreateOrConnect.map((address) => {
+        return {
+          address: {
+            connectOrCreate: {
+              where: { address: address.address },
+              create: address
+            }
+          }
+        }
+      })
+    }
+  }
+
   return await prisma.paybutton.update({
     where: {
       id: paybuttonId
     },
-    data: {
-      name: parsedParams.name,
-      buttonData: parsedParams.buttonData
-    },
+    data: updateData,
     include: includeAddresses
   })
 }

@@ -14,6 +14,10 @@ import xecaddr from 'xecaddrjs'
 
 /* Validates the address and adds a prefix to it, if it does not have it already.
  */
+const parseAddressTextBlock = function (addressBlock: string): string[] {
+  return addressBlock.trim().split('\n').map((addr) => parseAddress(addr))
+}
+
 export const parseAddress = function (addressString: string | undefined): string {
   if (addressString === '' || addressString === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
   let parsedAddress: string
@@ -78,7 +82,7 @@ export const parsePaybuttonPOSTRequest = function (params: paybuttonPOSTParamete
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   if (params.addresses === '' || params.addresses === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
-  const parsedAddresses = params.addresses.trim().split('\n').map((addr) => parseAddress(addr))
+  const parsedAddresses = parseAddressTextBlock(params.addresses)
   const parsedButtonData = parseButtonData(params.buttonData)
   return {
     userId: params.userId,
@@ -97,6 +101,7 @@ export interface WalletPOSTParameters {
 export interface PaybuttonPATCHParameters {
   name?: string
   buttonData?: string
+  addresses?: string
 }
 
 export interface WalletPATCHParameters {
@@ -129,8 +134,12 @@ export const parseWalletPATCHRequest = function (params: WalletPATCHParameters):
 }
 
 export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters): UpdatePaybuttonInput {
-  return {
+  const ret: UpdatePaybuttonInput = {
     name: params.name,
     buttonData: parseButtonData(params.buttonData)
   }
+  if (params.addresses !== '' && params.addresses !== undefined) {
+    ret.prefixedAddressList = parseAddressTextBlock(params.addresses)
+  }
+  return ret
 }
