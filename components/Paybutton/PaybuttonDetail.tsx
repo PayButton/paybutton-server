@@ -8,7 +8,6 @@ interface IProps {
   onDelete: Function
 }
 export default ({ paybutton, onDelete }: IProps): FunctionComponent => {
-  console.log(paybutton)
   return (
     <div className={style.paybutton_list_ctn}>
       <div className={`${style.paybutton_card} ${style.paybutton_card_no_hover}`}>
