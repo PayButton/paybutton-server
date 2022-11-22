@@ -21,6 +21,10 @@
   margin: 0;
 }
 
+.paybutton_card h6 {
+  margin: 20px 0 5px 0;
+}
+
 .address {
   color: var(--secondary-text-color);
 }

@@ -8,6 +8,7 @@ interface IProps {
   onDelete: Function
 }
 export default ({ paybutton, onDelete }: IProps): FunctionComponent => {
+  console.log(paybutton)
   return (
     <div className={style.paybutton_list_ctn}>
       <div className={`${style.paybutton_card} ${style.paybutton_card_no_hover}`}>
@@ -24,12 +25,17 @@ export default ({ paybutton, onDelete }: IProps): FunctionComponent => {
               </div>
             ))}
           </div>
-          <h6>
-            Associated data:
-          </h6>
-          <div>
-            {paybutton.buttonData}
-          </div>
+          {paybutton.buttonData === '{}' || paybutton.buttonData === undefined
+            ? null
+            : <>
+              <h6>
+                Associated data:
+              </h6>
+              <div>
+                {paybutton.buttonData}
+              </div>
+            </>
+          }
       </div>
     </div>
   )
