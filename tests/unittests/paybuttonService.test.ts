@@ -55,3 +55,21 @@ describe('Delete services', () => {
     expect(result).toEqual(mockedPaybutton)
   })
 })
+
+describe('Update services', () => {
+  it('Should return paybutton nested', async () => {
+    prismaMock.paybutton.update.mockResolvedValue(mockedPaybutton)
+    prisma.paybutton.update = prismaMock.paybutton.update
+
+    prismaMock.network.findUnique.mockResolvedValue(mockedNetwork)
+    prisma.network.findUnique = prismaMock.network.findUnique
+    const updatePaybuttonInput = {
+      userId: 'mocked-uid',
+      name: 'mocked-name',
+      prefixedAddressList: ['mockednetwork:mockaddress'],
+      buttonData: ''
+    }
+    const result = await paybuttonService.updatePaybutton(1, updatePaybuttonInput)
+    expect(result).toEqual(mockedPaybutton)
+  })
+})
