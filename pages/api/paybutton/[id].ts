@@ -56,6 +56,11 @@ export default async (
         case RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message:
           res.status(404).json(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404)
           break
+        case RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400)
+          break
+        default:
+          res.status(500).json({ statusCode: 500, message: parsedError.message })
       }
     }
   }
