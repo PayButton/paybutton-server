@@ -47,7 +47,6 @@ export default async (
     try {
       const values = req.body
       const updatePaybuttonInput = parsePaybuttonPATCHRequest(values)
-      console.log('inputs', updatePaybuttonInput)
       const paybutton = await paybuttonService.updatePaybutton(Number(paybuttonId), updatePaybuttonInput)
       res.status(200).json(paybutton)
     } catch (err: any) {
@@ -55,6 +54,9 @@ export default async (
       switch (parsedError.message) {
         case RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message:
           res.status(404).json(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404)
+          break
+        case RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400)
           break
         case RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400.message:
           res.status(400).json(RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400)
