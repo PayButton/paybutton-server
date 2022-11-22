@@ -116,9 +116,12 @@ export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Payb
 }
 
 export async function updatePaybutton (paybuttonId: number, params: UpdatePaybuttonInput): Promise<PaybuttonWithAddresses> {
-  const updateData: Prisma.PaybuttonUpdateInput = {
-    name: params.name,
-    buttonData: params.buttonData
+  const updateData: Prisma.PaybuttonUpdateInput = {}
+  if (params.name !== undefined && params.name !== '') {
+    updateData.name = params.name
+  }
+  if (params.buttonData !== undefined && params.buttonData !== '') {
+    updateData.buttonData = params.buttonData
   }
   if (params.prefixedAddressList !== undefined && params.prefixedAddressList.length !== 0) {
     const addressesToCreateOrConnect = await getAddressObjectsToCreateOrConnect(params.prefixedAddressList)

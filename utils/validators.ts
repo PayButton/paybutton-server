@@ -135,9 +135,12 @@ export const parseWalletPATCHRequest = function (params: WalletPATCHParameters):
 
 export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters): UpdatePaybuttonInput {
   const ret: UpdatePaybuttonInput = {
-    name: params.name,
-    buttonData: parseButtonData(params.buttonData)
+    name: params.name
   }
+  if (params.buttonData !== '' && params.buttonData !== undefined) {
+    ret.buttonData = parseButtonData(params.buttonData)
+  }
+
   if (params.addresses !== '' && params.addresses !== undefined) {
     ret.prefixedAddressList = parseAddressTextBlock(params.addresses)
   }
