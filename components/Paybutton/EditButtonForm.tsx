@@ -59,8 +59,9 @@ export default function EditButtonForm ({ paybutton, error, onDelete, refreshPay
                   </div>
                 </label>
                 {multipleAddresses
-                  ? <textarea {...register('addresses')} id='addresses' name='addresses' required />
-                  : <input {...register('addresses')} id='addresses' name='addresses' required />
+                  ? <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')}/>
+                  : <input {...register('addresses')} id='addresses' name='addresses'
+                  placeholder={paybutton.addresses.map((conn) => `${conn.address.address.slice(0, 15)}...`).join('; ')}/>
                 }
                 {multipleAddresses &&
                 <div className={style.tip}>Place each address on a seperate line. No commas or spaces needed</div>
@@ -69,7 +70,7 @@ export default function EditButtonForm ({ paybutton, error, onDelete, refreshPay
                   {(error === undefined) ? null : <div className={style.error_message}>{error}</div>}
                   <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
                   <div>
-                    <button type='submit'>Submit</button>
+      <button type='submit'>Submit</button>
                     <button onClick={() => { setModal(false); reset() }} className={style.cancel_btn}>Cancel</button>
                   </div>
                 </div>
