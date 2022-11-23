@@ -60,6 +60,8 @@ describe('Update services', () => {
   it('Should return paybutton nested', async () => {
     prismaMock.paybutton.update.mockResolvedValue(mockedPaybutton)
     prisma.paybutton.update = prismaMock.paybutton.update
+    prismaMock.addressesOnButtons.deleteMany.mockResolvedValue({ count: 0 })
+    prisma.addressesOnButtons.deleteMany = prismaMock.addressesOnButtons.deleteMany
 
     prismaMock.network.findUnique.mockResolvedValue(mockedNetwork)
     prisma.network.findUnique = prismaMock.network.findUnique
