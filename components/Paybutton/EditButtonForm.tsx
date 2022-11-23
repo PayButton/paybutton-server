@@ -22,6 +22,7 @@ export default function EditButtonForm ({ paybutton, error, onDelete, refreshPay
   const { register, handleSubmit, reset } = useForm<paybuttonPOSTParameters>()
   const [modal, setModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState(false)
+  const [multipleAddresses, setMultipleAddresses] = useState(false)
 
   useEffect(() => {
     setModal(false)
@@ -50,7 +51,20 @@ export default function EditButtonForm ({ paybutton, error, onDelete, refreshPay
             <div className={style.form_ctn}>
               <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
                 <label htmlFor='name'>Button Name</label>
-                <input {...register('name')} type='text' id='name' name='name' required placeholder={paybutton.name}/>
+                <input {...register('name')} type='text' id='name' name='name' placeholder={paybutton.name}/>
+                <label className={style.labelMargin} htmlFor='addresses'>
+                  Address{multipleAddresses && 'es'}
+                  <div className={style.multiple_address} onClick={() => setMultipleAddresses(!multipleAddresses)}>
+                    {multipleAddresses ? 'Single Address' : 'Multiple Addresses'}
+                  </div>
+                </label>
+                {multipleAddresses
+                  ? <textarea {...register('addresses')} id='addresses' name='addresses' required />
+                  : <input {...register('addresses')} id='addresses' name='addresses' required />
+                }
+                {multipleAddresses &&
+                <div className={style.tip}>Place each address on a seperate line. No commas or spaces needed</div>
+                }
                 <div className={style.btn_row2}>
                   {(error === undefined) ? null : <div className={style.error_message}>{error}</div>}
                   <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
