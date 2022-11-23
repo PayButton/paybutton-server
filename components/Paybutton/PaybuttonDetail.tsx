@@ -25,12 +25,6 @@ export default ({ paybutton, onDelete, refreshPaybutton }: IProps): FunctionComp
               </div>
             ))}
           </div>
-          <h6>
-            Associated data:
-          </h6>
-          <div>
-            {paybutton.buttonData}
-          </div>
       </div>
     </div>
   )

@@ -5,7 +5,6 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 
 export interface UpdatePaybuttonInput {
   name?: string
-  buttonData?: string
   prefixedAddressList?: string[]
 }
 
@@ -119,9 +118,6 @@ export async function updatePaybutton (paybuttonId: number, params: UpdatePaybut
   const updateData: Prisma.PaybuttonUpdateInput = {}
   if (params.name !== undefined && params.name !== '') {
     updateData.name = params.name
-  }
-  if (params.buttonData !== undefined && params.buttonData !== '') {
-    updateData.buttonData = params.buttonData
   }
   if (params.prefixedAddressList !== undefined && params.prefixedAddressList.length !== 0) {
     const addressesToCreateOrConnect = await getAddressObjectsToCreateOrConnect(params.prefixedAddressList)

@@ -104,7 +104,6 @@ export interface WalletPOSTParameters {
 
 export interface PaybuttonPATCHParameters {
   name?: string
-  buttonData?: string
   addresses?: string
 }
 
@@ -140,9 +139,6 @@ export const parseWalletPATCHRequest = function (params: WalletPATCHParameters):
 export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters): UpdatePaybuttonInput {
   const ret: UpdatePaybuttonInput = {
     name: params.name
-  }
-  if (params.buttonData !== '' && params.buttonData !== undefined) {
-    ret.buttonData = parseButtonData(params.buttonData)
   }
 
   if (params.addresses !== '' && params.addresses !== undefined) {
