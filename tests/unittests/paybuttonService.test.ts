@@ -62,6 +62,13 @@ describe('Update services', () => {
     prisma.paybutton.update = prismaMock.paybutton.update
     prismaMock.addressesOnButtons.deleteMany.mockResolvedValue({ count: 0 })
     prisma.addressesOnButtons.deleteMany = prismaMock.addressesOnButtons.deleteMany
+    prisma.addressesOnButtons.deleteMany = prismaMock.addressesOnButtons.deleteMany
+    prismaMock.$transaction.mockImplementation(
+      (fn: (prisma: any) => any) => {
+        return fn(prisma)
+      }
+    )
+    prisma.$transaction = prismaMock.$transaction
 
     prismaMock.network.findUnique.mockResolvedValue(mockedNetwork)
     prisma.network.findUnique = prismaMock.network.findUnique
