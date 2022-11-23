@@ -66,8 +66,7 @@ describe('Update services', () => {
     const updatePaybuttonInput = {
       userId: 'mocked-uid',
       name: 'mocked-name',
-      prefixedAddressList: ['mockednetwork:mockaddress'],
-      buttonData: ''
+      prefixedAddressList: ['mockednetwork:mockaddress']
     }
     const result = await paybuttonService.updatePaybutton(1, updatePaybuttonInput)
     expect(result).toEqual(mockedPaybutton)

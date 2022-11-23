@@ -185,24 +185,15 @@ describe('parsePaybuttonPOSTRequest', () => {
 describe('parsePaybuttonPATCHRequest', () => {
   const data: v.paybuttonPOSTParameters = {
     name: 'somename',
-    buttonData: undefined,
     addresses: undefined
   }
-  it('Invalid button data throws error', () => {
-    expect(() => {
-      data.buttonData = '{test:}'
-      v.parsePaybuttonPATCHRequest(data)
-    }).toThrow(RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400.message)
-  })
   it('Invalid addresses throws error', () => {
     expect(() => {
-      data.buttonData = undefined
       data.addresses = 'ecash:lkajsdl\nll'
       v.parsePaybuttonPATCHRequest(data)
     }).toThrow(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
   })
   it('Addresses text is split', () => {
-    data.buttonData = undefined
     data.addresses = `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
     const res = v.parsePaybuttonPATCHRequest(data)
     expect(res.prefixedAddressList).toStrictEqual([

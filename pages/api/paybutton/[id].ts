@@ -58,9 +58,6 @@ export default async (
         case RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message:
           res.status(400).json(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400)
           break
-        case RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400.message:
-          res.status(400).json(RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400)
-          break
         default:
           res.status(500).json({ statusCode: 500, message: parsedError.message })
       }
