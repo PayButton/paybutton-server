@@ -135,11 +135,21 @@ export async function updatePaybutton (paybuttonId: number, params: UpdatePaybut
     }
   }
 
-  return await prisma.paybutton.update({
-    where: {
-      id: paybuttonId
-    },
-    data: updateData,
-    include: includeAddresses
+  return await prisma.$transaction(async (prisma) => {
+    // remove previous address connections, if new address list sent
+    if (params.prefixedAddressList !== undefined && params.prefixedAddressList.length !== 0) {
+      void await prisma.addressesOnButtons.deleteMany({
+        where: {
+          paybuttonId
+        }
+      })
+    }
+    return await prisma.paybutton.update({
+      where: {
+        id: paybuttonId
+      },
+      data: updateData,
+      include: includeAddresses
+    })
   })
 }
