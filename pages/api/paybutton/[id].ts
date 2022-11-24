@@ -52,6 +52,9 @@ export default async (
     } catch (err: any) {
       const parsedError = parseError(err)
       switch (parsedError.message) {
+        case RESPONSE_MESSAGES.INVALID_ADDRESS_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.INVALID_ADDRESS_400)
+          break
         case RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message:
           res.status(404).json(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404)
           break
