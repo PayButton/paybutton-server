@@ -22,7 +22,6 @@ export default function EditButtonForm ({ paybutton, error, onDelete, refreshPay
   const { register, handleSubmit, reset } = useForm<paybuttonPOSTParameters>()
   const [modal, setModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState(false)
-  const [multipleAddresses, setMultipleAddresses] = useState(false)
 
   useEffect(() => {
     setModal(false)
@@ -53,19 +52,10 @@ export default function EditButtonForm ({ paybutton, error, onDelete, refreshPay
                 <label htmlFor='name'>Button Name</label>
                 <input {...register('name')} type='text' id='name' name='name' placeholder={paybutton.name}/>
                 <label className={style.labelMargin} htmlFor='addresses'>
-                  Address{multipleAddresses && 'es'}
-                  <div className={style.multiple_address} onClick={() => setMultipleAddresses(!multipleAddresses)}>
-                    {multipleAddresses ? 'Single Address' : 'Multiple Addresses'}
-                  </div>
+                  Addresses
                 </label>
-                {multipleAddresses
-                  ? <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')}/>
-                  : <input {...register('addresses')} id='addresses' name='addresses'
-                  placeholder={paybutton.addresses.map((conn) => `${conn.address.address.slice(0, 15)}...`).join('; ')}/>
-                }
-                {multipleAddresses &&
+                  <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')}/>
                 <div className={style.tip}>Place each address on a seperate line. No commas or spaces needed</div>
-                }
                 <div className={style.btn_row2}>
                   {(error === undefined) ? null : <div className={style.error_message}>{error}</div>}
                   <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
