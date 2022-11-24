@@ -3,6 +3,11 @@ import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
+export interface UpdatePaybuttonInput {
+  name?: string
+  prefixedAddressList?: string[]
+}
+
 export interface CreatePaybuttonInput {
   userId: string
   name: string
@@ -29,9 +34,9 @@ const paybuttonWithAddresses = Prisma.validator<Prisma.PaybuttonArgs>()(
 
 export type PaybuttonWithAddresses = Prisma.PaybuttonGetPayload<typeof paybuttonWithAddresses>
 
-export async function createPaybutton (values: CreatePaybuttonInput): Promise<PaybuttonWithAddresses> {
-  const addresses = await Promise.all(
-    values.prefixedAddressList.map(
+async function getAddressObjectsToCreateOrConnect (prefixedAddressList: string[]): Promise<Prisma.AddressUncheckedCreateWithoutPaybuttonsInput[]> {
+  return await Promise.all(
+    prefixedAddressList.map(
       async (addressWithPrefix) => {
         const prefix = addressWithPrefix.split(':')[0].toLowerCase()
         const network = await networkService.getNetworkFromSlug(prefix)
@@ -42,13 +47,17 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
         }
       })
   )
+}
+
+export async function createPaybutton (values: CreatePaybuttonInput): Promise<PaybuttonWithAddresses> {
+  const addressesToCreateOrConnect = await getAddressObjectsToCreateOrConnect(values.prefixedAddressList)
   return await prisma.paybutton.create({
     data: {
       providerUserId: values.userId,
       name: values.name,
       buttonData: values.buttonData,
       addresses: {
-        create: addresses.map((address) => {
+        create: addressesToCreateOrConnect.map((address) => {
           return {
             address: {
               connectOrCreate: {
@@ -102,5 +111,45 @@ export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Payb
   return await prisma.paybutton.findMany({
     where: { providerUserId: userId },
     include: includeAddresses
+  })
+}
+
+export async function updatePaybutton (paybuttonId: number, params: UpdatePaybuttonInput): Promise<PaybuttonWithAddresses> {
+  const updateData: Prisma.PaybuttonUpdateInput = {}
+  if (params.name !== undefined && params.name !== '') {
+    updateData.name = params.name
+  }
+  if (params.prefixedAddressList !== undefined && params.prefixedAddressList.length !== 0) {
+    const addressesToCreateOrConnect = await getAddressObjectsToCreateOrConnect(params.prefixedAddressList)
+    updateData.addresses = {
+      create: addressesToCreateOrConnect.map((address) => {
+        return {
+          address: {
+            connectOrCreate: {
+              where: { address: address.address },
+              create: address
+            }
+          }
+        }
+      })
+    }
+  }
+
+  return await prisma.$transaction(async (prisma) => {
+    // remove previous address connections, if new address list sent
+    if (params.prefixedAddressList !== undefined && params.prefixedAddressList.length !== 0) {
+      void await prisma.addressesOnButtons.deleteMany({
+        where: {
+          paybuttonId
+        }
+      })
+    }
+    return await prisma.paybutton.update({
+      where: {
+        id: paybuttonId
+      },
+      data: updateData,
+      include: includeAddresses
+    })
   })
 }

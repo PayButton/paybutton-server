@@ -1,4 +1,5 @@
 import { RequestOptions, RequestMethod } from 'node-mocks-http'
+import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import paybuttonsEndpoint from 'pages/api/paybuttons/index'
 import paybuttonEndpoint from 'pages/api/paybutton/index'
 import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
@@ -161,6 +162,111 @@ describe('POST /api/paybutton/', () => {
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400.message)
+  })
+})
+
+describe('PATCH /api/paybutton/', () => {
+  let createdPaybuttons: PaybuttonWithAddresses[]
+  beforeAll(async () => {
+    await clearPaybuttonsAndAddresses()
+    createdPaybuttons = []
+    const userA = 'test-u-id'
+    const userB = 'test-other-u-id'
+    for (let i = 0; i < 4; i++) {
+      const userId = i === 3 ? userB : userA
+      const paybutton = await createPaybuttonForUser(userId)
+      createdPaybuttons.push(paybutton)
+    }
+  })
+  const baseRequestOptions: RequestOptions = {
+    method: 'PATCH' as RequestMethod,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: {
+      addresses: undefined,
+      name: undefined
+    },
+    query: {}
+  }
+
+  it('Update a paybutton name', async () => {
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = createdPaybuttons[0].id
+    baseRequestOptions.body = {
+      name: 'blablabla',
+      addresses: undefined
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(200)
+    expect(responseData.providerUserId).toBe('test-u-id')
+    expect(responseData.name).toBe('blablabla')
+    expect(responseData.uuid).not.toBeNull()
+    expect(responseData.addresses).toEqual(
+      expect.arrayContaining([
+        {
+          address: expect.objectContaining({
+            address: createdPaybuttons[0].addresses.map((addr) => addr.address.address)[0]
+          })
+        },
+        {
+          address:
+          expect.objectContaining({
+            address: createdPaybuttons[0].addresses.map((addr) => addr.address.address)[1]
+          })
+        }
+      ])
+    )
+  })
+
+  it('Update a paybutton addresses', async () => {
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = createdPaybuttons[0].id
+    baseRequestOptions.body = {
+      addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
+    expect(res.statusCode).toBe(200)
+    const responseData = res._getJSONData()
+    expect(responseData.providerUserId).toBe('test-u-id')
+    expect(responseData.name).toBe('blablabla')
+    expect(responseData.addresses).toEqual(
+      expect.arrayContaining([
+        {
+          address: expect.objectContaining({
+            address: `ecash:${exampleAddresses.ecash}`
+          })
+        },
+        {
+          address:
+          expect.objectContaining({
+            address: `bitcoincash:${exampleAddresses.bitcoincash}`
+          })
+        }
+      ])
+    )
+  })
+
+  it('Should fail with repeated name', async () => {
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = createdPaybuttons[0].id
+    baseRequestOptions.body = {
+      name: createdPaybuttons[1].name,
+      addresses: undefined
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
+    expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message)
+  })
+  it('Should fail for non non-existent button', async () => {
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 9128371987912
+    baseRequestOptions.body = {
+      name: 'some-different-name',
+      addresses: undefined
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
+    expect(res.statusCode).toBe(404)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
   })
 })
 

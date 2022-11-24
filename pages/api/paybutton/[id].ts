@@ -1,5 +1,5 @@
 import * as paybuttonService from 'services/paybuttonService'
-import { parseError } from 'utils/validators'
+import { parseError, parsePaybuttonPATCHRequest } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { setSession } from 'utils/setSession'
 
@@ -37,6 +37,26 @@ export default async (
           break
         case RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message:
           res.status(400).json(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400)
+          break
+        default:
+          res.status(500).json({ statusCode: 500, message: parsedError.message })
+      }
+    }
+  }
+  if (req.method === 'PATCH') {
+    try {
+      const values = req.body
+      const updatePaybuttonInput = parsePaybuttonPATCHRequest(values)
+      const paybutton = await paybuttonService.updatePaybutton(Number(paybuttonId), updatePaybuttonInput)
+      res.status(200).json(paybutton)
+    } catch (err: any) {
+      const parsedError = parseError(err)
+      switch (parsedError.message) {
+        case RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message:
+          res.status(404).json(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404)
+          break
+        case RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400)
           break
         default:
           res.status(500).json({ statusCode: 500, message: parsedError.message })

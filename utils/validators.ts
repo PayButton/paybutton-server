@@ -1,6 +1,6 @@
 import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN } from '../constants/index'
 import { Prisma } from '@prisma/client'
-import { CreatePaybuttonInput } from '../services/paybuttonService'
+import { CreatePaybuttonInput, UpdatePaybuttonInput } from '../services/paybuttonService'
 import { CreateWalletInput, UpdateWalletInput } from '../services/walletService'
 import { getAddressPrefix } from './index'
 import xecaddr from 'xecaddrjs'
@@ -14,6 +14,10 @@ import xecaddr from 'xecaddrjs'
 
 /* Validates the address and adds a prefix to it, if it does not have it already.
  */
+const parseAddressTextBlock = function (addressBlock: string): string[] {
+  return addressBlock.trim().split('\n').map((addr) => parseAddress(addr))
+}
+
 export const parseAddress = function (addressString: string | undefined): string {
   if (addressString === '' || addressString === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
   let parsedAddress: string
@@ -59,9 +63,13 @@ export const parseError = function (error: Error): Error {
         }
         break
       case 'P2025':
-        if (error.message.includes('prisma.paybutton.delete')) {
+        if (
+          error.message.includes('prisma.paybutton.delete') ||
+          error.message.includes('prisma.paybutton.update')
+        ) {
           return new Error(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
         }
+        break
     }
   }
   return error
@@ -78,7 +86,7 @@ export const parsePaybuttonPOSTRequest = function (params: paybuttonPOSTParamete
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   if (params.addresses === '' || params.addresses === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
-  const parsedAddresses = params.addresses.trim().split('\n').map((addr) => parseAddress(addr))
+  const parsedAddresses = parseAddressTextBlock(params.addresses)
   const parsedButtonData = parseButtonData(params.buttonData)
   return {
     userId: params.userId,
@@ -92,6 +100,11 @@ export interface WalletPOSTParameters {
   userId?: string
   name?: string
   paybuttonIdList?: number[]
+}
+
+export interface PaybuttonPATCHParameters {
+  name?: string
+  addresses?: string
 }
 
 export interface WalletPATCHParameters {
@@ -121,4 +134,15 @@ export const parseWalletPATCHRequest = function (params: WalletPATCHParameters):
     isXECDefault: params.isXECDefault,
     isBCHDefault: params.isBCHDefault
   }
+}
+
+export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters): UpdatePaybuttonInput {
+  const ret: UpdatePaybuttonInput = {
+    name: params.name
+  }
+
+  if (params.addresses !== '' && params.addresses !== undefined) {
+    ret.prefixedAddressList = parseAddressTextBlock(params.addresses)
+  }
+  return ret
 }

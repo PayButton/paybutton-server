@@ -181,3 +181,24 @@ describe('parsePaybuttonPOSTRequest', () => {
     }).toThrow(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
   })
 })
+
+describe('parsePaybuttonPATCHRequest', () => {
+  const data: v.paybuttonPOSTParameters = {
+    name: 'somename',
+    addresses: undefined
+  }
+  it('Invalid addresses throws error', () => {
+    expect(() => {
+      data.addresses = 'ecash:lkajsdl\nll'
+      v.parsePaybuttonPATCHRequest(data)
+    }).toThrow(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
+  })
+  it('Addresses text is split', () => {
+    data.addresses = `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
+    const res = v.parsePaybuttonPATCHRequest(data)
+    expect(res.prefixedAddressList).toStrictEqual([
+      `ecash:${exampleAddresses.ecash}`,
+      `bitcoincash:${exampleAddresses.bitcoincash}`
+    ])
+  })
+})

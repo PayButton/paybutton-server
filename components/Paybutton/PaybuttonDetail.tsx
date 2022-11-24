@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from 'react'
-import  { PaybuttonWithAddresses } from 'services/paybuttonService'
+import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import style from './paybutton.module.css'
 import EditButtonForm from './EditButtonForm'
 
