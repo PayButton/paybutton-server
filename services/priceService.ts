@@ -23,7 +23,7 @@ interface IResponseData {
   Price_in_USD: string
 }
 
-async function syncCurrentPricesForNetworkId (responseData: IResponseData, networkId: number): Promise<void> {
+async function upsertCurrentPricesForNetworkId (responseData: IResponseData, networkId: number): Promise<void> {
   await prisma.price.upsert({
     where: {
       Price_timestamp_quoteId_networkId_unique_constraint: {
@@ -69,13 +69,13 @@ export async function syncCurrentPrices (): Promise<boolean> {
   let res = await axios.get(`${appInfo.priceAPIURL}/BCH+${todayString}`)
   let responseData = res.data
   if (responseData.success !== false) {
-    void syncCurrentPricesForNetworkId(responseData, BCH_NETWORK_ID)
+    void upsertCurrentPricesForNetworkId(responseData, BCH_NETWORK_ID)
   } else success = false
 
   res = await axios.get(`${appInfo.priceAPIURL}/XEC+${todayString}`)
   responseData = res.data
   if (responseData.success !== false) {
-    void syncCurrentPricesForNetworkId(responseData, XEC_NETWORK_ID)
+    void upsertCurrentPricesForNetworkId(responseData, XEC_NETWORK_ID)
   } else success = false
 
   return success
