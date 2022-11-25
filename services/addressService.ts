@@ -54,7 +54,6 @@ export async function upsertAddress (addressString: string): Promise<AddressWith
   const prefixedAddress = parseAddress(addressString)
   const prefix = prefixedAddress.split(':')[0].toLowerCase()
   const network = await getNetworkFromSlug(prefix)
-  if (network === null) throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
   return await prisma.address.upsert({
     where: {
       address: prefixedAddress

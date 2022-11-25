@@ -3,8 +3,10 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 import prisma from 'prisma/clientInstance'
 import { getBlockchainInfo, getBlockInfo } from 'services/grpcService'
 
-export async function getNetworkFromSlug (slug: string): Promise<Network | null> {
-  return await prisma.network.findUnique({ where: { slug } })
+export async function getNetworkFromSlug (slug: string): Promise<Network> {
+  const network = await prisma.network.findUnique({ where: { slug } })
+  if (network === null) throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
+  return network
 }
 
 export interface ConnectionInfo {
