@@ -55,7 +55,7 @@ export default function EditButtonForm ({ paybutton, error, onDelete, refreshPay
                   Addresses
                 </label>
                   <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')}/>
-                <div className={style.tip}>Place each address on a seperate line. No commas or spaces needed</div>
+                <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
                 <div className={style.btn_row2}>
                   {(error === undefined) ? null : <div className={style.error_message}>{error}</div>}
                   <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
