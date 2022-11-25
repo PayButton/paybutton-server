@@ -99,7 +99,7 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
   }
 
   async fetchTransactions (address: string): Promise<void> {
-    const res = await fetch(`/api/transactions/${address}`, {
+    const res = await fetch(`/api/address/transactions/${address}`, {
       method: 'GET'
     })
     const ok = await res.json()

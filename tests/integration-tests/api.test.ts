@@ -6,10 +6,10 @@ import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
 import walletsEndpoint from 'pages/api/wallets/index'
 import walletEndpoint from 'pages/api/wallet/index'
 import walletIdEndpoint from 'pages/api/wallet/[id]'
-import transactionsEndpoint from 'pages/api/transactions/[address]'
-import transactionsSyncEndpoint from 'pages/api/transactions/sync/[address]'
+import transactionsEndpoint from 'pages/api/address/transactions/[address]'
+import transactionsSyncEndpoint from 'pages/api/address/transactions/sync/[address]'
 import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
-import balanceEndpoint from 'pages/api/balance/[address]'
+import balanceEndpoint from 'pages/api/address/balance/[address]'
 import dashboardEndpoint from 'pages/api/dashboard/index'
 import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
 import {
@@ -893,7 +893,7 @@ describe('DELETE /api/paybutton/[id]', () => {
   })
 })
 
-describe('GET /api/transactions/[address]', () => {
+describe('GET /api/address/transactions/[address]', () => {
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
     headers: {
@@ -938,7 +938,7 @@ describe('GET /api/transactions/[address]', () => {
   })
 })
 
-describe('GET /api/transactions/sync/[address]', () => {
+describe('GET /api/address/transactions/sync/[address]', () => {
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
     headers: {
@@ -1002,7 +1002,7 @@ describe('GET /api/transaction/[transactionId]', () => {
   })
 })
 
-describe('GET /api/balance/[address]', () => {
+describe('GET /api/address/balance/[address]', () => {
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
     headers: {
