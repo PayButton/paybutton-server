@@ -54,7 +54,7 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, error }: IProps):
                   : <input {...register('addresses')} id='addresses' name='addresses' required />
                 }
                 {multipleAddresses &&
-                <div className={style.tip}>Place each address on a seperate line. No commas or spaces needed</div>
+                <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
                 }
                 <div className={style.btn_row}>
                   {error !== '' && <div className={style.error_message}>{error}</div>}
