@@ -11,6 +11,8 @@ import transactionsSyncEndpoint from 'pages/api/address/transactions/sync/[addre
 import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
 import balanceEndpoint from 'pages/api/address/balance/[address]'
 import dashboardEndpoint from 'pages/api/dashboard/index'
+import currentPriceEndpoint from 'pages/api/price/[networkSlug]'
+import currentPriceForQuoteEndpoint from 'pages/api/price/[networkSlug]/[quoteSlug]'
 import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
 import {
   exampleAddresses,
@@ -21,7 +23,8 @@ import {
   createWalletForUser,
   countPaybuttons,
   countAddresses,
-  countWallets
+  countWallets,
+  createCurrentPrices
 } from 'tests/utils'
 
 import { RESPONSE_MESSAGES } from 'constants/index'
@@ -1057,5 +1060,96 @@ describe('GET /api/dashboard', () => {
       }
     }
     )
+  })
+})
+
+describe('GET /api/prices/current/[networkSlug]', () => {
+  const baseRequestOptions: RequestOptions = {
+    method: 'GET' as RequestMethod,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    query: {}
+  }
+
+  beforeAll(async () => {
+    void await createCurrentPrices()
+  })
+
+  it('Should return HTTP 400 (Bad Request) if no networkSlug specified', async () => {
+    const res = await testEndpoint(baseRequestOptions, currentPriceEndpoint)
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.NETWORK_SLUG_NOT_PROVIDED_400.statusCode)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NETWORK_SLUG_NOT_PROVIDED_400.message)
+  })
+
+  it('Should return HTTP 400 if invalid networkSlug specified', async () => {
+    baseRequestOptions.query = { networkSlug: 'bla' }
+    const res = await testEndpoint(baseRequestOptions, currentPriceEndpoint)
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.statusCode)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
+  })
+
+  it('Should return HTTP 200', async () => {
+    baseRequestOptions.query = { networkSlug: 'ecash' }
+    const res = await testEndpoint(baseRequestOptions, currentPriceEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(200)
+    expect(responseData).toEqual('122')
+  })
+})
+
+describe('GET /api/prices/current/[networkSlug]/[quoteSlug]', () => {
+  const baseRequestOptions: RequestOptions = {
+    method: 'GET' as RequestMethod,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    query: {}
+  }
+
+  beforeAll(async () => {
+    void await createCurrentPrices()
+  })
+
+  it('Should return HTTP 400 if no networkSlug specified', async () => {
+    baseRequestOptions.query = { quoteSlug: 'cad' }
+    const res = await testEndpoint(baseRequestOptions, currentPriceForQuoteEndpoint)
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.NETWORK_SLUG_NOT_PROVIDED_400.statusCode)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NETWORK_SLUG_NOT_PROVIDED_400.message)
+  })
+
+  it('Should return HTTP 400 if no quoteSlug specified', async () => {
+    baseRequestOptions.query = { networkSlug: 'ecash' }
+    const res = await testEndpoint(baseRequestOptions, currentPriceForQuoteEndpoint)
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.QUOTE_SLUG_NOT_PROVIDED_400.statusCode)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.QUOTE_SLUG_NOT_PROVIDED_400.message)
+  })
+
+  it('Should return HTTP 400 if invalid networkSlug specified', async () => {
+    baseRequestOptions.query = { networkSlug: 'bla', quoteSlug: 'cad' }
+    const res = await testEndpoint(baseRequestOptions, currentPriceForQuoteEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.statusCode)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
+  })
+
+  it('Should return HTTP 400 if invalid quoteSlug specified', async () => {
+    baseRequestOptions.query = { networkSlug: 'ecash', quoteSlug: 'bla' }
+    const res = await testEndpoint(baseRequestOptions, currentPriceForQuoteEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.INVALID_QUOTE_SLUG_400.statusCode)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_QUOTE_SLUG_400.message)
+  })
+
+  it('Should return HTTP 200', async () => {
+    baseRequestOptions.query = { networkSlug: 'ecash', quoteSlug: 'cad' }
+    const res = await testEndpoint(baseRequestOptions, currentPriceForQuoteEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(200)
+    expect(responseData).toEqual('133')
   })
 })

@@ -2,6 +2,7 @@ import * as httpMocks from 'node-mocks-http'
 import prisma from 'prisma/clientInstance'
 import { createPaybutton, PaybuttonWithAddresses } from 'services/paybuttonService'
 import { createWallet, WalletWithAddressesAndPaybuttons } from 'services/walletService'
+import { upsertCurrentPricesForNetworkId } from 'services/priceService'
 import { SUPPORTED_ADDRESS_PATTERN } from 'constants/index'
 import RandExp from 'randexp'
 
@@ -63,4 +64,15 @@ export const exampleAddresses = {
   bchtest: 'qrcn673f42dl4z8l3xpc0gr5kpxg7ea5mqhj3atxd3',
   ecash: 'qz3ye4namaqlca8zgvdju8uqa2wwx8twd5y8wjd9ru',
   ectest: 'qrfekq9s0c8tcuh75wpcxqnyl5e7dhqk4gq6pjct44'
+}
+
+export const createCurrentPrices = async (): Promise<void> => {
+  void await upsertCurrentPricesForNetworkId({
+    Price_in_CAD: '133',
+    Price_in_USD: '122'
+  }, 1)
+  void await upsertCurrentPricesForNetworkId({
+    Price_in_CAD: '13',
+    Price_in_USD: '12'
+  }, 2)
 }
