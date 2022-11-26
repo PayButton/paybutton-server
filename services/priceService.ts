@@ -89,6 +89,22 @@ export async function getCurrentPrices (): Promise<Price[]> {
   })
 }
 
+export async function getCurrentPricesForNetworkId (networkId: number): Promise<QuoteValues> {
+  const currentPrices = await prisma.price.findMany({
+    where: {
+      timestamp: 0,
+      networkId
+    }
+  })
+  if (currentPrices.length !== N_OF_QUOTES) {
+    throw new Error(RESPONSE_MESSAGES.NO_CURRENT_PRICES_FOUND_404.message)
+  }
+  return {
+    usd: currentPrices.filter((price) => price.quoteId === USD_QUOTE_ID)[0].value,
+    cad: currentPrices.filter((price) => price.quoteId === CAD_QUOTE_ID)[0].value
+  }
+}
+
 export async function syncPricesFromTransactionList (transactions: TransactionWithAddressAndPrices[]): Promise<void> {
   const promisedValuesList: Array<Promise<QuoteValues | undefined>> = []
   const syncParamsList: SyncTransactionPricesInput[] = []
