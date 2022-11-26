@@ -7,7 +7,7 @@ import { RESPONSE_MESSAGES, SUPPORTED_QUOTES } from 'constants/index'
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   if (req.method === 'GET') {
     const networkSlug = req.query.networkSlug as string
-    const quoteSlug = (req.query.quoteSlug as string).toLowerCase()
+    const quoteSlug = req.query.quoteSlug as string
     try {
       if (quoteSlug === '' || quoteSlug === undefined) {
         throw new Error(RESPONSE_MESSAGES.QUOTE_SLUG_NOT_PROVIDED_400.message)
@@ -24,8 +24,14 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
     } catch (err: any) {
       const parsedError = parseError(err)
       switch (parsedError.message) {
+        case RESPONSE_MESSAGES.INVALID_QUOTE_SLUG_400.message:
+          res.status(RESPONSE_MESSAGES.INVALID_QUOTE_SLUG_400.statusCode).json(RESPONSE_MESSAGES.INVALID_QUOTE_SLUG_400)
+          break
         case RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message:
           res.status(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.statusCode).json(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400)
+          break
+        case RESPONSE_MESSAGES.QUOTE_SLUG_NOT_PROVIDED_400.message:
+          res.status(RESPONSE_MESSAGES.QUOTE_SLUG_NOT_PROVIDED_400.statusCode).json(RESPONSE_MESSAGES.QUOTE_SLUG_NOT_PROVIDED_400)
           break
         case RESPONSE_MESSAGES.NETWORK_SLUG_NOT_PROVIDED_400.message:
           res.status(RESPONSE_MESSAGES.NETWORK_SLUG_NOT_PROVIDED_400.statusCode).json(RESPONSE_MESSAGES.NETWORK_SLUG_NOT_PROVIDED_400)
