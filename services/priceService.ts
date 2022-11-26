@@ -23,7 +23,7 @@ interface IResponseData {
   Price_in_USD: string
 }
 
-async function upsertCurrentPricesForNetworkId (responseData: IResponseData, networkId: number): Promise<void> {
+export async function upsertCurrentPricesForNetworkId (responseData: IResponseData, networkId: number): Promise<void> {
   await prisma.price.upsert({
     where: {
       Price_timestamp_quoteId_networkId_unique_constraint: {
