@@ -1,31 +1,40 @@
 import React, { ReactElement, useState, useEffect } from 'react'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { useForm } from 'react-hook-form'
-import { paybuttonPOSTParameters } from 'utils/validators'
+import { paybuttonPOSTParameters, paybuttonPATCHParameters } from 'utils/validators'
 import Image from 'next/image'
 import style from '../Paybutton/paybutton.module.css'
 import s from '../Wallet/wallet.module.css'
 import EditIcon from 'assets/edit-icon.png'
 import TrashIcon from 'assets/trash-icon.png'
+import axios from 'axios'
+import { appInfo } from 'config/appInfo'
 
 interface IProps {
-  onSubmit: Function
   onDelete: Function
   paybutton: PaybuttonWithAddresses
+  refreshPaybutton: Function
   error: String
   editname: boolean
 }
 
-export default function EditButtonForm ({ onSubmit, paybutton, error, onDelete }: IProps): ReactElement {
+export default function EditButtonForm ({ paybutton, error, onDelete, refreshPaybutton }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<paybuttonPOSTParameters>()
   const [modal, setModal] = useState(false)
-  const [buttonName, setButtonName] = useState(paybutton.name)
   const [deleteModal, setDeleteModal] = useState(false)
 
   useEffect(() => {
     setModal(false)
     reset()
   }, [paybutton])
+
+  async function onSubmit (params: paybuttonPATCHParameters): Promise<void> {
+    if (params.name === '' || params.name === undefined) {
+      params.name = paybutton.name
+    }
+    void await axios.patch(`${appInfo.websiteDomain}/api/paybutton/${paybutton.id}`, params)
+    refreshPaybutton()
+  }
 
   return (
     <>
@@ -41,13 +50,18 @@ export default function EditButtonForm ({ onSubmit, paybutton, error, onDelete }
             <div className={style.form_ctn}>
               <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
                 <label htmlFor='name'>Button Name</label>
-                <input {...register('name')} type='text' id='name' name='name' required placeholder={paybutton.name} value={buttonName} onChange={(e) => setButtonName(e.target.value)} />
+                <input {...register('name')} type='text' id='name' name='name' placeholder={paybutton.name}/>
+                <label className={style.labelMargin} htmlFor='addresses'>
+                  Addresses
+                </label>
+                  <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')}/>
+                <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
                 <div className={style.btn_row2}>
                   {(error === undefined) ? null : <div className={style.error_message}>{error}</div>}
-                  <button onClick={() => { setModal(false); reset(); setButtonName(paybutton.name); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
+                  <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
                   <div>
-                    <button type='submit'>Submit</button>
-                    <button onClick={() => { setModal(false); reset(); setButtonName(paybutton.name) }} className={style.cancel_btn}>Cancel</button>
+      <button type='submit'>Submit</button>
+                    <button onClick={() => { setModal(false); reset() }} className={style.cancel_btn}>Cancel</button>
                   </div>
                 </div>
               </form>
