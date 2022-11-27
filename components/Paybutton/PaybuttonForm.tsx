@@ -14,7 +14,6 @@ interface IProps {
 export default function PaybuttonForm ({ onSubmit, paybuttons, error }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<paybuttonPOSTParameters>()
   const [modal, setModal] = useState(false)
-  const [multipleAddresses, setMultipleAddresses] = useState(false)
 
   useEffect(() => {
     setModal(false)
@@ -44,18 +43,10 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, error }: IProps):
                 <br /> */}
 
                 <label className={style.labelMargin} htmlFor='addresses'>
-                  Address{multipleAddresses && 'es'}
-                  <div className={style.multiple_address} onClick={() => setMultipleAddresses(!multipleAddresses)}>
-                    {multipleAddresses ? 'Single Address' : 'Multiple Addresses'}
-                  </div>
+                  Addresses
                 </label>
-                {multipleAddresses
-                  ? <textarea {...register('addresses')} id='addresses' name='addresses' required />
-                  : <input {...register('addresses')} id='addresses' name='addresses' required />
-                }
-                {multipleAddresses &&
+                  <textarea {...register('addresses')} id='addresses' name='addresses' required />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
-                }
                 <div className={style.btn_row}>
                   {error !== '' && <div className={style.error_message}>{error}</div>}
                   <button type='submit'>Submit</button>

@@ -23,7 +23,7 @@ interface IResponseData {
   Price_in_USD: string
 }
 
-async function syncCurrentPricesForNetworkId (responseData: IResponseData, networkId: number): Promise<void> {
+export async function upsertCurrentPricesForNetworkId (responseData: IResponseData, networkId: number): Promise<void> {
   await prisma.price.upsert({
     where: {
       Price_timestamp_quoteId_networkId_unique_constraint: {
@@ -69,13 +69,13 @@ export async function syncCurrentPrices (): Promise<boolean> {
   let res = await axios.get(`${appInfo.priceAPIURL}/BCH+${todayString}`)
   let responseData = res.data
   if (responseData.success !== false) {
-    void syncCurrentPricesForNetworkId(responseData, BCH_NETWORK_ID)
+    void upsertCurrentPricesForNetworkId(responseData, BCH_NETWORK_ID)
   } else success = false
 
   res = await axios.get(`${appInfo.priceAPIURL}/XEC+${todayString}`)
   responseData = res.data
   if (responseData.success !== false) {
-    void syncCurrentPricesForNetworkId(responseData, XEC_NETWORK_ID)
+    void upsertCurrentPricesForNetworkId(responseData, XEC_NETWORK_ID)
   } else success = false
 
   return success
@@ -87,6 +87,22 @@ export async function getCurrentPrices (): Promise<Price[]> {
       timestamp: 0
     }
   })
+}
+
+export async function getCurrentPricesForNetworkId (networkId: number): Promise<QuoteValues> {
+  const currentPrices = await prisma.price.findMany({
+    where: {
+      timestamp: 0,
+      networkId
+    }
+  })
+  if (currentPrices.length !== N_OF_QUOTES) {
+    throw new Error(RESPONSE_MESSAGES.NO_CURRENT_PRICES_FOUND_404.message)
+  }
+  return {
+    usd: currentPrices.filter((price) => price.quoteId === USD_QUOTE_ID)[0].value,
+    cad: currentPrices.filter((price) => price.quoteId === CAD_QUOTE_ID)[0].value
+  }
 }
 
 export async function syncPricesFromTransactionList (transactions: TransactionWithAddressAndPrices[]): Promise<void> {
