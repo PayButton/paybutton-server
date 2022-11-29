@@ -1,4 +1,4 @@
-import { Transaction as BCHTransaction } from 'grpc-bchrpc-node'
+import { Transaction } from 'grpc-bchrpc-node'
 import prisma from 'prisma/clientInstance'
 import { Prisma, Address } from '@prisma/client'
 import grpcService from 'services/grpcService'
@@ -13,7 +13,7 @@ import xecaddr from 'xecaddrjs'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
 
-export async function getTransactionAmount (transaction: BCHTransaction.AsObject, addressString: string): Promise<Prisma.Decimal> {
+export async function getTransactionAmount (transaction: Transaction.AsObject, addressString: string): Promise<Prisma.Decimal> {
   let totalOutput = 0
   let totalInput = 0
   const addressFormat = xecaddr.detectAddressFormat(addressString)
@@ -108,7 +108,7 @@ export async function base64HashToHex (base64Hash: string): Promise<string> {
   )
 }
 
-export async function upsertTransaction (transaction: BCHTransaction.AsObject, address: Address): Promise<TransactionWithAddressAndPrices | undefined> {
+export async function upsertTransaction (transaction: Transaction.AsObject, address: Address): Promise<TransactionWithAddressAndPrices | undefined> {
   const receivedAmount = await getTransactionAmount(transaction, address.address)
   if (receivedAmount === new Prisma.Decimal(0)) { // out transactions
     return
@@ -133,7 +133,7 @@ export async function upsertTransaction (transaction: BCHTransaction.AsObject, a
   })
 }
 
-export async function upsertManyTransactions (transactions: BCHTransaction.AsObject[], address: Address): Promise<TransactionWithAddressAndPrices[]> {
+export async function upsertManyTransactions (transactions: Transaction.AsObject[], address: Address): Promise<TransactionWithAddressAndPrices[]> {
   const ret = await prisma.$transaction(async (_) => {
     const insertedTransactions: Array<TransactionWithAddressAndPrices | undefined> = await Promise.all(
       transactions.map(async (transaction) => {
