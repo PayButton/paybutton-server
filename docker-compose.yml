@@ -6,6 +6,7 @@ services:
     depends_on: 
       - db
       - users-service
+      - cache
     build: .
     ports:
       - "3000:3000"
@@ -33,6 +34,7 @@ services:
     container_name: paybutton-users-service
     depends_on:
       - db
+      - cache
     image: registry.supertokens.io/supertokens/supertokens-mysql
     restart: always
     ports:
@@ -43,3 +45,15 @@ services:
       MYSQL_PASSWORD: supertokens
       MYSQL_HOST: db
       MYSQL_PORT: 3306
+
+  cache:
+    container_name: paybutton-cache
+    image: redis:6.2-alpine
+    restart: always
+    user: redis
+    ports:
+      - 6379:6379
+    volumes:
+      - ./redis:/data/redis
+    # dump the dataset each 20 seconds if there was at least 1 change
+    command: sh -c "umask 000 && redis-server /data/redis/redis.conf --save 20 1 --loglevel warning"
