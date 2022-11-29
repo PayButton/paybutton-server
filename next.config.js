@@ -52,6 +52,14 @@ const {
       async rewrites() {
         return [
           {
+            source: '/address/transactions/:address',
+            destination: `${env.API_BASE_PATH}/transactions/:address`,
+          },
+          {
+            source: '/address/balance/:address',
+            destination: `${env.API_BASE_PATH}/balance/:address`,
+          },
+          {
             source: '/:path*',
             destination: '/:path*',
           },
