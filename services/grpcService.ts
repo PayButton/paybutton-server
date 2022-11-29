@@ -100,7 +100,7 @@ export const getTransactionDetails = async (
   return res;
 };
 
-export const Subscribe = async (
+export const subscribeTransactions = async (
   addresses: string[],
   onTransactionNotification: (txn: Transaction.AsObject) => any,
   networkSlug: string,
@@ -130,7 +130,7 @@ export const Subscribe = async (
 export default {
   getAddress,
   getUtxos,
-  Subscribe,
+  subscribeTransactions,
   getBalance,
   getTransactionDetails,
 };
