@@ -133,7 +133,7 @@ export async function upsertTransaction (transaction: Transaction.AsObject, addr
   })
 }
 
-export async function upsertManyTransactions (transactions: Transaction.AsObject[], address: Address): Promise<TransactionWithAddressAndPrices[]> {
+export async function upsertManyTransactionsForAddress (transactions: Transaction.AsObject[], address: Address): Promise<TransactionWithAddressAndPrices[]> {
   const ret = await prisma.$transaction(async (_) => {
     const insertedTransactions: Array<TransactionWithAddressAndPrices | undefined> = await Promise.all(
       transactions.map(async (transaction) => {
@@ -165,7 +165,7 @@ export async function syncTransactionsForAddress (addressString: string): Promis
     })
     newTransactionsCount = nextTransactions.length
     seenTransactionsCount += newTransactionsCount
-    const newInsertedTransactions = await upsertManyTransactions(nextTransactions, address)
+    const newInsertedTransactions = await upsertManyTransactionsForAddress(nextTransactions, address)
     insertedTransactions = [...insertedTransactions, ...newInsertedTransactions]
     await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
   }
