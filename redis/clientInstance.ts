@@ -1,9 +1,9 @@
 import { createClient } from 'redis'
 import { appInfo } from 'config/appInfo'
 
-export const client = createClient({ url: appInfo.redisURL })
-client.on('error', (err) => console.log('Redis Client Error', err))
+export const redis = createClient({ url: appInfo.redisURL })
+redis.on('error', (err) => console.log('Redis Client Error', err))
 
-void client.connect()
+void redis.connect()
 
-export default client
+export default redis
