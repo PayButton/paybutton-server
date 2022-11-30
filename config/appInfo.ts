@@ -7,5 +7,6 @@ export const appInfo = {
   websiteBasePath: `${websiteBasePath}/auth`,
   websiteDomain: process.env.WEBSITE_DOMAIN ?? 'localhost:3000',
   showTestNetworks: JSON.parse(process.env.SHOW_TEST_NETWORKS ?? 'false'),
-  priceAPIURL: process.env.PRICE_API_URL ?? ''
+  priceAPIURL: process.env.PRICE_API_URL ?? '',
+  redisURL: process.env.REDIS_URL ?? 'redis://paybutton-cache:6379'
 }
