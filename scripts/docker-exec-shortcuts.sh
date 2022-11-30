@@ -2,9 +2,11 @@
 
 node_container_name="paybutton-dev"
 db_container_name="paybutton-db"
+cache_container_name="paybutton-cache"
 base_command_node="docker exec -it $node_container_name"
 base_command_node_root="docker exec  -it -u 0 $node_container_name"
 base_command_db="docker exec -it $db_container_name"
+base_command_cache="docker exec -it $cache_container_name"
 command="$1"
 
 shift
@@ -69,6 +71,12 @@ case "$command" in
     "prismagenerate" | "pg")
         eval "$base_command_node" yarn prisma generate "$@"
         ;;
+    "cache" | "c")
+        eval "$base_command_cache" redis-cli
+        ;;
+    "cacheshell" | "cs")
+        eval "$base_command_cache" ash -l
+        ;;
     *)
         echo Avaiable commands:
         echo "  shortcut, command name      [container_name]    command description"
@@ -92,6 +100,8 @@ case "$command" in
         echo "  mr, migratereset            [$node_container_name]     recreate the database"
         echo "  pd, prismadb                [$node_container_name]     run \`prisma db ARGS\`"
         echo "  pg, prismagenerate          [$node_container_name]     run \`prisma generate\` to generate client from scheme"
+        echo "  c, cache                    [$cache_container_name]   enter the redis command-line interface"
+        echo "  cs, cacheshell              [$node_container_name]    enter the redis container"
         ;;
 esac
 
