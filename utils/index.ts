@@ -33,6 +33,10 @@ export const getAddressPrefix = function (addressString: string): string {
   throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
 }
 
+export const getAddressPrefixed = function (addressString: string): string {
+  return `${getAddressPrefix(addressString)}:${removeAddressPrefix(addressString)}`
+}
+
 export async function satoshisToUnit (satoshis: Prisma.Decimal, networkFormat: string): Promise<Prisma.Decimal> {
   if (networkFormat === xecaddr.Format.Xecaddr) {
     return satoshis.dividedBy(1e2)

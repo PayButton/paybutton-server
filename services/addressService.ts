@@ -50,6 +50,20 @@ export async function fetchAllUserAddresses (userId: string, includeTransactions
   })
 }
 
+export async function fetchAddressesInList (prefixedAddressList: string[]): Promise<AddressFullType[]> {
+  return await prisma.address.findMany({
+    where: {
+      address: {
+        in: prefixedAddressList
+      }
+    },
+    include: {
+      network: true,
+      transactions: true
+    }
+  })
+}
+
 export async function upsertAddress (addressString: string): Promise<AddressWithTransactions> {
   const prefixedAddress = parseAddress(addressString)
   const prefix = prefixedAddress.split(':')[0].toLowerCase()
