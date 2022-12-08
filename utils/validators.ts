@@ -127,7 +127,7 @@ export const parseWalletPOSTRequest = function (params: WalletPOSTParameters): C
 
 export const parseWalletPATCHRequest = function (params: WalletPATCHParameters): UpdateWalletInput {
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
-  if (params.paybuttonIdList === undefined || params.paybuttonIdList === []) throw new Error(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message)
+  if (params.paybuttonIdList === undefined || params.paybuttonIdList.length === 0) throw new Error(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message)
   return {
     name: params.name,
     paybuttonIdList: params.paybuttonIdList,
