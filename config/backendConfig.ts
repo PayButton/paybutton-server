@@ -2,10 +2,7 @@ import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemail
 import SessionNode from 'supertokens-node/recipe/session'
 import { appInfo } from './appInfo'
 import { TypeInput } from 'supertokens-node/types'
-import * as addressService from 'services/addressService'
 import * as walletService from 'services/walletService'
-import { syncTransactions } from 'services/transactionService'
-import { syncCurrentPrices } from 'services/priceService'
 
 const getSocialLoginProviders = (): array => {
   const availableSocialProviders = {
@@ -52,6 +49,7 @@ const getSocialLoginProviders = (): array => {
   })
   socialProviderNodes.filter(provider => provider !== false)
 }
+
 export const backendConfig = (): TypeInput => {
   let connectionURI: string = process.env.SUPERTOKENS_CONNECTION_URI
 
@@ -102,10 +100,6 @@ export const backendConfig = (): TypeInput => {
 
                 if (response.status === 'OK') {
                   // post sign in logic goes here
-                  (await addressService.fetchAllUserAddresses(response.user.id)).forEach((addr) => {
-                    void syncTransactions(addr.address)
-                  })
-                  void syncCurrentPrices()
                   return response
                 }
               },
@@ -124,10 +118,6 @@ export const backendConfig = (): TypeInput => {
                     void walletService.createDefaultWalletForUser(response.user.id)
                   } else {
                     // post sign in logic goes here
-                    (await addressService.fetchAllUserAddresses(response.user.id)).forEach((addr) => {
-                      void syncTransactions(addr.address)
-                    })
-                    void syncCurrentPrices()
                   }
                 }
 
