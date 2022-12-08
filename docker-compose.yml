@@ -12,7 +12,7 @@ services:
       - "3000:3000"
     volumes:
       - .:/home/node/src
-    command: sh -c "yarn && yarn prisma migrate dev && yarn prisma db seed && yarn dev"
+    command: sh -c "yarn && yarn prisma migrate dev && yarn prisma db seed && yarn initJobs && yarn dev"
   db:
     container_name: paybutton-db
     image: mariadb
