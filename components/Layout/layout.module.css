@@ -8,6 +8,9 @@
   padding-right: 25px; */
   display: flex;
   position: relative;
+  max-width: 1800px;
+  background-color: var(--primary-bg-color);
+  margin: auto;
 }
 
 .layout main {
@@ -43,5 +46,11 @@
   .layout main {
     max-height: unset;
     overflow-y: unset;
+  }
+}
+
+@media (min-width: 1800px) {
+  .layout {
+    border-right: 1px solid var(--primary-text-color);
   }
 }

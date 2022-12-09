@@ -12,6 +12,7 @@ body {
   --bg: var(--primary-bg-color);
   font-size: 16px;
   color: var(--primary-text-color);
+  background-color: #ccdbf7;
 }
 
 input,
@@ -76,8 +77,7 @@ body[data-theme='dark'] button {
   width: 100%;
   padding: 25px;
   border-radius: 10px;
-  margin-top: 25px;
-  max-width: 1400px;
+  margin-top: 15px;
 }
 
 .paybutton-table-ctn table {
@@ -219,6 +219,7 @@ body[data-theme='dark'] .table-eye {
   justify-content: center;
   position: relative;
   max-width: 1400px;
+  margin-bottom: 50px;
 }
 
 .table-navigation-ctn button {
