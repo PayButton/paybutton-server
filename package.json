@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "dotenv -e .env.development next dev",
     "build": "next build && tsc --project tsconfig.json",
-    "initJobs": "dotenv -e .env.development -- tsx jobs/initJobs.ts",
+    "initJobs": "dotenv -e .env.development -e .env -- tsx jobs/initJobs.ts",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "prod": "npm run build && NODE_ENV=production pm2 start dist/index.js",
     "test": "dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js",
