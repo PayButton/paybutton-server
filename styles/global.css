@@ -12,7 +12,6 @@ body {
   --bg: var(--primary-bg-color);
   font-size: 16px;
   color: var(--primary-text-color);
-  background-color: #ccdbf7;
 }
 
 input,

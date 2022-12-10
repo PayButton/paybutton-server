@@ -10,12 +10,6 @@
   width: 220px;
 }
 
-@media (min-width: 1800px) {
-  .aside {
-    border-left: 1px solid var(--primary-text-color);
-  }
-}
-
 .ul {
   padding: 0;
 }
