@@ -50,10 +50,10 @@ services:
     container_name: paybutton-cache
     image: redis:6.2-alpine
     restart: always
-    user: redis
+    user: 1000:1000
     ports:
       - 6379:6379
     volumes:
-      - ./redis:/data/redis
+      - ./redis:/data/redis:z
     # dump the dataset each 20 seconds if there was at least 1 change
     command: sh -c "umask 000 && redis-server /data/redis/redis.conf --save 20 1 --loglevel warning"
