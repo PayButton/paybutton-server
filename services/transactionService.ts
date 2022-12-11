@@ -172,7 +172,7 @@ export async function syncTransactionsForAddress (addressString: string): Promis
   return insertedTransactions
 }
 
-export async function syncTransactions (addressString: string): Promise<void> {
+export async function syncTransactionsAndPricesForAddress (addressString: string): Promise<void> {
   const address = parseAddress(addressString)
   if (address === '' || address === undefined) {
     throw new Error(ADDRESS_NOT_PROVIDED_400.message)
