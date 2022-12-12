@@ -24,7 +24,8 @@ export const syncAllAddressTransactionsForNetworkWorker = async (queueName: stri
     queueName,
     syncAllAddressTransactionsForNetworkJob,
     {
-      connection: redis
+      connection: redis,
+      lockDuration: 120000
     }
   )
   worker.on('completed', job => {
