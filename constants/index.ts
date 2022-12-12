@@ -40,6 +40,9 @@ export const RESPONSE_MESSAGES = {
 // When fetching some address transactions, number of transactions to fetch at a time.
 export const FETCH_N = 100
 
+// When fetching the FETCH_N transactions, max time to wait in milliseconds to upsert them.
+export const FETCH_N_TIMEOUT = 120000
+
 // When fetching some address transactions, delay (in ms) between each fetch.
 export const FETCH_DELAY = 100
 
