@@ -4,3 +4,4 @@ USER node
 WORKDIR /home/node/src/
 ENV PATH /home/node/src/node_modules/.bin:$PATH
 EXPOSE 3000
+ENTRYPOINT ["./scripts/paybutton-server-start.sh"]
