@@ -41,6 +41,9 @@ case "$command" in
     "noderootshell" | "nrs")
         eval "$base_command_node_root" ash -l
         ;;
+    "jobs" | "j")
+        eval "$base_command_node" tmux attach
+        ;;
     "yarn" | "y")
         eval "$base_command_node" yarn "$@"
         ;;
