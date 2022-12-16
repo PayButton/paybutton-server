@@ -248,7 +248,28 @@ export async function syncTransactionPriceValues (params: SyncTransactionPricesI
   })
 
   if (existentPrices.length === N_OF_QUOTES) {
-    return undefined
+    const ret = { usd: undefined, cad: undefined }
+    for (const price of existentPrices) {
+      void await prisma.pricesOnTransactions.upsert({
+        where: {
+          priceId_transactionId: {
+            priceId: price.id,
+            transactionId: params.transactionId
+          }
+        },
+        create: {
+          transactionId: params.transactionId,
+          priceId: price.id
+        },
+        update: {}
+      })
+      if (price.quoteId === USD_QUOTE_ID) {
+        ret.usd = price.value
+      } else if (price.quoteId === CAD_QUOTE_ID) {
+        ret.cad = price.value
+      }
+    }
+    return ret as QuoteValues
   }
 
   let res
