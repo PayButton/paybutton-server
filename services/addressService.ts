@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client'
+import { Prisma, Address } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { fetchAddressTransactions } from 'services/transactionService'
@@ -54,6 +54,14 @@ export async function fetchAllAddresses (includeTransactions = false): Promise<A
   return await prisma.address.findMany({
     include: {
       transactions: includeTransactions
+    }
+  })
+}
+
+export async function fetchUnsyncedAddresses (): Promise<Address[]> {
+  return await prisma.address.findMany({
+    where: {
+      lastSynced: null
     }
   })
 }
