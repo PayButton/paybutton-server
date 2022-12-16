@@ -49,7 +49,8 @@ export const syncCurrentPricesWorker = async (queueName: string): Promise<void> 
       void priceService.syncCurrentPrices()
     },
     {
-      connection: redis
+      connection: redis,
+      lockDuration: 120000
     }
   )
   worker.on('completed', job => {
