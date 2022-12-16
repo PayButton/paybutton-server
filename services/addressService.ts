@@ -116,3 +116,14 @@ export async function getAddressPaymentInfo (addressString: string): Promise<Add
     paymentCount
   }
 }
+
+export async function updateLastSynced (addressString: string): Promise<void> {
+  await prisma.address.update({
+    where: {
+      address: addressString
+    },
+    data: {
+      lastSynced: new Date()
+    }
+  })
+}
