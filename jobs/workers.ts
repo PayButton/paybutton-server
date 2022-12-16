@@ -1,5 +1,6 @@
-import { Worker, Job } from 'bullmq'
+import { Worker, Job, Queue } from 'bullmq'
 import { redis } from 'redis/clientInstance'
+import { SYNC_NEW_ADDRESSES_DELAY } from 'constants/index'
 
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
@@ -59,6 +60,47 @@ export const syncCurrentPricesWorker = async (queueName: string): Promise<void> 
     if (job !== undefined) {
       console.log('initial syncing of current prices FAILED')
       console.log(`error for initial syncing of current prices: ${err.message}`)
+    }
+  })
+}
+
+export const syncUnsyncedAddressesWorker = async (queue: Queue): Promise<void> => {
+  const worker = new Worker(
+    queue.name,
+    async (job) => {
+      const newAddresses = (await addressService.fetchUnsyncedAddresses()).map((addr) => addr.address)
+      if (newAddresses.length !== 0) {
+        job.data.syncedAddresses = newAddresses
+        await Promise.all(
+          newAddresses.map(async (addr) => {
+            await transactionService.syncTransactionsAndPricesForAddress(addr)
+          })
+        )
+      }
+      await queue.add(
+        'syncUnsyncedAddresses',
+        {},
+        { delay: SYNC_NEW_ADDRESSES_DELAY }
+      )
+    },
+    {
+      connection: redis,
+      lockDuration: 120000
+    }
+  )
+  worker.on('completed', job => {
+    if (job.data.syncedAddresses === undefined) {
+      console.log('no new addresses to sync')
+    } else {
+      console.log('synced', job.data.syncedAddresses)
+      job.data.syncedAddresses = undefined
+    }
+  })
+
+  worker.on('failed', (job, err) => {
+    if (job !== undefined) {
+      console.log('automatic syncing of address FAILED')
+      console.log(`error for automatic syncing of addresses: ${err.message}`)
     }
   })
 }

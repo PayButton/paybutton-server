@@ -40,11 +40,14 @@ export const RESPONSE_MESSAGES = {
 // When fetching some address transactions, number of transactions to fetch at a time.
 export const FETCH_N = 100
 
-// When fetching the FETCH_N transactions, max time to wait in milliseconds to upsert them.
+// When fetching the FETCH_N transactions, max time (in ms) to wait to upsert them.
 export const FETCH_N_TIMEOUT = 120000
 
 // When fetching some address transactions, delay (in ms) between each fetch.
 export const FETCH_DELAY = 100
+
+// Wait time (in ms) to see if there are new unsynced addresses
+export const SYNC_NEW_ADDRESSES_DELAY = 10000
 
 export const XEC_NETWORK_ID = 1
 export const BCH_NETWORK_ID = 2
