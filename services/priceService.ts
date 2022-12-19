@@ -248,7 +248,7 @@ export async function syncTransactionPriceValues (params: SyncTransactionPricesI
   })
 
   if (existentPrices.length === N_OF_QUOTES) {
-    const ret = { usd: undefined, cad: undefined }
+    let cadPrice, usdPrice
     for (const price of existentPrices) {
       void await prisma.pricesOnTransactions.upsert({
         where: {
@@ -264,12 +264,18 @@ export async function syncTransactionPriceValues (params: SyncTransactionPricesI
         update: {}
       })
       if (price.quoteId === USD_QUOTE_ID) {
-        ret.usd = price.value
+        usdPrice = price.value
       } else if (price.quoteId === CAD_QUOTE_ID) {
-        ret.cad = price.value
+        cadPrice = price.value
       }
     }
-    return ret as QuoteValues
+    if (cadPrice === undefined || usdPrice === undefined) {
+      throw new Error(RESPONSE_MESSAGES.INVALID_PRICE_STATE_400.message)
+    }
+    return {
+      cad: cadPrice,
+      usd: usdPrice
+    }
   }
 
   let res
