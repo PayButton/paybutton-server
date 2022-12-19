@@ -4,6 +4,7 @@
   padding: 20px;
   margin-bottom: 15px;
   position: relative;
+  margin-top: 15px;
 }
 
 .transactiontable_header {
@@ -63,7 +64,10 @@
 }
 
 .tablelabel {
-  margin-bottom: -10px;
+  background-color: var(--secondary-bg-color);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: -5px;
 }
 
 /*********************** COPY BUTTON  **************************/
@@ -80,10 +84,10 @@
 .copy_btn img {
   border-radius: 0 !important;
   opacity: 0.5;
- }
+}
 
 .copy_btn:hover img {
- opacity: 1;
+  opacity: 1;
 }
 
 .tooltiptext2 {
@@ -115,10 +119,10 @@
 
 @media (max-width: 600px) {
   .transactiontable_header > div:first-child,
-.transaction_row > div:first-child {
- display: none;
-}
-.transaction_row {
-  font-size: 12px;
-}
+  .transaction_row > div:first-child {
+    display: none;
+  }
+  .transaction_row {
+    font-size: 12px;
+  }
 }
