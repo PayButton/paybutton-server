@@ -6,7 +6,7 @@ dev:
 	docker-compose up --build -d
 
 stop-dev:
-	docker-compose down
+	docker-compose down && rm redis/dump.rdb
 
 reset-dev:
 	make stop-dev && make dev
