@@ -42,7 +42,7 @@ case "$command" in
         eval "$base_command_node_root" ash -l
         ;;
     "jobs" | "j")
-        eval "$base_command_node" tmux attach
+        eval "$base_command_node" tmux attach -r
         ;;
     "yarn" | "y")
         eval "$base_command_node" yarn "$@"
@@ -104,7 +104,8 @@ case "$command" in
         echo "  pd, prismadb                [$node_container_name]     run \`prisma db ARGS\`"
         echo "  pg, prismagenerate          [$node_container_name]     run \`prisma generate\` to generate client from scheme"
         echo "  c, cache                    [$cache_container_name]   enter the redis command-line interface"
-        echo "  cs, cacheshell              [$node_container_name]    enter the redis container"
+        echo "  cs, cacheshell              [$node_container_name]     enter the redis container"
+        echo "  j, jobs                     [$node_container_name]     show jobs running"
         ;;
 esac
 
