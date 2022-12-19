@@ -4,7 +4,7 @@ import { Prisma, Address } from '@prisma/client'
 import grpcService from 'services/grpcService'
 import { parseAddress } from 'utils/validators'
 import { satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from 'utils/index'
-import { fetchAddressBySubstring } from 'services/addressService'
+import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
 import { syncPricesFromTransactionList, QuoteValues } from 'services/priceService'
 import { FETCH_N_TIMEOUT, RESPONSE_MESSAGES, FETCH_N, FETCH_DELAY, USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, BCH_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD, BCH_TIMESTAMP_THRESHOLD, N_OF_QUOTES } from 'constants/index'
 import _ from 'lodash'
@@ -171,6 +171,8 @@ export async function syncTransactionsForAddress (addressString: string): Promis
     insertedTransactions = [...insertedTransactions, ...newInsertedTransactions]
     await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
   }
+
+  await updateLastSynced(addressString)
   return insertedTransactions
 }
 

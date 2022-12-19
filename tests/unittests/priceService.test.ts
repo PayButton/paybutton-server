@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { appInfo } from 'config/appInfo'
 import { prismaMock } from 'prisma/mockedClient'
-import { mockedUSDPrice, mockedCADPrice } from 'tests/mockedObjects'
+import { mockedUSDPrice, mockedCADPrice, mockedPriceOnTransaction } from 'tests/mockedObjects'
 
 import axios from 'axios'
 jest.mock('axios')
@@ -14,6 +14,8 @@ describe('Sync price from transaction', () => {
   beforeEach(async () => {
     prismaMock.price.findMany.mockResolvedValue([])
     prisma.price.findMany = prismaMock.price.findMany
+    prismaMock.pricesOnTransactions.upsert.mockResolvedValue(mockedPriceOnTransaction)
+    prisma.pricesOnTransactions.upsert = prismaMock.pricesOnTransactions.upsert
   })
   it('Ignore price API fail response', async () => {
     mockedAxios.get.mockResolvedValue({ data: { success: false } })
@@ -38,7 +40,7 @@ describe('Sync price from transaction', () => {
     }
     appInfo.priceAPIURL = 'foo'
   })
-  it('Undefined if price already exists', async () => {
+  it('Existent price if price already exists', async () => {
     mockedAxios.get.mockResolvedValue({ data: { success: false } })
     prismaMock.price.findMany.mockResolvedValue([mockedUSDPrice, mockedCADPrice])
     prisma.price.findMany = prismaMock.price.findMany
@@ -47,7 +49,10 @@ describe('Sync price from transaction', () => {
       transactionId: 1,
       timestamp: 1
     })
-    expect(res).toBeUndefined()
+    expect(res).toStrictEqual({
+      cad: new Prisma.Decimal('18'),
+      usd: new Prisma.Decimal('10')
+    })
   })
 })
 

@@ -19,6 +19,7 @@ model Address {
   walletId     Int?
   network      Network              @relation(fields: [networkId], references: [id], onUpdate: Restrict)
   wallet       Wallet?              @relation(fields: [walletId], references: [id], onUpdate: Restrict)
+  lastSynced   DateTime?
   paybuttons   AddressesOnButtons[]
   transactions Transaction[]
 

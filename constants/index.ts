@@ -30,6 +30,7 @@ export const RESPONSE_MESSAGES = {
   DEFAULT_BCH_WALLET_MUST_HAVE_SOME_BCH_ADDRESS_400: { statusCode: 400, message: 'Default BCH wallet must have some BCH address.' },
   MISSING_PRICE_API_URL_400: { statusCode: 400, message: 'Missing PRICE_API_URL environment variable.' },
   MISSING_PRICE_FOR_TRANSACTION_400: { statusCode: 400, message: 'Missing price for transaction.' },
+  INVALID_PRICE_STATE_400: { statusCode: 400, message: 'Missing expected quote price for transaction.' },
   COULD_NOT_GET_BLOCK_INFO: { statusCode: 500, message: "Couldn't get block info." },
   NETWORK_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'networkSlug' not provided." },
   QUOTE_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'quoteSlug' not provided." },
@@ -40,11 +41,14 @@ export const RESPONSE_MESSAGES = {
 // When fetching some address transactions, number of transactions to fetch at a time.
 export const FETCH_N = 100
 
-// When fetching the FETCH_N transactions, max time to wait in milliseconds to upsert them.
+// When fetching the FETCH_N transactions, max time (in ms) to wait to upsert them.
 export const FETCH_N_TIMEOUT = 120000
 
 // When fetching some address transactions, delay (in ms) between each fetch.
 export const FETCH_DELAY = 100
+
+// Wait time (in ms) to see if there are new unsynced addresses
+export const SYNC_NEW_ADDRESSES_DELAY = 10000
 
 export const XEC_NETWORK_ID = 1
 export const BCH_NETWORK_ID = 2
