@@ -26,6 +26,7 @@ export const mockedPaybutton: PaybuttonWithAddresses = {
         address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+        lastSynced: null,
         networkId: 1,
         walletId: 1
       }
@@ -36,6 +37,7 @@ export const mockedPaybutton: PaybuttonWithAddresses = {
         address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+        lastSynced: null,
         networkId: 2,
         walletId: 1
       }
@@ -49,6 +51,7 @@ export const mockedBCHAddress = {
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   networkId: 2,
+  lastSynced: null,
   paybuttonId: 1,
   walletId: null
 }
@@ -58,6 +61,7 @@ export const mockedXECAddress = {
   address: 'ecash:qrmm7edwuj4jf7tnvygjyztyy0a0qxvl7quss2vxek',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+  lastSynced: null,
   networkId: 1,
   paybuttonId: 1,
   walletId: null
@@ -80,6 +84,7 @@ export const mockedPaybuttonList = [
           address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
           createdAt: new Date('2022-05-27T15:18:42.000Z'),
           updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+          lastSynced: null,
           networkId: 1,
           walletId: null
         }
@@ -90,6 +95,7 @@ export const mockedPaybuttonList = [
           address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
           createdAt: new Date('2022-05-27T15:18:42.000Z'),
           updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+          lastSynced: null,
           networkId: 2,
           walletId: null
         }
@@ -112,6 +118,7 @@ export const mockedPaybuttonList = [
           address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
           createdAt: new Date('2022-05-27T15:18:42.000Z'),
           updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+          lastSynced: null,
           networkId: 1,
           walletId: null
         }
@@ -122,6 +129,7 @@ export const mockedPaybuttonList = [
           address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
           createdAt: new Date('2022-05-27T15:18:42.000Z'),
           updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+          lastSynced: null,
           networkId: 2,
           walletId: null
         }
@@ -205,6 +213,22 @@ export const mockedNetwork = {
 }
 
 // Transaction
+export const mockedPriceOnTransaction = {
+  priceId: 1,
+  transactionId: 1,
+  createdAt: new Date('2022-11-02T15:18:42.000Z'),
+  updatedAt: new Date('2022-11-02T15:18:42.000Z'),
+  price: {
+    id: 1,
+    value: new Prisma.Decimal('0.00001759'),
+    createdAt: new Date('2022-11-02T15:18:42.000Z'),
+    updatedAt: new Date('2022-11-02T15:18:42.000Z'),
+    timestamp: 1606632380,
+    networkId: 1,
+    quoteId: 1
+  }
+}
+
 export const mockedTransaction = {
   id: 1,
   hash: 'Yh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
@@ -220,21 +244,7 @@ export const mockedTransaction = {
   amount: new Prisma.Decimal('4.31247724'),
   timestamp: 1657130467,
   prices: [
-    {
-      priceId: 1,
-      transactionId: 1,
-      createdAt: new Date('2022-11-02T15:18:42.000Z'),
-      updatedAt: new Date('2022-11-02T15:18:42.000Z'),
-      price: {
-        id: 1,
-        value: new Prisma.Decimal('0.00001759'),
-        createdAt: new Date('2022-11-02T15:18:42.000Z'),
-        updatedAt: new Date('2022-11-02T15:18:42.000Z'),
-        timestamp: 1606632380,
-        networkId: 1,
-        quoteId: 1
-      }
-    }
+    mockedPriceOnTransaction
   ]
 }
 
