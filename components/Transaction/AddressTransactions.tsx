@@ -66,7 +66,7 @@ export default ({ addressTransactions }: IProps): FunctionComponent => {
     <>
       {Object.keys(addressTransactions).map(transactionAddress => (
         <div key={transactionAddress}>
-          {Object.keys(addressTransactions).length > 1 && <div className={style.tablelabel}>{transactionAddress}</div>}
+          <div className={style.tablelabel}>{transactionAddress}</div>
           { addressTransactions[transactionAddress].length === 0
             ? <div className={style.transaction_ctn}>No transactions yet</div>
             : <TableContainer columns={columns} data={addressTransactions[transactionAddress]} />
