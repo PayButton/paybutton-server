@@ -1,9 +1,8 @@
-import { createClient } from 'redis'
 import { appInfo } from 'config/appInfo'
+import IORedis from 'ioredis'
 
-export const redis = createClient({ url: appInfo.redisURL })
+export const redis = new IORedis(appInfo.redisURL, {
+  maxRetriesPerRequest: null
+})
+
 redis.on('error', (err) => console.log('Redis Client Error', err))
-
-void redis.connect()
-
-export default redis
