@@ -1,7 +1,6 @@
 #!/bin/sh
-set -e
 
-yarn
-yarn prisma migrate dev
-yarn prisma db seed
-yarn dev
+yarn || exit
+yarn prisma migrate dev || exit
+yarn prisma db seed || exit
+yarn dev || exit
