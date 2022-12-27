@@ -50,6 +50,25 @@ export async function fetchAllUserAddresses (userId: string, includeTransactions
   })
 }
 
+export async function fetchAllAddresses (includeTransactions = false): Promise<AddressWithTransactions[]> {
+  return await prisma.address.findMany({
+    include: {
+      transactions: includeTransactions
+    }
+  })
+}
+
+export async function fetchAllAddressesForNetworkId (networkId: number, includeTransactions = false): Promise<AddressWithTransactions[]> {
+  return await prisma.address.findMany({
+    where: {
+      networkId
+    },
+    include: {
+      transactions: includeTransactions
+    }
+  })
+}
+
 export async function fetchAddressesInList (prefixedAddressList: string[]): Promise<AddressFullType[]> {
   return await prisma.address.findMany({
     where: {

@@ -6,9 +6,9 @@ import { parseAddress } from 'utils/validators'
 import { satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from 'utils/index'
 import { fetchAddressBySubstring } from 'services/addressService'
 import { syncPricesFromTransactionList, QuoteValues } from 'services/priceService'
+import { FETCH_N_TIMEOUT, RESPONSE_MESSAGES, FETCH_N, FETCH_DELAY, USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, BCH_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD, BCH_TIMESTAMP_THRESHOLD, N_OF_QUOTES } from 'constants/index'
 import _ from 'lodash'
 
-import { RESPONSE_MESSAGES, FETCH_N, FETCH_DELAY, USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, BCH_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD, BCH_TIMESTAMP_THRESHOLD, N_OF_QUOTES } from 'constants/index'
 import xecaddr from 'xecaddrjs'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
@@ -141,6 +141,8 @@ export async function upsertManyTransactionsForAddress (transactions: Transactio
       })
     )
     return insertedTransactions
+  }, {
+    timeout: FETCH_N_TIMEOUT
   })
   return ret.filter((t) => t !== undefined) as TransactionWithAddressAndPrices[]
 }

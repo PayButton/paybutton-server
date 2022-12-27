@@ -63,6 +63,9 @@ export async function upsertCurrentPricesForNetworkId (responseData: IResponseDa
 }
 
 export async function syncCurrentPrices (): Promise<boolean> {
+  if (appInfo.priceAPIURL === '') {
+    throw new Error(RESPONSE_MESSAGES.MISSING_PRICE_API_URL_400.message)
+  }
   const todayString = moment().format(PRICE_API_DATE_FORMAT)
   let success = true
 
