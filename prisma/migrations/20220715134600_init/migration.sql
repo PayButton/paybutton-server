@@ -4,6 +4,7 @@ CREATE TABLE `Address` (
     `address` VARCHAR(255) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
+    `lastSynced` DATETIME(3) NULL,
     `networkId` INTEGER NOT NULL,
     `walletId` INTEGER NULL,
 
