@@ -1,20 +1,37 @@
 import { Worker, Job, Queue } from 'bullmq'
+import { Address } from '@prisma/client'
 import { redis } from 'redis/clientInstance'
 import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
+import { getAddressPrefix } from 'utils/index'
+import { Transaction } from 'grpc-bchrpc-node'
 
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
 import * as addressService from 'services/addressService'
+import * as grpcService from 'services/grpcService'
+
+const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void> => {
+  // sync addresses
+  await Promise.all(
+    addressList.map(async (addr) => {
+      await transactionService.syncTransactionsAndPricesForAddress(addr.address)
+    })
+  )
+  // subscribe addresses
+  addressList.map(async (addr) => {
+    await grpcService.subscribeTransactions(
+      [addr.address],
+      async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr) },
+      getAddressPrefix(addr.address)
+    )
+  })
+}
 
 const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> => {
   console.log(`job ${job.id as string}: syncing all addresses for network ${job.data.networkId as string}...`)
   try {
     const addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
-    await Promise.all(
-      addresses.map(async (addr) => {
-        await transactionService.syncTransactionsAndPricesForAddress(addr.address)
-      })
-    )
+    await syncAndSubscribeAddressList(addresses)
   } catch (err: any) {
     throw new Error(`job ${job.id as string} failed with error ${err.message as string}`)
   }
@@ -69,15 +86,13 @@ export const syncUnsyncedAddressesWorker = async (queue: Queue): Promise<void> =
   const worker = new Worker(
     queue.name,
     async (job) => {
-      const newAddresses = (await addressService.fetchUnsyncedAddresses()).map((addr) => addr.address)
+      const newAddresses = await addressService.fetchUnsyncedAddresses()
       if (newAddresses.length !== 0) {
+        await syncAndSubscribeAddressList(newAddresses)
         job.data.syncedAddresses = newAddresses
-        await Promise.all(
-          newAddresses.map(async (addr) => {
-            await transactionService.syncTransactionsAndPricesForAddress(addr)
-          })
-        )
       }
+
+      // add same job to the queue again, so it runs repeating
       await queue.add(
         'syncUnsyncedAddresses',
         {},
