@@ -1,6 +1,6 @@
 import { Worker, Job, Queue } from 'bullmq'
 import { redis } from 'redis/clientInstance'
-import { SYNC_NEW_ADDRESSES_DELAY } from 'constants/index'
+import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
 
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
@@ -26,7 +26,7 @@ export const syncAllAddressTransactionsForNetworkWorker = async (queueName: stri
     syncAllAddressTransactionsForNetworkJob,
     {
       connection: redis,
-      lockDuration: 120000
+      lockDuration: DEFAULT_WORKER_LOCK_DURATION
     }
   )
   worker.on('completed', job => {
@@ -50,7 +50,7 @@ export const syncCurrentPricesWorker = async (queueName: string): Promise<void> 
     },
     {
       connection: redis,
-      lockDuration: 120000
+      lockDuration: DEFAULT_WORKER_LOCK_DURATION
     }
   )
   worker.on('completed', job => {
@@ -86,7 +86,7 @@ export const syncUnsyncedAddressesWorker = async (queue: Queue): Promise<void> =
     },
     {
       connection: redis,
-      lockDuration: 120000
+      lockDuration: DEFAULT_WORKER_LOCK_DURATION
     }
   )
   worker.on('completed', job => {
