@@ -108,9 +108,9 @@ export const subscribeTransactions = async (
   const createTxnStream = async (): Promise<void> => {
     const client = getClientForNetworkSlug(networkSlug)
     const txnStream = await client.subscribeTransactions({
-      includeMempoolAcceptance: true,
-      includeBlockAcceptance: false,
-      includeSerializedTxn: false,
+      //includeMempoolAcceptance: true,
+      includeBlockAcceptance: true,
+      //includeSerializedTxn: false,
       addresses: addresses,
     });
 
@@ -119,7 +119,7 @@ export const subscribeTransactions = async (
     });
 
     txnStream.on('data', async (data: TransactionNotification) => {
-      let txn = data.getUnconfirmedTransaction()!.getTransaction()!;
+      let txn = data.getConfirmedTransaction()!;
       onTransactionNotification(txn.toObject());
     });
     console.log(`txn data stream established.`);
