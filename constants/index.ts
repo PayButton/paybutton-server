@@ -66,3 +66,6 @@ export const PRICE_API_DATE_FORMAT = 'YYYYMMDD'
 
 export const BCH_TIMESTAMP_THRESHOLD = 1501588800 // 2017 Aug 1, 12PM
 export const XEC_TIMESTAMP_THRESHOLD = 1605398400 // 2020 Nov 15, 12AM
+
+// Wait time (in ms) between sync of current prices
+export const CURRENT_PRICE_SYNC_DELAY = 60000

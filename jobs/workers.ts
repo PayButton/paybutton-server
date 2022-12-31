@@ -54,12 +54,12 @@ export const syncCurrentPricesWorker = async (queueName: string): Promise<void> 
     }
   )
   worker.on('completed', job => {
-    console.log('initial syncing of current prices finished')
+    console.log('syncing of current prices finished')
   })
 
   worker.on('failed', (job, err) => {
     if (job !== undefined) {
-      console.log('initial syncing of current prices FAILED')
+      console.log('syncing of current prices FAILED')
       console.log(`error for initial syncing of current prices: ${err.message}`)
     }
   })

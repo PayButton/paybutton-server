@@ -1,4 +1,4 @@
-import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID, CURRENT_PRICE_SYNC_DELAY } from 'constants/index'
 import { Queue, FlowProducer } from 'bullmq'
 import { redis } from 'redis/clientInstance'
 import {
@@ -12,7 +12,7 @@ const main = async (): Promise<void> => {
   const initTransactionsSync = new Queue('initTransactionsSync', { connection: redis })
 
   // sync current prices
-  const initPricesSync = new Queue('initPricesSync', { connection: redis })
+  const currentPricesSync = new Queue('currentPricesSync', { connection: redis })
 
   // try to sync new addresses periodically
   const newAddressesSync = new Queue('newAddressesSync', { connection: redis })
@@ -41,17 +41,21 @@ const main = async (): Promise<void> => {
         data: { networkId: BCH_NETWORK_ID },
         opts: { removeOnFail: false, jobId: 'syncBCHAddresses' },
         queueName: initTransactionsSync.name
-      },
-      {
-        name: 'syncCurrentPrices',
-        data: {},
-        opts: { removeOnFail: false, jobId: 'syncCurrentPrices' },
-        queueName: initPricesSync.name
       }
     ]
   })
+  await currentPricesSync.add('syncCurrentPrices',
+    {},
+    {
+      removeOnFail: false,
+      jobId: 'syncCurrentPrices',
+      repeat: {
+        every: CURRENT_PRICE_SYNC_DELAY
+      }
+    }
+  )
 
-  await syncCurrentPricesWorker(initPricesSync.name)
+  await syncCurrentPricesWorker(currentPricesSync.name)
   await syncAllAddressTransactionsForNetworkWorker(initTransactionsSync.name)
   await syncUnsyncedAddressesWorker(newAddressesSync)
 }
