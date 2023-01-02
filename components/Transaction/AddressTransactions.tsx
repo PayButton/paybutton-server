@@ -18,6 +18,13 @@ export default ({ addressTransactions }: IProps): FunctionComponent => {
   const columns = useMemo(
     () => [
       {
+        Header: 'Confirmed',
+        accessor: 'confirmed',
+        Cell: (cellProps) => {
+          return <div className='table-date'>{cellProps.cell.value === true ? 'yes' : 'no'}</div>
+        }
+      },
+      {
         Header: 'Date',
         accessor: 'timestamp',
         Cell: (cellProps) => {
@@ -51,7 +58,7 @@ export default ({ addressTransactions }: IProps): FunctionComponent => {
         Cell: (cellProps) => {
           const url = cellProps.cell.row.values.address.networkId === 1 ? 'https://explorer.e.cash/tx/' : 'https://blockchair.com/bitcoin-cash/transaction/'
           return (
-            <a href={url + cellProps.cell.value} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
+            <a href={url.concat(cellProps.cell.value)} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
               <div className="table-eye">
                 <Image src={EyeIcon} alt='View on explorer' />
               </div>
