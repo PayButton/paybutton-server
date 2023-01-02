@@ -108,7 +108,7 @@ export async function base64HashToHex (base64Hash: string): Promise<string> {
   )
 }
 
-export async function upsertTransaction (transaction: Transaction.AsObject, address: Address): Promise<TransactionWithAddressAndPrices | undefined> {
+export async function upsertTransaction (transaction: Transaction.AsObject, address: Address, confirmed=true): Promise<TransactionWithAddressAndPrices | undefined> {
   const receivedAmount = await getTransactionAmount(transaction, address.address)
   if (receivedAmount === new Prisma.Decimal(0)) { // out transactions
     return
@@ -118,7 +118,8 @@ export async function upsertTransaction (transaction: Transaction.AsObject, addr
     hash,
     amount: receivedAmount,
     addressId: address.id,
-    timestamp: transaction.timestamp
+    timestamp: transaction.timestamp,
+    confirmed: confirmed
   }
   return await prisma.transaction.upsert({
     where: {
