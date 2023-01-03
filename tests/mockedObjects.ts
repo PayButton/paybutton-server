@@ -47,7 +47,7 @@ export const mockedPaybutton: PaybuttonWithAddresses = {
 
 export const mockedBCHAddress = {
   id: 1,
-  address: 'bitcoincash:qzqh7ej2vz26a9xaxq7capzfwgxt5gem9g8rvfxc5t',
+  address: 'bitcoincash:qzqh7rwaq9zm4zcv40lh9c9u50gy07gcesdmja8426',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   networkId: 2,
