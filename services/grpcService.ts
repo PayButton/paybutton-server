@@ -10,6 +10,7 @@ import {
 } from 'grpc-bchrpc-node'
 
 import { getAddressPrefix } from '../utils/index'
+import { parseMempoolTx  } from 'services/transactionService'
 import { RESPONSE_MESSAGES } from '../constants/index'
 
 let grpcBCH = new GrpcClient({ url: process.env.GRPC_BCH_NODE_URL });
@@ -148,10 +149,8 @@ export const subscribeTransactions = async (
       onTransactionNotification(objectTxn);
     });
     void unconfirmedStream.on('data', async (data: TransactionNotification) => {
-      let unconfirmedTxn = data.getUnconfirmedTransaction()!;
-      let timestamp = unconfirmedTxn.getAddedTime()
-      let objectTxn = unconfirmedTxn.getTransaction()!.toObject();
-      objectTxn.timestamp = timestamp
+      let unconfirmedTxn = data.getUnconfirmedTransaction()!.toObject();
+      let objectTxn = parseMempoolTx(unconfirmedTxn)
       console.log(`${nowDateString}: got unconfirmed txn`, objectTxn);
       onMempoolTransactionNotification(objectTxn);
     });

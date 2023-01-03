@@ -13,7 +13,7 @@ import xecaddr from 'xecaddrjs'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
 
-const parseMempoolTx = function (mempoolTx: MempoolTransaction.AsObject): Transaction.AsObject {
+export const parseMempoolTx = function (mempoolTx: MempoolTransaction.AsObject): Transaction.AsObject {
   const tx = mempoolTx.transaction!
   tx.timestamp = mempoolTx.addedTime
   return tx
