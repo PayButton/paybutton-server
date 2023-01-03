@@ -103,26 +103,60 @@ export const getTransactionDetails = async (
 export const subscribeTransactions = async (
   addresses: string[],
   onTransactionNotification: (txn: Transaction.AsObject) => any,
+  onMempoolTransactionNotification: (txn: Transaction.AsObject) => any,
   networkSlug: string,
 ): Promise<void> => {
   const createTxnStream = async (): Promise<void> => {
     const client = getClientForNetworkSlug(networkSlug)
-    const txnStream = await client.subscribeTransactions({
+    const confirmedStream = await client.subscribeTransactions({
+      includeMempoolAcceptance: false,
+      includeBlockAcceptance: true,
+      addresses: addresses,
+    });
+    const unconfirmedStream = await client.subscribeTransactions({
       includeMempoolAcceptance: true,
       includeBlockAcceptance: false,
-      includeSerializedTxn: false,
       addresses: addresses,
     });
 
-    txnStream.on('end', async (error: any) => {
-      console.log('stream ended', error);
+    let nowDateString = (new Date()).toISOString()
+
+    // output for end, error or close of stream
+    void confirmedStream.on('end', async () => {
+      console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream ended`);
+    });
+    void confirmedStream.on('close', async () => {
+      console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream closed`);
+    });
+    void confirmedStream.on('error', async (error: any) => {
+      console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream error`, error);
+    });
+    void unconfirmedStream.on('end', async () => {
+      console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream ended`);
+    });
+    void unconfirmedStream.on('close', async () => {
+      console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream closed`);
+    });
+    void unconfirmedStream.on('error', async (error: any) => {
+      console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream error`, error);
     });
 
-    txnStream.on('data', async (data: TransactionNotification) => {
-      let txn = data.getUnconfirmedTransaction()!.getTransaction()!;
-      onTransactionNotification(txn.toObject());
+    // output for data stream
+    void confirmedStream.on('data', async (data: TransactionNotification) => {
+      let objectTxn = data.getConfirmedTransaction()!.toObject();
+      console.log(`${nowDateString}: got confirmed txn`, objectTxn);
+      onTransactionNotification(objectTxn);
     });
-    console.log(`txn data stream established.`);
+    void unconfirmedStream.on('data', async (data: TransactionNotification) => {
+      let unconfirmedTxn = data.getUnconfirmedTransaction()!;
+      let timestamp = unconfirmedTxn.getAddedTime()
+      let objectTxn = unconfirmedTxn.getTransaction()!.toObject();
+      objectTxn.timestamp = timestamp
+      console.log(`${nowDateString}: got unconfirmed txn`, objectTxn);
+      onMempoolTransactionNotification(objectTxn);
+    });
+
+    console.log(`${nowDateString}: txn data stream established for addresses ${addresses.join(', ')}.`);
   };
   await createTxnStream();
 };

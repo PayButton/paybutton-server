@@ -69,3 +69,4 @@ export const XEC_TIMESTAMP_THRESHOLD = 1605398400 // 2020 Nov 15, 12AM
 
 // Wait time (in ms) between sync of current prices
 export const CURRENT_PRICE_SYNC_DELAY = 60000
+export const DEFAULT_WORKER_LOCK_DURATION = 120000
