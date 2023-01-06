@@ -54,6 +54,13 @@ const getDefaultForNetworkIds = (isXECDefault: boolean | undefined, isBCHDefault
   return defaultForNetworkIds
 }
 
+const walletHasAddressForNetwork = (wallet: WalletWithAddressesAndPaybuttons, networkId: number): boolean => {
+  if (wallet.addresses.every((addr) => addr.networkId !== networkId)) {
+    return false
+  }
+  return true
+}
+
 export type WalletWithAddressesAndPaybuttons = Prisma.WalletGetPayload<typeof walletWithAddressesAndPaybuttons>
 
 export async function createWallet (values: CreateWalletInput): Promise<WalletWithAddressesAndPaybuttons> {
@@ -143,6 +150,9 @@ export async function setDefaultWallet (wallet: WalletWithAddressesAndPaybuttons
     throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
   }
   if (networkIds.includes(XEC_NETWORK_ID)) {
+    if (!walletHasAddressForNetwork(wallet, XEC_NETWORK_ID)) {
+      throw new Error(RESPONSE_MESSAGES.DEFAULT_XEC_WALLET_MUST_HAVE_SOME_XEC_ADDRESS_400.message)
+    }
     // see if any wallet is already the default
     const prevXECDefault = await prisma.walletsOnUserProfile.findUnique({
       where: {
@@ -181,6 +191,10 @@ export async function setDefaultWallet (wallet: WalletWithAddressesAndPaybuttons
     })
   }
   if (networkIds.includes(BCH_NETWORK_ID)) {
+    if (!walletHasAddressForNetwork(wallet, BCH_NETWORK_ID)) {
+      throw new Error(RESPONSE_MESSAGES.DEFAULT_BCH_WALLET_MUST_HAVE_SOME_BCH_ADDRESS_400.message)
+    }
+
     // see if any wallet is already the default
     const prevBCHDefault = await prisma.walletsOnUserProfile.findUnique({
       where: {
