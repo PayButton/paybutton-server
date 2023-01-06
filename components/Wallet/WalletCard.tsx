@@ -32,7 +32,11 @@ const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userPaybutt
         <div className={style.edit_button_ctn}>
           {wallet.userProfile?.isXECDefault === true && <div className={style.default_wallet}>Default XEC Wallet</div>}
           {wallet.userProfile?.isBCHDefault === true && <div className={style.default_wallet}>Default BCH Wallet</div>}
-          <EditWalletForm wallet={wallet} userPaybuttons={userPaybuttons} refreshWalletList={refreshWalletList}/>
+          <EditWalletForm
+            wallet={wallet}
+            userPaybuttons={userPaybuttons}
+            refreshWalletList={refreshWalletList}
+          />
         </div>
       </div>
 

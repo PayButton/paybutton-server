@@ -47,24 +47,24 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
         <Image src={EditIcon} alt='edit' />
       </div>
 
-  {modal
-    ? (
-        <div className={style_pb.form_ctn_outer}>
-          <div className={style_pb.form_ctn_inner}>
-            <h4>Edit {wallet.name}</h4>
-            <div className={style_pb.form_ctn}>
-              <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
-                <label htmlFor='name'>Wallet Name</label>
-                <input
+      {modal
+        ? (
+          <div className={style_pb.form_ctn_outer}>
+            <div className={style_pb.form_ctn_inner}>
+              <h4>Edit {wallet.name}</h4>
+              <div className={style_pb.form_ctn}>
+                <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
+                  <label htmlFor='name'>Wallet Name</label>
+                  <input
                     {...register('name')}
                     type='text'
                     id='name'
                     name='name'
                     placeholder={wallet.name}
-                />
-                <div className={style.makedefault_ctn} key={`edit-wallet-${wallet.id}`}>
-                  <div className={style.input_field}>
-                    <input
+                  />
+                  <div className={style.makedefault_ctn} key={`edit-wallet-${wallet.id}`}>
+                    <div className={style.input_field}>
+                      <input
                         {...register('isXECDefault')}
                         defaultChecked={wallet.userProfile?.isXECDefault === true}
                         type="checkbox"
@@ -73,11 +73,11 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                           wallet.addresses.every((addr) => addr.networkId !== XEC_NETWORK_ID) ||
                           wallet.userProfile?.isXECDefault === true
                         }
-                    />
-                    <label htmlFor='xec-default' className={style.makedefault_margin}>Make Default XEC Wallet</label>
-                  </div>
-                  <div className={style.input_field}>
-                    <input
+                      />
+                      <label htmlFor='xec-default' className={style.makedefault_margin}>Make Default XEC Wallet</label>
+                    </div>
+                    <div className={style.input_field}>
+                      <input
                         {...register('isBCHDefault')}
                         defaultChecked={wallet.userProfile?.isBCHDefault === true}
                         type="checkbox"
@@ -86,36 +86,35 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                           wallet.addresses.every((addr) => addr.networkId !== BCH_NETWORK_ID) ||
                           wallet.userProfile?.isBCHDefault === true
                         }
-                    />
-                    <label htmlFor='bch-default' className={style.makedefault_margin}>Make Default BCH Wallet</label>
+                      />
+                      <label htmlFor='bch-default' className={style.makedefault_margin}>Make Default BCH Wallet</label>
+                    </div>
                   </div>
-                </div>
 
-      <h4>Paybuttons</h4>
-      <div className={style.buttonlist_ctn}>
-      {userPaybuttons.map((pb, index) => (
-        <div className={style.input_field} key={`edit-pb-${pb.id}`}>
-          <input {...register('paybuttonIdList')}
-          type='checkbox'
-          value={pb.id}
-          id={`paybuttonIdList.${index}`}
-          defaultChecked={pb.walletId === wallet.id}
-          />
-          <label htmlFor={`paybuttonIdList.${index}`}>{pb.name}</label>
-        </div>
-      ))}
-      </div>
-
-                <div className={style_pb.btn_row}>
-                  <button type='submit'>Submit</button>
-                  <button onClick={() => { setModal(false); reset() }} className={style_pb.cancel_btn}>Cancel</button>
-                </div>
-              </form>
+                  <h4>Paybuttons</h4>
+                  <div className={style.buttonlist_ctn}>
+                    {userPaybuttons.map((pb, index) => (
+                      <div className={style.input_field} key={`edit-pb-${pb.id}`}>
+                        <input {...register('paybuttonIdList')}
+                          type='checkbox'
+                          value={pb.id}
+                          id={`paybuttonIdList.${index}`}
+                          defaultChecked={pb.walletId === wallet.id}
+                        />
+                        <label htmlFor={`paybuttonIdList.${index}`}>{pb.name}</label>
+                      </div>
+                    ))}
+                  </div>
+                  <div className={style_pb.btn_row}>
                     {error !== '' && <div className={style_pb.error_message}>{error}</div>}
+                    <button type='submit'>Submit</button>
+                    <button onClick={() => { setModal(false); reset() }} className={style_pb.cancel_btn}>Cancel</button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>)
-    : null}
+          </div>)
+        : null}
     </>
   )
 }
