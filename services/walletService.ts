@@ -40,7 +40,7 @@ const walletWithAddressesAndPaybuttons = Prisma.validator<Prisma.WalletArgs>()(
   { include: includeAddressesAndPaybuttons }
 )
 
-const getDefaultForNetworkIds = (isXECDefault: boolean | undefined, isBCHDefault: boolean | undefined): number[] => {
+export const getDefaultForNetworkIds = (isXECDefault: boolean | undefined, isBCHDefault: boolean | undefined): number[] => {
   const defaultForNetworkIds: number[] = []
   // set default for XEC
   if (isXECDefault === true) {
@@ -54,7 +54,7 @@ const getDefaultForNetworkIds = (isXECDefault: boolean | undefined, isBCHDefault
   return defaultForNetworkIds
 }
 
-const walletHasAddressForNetwork = (wallet: WalletWithAddressesAndPaybuttons, networkId: number): boolean => {
+export const walletHasAddressForNetwork = (wallet: WalletWithAddressesAndPaybuttons, networkId: number): boolean => {
   if (wallet.addresses.every((addr) => addr.networkId !== networkId)) {
     return false
   }
