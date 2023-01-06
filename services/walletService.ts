@@ -40,6 +40,20 @@ const walletWithAddressesAndPaybuttons = Prisma.validator<Prisma.WalletArgs>()(
   { include: includeAddressesAndPaybuttons }
 )
 
+const getDefaultForNetworkIds = (isXECDefault: boolean | undefined, isBCHDefault: boolean | undefined): number[] => {
+  const defaultForNetworkIds: number[] = []
+  // set default for XEC
+  if (isXECDefault === true) {
+    defaultForNetworkIds.push(XEC_NETWORK_ID)
+  }
+
+  // set default for BCH
+  if (isBCHDefault === true) {
+    defaultForNetworkIds.push(BCH_NETWORK_ID)
+  }
+  return defaultForNetworkIds
+}
+
 export type WalletWithAddressesAndPaybuttons = Prisma.WalletGetPayload<typeof walletWithAddressesAndPaybuttons>
 
 export async function createWallet (values: CreateWalletInput): Promise<WalletWithAddressesAndPaybuttons> {
@@ -206,13 +220,13 @@ export async function setDefaultWallet (wallet: WalletWithAddressesAndPaybuttons
   return wallet
 }
 
-export async function updateWallet (walletId: number, params: any): Promise<WalletWithAddressesAndPaybuttons> {
+export async function updateWallet (walletId: number, params: UpdateWalletInput): Promise<WalletWithAddressesAndPaybuttons> {
   const wallet = await fetchWalletById(walletId)
   if (wallet === null) {
     throw new Error(RESPONSE_MESSAGES.NO_WALLET_FOUND_404.message)
   }
 
-  const paybuttonList = await paybuttonService.fetchPaybuttonArrayByIds(params.paybuttonIdList.map((id: string) => Number(id)))
+  const paybuttonList = await paybuttonService.fetchPaybuttonArrayByIds(params.paybuttonIdList)
 
   // enforce that added paybuttons & addresses don't already belong to a wallet
   paybuttonList.forEach((pb) => {
@@ -228,16 +242,8 @@ export async function updateWallet (walletId: number, params: any): Promise<Wall
   if (wallet.userProfile === null) {
     throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
   }
-  // set default for XEC
-  const defaultForNetworkIds: number[] = []
-  if (params.isXECDefault === true) {
-    defaultForNetworkIds.push(XEC_NETWORK_ID)
-  }
 
-  // set default for BCH
-  if (params.isBCHDefault === true) {
-    defaultForNetworkIds.push(BCH_NETWORK_ID)
-  }
+  const defaultForNetworkIds = getDefaultForNetworkIds(params.isXECDefault, params.isBCHDefault)
 
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   return await prisma.$transaction(async (prisma) => {
