@@ -20,6 +20,7 @@ interface IProps {
 export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletList }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<WalletPATCHParameters>()
   const [modal, setModal] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     setModal(false)
@@ -30,8 +31,13 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
     if (params.name === '' || params.name === undefined) {
       params.name = wallet.name
     }
-    void await axios.patch(`${appInfo.websiteDomain}/api/wallet/${wallet.id}`, params)
-    refreshWalletList()
+    try {
+      void await axios.patch(`${appInfo.websiteDomain}/api/wallet/${wallet.id}`, params)
+      refreshWalletList()
+      setError('')
+    } catch (err: any) {
+      setError(err.response.data.message)
+    }
   }
 
   return (
@@ -104,6 +110,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                   <button onClick={() => { setModal(false); reset() }} className={style_pb.cancel_btn}>Cancel</button>
                 </div>
               </form>
+                    {error !== '' && <div className={style_pb.error_message}>{error}</div>}
             </div>
           </div>
         </div>)
