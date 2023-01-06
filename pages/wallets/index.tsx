@@ -4,11 +4,11 @@ import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
-import { Paybutton } from '@prisma/client'
 import { GetServerSideProps } from 'next'
 import WalletCard from 'components/Wallet/WalletCard'
 import WalletForm from 'components/Wallet/WalletForm'
 import { WalletWithAddressesAndPaybuttons, WalletPaymentInfo } from 'services/walletService'
+import { PaybuttonWithAddresses } from 'services/paybuttonService'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -44,7 +44,7 @@ interface WalletsProps {
 
 interface WalletsState {
   walletsWithPaymentInfo: [{wallet: WalletWithAddressesAndPaybuttons, paymentInfo: WalletPaymentInfo}]
-  userPaybuttons: Paybutton[]
+  userPaybuttons: PaybuttonWithAddresses[]
 }
 
 export default function Wallets ({ userId }: WalletsProps): React.ReactElement {
