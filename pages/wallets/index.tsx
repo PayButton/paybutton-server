@@ -112,7 +112,12 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
           }
           return a.wallet.name.localeCompare(b.wallet.name)
         }).map(walletWithPaymentInfo => {
-          return <WalletCard wallet={walletWithPaymentInfo.wallet} paymentInfo={walletWithPaymentInfo.paymentInfo} userPaybuttons={this.state.userPaybuttons} refreshWalletList={this.refreshWalletList}/>
+          return <WalletCard
+            wallet={walletWithPaymentInfo.wallet}
+            paymentInfo={walletWithPaymentInfo.paymentInfo}
+            userPaybuttons={this.state.userPaybuttons}
+            refreshWalletList={this.refreshWalletList}
+          />
         }
         )}
         <WalletForm />

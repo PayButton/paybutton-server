@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from 'react'
-import { Paybutton } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import style from './wallet.module.css'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -7,16 +7,17 @@ import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EditWalletForm from './EditWalletForm'
 import { WalletWithAddressesAndPaybuttons, WalletPaymentInfo } from 'services/walletService'
+import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 interface IProps {
   wallet: WalletWithAddressesAndPaybuttons
   paymentInfo: WalletPaymentInfo
-  userPaybuttons: Paybutton[]
+  userPaybuttons: PaybuttonWithAddresses[]
   refreshWalletList: Function
 }
 
-export default ({ wallet, paymentInfo, userPaybuttons, refreshWalletList }: IProps): FunctionComponent => {
+const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userPaybuttons, refreshWalletList }: IProps) => {
   const networks = wallet.addresses.map((addr) => addr.networkId)
   return (
     <div className={style.wallet_card}>
@@ -36,13 +37,13 @@ export default ({ wallet, paymentInfo, userPaybuttons, refreshWalletList }: IPro
       </div>
 
       <div className={style.info_ctn}>
-      {paymentInfo.XECBalance > 0 &&
+      {paymentInfo.XECBalance > new Prisma.Decimal(0) &&
         <div className={style.info_item}>
           <h6>XEC Balance</h6>
           <h5>{Number(paymentInfo.XECBalance).toLocaleString()} XEC</h5>
         </div>
       }
-      {paymentInfo.BCHBalance > 0 &&
+      {paymentInfo.BCHBalance > new Prisma.Decimal(0) &&
         <div className={style.info_item}>
           <h6>BCH Balance</h6>
           <h5>{Number(paymentInfo.BCHBalance).toLocaleString()} BCH</h5>
@@ -67,3 +68,5 @@ export default ({ wallet, paymentInfo, userPaybuttons, refreshWalletList }: IPro
     </div>
   )
 }
+
+export default component
