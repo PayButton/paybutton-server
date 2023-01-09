@@ -189,11 +189,15 @@ export async function createDefaultWalletForUser (userId: string): Promise<Walle
   return wallet
 }
 
-export async function fetchWalletById (walletId: number | string): Promise<WalletWithAddressesAndPaybuttons | null> {
-  return await prisma.wallet.findUnique({
+export async function fetchWalletById (walletId: number | string): Promise<WalletWithAddressesAndPaybuttons> {
+  const wallet = await prisma.wallet.findUnique({
     where: { id: Number(walletId) },
     include: includeAddressesAndPaybuttons
   })
+  if (wallet === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_WALLET_FOUND_404.message)
+  }
+  return wallet
 }
 
 export async function setDefaultWallet (wallet: WalletWithAddressesAndPaybuttons, networkIds: number[]): Promise<WalletWithAddressesAndPaybuttons> {
@@ -287,9 +291,6 @@ export async function setDefaultWallet (wallet: WalletWithAddressesAndPaybuttons
 
 export async function updateWallet (walletId: number, params: UpdateWalletInput): Promise<WalletWithAddressesAndPaybuttons> {
   const wallet = await fetchWalletById(walletId)
-  if (wallet === null) {
-    throw new Error(RESPONSE_MESSAGES.NO_WALLET_FOUND_404.message)
-  }
 
   const paybuttonList = await paybuttonService.fetchPaybuttonArrayByIds(params.paybuttonIdList)
 
