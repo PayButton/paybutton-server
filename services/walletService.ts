@@ -69,9 +69,7 @@ async function setPaybuttonListForWallet (
   prisma: Prisma.TransactionClient,
   paybuttonList: paybuttonService.PaybuttonWithAddresses[],
   wallet: WalletWithAddressesAndPaybuttons
-): Promise<void> {
-  const addedPaybuttonList = []
-  const addedAddressList = []
+): Promise<WalletWithAddressesAndPaybuttons> {
   const addedPaybuttonIdSet = new Set()
   const addedAddressIdSet = new Set()
   // add paybuttons from list
@@ -98,7 +96,6 @@ async function setPaybuttonListForWallet (
         id: paybutton.id
       }
     })
-    addedPaybuttonList.push(updatedPaybutton)
     addedPaybuttonIdSet.add(updatedPaybutton.id)
 
     for (const connector of paybutton.addresses) {
@@ -111,11 +108,6 @@ async function setPaybuttonListForWallet (
         }
       })
       addedAddressIdSet.add(updatedAddress.id)
-      addedAddressList.push({
-        id: updatedAddress.id,
-        address: updatedAddress.address,
-        networkId: updatedAddress.networkId
-      })
     }
   }
 
@@ -142,10 +134,7 @@ async function setPaybuttonListForWallet (
       }
     })
   }
-  wallet.paybuttons = addedPaybuttonList
-  wallet.addresses = addedAddressList.filter((obj, pos, arr) => { // remove duplicates
-    return arr.map(addr => addr.id).indexOf(obj.id) === pos
-  })
+  return await fetchWalletById(wallet.id)
 }
 
 export async function createWallet (values: CreateWalletInput): Promise<WalletWithAddressesAndPaybuttons> {
@@ -311,7 +300,7 @@ export async function updateWallet (walletId: number, params: UpdateWalletInput)
       },
       include: includeAddressesAndPaybuttons
     })
-    await setPaybuttonListForWallet(prisma, paybuttonList, updatedWallet)
+    updatedWallet = await setPaybuttonListForWallet(prisma, paybuttonList, updatedWallet)
     updatedWallet = await setDefaultWallet(updatedWallet, defaultForNetworkIds)
     return updatedWallet
   })
