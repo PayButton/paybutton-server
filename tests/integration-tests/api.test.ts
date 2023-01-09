@@ -708,7 +708,7 @@ describe('PATCH /api/wallet/[id]', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     // avoid comparing `Date` with `string`
-    responseData.paybuttons[0].updatedAt = new Date(responseData.paybuttons[0].updatedAt)
+    responseData.paybuttons[0].updatedAt = new Date(wallet.paybuttons[0].updatedAt)
     responseData.paybuttons[0].createdAt = new Date(responseData.paybuttons[0].createdAt)
     expect(responseData).toMatchObject({
       ...wallet,
@@ -743,7 +743,7 @@ describe('PATCH /api/wallet/[id]', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     // avoid comparing `Date` with `string`
-    responseData.paybuttons[0].updatedAt = new Date(responseData.paybuttons[0].updatedAt)
+    responseData.paybuttons[0].updatedAt = new Date(wallet.paybuttons[0].updatedAt)
     responseData.paybuttons[0].createdAt = new Date(responseData.paybuttons[0].createdAt)
     expect(responseData).toMatchObject({
       ...wallet,
@@ -768,7 +768,7 @@ describe('PATCH /api/wallet/[id]', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     // avoid comparing `Date` with `string`
-    responseData.paybuttons[0].updatedAt = new Date(responseData.paybuttons[0].updatedAt)
+    responseData.paybuttons[0].updatedAt = new Date(wallet.paybuttons[0].updatedAt)
     responseData.paybuttons[0].createdAt = new Date(responseData.paybuttons[0].createdAt)
     expect(responseData).toMatchObject({
       ...wallet,
