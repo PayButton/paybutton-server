@@ -70,11 +70,12 @@ async function setPaybuttonListForWallet (
   paybuttonList: paybuttonService.PaybuttonWithAddresses[],
   wallet: WalletWithAddressesAndPaybuttons
 ): Promise<void> {
-  const paybuttonIdList = new Set()
-  const addressIdList = new Set()
+  const addedPaybuttonList = []
+  const addedAddressList = []
+  const addedPaybuttonIdSet = new Set()
+  const addedAddressIdSet = new Set()
   // add paybuttons from list
   for (const paybutton of paybuttonList) {
-    paybuttonIdList.add(paybutton.id)
     // enforce that added paybuttons & addresses don't already belong to a wallet
     if (paybutton.walletId !== null && paybutton.walletId !== wallet.id) {
       throw new Error(RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400.message)
@@ -83,7 +84,6 @@ async function setPaybuttonListForWallet (
       if (connector.address.walletId !== null && connector.address.walletId !== wallet.id) {
         throw new Error(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
       }
-      addressIdList.add(connector.address.id)
     }
     // enforce that wallet & paybutton have the same user provider
     if (paybutton.providerUserId !== wallet.providerUserId) {
@@ -98,8 +98,9 @@ async function setPaybuttonListForWallet (
         id: paybutton.id
       }
     })
+    addedPaybuttonList.push(updatedPaybutton)
+    addedPaybuttonIdSet.add(updatedPaybutton.id)
 
-    wallet.paybuttons.push(updatedPaybutton)
     for (const connector of paybutton.addresses) {
       const updatedAddress = await prisma.address.update({
         data: {
@@ -109,7 +110,8 @@ async function setPaybuttonListForWallet (
           id: connector.address.id
         }
       })
-      wallet.addresses.push({
+      addedAddressIdSet.add(updatedAddress.id)
+      addedAddressList.push({
         id: updatedAddress.id,
         address: updatedAddress.address,
         networkId: updatedAddress.networkId
@@ -118,7 +120,7 @@ async function setPaybuttonListForWallet (
   }
 
   // remove paybuttons & their addresses that are not on the list
-  const paybuttonToRemoveList = wallet.paybuttons.filter(pb => !paybuttonIdList.has(pb.id))
+  const paybuttonToRemoveList = wallet.paybuttons.filter(pb => !addedPaybuttonIdSet.has(pb.id))
   for (const paybutton of paybuttonToRemoveList) {
     await prisma.paybutton.update({
       data: {
@@ -129,7 +131,7 @@ async function setPaybuttonListForWallet (
       }
     })
   }
-  const addressToRemoveList = wallet.addresses.filter(addr => !addressIdList.has(addr.id))
+  const addressToRemoveList = wallet.addresses.filter(addr => !addedAddressIdSet.has(addr.id))
   for (const address of addressToRemoveList) {
     await prisma.address.update({
       data: {
@@ -140,8 +142,10 @@ async function setPaybuttonListForWallet (
       }
     })
   }
-  wallet.paybuttons = wallet.paybuttons.filter(pb => paybuttonIdList.has(pb.id))
-  wallet.addresses = wallet.addresses.filter(addr => addressIdList.has(addr.id))
+  wallet.paybuttons = addedPaybuttonList
+  wallet.addresses = addedAddressList.filter((obj, pos, arr) => { // remove duplicates
+    return arr.map(addr => addr.id).indexOf(obj.id) === pos
+  })
 }
 
 export async function createWallet (values: CreateWalletInput): Promise<WalletWithAddressesAndPaybuttons> {
