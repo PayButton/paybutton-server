@@ -36,7 +36,6 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
       refreshWalletList()
       setError('')
     } catch (err: any) {
-      console.log('se sliga iramo', err.response.data.message)
       setError(err.response.data.message)
     }
   }
