@@ -76,3 +76,19 @@ export const createCurrentPrices = async (): Promise<void> => {
     Price_in_USD: '12'
   }, 2)
 }
+
+export const deepCopy = (obj: any): any => {
+  // from https://decipher.dev/30-seconds-of-typescript/docs/deepClone/
+  if (obj === null) return null
+  const clone = { ...obj }
+  Object.keys(clone).forEach(
+    (key) =>
+      (clone[key] =
+        typeof obj[key] === 'object' ? deepCopy(obj[key]) : obj[key])
+  )
+  return Array.isArray(obj) && obj.length > 0
+    ? (clone.length = obj.length) > 0 && Array.from(clone)
+    : Array.isArray(obj)
+      ? Array.from(obj)
+      : clone
+}
