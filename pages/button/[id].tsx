@@ -134,7 +134,9 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
       )
     }
     return (
-      <Page />
+      <Page >
+        loading...
+      </Page >
     )
   }
 }
