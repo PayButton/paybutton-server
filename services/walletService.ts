@@ -65,11 +65,17 @@ export const walletHasAddressForNetwork = (wallet: WalletWithAddressesAndPaybutt
 
 export type WalletWithAddressesAndPaybuttons = Prisma.WalletGetPayload<typeof walletWithAddressesAndPaybuttons>
 
+/* Update wallet paybutton and addresses from `paybuttonList`.
+   * If the wallet already exists and is being update (create=false),
+   *  return the updated wallet.
+   * Else, if the wallet does not yet exists (create=true), return void.
+   */
 async function setPaybuttonListForWallet (
   prisma: Prisma.TransactionClient,
   paybuttonList: paybuttonService.PaybuttonWithAddresses[],
-  wallet: WalletWithAddressesAndPaybuttons
-): Promise<WalletWithAddressesAndPaybuttons> {
+  wallet: WalletWithAddressesAndPaybuttons,
+  create = false
+): Promise<WalletWithAddressesAndPaybuttons | undefined> {
   const addedPaybuttonIdSet = new Set()
   const addedAddressIdSet = new Set()
   // add paybuttons from list
@@ -134,7 +140,9 @@ async function setPaybuttonListForWallet (
       }
     })
   }
-  return await fetchWalletById(wallet.id)
+  if (!create) {
+    return await fetchWalletById(wallet.id)
+  }
 }
 
 export async function createWallet (values: CreateWalletInput): Promise<WalletWithAddressesAndPaybuttons> {
@@ -162,7 +170,7 @@ export async function createWallet (values: CreateWalletInput): Promise<WalletWi
       },
       include: includeAddressesAndPaybuttons
     })
-    await setPaybuttonListForWallet(prisma, paybuttonList, w)
+    await setPaybuttonListForWallet(prisma, paybuttonList, w, true)
     return w
   })
   return await setDefaultWallet(wallet, defaultForNetworkIds)
@@ -300,7 +308,7 @@ export async function updateWallet (walletId: number, params: UpdateWalletInput)
       },
       include: includeAddressesAndPaybuttons
     })
-    updatedWallet = await setPaybuttonListForWallet(prisma, paybuttonList, updatedWallet)
+    updatedWallet = (await setPaybuttonListForWallet(prisma, paybuttonList, updatedWallet))!
     updatedWallet = await setDefaultWallet(updatedWallet, defaultForNetworkIds)
     return updatedWallet
   })
