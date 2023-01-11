@@ -3,9 +3,8 @@ import { Prisma, Paybutton, Address } from '@prisma/client'
 import * as walletService from 'services/walletService'
 import * as addressService from 'services/addressService'
 import { prismaMock } from 'prisma/mockedClient'
-import { deepCopy } from 'tests/utils'
 import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
-import { mockedWallet, mockedWalletList, mockedPaybuttonList, mockedPaybutton, mockedNetwork, mockedBCHAddress } from '../mockedObjects'
+import { mockedWallet, mockedWalletList, mockedPaybuttonList, mockedPaybutton, mockedNetwork, mockedBCHAddress, mockedAddressList } from '../mockedObjects'
 
 describe('Fetch services', () => {
   it('Should fetch wallet by id', async () => {
@@ -50,10 +49,10 @@ describe('Create services', () => {
     paybuttons: Paybutton[]
     createWalletInput: walletService.CreateWalletInput
   }
-  const paybuttonListCopy = deepCopy(mockedPaybuttonList)
   const data: Data = {
-    address: paybuttonListCopy[0].addresses[0].address,
-    paybuttons: paybuttonListCopy.slice(0, 1),
+
+    address: mockedPaybuttonList[0].addresses[0].address,
+    paybuttons: mockedPaybuttonList.slice(0, 1),
     createWalletInput: {
       userId: 'mocked-uid',
       name: 'mockedWallet-name',
@@ -64,15 +63,17 @@ describe('Create services', () => {
   beforeEach(() => {
     prismaMock.wallet.create.mockResolvedValue(mockedWallet)
     prisma.wallet.create = prismaMock.wallet.create
+    prismaMock.wallet.findUnique.mockResolvedValue(mockedWallet)
+    prisma.wallet.findUnique = prismaMock.wallet.findUnique
     prismaMock.$transaction.mockImplementation(
       (fn: (prisma: any) => any) => {
         return fn(prisma)
       }
     )
     prisma.$transaction = prismaMock.$transaction
-    prismaMock.paybutton.update.mockResolvedValue(paybuttonListCopy[0])
+    prismaMock.paybutton.update.mockImplementation((_) => mockedPaybuttonList.filter(pb => pb.id === _.where.id)[0] as any)
     prisma.paybutton.update = prismaMock.paybutton.update
-    prismaMock.address.update.mockResolvedValue(data.address)
+    prismaMock.address.update.mockImplementation((_) => mockedAddressList.filter(addr => addr.id === _.where.id)[0] as any)
     prisma.address.update = prismaMock.address.update
 
     prismaMock.network.findUnique.mockResolvedValue(mockedNetwork)
@@ -93,17 +94,20 @@ describe('Create services', () => {
       await walletService.createWallet(data.createWalletInput)
     } catch (e: any) {
       expect(e.message).toMatch(RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400.message)
+    } finally {
+      data.paybuttons[0].walletId = null
     }
   })
 
   it('Should failed for already binded address', async () => {
-    data.paybuttons[0].walletId = null
     data.address.walletId = 1729
     expect.assertions(1)
     try {
       await walletService.createWallet(data.createWalletInput)
     } catch (e: any) {
       expect(e.message).toMatch(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
+    } finally {
+      data.address.walletId = null
     }
   })
 })
@@ -120,7 +124,6 @@ describe('Update services', () => {
       paybuttonIdList: [1]
     }
   }
-  const paybuttonListCopy = deepCopy(mockedPaybuttonList)
 
   beforeEach(() => {
     data = {
@@ -141,23 +144,26 @@ describe('Update services', () => {
       }
     )
     prisma.$transaction = prismaMock.$transaction
-    prismaMock.paybutton.findMany.mockResolvedValue(paybuttonListCopy)
+    prismaMock.paybutton.findMany.mockResolvedValue(mockedPaybuttonList)
     prisma.paybutton.findMany = prismaMock.paybutton.findMany
 
-    prismaMock.paybutton.update.mockResolvedValue(paybuttonListCopy[0])
+    prismaMock.paybutton.update.mockImplementation((_) => mockedPaybuttonList.filter(pb => pb.id === _.where.id)[0] as any)
     prisma.paybutton.update = prismaMock.paybutton.update
-    prismaMock.address.update.mockResolvedValue(paybuttonListCopy[0].addresses[0].address)
+    prismaMock.address.update.mockImplementation((_) => mockedAddressList.filter(addr => addr.id === _.where.id)[0] as any)
     prisma.address.update = prismaMock.address.update
 
     prismaMock.network.findUnique.mockResolvedValue(mockedNetwork)
     prisma.network.findUnique = prismaMock.network.findUnique
-    prismaMock.paybutton.findMany.mockResolvedValue([paybuttonListCopy[0]])
+    prismaMock.paybutton.findMany.mockResolvedValue([mockedPaybuttonList[0]])
     prisma.paybutton.findMany = prismaMock.paybutton.findMany
   })
 
   it('Update wallet', async () => {
     const result = await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
-    expect(result).toEqual(mockedWallet)
+    expect(result).toEqual({
+      ...mockedWallet,
+      paybuttons: [mockedPaybuttonList[0]]
+    })
   })
 
   it('Fail for paybutton that is already on another wallet', async () => {
