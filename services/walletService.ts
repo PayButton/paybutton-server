@@ -157,7 +157,7 @@ export async function setPaybuttonListForWallet (
   // remove paybuttons & their addresses that are not on the list
   await removePaybuttonsFromWallet(
     prisma,
-    wallet.addresses.map(addr => addr.id).filter(addrId => !addedAddressIdSet.has(addrId))
+    wallet.paybuttons.map(pb => pb.id).filter(pbId => !addedPaybuttonIdSet.has(pbId))
   )
   await removeAddressesFromWallet(
     prisma,
