@@ -142,7 +142,8 @@ export const mockedPaybuttonList = [
         address: mockedAddressList[3]
       }
     ]
-  }
+  },
+  mockedPaybutton
 ]
 
 // Wallet
