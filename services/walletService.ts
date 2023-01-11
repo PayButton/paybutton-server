@@ -122,6 +122,7 @@ export async function setPaybuttonListForWallet (
       throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
     }
 
+    // update paybuttons & addresses
     const updatedPaybutton = await prisma.paybutton.update({
       data: {
         walletId: wallet.id
