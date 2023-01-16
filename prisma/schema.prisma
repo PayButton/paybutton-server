@@ -68,7 +68,7 @@ model Transaction {
   id        Int                    @id @default(autoincrement())
   hash      String                 @db.VarChar(255)
   amount    Decimal                @db.Decimal(24, 8)
-  confirmed Boolean                @default(true)
+  confirmed Boolean                @default(false)
   timestamp Int
   addressId Int
   address   Address                @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Restrict)

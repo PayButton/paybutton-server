@@ -21,7 +21,7 @@ const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void
   addressList.map(async (addr) => {
     await grpcService.subscribeTransactions(
       [addr.address],
-      async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr) },
+      async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, true) },
       async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, false) },
       getAddressPrefix(addr.address)
     )
