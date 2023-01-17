@@ -1,5 +1,6 @@
 import { mockedGrpc, mockedBCHAddress, mockedXECAddress } from '../mockedObjects'
 import grpcService from '../../services/grpcService'
+import { NETWORK_SLUGS } from 'constants/index'
 
 describe('Test service returned objects consistency', () => {
   it('test getAddress for real address', async () => {
@@ -42,7 +43,7 @@ describe('Test service returned objects consistency', () => {
     expect(res).toBe(1780)
   })
   it('test getTransactionDetails', async () => {
-    const res = await grpcService.getTransactionDetails(mockedBCHAddress.address, 'bitcoincash')
+    const res = await grpcService.getTransactionDetails(mockedBCHAddress.address, NETWORK_SLUGS.bitcoincash)
     expect(res).toEqual(expect.objectContaining({
       transaction: {
         hash: 'hu9m3BZg/zlxis7ehc0x/+9qELXC8dkbimOtc5v598s=',

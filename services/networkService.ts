@@ -2,6 +2,7 @@ import { Network, Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import prisma from 'prisma/clientInstance'
 import { getBlockchainInfo, getBlockInfo } from 'services/grpcService'
+import { NETWORK_SLUGS } from 'constants/index'
 
 export async function getNetworkFromSlug (slug: string): Promise<Network> {
   const network = await prisma.network.findUnique({ where: { slug } })
@@ -39,7 +40,7 @@ export async function getNetworks (includeTestNetworks?: boolean): Promise<Netwo
     : {
         where: {
           slug: {
-            in: ['ecash', 'bitcoincash']
+            in: [NETWORK_SLUGS.ecash, NETWORK_SLUGS.bitcoincash]
           }
         }
       }
