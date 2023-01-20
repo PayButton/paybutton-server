@@ -1,7 +1,7 @@
 #!/bin/sh
 
-yarn || exit
-yarn prisma migrate dev || exit
-yarn prisma db seed || exit
-./init-jobs.sh || exit
-yarn dev || exit
+yarn || exit 1
+yarn prisma migrate dev || exit 1
+yarn prisma db seed || exit 1
+./init-jobs.sh || exit 1
+yarn dev || exit 1

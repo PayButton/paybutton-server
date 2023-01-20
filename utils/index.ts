@@ -2,6 +2,7 @@ import xecaddr from 'xecaddrjs'
 import { Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES } from '../constants/index'
 import * as bitcoinjs from 'bitcoinjs-lib'
+import { NETWORK_SLUGS } from 'constants/index'
 
 export const removeAddressPrefix = function (addressString: string): string {
   if (addressString.includes(':')) {
@@ -16,15 +17,15 @@ export const getAddressPrefix = function (addressString: string): string {
     const network = xecaddr.detectAddressNetwork(addressString)
     if (format === xecaddr.Format.Xecaddr) {
       if (network === xecaddr.Network.Mainnet) {
-        return 'ecash'
+        return NETWORK_SLUGS.ecash
       } else if (network === xecaddr.Network.Testnet) {
-        return 'ectest'
+        return NETWORK_SLUGS.ectest
       }
     } else if (format === xecaddr.Format.Cashaddr) {
       if (network === xecaddr.Network.Mainnet) {
-        return 'bitcoincash'
+        return NETWORK_SLUGS.bitcoincash
       } else if (network === xecaddr.Network.Testnet) {
-        return 'bchtest'
+        return NETWORK_SLUGS.bchtest
       }
     }
   } catch {
