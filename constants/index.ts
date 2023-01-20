@@ -38,6 +38,14 @@ export const RESPONSE_MESSAGES = {
   INVALID_QUOTE_SLUG_400: { statusCode: 400, message: 'Invalid quote slug.' }
 }
 
+export const NETWORK_SLUGS = {
+  ecash: 'ecash',
+  bitcoincash: 'bitcoincash',
+  ectest: 'ectest',
+  bchtest: 'bchtest',
+  bchreg: 'bchreg',
+}
+
 // When fetching some address transactions, number of transactions to fetch at a time.
 export const FETCH_N = 100
 
@@ -69,3 +77,4 @@ export const XEC_TIMESTAMP_THRESHOLD = 1605398400 // 2020 Nov 15, 12AM
 
 // Wait time (in ms) between sync of current prices
 export const CURRENT_PRICE_SYNC_DELAY = 60000
+export const DEFAULT_WORKER_LOCK_DURATION = 120000

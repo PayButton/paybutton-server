@@ -56,4 +56,4 @@ services:
     volumes:
       - ./redis:/data/redis:z
     # dump the dataset each 20 seconds if there was at least 1 change
-    command: sh -c "umask 000 && redis-server /data/redis/redis.conf --save 20 1 --loglevel warning"
+    command: sh -c "umask 000 && redis-server /data/redis/redis.conf --loglevel warning"

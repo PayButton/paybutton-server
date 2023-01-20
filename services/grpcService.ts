@@ -10,15 +10,15 @@ import {
 } from 'grpc-bchrpc-node'
 
 import { getAddressPrefix } from '../utils/index'
-import { RESPONSE_MESSAGES } from '../constants/index'
+import { RESPONSE_MESSAGES, NETWORK_SLUGS } from '../constants/index'
 
 let grpcBCH = new GrpcClient({ url: process.env.GRPC_BCH_NODE_URL });
 
 export const getClientForAddress = (addressString: string): GrpcClient => {
   const prefix = getAddressPrefix(addressString)
-  if (prefix === 'ecash') {
+  if (prefix === NETWORK_SLUGS.ecash) {
     return new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL });
-  } else if (prefix === 'bitcoincash' ) {
+  } else if (prefix === NETWORK_SLUGS.bitcoincash) {
     return grpcBCH
   } else {
     throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
@@ -26,9 +26,9 @@ export const getClientForAddress = (addressString: string): GrpcClient => {
 }
 
 export const getClientForNetworkSlug = (networkSlug: string): GrpcClient => {
-  if (networkSlug === 'ecash') {
+  if (networkSlug === NETWORK_SLUGS.ecash) {
     return new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL });
-  } else if (networkSlug === 'bitcoincash' ) {
+  } else if (networkSlug === NETWORK_SLUGS.bitcoincash) {
     return grpcBCH
   } else {
     throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
@@ -108,9 +108,9 @@ export const subscribeTransactions = async (
   const createTxnStream = async (): Promise<void> => {
     const client = getClientForNetworkSlug(networkSlug)
     const txnStream = await client.subscribeTransactions({
-      includeMempoolAcceptance: true,
-      includeBlockAcceptance: false,
-      includeSerializedTxn: false,
+      //includeMempoolAcceptance: true,
+      includeBlockAcceptance: true,
+      //includeSerializedTxn: false,
       addresses: addresses,
     });
 
@@ -119,7 +119,7 @@ export const subscribeTransactions = async (
     });
 
     txnStream.on('data', async (data: TransactionNotification) => {
-      let txn = data.getUnconfirmedTransaction()!.getTransaction()!;
+      let txn = data.getConfirmedTransaction()!;
       onTransactionNotification(txn.toObject());
     });
     console.log(`txn data stream established.`);
