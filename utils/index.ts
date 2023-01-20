@@ -70,12 +70,17 @@ export async function pubkeyToAddress (pubkeyString: string, networkFormat: stri
   return address
 }
 
-export const formatQuoteValue = (numberString: string, quoteId?: number): string => {
+export const formatQuoteValue = (numberString: string, quoteId?: number, maximumFractionDigits?: number): string => {
+  const parsedFloat = parseFloat(numberString)
   if (quoteId === USD_QUOTE_ID) {
-    const addcommas = parseFloat(numberString).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    return addcommas
+    return parsedFloat.toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: maximumFractionDigits === undefined ? 2 : maximumFractionDigits
+      }
+    )
   } else {
-    const addcommas = parseFloat(numberString).toLocaleString()
-    return addcommas
+    return parsedFloat.toLocaleString()
   }
 }

@@ -77,7 +77,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
     <ThirdPartyEmailPasswordAuthNoSSR>
       <h2>Dashboard</h2>
       <div className={style.number_ctn}>
-        <NumberBlock value={'$'.concat(formatQuoteValue(dashboardData.total.revenue, USD_QUOTE_ID)) } text='Revenue (lifetime)' />
+        <NumberBlock value={'$'.concat(formatQuoteValue(dashboardData.total.revenue, USD_QUOTE_ID, 3)) } text='Revenue (lifetime)' />
         <NumberBlock value={formatQuoteValue(dashboardData.total.payments)} text='Payments (lifetime)' />
         <NumberBlock value={dashboardData.total.buttons} text='Buttons' />
       </div>
