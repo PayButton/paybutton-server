@@ -27,7 +27,7 @@ import {
   createCurrentPrices
 } from 'tests/utils'
 
-import { RESPONSE_MESSAGES } from 'constants/index'
+import { RESPONSE_MESSAGES, NETWORK_SLUGS } from 'constants/index'
 
 jest.mock('../../utils/setSession', () => {
   return {
@@ -1165,7 +1165,7 @@ describe('GET /api/prices/current/[networkSlug]', () => {
   })
 
   it('Should return HTTP 200', async () => {
-    baseRequestOptions.query = { networkSlug: 'ecash' }
+    baseRequestOptions.query = { networkSlug: NETWORK_SLUGS.ecash }
     const res = await testEndpoint(baseRequestOptions, currentPriceEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
@@ -1195,7 +1195,7 @@ describe('GET /api/prices/current/[networkSlug]/[quoteSlug]', () => {
   })
 
   it('Should return HTTP 400 if no quoteSlug specified', async () => {
-    baseRequestOptions.query = { networkSlug: 'ecash' }
+    baseRequestOptions.query = { networkSlug: NETWORK_SLUGS.ecash }
     const res = await testEndpoint(baseRequestOptions, currentPriceForQuoteEndpoint)
     expect(res.statusCode).toBe(RESPONSE_MESSAGES.QUOTE_SLUG_NOT_PROVIDED_400.statusCode)
     const responseData = res._getJSONData()
@@ -1211,7 +1211,7 @@ describe('GET /api/prices/current/[networkSlug]/[quoteSlug]', () => {
   })
 
   it('Should return HTTP 400 if invalid quoteSlug specified', async () => {
-    baseRequestOptions.query = { networkSlug: 'ecash', quoteSlug: 'bla' }
+    baseRequestOptions.query = { networkSlug: NETWORK_SLUGS.ecash, quoteSlug: 'bla' }
     const res = await testEndpoint(baseRequestOptions, currentPriceForQuoteEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(RESPONSE_MESSAGES.INVALID_QUOTE_SLUG_400.statusCode)
@@ -1219,7 +1219,7 @@ describe('GET /api/prices/current/[networkSlug]/[quoteSlug]', () => {
   })
 
   it('Should return HTTP 200', async () => {
-    baseRequestOptions.query = { networkSlug: 'ecash', quoteSlug: 'cad' }
+    baseRequestOptions.query = { networkSlug: NETWORK_SLUGS.ecash, quoteSlug: 'cad' }
     const res = await testEndpoint(baseRequestOptions, currentPriceForQuoteEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)

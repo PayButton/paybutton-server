@@ -8,7 +8,7 @@ import {
 import { Prisma } from '@prisma/client'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
-import { USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID } from 'constants/index'
+import { USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, NETWORK_SLUGS } from 'constants/index'
 
 export const mockedPaybutton: PaybuttonWithAddresses = {
   id: 4,
@@ -213,7 +213,7 @@ export const mockedWalletsOnUserProfile = {
 // Network
 export const mockedNetwork = {
   id: 1,
-  slug: 'bitcoincash',
+  slug: NETWORK_SLUGS.bitcoincash,
   ticker: 'bch',
   title: 'Bitcoin Cash',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),

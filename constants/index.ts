@@ -38,6 +38,14 @@ export const RESPONSE_MESSAGES = {
   INVALID_QUOTE_SLUG_400: { statusCode: 400, message: 'Invalid quote slug.' }
 }
 
+export const NETWORK_SLUGS = {
+  ecash: 'ecash',
+  bitcoincash: 'bitcoincash',
+  ectest: 'ectest',
+  bchtest: 'bchtest',
+  bchreg: 'bchreg',
+}
+
 // When fetching some address transactions, number of transactions to fetch at a time.
 export const FETCH_N = 100
 
