@@ -6,7 +6,7 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import style from './dashboard.module.css'
-import { FormatNumber } from 'utils/index'
+import { formatQuoteValue } from 'utils/index'
 import { USD_QUOTE_ID } from 'constants/index'
 const Chart = dynamic(async () => await import('./Chart'), {
   ssr: false
@@ -77,8 +77,8 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
     <ThirdPartyEmailPasswordAuthNoSSR>
       <h2>Dashboard</h2>
       <div className={style.number_ctn}>
-        <NumberBlock value={'$'.concat(FormatNumber(dashboardData.total.revenue, USD_QUOTE_ID)) } text='Revenue (lifetime)' />
-        <NumberBlock value={FormatNumber(dashboardData.total.payments)} text='Payments (lifetime)' />
+        <NumberBlock value={'$'.concat(formatQuoteValue(dashboardData.total.revenue, USD_QUOTE_ID)) } text='Revenue (lifetime)' />
+        <NumberBlock value={formatQuoteValue(dashboardData.total.payments)} text='Payments (lifetime)' />
         <NumberBlock value={dashboardData.total.buttons} text='Buttons' />
       </div>
       <div className={style.btn_ctn}>
@@ -91,7 +91,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Revenue</h4>
-            <h5>{activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${FormatNumber(activePeriod.totalRevenue, USD_QUOTE_ID)}</h5>
+            <h5>{activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${formatQuoteValue(activePeriod.totalRevenue, USD_QUOTE_ID)}</h5>
           </div>
           <div className={style.chart_ctn}>
             <Chart data={activePeriod.revenue} usd={true} />
@@ -100,7 +100,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h4>Payments</h4>
-            <h5>{activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: {FormatNumber(activePeriod.totalPayments)}</h5>
+            <h5>{activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: {formatQuoteValue(activePeriod.totalPayments)}</h5>
           </div>
           <div className={style.chart_ctn}>
             <Chart data={activePeriod.payments} />

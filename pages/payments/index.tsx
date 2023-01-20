@@ -12,7 +12,7 @@ import Link from 'next/link'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
-import { FormatNumber } from 'utils/index'
+import { formatQuoteValue } from 'utils/index'
 import { XEC_NETWORK_ID, USD_QUOTE_ID } from 'constants/index'
 import moment from 'moment'
 
@@ -74,7 +74,7 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
         Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
         accessor: 'value',
         Cell: (cellProps) => {
-          return <div style={{ textAlign: 'right', fontWeight: '600' }}>${FormatNumber(cellProps.cell.value, USD_QUOTE_ID)}</div>
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}>${formatQuoteValue(cellProps.cell.value, USD_QUOTE_ID)}</div>
         }
       },
       {

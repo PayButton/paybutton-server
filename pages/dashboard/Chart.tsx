@@ -1,6 +1,6 @@
 import type { NextPage } from 'next'
 import React from 'react'
-import { FormatNumber } from 'utils/index'
+import { formatQuoteValue } from 'utils/index'
 import { USD_QUOTE_ID } from 'constants/index'
 import {
   Chart as ChartJS,
@@ -48,7 +48,7 @@ const Chart: NextPage<Props> = ({ data, usd }) => {
         displayColors: false,
         callbacks: {
           label: function (context) {
-            return usd ? '$' + FormatNumber(context.raw, USD_QUOTE_ID) : FormatNumber(context.raw)
+            return usd ? '$' + formatQuoteValue(context.raw, USD_QUOTE_ID) : formatQuoteValue(context.raw)
           }
         },
         mode: 'nearest',
