@@ -12,7 +12,7 @@ import Link from 'next/link'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
-import { FormatNumber } from 'utils/general'
+import { FormatNumber } from 'utils/index'
 import { XEC_NETWORK_ID, USD_QUOTE_ID } from 'constants/index'
 import moment from 'moment'
 

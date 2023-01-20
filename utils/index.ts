@@ -2,7 +2,7 @@ import xecaddr from 'xecaddrjs'
 import { Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES } from '../constants/index'
 import * as bitcoinjs from 'bitcoinjs-lib'
-import { NETWORK_SLUGS } from 'constants/index'
+import { NETWORK_SLUGS, USD_QUOTE_ID } from 'constants/index'
 
 export const removeAddressPrefix = function (addressString: string): string {
   if (addressString.includes(':')) {
@@ -68,4 +68,14 @@ export async function pubkeyToAddress (pubkeyString: string, networkFormat: stri
       throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
   }
   return address
+}
+
+export const FormatNumber = (numberString: string, quoteId?: number): string => {
+  if (quoteId === USD_QUOTE_ID) {
+    const addcommas = parseFloat(numberString).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    return addcommas
+  } else {
+    const addcommas = parseFloat(numberString).toLocaleString()
+    return addcommas
+  }
 }

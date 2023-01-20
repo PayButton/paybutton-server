@@ -6,7 +6,7 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import style from './dashboard.module.css'
-import { FormatNumber } from 'utils/general'
+import { FormatNumber } from 'utils/index'
 import { USD_QUOTE_ID } from 'constants/index'
 const Chart = dynamic(async () => await import('./Chart'), {
   ssr: false

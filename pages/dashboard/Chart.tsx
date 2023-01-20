@@ -1,6 +1,6 @@
 import type { NextPage } from 'next'
 import React from 'react'
-import { FormatNumber } from 'utils/general'
+import { FormatNumber } from 'utils/index'
 import { USD_QUOTE_ID } from 'constants/index'
 import {
   Chart as ChartJS,
