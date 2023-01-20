@@ -3,7 +3,7 @@ import { Prisma, Paybutton, Address } from '@prisma/client'
 import * as walletService from 'services/walletService'
 import * as addressService from 'services/addressService'
 import { prismaMock } from 'prisma/mockedClient'
-import { RESPONSE_MESSAGES } from 'constants/index'
+import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { mockedWallet, mockedWalletList, mockedPaybuttonList, mockedPaybutton, mockedNetwork, mockedBCHAddress } from '../mockedObjects'
 
 describe('Fetch services', () => {
@@ -212,5 +212,60 @@ describe('Update services', () => {
     } catch (e: any) {
       expect(e.message).toMatch(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
     }
+  })
+})
+
+describe('Auxiliary functions', () => {
+  it('gets network default', () => {
+    expect(
+      walletService.getDefaultForNetworkIds(true, true)
+    ).toStrictEqual([1, 2])
+    expect(
+      walletService.getDefaultForNetworkIds(true, false)
+    ).toStrictEqual([1])
+    expect(
+      walletService.getDefaultForNetworkIds(false, true)
+    ).toStrictEqual([2])
+    expect(
+      walletService.getDefaultForNetworkIds(false, false)
+    ).toStrictEqual([])
+  })
+  it('Mocked wallet has address for both networks', () => {
+    expect(
+      walletService.walletHasAddressForNetwork(mockedWallet, XEC_NETWORK_ID)
+    ).toBe(true)
+    expect(
+      walletService.walletHasAddressForNetwork(mockedWallet, XEC_NETWORK_ID)
+    ).toBe(true)
+  })
+  it('Mocked wallet has address only for XEC', () => {
+    const otherWallet = { ...mockedWallet }
+    otherWallet.addresses = otherWallet.addresses.filter((addr) => addr.networkId === XEC_NETWORK_ID)
+    expect(
+      walletService.walletHasAddressForNetwork(otherWallet, XEC_NETWORK_ID)
+    ).toBe(true)
+    expect(
+      walletService.walletHasAddressForNetwork(otherWallet, BCH_NETWORK_ID)
+    ).toBe(false)
+  })
+  it('Mocked wallet has address only for BCH', () => {
+    const otherWallet = { ...mockedWallet }
+    otherWallet.addresses = otherWallet.addresses.filter((addr) => addr.networkId === BCH_NETWORK_ID)
+    expect(
+      walletService.walletHasAddressForNetwork(otherWallet, BCH_NETWORK_ID)
+    ).toBe(true)
+    expect(
+      walletService.walletHasAddressForNetwork(otherWallet, XEC_NETWORK_ID)
+    ).toBe(false)
+  })
+  it('Mocked wallet has no addresses', () => {
+    const otherWallet = { ...mockedWallet }
+    otherWallet.addresses = []
+    expect(
+      walletService.walletHasAddressForNetwork(otherWallet, BCH_NETWORK_ID)
+    ).toBe(false)
+    expect(
+      walletService.walletHasAddressForNetwork(otherWallet, XEC_NETWORK_ID)
+    ).toBe(false)
   })
 })

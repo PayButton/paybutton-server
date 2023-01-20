@@ -8,7 +8,7 @@ import {
 import { Prisma } from '@prisma/client'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
-import { USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID } from 'constants/index'
+import { USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, NETWORK_SLUGS } from 'constants/index'
 
 export const mockedPaybutton: PaybuttonWithAddresses = {
   id: 4,
@@ -47,7 +47,7 @@ export const mockedPaybutton: PaybuttonWithAddresses = {
 
 export const mockedBCHAddress = {
   id: 1,
-  address: 'bitcoincash:qzqh7ej2vz26a9xaxq7capzfwgxt5gem9g8rvfxc5t',
+  address: 'bitcoincash:qzqh7rwaq9zm4zcv40lh9c9u50gy07gcesdmja8426',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   networkId: 2,
@@ -205,7 +205,7 @@ export const mockedWalletsOnUserProfile = {
 // Network
 export const mockedNetwork = {
   id: 1,
-  slug: 'bitcoincash',
+  slug: NETWORK_SLUGS.bitcoincash,
   ticker: 'bch',
   title: 'Bitcoin Cash',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
