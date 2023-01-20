@@ -13,7 +13,7 @@ import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import { FormatNumber } from 'utils/general'
-import { XEC_NETWORK_ID } from 'constants/index'
+import { XEC_NETWORK_ID, USD_QUOTE_ID } from 'constants/index'
 import moment from 'moment'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
@@ -74,7 +74,7 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
         Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
         accessor: 'value',
         Cell: (cellProps) => {
-          return <div style={{ textAlign: 'right', fontWeight: '600' }}>${FormatNumber(cellProps.cell.value, 'dollars')}</div>
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}>${FormatNumber(cellProps.cell.value, USD_QUOTE_ID)}</div>
         }
       },
       {

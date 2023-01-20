@@ -1,3 +1,5 @@
+import { USD_QUOTE_ID } from 'constants/index'
+
 export const copyText = function (id: string): string {
   if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
     const textToCopy = document.getElementById(id).textContent
@@ -5,12 +7,12 @@ export const copyText = function (id: string): string {
   }
 }
 
-export const FormatNumber = (x, type) => {
-  if (type === 'dollars') {
-    const addcommas = parseFloat(x).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+export const FormatNumber = (numberString: string, quoteId?: number): string => {
+  if (quoteId === USD_QUOTE_ID) {
+    const addcommas = parseFloat(numberString).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     return addcommas
   } else {
-    const addcommas = parseFloat(x).toLocaleString()
+    const addcommas = parseFloat(numberString).toLocaleString()
     return addcommas
   }
 }
