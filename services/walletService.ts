@@ -16,6 +16,7 @@ export interface UpdateWalletInput {
   isXECDefault?: boolean
   isBCHDefault?: boolean
   paybuttonIdList: number[]
+  userId: string
 }
 
 const includeAddressesAndPaybuttons = {
@@ -244,6 +245,9 @@ export async function updateWallet (walletId: number, params: UpdateWalletInput)
 
   // enforce that added paybuttons & addresses don't already belong to a wallet
   paybuttonList.forEach((pb) => {
+    if (pb.providerUserId !== params.userId) {
+      throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
+    }
     if (pb.walletId !== null && pb.walletId !== walletId) {
       throw new Error(RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400.message)
     }

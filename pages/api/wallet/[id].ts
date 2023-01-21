@@ -25,8 +25,9 @@ export default async (
   } else if (req.method === 'PATCH') {
     await setSession(req, res)
     try {
-      const values = req.body
-      const updateWalletInput = parseWalletPATCHRequest(values)
+      const params = req.body
+      params.userId = req.session.userId
+      const updateWalletInput = parseWalletPATCHRequest(params)
       const wallet = await walletService.updateWallet(Number(walletId), updateWalletInput)
       res.status(200).json(wallet)
     } catch (err: any) {
