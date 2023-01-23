@@ -53,10 +53,10 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
     if (selectedPaybuttonIdList === undefined) return false
     for (const selectedPaybuttonId of selectedPaybuttonIdList) {
       let paybutton = userPaybuttons.find((pb) => pb.id === Number(selectedPaybuttonId))
-      if (paybutton === undefined) {
-        continue
-      }
-      if (paybutton.addresses.some((addr) => addr.address.networkId === networkId)) {
+      if (
+        paybutton !== undefined
+        && paybutton.addresses.some((addr) => addr.address.networkId === networkId)
+      ) {
         ret = true
         break
       }
