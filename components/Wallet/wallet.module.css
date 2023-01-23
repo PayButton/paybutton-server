@@ -136,6 +136,10 @@
   align-items: center;
 }
 
+.input_field input[disabled] + label {
+  color: #888;
+}
+
 .makedefault_ctn label,
 .makedefault_ctn input,
 .buttonlist_ctn label,
