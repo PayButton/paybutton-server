@@ -4,6 +4,7 @@ import { WalletPOSTParameters } from 'utils/validators'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import Image from 'next/image'
+import Link from 'next/link'
 import style from '../Wallet/wallet.module.css'
 import style_pb from 'components/Paybutton/paybutton.module.css'
 import Plus from 'assets/plus.png'
@@ -118,6 +119,7 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
 
                   <h4>Paybuttons</h4>
                   <div className={style.buttonlist_ctn}>
+                    {userPaybuttons.length === 0 && <div className={style.make_btn_p}>No Buttons yet. <Link href='/buttons'>Click here</Link> to make one!</div>}
                     {userPaybuttons.map((pb, index) => (
                       <div className={style.input_field} key={`create-pb-${pb.id}`}>
                         <input {...register('paybuttonIdList')}
