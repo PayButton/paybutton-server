@@ -70,17 +70,36 @@ export async function pubkeyToAddress (pubkeyString: string, networkFormat: stri
   return address
 }
 
-export const formatQuoteValue = (numberString: string, quoteId?: number, maximumFractionDigits?: number): string => {
+const findFirstSignificantDigit = (floatNumber: number): number | undefined => {
+  if (floatNumber <= 0) {
+    return undefined
+  }
+  let ret = 0
+  while (floatNumber < 1) {
+    floatNumber = floatNumber * 10
+    ret++
+  }
+  return ret
+}
+export const formatQuoteValue = (numberString: string, quoteId?: number): string => {
   const parsedFloat = parseFloat(numberString)
+  let minDigits: number
+  let maxDigits: number
   if (quoteId === USD_QUOTE_ID) {
-    return parsedFloat.toLocaleString(
-      undefined,
-      {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: maximumFractionDigits === undefined ? 2 : maximumFractionDigits
-      }
-    )
+    minDigits = 2
+    if (parsedFloat < 0.01) {
+      maxDigits = findFirstSignificantDigit(parsedFloat) ?? 2
+    } else {
+      maxDigits = 2
+    }
   } else {
     return parsedFloat.toLocaleString()
   }
+  return parsedFloat.toLocaleString(
+    undefined,
+    {
+      minimumFractionDigits: minDigits,
+      maximumFractionDigits: maxDigits
+    }
+  )
 }
