@@ -106,6 +106,7 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
             <div className={style_pb.form_ctn_inner}>
               <h4>Create New Wallet</h4>
               <div className={style_pb.form_ctn}>
+                <p>Wallets must have a unique name and contain at least one button. Each button can only be linked to one wallet at a time.</p>
                 <form onSubmit={handleSubmit(onSubmit)} method='post'>
                   <label htmlFor='name'>Wallet Name</label>
                   <input
