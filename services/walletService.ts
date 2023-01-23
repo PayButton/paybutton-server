@@ -18,6 +18,7 @@ export interface UpdateWalletInput {
   isXECDefault?: boolean
   isBCHDefault?: boolean
   paybuttonIdList: number[]
+  userId: string
 }
 
 const includeAddressesAndPaybuttons = {
@@ -323,6 +324,20 @@ export async function updateWallet (walletId: number, params: UpdateWalletInput)
   if (wallet.userProfile === null) {
     throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
   }
+  // enforce that added paybuttons & addresses don't already belong to a wallet
+  paybuttonList.forEach((pb) => {
+    if (pb.providerUserId !== params.userId) {
+      throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
+    }
+    if (pb.walletId !== null && pb.walletId !== walletId) {
+      throw new Error(RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400.message)
+    }
+    pb.addresses.forEach((conn) => {
+      if (conn.address.walletId !== null && conn.address.walletId !== walletId) {
+        throw new Error(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
+      }
+    })
+  })
 
   const defaultForNetworkIds = getDefaultForNetworkIds(params.isXECDefault, params.isBCHDefault)
 

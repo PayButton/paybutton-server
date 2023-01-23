@@ -128,14 +128,7 @@ describe('Update services', () => {
   interface Data {
     updateWalletInput: walletService.UpdateWalletInput
   }
-  let data: Data = {
-    updateWalletInput: {
-      name: '',
-      isXECDefault: undefined,
-      isBCHDefault: undefined,
-      paybuttonIdList: [1]
-    }
-  }
+  let data: Data
 
   beforeEach(() => {
     data = {
@@ -143,7 +136,8 @@ describe('Update services', () => {
         name: 'mockedWallet',
         isXECDefault: undefined,
         isBCHDefault: undefined,
-        paybuttonIdList: [1]
+        paybuttonIdList: [1],
+        userId: 'mocked-uid'
       }
     }
     prismaMock.wallet.update.mockResolvedValue(mockedWallet)
