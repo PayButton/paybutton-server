@@ -133,7 +133,6 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
                       </div>
                     ))}
                   </div>
-                  <hr/>
                   <div className={style.makedefault_ctn} key={'wallet-create'}>
                     <div className={style.input_field}>
                       <input
