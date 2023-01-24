@@ -3,7 +3,6 @@ import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { useForm } from 'react-hook-form'
 import { WalletPATCHParameters } from 'utils/validators'
 import Image from 'next/image'
-import Link from 'next/link'
 import style from '../Wallet/wallet.module.css'
 import style_pb from '../Paybutton/paybutton.module.css'
 import EditIcon from 'assets/edit-icon.png'
@@ -64,7 +63,6 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                   />
                   <h4>Paybuttons</h4>
                   <div className={style.buttonlist_ctn}>
-                  {userPaybuttons.length === 0 && <div className={style.make_btn_p}>No Buttons yet. <Link href='/buttons'>Click here</Link> to make one!</div>}
                     {userPaybuttons.map((pb, index) => (
                       <div className={style.input_field} key={`edit-pb-${pb.id}`}>
                         <input {...register('paybuttonIdList')}
