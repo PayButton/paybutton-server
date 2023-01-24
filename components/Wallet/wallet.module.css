@@ -164,15 +164,6 @@
   border-color: #231f20 !important;
 }
 
-.make_btn_p {
-  margin-top: 0;
-}
-
-.make_btn_p a {
-  text-decoration: underline;
-  color: var(--accent-color);
-}
-
 @media (max-width: 960px) {
   .wallet_card_header {
     flex-direction: column;
