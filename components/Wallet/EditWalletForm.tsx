@@ -61,20 +61,6 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                     name='name'
                     placeholder={wallet.name}
                   />
-                  <h4>Paybuttons</h4>
-                  <div className={style.buttonlist_ctn}>
-                    {userPaybuttons.map((pb, index) => (
-                      <div className={style.input_field} key={`edit-pb-${pb.id}`}>
-                        <input {...register('paybuttonIdList')}
-                          type='checkbox'
-                          value={pb.id}
-                          id={`paybuttonIdList.${index}`}
-                          defaultChecked={pb.walletId === wallet.id}
-                        />
-                        <label htmlFor={`paybuttonIdList.${index}`}>{pb.name}</label>
-                      </div>
-                    ))}
-                  </div>
                   <div className={style.makedefault_ctn} key={`edit-wallet-${wallet.id}`}>
                     <div className={style.input_field}>
                       <input
@@ -102,6 +88,21 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                       />
                       <label htmlFor='bch-default' className={style.makedefault_margin}>Make Default BCH Wallet</label>
                     </div>
+                  </div>
+
+                  <h4>Paybuttons</h4>
+                  <div className={style.buttonlist_ctn}>
+                    {userPaybuttons.map((pb, index) => (
+                      <div className={style.input_field} key={`edit-pb-${pb.id}`}>
+                        <input {...register('paybuttonIdList')}
+                          type='checkbox'
+                          value={pb.id}
+                          id={`paybuttonIdList.${index}`}
+                          defaultChecked={pb.walletId === wallet.id}
+                        />
+                        <label htmlFor={`paybuttonIdList.${index}`}>{pb.name}</label>
+                      </div>
+                    ))}
                   </div>
                   <div className={style_pb.btn_row}>
                     {error !== '' && <div className={style_pb.error_message}>{error}</div>}
