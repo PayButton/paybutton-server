@@ -11,7 +11,6 @@ export default async (
   if (req.method === 'GET') {
     try {
       const wallet = await walletService.fetchWalletById(walletId)
-      if (wallet == null) throw new Error(RESPONSE_MESSAGES.NO_WALLET_FOUND_404.message)
       res.status(200).json(wallet)
     } catch (err: any) {
       switch (err.message) {

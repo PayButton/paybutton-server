@@ -1,13 +1,13 @@
 import React, { ReactElement, useState, useEffect } from 'react'
-import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { useForm } from 'react-hook-form'
 import { WalletPATCHParameters } from 'utils/validators'
+import { PaybuttonWithAddresses } from 'services/paybuttonService'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import Image from 'next/image'
 import style from '../Wallet/wallet.module.css'
 import style_pb from '../Paybutton/paybutton.module.css'
 import EditIcon from 'assets/edit-icon.png'
 import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
-import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import axios from 'axios'
 import { appInfo } from 'config/appInfo'
 
@@ -20,12 +20,10 @@ interface IProps {
 export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletList }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<WalletPATCHParameters>()
   const [modal, setModal] = useState(false)
+  const [isXECDefaultDisabled, setIsXECDefaultDisabled] = useState(true)
+  const [isBCHDefaultDisabled, setIsBCHDefaultDisabled] = useState(true)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    setModal(false)
-    reset()
-  }, [wallet, userPaybuttons])
+  const [selectedPaybuttonIdList, setSelectedPaybuttonIdList] = useState([] as string[])
 
   async function onSubmit (params: WalletPATCHParameters): Promise<void> {
     if (params.name === '' || params.name === undefined) {
@@ -39,6 +37,68 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
       setError(err.response.data.message)
     }
   }
+
+  function handleSelectedPaybuttonsChange (checked: boolean, paybuttonId: string): void {
+    if (selectedPaybuttonIdList.includes(paybuttonId) && !checked) {
+      setSelectedPaybuttonIdList(
+        selectedPaybuttonIdList.filter(id => id !== paybuttonId)
+      )
+    }
+    if (!selectedPaybuttonIdList.includes(paybuttonId) && checked) {
+      setSelectedPaybuttonIdList(
+        [...selectedPaybuttonIdList, paybuttonId]
+      )
+    }
+  }
+
+  function hasAddressForNetworkId (networkId: number): boolean {
+    let ret = false
+    if (selectedPaybuttonIdList === undefined) return false
+    for (const selectedPaybuttonId of selectedPaybuttonIdList) {
+      const paybutton = userPaybuttons.find((pb) => pb.id === Number(selectedPaybuttonId))
+      if (paybutton === undefined) {
+        continue
+      }
+      if (paybutton.addresses.some((addr) => addr.address.networkId === networkId)) {
+        ret = true
+        break
+      }
+    }
+    return ret
+  }
+
+  function disableDefaultInputFields (): void {
+    if (hasAddressForNetworkId(XEC_NETWORK_ID)) {
+      setIsXECDefaultDisabled(false)
+    } else {
+      setIsXECDefaultDisabled(true)
+      const el = document.getElementById('isXECDefault') as HTMLInputElement
+      if (el === null) return
+      el.checked = false
+    }
+    if (hasAddressForNetworkId(BCH_NETWORK_ID)) {
+      setIsBCHDefaultDisabled(false)
+    } else {
+      setIsBCHDefaultDisabled(true)
+      const el = document.getElementById('isBCHDefault') as HTMLInputElement
+      if (el === null) return
+      el.checked = false
+    }
+  }
+
+  useEffect(() => {
+    setModal(false)
+    reset()
+  }, [wallet, userPaybuttons])
+
+  useEffect(() => {
+    disableDefaultInputFields()
+  }, [selectedPaybuttonIdList])
+
+  useEffect(() => {
+    setModal(false)
+    reset()
+  }, [userPaybuttons])
 
   return (
     <>
@@ -61,35 +121,6 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                     name='name'
                     placeholder={wallet.name}
                   />
-                  <div className={style.makedefault_ctn} key={`edit-wallet-${wallet.id}`}>
-                    <div className={style.input_field}>
-                      <input
-                        {...register('isXECDefault')}
-                        defaultChecked={wallet.userProfile?.isXECDefault === true}
-                        type="checkbox"
-                        name='isXECDefault'
-                        disabled={
-                          wallet.addresses.every((addr) => addr.networkId !== XEC_NETWORK_ID) ||
-                          wallet.userProfile?.isXECDefault === true
-                        }
-                      />
-                      <label htmlFor='xec-default' className={style.makedefault_margin}>Make Default XEC Wallet</label>
-                    </div>
-                    <div className={style.input_field}>
-                      <input
-                        {...register('isBCHDefault')}
-                        defaultChecked={wallet.userProfile?.isBCHDefault === true}
-                        type="checkbox"
-                        name='isBCHDefault'
-                        disabled={
-                          wallet.addresses.every((addr) => addr.networkId !== BCH_NETWORK_ID) ||
-                          wallet.userProfile?.isBCHDefault === true
-                        }
-                      />
-                      <label htmlFor='bch-default' className={style.makedefault_margin}>Make Default BCH Wallet</label>
-                    </div>
-                  </div>
-
                   <h4>Paybuttons</h4>
                   <div className={style.buttonlist_ctn}>
                     {userPaybuttons.map((pb, index) => (
@@ -99,11 +130,42 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                           value={pb.id}
                           id={`paybuttonIdList.${index}`}
                           defaultChecked={pb.walletId === wallet.id}
+                          disabled={
+                            (pb.walletId !== null && pb.walletId !== wallet.id) ||
+                            pb.addresses.map((addr) => addr.address.walletId).some((walletId) =>
+                              walletId !== null && walletId !== wallet.id
+                            )
+                          }
+                          onChange={ (e) => handleSelectedPaybuttonsChange(e.target.checked, pb.id) }
                         />
                         <label htmlFor={`paybuttonIdList.${index}`}>{pb.name}</label>
                       </div>
                     ))}
                   </div>
+                  <hr/>
+                  <div className={style.makedefault_ctn} key={`edit-wallet-${wallet.id}`}>
+                    <div className={style.input_field}>
+                      <input
+                        {...register('isXECDefault')}
+                        defaultChecked={wallet.userProfile?.isXECDefault === true}
+                        type="checkbox"
+                        id='isXECDefault'
+                        disabled={ isXECDefaultDisabled }
+                      />
+                      <label htmlFor='xec-default' className={style.makedefault_margin}>Make Default XEC Wallet</label>
+                    </div>
+                    <div className={style.input_field}>
+                      <input
+                        {...register('isBCHDefault')}
+                        defaultChecked={wallet.userProfile?.isBCHDefault === true}
+                        type="checkbox"
+                        id='isBCHDefault'
+                        disabled={ isBCHDefaultDisabled }
+                      />
+                      <label htmlFor='bch-default' className={style.makedefault_margin}>Make Default BCH Wallet</label>
+                    </div>
+                  </div>
+
                   <div className={style_pb.btn_row}>
                     {error !== '' && <div className={style_pb.error_message}>{error}</div>}
                     <button type='submit'>Submit</button>

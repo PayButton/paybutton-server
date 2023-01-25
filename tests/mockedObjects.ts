@@ -67,6 +67,45 @@ export const mockedXECAddress = {
   walletId: null
 }
 
+export const mockedAddressList = [
+  {
+    id: 1,
+    address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
+    createdAt: new Date('2022-05-27T15:18:42.000Z'),
+    updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+    lastSynced: null,
+    networkId: 1,
+    walletId: null
+  },
+  {
+    id: 2,
+    address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
+    createdAt: new Date('2022-05-27T15:18:42.000Z'),
+    updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+    lastSynced: null,
+    networkId: 2,
+    walletId: null
+  },
+  {
+    id: 3,
+    address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
+    createdAt: new Date('2022-05-27T15:18:42.000Z'),
+    updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+    lastSynced: null,
+    networkId: 1,
+    walletId: null
+  },
+  {
+    id: 4,
+    address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
+    createdAt: new Date('2022-05-27T15:18:42.000Z'),
+    updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+    lastSynced: null,
+    networkId: 2,
+    walletId: null
+  }
+]
+
 export const mockedPaybuttonList = [
   {
     id: 1,
@@ -79,26 +118,10 @@ export const mockedPaybuttonList = [
     walletId: null,
     addresses: [
       {
-        address: {
-          id: 1,
-          address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
-          createdAt: new Date('2022-05-27T15:18:42.000Z'),
-          updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-          lastSynced: null,
-          networkId: 1,
-          walletId: null
-        }
+        address: mockedAddressList[0]
       },
       {
-        address: {
-          id: 2,
-          address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
-          createdAt: new Date('2022-05-27T15:18:42.000Z'),
-          updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-          lastSynced: null,
-          networkId: 2,
-          walletId: null
-        }
+        address: mockedAddressList[1]
       }
     ]
   },
@@ -113,29 +136,14 @@ export const mockedPaybuttonList = [
     walletId: null,
     addresses: [
       {
-        address: {
-          id: 3,
-          address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
-          createdAt: new Date('2022-05-27T15:18:42.000Z'),
-          updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-          lastSynced: null,
-          networkId: 1,
-          walletId: null
-        }
+        address: mockedAddressList[2]
       },
       {
-        address: {
-          id: 4,
-          address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
-          createdAt: new Date('2022-05-27T15:18:42.000Z'),
-          updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-          lastSynced: null,
-          networkId: 2,
-          walletId: null
-        }
+        address: mockedAddressList[3]
       }
     ]
-  }
+  },
+  mockedPaybutton
 ]
 
 // Wallet

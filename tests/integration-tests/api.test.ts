@@ -708,7 +708,7 @@ describe('PATCH /api/wallet/[id]', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     // avoid comparing `Date` with `string`
-    responseData.paybuttons[0].updatedAt = new Date(responseData.paybuttons[0].updatedAt)
+    responseData.paybuttons[0].updatedAt = new Date(wallet.paybuttons[0].updatedAt)
     responseData.paybuttons[0].createdAt = new Date(responseData.paybuttons[0].createdAt)
     expect(responseData).toMatchObject({
       ...wallet,
@@ -743,7 +743,7 @@ describe('PATCH /api/wallet/[id]', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     // avoid comparing `Date` with `string`
-    responseData.paybuttons[0].updatedAt = new Date(responseData.paybuttons[0].updatedAt)
+    responseData.paybuttons[0].updatedAt = new Date(wallet.paybuttons[0].updatedAt)
     responseData.paybuttons[0].createdAt = new Date(responseData.paybuttons[0].createdAt)
     expect(responseData).toMatchObject({
       ...wallet,
@@ -768,7 +768,7 @@ describe('PATCH /api/wallet/[id]', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     // avoid comparing `Date` with `string`
-    responseData.paybuttons[0].updatedAt = new Date(responseData.paybuttons[0].updatedAt)
+    responseData.paybuttons[0].updatedAt = new Date(wallet.paybuttons[0].updatedAt)
     responseData.paybuttons[0].createdAt = new Date(responseData.paybuttons[0].createdAt)
     expect(responseData).toMatchObject({
       ...wallet,
@@ -779,6 +779,79 @@ describe('PATCH /api/wallet/[id]', () => {
       createdAt: expect.anything(),
       updatedAt: expect.anything()
     })
+  })
+
+  it('Update wallet with new paybuttons', async () => {
+    const wallet = createdWallets[0]
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
+    const newPaybuttons = await Promise.all([
+      await createPaybuttonForUser('test-u-id'),
+      await createPaybuttonForUser('test-u-id')
+    ])
+    let newAddresses: any = []
+    const newPaybuttonsWithoutAddresses = newPaybuttons.map(pb => {
+      const { addresses, ...rest } = pb
+      newAddresses = [...newAddresses, ...addresses.map(addr => {
+        return {
+          address: addr.address.address,
+          networkId: addr.address.networkId,
+          id: addr.address.id
+        }
+      })]
+      return rest
+    })
+    const oldPayButtonIds = wallet.paybuttons.map(pb => pb.id)
+    const newPaybuttonIds = newPaybuttons.map(pb => pb.id)
+    if (baseRequestOptions.body != null) {
+      baseRequestOptions.body.name = wallet.name
+      baseRequestOptions.body.paybuttonIdList = newPaybuttonIds
+      baseRequestOptions.body.isBCHDefault = false
+    } else { throw new Error() }
+    const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(200)
+
+    // check that endpoint returns updated wallet
+    for (const paybutton of newPaybuttonsWithoutAddresses) {
+      paybutton.updatedAt = expect.anything()
+      paybutton.createdAt = expect.anything()
+      paybutton.walletId = wallet.id
+    }
+    expect(responseData).toMatchObject({
+      ...wallet,
+      paybuttons: newPaybuttonsWithoutAddresses,
+      addresses: newAddresses,
+      createdAt: expect.anything(),
+      updatedAt: expect.anything()
+    })
+
+    // check that old paybuttons do not belong to any wallet
+    const getPaybuttonsOptions: RequestOptions = {
+      method: 'GET' as RequestMethod,
+      query: {}
+    }
+
+    for (const id of oldPayButtonIds) {
+      if (getPaybuttonsOptions.query != null) getPaybuttonsOptions.query.id = id
+      const res = await testEndpoint(getPaybuttonsOptions, paybuttonIdEndpoint)
+      const responseData = res._getJSONData()
+      expect(res.statusCode).toBe(200)
+      expect(responseData.addresses).toEqual(
+        expect.arrayContaining([
+          {
+            address: expect.objectContaining({
+              walletId: null
+            })
+          },
+          {
+            address: expect.objectContaining({
+              walletId: null
+            })
+          }
+        ])
+      )
+      expect(responseData.walletId).toBeNull()
+    }
   })
 })
 
