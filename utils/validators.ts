@@ -99,7 +99,9 @@ export const parsePaybuttonPOSTRequest = function (params: paybuttonPOSTParamete
 export interface WalletPOSTParameters {
   userId?: string
   name?: string
-  paybuttonIdList?: number[]
+  isXECDefault?: boolean
+  isBCHDefault?: boolean
+  paybuttonIdList: number[]
 }
 
 export interface PaybuttonPATCHParameters {
@@ -119,10 +121,13 @@ export const parseWalletPOSTRequest = function (params: WalletPOSTParameters): C
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   if (params.paybuttonIdList === undefined) throw new Error(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message)
+  params.paybuttonIdList = params.paybuttonIdList.map((id: string | number) => Number(id))
   return {
     userId: params.userId,
     name: params.name,
-    paybuttonIdList: params.paybuttonIdList
+    paybuttonIdList: params.paybuttonIdList,
+    isXECDefault: params.isXECDefault,
+    isBCHDefault: params.isBCHDefault
   }
 }
 

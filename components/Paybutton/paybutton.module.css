@@ -146,6 +146,10 @@
   border: 1px solid var(--secondary-text-color);
 }
 
+.form_ctn p {
+  margin-top: 0;
+}
+
 .form_ctn form {
   display: flex;
   flex-direction: column;
@@ -263,7 +267,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between
+  justify-content: space-between;
 }
 
 .error_message {

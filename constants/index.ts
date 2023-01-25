@@ -7,8 +7,8 @@ export const RESPONSE_MESSAGES = {
   USER_ID_NOT_PROVIDED_400: { statusCode: 400, message: "'userId' not provided." },
   MULTIPLE_USER_IDS_PROVIDED_400: { statusCode: 400, message: "Multiple 'userId' provided." },
   NAME_NOT_PROVIDED_400: { statusCode: 400, message: "'name' not provided." },
-  PAYBUTTON_NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Button name already exists for this user.' },
-  WALLET_NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Wallet name already exists for this user.' },
+  PAYBUTTON_NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Button name already exists.' },
+  WALLET_NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Wallet name already exists.' },
   ADDRESSES_NOT_PROVIDED_400: { statusCode: 400, message: "'addresses' not provided." },
   BUTTON_IDS_NOT_PROVIDED_400: { statusCode: 400, message: "'paybuttonIdList' not provided." },
   TRANSACTION_ID_NOT_PROVIDED_400: { statusCode: 400, message: "'transactionId' not provided." },
@@ -43,7 +43,7 @@ export const NETWORK_SLUGS = {
   bitcoincash: 'bitcoincash',
   ectest: 'ectest',
   bchtest: 'bchtest',
-  bchreg: 'bchreg',
+  bchreg: 'bchreg'
 }
 
 // When fetching some address transactions, number of transactions to fetch at a time.

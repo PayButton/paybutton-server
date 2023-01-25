@@ -8,6 +8,8 @@ import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/ind
 export interface CreateWalletInput {
   userId: string
   name: string
+  isXECDefault?: boolean
+  isBCHDefault?: boolean
   paybuttonIdList: number[]
 }
 
@@ -66,9 +68,9 @@ export type WalletWithAddressesAndPaybuttons = Prisma.WalletGetPayload<typeof wa
 
 export async function createWallet (values: CreateWalletInput): Promise<WalletWithAddressesAndPaybuttons> {
   const paybuttonList = await paybuttonService.fetchPaybuttonArrayByIds(values.paybuttonIdList)
-  let wallet: WalletWithAddressesAndPaybuttons
-  return await prisma.$transaction(async (prisma) => {
-    wallet = await prisma.wallet.create({
+  const defaultForNetworkIds = getDefaultForNetworkIds(values.isXECDefault, values.isBCHDefault)
+  const wallet: WalletWithAddressesAndPaybuttons = await prisma.$transaction(async (prisma) => {
+    const w = await prisma.wallet.create({
       data: {
         providerUserId: values.userId,
         name: values.name,
@@ -99,34 +101,35 @@ export async function createWallet (values: CreateWalletInput): Promise<WalletWi
 
       const updatedPaybutton = await prisma.paybutton.update({
         data: {
-          walletId: wallet.id
+          walletId: w.id
         },
         where: {
           id: paybutton.id
         }
       })
-      wallet.paybuttons.push(updatedPaybutton)
+      w.paybuttons.push(updatedPaybutton)
       for (const connector of paybutton.addresses) {
         if (connector.address.walletId !== null) {
           throw new Error(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
         }
         const updatedAddress = await prisma.address.update({
           data: {
-            walletId: wallet.id
+            walletId: w.id
           },
           where: {
             id: connector.address.id
           }
         })
-        wallet.addresses.push({
+        w.addresses.push({
           id: updatedAddress.id,
           address: updatedAddress.address,
           networkId: updatedAddress.networkId
         })
       }
     }
-    return wallet
+    return w
   })
+  return await setDefaultWallet(wallet, defaultForNetworkIds)
 }
 
 export async function createDefaultWalletForUser (userId: string): Promise<WalletWithAddressesAndPaybuttons> {
