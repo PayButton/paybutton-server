@@ -58,6 +58,7 @@ CREATE TABLE `Transaction` (
     `amount` DECIMAL(24, 8) NOT NULL,
     `timestamp` INTEGER NOT NULL,
     `addressId` INTEGER NOT NULL,
+    `confirmed` BOOLEAN NOT NULL DEFAULT FALSE,
 
     UNIQUE INDEX `Transaction_hash_key`(`hash`),
     PRIMARY KEY (`id`)

@@ -18,6 +18,13 @@ export default ({ addressTransactions }: IProps): FunctionComponent => {
   const columns = useMemo(
     () => [
       {
+        Header: 'Confirmed',
+        accessor: 'confirmed',
+        Cell: (cellProps) => {
+          return <div className='table-date'>{cellProps.cell.value === true ? 'yes' : 'no'}</div>
+        }
+      },
+      {
         Header: 'Date',
         accessor: 'timestamp',
         Cell: (cellProps) => {

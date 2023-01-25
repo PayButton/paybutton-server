@@ -241,6 +241,7 @@ export const mockedTransaction = {
   id: 1,
   hash: 'Yh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
   addressId: 1,
+  confirmed: true,
   address: {
     id: 1,
     address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
@@ -260,6 +261,7 @@ export const mockedTransactionList = [
   {
     id: 1,
     hash: 'Yh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
+    confirmed: true,
     addressId: 1,
     amount: new Prisma.Decimal('4.31247724'),
     timestamp: 1657130467
@@ -267,6 +269,7 @@ export const mockedTransactionList = [
   {
     id: 2,
     hash: 'hh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
+    confirmed: true,
     addressId: 1,
     amount: new Prisma.Decimal('1.5'),
     timestamp: 1657130467
@@ -274,6 +277,7 @@ export const mockedTransactionList = [
   {
     id: 3,
     hash: '5h5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
+    confirmed: true,
     addressId: 1,
     amount: new Prisma.Decimal('0.2'),
     timestamp: 1657130467
