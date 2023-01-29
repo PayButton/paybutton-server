@@ -120,7 +120,7 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
           />
         }
         )}
-        <WalletForm />
+        <WalletForm userPaybuttons={this.state.userPaybuttons} refreshWalletList={this.refreshWalletList} userId={this.props.userId}/>
         </div>
       </>
     )

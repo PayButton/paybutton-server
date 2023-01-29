@@ -5,7 +5,7 @@ import Image from 'next/image'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
-import { FormatNumber } from 'utils/general'
+import { formatQuoteValue } from 'utils/index'
 import TableContainer from '../../components/TableContainer'
 import moment from 'moment'
 
@@ -35,7 +35,7 @@ export default ({ addressTransactions }: IProps): FunctionComponent => {
         Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
         accessor: 'amount',
         Cell: (cellProps) => {
-          return <div style={{ textAlign: 'right', fontWeight: '600' }}>{FormatNumber(cellProps.cell.value)} {cellProps.row.values.address.networkId === 1 ? 'XEC' : 'BCH' }</div>
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}>{formatQuoteValue(cellProps.cell.value)} {cellProps.row.values.address.networkId === 1 ? 'XEC' : 'BCH' }</div>
         }
       },
       {

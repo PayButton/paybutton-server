@@ -12,7 +12,8 @@ describe('Create services', () => {
 
     const result = await transactionService.upsertTransaction(
       mockedGrpc.transaction1.toObject(),
-      mockedBCHAddress
+      mockedBCHAddress,
+      true
     )
     expect(result).toEqual(mockedTransaction)
   })

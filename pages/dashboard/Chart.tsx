@@ -1,6 +1,7 @@
 import type { NextPage } from 'next'
 import React from 'react'
-import { FormatNumber } from 'utils/general'
+import { formatQuoteValue } from 'utils/index'
+import { USD_QUOTE_ID } from 'constants/index'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -31,7 +32,7 @@ interface Props {
 const Chart: NextPage<Props> = ({ data, usd }) => {
   const chartData = data
 
-  function cssvar (name) {
+  function cssvar (name): string {
     return getComputedStyle(document.body).getPropertyValue(name)
   }
 
@@ -47,7 +48,7 @@ const Chart: NextPage<Props> = ({ data, usd }) => {
         displayColors: false,
         callbacks: {
           label: function (context) {
-            return usd ? '$' + FormatNumber(context.raw, 'dollars') : FormatNumber(context.raw)
+            return usd ? '$' + formatQuoteValue(context.raw, USD_QUOTE_ID) : formatQuoteValue(context.raw)
           }
         },
         mode: 'nearest',
@@ -75,7 +76,7 @@ const Chart: NextPage<Props> = ({ data, usd }) => {
         beginAtZero: true,
         ticks: {
           color: cssvar('--primary-text-color'),
-          callback: function (value) {
+          callback: function (value: string) {
             return usd ? '$' + value : value
           }
         },

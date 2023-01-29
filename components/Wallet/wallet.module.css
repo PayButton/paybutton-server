@@ -136,6 +136,11 @@
   align-items: center;
 }
 
+.input_field input[disabled] + label {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .makedefault_ctn label,
 .makedefault_ctn input,
 .buttonlist_ctn label,
