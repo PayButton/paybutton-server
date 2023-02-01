@@ -13,9 +13,13 @@ import xecaddr from 'xecaddrjs'
 --------------------------------------------------------------------------------------- */
 
 /* Validates the address and adds a prefix to it, if it does not have it already.
+    Also removes duplicated addresses.
  */
 const parseAddressTextBlock = function (addressBlock: string): string[] {
-  return addressBlock.trim().split('\n').map((addr) => parseAddress(addr))
+  return addressBlock.trim()
+    .split('\n')
+    .map((addr) => parseAddress(addr.trim()))
+    .filter((value, index, self) => self.indexOf(value) === index)
 }
 
 export const parseAddress = function (addressString: string | undefined): string {
