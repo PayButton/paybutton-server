@@ -999,7 +999,7 @@ describe('GET /api/address/transactions/[address]', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  it('Should return HTTP 404 in case address is valid but not yet on the system', async () => {
+  it('Should return HTTP 200 in case address is valid but not yet on the system', async () => {
     const baseRequestOptions: RequestOptions = {
       method: 'GET' as RequestMethod,
       headers: {
@@ -1010,7 +1010,7 @@ describe('GET /api/address/transactions/[address]', () => {
       }
     }
     const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
-    expect(res.statusCode).toBe(404)
+    expect(res.statusCode).toBe(200)
   })
 })
 
