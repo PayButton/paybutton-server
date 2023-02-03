@@ -91,7 +91,7 @@ export async function fetchAddressesInList (prefixedAddressList: string[]): Prom
   })
 }
 
-export async function upsertAddress (addressString: string): Promise<AddressWithTransactions> {
+export async function upsertAddress (addressString: string, walletId?: number, includeTransactions = false): Promise<AddressWithTransactions> {
   const prefixedAddress = parseAddress(addressString)
   const prefix = prefixedAddress.split(':')[0].toLowerCase()
   const network = await getNetworkFromSlug(prefix)
@@ -101,10 +101,13 @@ export async function upsertAddress (addressString: string): Promise<AddressWith
     },
     create: {
       address: prefixedAddress.toLowerCase(),
-      networkId: Number(network.id)
+      networkId: Number(network.id),
+      walletId
     },
-    update: {},
-    include: { transactions: true }
+    update: {
+      walletId
+    },
+    include: { transactions: includeTransactions }
   })
 }
 

@@ -14,6 +14,7 @@ export const RESPONSE_MESSAGES = {
   TRANSACTION_ID_NOT_PROVIDED_400: { statusCode: 400, message: "'transactionId' not provided." },
   INVALID_NETWORK_SLUG_400: { statusCode: 400, message: 'Invalid network slug.' },
   INVALID_NETWORK_ID_400: { statusCode: 400, message: 'Invalid network id.' },
+  INVALID_WALLET_ID_400: { statusCode: 400, message: 'Invalid wallet id.' },
   INVALID_BUTTON_DATA_400: { statusCode: 400, message: "'buttonData' is not valid JSON." },
   PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400: { statusCode: 400, message: 'One or more buttons already belong to another wallet.' },
   WALLET_CREATION_FAILED_400: { statusCode: 400, message: 'Wallet creation failed.' },
