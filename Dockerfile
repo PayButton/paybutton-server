@@ -1,5 +1,5 @@
-FROM node:lts
-RUN apt-get update && apt-get -y install tmux
+FROM  --platform=linux/amd64 node:lts-alpine
+RUN apk add --no-cache python3 make g++ tmux openssl1.1-compat
 USER node
 WORKDIR /home/node/src/
 ENV PATH /home/node/src/node_modules/.bin:$PATH
