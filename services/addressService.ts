@@ -30,7 +30,7 @@ export async function fetchAddressBySubstring (substring: string): Promise<Addre
 export async function addressExistsBySubstring (substring: string): Promise<boolean> {
   try {
     await fetchAddressBySubstring(substring)
-  } catch (err) {
+  } catch (err: any) {
     switch (err.message) {
       case RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message:
         return false
