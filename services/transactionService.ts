@@ -1,4 +1,4 @@
-import { Transaction } from 'grpc-bchrpc-node'
+import { Transaction, MempoolTransaction } from 'grpc-bchrpc-node'
 import prisma from 'prisma/clientInstance'
 import { Prisma, Address } from '@prisma/client'
 import grpcService from 'services/grpcService'
@@ -12,6 +12,21 @@ import _ from 'lodash'
 import xecaddr from 'xecaddrjs'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
+
+export const parseMempoolTx = function (mempoolTx: MempoolTransaction.AsObject): Transaction.AsObject {
+  const tx = mempoolTx.transaction!
+  tx.timestamp = mempoolTx.addedTime
+  return tx
+}
+
+const txThesholdFilter = (address: Address) => {
+  return (t: Transaction.AsObject, index: number, array: Transaction.AsObject[]): boolean => {
+    return (
+      (t.timestamp >= XEC_TIMESTAMP_THRESHOLD && address.networkId === XEC_NETWORK_ID) ||
+      (t.timestamp >= BCH_TIMESTAMP_THRESHOLD && address.networkId === BCH_NETWORK_ID)
+    )
+  }
+}
 
 export async function getTransactionAmount (transaction: Transaction.AsObject, addressString: string): Promise<Prisma.Decimal> {
   let totalOutput = 0
@@ -108,7 +123,7 @@ export async function base64HashToHex (base64Hash: string): Promise<string> {
   )
 }
 
-export async function upsertTransaction (transaction: Transaction.AsObject, address: Address, confirmed = false): Promise<TransactionWithAddressAndPrices | undefined> {
+export async function upsertTransaction (transaction: Transaction.AsObject, address: Address, confirmed = true): Promise<TransactionWithAddressAndPrices | undefined> {
   const receivedAmount = await getTransactionAmount(transaction, address.address)
   if (receivedAmount === new Prisma.Decimal(0)) { // out transactions
     return
@@ -134,7 +149,7 @@ export async function upsertTransaction (transaction: Transaction.AsObject, addr
   })
 }
 
-export async function upsertManyTransactionsForAddress (transactions: Transaction.AsObject[], address: Address, confirmed = false): Promise<TransactionWithAddressAndPrices[]> {
+export async function upsertManyTransactionsForAddress (transactions: Transaction.AsObject[], address: Address, confirmed = true): Promise<TransactionWithAddressAndPrices[]> {
   const ret = await prisma.$transaction(async (_) => {
     const insertedTransactions: Array<TransactionWithAddressAndPrices | undefined> = await Promise.all(
       transactions.map(async (transaction) => {
@@ -154,21 +169,26 @@ export async function syncTransactionsForAddress (addressString: string): Promis
   let seenTransactionsCount = 0
   let insertedTransactions: TransactionWithAddressAndPrices[] = []
   while (newTransactionsCount !== 0) {
-    let nextTransactions = (await grpcService.getAddress({
+    const addressTransactions = await grpcService.getAddress({
       address: address.address,
       nbFetch: FETCH_N,
       nbSkip: seenTransactionsCount
-    })).confirmedTransactionsList
-    // remove transactions older than the networks
-    nextTransactions = nextTransactions.filter((t) => {
-      return (
-        (t.timestamp >= XEC_TIMESTAMP_THRESHOLD && address.networkId === XEC_NETWORK_ID) ||
-        (t.timestamp >= BCH_TIMESTAMP_THRESHOLD && address.networkId === BCH_NETWORK_ID)
-      )
     })
-    newTransactionsCount = nextTransactions.length
+    let nextConfirmedTransactions = addressTransactions.confirmedTransactionsList
+    let nextUnconfirmedTransactions = addressTransactions.unconfirmedTransactionsList.map(mempoolTx => parseMempoolTx(mempoolTx))
+
+    // remove transactions older than the networks
+    nextConfirmedTransactions = nextConfirmedTransactions.filter(txThesholdFilter(address))
+    nextUnconfirmedTransactions = nextUnconfirmedTransactions.filter(txThesholdFilter(address))
+
+    newTransactionsCount = nextConfirmedTransactions.length // Unconfirmed transactions are NOT taken into account when skipping with nbSkip
     seenTransactionsCount += newTransactionsCount
-    const newInsertedTransactions = await upsertManyTransactionsForAddress(nextTransactions, address)
+
+    let newInsertedTransactions = await upsertManyTransactionsForAddress(nextConfirmedTransactions, address)
+    newInsertedTransactions = [
+      ...newInsertedTransactions,
+      ...(await upsertManyTransactionsForAddress(nextUnconfirmedTransactions, address, false))
+    ]
     insertedTransactions = [...insertedTransactions, ...newInsertedTransactions]
     await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
   }
