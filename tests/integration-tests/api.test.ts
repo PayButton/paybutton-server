@@ -29,6 +29,11 @@ import {
 
 import { RESPONSE_MESSAGES, NETWORK_SLUGS } from 'constants/index'
 
+jest.spyOn(validators, 'parseAddress').mockImplementation((addr: string | undefined) => {
+  if (addr === '' || addr === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
+  return addr
+})
+
 jest.mock('../../utils/setSession', () => {
   return {
     setSession: (req: any, res: any) => {
@@ -53,8 +58,7 @@ describe('POST /api/paybutton/', () => {
     body: {
       addresses: `${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
       name: 'test-paybutton',
-      buttonData: '{"somefield":"somevalue"}',
-      walletId: 1
+      buttonData: '{"somefield":"somevalue"}'
     }
   }
 

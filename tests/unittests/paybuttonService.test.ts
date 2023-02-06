@@ -45,7 +45,6 @@ describe('Create services', () => {
     prisma.network.findUnique = prismaMock.network.findUnique
     const createPaybuttonInput = {
       userId: 'mocked-uid',
-      walletId: 1,
       name: 'mocked-name',
       prefixedAddressList: ['mockednetwork:mockaddress'],
       buttonData: ''

@@ -149,7 +149,6 @@ describe('parseButtonData', () => {
 describe('parsePaybuttonPOSTRequest', () => {
   const data: v.paybuttonPOSTParameters = {
     userId: undefined,
-    walletId: '1',
     name: 'somename',
     buttonData: undefined,
     addresses: 'ecash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
@@ -180,13 +179,6 @@ describe('parsePaybuttonPOSTRequest', () => {
       data.addresses = ''
       v.parsePaybuttonPOSTRequest(data)
     }).toThrow(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
-  })
-  it('Missing walletId throws errors', () => {
-    expect(() => {
-      data.addresses = 'ecash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
-      data.walletId = undefined
-      v.parsePaybuttonPOSTRequest(data)
-    }).toThrow(RESPONSE_MESSAGES.INVALID_WALLET_ID_400.message)
   })
 })
 

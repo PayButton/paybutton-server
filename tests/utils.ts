@@ -41,11 +41,7 @@ export const createPaybuttonForUser = async (userId: string, addressList?: strin
     prefixedAddressList = addressList
   }
   const name = Math.random().toString(36).slice(2)
-  jest.spyOn(validators, 'parseAddress').mockImplementation((addr: string | undefined) => {
-    return addr ?? '-'
-  })
   const buttonData = JSON.stringify({ someCustom: 'userData' })
-  walletId = walletId ?? 1
   return await createPaybutton({ userId, walletId, name, prefixedAddressList, buttonData })
 }
 
