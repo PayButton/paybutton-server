@@ -91,8 +91,11 @@ export const parsePaybuttonPOSTRequest = function (params: paybuttonPOSTParamete
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   if (params.addresses === '' || params.addresses === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
-  const walletId: number = Number(params.walletId)
-  if (isNaN(walletId)) {
+  let walletId: number | undefined = Number(params.walletId)
+  if (params.walletId === '' || params.walletId === undefined) {
+    walletId = undefined
+  }
+  else if (isNaN(walletId)) {
     throw new Error(RESPONSE_MESSAGES.INVALID_WALLET_ID_400.message)
   }
 
