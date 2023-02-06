@@ -1,6 +1,5 @@
 import prisma from 'prisma/clientInstance'
 import * as paybuttonService from 'services/paybuttonService'
-import * as validators from 'utils/validators'
 import { prismaMock } from 'prisma/mockedClient'
 import { mockedPaybutton, mockedPaybuttonList, mockedNetwork } from '../mockedObjects'
 
@@ -26,10 +25,6 @@ describe('Create services', () => {
   it('Should return paybutton nested', async () => {
     prismaMock.paybutton.create.mockResolvedValue(mockedPaybutton)
     prisma.paybutton.create = prismaMock.paybutton.create
-
-    jest.spyOn(validators, 'parseAddress').mockImplementation((addr: string | undefined) => {
-      return addr ?? '-'
-    })
 
     prismaMock.$transaction.mockImplementation(
       (fn: (prisma: any) => any) => {
