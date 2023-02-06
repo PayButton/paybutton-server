@@ -1,5 +1,6 @@
 import prisma from 'prisma/clientInstance'
 import * as paybuttonService from 'services/paybuttonService'
+import * as validators from 'utils/validators'
 import { prismaMock } from 'prisma/mockedClient'
 import { mockedPaybutton, mockedPaybuttonList, mockedNetwork } from '../mockedObjects'
 
@@ -26,10 +27,25 @@ describe('Create services', () => {
     prismaMock.paybutton.create.mockResolvedValue(mockedPaybutton)
     prisma.paybutton.create = prismaMock.paybutton.create
 
+    jest.spyOn(validators, 'parseAddress').mockImplementation((addr: string | undefined) => {
+      return addr ?? '-'
+    })
+
+    prismaMock.$transaction.mockImplementation(
+      (fn: (prisma: any) => any) => {
+        return fn(prisma)
+      }
+    )
+    prisma.$transaction = prismaMock.$transaction
+
+    prismaMock.address.upsert.mockResolvedValue(mockedPaybutton.addresses[0].address)
+    prisma.address.upsert = prismaMock.address.upsert
+
     prismaMock.network.findUnique.mockResolvedValue(mockedNetwork)
     prisma.network.findUnique = prismaMock.network.findUnique
     const createPaybuttonInput = {
       userId: 'mocked-uid',
+      walletId: 1,
       name: 'mocked-name',
       prefixedAddressList: ['mockednetwork:mockaddress'],
       buttonData: ''

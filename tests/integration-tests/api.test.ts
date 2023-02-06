@@ -53,7 +53,8 @@ describe('POST /api/paybutton/', () => {
     body: {
       addresses: `${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
       name: 'test-paybutton',
-      buttonData: '{"somefield":"somevalue"}'
+      buttonData: '{"somefield":"somevalue"}',
+      walletId: 1
     }
   }
 

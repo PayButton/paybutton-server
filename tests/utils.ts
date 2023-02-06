@@ -4,6 +4,7 @@ import { createPaybutton, PaybuttonWithAddresses } from 'services/paybuttonServi
 import { createWallet, WalletWithAddressesAndPaybuttons } from 'services/walletService'
 import { upsertCurrentPricesForNetworkId } from 'services/priceService'
 import { SUPPORTED_ADDRESS_PATTERN } from 'constants/index'
+import * as validators from 'utils/validators'
 import RandExp from 'randexp'
 
 export const testEndpoint = async (requestOptions: httpMocks.RequestOptions, endpoint: Function): Promise<httpMocks.MockResponse<any>> => {
@@ -31,7 +32,7 @@ export const createWalletForUser = async (userId: string, paybuttonIdList: numbe
   return await createWallet({ userId, name, paybuttonIdList })
 }
 
-export const createPaybuttonForUser = async (userId: string, addressList?: string[]): Promise<PaybuttonWithAddresses> => {
+export const createPaybuttonForUser = async (userId: string, addressList?: string[], walletId?: number): Promise<PaybuttonWithAddresses> => {
   let prefixedAddressList = [
     'bitcoincash:' + addressRandexp.gen(),
     'ecash:' + addressRandexp.gen()
@@ -40,8 +41,12 @@ export const createPaybuttonForUser = async (userId: string, addressList?: strin
     prefixedAddressList = addressList
   }
   const name = Math.random().toString(36).slice(2)
+  jest.spyOn(validators, 'parseAddress').mockImplementation((addr: string | undefined) => {
+    return addr ?? '-'
+  })
   const buttonData = JSON.stringify({ someCustom: 'userData' })
-  return await createPaybutton({ userId, name, prefixedAddressList, buttonData })
+  walletId = walletId ?? 1
+  return await createPaybutton({ userId, walletId, name, prefixedAddressList, buttonData })
 }
 
 export const countPaybuttons = async (): Promise<number> => {
