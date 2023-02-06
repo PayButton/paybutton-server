@@ -41,8 +41,15 @@ case "$command" in
     "noderootshell" | "nrs")
         eval "$base_command_node_root" ash -l
         ;;
-    "jobs" | "j")
-        eval "$base_command_node" tmux attach -r
+    "jobswatch" | "jw")
+        eval "$base_command_node" watch -n 1 'cat jobs/out.log'
+        ;;
+    "jobsstop" | "js")
+        eval "$base_command_node" tmux kill-session -t initJobs && echo Jobs stoped. || echo No jobs running.
+        ;;
+    "jobsrestart" | "jr")
+        eval "$base_command_node" tmux kill-session -t initJobs && echo Jobs stoped, restarting... || echo No jobs running, starting...
+        eval "$base_command_node" sh ./scripts/init-jobs.sh
         ;;
     "yarn" | "y")
         eval "$base_command_node" yarn "$@"
@@ -105,7 +112,9 @@ case "$command" in
         echo "  pg, prismagenerate          [$node_container_name]     run \`prisma generate\` to generate client from scheme"
         echo "  c, cache                    [$cache_container_name]   enter the redis command-line interface"
         echo "  cs, cacheshell              [$node_container_name]     enter the redis container"
-        echo "  j, jobs                     [$node_container_name]     show jobs running"
+        echo "  jw, jobswatch               [$node_container_name]     watch jobs logs"
+        echo "  js, jobsstop                [$node_container_name]     stop jobs"
+        echo "  jr, jobsrestart             [$node_container_name]     restart jobs"
         ;;
 esac
 
