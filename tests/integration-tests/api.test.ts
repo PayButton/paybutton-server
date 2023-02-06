@@ -88,8 +88,7 @@ describe('POST /api/paybutton/', () => {
   it('Create a paybutton empty JSON for buttonData', async () => {
     baseRequestOptions.body = {
       name: 'test-paybutton-no-button-data',
-      addresses: `ectest:${exampleAddresses.ectest}`,
-      walletId: 1
+      addresses: `ectest:${exampleAddresses.ectest}`
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     const responseData = res._getJSONData()
@@ -112,7 +111,6 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: '',
-      walletId: 1,
       addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -125,7 +123,6 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton',
-      walletId: 1,
       addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -138,7 +135,6 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton',
-      walletId: 1,
       addresses: ''
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -151,7 +147,6 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton',
-      walletId: 1,
       addresses: 'ecash:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -165,27 +160,12 @@ describe('POST /api/paybutton/', () => {
       userId: 'test-u-id',
       name: 'test-paybutton',
       addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
-      walletId: 1,
       buttonData: '{invalidjson'
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400.message)
-  })
-
-  it('Fail without walletId', async () => {
-    baseRequestOptions.body = {
-      userId: 'test-u-id',
-      name: 'test-paybutton',
-      addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
-      walletId: '',
-      buttonData: '{invalidjson'
-    }
-    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
-    expect(res.statusCode).toBe(400)
-    const responseData = res._getJSONData()
-    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_WALLET_ID_400.message)
   })
 })
 
