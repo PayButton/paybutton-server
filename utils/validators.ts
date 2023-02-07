@@ -93,10 +93,7 @@ export const parsePaybuttonPOSTRequest = function (params: paybuttonPOSTParamete
   if (params.addresses === '' || params.addresses === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
   let walletId: number | undefined = Number(params.walletId)
   if (params.walletId === '' || params.walletId === undefined) {
-    walletId = undefined
-  }
-  else if (isNaN(walletId)) {
-    throw new Error(RESPONSE_MESSAGES.INVALID_WALLET_ID_400.message)
+    throw new Error(RESPONSE_MESSAGES.WALLET_ID_NOT_PROVIDED_400.message)
   }
 
   const parsedAddresses = parseAddressTextBlock(params.addresses)
