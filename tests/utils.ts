@@ -4,7 +4,6 @@ import { createPaybutton, PaybuttonWithAddresses } from 'services/paybuttonServi
 import { createWallet, WalletWithAddressesAndPaybuttons } from 'services/walletService'
 import { upsertCurrentPricesForNetworkId } from 'services/priceService'
 import { SUPPORTED_ADDRESS_PATTERN } from 'constants/index'
-import * as validators from 'utils/validators'
 import RandExp from 'randexp'
 
 export const testEndpoint = async (requestOptions: httpMocks.RequestOptions, endpoint: Function): Promise<httpMocks.MockResponse<any>> => {
