@@ -33,11 +33,11 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       if (req.query.address === '' || req.query.address === undefined) {
         throw new Error(ADDRESS_NOT_PROVIDED_400.message)
       }
-      let transactions = []
+
       const address = parseAddress(req.query.address as string)
 
-      // this flag ?server_only=1 tells us to only retrieve what we have in the database
-      const serverOnly = req.query.server_only === '1'
+      // this flag ?serverOnly=1 tells us to only retrieve what we have in the database
+      const serverOnly = req.query.serverOnly === '1'
 
       if (!await addressExistsBySubstring(address)) {
         if (serverOnly) throw new Error(NO_ADDRESS_FOUND_404.message)
@@ -45,7 +45,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
         await upsertAddress(address)
         await syncTransactionsAndPricesForAddress(address)
       }
-      transactions = await fetchAddressTransactions(address)
+      const transactions = await fetchAddressTransactions(address)
 
       res.status(200).send(transactions)
     } catch (err: any) {

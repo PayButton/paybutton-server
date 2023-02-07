@@ -999,7 +999,7 @@ describe('GET /api/address/transactions/[address]', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  it('Should return HTTP 404 in case address is valid but not yet on the system with flag server_only', async () => {
+  it('Should return HTTP 404 in case address is valid but not yet on the system with flag serverOnly', async () => {
     const baseRequestOptions: RequestOptions = {
       method: 'GET' as RequestMethod,
       headers: {
@@ -1007,7 +1007,7 @@ describe('GET /api/address/transactions/[address]', () => {
       },
       query: {
         address: `ecash:${exampleAddresses.ecash}`,
-        server_only: '1'
+        serverOnly: '1'
       }
     }
     const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
