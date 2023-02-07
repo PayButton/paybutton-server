@@ -90,7 +90,7 @@ export async function fetchAddressesInList (prefixedAddressList: string[]): Prom
   })
 }
 
-export async function upsertAddress (addressString: string): Promise<AddressWithTransactions> {
+export async function upsertAddress (addressString: string, walletId?: number, includeTransactions = false): Promise<AddressWithTransactions> {
   const prefix = addressString.split(':')[0].toLowerCase()
   const network = await getNetworkFromSlug(prefix)
   return await prisma.address.upsert({
@@ -99,10 +99,13 @@ export async function upsertAddress (addressString: string): Promise<AddressWith
     },
     create: {
       address: addressString.toLowerCase(),
-      networkId: Number(network.id)
+      networkId: Number(network.id),
+      walletId
     },
-    update: {},
-    include: { transactions: true }
+    update: {
+      walletId
+    },
+    include: { transactions: includeTransactions }
   })
 }
 
