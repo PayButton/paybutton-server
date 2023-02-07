@@ -184,7 +184,7 @@ export async function syncTransactionsForAddress (addressString: string): Promis
     newTransactionsCount = nextConfirmedTransactions.length // Unconfirmed transactions are NOT taken into account when skipping with nbSkip
     seenTransactionsCount += newTransactionsCount
 
-    let newInsertedTransactions = await upsertManyTransactionsForAddress(nextConfirmedTransactions, address)
+    let newInsertedTransactions = await upsertManyTransactionsForAddress(nextConfirmedTransactions, address, true)
     newInsertedTransactions = [
       ...newInsertedTransactions,
       ...(await upsertManyTransactionsForAddress(nextUnconfirmedTransactions, address, false))
