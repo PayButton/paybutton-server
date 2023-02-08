@@ -23,6 +23,7 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
   const [isBCHDefaultDisabled, setIsBCHDefaultDisabled] = useState(true)
   const [error, setError] = useState('')
   const [selectedPaybuttonIdList, setSelectedPaybuttonIdList] = useState([] as number[])
+  const [disabledPaybuttonList, setDisabledPaybuttonList] = useState([] as PaybuttonWithAddresses[])
 
   async function onSubmit (params: WalletPOSTParameters): Promise<void> {
     params.userId = userId
@@ -34,6 +35,36 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
     } catch (err: any) {
       setError(err.response.data.message)
     }
+  }
+
+  const disableLastWalletPaybuttons = (): void => {
+    let disabledPaybuttons = [] as PaybuttonWithAddresses[]
+    for (const paybutton of userPaybuttons) {
+
+      const paybuttonHasWallet = paybutton.walletId !== undefined && paybutton.walletId !== null
+      if (paybuttonHasWallet) {
+
+        const paybuttonIsSelected = selectedPaybuttonIdList.includes(paybutton.id)
+        if (!paybuttonIsSelected) {
+
+          const otherPaybuttonsOfSameWalletRemaining = userPaybuttons.filter(otherPb => {
+            const otherPaybuttonIsSelected = selectedPaybuttonIdList.includes(otherPb.id)
+            return (
+              otherPb.walletId === paybutton.walletId
+              && otherPb.id !== paybutton.id
+              && !otherPaybuttonIsSelected
+            )
+          })
+
+          if (otherPaybuttonsOfSameWalletRemaining.length === 0) {
+            disabledPaybuttons.push(paybutton)
+          }
+        }
+      }
+    }
+    setDisabledPaybuttonList(
+      disabledPaybuttons
+    )
   }
 
   function handleSelectedPaybuttonsChange(checked: boolean, paybuttonId: number): void {
@@ -86,12 +117,18 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
   }
   useEffect(() => {
     disableDefaultInputFields()
+    disableLastWalletPaybuttons()
   }, [selectedPaybuttonIdList])
 
   useEffect(() => {
     setModal(false)
     reset()
   }, [userPaybuttons])
+
+  useEffect(() => {
+    setSelectedPaybuttonIdList([])
+    disableLastWalletPaybuttons()
+  }, [modal])
 
   return (
     <>
@@ -126,6 +163,9 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
                           type='checkbox'
                           value={pb.id}
                           id={`paybuttonIdList.${index}`}
+                          disabled={
+                            disabledPaybuttonList.map(pb => pb.id).includes(pb.id)
+                          }
                           onChange={ (e) => handleSelectedPaybuttonsChange(e.target.checked, pb.id) }
                         />
                         <label htmlFor={`paybuttonIdList.${index}`}>{pb.name}</label>
