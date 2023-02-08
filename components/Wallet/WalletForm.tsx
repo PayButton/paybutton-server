@@ -37,12 +37,13 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
   }
 
   function handleSelectedPaybuttonsChange(checked: boolean, paybuttonId: number): void {
-    if (selectedPaybuttonIdList.includes(paybuttonId) && checked === false) {
+    const paybuttonIsSelected = selectedPaybuttonIdList.includes(paybuttonId)
+    if (paybuttonIsSelected && checked === false) {
       setSelectedPaybuttonIdList(
         selectedPaybuttonIdList.filter(id => id !== paybuttonId)
       )
     }
-    if (!selectedPaybuttonIdList.includes(paybuttonId) && checked === true) {
+    if (!paybuttonIsSelected && checked === true) {
       setSelectedPaybuttonIdList(
         [...selectedPaybuttonIdList, paybuttonId]
       )
