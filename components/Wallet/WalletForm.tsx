@@ -124,11 +124,7 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
                           type='checkbox'
                           value={pb.id}
                           id={`paybuttonIdList.${index}`}
-                          disabled={
-                            pb.walletId !== null
-                            || pb.addresses.map((addr) => addr.address.walletId).some((id) => id !== null)
-                          }
-                         onChange={ (e) => handleSelectedPaybuttonsChange(e.target.checked, pb.id) }
+                          onChange={ (e) => handleSelectedPaybuttonsChange(e.target.checked, pb.id) }
                         />
                         <label htmlFor={`paybuttonIdList.${index}`}>{pb.name}</label>
                       </div>

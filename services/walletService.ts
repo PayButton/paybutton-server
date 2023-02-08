@@ -109,15 +109,6 @@ export async function setPaybuttonListForWallet (
   const updatedWalletPaybuttonList = []
   // add paybuttons from list
   for (const paybutton of paybuttonList) {
-    // enforce that added paybuttons & addresses don't already belong to a wallet
-    if (paybutton.walletId !== null && paybutton.walletId !== wallet.id) {
-      throw new Error(RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400.message)
-    }
-    for (const connector of paybutton.addresses) {
-      if (connector.address.walletId !== null && connector.address.walletId !== wallet.id) {
-        throw new Error(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
-      }
-    }
     // enforce that wallet & paybutton have the same user provider
     if (paybutton.providerUserId !== wallet.providerUserId) {
       throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
@@ -329,14 +320,6 @@ export async function updateWallet (walletId: number, params: UpdateWalletInput)
     if (pb.providerUserId !== params.userId) {
       throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
     }
-    if (pb.walletId !== null && pb.walletId !== walletId) {
-      throw new Error(RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400.message)
-    }
-    pb.addresses.forEach((conn) => {
-      if (conn.address.walletId !== null && conn.address.walletId !== walletId) {
-        throw new Error(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
-      }
-    })
   })
 
   const defaultForNetworkIds = getDefaultForNetworkIds(params.isXECDefault, params.isBCHDefault)
