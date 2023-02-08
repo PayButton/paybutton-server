@@ -468,7 +468,7 @@ describe('POST /api/wallets/', () => {
     expect(responseData.message).toBe(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
   })
 
-  it('Succed with paybutton that already belongs to other wallet', async () => {
+  it('Succeed with paybutton that already belongs to other wallet', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-wallet3',
@@ -494,7 +494,7 @@ describe('POST /api/wallets/', () => {
     )
   })
 
-  it('Succed with address that already belongs to other wallet', async () => {
+  it('Succeed with address that already belongs to other wallet', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-wallet4',
