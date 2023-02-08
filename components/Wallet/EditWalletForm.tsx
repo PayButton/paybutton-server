@@ -23,9 +23,10 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
   const [isXECDefaultDisabled, setIsXECDefaultDisabled] = useState(true)
   const [isBCHDefaultDisabled, setIsBCHDefaultDisabled] = useState(true)
   const [error, setError] = useState('')
-  const [selectedPaybuttonIdList, setSelectedPaybuttonIdList] = useState([] as string[])
+  const [selectedPaybuttonIdList, setSelectedPaybuttonIdList] = useState([] as number[])
 
   async function onSubmit (params: WalletPATCHParameters): Promise<void> {
+    params.paybuttonIdList = selectedPaybuttonIdList
     if (params.name === '' || params.name === undefined) {
       params.name = wallet.name
     }
@@ -38,7 +39,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
     }
   }
 
-  function handleSelectedPaybuttonsChange (checked: boolean, paybuttonId: string): void {
+  function handleSelectedPaybuttonsChange (checked: boolean, paybuttonId: number): void {
     if (selectedPaybuttonIdList.includes(paybuttonId) && !checked) {
       setSelectedPaybuttonIdList(
         selectedPaybuttonIdList.filter(id => id !== paybuttonId)
@@ -55,7 +56,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
     let ret = false
     if (selectedPaybuttonIdList === undefined) return false
     for (const selectedPaybuttonId of selectedPaybuttonIdList) {
-      const paybutton = userPaybuttons.find((pb) => pb.id === Number(selectedPaybuttonId))
+      const paybutton = userPaybuttons.find((pb) => pb.id === selectedPaybuttonId)
       if (paybutton === undefined) {
         continue
       }
@@ -125,7 +126,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                   <div className={style.buttonlist_ctn}>
                     {userPaybuttons.map((pb, index) => (
                       <div className={style.input_field} key={`edit-pb-${pb.id}`}>
-                        <input {...register('paybuttonIdList')}
+                        <input
                           type='checkbox'
                           value={pb.id}
                           id={`paybuttonIdList.${index}`}
