@@ -347,6 +347,11 @@ export interface WalletPaymentInfo {
   paymentCount: number
 }
 
+export interface WalletWithPaymentInfo {
+  wallet: WalletWithAddressesAndPaybuttons
+  paymentInfo: WalletPaymentInfo
+}
+
 export async function getWalletBalance (wallet: WalletWithAddressesAndPaybuttons): Promise<WalletPaymentInfo> {
   const ret: WalletPaymentInfo = {
     XECBalance: new Prisma.Decimal(0),
