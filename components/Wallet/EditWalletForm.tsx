@@ -130,12 +130,6 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                           value={pb.id}
                           id={`paybuttonIdList.${index}`}
                           defaultChecked={pb.walletId === wallet.id}
-                          disabled={
-                            (pb.walletId !== null && pb.walletId !== wallet.id) ||
-                            pb.addresses.map((addr) => addr.address.walletId).some((walletId) =>
-                              walletId !== null && walletId !== wallet.id
-                            )
-                          }
                           onChange={ (e) => handleSelectedPaybuttonsChange(e.target.checked, pb.id) }
                         />
                         <label htmlFor={`paybuttonIdList.${index}`}>{pb.name}</label>
