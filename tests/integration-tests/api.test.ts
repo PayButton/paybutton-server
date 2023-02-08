@@ -468,30 +468,56 @@ describe('POST /api/wallets/', () => {
     expect(responseData.message).toBe(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
   })
 
-  it('Fail with paybutton that already belongs to other wallet', async () => {
+  it('Succed with paybutton that already belongs to other wallet', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
-      name: 'test-wallet2',
+      name: 'test-wallet3',
       paybuttonIdList: [buttonIds[0]]
 
     }
     const res = await testEndpoint(baseRequestOptions, walletEndpoint)
     const responseData = res._getJSONData()
-    expect(res.statusCode).toBe(400)
-    expect(responseData.message).toBe(RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400.message)
+    expect(res.statusCode).toBe(200)
+    expect(responseData.providerUserId).toBe('test-u-id')
+    expect(responseData.name).toBe('test-wallet3')
+    expect(responseData.userProfile).toStrictEqual({
+      isXECDefault: null,
+      isBCHDefault: null,
+      userProfileId: 3
+    })
+    expect(responseData.paybuttons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          walletId: responseData.id
+        })
+      ])
+    )
   })
 
-  it('Fail with address that already belongs to other wallet', async () => {
+  it('Succed with address that already belongs to other wallet', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
-      name: 'test-wallet2',
+      name: 'test-wallet4',
       paybuttonIdList: [buttonIds[2]]
 
     }
     const res = await testEndpoint(baseRequestOptions, walletEndpoint)
     const responseData = res._getJSONData()
-    expect(res.statusCode).toBe(400)
-    expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
+    expect(res.statusCode).toBe(200)
+    expect(responseData.providerUserId).toBe('test-u-id')
+    expect(responseData.name).toBe('test-wallet4')
+    expect(responseData.userProfile).toStrictEqual({
+      isXECDefault: null,
+      isBCHDefault: null,
+      userProfileId: 3
+    })
+    expect(responseData.paybuttons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          walletId: responseData.id
+        })
+      ])
+    )
   })
 })
 

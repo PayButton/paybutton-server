@@ -244,23 +244,18 @@ describe.only('Set wallet paybuttons', () => {
     )
     expect(result).toEqual(mockedWallet)
   })
-  it('Fail for paybutton that already belongs to other wallet', async () => {
-    expect.assertions(1)
-    try {
-      await walletService.setPaybuttonListForWallet(
-        prismaMock,
-        [{
-          ...mockedPaybutton,
-          walletId: 999
-        }],
-        mockedWallet
-      )
-    } catch (e: any) {
-      expect(e.message).toMatch(RESPONSE_MESSAGES.PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400.message)
-    }
+  it('Update paybutton that already belongs to other wallet', async () => {
+    const result = await walletService.setPaybuttonListForWallet(
+      prismaMock,
+      [{
+        ...mockedPaybutton,
+        walletId: 999
+      }],
+      mockedWallet
+    )
+    expect(result).toEqual(mockedWallet)
   })
-  it('Fail for paybutton with address that already belongs to other wallet', async () => {
-    expect.assertions(1)
+  it('Update for paybutton with address that already belongs to other wallet', async () => {
     const newPaybuttonAddressesList = [
       {
         address: {
@@ -272,19 +267,15 @@ describe.only('Set wallet paybuttons', () => {
         address: mockedPaybutton.addresses[1].address
       }
     ]
-
-    try {
-      await walletService.setPaybuttonListForWallet(
-        prismaMock,
-        [{
-          ...mockedPaybutton,
-          addresses: newPaybuttonAddressesList
-        }],
-        mockedWallet
-      )
-    } catch (e: any) {
-      expect(e.message).toMatch(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message)
-    }
+    const result = await walletService.setPaybuttonListForWallet(
+      prismaMock,
+      [{
+        ...mockedPaybutton,
+        addresses: newPaybuttonAddressesList
+      }],
+      mockedWallet
+    )
+    expect(result).toEqual(mockedWallet)
   })
   it('Fail for paybutton of different user than wallet', async () => {
     expect.assertions(1)
