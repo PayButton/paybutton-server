@@ -1,6 +1,7 @@
 import React, { ReactElement, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { PaybuttonPOSTParameters } from 'utils/validators'
+import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
 import Image from 'next/image'
 import style from './paybutton.module.css'
 import Plus from 'assets/plus.png'
@@ -8,10 +9,11 @@ import Plus from 'assets/plus.png'
 interface IProps {
   onSubmit: Function
   paybuttons: []
+  wallets: WalletWithAddressesAndPaybuttons[]
   error: String
 }
 
-export default function PaybuttonForm ({ onSubmit, paybuttons, error }: IProps): ReactElement {
+export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<PaybuttonPOSTParameters>()
   const [modal, setModal] = useState(false)
 
@@ -20,6 +22,12 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, error }: IProps):
     reset()
   }, [paybuttons])
 
+  let walletOptions = wallets.map((wallet) => {
+    return {
+      "value": wallet.id,
+      "label": wallet.name
+    }
+  })
   return (
     <>
       <div className={style.create_button_ctn}>
@@ -37,6 +45,16 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, error }: IProps):
               <form onSubmit={handleSubmit(onSubmit)} method='post'>
                 <label htmlFor='name'>Name</label>
                 <input {...register('name')} type='text' id='name' name='name' required />
+
+                <label htmlFor='wallet'>Wallet</label>
+                <select {...register('walletId')} required>
+                  {walletOptions.map((w) => 
+                    <option value={w.value}>
+                      {w.label}
+                    </option>
+                  )}
+                </select>
+
 
                 {/* <label htmlFor='buttonData'>Button Data</label> <br />
                 <textarea {...register('buttonData')} id='buttonData' name='buttonData' />

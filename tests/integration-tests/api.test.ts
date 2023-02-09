@@ -53,7 +53,8 @@ describe('POST /api/paybutton/', () => {
     body: {
       addresses: `${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
       name: 'test-paybutton',
-      buttonData: '{"somefield":"somevalue"}'
+      buttonData: '{"somefield":"somevalue"}',
+      walletId: '1'
     }
   }
 
@@ -87,6 +88,7 @@ describe('POST /api/paybutton/', () => {
   it('Create a paybutton empty JSON for buttonData', async () => {
     baseRequestOptions.body = {
       name: 'test-paybutton-no-button-data',
+      walletId: '1',
       addresses: `ectest:${exampleAddresses.ectest}`
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -110,6 +112,7 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: '',
+      walletId: '1',
       addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -122,11 +125,12 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton',
+      walletId: '1',
       addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
-    expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
     expect(responseData.message).toBe(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message)
   })
 
@@ -134,6 +138,7 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton',
+      walletId: '1',
       addresses: ''
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -146,11 +151,12 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton',
+      walletId: '1',
       addresses: 'ecash:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nbitcoincash:qz0dqjf6w6dp0lcs8cc68s720q9dv5zv8cs8fc0lt4'
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
-    expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
     expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
   })
 
@@ -158,13 +164,27 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton',
+      walletId: '1',
       addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
       buttonData: '{invalidjson'
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
-    expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
     expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_BUTTON_DATA_400.message)
+  })
+
+  it('Fail with missing walletId', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'another-test-paybutton',
+      walletId: '',
+      addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.WALLET_ID_NOT_PROVIDED_400.message)
   })
 })
 
