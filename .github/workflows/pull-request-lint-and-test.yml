@@ -14,6 +14,8 @@ jobs:
           fetch-depth: 0
       - name: Install dependencies
         run: yarn
+      - name: Check no tests are run with `.only`
+        run: make no-isolated-tests
       - name: Lint and check format
         run: make lint-master
       - name: Run unit tests

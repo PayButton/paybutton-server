@@ -23,6 +23,9 @@ check-logs-users:
 lint:
 	yarn eslint .
 
+no-isolated-tests:
+	grep -rEq '(describe|it)\.only' tests/* && exit 1
+
 lint-master:
 	$(git_diff_to_master)
 	yarn eslint --stdin --stdin-filename DIFF
