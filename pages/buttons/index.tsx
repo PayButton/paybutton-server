@@ -2,7 +2,7 @@ import React from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import { PaybuttonList, PaybuttonForm } from 'components/Paybutton'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
-import { paybuttonPOSTParameters } from 'utils/validators'
+import { PaybuttonPOSTParameters } from 'utils/validators'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
@@ -76,7 +76,7 @@ class ProtectedPage extends React.Component<PaybuttonsProps, PaybuttonsState> {
     }
   }
 
-  async onSubmit (values: paybuttonPOSTParameters): Promise<void> {
+  async onSubmit (values: PaybuttonPOSTParameters): Promise<void> {
     const res = await fetch('/api/paybutton', {
       method: 'POST',
       headers: {
