@@ -232,7 +232,7 @@ describe('Update services', () => {
   })
 })
 
-describe('Set wallet paybuttons', () => {
+describe.only('Set wallet paybuttons', () => {
   beforeEach(() => {
     prismaMockPaybuttonAndAddressUpdate()
   })

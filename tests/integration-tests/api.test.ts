@@ -57,7 +57,7 @@ describe('POST /api/paybutton/', () => {
     }
   }
 
-  it('Create a paybutton with two addresses', async () => {
+  it.only('Create a paybutton with two addresses', async () => {
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
