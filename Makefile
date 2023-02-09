@@ -24,7 +24,7 @@ lint:
 	yarn eslint .
 
 no-isolated-tests:
-	grep -rEq '(describe|it)\.only' tests/* && exit 1
+	grep -rEn '(describe|it)\.only' tests/* && exit 1 || echo No isolated tests.
 
 lint-master:
 	$(git_diff_to_master)
