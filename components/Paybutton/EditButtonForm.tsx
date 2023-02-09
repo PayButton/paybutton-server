@@ -14,26 +14,33 @@ interface IProps {
   onDelete: Function
   paybutton: PaybuttonWithAddresses
   refreshPaybutton: Function
-  error: String
-  editname: boolean
 }
 
-export default function EditButtonForm ({ paybutton, error, onDelete, refreshPaybutton }: IProps): ReactElement {
+export default function EditButtonForm ({ paybutton, onDelete, refreshPaybutton }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<PaybuttonPOSTParameters>()
   const [modal, setModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     setModal(false)
     reset()
   }, [paybutton])
 
+  useEffect(() => {
+    setError('')
+  }, [modal])
+
   async function onSubmit (params: PaybuttonPATCHParameters): Promise<void> {
     if (params.name === '' || params.name === undefined) {
       params.name = paybutton.name
     }
-    void await axios.patch(`${appInfo.websiteDomain}/api/paybutton/${paybutton.id}`, params)
-    refreshPaybutton()
+    try {
+      void await axios.patch(`${appInfo.websiteDomain}/api/paybutton/${paybutton.id}`, params)
+      refreshPaybutton()
+    } catch (err: any) {
+      setError(err.response.data.message)
+    }
   }
 
   return (
