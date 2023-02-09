@@ -79,7 +79,7 @@ export const parseError = function (error: Error): Error {
   return error
 }
 
-export interface paybuttonPOSTParameters {
+export interface PaybuttonPOSTParameters {
   userId?: string
   walletId?: string
   name?: string
@@ -87,7 +87,7 @@ export interface paybuttonPOSTParameters {
   addresses?: string
 }
 
-export const parsePaybuttonPOSTRequest = function (params: paybuttonPOSTParameters): CreatePaybuttonInput {
+export const parsePaybuttonPOSTRequest = function (params: PaybuttonPOSTParameters): CreatePaybuttonInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   if (params.addresses === '' || params.addresses === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
@@ -131,7 +131,7 @@ export interface WalletPATCHParameters {
 export const parseWalletPOSTRequest = function (params: WalletPOSTParameters): CreateWalletInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
-  if (params.paybuttonIdList === undefined) throw new Error(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message)
+  if (params.paybuttonIdList === undefined || params.paybuttonIdList.length === 0) throw new Error(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message)
   params.paybuttonIdList = params.paybuttonIdList.map((id: string | number) => Number(id))
   return {
     userId: params.userId,
