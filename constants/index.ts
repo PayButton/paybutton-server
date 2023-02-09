@@ -11,7 +11,7 @@ export const RESPONSE_MESSAGES = {
   PAYBUTTON_NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Button name already exists.' },
   WALLET_NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Wallet name already exists.' },
   ADDRESSES_NOT_PROVIDED_400: { statusCode: 400, message: "'addresses' not provided." },
-  BUTTON_IDS_NOT_PROVIDED_400: { statusCode: 400, message: "'paybuttonIdList' not provided." },
+  BUTTON_IDS_NOT_PROVIDED_400: { statusCode: 400, message: 'Paybuttons were not provided.' },
   TRANSACTION_ID_NOT_PROVIDED_400: { statusCode: 400, message: "'transactionId' not provided." },
   INVALID_NETWORK_SLUG_400: { statusCode: 400, message: 'Invalid network slug.' },
   INVALID_NETWORK_ID_400: { statusCode: 400, message: 'Invalid network id.' },
