@@ -156,7 +156,7 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId }
                     name='name'
                   />
 
-                  <h4>Addresses</h4>
+                  <h4>Select Buttons</h4>
                   <div className={style.buttonlist_ctn}>
                     {userAddresses.map((addr, index) => (
                       <div className={style.input_field} key={`create-addr-${addr.id}`}>
@@ -170,10 +170,10 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId }
                           onChange={ (e) => handleSelectedAddressesChange(e.target.checked, addr.id) }
                         />
                         <label htmlFor={`addressIdList.${index}`}>
-                            <b>{addr.address}</b>
                           {addr.paybuttons.map((conn) => (
-                            <div>{conn.paybutton.name}</div>
+                            <div className={style.buttonpill}>{conn.paybutton.name}</div>
                           ))}
+                          <div className={style.addresslabel}>{addr.address}</div>
                         </label>
                       </div>
                     ))}
