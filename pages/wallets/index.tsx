@@ -78,7 +78,7 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
     const paybuttonsResponse = await fetch(`/api/paybuttons?userId=${this.props.userId}`, {
       method: 'GET'
     })
-    const addressesResponse = await fetch(`/api/addresses?userId=${this.props.userId}`, {
+    const addressesResponse = await fetch(`/api/addresses?userId=${this.props.userId}&includePaybuttons=1`, {
       method: 'GET'
     })
     if (walletsResponse.status === 200) {
