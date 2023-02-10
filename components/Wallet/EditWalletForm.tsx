@@ -7,12 +7,12 @@ import Image from 'next/image'
 import style from '../Wallet/wallet.module.css'
 import style_pb from '../Paybutton/paybutton.module.css'
 import EditIcon from 'assets/edit-icon.png'
-import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
+import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import axios from 'axios'
 import { appInfo } from 'config/appInfo'
 
 interface IProps {
-  wallet: WalletWithAddressesAndPaybuttons
+  wallet: WalletWithAddressesWithPaybuttons
   userPaybuttons: PaybuttonWithAddresses[]
   refreshWalletList: Function
 }
