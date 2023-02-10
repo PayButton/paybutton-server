@@ -36,15 +36,30 @@ export const RESPONSE_MESSAGES = {
   NETWORK_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'networkSlug' not provided." },
   QUOTE_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'quoteSlug' not provided." },
   NO_CURRENT_PRICES_FOUND_404: { statusCode: 404, message: 'Current prices not found.' },
-  INVALID_QUOTE_SLUG_400: { statusCode: 400, message: 'Invalid quote slug.' }
+  INVALID_QUOTE_SLUG_400: { statusCode: 400, message: 'Invalid quote slug.' },
+  INVALID_TICKER_400: { statusCode: 400, message: 'Invalid ticker.' }
 }
 
-export const NETWORK_SLUGS = {
+interface KeyValueString {
+  [key: string]: string
+}
+
+export const NETWORK_SLUGS: KeyValueString = {
   ecash: 'ecash',
   bitcoincash: 'bitcoincash',
   ectest: 'ectest',
   bchtest: 'bchtest',
   bchreg: 'bchreg'
+}
+
+export const TICKERS: KeyValueString = {
+  ecash: 'XEC',
+  bitcoincash: 'BCH'
+}
+
+export const FIRST_DATES_PRICES: KeyValueString = {
+  XEC: '2020-11-14',
+  BCH: '2017-08-01'
 }
 
 // When fetching some address transactions, number of transactions to fetch at a time.
