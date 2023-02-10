@@ -7,7 +7,7 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import WalletCard from 'components/Wallet/WalletCard'
 import WalletForm from 'components/Wallet/WalletForm'
-import { WalletWithAddressesAndPaybuttons, WalletPaymentInfo } from 'services/walletService'
+import { WalletWithPaymentInfo } from 'services/walletService'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
@@ -43,7 +43,7 @@ interface WalletsProps {
 }
 
 interface WalletsState {
-  walletsWithPaymentInfo: [{wallet: WalletWithAddressesAndPaybuttons, paymentInfo: WalletPaymentInfo}]
+  walletsWithPaymentInfo: WalletWithPaymentInfo[]
   userPaybuttons: PaybuttonWithAddresses[]
 }
 
