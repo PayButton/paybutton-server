@@ -34,3 +34,4 @@ yarn-error.log*
 .vercel
 
 jobs/out.log
+/scripts/db/prices.csv

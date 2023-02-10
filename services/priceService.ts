@@ -3,8 +3,11 @@ import axios from 'axios'
 import { appInfo } from 'config/appInfo'
 import { Prisma, Price } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
-import { PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { FIRST_DATES_PRICES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import moment from 'moment'
+import fs from 'fs'
+import { promisify } from 'util'
+import * as path from 'path'
 
 function flattenTimestamp (timestamp: number): number {
   const date = moment((timestamp * 1000))
@@ -21,6 +24,9 @@ function dateStringFromTimestamp (timestamp: number): string {
 interface IResponseData {
   Price_in_CAD: string
   Price_in_USD: string
+}
+interface KeyValueMoment {
+  [key: string]: moment.Moment
 }
 
 export async function upsertCurrentPricesForNetworkId (responseData: IResponseData, networkId: number): Promise<void> {
@@ -62,23 +68,39 @@ export async function upsertCurrentPricesForNetworkId (responseData: IResponseDa
   })
 }
 
-export async function syncCurrentPrices (): Promise<boolean> {
+async function getPriceForDayTicker (day: moment.Moment, ticker: string): Promise<IResponseData | null> {
   if (appInfo.priceAPIURL === '') {
     throw new Error(RESPONSE_MESSAGES.MISSING_PRICE_API_URL_400.message)
   }
-  const todayString = moment().format(PRICE_API_DATE_FORMAT)
-  let success = true
+  if (!Object.values(TICKERS).includes(ticker)) {
+    throw new Error(RESPONSE_MESSAGES.INVALID_TICKER_400.message)
+  }
 
-  let res = await axios.get(`${appInfo.priceAPIURL}/BCH+${todayString}`)
-  let responseData = res.data
-  if (responseData.success !== false) {
-    void upsertCurrentPricesForNetworkId(responseData, BCH_NETWORK_ID)
+  const dayString = day.format(PRICE_API_DATE_FORMAT)
+  try {
+    const res = await axios.get(`${appInfo.priceAPIURL}/${ticker}+${dayString}`, {
+      timeout: 10 * 1000
+    })
+
+    if (res.data.success !== false) { return res.data } else { return null }
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+}
+
+export async function syncCurrentPrices (): Promise<boolean> {
+  let success = true
+  const today = moment()
+
+  const bchPrice = await getPriceForDayTicker(today, TICKERS.bitcoincash)
+  if (bchPrice != null) {
+    void upsertCurrentPricesForNetworkId(bchPrice, BCH_NETWORK_ID)
   } else success = false
 
-  res = await axios.get(`${appInfo.priceAPIURL}/XEC+${todayString}`)
-  responseData = res.data
-  if (responseData.success !== false) {
-    void upsertCurrentPricesForNetworkId(responseData, XEC_NETWORK_ID)
+  const xecPrice = await getPriceForDayTicker(today, TICKERS.ecash)
+  if (xecPrice != null) {
+    void upsertCurrentPricesForNetworkId(xecPrice, XEC_NETWORK_ID)
   } else success = false
 
   return success
@@ -301,4 +323,88 @@ export async function syncTransactionPriceValues (params: SyncTransactionPricesI
     usd: new Prisma.Decimal(usdPriceString),
     cad: new Prisma.Decimal(cadPriceString)
   }
+}
+
+// run once script, used to find the first date of each ticker
+async function findFirstDate (ticker: string, searchStart: moment.Moment): Promise<moment.Moment> {
+  if (moment().isBefore(searchStart)) return moment()
+
+  let i = 0
+
+  while (true) {
+    const price = await getPriceForDayTicker(searchStart, ticker)
+    if (price?.Price_in_USD === undefined) {
+      break
+    }
+    searchStart.add(1, 'day')
+    console.log(`${ticker} ${i} ${searchStart.format('YYYY-MM-DD')}`)
+    i++
+  }
+
+  return searchStart.clone()
+}
+
+// run once script, first date values found were:
+//     xec: 2020-11-14, bch: 2017-08-01
+export async function findFirstDates (): Promise<void> {
+  const dates: KeyValueMoment = {}
+  dates[TICKERS.ecash] = moment('2020-11-12')
+  dates[TICKERS.bitcoincash] = moment('2017-07-30')
+
+  await Promise.all(Object.values(TICKERS).map(async (ticker) => {
+    dates[ticker] = await findFirstDate(ticker, dates[ticker])
+  }))
+
+  console.log(`xec: ${dates[TICKERS.ecash].format('YYYY-MM-DD')}, bch: ${dates[TICKERS.bitcoincash].format('YYYY-MM-DD')}`)
+}
+interface PriceFileData {
+  ticker: string
+  date: string
+  priceInCAD: string
+  priceInUSD: string
+}
+
+async function writeToFile (fileName: string, content: PriceFileData[]): Promise<void> {
+  const writeFile = promisify(fs.writeFile)
+
+  const headers = ['ticker', 'date', 'priceInCAD', 'priceInUSD']
+  const rows = content.map(({ ticker, date, priceInCAD, priceInUSD }) => [ticker, date, priceInCAD, priceInUSD])
+  const csv = [headers, ...rows].map(row => row.join(',')).join('\n')
+
+  await writeFile(fileName, csv, 'utf8')
+}
+
+export async function createPricesFile (): Promise<void> {
+  const start = moment()
+  const prices: PriceFileData[] = []
+
+  await Promise.all(Object.values(TICKERS).map(async (ticker) => {
+    const today = moment()
+    const date = moment(FIRST_DATES_PRICES[ticker])
+
+    while (date.isBefore(today)) {
+      const price = await getPriceForDayTicker(date, ticker)
+      if (price != null) {
+        prices.push({
+          ticker,
+          date: date.format('YYYYMMDD'),
+          priceInCAD: price.Price_in_CAD,
+          priceInUSD: price.Price_in_USD
+        })
+      }
+      console.log(`${ticker} ${date.format('YYYYMMDD')}`)
+      date.add(1, 'days')
+    }
+  }))
+
+  prices.sort((a, b) => {
+    let res = 0
+    if (a.ticker < b.ticker) res -= 2
+    if (a.date < b.date) res -= 1
+    return res
+  })
+  await writeToFile(path.join('scripts', 'db', 'prices.csv'), prices)
+
+  const finish = moment()
+  console.log(`\n\nstart: ${start.format('HH:mm:ss')}\nfinish: ${finish.format('HH:mm:ss')}\nduration: ${(finish.diff(start) / 1000 / 60).toFixed(2)} minutes`)
 }
