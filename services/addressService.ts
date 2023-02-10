@@ -90,20 +90,6 @@ export async function fetchAddressesInList (prefixedAddressList: string[]): Prom
   })
 }
 
-export async function fetchAddressArrayByIds (addressIdList: number[]): Promise<Address[]> {
-  const addressArray = await prisma.address.findMany({
-    where: {
-      id: {
-        in: addressIdList
-      }
-    }
-  })
-  if (addressIdList.length !== addressArray.length) {
-    throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
-  }
-  return addressArray
-}
-
 export async function upsertAddress (addressString: string, walletId?: number, includeTransactions = false): Promise<AddressWithTransactions> {
   const prefix = addressString.split(':')[0].toLowerCase()
   const network = await getNetworkFromSlug(prefix)
