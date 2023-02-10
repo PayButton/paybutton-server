@@ -9,7 +9,7 @@ import WalletCard from 'components/Wallet/WalletCard'
 import WalletForm from 'components/Wallet/WalletForm'
 import { WalletWithPaymentInfo } from 'services/walletService'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
-import { Address } from '@prisma/client'
+import { AddressWithPaybuttons } from 'services/addressService'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -46,7 +46,7 @@ interface WalletsProps {
 interface WalletsState {
   walletsWithPaymentInfo: WalletWithPaymentInfo[]
   userPaybuttons: PaybuttonWithAddresses[]
-  userAddresses: Address[]
+  userAddresses: AddressWithPaybuttons[]
 }
 
 export default function Wallets ({ userId }: WalletsProps): React.ReactElement {
@@ -126,6 +126,7 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
           return <WalletCard
             wallet={walletWithPaymentInfo.wallet}
             paymentInfo={walletWithPaymentInfo.paymentInfo}
+            userAddresses={this.state.userAddresses}
             userPaybuttons={this.state.userPaybuttons}
             refreshWalletList={this.refreshWalletList}
           />
