@@ -91,7 +91,7 @@ export const parsePaybuttonPOSTRequest = function (params: PaybuttonPOSTParamete
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   if (params.addresses === '' || params.addresses === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
-  let walletId: number | undefined = Number(params.walletId)
+  const walletId: number | undefined = Number(params.walletId)
   if (params.walletId === '' || params.walletId === undefined) {
     throw new Error(RESPONSE_MESSAGES.WALLET_ID_NOT_PROVIDED_400.message)
   }
@@ -112,7 +112,7 @@ export interface WalletPOSTParameters {
   name?: string
   isXECDefault?: boolean
   isBCHDefault?: boolean
-  paybuttonIdList: number[]
+  addressIdList: number[]
 }
 
 export interface PaybuttonPATCHParameters {
@@ -131,12 +131,12 @@ export interface WalletPATCHParameters {
 export const parseWalletPOSTRequest = function (params: WalletPOSTParameters): CreateWalletInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
-  if (params.paybuttonIdList === undefined || params.paybuttonIdList.length === 0) throw new Error(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message)
-  params.paybuttonIdList = params.paybuttonIdList.map((id: string | number) => Number(id))
+  if (params.addressIdList === undefined || params.addressIdList.length === 0) throw new Error(RESPONSE_MESSAGES.ADDRESS_IDS_NOT_PROVIDED_400.message)
+  params.addressIdList = params.addressIdList.map((id: string | number) => Number(id))
   return {
     userId: params.userId,
     name: params.name,
-    paybuttonIdList: params.paybuttonIdList,
+    addressIdList: params.addressIdList,
     isXECDefault: params.isXECDefault,
     isBCHDefault: params.isBCHDefault
   }

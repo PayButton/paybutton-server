@@ -10,7 +10,7 @@ export interface CreateWalletInput {
   name: string
   isXECDefault?: boolean
   isBCHDefault?: boolean
-  paybuttonIdList: number[]
+  addressIdList: number[]
 }
 
 export interface UpdateWalletInput {
@@ -163,10 +163,32 @@ export async function setPaybuttonListForWallet (
   return updatedWallet
 }
 
+export async function setAddressListForWallet (
+  prisma: Prisma.TransactionClient,
+  addressIdList: number[],
+  wallet: WalletWithAddressesAndPaybuttons
+): Promise<void> {
+  for (const addressId of addressIdList) {
+    await prisma.address.update({
+      data: {
+        walletId: wallet.id
+      },
+      where: {
+        id: addressId
+      }
+    })
+  }
+
+  // remove addresses that are not on the list
+  await removeAddressesFromWallet(
+    prisma,
+    wallet.addresses.map(addr => addr.id).filter(addrId => !addressIdList.includes(addrId))
+  )
+}
+
 export async function createWallet (values: CreateWalletInput): Promise<WalletWithAddressesAndPaybuttons> {
-  const paybuttonList = await paybuttonService.fetchPaybuttonArrayByIds(values.paybuttonIdList)
   const defaultForNetworkIds = getDefaultForNetworkIds(values.isXECDefault, values.isBCHDefault)
-  const wallet: WalletWithAddressesAndPaybuttons = await prisma.$transaction(async (prisma) => {
+  const newWalletId: number = await prisma.$transaction(async (prisma) => {
     const w = await prisma.wallet.create({
       data: {
         providerUserId: values.userId,
@@ -188,11 +210,11 @@ export async function createWallet (values: CreateWalletInput): Promise<WalletWi
       },
       include: includeAddressesAndPaybuttons
     })
-    await setPaybuttonListForWallet(prisma, paybuttonList, w)
-    return w
+    await setAddressListForWallet(prisma, values.addressIdList, w)
+    return w.id
   })
   return await setDefaultWallet(
-    await fetchWalletById(wallet.id),
+    await fetchWalletById(newWalletId),
     defaultForNetworkIds
   )
 }
@@ -201,7 +223,7 @@ export async function createDefaultWalletForUser (userId: string): Promise<Walle
   const wallet = await createWallet({
     userId,
     name: 'Default Wallet',
-    paybuttonIdList: []
+    addressIdList: []
   })
   await setDefaultWallet(wallet, [XEC_NETWORK_ID, BCH_NETWORK_ID])
   return wallet
