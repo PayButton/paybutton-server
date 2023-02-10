@@ -72,6 +72,10 @@ export const parseError = function (error: Error): Error {
           error.message.includes('prisma.paybutton.update')
         ) {
           return new Error(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
+        } else if (
+          error.message.includes('prisma.address.update')
+        ) {
+          return new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
         }
         break
     }
