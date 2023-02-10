@@ -84,7 +84,7 @@ async function getPriceForDayTicker (day: moment.Moment, ticker: string): Promis
 
     if (res.data.success !== false) { return res.data } else { return null }
   } catch (error) {
-    console.error(error)
+    console.error(error?.response?.status)
     return null
   }
 }
@@ -375,14 +375,21 @@ async function writeToFile (fileName: string, content: PriceFileData[]): Promise
 }
 
 export async function createPricesFile (): Promise<void> {
+  console.log('Price file creation started')
   const start = moment()
   const prices: PriceFileData[] = []
 
   await Promise.all(Object.values(TICKERS).map(async (ticker) => {
     const today = moment()
-    const date = moment(FIRST_DATES_PRICES[ticker])
+    const firstDate = moment(FIRST_DATES_PRICES[ticker])
 
-    while (date.isBefore(today)) {
+    const dates: moment.Moment[] = []
+    while (firstDate.isBefore(today)) {
+      dates.push(firstDate.clone())
+      firstDate.add(1, 'days')
+    }
+
+    await Promise.all(dates.map(async date => {
       const price = await getPriceForDayTicker(date, ticker)
       if (price != null) {
         prices.push({
@@ -391,20 +398,16 @@ export async function createPricesFile (): Promise<void> {
           priceInCAD: price.Price_in_CAD,
           priceInUSD: price.Price_in_USD
         })
-      }
-      console.log(`${ticker} ${date.format('YYYYMMDD')}`)
-      date.add(1, 'days')
-    }
+      } else console.error(`${ticker} ${date.format('YYYYMMDD')} came back null`)
+    }))
   }))
 
   prices.sort((a, b) => {
-    let res = 0
-    if (a.ticker < b.ticker) res -= 2
-    if (a.date < b.date) res -= 1
-    return res
+    if (a.ticker < b.ticker || a.date < b.date) return -1
+    return 1
   })
   await writeToFile(path.join('scripts', 'db', 'prices.csv'), prices)
 
   const finish = moment()
-  console.log(`\n\nstart: ${start.format('HH:mm:ss')}\nfinish: ${finish.format('HH:mm:ss')}\nduration: ${(finish.diff(start) / 1000 / 60).toFixed(2)} minutes`)
+  console.log(`\n\nstart: ${start.format('HH:mm:ss')}\nfinish: ${finish.format('HH:mm:ss')}\nduration: ${(finish.diff(start) / 1000).toFixed(2)} seconds`)
 }
