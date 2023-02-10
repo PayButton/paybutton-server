@@ -1,6 +1,7 @@
 import { RequestOptions, RequestMethod } from 'node-mocks-http'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import paybuttonsEndpoint from 'pages/api/paybuttons/index'
+import addressesEndpoint from 'pages/api/addresses/index'
 import paybuttonEndpoint from 'pages/api/paybutton/index'
 import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
 import walletsEndpoint from 'pages/api/wallets/index'
@@ -374,6 +375,95 @@ describe('GET /api/paybuttons/', () => {
       userId: ['test-u-id', 'test-other-u-id']
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonsEndpoint)
+    expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message)
+  })
+})
+
+describe('GET /api/addresses/', () => {
+  // Create 4 paybuttons, 3 for one user and 1 for another.
+  const userA = 'test-u-id'
+  const userB = 'test-other-u-id'
+  beforeAll(async () => {
+    await clearPaybuttonsAndAddresses()
+    for (let i = 0; i < 4; i++) {
+      const userId = i === 3 ? userB : userA
+      await createPaybuttonForUser(userId)
+    }
+  })
+
+  const baseRequestOptions: RequestOptions = {
+    method: 'GET' as RequestMethod,
+    query: {
+      userId: userA
+    }
+  }
+
+  it('Get 6 addresses for userA', async () => {
+    const res = await testEndpoint(baseRequestOptions, addressesEndpoint)
+    expect(res.statusCode).toBe(200)
+    const responseData = res._getJSONData()
+    expect(responseData.length).toBe(6)
+  })
+
+  it('Get 2 addresses for userB', async () => {
+    baseRequestOptions.query = {
+      userId: userB
+    }
+    const res = await testEndpoint(baseRequestOptions, addressesEndpoint)
+    expect(res.statusCode).toBe(200)
+    const responseData = res._getJSONData()
+    expect(responseData.length).toBe(2)
+    expect(responseData).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          address: expect.any(String),
+          id: expect.any(Number),
+          networkId: expect.any(Number),
+          walletId: null,
+          lastSynced: null,
+          createdAt: expect.any(String),
+          updatedAt: expect.any(String)
+        }),
+        expect.objectContaining({
+          address: expect.any(String),
+          id: expect.any(Number),
+          networkId: expect.any(Number),
+          walletId: null,
+          lastSynced: null,
+          createdAt: expect.any(String),
+          updatedAt: expect.any(String)
+        })
+      ])
+    )
+  })
+
+  it('Get no addresses for unknown user', async () => {
+    baseRequestOptions.query = {
+      userId: 'unknown-user'
+    }
+    const res = await testEndpoint(baseRequestOptions, addressesEndpoint)
+    expect(res.statusCode).toBe(200)
+    const responseData = res._getJSONData()
+    expect(responseData.length).toBe(0)
+  })
+
+  it('Fail without userId', async () => {
+    baseRequestOptions.query = {
+      userId: ''
+    }
+    const res = await testEndpoint(baseRequestOptions, addressesEndpoint)
+    expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+  })
+
+  it('Fail with multiple userIds', async () => {
+    baseRequestOptions.query = {
+      userId: ['test-u-id', 'test-other-u-id']
+    }
+    const res = await testEndpoint(baseRequestOptions, addressesEndpoint)
     expect(res.statusCode).toBe(400)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message)
