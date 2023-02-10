@@ -79,24 +79,31 @@ export const parseError = function (error: Error): Error {
   return error
 }
 
-export interface paybuttonPOSTParameters {
+export interface PaybuttonPOSTParameters {
   userId?: string
+  walletId?: string
   name?: string
   buttonData?: string
   addresses?: string
 }
 
-export const parsePaybuttonPOSTRequest = function (params: paybuttonPOSTParameters): CreatePaybuttonInput {
+export const parsePaybuttonPOSTRequest = function (params: PaybuttonPOSTParameters): CreatePaybuttonInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   if (params.addresses === '' || params.addresses === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
+  let walletId: number | undefined = Number(params.walletId)
+  if (params.walletId === '' || params.walletId === undefined) {
+    throw new Error(RESPONSE_MESSAGES.WALLET_ID_NOT_PROVIDED_400.message)
+  }
+
   const parsedAddresses = parseAddressTextBlock(params.addresses)
   const parsedButtonData = parseButtonData(params.buttonData)
   return {
     userId: params.userId,
     name: params.name,
     buttonData: parsedButtonData,
-    prefixedAddressList: parsedAddresses
+    prefixedAddressList: parsedAddresses,
+    walletId
   }
 }
 

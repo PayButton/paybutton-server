@@ -31,7 +31,7 @@ export const createWalletForUser = async (userId: string, paybuttonIdList: numbe
   return await createWallet({ userId, name, paybuttonIdList })
 }
 
-export const createPaybuttonForUser = async (userId: string, addressList?: string[]): Promise<PaybuttonWithAddresses> => {
+export const createPaybuttonForUser = async (userId: string, addressList?: string[], walletId?: number): Promise<PaybuttonWithAddresses> => {
   let prefixedAddressList = [
     'bitcoincash:' + addressRandexp.gen(),
     'ecash:' + addressRandexp.gen()
@@ -41,7 +41,7 @@ export const createPaybuttonForUser = async (userId: string, addressList?: strin
   }
   const name = Math.random().toString(36).slice(2)
   const buttonData = JSON.stringify({ someCustom: 'userData' })
-  return await createPaybutton({ userId, name, prefixedAddressList, buttonData })
+  return await createPaybutton({ userId, walletId, name, prefixedAddressList, buttonData })
 }
 
 export const countPaybuttons = async (): Promise<number> => {
