@@ -22,10 +22,12 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
   const [isXECDefaultDisabled, setIsXECDefaultDisabled] = useState(true)
   const [isBCHDefaultDisabled, setIsBCHDefaultDisabled] = useState(true)
   const [error, setError] = useState('')
-  const [selectedPaybuttonIdList, setSelectedPaybuttonIdList] = useState([] as string[])
+  const [selectedPaybuttonIdList, setSelectedPaybuttonIdList] = useState([] as number[])
+  const [disabledPaybuttonList, setDisabledPaybuttonList] = useState([] as PaybuttonWithAddresses[])
 
   async function onSubmit (params: WalletPOSTParameters): Promise<void> {
     params.userId = userId
+    params.paybuttonIdList = selectedPaybuttonIdList
     try {
       void await axios.post(`${appInfo.websiteDomain}/api/wallet`, params)
       refreshWalletList()
@@ -35,13 +37,44 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
     }
   }
 
-  function handleSelectedPaybuttonsChange(checked: boolean, paybuttonId: string): void {
-    if (selectedPaybuttonIdList.includes(paybuttonId) && checked === false) {
+  const disableLastWalletPaybuttons = (): void => {
+    let disabledPaybuttons = [] as PaybuttonWithAddresses[]
+    for (const paybutton of userPaybuttons) {
+
+      const paybuttonHasWallet = paybutton.walletId !== undefined && paybutton.walletId !== null
+      if (paybuttonHasWallet) {
+
+        const paybuttonIsSelected = selectedPaybuttonIdList.includes(paybutton.id)
+        if (!paybuttonIsSelected) {
+
+          const otherPaybuttonsOfSameWalletRemaining = userPaybuttons.filter(otherPb => {
+            const otherPaybuttonIsSelected = selectedPaybuttonIdList.includes(otherPb.id)
+            return (
+              otherPb.walletId === paybutton.walletId
+              && otherPb.id !== paybutton.id
+              && !otherPaybuttonIsSelected
+            )
+          })
+
+          if (otherPaybuttonsOfSameWalletRemaining.length === 0) {
+            disabledPaybuttons.push(paybutton)
+          }
+        }
+      }
+    }
+    setDisabledPaybuttonList(
+      disabledPaybuttons
+    )
+  }
+
+  function handleSelectedPaybuttonsChange(checked: boolean, paybuttonId: number): void {
+    const paybuttonIsSelected = selectedPaybuttonIdList.includes(paybuttonId)
+    if (paybuttonIsSelected && checked === false) {
       setSelectedPaybuttonIdList(
         selectedPaybuttonIdList.filter(id => id !== paybuttonId)
       )
     }
-    if (!selectedPaybuttonIdList.includes(paybuttonId) && checked === true) {
+    if (!paybuttonIsSelected && checked === true) {
       setSelectedPaybuttonIdList(
         [...selectedPaybuttonIdList, paybuttonId]
       )
@@ -52,7 +85,7 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
     let ret = false
     if (selectedPaybuttonIdList === undefined) return false
     for (const selectedPaybuttonId of selectedPaybuttonIdList) {
-      let paybutton = userPaybuttons.find((pb) => pb.id === Number(selectedPaybuttonId))
+      let paybutton = userPaybuttons.find((pb) => pb.id === selectedPaybuttonId)
       if (
         paybutton !== undefined
         && paybutton.addresses.some((addr) => addr.address.networkId === networkId)
@@ -84,12 +117,18 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
   }
   useEffect(() => {
     disableDefaultInputFields()
+    disableLastWalletPaybuttons()
   }, [selectedPaybuttonIdList])
 
   useEffect(() => {
     setModal(false)
     reset()
   }, [userPaybuttons])
+
+  useEffect(() => {
+    setSelectedPaybuttonIdList([])
+    disableLastWalletPaybuttons()
+  }, [modal])
 
   return (
     <>
@@ -120,15 +159,14 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
                   <div className={style.buttonlist_ctn}>
                     {userPaybuttons.map((pb, index) => (
                       <div className={style.input_field} key={`create-pb-${pb.id}`}>
-                        <input {...register('paybuttonIdList')}
+                        <input
                           type='checkbox'
                           value={pb.id}
                           id={`paybuttonIdList.${index}`}
                           disabled={
-                            pb.walletId !== null
-                            || pb.addresses.map((addr) => addr.address.walletId).some((id) => id !== null)
+                            disabledPaybuttonList.map(pb => pb.id).includes(pb.id)
                           }
-                         onChange={ (e) => handleSelectedPaybuttonsChange(e.target.checked, pb.id) }
+                          onChange={ (e) => handleSelectedPaybuttonsChange(e.target.checked, pb.id) }
                         />
                         <label htmlFor={`paybuttonIdList.${index}`}>{pb.name}</label>
                       </div>
