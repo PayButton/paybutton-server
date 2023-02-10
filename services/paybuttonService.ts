@@ -1,4 +1,5 @@
 import * as networkService from 'services/networkService'
+import * as addressService from 'services/addressService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
@@ -10,6 +11,7 @@ export interface UpdatePaybuttonInput {
 
 export interface CreatePaybuttonInput {
   userId: string
+  walletId?: number
   name: string
   buttonData: string
   prefixedAddressList: string[]
@@ -49,26 +51,34 @@ async function getAddressObjectsToCreateOrConnect (prefixedAddressList: string[]
 }
 
 export async function createPaybutton (values: CreatePaybuttonInput): Promise<PaybuttonWithAddresses> {
-  const addressesToCreateOrConnect = await getAddressObjectsToCreateOrConnect(values.prefixedAddressList)
-  return await prisma.paybutton.create({
-    data: {
-      providerUserId: values.userId,
-      name: values.name,
-      buttonData: values.buttonData,
-      addresses: {
-        create: addressesToCreateOrConnect.map((address) => {
-          return {
-            address: {
-              connectOrCreate: {
-                where: { address: address.address },
-                create: address
+  return await prisma.$transaction(async (prisma) => {
+    // Creates or updates the `Address` objects
+    for await (const address of values.prefixedAddressList) {
+      void await addressService.upsertAddress(address, values.walletId)
+    }
+
+    // Creates the `Paybutton`, the `AddressesOnButtons` objects
+    // and connects it to the the `Address` object.
+    return await prisma.paybutton.create({
+      data: {
+        providerUserId: values.userId,
+        name: values.name,
+        buttonData: values.buttonData,
+        walletId: values.walletId,
+        addresses: {
+          create: values.prefixedAddressList.map((address) => {
+            return {
+              address: {
+                connect: {
+                  address
+                }
               }
             }
-          }
-        })
-      }
-    },
-    include: includeAddresses
+          })
+        }
+      },
+      include: includeAddresses
+    })
   })
 }
 export async function deletePaybutton (values: DeletePaybuttonInput): Promise<PaybuttonWithAddresses> {

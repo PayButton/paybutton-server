@@ -2,7 +2,6 @@ import { Prisma, Address } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { fetchAddressTransactions } from 'services/transactionService'
-import { parseAddress } from 'utils/validators'
 import { getNetworkFromSlug } from 'services/networkService'
 
 const addressFullType = Prisma.validator<Prisma.AddressArgs>()({
@@ -105,20 +104,22 @@ export async function fetchAddressesInList (prefixedAddressList: string[]): Prom
   })
 }
 
-export async function upsertAddress (addressString: string): Promise<AddressWithTransactions> {
-  const prefixedAddress = parseAddress(addressString)
-  const prefix = prefixedAddress.split(':')[0].toLowerCase()
+export async function upsertAddress (addressString: string, walletId?: number, includeTransactions = false): Promise<AddressWithTransactions> {
+  const prefix = addressString.split(':')[0].toLowerCase()
   const network = await getNetworkFromSlug(prefix)
   return await prisma.address.upsert({
     where: {
-      address: prefixedAddress
+      address: addressString
     },
     create: {
-      address: prefixedAddress.toLowerCase(),
-      networkId: Number(network.id)
+      address: addressString.toLowerCase(),
+      networkId: Number(network.id),
+      walletId
     },
-    update: {},
-    include: { transactions: true }
+    update: {
+      walletId
+    },
+    include: { transactions: includeTransactions }
   })
 }
 

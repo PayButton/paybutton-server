@@ -26,6 +26,16 @@ describe('Create services', () => {
     prismaMock.paybutton.create.mockResolvedValue(mockedPaybutton)
     prisma.paybutton.create = prismaMock.paybutton.create
 
+    prismaMock.$transaction.mockImplementation(
+      (fn: (prisma: any) => any) => {
+        return fn(prisma)
+      }
+    )
+    prisma.$transaction = prismaMock.$transaction
+
+    prismaMock.address.upsert.mockResolvedValue(mockedPaybutton.addresses[0].address)
+    prisma.address.upsert = prismaMock.address.upsert
+
     prismaMock.network.findUnique.mockResolvedValue(mockedNetwork)
     prisma.network.findUnique = prismaMock.network.findUnique
     const createPaybuttonInput = {

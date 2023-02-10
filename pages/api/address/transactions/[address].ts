@@ -54,7 +54,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
           res.status(ADDRESS_NOT_PROVIDED_400.statusCode).json(ADDRESS_NOT_PROVIDED_400)
           break
         case INVALID_ADDRESS_400.message: {
-          res.status(INVALID_ADDRESS_400.statusCode).send(INVALID_ADDRESS_400)
+          res.status(INVALID_ADDRESS_400.statusCode).json(INVALID_ADDRESS_400)
           break
         }
         case NO_ADDRESS_FOUND_404.message: {

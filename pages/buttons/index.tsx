@@ -2,7 +2,8 @@ import React from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import { PaybuttonList, PaybuttonForm } from 'components/Paybutton'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
-import { paybuttonPOSTParameters } from 'utils/validators'
+import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
+import { PaybuttonPOSTParameters } from 'utils/validators'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
@@ -43,6 +44,7 @@ interface PaybuttonsProps {
 
 interface PaybuttonsState {
   paybuttons: PaybuttonWithAddresses[]
+  wallets: WalletWithAddressesAndPaybuttons[]
   error: String
 }
 
@@ -58,11 +60,12 @@ class ProtectedPage extends React.Component<PaybuttonsProps, PaybuttonsState> {
   constructor (props: PaybuttonsProps) {
     super(props)
     this.props = props
-    this.state = { paybuttons: [], error: '' }
+    this.state = { paybuttons: [], wallets: [], error: '' }
   }
 
   async componentDidMount (): Promise<void> {
     await this.fetchPaybuttons()
+    await this.fetchWallets()
   }
 
   async fetchPaybuttons (): Promise<void> {
@@ -76,7 +79,18 @@ class ProtectedPage extends React.Component<PaybuttonsProps, PaybuttonsState> {
     }
   }
 
-  async onSubmit (values: paybuttonPOSTParameters): Promise<void> {
+  async fetchWallets (): Promise<void> {
+    const res = await fetch(`/api/wallets?userId=${this.props.userId}`, {
+      method: 'GET'
+    })
+    if (res.status === 200) {
+      this.setState({
+        wallets: (await res.json()).map(walletWithPaymentInfo => walletWithPaymentInfo.wallet)
+      })
+    }
+  }
+
+  async onSubmit (values: PaybuttonPOSTParameters): Promise<void> {
     const res = await fetch('/api/paybutton', {
       method: 'POST',
       headers: {
@@ -110,7 +124,7 @@ class ProtectedPage extends React.Component<PaybuttonsProps, PaybuttonsState> {
       <>
         <h2>Buttons</h2>
         <PaybuttonList paybuttons={this.state.paybuttons} />
-        <PaybuttonForm onSubmit={this.onSubmit.bind(this)} paybuttons={this.state.paybuttons} error={this.state.error} />
+        <PaybuttonForm onSubmit={this.onSubmit.bind(this)} paybuttons={this.state.paybuttons} wallets={this.state.wallets} error={this.state.error} />
       </>
     )
   }

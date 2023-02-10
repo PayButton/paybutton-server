@@ -18,7 +18,7 @@ const {
     const base_url = process.env.BASE_URL || 'paybutton.io'
     const env = {
       APP_URL: (() => {
-        if (isDev) return 'http://localhost:3000'
+        if (isDev) return process.env.WEBSITE_DOMAIN ?? 'http://localhost:3000'
         if (isProd) {
           return branch === 'master' ? `https://${base_url}` : `https://${branch.replaceAll('/', '-')}.${base_url}`
         }
