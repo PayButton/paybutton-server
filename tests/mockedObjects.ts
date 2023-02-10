@@ -146,6 +146,16 @@ export const mockedPaybuttonList = [
   mockedPaybutton
 ]
 
+export const mockedBCHAddressWithPaybutton = { ...mockedBCHAddress } as any
+mockedBCHAddressWithPaybutton.paybuttons = [
+  {
+    paybutton: mockedPaybuttonList[2]
+  },
+  {
+    address: mockedPaybuttonList[3]
+  }
+]
+
 // Wallet
 export const mockedWallet: WalletWithAddressesAndPaybuttons = {
   id: 1,
