@@ -70,7 +70,7 @@ describe('Create services', () => {
     createWalletInput: {
       userId: 'mocked-uid',
       name: 'mockedWallet-name',
-      paybuttonIdList: [1]
+      addressIdList: [1]
     }
   }
 
