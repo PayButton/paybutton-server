@@ -8,19 +8,25 @@ import BCHIcon from 'assets/bch-logo.png'
 import EditWalletForm from './EditWalletForm'
 import { WalletWithAddressesWithPaybuttons, WalletPaymentInfo } from 'services/walletService'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
-import { AddressWithPaybuttons } from 'services/addressService'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 interface IProps {
   wallet: WalletWithAddressesWithPaybuttons
   paymentInfo: WalletPaymentInfo
-  userAddresses: AddressWithPaybuttons[]
   userPaybuttons: PaybuttonWithAddresses[]
   refreshWalletList: Function
 }
 
-const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userPaybuttons, userAddresses, refreshWalletList }: IProps) => {
+const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userPaybuttons, refreshWalletList }: IProps) => {
   const networks = wallet.addresses.map((addr) => addr.networkId)
+  const differentPaybuttons = [...new Set(
+    wallet.addresses.map(addr =>
+      addr.paybuttons.map(conn => conn.paybutton)
+    ).reduce(
+      (accumulator, pbList) => accumulator.concat(pbList),
+      []
+    )
+  )]
   return (
     <div className={style.wallet_card}>
       <div className={style.wallet_card_header_ctn}>
@@ -63,10 +69,8 @@ const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userPaybutt
         <div className={style.info_item}>
           <h6>Buttons</h6>
           <div className={style.buttons_list_ctn}>
-            {wallet.addresses.map(addr =>
-              addr.paybuttons.map(conn =>
-              <Link href={`/button/${conn.paybutton.id}`}>{conn.paybutton.name}</Link>
-              )
+            {differentPaybuttons.map(pb =>
+              <Link href={`/button/${pb.id}`}>{pb.name}</Link>
             )}
           </div>
         </div>
