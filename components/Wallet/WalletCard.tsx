@@ -19,14 +19,14 @@ interface IProps {
 
 const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userAddresses, refreshWalletList }: IProps) => {
   const networks = wallet.addresses.map((addr) => addr.networkId)
-  const differentPaybuttons = [...new Set(
-    wallet.addresses.map(addr =>
-      addr.paybuttons.map(conn => conn.paybutton)
-    ).reduce(
-      (accumulator, pbList) => accumulator.concat(pbList),
-      []
-    )
-  )]
+  const differentPaybuttons = wallet.addresses.map(addr =>
+    addr.paybuttons.map(conn => conn.paybutton)
+  ).reduce(
+    (accumulator, pbList) => accumulator.concat(pbList),
+    []
+  ).filter(
+    (pb, index, self) => index === self.findIndex(p => p.id === pb.id)
+  )
   return (
     <div className={style.wallet_card}>
       <div className={style.wallet_card_header_ctn}>
