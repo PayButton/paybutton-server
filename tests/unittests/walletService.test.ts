@@ -4,7 +4,15 @@ import * as walletService from 'services/walletService'
 import * as addressService from 'services/addressService'
 import { prismaMock } from 'prisma/mockedClient'
 import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
-import { mockedWallet, mockedWalletList, mockedPaybuttonList, mockedPaybutton, mockedNetwork, mockedBCHAddress, mockedAddressList } from '../mockedObjects'
+import {
+  mockedWallet,
+  mockedWalletList,
+  mockedPaybuttonList,
+  mockedPaybutton,
+  mockedNetwork,
+  mockedAddressList,
+  mockedBCHAddressWithPaybutton
+} from '../mockedObjects'
 
 const prismaMockPaybuttonAndAddressUpdate = (): void => {
   prismaMock.paybutton.update.mockImplementation((_) => {
@@ -44,11 +52,10 @@ describe('Fetch services', () => {
         paymentCount: 3
       }
     })
-    const params: walletService.WalletWithAddressesAndPaybuttons = {
+    const params: walletService.WalletWithAddressesWithPaybuttons = {
       ...mockedWallet,
       userProfile: null,
-      addresses: [mockedBCHAddress],
-      paybuttons: []
+      addresses: [mockedBCHAddressWithPaybutton]
     }
     const result = await walletService.getWalletBalance(params)
     expect(result).toHaveProperty('XECBalance', new Prisma.Decimal('0'))
@@ -70,7 +77,7 @@ describe('Create services', () => {
     createWalletInput: {
       userId: 'mocked-uid',
       name: 'mockedWallet-name',
-      paybuttonIdList: [1]
+      addressIdList: [1]
     }
   }
 

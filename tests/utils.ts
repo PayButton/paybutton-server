@@ -26,9 +26,9 @@ export const clearPaybuttonsAndAddresses = async (): Promise<void> => {
 
 const addressRandexp = new RandExp(SUPPORTED_ADDRESS_PATTERN)
 
-export const createWalletForUser = async (userId: string, paybuttonIdList: number[]): Promise<WalletWithAddressesAndPaybuttons> => {
+export const createWalletForUser = async (userId: string, addressIdList: number[]): Promise<WalletWithAddressesAndPaybuttons> => {
   const name = Math.random().toString(36).slice(2)
-  return await createWallet({ userId, name, paybuttonIdList })
+  return await createWallet({ userId, name, addressIdList })
 }
 
 export const createPaybuttonForUser = async (userId: string, addressList?: string[], walletId?: number): Promise<PaybuttonWithAddresses> => {

@@ -6,10 +6,11 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
   if (req.method === 'GET') {
     const query = req.query
     const userId: string | string[] | undefined = query.userId
+    const includePaybuttons = req.query.includePaybuttons === '1'
     try {
       if (userId === '' || userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
       if (Array.isArray(userId)) throw new Error(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message)
-      const addressList = await addressService.fetchAllUserAddresses(userId)
+      const addressList = await addressService.fetchAllUserAddresses(userId, false, includePaybuttons)
       res.status(200).json(addressList)
     } catch (err: any) {
       switch (err.message) {
