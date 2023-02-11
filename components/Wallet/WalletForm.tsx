@@ -68,13 +68,13 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId }
   }
 
   function handleSelectedAddressesChange(checked: boolean, addressId: number): void {
-    const paybuttonIsSelected = selectedAddressIdList.includes(addressId)
-    if (paybuttonIsSelected && checked === false) {
+    const addressIsSelected = selectedAddressIdList.includes(addressId)
+    if (addressIsSelected && checked === false) {
       setSelectedAddressIdList(
         selectedAddressIdList.filter(id => id !== addressId)
       )
     }
-    if (!paybuttonIsSelected && checked === true) {
+    if (!addressIsSelected && checked === true) {
       setSelectedAddressIdList(
         [...selectedAddressIdList, addressId]
       )
