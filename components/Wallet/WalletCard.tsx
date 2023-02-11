@@ -8,18 +8,16 @@ import BCHIcon from 'assets/bch-logo.png'
 import EditWalletForm from './EditWalletForm'
 import { WalletWithAddressesWithPaybuttons, WalletPaymentInfo } from 'services/walletService'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
-import { AddressWithPaybuttons } from 'services/addressService'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 interface IProps {
   wallet: WalletWithAddressesWithPaybuttons
   paymentInfo: WalletPaymentInfo
-  userAddresses: AddressWithPaybuttons[]
   userPaybuttons: PaybuttonWithAddresses[]
   refreshWalletList: Function
 }
 
-const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userPaybuttons, userAddresses, refreshWalletList }: IProps) => {
+const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userPaybuttons, refreshWalletList }: IProps) => {
   const networks = wallet.addresses.map((addr) => addr.networkId)
   return (
     <div className={style.wallet_card}>
