@@ -1,5 +1,4 @@
 // import * as networkService from 'services/networkService'
-import * as paybuttonService from 'services/paybuttonService'
 import * as addressService from 'services/addressService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
@@ -17,7 +16,7 @@ export interface UpdateWalletInput {
   name: string
   isXECDefault?: boolean
   isBCHDefault?: boolean
-  paybuttonIdList: number[]
+  addressIdList: number[]
   userId: string
 }
 
@@ -87,22 +86,6 @@ export const walletHasAddressForNetwork = (wallet: WalletWithAddressesAndPaybutt
   return true
 }
 
-async function removePaybuttonsFromWallet (
-  prisma: Prisma.TransactionClient,
-  paybuttonIdsToRemoveList: number[]
-): Promise<void> {
-  for (const paybuttonId of paybuttonIdsToRemoveList) {
-    await prisma.paybutton.update({
-      data: {
-        walletId: null
-      },
-      where: {
-        id: paybuttonId
-      }
-    })
-  }
-}
-
 async function removeAddressesFromWallet (
   prisma: Prisma.TransactionClient,
   addressIdsToRemoveList: number[]
@@ -117,71 +100,6 @@ async function removeAddressesFromWallet (
       }
     })
   }
-}
-
-export async function setPaybuttonListForWallet (
-  prisma: Prisma.TransactionClient,
-  paybuttonList: paybuttonService.PaybuttonWithAddresses[],
-  wallet: WalletWithAddressesAndPaybuttons
-): Promise<WalletWithAddressesAndPaybuttons> {
-  const addedPaybuttonIdSet = new Set()
-  const addedAddressIdSet = new Set()
-  const updatedWalletAddressList = []
-  const updatedWalletPaybuttonList = []
-  // add paybuttons from list
-  for (const paybutton of paybuttonList) {
-    // enforce that wallet & paybutton have the same user provider
-    if (paybutton.providerUserId !== wallet.providerUserId) {
-      throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
-    }
-
-    // update paybuttons & addresses
-    const updatedPaybutton = await prisma.paybutton.update({
-      data: {
-        walletId: wallet.id
-      },
-      where: {
-        id: paybutton.id
-      }
-    })
-    addedPaybuttonIdSet.add(updatedPaybutton.id)
-    updatedWalletPaybuttonList.push(updatedPaybutton)
-
-    for (const connector of paybutton.addresses) {
-      if (!addedAddressIdSet.has(connector.address.id)) {
-        const updatedAddress = await prisma.address.update({
-          data: {
-            walletId: wallet.id
-          },
-          where: {
-            id: connector.address.id
-          }
-        })
-        addedAddressIdSet.add(updatedAddress.id)
-        updatedWalletAddressList.push({
-          id: updatedAddress.id,
-          address: updatedAddress.address,
-          networkId: updatedAddress.networkId
-        })
-      }
-    }
-  }
-
-  // remove paybuttons & their addresses that are not on the list
-  await removePaybuttonsFromWallet(
-    prisma,
-    wallet.paybuttons.map(pb => pb.id).filter(pbId => !addedPaybuttonIdSet.has(pbId))
-  )
-  await removeAddressesFromWallet(
-    prisma,
-    wallet.addresses.map(addr => addr.id).filter(addrId => !addedAddressIdSet.has(addrId))
-  )
-  const updatedWallet = {
-    ...wallet,
-    paybuttons: updatedWalletPaybuttonList,
-    addresses: updatedWalletAddressList
-  }
-  return updatedWallet
 }
 
 export async function setAddressListForWallet (
@@ -353,23 +271,15 @@ export async function setDefaultWallet (wallet: WalletWithAddressesAndPaybuttons
 export async function updateWallet (walletId: number, params: UpdateWalletInput): Promise<WalletWithAddressesAndPaybuttons> {
   const wallet = await fetchWalletById(walletId)
 
-  const paybuttonList = await paybuttonService.fetchPaybuttonArrayByIds(params.paybuttonIdList)
-
   if (wallet.userProfile === null) {
     throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
   }
-  // enforce that added paybuttons & addresses don't already belong to a wallet
-  paybuttonList.forEach((pb) => {
-    if (pb.providerUserId !== params.userId) {
-      throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
-    }
-  })
 
   const defaultForNetworkIds = getDefaultForNetworkIds(params.isXECDefault, params.isBCHDefault)
 
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
-  return await prisma.$transaction(async (prisma) => {
-    let updatedWallet = await prisma.wallet.update({
+  await prisma.$transaction(async (prisma) => {
+    const updatedWallet = await prisma.wallet.update({
       where: {
         id: wallet.id
       },
@@ -378,10 +288,13 @@ export async function updateWallet (walletId: number, params: UpdateWalletInput)
       },
       include: includeAddressesAndPaybuttons
     })
-    updatedWallet = await setPaybuttonListForWallet(prisma, paybuttonList, updatedWallet)
-    updatedWallet = await setDefaultWallet(updatedWallet, defaultForNetworkIds)
+    await setAddressListForWallet(prisma, params.addressIdList, updatedWallet)
     return updatedWallet
   })
+  return await setDefaultWallet(
+    await fetchWalletById(walletId),
+    defaultForNetworkIds
+  )
 }
 
 export interface WalletPaymentInfo {
