@@ -41,7 +41,7 @@ export const RESPONSE_MESSAGES = {
   INVALID_TICKER_400: { statusCode: 400, message: 'Invalid ticker.' }
 }
 
-interface KeyValueString {
+export interface KeyValueString {
   [key: string]: string
 }
 
