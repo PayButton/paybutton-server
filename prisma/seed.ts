@@ -5,7 +5,7 @@ import { addresses } from './seeds/addresses'
 import { connectors } from './seeds/connectors'
 import { walletUserConnectors } from './seeds/walletUserConnectors'
 import { wallets } from './seeds/wallets'
-import { prices } from './seeds/prices'
+import { getPrices } from './seeds/prices'
 import { quotes } from './seeds/quotes'
 import { createDevUserRawQueryList, userProfiles } from './seeds/devUser'
 const prisma = new PrismaClient()
@@ -43,7 +43,7 @@ async function main (): Promise<void> {
   }
   // create prices
   if (await prisma.price.count() === 0) {
-    await prisma.price.createMany({ data: prices })
+    await prisma.price.createMany({ data: await getPrices() })
   }
 }
 
