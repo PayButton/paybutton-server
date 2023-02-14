@@ -15,8 +15,8 @@ export default async (req: any, res: any): Promise<void> => {
         case RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message:
           res.status(400).json(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400)
           break
-        case RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message:
-          res.status(404).json(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404)
+        case RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message:
+          res.status(404).json(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404)
           break
         case RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400.message:
           res.status(400).json(RESPONSE_MESSAGES.ADDRESS_ALREADY_BELONGS_TO_WALLET_400)
@@ -30,8 +30,8 @@ export default async (req: any, res: any): Promise<void> => {
         case RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400.message:
           res.status(400).json(RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400)
           break
-        case RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400.message:
-          res.status(400).json(RESPONSE_MESSAGES.BUTTON_IDS_NOT_PROVIDED_400)
+        case RESPONSE_MESSAGES.ADDRESS_IDS_NOT_PROVIDED_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.ADDRESS_IDS_NOT_PROVIDED_400)
           break
         case RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message:
           res.status(400).json(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400)

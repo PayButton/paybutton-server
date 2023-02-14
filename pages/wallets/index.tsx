@@ -9,6 +9,7 @@ import WalletCard from 'components/Wallet/WalletCard'
 import WalletForm from 'components/Wallet/WalletForm'
 import { WalletWithPaymentInfo } from 'services/walletService'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
+import { Address } from '@prisma/client'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -45,6 +46,7 @@ interface WalletsProps {
 interface WalletsState {
   walletsWithPaymentInfo: WalletWithPaymentInfo[]
   userPaybuttons: PaybuttonWithAddresses[]
+  userAddresses: Address[]
 }
 
 export default function Wallets ({ userId }: WalletsProps): React.ReactElement {
@@ -60,7 +62,8 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
     super(props)
     this.state = {
       walletsWithPaymentInfo: [],
-      userPaybuttons: []
+      userPaybuttons: [],
+      userAddresses: []
     }
   }
 
@@ -75,6 +78,9 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
     const paybuttonsResponse = await fetch(`/api/paybuttons?userId=${this.props.userId}`, {
       method: 'GET'
     })
+    const addressesResponse = await fetch(`/api/addresses?userId=${this.props.userId}`, {
+      method: 'GET'
+    })
     if (walletsResponse.status === 200) {
       this.setState({
         walletsWithPaymentInfo: await walletsResponse.json()
@@ -83,6 +89,11 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
     if (paybuttonsResponse.status === 200) {
       this.setState({
         userPaybuttons: await paybuttonsResponse.json()
+      })
+    }
+    if (paybuttonsResponse.status === 200) {
+      this.setState({
+        userAddresses: await addressesResponse.json()
       })
     }
   }
@@ -120,7 +131,7 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
           />
         }
         )}
-        <WalletForm userPaybuttons={this.state.userPaybuttons} refreshWalletList={this.refreshWalletList} userId={this.props.userId}/>
+        <WalletForm userAddresses={this.state.userAddresses} refreshWalletList={this.refreshWalletList} userId={this.props.userId}/>
         </div>
       </>
     )

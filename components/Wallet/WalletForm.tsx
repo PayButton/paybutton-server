@@ -1,7 +1,7 @@
 import React, { ReactElement, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { WalletPOSTParameters } from 'utils/validators'
-import { PaybuttonWithAddresses } from 'services/paybuttonService'
+import { Address } from '@prisma/client'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import Image from 'next/image'
 import style from '../Wallet/wallet.module.css'
@@ -11,23 +11,23 @@ import axios from 'axios'
 import { appInfo } from 'config/appInfo'
 
 interface IProps {
-  userPaybuttons: PaybuttonWithAddresses[]
+  userAddresses: Address[]
   refreshWalletList: Function
   userId: string
 }
 
-export default function WalletForm ({ userPaybuttons, refreshWalletList, userId }: IProps): ReactElement {
+export default function WalletForm ({ userAddresses, refreshWalletList, userId }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<WalletPOSTParameters>()
   const [modal, setModal] = useState(false)
   const [isXECDefaultDisabled, setIsXECDefaultDisabled] = useState(true)
   const [isBCHDefaultDisabled, setIsBCHDefaultDisabled] = useState(true)
   const [error, setError] = useState('')
-  const [selectedPaybuttonIdList, setSelectedPaybuttonIdList] = useState([] as number[])
-  const [disabledPaybuttonList, setDisabledPaybuttonList] = useState([] as PaybuttonWithAddresses[])
+  const [selectedAddressIdList, setSelectedAddressIdList] = useState([] as number[])
+  const [disabledAddressList, setDisabledAddressList] = useState([] as Address[])
 
   async function onSubmit (params: WalletPOSTParameters): Promise<void> {
     params.userId = userId
-    params.paybuttonIdList = selectedPaybuttonIdList
+    params.addressIdList = selectedAddressIdList
     try {
       void await axios.post(`${appInfo.websiteDomain}/api/wallet`, params)
       refreshWalletList()
@@ -37,58 +37,58 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
     }
   }
 
-  const disableLastWalletPaybuttons = (): void => {
-    let disabledPaybuttons = [] as PaybuttonWithAddresses[]
-    for (const paybutton of userPaybuttons) {
+  const disableLastWalletAddresses = (): void => {
+    let disabledAddresses = [] as Address[]
+    for (const address of userAddresses) {
 
-      const paybuttonHasWallet = paybutton.walletId !== undefined && paybutton.walletId !== null
-      if (paybuttonHasWallet) {
+      const addressHasWallet = address.walletId !== undefined && address.walletId !== null
+      if (addressHasWallet) {
 
-        const paybuttonIsSelected = selectedPaybuttonIdList.includes(paybutton.id)
-        if (!paybuttonIsSelected) {
+        const addressIsSelected = selectedAddressIdList.includes(address.id)
+        if (!addressIsSelected) {
 
-          const otherPaybuttonsOfSameWalletRemaining = userPaybuttons.filter(otherPb => {
-            const otherPaybuttonIsSelected = selectedPaybuttonIdList.includes(otherPb.id)
+          const otherAddressesOfSameWalletRemaining = userAddresses.filter(otherAddr => {
+            const otherAddressIsSelected = selectedAddressIdList.includes(otherAddr.id)
             return (
-              otherPb.walletId === paybutton.walletId
-              && otherPb.id !== paybutton.id
-              && !otherPaybuttonIsSelected
+              otherAddr.walletId === address.walletId
+              && otherAddr.id !== address.id
+              && !otherAddressIsSelected
             )
           })
 
-          if (otherPaybuttonsOfSameWalletRemaining.length === 0) {
-            disabledPaybuttons.push(paybutton)
+          if (otherAddressesOfSameWalletRemaining.length === 0) {
+            disabledAddresses.push(address)
           }
         }
       }
     }
-    setDisabledPaybuttonList(
-      disabledPaybuttons
+    setDisabledAddressList(
+      disabledAddresses
     )
   }
 
-  function handleSelectedPaybuttonsChange(checked: boolean, paybuttonId: number): void {
-    const paybuttonIsSelected = selectedPaybuttonIdList.includes(paybuttonId)
-    if (paybuttonIsSelected && checked === false) {
-      setSelectedPaybuttonIdList(
-        selectedPaybuttonIdList.filter(id => id !== paybuttonId)
+  function handleSelectedAddressesChange(checked: boolean, addressId: number): void {
+    const addressIsSelected = selectedAddressIdList.includes(addressId)
+    if (addressIsSelected && checked === false) {
+      setSelectedAddressIdList(
+        selectedAddressIdList.filter(id => id !== addressId)
       )
     }
-    if (!paybuttonIsSelected && checked === true) {
-      setSelectedPaybuttonIdList(
-        [...selectedPaybuttonIdList, paybuttonId]
+    if (!addressIsSelected && checked === true) {
+      setSelectedAddressIdList(
+        [...selectedAddressIdList, addressId]
       )
     }
   }
 
   function hasAddressForNetworkId(networkId: number): boolean {
     let ret = false
-    if (selectedPaybuttonIdList === undefined) return false
-    for (const selectedPaybuttonId of selectedPaybuttonIdList) {
-      let paybutton = userPaybuttons.find((pb) => pb.id === selectedPaybuttonId)
+    if (selectedAddressIdList === undefined) return false
+    for (const selectedAddressId of selectedAddressIdList) {
+      let address = userAddresses.find((addr) => addr.id === selectedAddressId)
       if (
-        paybutton !== undefined
-        && paybutton.addresses.some((addr) => addr.address.networkId === networkId)
+        address !== undefined
+        && address.networkId === networkId
       ) {
         ret = true
         break
@@ -117,17 +117,17 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
   }
   useEffect(() => {
     disableDefaultInputFields()
-    disableLastWalletPaybuttons()
-  }, [selectedPaybuttonIdList])
+    disableLastWalletAddresses()
+  }, [selectedAddressIdList])
 
   useEffect(() => {
     setModal(false)
     reset()
-  }, [userPaybuttons])
+  }, [userAddresses])
 
   useEffect(() => {
-    setSelectedPaybuttonIdList([])
-    disableLastWalletPaybuttons()
+    setSelectedAddressIdList([])
+    disableLastWalletAddresses()
   }, [modal])
 
   return (
@@ -155,20 +155,20 @@ export default function WalletForm ({ userPaybuttons, refreshWalletList, userId 
                     name='name'
                   />
 
-                  <h4>Paybuttons</h4>
+                  <h4>Addresses</h4>
                   <div className={style.buttonlist_ctn}>
-                    {userPaybuttons.map((pb, index) => (
-                      <div className={style.input_field} key={`create-pb-${pb.id}`}>
+                    {userAddresses.map((addr, index) => (
+                      <div className={style.input_field} key={`create-addr-${addr.id}`}>
                         <input
                           type='checkbox'
-                          value={pb.id}
-                          id={`paybuttonIdList.${index}`}
+                          value={addr.id}
+                          id={`addressIdList.${index}`}
                           disabled={
-                            disabledPaybuttonList.map(pb => pb.id).includes(pb.id)
+                            disabledAddressList.map(addr => addr.id).includes(addr.id)
                           }
-                          onChange={ (e) => handleSelectedPaybuttonsChange(e.target.checked, pb.id) }
+                          onChange={ (e) => handleSelectedAddressesChange(e.target.checked, addr.id) }
                         />
-                        <label htmlFor={`paybuttonIdList.${index}`}>{pb.name}</label>
+                        <label htmlFor={`addressIdList.${index}`}>{addr.address}</label>
                       </div>
                     ))}
                   </div>
