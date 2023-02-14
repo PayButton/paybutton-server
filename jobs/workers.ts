@@ -64,7 +64,8 @@ export const syncCurrentPricesWorker = async (queueName: string): Promise<void> 
     queueName,
     async (job) => {
       console.log(`job ${job.id as string}: syncing current prices...`)
-      void priceService.syncCurrentPrices()
+      await priceService.syncCurrentPrices()
+      await priceService.syncPastPrices()
     },
     {
       connection: redis,

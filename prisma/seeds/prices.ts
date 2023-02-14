@@ -1,17 +1,22 @@
 import { Price, Prisma } from '@prisma/client'
 import { getPriceForDayTicker } from 'services/priceService'
-import { TICKERS, FIRST_DATES_PRICES } from 'constants/index'
+import { TICKERS, XEC_TIMESTAMP_THRESHOLD, BCH_TIMESTAMP_THRESHOLD, NETWORKS, QUOTES, KeyValueAny } from 'constants/index'
 import moment from 'moment'
 
 import * as fs from 'fs'
 import * as path from 'path'
 import { promisify } from 'util'
 
-export interface KeyValueAny {
-  [key: string]: any
-}
 interface KeyValueMoment {
   [key: string]: moment.Moment
+}
+interface KeyValueNumber {
+  [key: string]: number
+}
+
+const FIRST_DATES_PRICES: KeyValueNumber = {
+  XEC: XEC_TIMESTAMP_THRESHOLD,
+  BCH: BCH_TIMESTAMP_THRESHOLD
 }
 
 interface PriceFileData {
@@ -40,7 +45,7 @@ export async function createPricesFile (): Promise<void> {
 
   await Promise.all(Object.values(TICKERS).map(async (ticker) => {
     const today = moment()
-    const firstDate = moment(FIRST_DATES_PRICES[ticker])
+    const firstDate = moment.unix(FIRST_DATES_PRICES[ticker])
 
     const dates: moment.Moment[] = []
     while (firstDate.isBefore(today)) {
@@ -121,9 +126,6 @@ async function getPricesFromFile (attempt: number = 1): Promise<PriceFileData[]>
     return await getPricesFromFile(++attempt)
   }
 }
-
-const NETWORKS: KeyValueAny = { XEC: 1, BCH: 2 }
-const QUOTES: KeyValueAny = { USD: 1, CAD: 2 }
 
 export async function getPrices (): Promise<Price[]> {
   const quotes = Object.keys(QUOTES)

@@ -3,7 +3,7 @@ import axios from 'axios'
 import { appInfo } from 'config/appInfo'
 import { Prisma, Price } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
-import { PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, NETWORKS } from 'constants/index'
 import moment from 'moment'
 
 function flattenTimestamp (timestamp: number): number {
@@ -23,19 +23,19 @@ interface IResponseData {
   Price_in_USD: string
 }
 
-export async function upsertCurrentPricesForNetworkId (responseData: IResponseData, networkId: number): Promise<void> {
+export async function upsertPricesForNetworkId (responseData: IResponseData, networkId: number, timestamp: number): Promise<void> {
   await prisma.price.upsert({
     where: {
       Price_timestamp_quoteId_networkId_unique_constraint: {
         quoteId: USD_QUOTE_ID,
         networkId,
-        timestamp: 0
+        timestamp
       }
     },
     create: {
       quoteId: USD_QUOTE_ID,
       networkId,
-      timestamp: 0,
+      timestamp,
       value: new Prisma.Decimal(responseData.Price_in_USD)
     },
     update: {
@@ -47,19 +47,23 @@ export async function upsertCurrentPricesForNetworkId (responseData: IResponseDa
       Price_timestamp_quoteId_networkId_unique_constraint: {
         quoteId: CAD_QUOTE_ID,
         networkId,
-        timestamp: 0
+        timestamp
       }
     },
     create: {
       quoteId: CAD_QUOTE_ID,
       networkId,
-      timestamp: 0,
+      timestamp,
       value: new Prisma.Decimal(responseData.Price_in_CAD)
     },
     update: {
       value: new Prisma.Decimal(responseData.Price_in_CAD)
     }
   })
+}
+
+export async function upsertCurrentPricesForNetworkId (responseData: IResponseData, networkId: number): Promise<void> {
+  await upsertPricesForNetworkId(responseData, networkId, 0)
 }
 
 export async function getPriceForDayTicker (day: moment.Moment, ticker: string, attempt: number = 1): Promise<IResponseData | null> {
@@ -82,6 +86,38 @@ export async function getPriceForDayTicker (day: moment.Moment, ticker: string, 
 
     if (attempt < 5) { return await getPriceForDayTicker(day, ticker, ++attempt) } else { return null }
   }
+}
+
+export async function syncPastPrices (): Promise<void> {
+  const lastTimestamp = await prisma.price.findFirst({
+    where: {
+      networkId: XEC_NETWORK_ID, // any valid network
+      quoteId: USD_QUOTE_ID // any valid quote
+    },
+    orderBy: [{ timestamp: 'desc' }],
+    select: { timestamp: true }
+  })
+
+  if (lastTimestamp?.timestamp === undefined) throw new Error('No prices found in the worker, please run prisma seed')
+  const lastDateInDB = moment.unix(lastTimestamp?.timestamp)
+
+  const date = moment().startOf('day').add(-1, 'day')
+  const datesToRetrieve: moment.Moment[] = []
+
+  while (date.isAfter(lastDateInDB)) {
+    datesToRetrieve.push(date.clone())
+    date.add(-1, 'day')
+  }
+
+  await Promise.all(
+    Object.values(TICKERS).map(async (ticker) =>
+      datesToRetrieve.map(async date => {
+        const price = await getPriceForDayTicker(date, ticker)
+        if (price != null) {
+          await upsertPricesForNetworkId(price, NETWORKS[ticker], date.unix())
+        }
+      })
+    ))
 }
 
 export async function syncCurrentPrices (): Promise<boolean> {

@@ -40,6 +40,9 @@ export const RESPONSE_MESSAGES = {
   INVALID_TICKER_400: { statusCode: 400, message: 'Invalid ticker.' }
 }
 
+export interface KeyValueAny {
+  [key: string]: any
+}
 export interface KeyValueString {
   [key: string]: string
 }
@@ -50,16 +53,6 @@ export const NETWORK_SLUGS: KeyValueString = {
   ectest: 'ectest',
   bchtest: 'bchtest',
   bchreg: 'bchreg'
-}
-
-export const TICKERS: KeyValueString = {
-  ecash: 'XEC',
-  bitcoincash: 'BCH'
-}
-
-export const FIRST_DATES_PRICES: KeyValueString = {
-  XEC: '2020-11-14',
-  BCH: '2017-08-01'
 }
 
 // When fetching some address transactions, number of transactions to fetch at a time.
@@ -94,3 +87,11 @@ export const XEC_TIMESTAMP_THRESHOLD = 1605398400 // 2020 Nov 15, 12AM
 // Wait time (in ms) between sync of current prices
 export const CURRENT_PRICE_SYNC_DELAY = 60000
 export const DEFAULT_WORKER_LOCK_DURATION = 120000
+
+export const TICKERS: KeyValueString = {
+  ecash: 'XEC',
+  bitcoincash: 'BCH'
+}
+
+export const NETWORKS: KeyValueAny = { XEC: 1, BCH: 2 }
+export const QUOTES: KeyValueAny = { USD: 1, CAD: 2 }
