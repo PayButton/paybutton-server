@@ -7,8 +7,11 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { promisify } from 'util'
 
-interface KeyValueMoment {
-  [key: string]: moment.Moment
+interface PriceFileData {
+  ticker: string
+  date: string
+  priceInCAD: string
+  priceInUSD: string
 }
 interface KeyValueNumber {
   [key: string]: number
@@ -17,13 +20,6 @@ interface KeyValueNumber {
 const FIRST_DATES_PRICES: KeyValueNumber = {
   XEC: XEC_TIMESTAMP_THRESHOLD,
   BCH: BCH_TIMESTAMP_THRESHOLD
-}
-
-interface PriceFileData {
-  ticker: string
-  date: string
-  priceInCAD: string
-  priceInUSD: string
 }
 
 export const PATH_PRICE_CSV_FILE = path.join('prisma', 'seeds', 'prices.csv')
@@ -147,41 +143,3 @@ export async function getPrices (): Promise<Price[]> {
 
   return prices.reduce((res, val) => res.concat(val), [])
 }
-
-// -------------------- run once script --------------------
-
-// used to find the first date of each ticker
-async function findFirstDate (ticker: string, searchStart: moment.Moment): Promise<moment.Moment> {
-  if (moment().isBefore(searchStart)) return moment()
-
-  let i = 0
-
-  while (true) {
-    const price = await getPriceForDayTicker(searchStart, ticker)
-    if (price?.Price_in_USD === undefined) {
-      break
-    }
-    searchStart.add(1, 'day')
-    console.log(`${ticker} ${i} ${searchStart.format('YYYY-MM-DD')}`)
-    i++
-  }
-
-  return searchStart.clone()
-}
-
-// run once script, first date values found were:
-//     xec: 2020-11-14, bch: 2017-08-01
-// @ts-expect-error
-export async function findFirstDates (): Promise<void> {
-  const dates: KeyValueMoment = {}
-  dates[TICKERS.ecash] = moment('2020-11-12')
-  dates[TICKERS.bitcoincash] = moment('2017-07-30')
-
-  await Promise.all(Object.values(TICKERS).map(async (ticker) => {
-    dates[ticker] = await findFirstDate(ticker, dates[ticker])
-  }))
-
-  console.log(`xec: ${dates[TICKERS.ecash].format('YYYY-MM-DD')}, bch: ${dates[TICKERS.bitcoincash].format('YYYY-MM-DD')}`)
-}
-
-// -------------------- run once script --------------------
