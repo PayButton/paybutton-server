@@ -134,11 +134,35 @@
 .input_field {
   display: flex;
   align-items: center;
+  margin-bottom: 10px;
 }
 
 .input_field input[disabled] + label {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+body .input_field input {
+  align-self: flex-start;
+  margin-top: 4px !important;
+}
+
+.buttonpill {
+  background-color: var(--primary-bg-color);
+  padding: 2px 20px;
+  margin-right: 5px;
+  border-radius: 100px;
+  display: inline-block;
+  font-size: 14px;
+  word-break: keep-all;
+  box-sizing: border-box;
+  transition: all ease-in-out 200ms;
+  margin-bottom: 5px;
+}
+
+.addresslabel {
+  font-size: 12px;
+  margin-left: 5px;
 }
 
 .makedefault_ctn label,
