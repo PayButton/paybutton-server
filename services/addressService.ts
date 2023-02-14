@@ -26,6 +26,20 @@ export async function fetchAddressBySubstring (substring: string): Promise<Addre
   return results[0]
 }
 
+export async function addressExistsBySubstring (substring: string): Promise<boolean> {
+  try {
+    await fetchAddressBySubstring(substring)
+  } catch (err: any) {
+    switch (err.message) {
+      case RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message:
+        return false
+      default:
+        throw new Error(err)
+    }
+  }
+  return true
+}
+
 const addressWithTransactions = Prisma.validator<Prisma.AddressArgs>()({
   include: { transactions: true }
 })
