@@ -101,7 +101,7 @@ export async function syncPastPrices (): Promise<void> {
   if (lastTimestamp?.timestamp === undefined) throw new Error('No prices found in the worker, please run prisma seed')
   const lastDateInDB = moment.unix(lastTimestamp?.timestamp)
 
-  const date = moment().startOf('day').add(-1, 'day')
+  const date = moment().startOf('day')
   const datesToRetrieve: moment.Moment[] = []
 
   while (date.isAfter(lastDateInDB)) {
