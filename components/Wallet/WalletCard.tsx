@@ -62,7 +62,7 @@ const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userPaybutt
           <h6>Buttons</h6>
           <div className={style.buttons_list_ctn}>
             {wallet.paybuttons.map(button =>
-                <Link href={`/button/${button.id}`}>{button.name}</Link>
+                <Link href={`/button/${button.id}`} key={button.name}>{button.name}</Link>
             )}
           </div>
         </div>

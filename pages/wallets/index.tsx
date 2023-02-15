@@ -128,6 +128,7 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
             paymentInfo={walletWithPaymentInfo.paymentInfo}
             userPaybuttons={this.state.userPaybuttons}
             refreshWalletList={this.refreshWalletList}
+            key={walletWithPaymentInfo.wallet.name}
           />
         }
         )}
