@@ -1,6 +1,6 @@
 import { Price, Prisma } from '@prisma/client'
-import { getPriceForDayTicker } from 'services/priceService'
-import { TICKERS, XEC_TIMESTAMP_THRESHOLD, BCH_TIMESTAMP_THRESHOLD, NETWORKS, QUOTES, KeyValueAny } from 'constants/index'
+import { getAllPricesByTicker } from 'services/priceService'
+import { PRICE_FILE_MAX_RETRIES, TICKERS, NETWORKS, QUOTES, KeyValueAny } from 'constants/index'
 import moment from 'moment'
 
 import * as fs from 'fs'
@@ -12,14 +12,6 @@ interface PriceFileData {
   date: string
   priceInCAD: string
   priceInUSD: string
-}
-interface KeyValueNumber {
-  [key: string]: number
-}
-
-const FIRST_DATES_PRICES: KeyValueNumber = {
-  XEC: XEC_TIMESTAMP_THRESHOLD,
-  BCH: BCH_TIMESTAMP_THRESHOLD
 }
 
 export const PATH_PRICE_CSV_FILE = path.join('prisma', 'seeds', 'prices.csv')
@@ -40,26 +32,16 @@ export async function createPricesFile (): Promise<void> {
   const prices: PriceFileData[] = []
 
   await Promise.all(Object.values(TICKERS).map(async (ticker) => {
-    const today = moment()
-    const firstDate = moment.unix(FIRST_DATES_PRICES[ticker])
+    const pricesByTicker = await getAllPricesByTicker(ticker)
 
-    const dates: moment.Moment[] = []
-    while (firstDate.isBefore(today)) {
-      dates.push(firstDate.clone())
-      firstDate.add(1, 'days')
-    }
-
-    await Promise.all(dates.map(async date => {
-      const price = await getPriceForDayTicker(date, ticker)
-      if (price != null) {
-        prices.push({
-          ticker,
-          date: date.format('YYYYMMDD'),
-          priceInCAD: price.Price_in_CAD,
-          priceInUSD: price.Price_in_USD
-        })
-      }
-    }))
+    pricesByTicker?.forEach(price => {
+      prices.push({
+        ticker,
+        date: price.day,
+        priceInCAD: price.Price_in_CAD,
+        priceInUSD: price.Price_in_USD
+      })
+    })
   }))
 
   prices.sort((a, b) => {
@@ -116,10 +98,10 @@ async function getPricesFromFile (attempt: number = 1): Promise<PriceFileData[]>
 
     return res
   } else {
-    if (attempt > 3) { throw new Error('Already attempted 3 times to create price files without success') }
+    if (attempt > PRICE_FILE_MAX_RETRIES) { throw new Error(`Already attempted ${PRICE_FILE_MAX_RETRIES} times to create price files without success`) }
 
     await createPricesFile()
-    return await getPricesFromFile(++attempt)
+    return await getPricesFromFile(attempt + 1)
   }
 }
 

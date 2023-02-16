@@ -30,6 +30,7 @@ export const RESPONSE_MESSAGES = {
   DEFAULT_XEC_WALLET_MUST_HAVE_SOME_XEC_ADDRESS_400: { statusCode: 400, message: 'Default XEC wallet must have some XEC address.' },
   DEFAULT_BCH_WALLET_MUST_HAVE_SOME_BCH_ADDRESS_400: { statusCode: 400, message: 'Default BCH wallet must have some BCH address.' },
   MISSING_PRICE_API_URL_400: { statusCode: 400, message: 'Missing PRICE_API_URL environment variable.' },
+  MISSING_PRICE_API_TOKEN_400: { statusCode: 400, message: 'Missing PRICE_API_TOKEN environment variable.' },
   MISSING_PRICE_FOR_TRANSACTION_400: { statusCode: 400, message: 'Missing price for transaction.' },
   INVALID_PRICE_STATE_400: { statusCode: 400, message: 'Missing expected quote price for transaction.' },
   COULD_NOT_GET_BLOCK_INFO: { statusCode: 500, message: "Couldn't get block info." },
@@ -80,6 +81,9 @@ export const SUPPORTED_QUOTES = [ // avoids hitting the DB every time for data t
 ]
 
 export const PRICE_API_DATE_FORMAT = 'YYYYMMDD'
+export const PRICE_API_TIMEOUT = 40 * 1000 // 40 seconds
+export const PRICE_API_MAX_RETRIES = 5
+export const PRICE_FILE_MAX_RETRIES = 3
 
 export const BCH_TIMESTAMP_THRESHOLD = 1501588800 // 2017 Aug 1, 12PM
 export const XEC_TIMESTAMP_THRESHOLD = 1605398400 // 2020 Nov 15, 12AM
