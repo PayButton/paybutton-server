@@ -8,5 +8,6 @@ export const appInfo = {
   websiteDomain: process.env.WEBSITE_DOMAIN ?? 'localhost:3000',
   showTestNetworks: JSON.parse(process.env.SHOW_TEST_NETWORKS ?? 'false'),
   priceAPIURL: process.env.PRICE_API_URL ?? '',
+  priceAPIToken: process.env.PRICE_API_TOKEN ?? '',
   redisURL: process.env.REDIS_URL ?? 'redis://paybutton-cache:6379'
 }
