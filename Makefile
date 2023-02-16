@@ -31,7 +31,7 @@ lint-master:
 	yarn eslint --stdin --stdin-filename DIFF
 
 test-unit:
-	PRICE_API_URL="foo" DATABASE_URL="mysql://paybutton-test:paybutton-test@db:3306/paybutton-test" npx ts-node -O '{"module":"commonjs"}' node_modules/jest/bin/jest.js tests/unittests --forceExit
+	PRICE_API_URL="foo" PRICE_API_TOKEN="bar" DATABASE_URL="mysql://paybutton-test:paybutton-test@db:3306/paybutton-test" npx ts-node -O '{"module":"commonjs"}' node_modules/jest/bin/jest.js tests/unittests --forceExit
 
 test-integration:
 	sleep 15
