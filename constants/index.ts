@@ -41,14 +41,11 @@ export const RESPONSE_MESSAGES = {
   INVALID_TICKER_400: { statusCode: 400, message: 'Invalid ticker.' }
 }
 
-export interface KeyValueAny {
-  [key: string]: any
-}
-export interface KeyValueString {
-  [key: string]: string
+export interface KeyValueT<T> {
+  [key: string]: T
 }
 
-export const NETWORK_SLUGS: KeyValueString = {
+export const NETWORK_SLUGS: KeyValueT<string> = {
   ecash: 'ecash',
   bitcoincash: 'bitcoincash',
   ectest: 'ectest',
@@ -80,6 +77,8 @@ export const SUPPORTED_QUOTES = [ // avoids hitting the DB every time for data t
   'cad'
 ]
 
+export const HUMAN_READABLE_DATE_FORMAT = 'YYYY-MM-DD'
+
 export const PRICE_API_DATE_FORMAT = 'YYYYMMDD'
 export const PRICE_API_TIMEOUT = 40 * 1000 // 40 seconds
 export const PRICE_API_MAX_RETRIES = 5
@@ -92,10 +91,10 @@ export const XEC_TIMESTAMP_THRESHOLD = 1605398400 // 2020 Nov 15, 12AM
 export const CURRENT_PRICE_SYNC_DELAY = 60000
 export const DEFAULT_WORKER_LOCK_DURATION = 120000
 
-export const TICKERS: KeyValueString = {
+export const TICKERS: KeyValueT<string> = {
   ecash: 'XEC',
   bitcoincash: 'BCH'
 }
 
-export const NETWORKS: KeyValueAny = { XEC: 1, BCH: 2 }
-export const QUOTES: KeyValueAny = { USD: 1, CAD: 2 }
+export const NETWORK_IDS: KeyValueT<number> = { XEC: 1, BCH: 2 }
+export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }

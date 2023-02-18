@@ -1,8 +1,8 @@
 import { Price, Prisma } from '@prisma/client'
 import { getAllPricesByTicker } from 'services/priceService'
-import { PRICE_FILE_MAX_RETRIES, TICKERS, NETWORKS, QUOTES, KeyValueAny } from 'constants/index'
+import { PRICE_FILE_MAX_RETRIES, TICKERS, NETWORK_IDS, QUOTE_IDS, KeyValueT } from 'constants/index'
+import { readCsv, fileExists } from 'utils/index'
 import moment from 'moment'
-
 import * as fs from 'fs'
 import * as path from 'path'
 import { promisify } from 'util'
@@ -57,40 +57,18 @@ export async function createPricesFile (): Promise<void> {
   console.log(`\n\nstart: ${start.format('HH:mm:ss')}\nfinish: ${finish.format('HH:mm:ss')}\nduration: ${(finish.diff(start) / 1000).toFixed(2)} seconds`)
 }
 
-async function readCsv (filePath: string): Promise<string[][]> {
-  return await new Promise((resolve, reject) => {
-    fs.readFile(filePath, 'utf8', (error, data) => {
-      if (error != null) {
-        reject(error)
-      } else {
-        resolve(
-          data
-            .split('\n')
-            .map((row) => row.split(','))
-        )
-      }
-    })
-  })
-}
-
-async function fileExists (filePath: string): Promise<boolean> {
-  try {
-    await fs.promises.stat(filePath)
-    return true
-  } catch (error) {
-    return false
-  }
-}
-
 async function getPricesFromFile (attempt: number = 1): Promise<PriceFileData[]> {
   if (await fileExists(PATH_PRICE_CSV_FILE)) {
     const csvContent = await readCsv(PATH_PRICE_CSV_FILE)
     const res: PriceFileData[] = []
 
-    for (let i = 1; i < csvContent.length; i++) {
-      const newPrice: KeyValueAny = {}
-      for (let j = 0; j < csvContent[0].length; j++) { // headers
-        newPrice[csvContent[0][j]] = csvContent[i][j]
+    const headers = csvContent[0]
+    const data = csvContent.slice(1)
+
+    for (const line of data) {
+      const newPrice: KeyValueT<any> = {}
+      for (const header of headers) {
+        newPrice[header] = line[headers.indexOf(header)]
       }
       // ignore some prices that come empty
       if (newPrice.priceInCAD !== '' && newPrice.priceInUSD !== '') { res.push(newPrice as PriceFileData) }
@@ -106,7 +84,7 @@ async function getPricesFromFile (attempt: number = 1): Promise<PriceFileData[]>
 }
 
 export async function getPrices (): Promise<Price[]> {
-  const quotes = Object.keys(QUOTES)
+  const quotes = Object.keys(QUOTE_IDS)
   const pricesFromFile = await getPricesFromFile()
 
   const prices: Price[][] = pricesFromFile.map(price =>
@@ -117,8 +95,8 @@ export async function getPrices (): Promise<Price[]> {
         createdAt: new Date(),
         updatedAt: new Date(),
         timestamp: moment(price.date).unix(),
-        networkId: NETWORKS[price.ticker],
-        quoteId: QUOTES[quote]
+        networkId: NETWORK_IDS[price.ticker],
+        quoteId: QUOTE_IDS[quote]
       }
     })
   )

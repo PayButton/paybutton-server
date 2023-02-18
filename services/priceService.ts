@@ -3,7 +3,8 @@ import axios from 'axios'
 import { appInfo } from 'config/appInfo'
 import { Prisma, Price } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
-import { PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, NETWORKS } from 'constants/index'
+import { NETWORK_IDS, HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
 import moment from 'moment'
 
 function flattenTimestamp (timestamp: number): number {
@@ -65,42 +66,27 @@ export async function upsertCurrentPricesForNetworkId (responseData: IResponseDa
   await upsertPricesForNetworkId(responseData, networkId, 0)
 }
 
-function validateTicker (ticker: string): void {
-  if (!Object.values(TICKERS).includes(ticker)) {
-    throw new Error(RESPONSE_MESSAGES.INVALID_TICKER_400.message)
-  }
-}
-
-function validatePriceAPIUrlAndToken (): void {
-  if (appInfo.priceAPIURL === '') {
-    throw new Error(RESPONSE_MESSAGES.MISSING_PRICE_API_URL_400.message)
-  }
-  if (appInfo.priceAPIToken === '') {
-    throw new Error(RESPONSE_MESSAGES.MISSING_PRICE_API_TOKEN_400.message)
-  }
-}
-
-function getPriceByDayURL (day: moment.Moment, ticker: string): string {
+function getURLForPriceByDayRequest (day: moment.Moment, ticker: string): string {
   validatePriceAPIUrlAndToken()
-  validateTicker(ticker)
+  validateNetworkTicker(ticker)
   return `${appInfo.priceAPIURL}/pricebydate/${appInfo.priceAPIToken}/${ticker}+${day.format(PRICE_API_DATE_FORMAT)}`
 }
 
 function getAllPricesByTickerURL (ticker: string): string {
   validatePriceAPIUrlAndToken()
-  validateTicker(ticker)
+  validateNetworkTicker(ticker)
   return `${appInfo.priceAPIURL}/dailyprices/${appInfo.priceAPIToken}/${ticker}`
 }
 
 export async function getPriceForDayTicker (day: moment.Moment, ticker: string, attempt: number = 1): Promise<IResponseData | null> {
   try {
-    const res = await axios.get(getPriceByDayURL(day, ticker), {
+    const res = await axios.get(getURLForPriceByDayRequest(day, ticker), {
       timeout: PRICE_API_TIMEOUT
     })
 
     if (res.data.success !== false) { return res.data } else { return null }
   } catch (error) {
-    console.error(`Problem getting price of ${ticker} ${day.format('YYYYMMDD')} -> ${error as string} (attempt ${attempt})`)
+    console.error(`Problem getting price of ${ticker} ${day.format(HUMAN_READABLE_DATE_FORMAT)} -> ${error as string} (attempt ${attempt})`)
 
     if (attempt < PRICE_API_MAX_RETRIES) {
       return await getPriceForDayTicker(day, ticker, attempt + 1)
@@ -108,43 +94,41 @@ export async function getPriceForDayTicker (day: moment.Moment, ticker: string, 
   }
 }
 
-export async function getAllPricesByTicker (ticker: string, attempt: number = 1): Promise<IResponseDataDaily[] | null> {
+export async function getAllPricesByTicker (ticker: string, attempt: number = 1): Promise<IResponseDataDaily[]> {
   try {
     const res = await axios.get(getAllPricesByTickerURL(ticker), {
       timeout: PRICE_API_TIMEOUT
     })
 
     if (res.data.success !== false) {
-      const dailyPrices: IResponseDataDaily[] = Object.entries<IResponseData>(res.data).map(e => {
+      const dailyPrices: IResponseDataDaily[] = Object.entries<IResponseData>(res.data).map(([day, priceData]) => {
         return {
-          day: e[0],
-          ...e[1]
+          day,
+          ...priceData
         }
       })
       return dailyPrices
-    } else { return null }
+    } else { console.error(`No success when getting price of ${ticker} (attempt ${attempt})`) }
   } catch (error) {
     console.error(`Problem getting price of ${ticker} -> ${error as string} (attempt ${attempt})`)
+  }
 
-    if (attempt < PRICE_API_MAX_RETRIES) {
-      return await getAllPricesByTicker(ticker, attempt + 1)
-    } else { return null }
+  if (attempt < PRICE_API_MAX_RETRIES) {
+    return await getAllPricesByTicker(ticker, attempt + 1)
+  } else {
+    throw new Error(`Price file could not be created after ${PRICE_API_MAX_RETRIES} retries`)
   }
 }
 
-export async function syncPastPrices (): Promise<void> {
-  const lastTimestamp = await prisma.price.findFirst({
-    where: {
-      networkId: XEC_NETWORK_ID, // any valid network
-      quoteId: USD_QUOTE_ID // any valid quote
-    },
+export async function syncPastDaysNewerPrices (): Promise<void> {
+  const lastPrice = await prisma.price.findFirst({
     orderBy: [{ timestamp: 'desc' }],
     select: { timestamp: true }
   })
 
-  if (lastTimestamp?.timestamp === undefined) throw new Error('No prices found in the worker, please run prisma seed')
-  const lastDateInDB = moment.unix(lastTimestamp?.timestamp)
+  if (lastPrice === null) throw new Error('No prices found, initial database seed did not complete successfully')
 
+  const lastDateInDB = moment.unix(lastPrice.timestamp)
   const date = moment().startOf('day')
   const datesToRetrieve: moment.Moment[] = []
 
@@ -158,7 +142,9 @@ export async function syncPastPrices (): Promise<void> {
       datesToRetrieve.map(async date => {
         const price = await getPriceForDayTicker(date, ticker)
         if (price != null) {
-          await upsertPricesForNetworkId(price, NETWORKS[ticker], date.unix())
+          await upsertPricesForNetworkId(price, NETWORK_IDS[ticker], date.unix())
+        } else {
+          console.error(`API gave a null response for ticker: ${NETWORK_IDS[ticker]}, date: ${date.format(HUMAN_READABLE_DATE_FORMAT)}`)
         }
       })
     ))
@@ -376,9 +362,9 @@ export async function syncTransactionPriceValues (params: SyncTransactionPricesI
   let res
 
   if (params.networkId === XEC_NETWORK_ID) {
-    res = await axios.get(getPriceByDayURL(moment.unix(params.timestamp), 'XEC'))
+    res = await axios.get(getURLForPriceByDayRequest(moment.unix(params.timestamp), 'XEC'))
   } else if (params.networkId === BCH_NETWORK_ID) {
-    res = await axios.get(getPriceByDayURL(moment.unix(params.timestamp), 'BCH'))
+    res = await axios.get(getURLForPriceByDayRequest(moment.unix(params.timestamp), 'BCH'))
   } else {
     throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_ID_400.message)
   }
