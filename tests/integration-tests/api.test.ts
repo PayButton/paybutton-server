@@ -662,23 +662,23 @@ describe('GET /api/wallets/', () => {
     expect(responseData.length).toBe(1)
     expect(responseData[0].wallet.addresses).toEqual(
       expect.arrayContaining([
-        {
+        expect.objectContaining({
           address: expect.any(String),
           networkId: expect.any(Number),
           id: expect.any(Number)
-        },
-        {
+        }),
+        expect.objectContaining({
           address: expect.any(String),
           networkId: expect.any(Number),
           id: expect.any(Number)
-        }
+        })
       ])
     )
     expect(responseData[0]).toHaveProperty('wallet')
     expect(responseData[0]).toHaveProperty('paymentInfo')
     expect(responseData[0].wallet).toHaveProperty('providerUserId', 'test-other-u-id')
     expect(responseData[0].wallet).toHaveProperty('name')
-    expect(responseData[0].wallet).toHaveProperty('paybuttons')
+    expect(responseData[0].wallet).toHaveProperty('addresses')
     expect(responseData[0].wallet).toHaveProperty('userProfile')
     expect(responseData[0].paymentInfo).toHaveProperty('XECBalance')
     expect(responseData[0].paymentInfo).toHaveProperty('BCHBalance')

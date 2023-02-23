@@ -6,12 +6,12 @@ import Image from 'next/image'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EditWalletForm from './EditWalletForm'
-import { WalletWithAddressesAndPaybuttons, WalletPaymentInfo } from 'services/walletService'
+import { WalletWithAddressesWithPaybuttons, WalletPaymentInfo } from 'services/walletService'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 interface IProps {
-  wallet: WalletWithAddressesAndPaybuttons
+  wallet: WalletWithAddressesWithPaybuttons
   paymentInfo: WalletPaymentInfo
   userPaybuttons: PaybuttonWithAddresses[]
   refreshWalletList: Function
@@ -19,6 +19,14 @@ interface IProps {
 
 const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userPaybuttons, refreshWalletList }: IProps) => {
   const networks = wallet.addresses.map((addr) => addr.networkId)
+  const differentPaybuttons = wallet.addresses.map(addr =>
+    addr.paybuttons.map(conn => conn.paybutton)
+  ).reduce(
+    (accumulator, pbList) => accumulator.concat(pbList),
+    []
+  ).filter(
+    (pb, index, self) => index === self.findIndex(p => p.id === pb.id)
+  )
   return (
     <div className={style.wallet_card}>
       <div className={style.wallet_card_header_ctn}>
@@ -61,8 +69,8 @@ const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userPaybutt
         <div className={style.info_item}>
           <h6>Buttons</h6>
           <div className={style.buttons_list_ctn}>
-            {wallet.paybuttons.map(button =>
-                <Link href={`/button/${button.id}`} key={button.name}>{button.name}</Link>
+            {differentPaybuttons.map(pb =>
+              <Link href={`/button/${pb.id}`}>{pb.name}</Link>
             )}
           </div>
         </div>
