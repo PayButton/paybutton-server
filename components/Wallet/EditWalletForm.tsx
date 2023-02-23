@@ -26,7 +26,6 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
   const thisWalletAddressIdList = userAddresses.filter(addr => addr.walletId === wallet.id).map(addr => addr.id)
 
   const [selectedAddressIdList, setSelectedAddressIdList] = useState([] as number[])
-  const [disabledAddressList, setDisabledAddressList] = useState([] as AddressWithPaybuttons[]) // WIPCheck
 
   async function onSubmit (params: WalletPATCHParameters): Promise<void> {
     params.addressIdList = selectedAddressIdList
@@ -90,35 +89,6 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
     }
   }
 
-  const disableLastWalletAddresses = (): void => {
-    const disabledAddresses = [] as AddressWithPaybuttons[]
-    for (const address of userAddresses) {
-      const addressHasWallet = address.walletId !== undefined && address.walletId !== null
-      if (addressHasWallet) {
-        const addressIsSelected = selectedAddressIdList.includes(address.id)
-
-        if (!addressIsSelected) {
-          const otherAddressesOfSameWalletRemaining = userAddresses.filter(otherPb => {
-            const otherAddressIsSelected = selectedAddressIdList.includes(otherPb.id)
-            return (
-              otherPb.walletId === address.walletId &&
-              otherPb.id !== address.id &&
-              !otherAddressIsSelected
-            )
-          })
-          if (otherAddressesOfSameWalletRemaining.length === 0) {
-            disabledAddresses.push(address)
-          }
-        } else if (selectedAddressIdList.length <= 1) {
-          disabledAddresses.push(address)
-        }
-      }
-    }
-    setDisabledAddressList(
-      disabledAddresses
-    )
-  }
-
   useEffect(() => {
     setModal(false)
     reset()
@@ -126,12 +96,10 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
 
   useEffect(() => {
     disableDefaultInputFields()
-    disableLastWalletAddresses()
   }, [selectedAddressIdList])
 
   useEffect(() => {
     setSelectedAddressIdList(thisWalletAddressIdList)
-    disableLastWalletAddresses()
   }, [modal])
 
   return (
@@ -164,9 +132,6 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                           value={addr.id}
                           id={`addressIdList.${index}`}
                           defaultChecked={addr.walletId === wallet.id}
-                          disabled={
-                            disabledAddressList.map(addr => addr.id).includes(addr.id)
-                          }
                           onChange={ (e) => handleSelectedAddressesChange(e.target.checked, addr.id) }
                         />
                         <label htmlFor={`addressIdList.${index}`}>
