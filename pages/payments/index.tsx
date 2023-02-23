@@ -96,7 +96,7 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
         Cell: (cellProps) => {
           return (
             <> {cellProps.cell.value.map((buttonDisplayData: ButtonDisplayData) =>
-              <div style={{ textAlign: 'center' }} className="table-button">
+              <div style={{ textAlign: 'center' }} className="table-button" key={buttonDisplayData.id}>
               <Link href={`/button/${buttonDisplayData.id}`}>{buttonDisplayData.name}</Link>
               </div>
             )} </>

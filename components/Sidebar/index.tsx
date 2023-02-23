@@ -98,8 +98,8 @@ const Sidebar = ({chart, setChart, loggedin}) => {
   <>
   {isBreakpoint &&
     <div className={style.topmenu}>
-      <Link href='/dashboard'>
-        <Image className={style.image} src={logoImageSource} alt='PayButton' width={120} height={22} />
+      <Link href='/dashboard' passHref>
+        <a><Image className={style.image} src={logoImageSource} alt='PayButton' width={120} height={22} /></a>
       </Link>
       <div className={style.menu_ctn_outer}>
         <input id="menu__toggle" className={style.menu_ctn} type="checkbox" onClick={()=>setMenu(!menu)}/>
@@ -113,8 +113,8 @@ const Sidebar = ({chart, setChart, loggedin}) => {
       <div>
         {!isBreakpoint &&
         <section className={style.section}>
-          <Link href='/dashboard'>
-            <Image className={style.image} src={logoImageSource} alt='PayButton' width={140} height={26} />
+          <Link href='/dashboard' passHref>
+            <a><Image className={style.image} src={logoImageSource} alt='PayButton' width={140} height={26} /></a>
           </Link>
         </section>
         }

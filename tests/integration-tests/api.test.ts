@@ -1150,14 +1150,15 @@ describe('GET /api/address/transactions/[address]', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  it('Should return HTTP 404 in case address is valid but not yet on the system', async () => {
+  it('Should return HTTP 404 in case address is valid but not yet on the system with flag serverOnly', async () => {
     const baseRequestOptions: RequestOptions = {
       method: 'GET' as RequestMethod,
       headers: {
         'Content-Type': 'application/json'
       },
       query: {
-        address: `ecash:${exampleAddresses.ecash}`
+        address: `ecash:${exampleAddresses.ecash}`,
+        serverOnly: '1'
       }
     }
     const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
