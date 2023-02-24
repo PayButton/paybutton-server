@@ -41,7 +41,7 @@
     "mysql2": "^2.3.3",
     "next": "latest",
     "node-mocks-http": "^1.11.0",
-    "prisma": "^3.14.0",
+    "prisma": "^4.10.1",
     "randexp": "^0.5.3",
     "react": "^16.13.1",
     "react-chartjs-2": "^4.2.0",
