@@ -2,7 +2,6 @@ import React, { ReactElement, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { WalletPOSTParameters } from 'utils/validators'
 import { AddressWithPaybuttons } from 'services/addressService'
-import { Address } from '@prisma/client'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import Image from 'next/image'
 import style from '../Wallet/wallet.module.css'
@@ -24,7 +23,6 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId }
   const [isBCHDefaultDisabled, setIsBCHDefaultDisabled] = useState(true)
   const [error, setError] = useState('')
   const [selectedAddressIdList, setSelectedAddressIdList] = useState([] as number[])
-  const [disabledAddressList, setDisabledAddressList] = useState([] as Address[])
 
   async function onSubmit (params: WalletPOSTParameters): Promise<void> {
     params.userId = userId
@@ -36,36 +34,6 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId }
     } catch (err: any) {
       setError(err.response.data.message)
     }
-  }
-
-  const disableLastWalletAddresses = (): void => {
-    let disabledAddresses = [] as Address[]
-    for (const address of userAddresses) {
-
-      const addressHasWallet = address.walletId !== undefined && address.walletId !== null
-      if (addressHasWallet) {
-
-        const addressIsSelected = selectedAddressIdList.includes(address.id)
-        if (!addressIsSelected) {
-
-          const otherAddressesOfSameWalletRemaining = userAddresses.filter(otherAddr => {
-            const otherAddressIsSelected = selectedAddressIdList.includes(otherAddr.id)
-            return (
-              otherAddr.walletId === address.walletId
-              && otherAddr.id !== address.id
-              && !otherAddressIsSelected
-            )
-          })
-
-          if (otherAddressesOfSameWalletRemaining.length === 0) {
-            disabledAddresses.push(address)
-          }
-        }
-      }
-    }
-    setDisabledAddressList(
-      disabledAddresses
-    )
   }
 
   function handleSelectedAddressesChange(checked: boolean, addressId: number): void {
@@ -118,7 +86,6 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId }
   }
   useEffect(() => {
     disableDefaultInputFields()
-    disableLastWalletAddresses()
   }, [selectedAddressIdList])
 
   useEffect(() => {
@@ -128,7 +95,6 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId }
 
   useEffect(() => {
     setSelectedAddressIdList([])
-    disableLastWalletAddresses()
   }, [modal])
 
   return (
@@ -164,9 +130,6 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId }
                           type='checkbox'
                           value={addr.id}
                           id={`addressIdList.${index}`}
-                          disabled={
-                            disabledAddressList.map(addr => addr.id).includes(addr.id)
-                          }
                           onChange={ (e) => handleSelectedAddressesChange(e.target.checked, addr.id) }
                         />
                         <label htmlFor={`addressIdList.${index}`}>

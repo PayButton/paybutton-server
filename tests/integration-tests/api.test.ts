@@ -542,17 +542,6 @@ describe('POST /api/wallets/', () => {
     expect(responseData.message).toBe(RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400.message)
   })
 
-  it('Fail without addressIdList', async () => {
-    baseRequestOptions.body = {
-      userId: 'test-u-id',
-      name: 'test-wallet'
-    }
-    const res = await testEndpoint(baseRequestOptions, walletEndpoint)
-    const responseData = res._getJSONData()
-    expect(res.statusCode).toBe(400)
-    expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_IDS_NOT_PROVIDED_400.message)
-  })
-
   it('Fail with non-existent address', async () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',

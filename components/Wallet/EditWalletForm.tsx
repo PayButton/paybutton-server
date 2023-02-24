@@ -28,7 +28,6 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
   const [selectedPaybuttonIdList, setSelectedPaybuttonIdList] = useState(
     thisWalletPaybuttonsIdList
   )
-  const [disabledPaybuttonList, setDisabledPaybuttonList] = useState([] as PaybuttonWithAddresses[])
 
   async function onSubmit (params: WalletPATCHParameters): Promise<void> {
     params.paybuttonIdList = selectedPaybuttonIdList
@@ -92,35 +91,6 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
     }
   }
 
-  const disableLastWalletPaybuttons = (): void => {
-    const disabledPaybuttons = [] as PaybuttonWithAddresses[]
-    for (const paybutton of userPaybuttons) {
-      const paybuttonHasWallet = paybutton.walletId !== undefined && paybutton.walletId !== null
-      if (paybuttonHasWallet) {
-        const paybuttonIsSelected = selectedPaybuttonIdList.includes(paybutton.id)
-
-        if (!paybuttonIsSelected) {
-          const otherPaybuttonsOfSameWalletRemaining = userPaybuttons.filter(otherPb => {
-            const otherPaybuttonIsSelected = selectedPaybuttonIdList.includes(otherPb.id)
-            return (
-              otherPb.walletId === paybutton.walletId &&
-              otherPb.id !== paybutton.id &&
-              !otherPaybuttonIsSelected
-            )
-          })
-          if (otherPaybuttonsOfSameWalletRemaining.length === 0) {
-            disabledPaybuttons.push(paybutton)
-          }
-        } else if (selectedPaybuttonIdList.length <= 1) {
-          disabledPaybuttons.push(paybutton)
-        }
-      }
-    }
-    setDisabledPaybuttonList(
-      disabledPaybuttons
-    )
-  }
-
   useEffect(() => {
     setModal(false)
     reset()
@@ -128,12 +98,10 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
 
   useEffect(() => {
     disableDefaultInputFields()
-    disableLastWalletPaybuttons()
   }, [selectedPaybuttonIdList])
 
   useEffect(() => {
     setSelectedPaybuttonIdList(thisWalletPaybuttonsIdList)
-    disableLastWalletPaybuttons()
   }, [modal])
 
   return (
@@ -166,9 +134,6 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                           value={pb.id}
                           id={`paybuttonIdList.${index}`}
                           defaultChecked={pb.walletId === wallet.id}
-                          disabled={
-                            disabledPaybuttonList.map(pb => pb.id).includes(pb.id)
-                          }
                           onChange={ (e) => handleSelectedPaybuttonsChange(e.target.checked, pb.id) }
                         />
                         <label htmlFor={`paybuttonIdList.${index}`}>{pb.name}</label>
