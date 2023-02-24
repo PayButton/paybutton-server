@@ -106,7 +106,7 @@ export const formatQuoteValue = (numberString: string, quoteId?: number): string
 
 export async function readCsv (fsModule: any, filePath: string): Promise<string[][]> {
   const data = await fsModule.promises.readFile(filePath, 'utf8')
-  return data.split('\n').map((row) => row.split(','))
+  return data.split('\n').map((row: string) => row.split(','))
 }
 
 export async function fileExists (fsModule: any, filePath: string): Promise<boolean> {
