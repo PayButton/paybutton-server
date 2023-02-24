@@ -3,7 +3,7 @@ import { Queue, FlowProducer } from 'bullmq'
 import { redis } from 'redis/clientInstance'
 import {
   syncAllAddressTransactionsForNetworkWorker,
-  syncCurrentPricesWorker,
+  syncCurrentAndPastPricesWorker,
   syncUnsyncedAddressesWorker
 } from './workers'
 
@@ -55,7 +55,7 @@ const main = async (): Promise<void> => {
     }
   )
 
-  await syncCurrentPricesWorker(currentPricesSync.name)
+  await syncCurrentAndPastPricesWorker(currentPricesSync.name)
   await syncAllAddressTransactionsForNetworkWorker(initTransactionsSync.name)
   await syncUnsyncedAddressesWorker(newAddressesSync)
 }

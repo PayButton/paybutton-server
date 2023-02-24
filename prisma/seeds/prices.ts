@@ -1,7 +1,7 @@
 import { Price, Prisma } from '@prisma/client'
 import { getAllPricesByTicker } from 'services/priceService'
-import { PRICE_FILE_MAX_RETRIES, TICKERS, NETWORK_IDS, QUOTE_IDS, KeyValueT } from 'constants/index'
-import { readCsv, fileExists } from 'utils/index'
+import { TICKERS, NETWORK_IDS, QUOTE_IDS, KeyValueT } from 'constants/index'
+import { readCsv, fileExists, isEmpty } from 'utils/index'
 import moment from 'moment'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -57,7 +57,7 @@ export async function createPricesFile (): Promise<void> {
   console.log(`\n\nstart: ${start.format('HH:mm:ss')}\nfinish: ${finish.format('HH:mm:ss')}\nduration: ${(finish.diff(start) / 1000).toFixed(2)} seconds`)
 }
 
-async function getPricesFromFile (attempt: number = 1): Promise<PriceFileData[]> {
+async function getPricesFromFile (): Promise<PriceFileData[]> {
   if (await fileExists(PATH_PRICE_CSV_FILE)) {
     const csvContent = await readCsv(PATH_PRICE_CSV_FILE)
     const res: PriceFileData[] = []
@@ -70,16 +70,14 @@ async function getPricesFromFile (attempt: number = 1): Promise<PriceFileData[]>
       for (const header of headers) {
         newPrice[header] = line[headers.indexOf(header)]
       }
-      // ignore some prices that come empty
-      if (newPrice.priceInCAD !== '' && newPrice.priceInUSD !== '') { res.push(newPrice as PriceFileData) }
+      // ignore some prices that may come empty
+      if (!isEmpty(newPrice.priceInCAD) && !isEmpty(newPrice.priceInUSD)) { res.push(newPrice as PriceFileData) }
     }
 
     return res
   } else {
-    if (attempt > PRICE_FILE_MAX_RETRIES) { throw new Error(`Already attempted ${PRICE_FILE_MAX_RETRIES} times to create price files without success`) }
-
     await createPricesFile()
-    return await getPricesFromFile(attempt + 1)
+    return await getPricesFromFile()
   }
 }
 

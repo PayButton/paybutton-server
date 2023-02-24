@@ -66,7 +66,7 @@ export async function upsertCurrentPricesForNetworkId (responseData: IResponseDa
   await upsertPricesForNetworkId(responseData, networkId, 0)
 }
 
-function getURLForPriceByDayRequest (day: moment.Moment, ticker: string): string {
+function getPriceURLForDayAndNetworkTicker (day: moment.Moment, ticker: string): string {
   validatePriceAPIUrlAndToken()
   validateNetworkTicker(ticker)
   return `${appInfo.priceAPIURL}/pricebydate/${appInfo.priceAPIToken}/${ticker}+${day.format(PRICE_API_DATE_FORMAT)}`
@@ -80,7 +80,7 @@ function getAllPricesByTickerURL (ticker: string): string {
 
 export async function getPriceForDayTicker (day: moment.Moment, ticker: string, attempt: number = 1): Promise<IResponseData | null> {
   try {
-    const res = await axios.get(getURLForPriceByDayRequest(day, ticker), {
+    const res = await axios.get(getPriceURLForDayAndNetworkTicker(day, ticker), {
       timeout: PRICE_API_TIMEOUT
     })
 
@@ -362,9 +362,9 @@ export async function syncTransactionPriceValues (params: SyncTransactionPricesI
   let res
 
   if (params.networkId === XEC_NETWORK_ID) {
-    res = await axios.get(getURLForPriceByDayRequest(moment.unix(params.timestamp), 'XEC'))
+    res = await axios.get(getPriceURLForDayAndNetworkTicker(moment.unix(params.timestamp), 'XEC'))
   } else if (params.networkId === BCH_NETWORK_ID) {
-    res = await axios.get(getURLForPriceByDayRequest(moment.unix(params.timestamp), 'BCH'))
+    res = await axios.get(getPriceURLForDayAndNetworkTicker(moment.unix(params.timestamp), 'BCH'))
   } else {
     throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_ID_400.message)
   }
