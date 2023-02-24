@@ -5,6 +5,8 @@ import Image from 'next/image'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
+import CheckIcon from 'assets/check-icon.png'
+import XIcon from 'assets/x-icon.png'
 import { formatQuoteValue } from 'utils/index'
 import TableContainer from '../../components/TableContainer'
 import moment from 'moment'
@@ -21,7 +23,7 @@ export default ({ addressTransactions }: IProps): FunctionComponent => {
         Header: 'Confirmed',
         accessor: 'confirmed',
         Cell: (cellProps) => {
-          return <div className='table-date'>{cellProps.cell.value === true ? 'yes' : 'no'}</div>
+          return <div className='table-conf-icon'>{cellProps.cell.value === true ? <Image src={CheckIcon} alt='confirmed' /> : <Image src={XIcon} alt='unconfirmed' />}</div>
         }
       },
       {
