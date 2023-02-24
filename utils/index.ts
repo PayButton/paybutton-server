@@ -118,3 +118,7 @@ export async function fileExists (filePath: string): Promise<boolean> {
     return false
   }
 }
+
+export function isEmpty (value: string): boolean {
+  return value === '' || value === null || value === undefined
+}
