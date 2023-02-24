@@ -157,6 +157,11 @@ body[data-theme='dark'] button {
   height: 20px;
 }
 
+.table-conf-icon {
+  width: 18px;
+  margin-left: 22px;
+}
+
 .table-button a {
   border: 1px solid var(--primary-bg-color);
   padding: 2px 10px;
