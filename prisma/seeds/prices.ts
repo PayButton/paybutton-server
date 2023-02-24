@@ -58,8 +58,8 @@ export async function createPricesFile (): Promise<void> {
 }
 
 async function getPricesFromFile (): Promise<PriceFileData[]> {
-  if (await fileExists(PATH_PRICE_CSV_FILE)) {
-    const csvContent = await readCsv(PATH_PRICE_CSV_FILE)
+  if (await fileExists(fs, PATH_PRICE_CSV_FILE)) {
+    const csvContent = await readCsv(fs, PATH_PRICE_CSV_FILE)
     const res: PriceFileData[] = []
 
     const headers = csvContent[0]

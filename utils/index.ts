@@ -2,7 +2,6 @@ import xecaddr from 'xecaddrjs'
 import { Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES } from '../constants/index'
 import * as bitcoinjs from 'bitcoinjs-lib'
-import * as fs from 'fs'
 import { NETWORK_SLUGS, USD_QUOTE_ID } from 'constants/index'
 
 export const removeAddressPrefix = function (addressString: string): string {
@@ -105,14 +104,14 @@ export const formatQuoteValue = (numberString: string, quoteId?: number): string
   )
 }
 
-export async function readCsv (filePath: string): Promise<string[][]> {
-  const data = await fs.promises.readFile(filePath, 'utf8')
+export async function readCsv (fsModule: any, filePath: string): Promise<string[][]> {
+  const data = await fsModule.promises.readFile(filePath, 'utf8')
   return data.split('\n').map((row) => row.split(','))
 }
 
-export async function fileExists (filePath: string): Promise<boolean> {
+export async function fileExists (fsModule: any, filePath: string): Promise<boolean> {
   try {
-    await fs.promises.stat(filePath)
+    await fsModule.promises.stat(filePath)
     return true
   } catch (error) {
     return false
