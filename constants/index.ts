@@ -90,7 +90,7 @@ export const XEC_TIMESTAMP_THRESHOLD = 1605398400 // 2020 Nov 15, 12AM
 export const CURRENT_PRICE_SYNC_DELAY = 60000
 export const DEFAULT_WORKER_LOCK_DURATION = 120000
 
-export const TICKERS: KeyValueT<string> = {
+export const NETWORK_TICKERS: KeyValueT<string> = {
   ecash: 'XEC',
   bitcoincash: 'BCH'
 }

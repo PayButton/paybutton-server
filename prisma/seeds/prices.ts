@@ -1,13 +1,13 @@
 import { Price, Prisma } from '@prisma/client'
-import { getAllPricesByTicker } from 'services/priceService'
-import { TICKERS, NETWORK_IDS, QUOTE_IDS, KeyValueT } from 'constants/index'
+import { getAllPricesByNetworkTicker } from 'services/priceService'
+import { NETWORK_TICKERS, NETWORK_IDS, QUOTE_IDS, KeyValueT } from 'constants/index'
 import { readCsv, fileExists, isEmpty } from 'utils/index'
 import moment from 'moment'
 import * as fs from 'fs'
 import * as path from 'path'
 import { promisify } from 'util'
 
-interface PriceFileData {
+interface PriceFileData extends KeyValueT<string> {
   ticker: string
   date: string
   priceInCAD: string
@@ -31,12 +31,14 @@ export async function createPricesFile (): Promise<void> {
   const start = moment()
   const prices: PriceFileData[] = []
 
-  await Promise.all(Object.values(TICKERS).map(async (ticker) => {
-    const pricesByTicker = await getAllPricesByTicker(ticker)
+  await Promise.all(Object.values(NETWORK_TICKERS).map(async (networkTicker) => {
+    const pricesByNetworkTicker = await getAllPricesByNetworkTicker(networkTicker)
 
-    pricesByTicker?.forEach(price => {
+    pricesByNetworkTicker?.forEach(price => {
+      if (isEmpty(price.Price_in_CAD) || isEmpty(price.Price_in_USD)) { throw new Error(`Price came back with at least one quote empty from API: ${JSON.stringify(price)}`) }
+
       prices.push({
-        ticker,
+        ticker: networkTicker,
         date: price.day,
         priceInCAD: price.Price_in_CAD,
         priceInUSD: price.Price_in_USD
@@ -66,7 +68,7 @@ async function getPricesFromFile (): Promise<PriceFileData[]> {
     const data = csvContent.slice(1)
 
     for (const line of data) {
-      const newPrice: KeyValueT<any> = {}
+      const newPrice: KeyValueT<string> = {}
       for (const header of headers) {
         newPrice[header] = line[headers.indexOf(header)]
       }

@@ -1,4 +1,4 @@
-import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN, TICKERS } from '../constants/index'
+import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN, NETWORK_TICKERS } from '../constants/index'
 import { Prisma } from '@prisma/client'
 import { CreatePaybuttonInput, UpdatePaybuttonInput } from '../services/paybuttonService'
 import { CreateWalletInput, UpdateWalletInput } from '../services/walletService'
@@ -161,8 +161,8 @@ export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParame
   return ret
 }
 
-export const validateNetworkTicker = function (ticker: string): void {
-  if (!Object.values(TICKERS).includes(ticker)) {
+export const validateNetworkTicker = function (networkTicker: string): void {
+  if (!Object.values(NETWORK_TICKERS).includes(networkTicker)) {
     throw new Error(RESPONSE_MESSAGES.INVALID_TICKER_400.message)
   }
 }
