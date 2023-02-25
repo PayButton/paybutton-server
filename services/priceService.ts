@@ -3,7 +3,7 @@ import axios from 'axios'
 import { appInfo } from 'config/appInfo'
 import { Prisma, Price } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
-import { NETWORK_IDS, HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { NETWORK_IDS, HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
 import moment from 'moment'
 
@@ -66,37 +66,37 @@ export async function upsertCurrentPricesForNetworkId (responseData: IResponseDa
   await upsertPricesForNetworkId(responseData, networkId, 0)
 }
 
-function getPriceURLForDayAndNetworkTicker (day: moment.Moment, ticker: string): string {
+function getPriceURLForDayAndNetworkTicker (day: moment.Moment, networkTicker: string): string {
   validatePriceAPIUrlAndToken()
-  validateNetworkTicker(ticker)
-  return `${appInfo.priceAPIURL}/pricebydate/${appInfo.priceAPIToken}/${ticker}+${day.format(PRICE_API_DATE_FORMAT)}`
+  validateNetworkTicker(networkTicker)
+  return `${appInfo.priceAPIURL}/pricebydate/${appInfo.priceAPIToken}/${networkTicker}+${day.format(PRICE_API_DATE_FORMAT)}`
 }
 
-function getAllPricesByTickerURL (ticker: string): string {
+function getAllPricesURLForNetworkTicker (networkTicker: string): string {
   validatePriceAPIUrlAndToken()
-  validateNetworkTicker(ticker)
-  return `${appInfo.priceAPIURL}/dailyprices/${appInfo.priceAPIToken}/${ticker}`
+  validateNetworkTicker(networkTicker)
+  return `${appInfo.priceAPIURL}/dailyprices/${appInfo.priceAPIToken}/${networkTicker}`
 }
 
-export async function getPriceForDayTicker (day: moment.Moment, ticker: string, attempt: number = 1): Promise<IResponseData | null> {
+export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networkTicker: string, attempt: number = 1): Promise<IResponseData | null> {
   try {
-    const res = await axios.get(getPriceURLForDayAndNetworkTicker(day, ticker), {
+    const res = await axios.get(getPriceURLForDayAndNetworkTicker(day, networkTicker), {
       timeout: PRICE_API_TIMEOUT
     })
 
     if (res.data.success !== false) { return res.data } else { return null }
   } catch (error) {
-    console.error(`Problem getting price of ${ticker} ${day.format(HUMAN_READABLE_DATE_FORMAT)} -> ${error as string} (attempt ${attempt})`)
+    console.error(`Problem getting price of ${networkTicker} ${day.format(HUMAN_READABLE_DATE_FORMAT)} -> ${error as string} (attempt ${attempt})`)
 
     if (attempt < PRICE_API_MAX_RETRIES) {
-      return await getPriceForDayTicker(day, ticker, attempt + 1)
+      return await getPriceForDayAndNetworkTicker(day, networkTicker, attempt + 1)
     } else { return null }
   }
 }
 
-export async function getAllPricesByTicker (ticker: string, attempt: number = 1): Promise<IResponseDataDaily[]> {
+export async function getAllPricesByNetworkTicker (networkTicker: string, attempt: number = 1): Promise<IResponseDataDaily[]> {
   try {
-    const res = await axios.get(getAllPricesByTickerURL(ticker), {
+    const res = await axios.get(getAllPricesURLForNetworkTicker(networkTicker), {
       timeout: PRICE_API_TIMEOUT
     })
 
@@ -108,13 +108,13 @@ export async function getAllPricesByTicker (ticker: string, attempt: number = 1)
         }
       })
       return dailyPrices
-    } else { console.error(`No success when getting price of ${ticker} (attempt ${attempt})`) }
+    } else { console.error(`No success when getting price of ${networkTicker} (attempt ${attempt})`) }
   } catch (error) {
-    console.error(`Problem getting price of ${ticker} -> ${error as string} (attempt ${attempt})`)
+    console.error(`Problem getting price of ${networkTicker} -> ${error as string} (attempt ${attempt})`)
   }
 
   if (attempt < PRICE_API_MAX_RETRIES) {
-    return await getAllPricesByTicker(ticker, attempt + 1)
+    return await getAllPricesByNetworkTicker(networkTicker, attempt + 1)
   } else {
     throw new Error(`Price file could not be created after ${PRICE_API_MAX_RETRIES} retries`)
   }
@@ -138,13 +138,13 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
   }
 
   await Promise.all(
-    Object.values(TICKERS).map(async (ticker) =>
+    Object.values(NETWORK_TICKERS).map(async (networkTicker) =>
       datesToRetrieve.map(async date => {
-        const price = await getPriceForDayTicker(date, ticker)
+        const price = await getPriceForDayAndNetworkTicker(date, networkTicker)
         if (price != null) {
-          await upsertPricesForNetworkId(price, NETWORK_IDS[ticker], date.unix())
+          await upsertPricesForNetworkId(price, NETWORK_IDS[networkTicker], date.unix())
         } else {
-          console.error(`API gave a null response for ticker: ${NETWORK_IDS[ticker]}, date: ${date.format(HUMAN_READABLE_DATE_FORMAT)}`)
+          console.error(`API gave a null response for ticker: ${NETWORK_IDS[networkTicker]}, date: ${date.format(HUMAN_READABLE_DATE_FORMAT)}`)
         }
       })
     ))
@@ -154,12 +154,12 @@ export async function syncCurrentPrices (): Promise<boolean> {
   let success = true
   const today = moment()
 
-  const bchPrice = await getPriceForDayTicker(today, TICKERS.bitcoincash)
+  const bchPrice = await getPriceForDayAndNetworkTicker(today, NETWORK_TICKERS.bitcoincash)
   if (bchPrice != null) {
     void upsertCurrentPricesForNetworkId(bchPrice, BCH_NETWORK_ID)
   } else success = false
 
-  const xecPrice = await getPriceForDayTicker(today, TICKERS.ecash)
+  const xecPrice = await getPriceForDayAndNetworkTicker(today, NETWORK_TICKERS.ecash)
   if (xecPrice != null) {
     void upsertCurrentPricesForNetworkId(xecPrice, XEC_NETWORK_ID)
   } else success = false
