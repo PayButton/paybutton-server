@@ -59,12 +59,13 @@ export const syncAllAddressTransactionsForNetworkWorker = async (queueName: stri
   })
 }
 
-export const syncCurrentPricesWorker = async (queueName: string): Promise<void> => {
+export const syncCurrentAndPastPricesWorker = async (queueName: string): Promise<void> => {
   const worker = new Worker(
     queueName,
     async (job) => {
-      console.log(`job ${job.id as string}: syncing current prices...`)
-      void priceService.syncCurrentPrices()
+      console.log(`job ${job.id as string}: syncing current and past prices...`)
+      await priceService.syncCurrentPrices()
+      await priceService.syncPastDaysNewerPrices()
     },
     {
       connection: redis,

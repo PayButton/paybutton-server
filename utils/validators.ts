@@ -1,8 +1,9 @@
-import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN } from '../constants/index'
+import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN, NETWORK_TICKERS } from '../constants/index'
 import { Prisma } from '@prisma/client'
 import { CreatePaybuttonInput, UpdatePaybuttonInput } from '../services/paybuttonService'
 import { CreateWalletInput, UpdateWalletInput } from '../services/walletService'
 import { getAddressPrefix } from './index'
+import { appInfo } from 'config/appInfo'
 import xecaddr from 'xecaddrjs'
 
 /* The functions exported here should validate the data structure / syntax of an
@@ -167,4 +168,19 @@ export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParame
     ret.prefixedAddressList = parseAddressTextBlock(params.addresses)
   }
   return ret
+}
+
+export const validateNetworkTicker = function (networkTicker: string): void {
+  if (!Object.values(NETWORK_TICKERS).includes(networkTicker)) {
+    throw new Error(RESPONSE_MESSAGES.INVALID_TICKER_400.message)
+  }
+}
+
+export const validatePriceAPIUrlAndToken = function (): void {
+  if (appInfo.priceAPIURL === '') {
+    throw new Error(RESPONSE_MESSAGES.MISSING_PRICE_API_URL_400.message)
+  }
+  if (appInfo.priceAPIToken === '') {
+    throw new Error(RESPONSE_MESSAGES.MISSING_PRICE_API_TOKEN_400.message)
+  }
 }

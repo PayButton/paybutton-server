@@ -40,6 +40,20 @@ describe('Sync price from transaction', () => {
     }
     appInfo.priceAPIURL = 'foo'
   })
+  it('Fail if no PRICE_API_TOKEN', async () => {
+    appInfo.priceAPIToken = ''
+    expect.assertions(1)
+    try {
+      await priceService.syncTransactionPriceValues({
+        networkId: 1,
+        transactionId: 1,
+        timestamp: 1
+      })
+    } catch (e: any) {
+      expect(e.message).toMatch(RESPONSE_MESSAGES.MISSING_PRICE_API_TOKEN_400.message)
+    }
+    appInfo.priceAPIToken = 'bar'
+  })
   it('Existent price if price already exists', async () => {
     mockedAxios.get.mockResolvedValue({ data: { success: false } })
     prismaMock.price.findMany.mockResolvedValue([mockedUSDPrice, mockedCADPrice])

@@ -31,16 +31,22 @@ export const RESPONSE_MESSAGES = {
   DEFAULT_XEC_WALLET_MUST_HAVE_SOME_XEC_ADDRESS_400: { statusCode: 400, message: 'Default XEC wallet must have some XEC address.' },
   DEFAULT_BCH_WALLET_MUST_HAVE_SOME_BCH_ADDRESS_400: { statusCode: 400, message: 'Default BCH wallet must have some BCH address.' },
   MISSING_PRICE_API_URL_400: { statusCode: 400, message: 'Missing PRICE_API_URL environment variable.' },
+  MISSING_PRICE_API_TOKEN_400: { statusCode: 400, message: 'Missing PRICE_API_TOKEN environment variable.' },
   MISSING_PRICE_FOR_TRANSACTION_400: { statusCode: 400, message: 'Missing price for transaction.' },
   INVALID_PRICE_STATE_400: { statusCode: 400, message: 'Missing expected quote price for transaction.' },
   COULD_NOT_GET_BLOCK_INFO: { statusCode: 500, message: "Couldn't get block info." },
   NETWORK_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'networkSlug' not provided." },
   QUOTE_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'quoteSlug' not provided." },
   NO_CURRENT_PRICES_FOUND_404: { statusCode: 404, message: 'Current prices not found.' },
-  INVALID_QUOTE_SLUG_400: { statusCode: 400, message: 'Invalid quote slug.' }
+  INVALID_QUOTE_SLUG_400: { statusCode: 400, message: 'Invalid quote slug.' },
+  INVALID_TICKER_400: { statusCode: 400, message: 'Invalid ticker.' }
 }
 
-export const NETWORK_SLUGS = {
+export interface KeyValueT<T> {
+  [key: string]: T
+}
+
+export const NETWORK_SLUGS: KeyValueT<string> = {
   ecash: 'ecash',
   bitcoincash: 'bitcoincash',
   ectest: 'ectest',
@@ -72,7 +78,11 @@ export const SUPPORTED_QUOTES = [ // avoids hitting the DB every time for data t
   'cad'
 ]
 
+export const HUMAN_READABLE_DATE_FORMAT = 'YYYY-MM-DD'
+
 export const PRICE_API_DATE_FORMAT = 'YYYYMMDD'
+export const PRICE_API_TIMEOUT = 40 * 1000 // 40 seconds
+export const PRICE_API_MAX_RETRIES = 5
 
 export const BCH_TIMESTAMP_THRESHOLD = 1501588800 // 2017 Aug 1, 12PM
 export const XEC_TIMESTAMP_THRESHOLD = 1605398400 // 2020 Nov 15, 12AM
@@ -80,3 +90,11 @@ export const XEC_TIMESTAMP_THRESHOLD = 1605398400 // 2020 Nov 15, 12AM
 // Wait time (in ms) between sync of current prices
 export const CURRENT_PRICE_SYNC_DELAY = 60000
 export const DEFAULT_WORKER_LOCK_DURATION = 120000
+
+export const NETWORK_TICKERS: KeyValueT<string> = {
+  ecash: 'XEC',
+  bitcoincash: 'BCH'
+}
+
+export const NETWORK_IDS: KeyValueT<number> = { XEC: 1, BCH: 2 }
+export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
