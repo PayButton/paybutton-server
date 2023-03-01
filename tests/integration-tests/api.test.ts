@@ -14,7 +14,7 @@ import balanceEndpoint from 'pages/api/address/balance/[address]'
 import dashboardEndpoint from 'pages/api/dashboard/index'
 import currentPriceEndpoint from 'pages/api/price/[networkSlug]'
 import currentPriceForQuoteEndpoint from 'pages/api/price/[networkSlug]/[quoteSlug]'
-import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
+import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import {
   exampleAddresses,
   testEndpoint,
@@ -470,6 +470,8 @@ describe('GET /api/addresses/', () => {
   })
 })
 
+const expectedAddressObject = expect.any(Object) // WIP add detail
+
 describe('POST /api/wallets/', () => {
   const addressIdList: number[] = []
   beforeAll(async () => {
@@ -573,13 +575,7 @@ describe('POST /api/wallets/', () => {
       userProfileId: 3
     })
     expect(responseData.addresses).toEqual(
-      expect.arrayContaining([
-        {
-          address: expect.any(String),
-          networkId: expect.any(Number),
-          id: expect.any(Number)
-        }
-      ])
+      expect.arrayContaining([expectedAddressObject])
     )
   })
 
@@ -601,13 +597,7 @@ describe('POST /api/wallets/', () => {
       userProfileId: 3
     })
     expect(responseData.addresses).toEqual(
-      expect.arrayContaining([
-        {
-          address: expect.any(String),
-          networkId: expect.any(Number),
-          id: expect.any(Number)
-        }
-      ])
+      expect.arrayContaining([expectedAddressObject])
     )
   })
 })
@@ -732,16 +722,8 @@ describe('GET /api/wallet/[id]', () => {
       expect(res.statusCode).toBe(200)
       expect(responseData.addresses).toEqual(
         expect.arrayContaining([
-          {
-            id: expect.any(Number),
-            networkId: expect.any(Number),
-            address: expect.any(String)
-          },
-          {
-            id: expect.any(Number),
-            networkId: expect.any(Number),
-            address: expect.any(String)
-          }
+          expectedAddressObject,
+          expectedAddressObject
         ])
       )
       expect(responseData).toHaveProperty('providerUserId')
@@ -761,7 +743,7 @@ describe('GET /api/wallet/[id]', () => {
 
 describe('PATCH /api/wallet/[id]', () => {
   // Create 4 wallets
-  let createdWallets: WalletWithAddressesAndPaybuttons[]
+  let createdWallets: WalletWithAddressesWithPaybuttons[]
   let baseRequestOptions: RequestOptions = {
     method: 'PATCH' as RequestMethod,
     query: {
@@ -771,7 +753,7 @@ describe('PATCH /api/wallet/[id]', () => {
       name: '',
       isXECDefault: null,
       isBCHDefault: null,
-      paybuttonIdList: []
+      addressIdList: []
     }
   }
 
@@ -782,7 +764,6 @@ describe('PATCH /api/wallet/[id]', () => {
     for (let i = 0; i < 4; i++) {
       const pb = await createPaybuttonForUser('test-u-id')
       const wallet = await createWalletForUser('test-u-id', pb.addresses.map(conn => conn.address.id))
-      wallet.paybuttons = [pb] // WIP
       createdWallets.push(wallet)
     }
   })
@@ -796,7 +777,7 @@ describe('PATCH /api/wallet/[id]', () => {
         name: '',
         isXECDefault: null,
         isBCHDefault: null,
-        paybuttonIdList: []
+        addressIdList: []
       }
     }
   })
@@ -806,24 +787,16 @@ describe('PATCH /api/wallet/[id]', () => {
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name + '-new'
-      baseRequestOptions.body.paybuttonIdList = wallet.paybuttons.map((pb) => pb.id)
+      baseRequestOptions.body.addressIdList = wallet.addresses.map((addr) => addr.id)
     }
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
-    responseData.paybuttons = wallet.paybuttons // WIP
+    responseData.addresses = wallet.addresses // WIP
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
-        {
-          id: expect.any(Number),
-          networkId: expect.any(Number),
-          address: expect.any(String)
-        },
-        {
-          id: expect.any(Number),
-          networkId: expect.any(Number),
-          address: expect.any(String)
-        }
+        expectedAddressObject,
+        expectedAddressObject
       ])
     )
     expect(responseData).toMatchObject({
@@ -839,7 +812,7 @@ describe('PATCH /api/wallet/[id]', () => {
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = createdWallets[1].name
-      baseRequestOptions.body.paybuttonIdList = wallet.paybuttons.map((pb) => pb.id)
+      baseRequestOptions.body.addressIdList = wallet.addresses.map((addr) => addr.id)
     }
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
@@ -852,25 +825,17 @@ describe('PATCH /api/wallet/[id]', () => {
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name
-      baseRequestOptions.body.paybuttonIdList = wallet.paybuttons.map((pb) => pb.id)
+      baseRequestOptions.body.addressIdList = wallet.addresses.map((addr) => addr.id)
       baseRequestOptions.body.isXECDefault = true
     }
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
-    responseData.paybuttons = wallet.paybuttons // WIP
+    responseData.addresses = wallet.addresses // WIP
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
-        {
-          id: expect.any(Number),
-          networkId: expect.any(Number),
-          address: expect.any(String)
-        },
-        {
-          id: expect.any(Number),
-          networkId: expect.any(Number),
-          address: expect.any(String)
-        }
+        expectedAddressObject,
+        expectedAddressObject
       ])
     )
     expect(responseData).toMatchObject({
@@ -889,25 +854,17 @@ describe('PATCH /api/wallet/[id]', () => {
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name
-      baseRequestOptions.body.paybuttonIdList = wallet.paybuttons.map((pb) => pb.id)
+      baseRequestOptions.body.addressIdList = wallet.addresses.map((addr) => addr.id)
       baseRequestOptions.body.isBCHDefault = true
     }
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
-    responseData.paybuttons = wallet.paybuttons // WIP
+    responseData.addresses = wallet.addresses // WIP
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
-        {
-          id: expect.any(Number),
-          networkId: expect.any(Number),
-          address: expect.any(String)
-        },
-        {
-          id: expect.any(Number),
-          networkId: expect.any(Number),
-          address: expect.any(String)
-        }
+        expectedAddressObject,
+        expectedAddressObject
       ])
     )
     expect(responseData).toMatchObject({
@@ -921,30 +878,28 @@ describe('PATCH /api/wallet/[id]', () => {
     })
   })
 
-  it.skip('Update wallet with new paybuttons', async () => { // WIP
+  it.skip('Update wallet with new paybuttons addresses', async () => { // WIP
     const wallet = createdWallets[0]
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     const newPaybuttons = await Promise.all([
       await createPaybuttonForUser('test-u-id'),
       await createPaybuttonForUser('test-u-id')
     ])
-    let newAddresses: any = []
-    const newPaybuttonsWithoutAddresses = newPaybuttons.map(pb => {
+    let newAddresses: any[] = []
+    newPaybuttons.map(pb => {
       const { addresses, ...rest } = pb
-      newAddresses = [...newAddresses, ...addresses.map(addr => {
-        return {
-          address: addr.address.address,
-          networkId: addr.address.networkId,
-          id: addr.address.id
-        }
-      })]
+      addresses.forEach(address => {
+        newAddresses = [...newAddresses,
+          { ...address.address, paybuttons: [{ address: pb }] }
+        ]
+      })
       return rest
     })
-    const oldPayButtonIds = wallet.paybuttons.map(pb => pb.id)
-    const newPaybuttonIds = newPaybuttons.map(pb => pb.id)
+    const oldAddressesIds = wallet.addresses.map(addr => addr.id)
+    const newAddressesIds = newAddresses.map(addr => addr.id)
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name
-      baseRequestOptions.body.paybuttonIdList = newPaybuttonIds
+      baseRequestOptions.body.addressIdList = newAddressesIds
       baseRequestOptions.body.isBCHDefault = false
     } else { throw new Error() }
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
@@ -952,26 +907,20 @@ describe('PATCH /api/wallet/[id]', () => {
     expect(res.statusCode).toBe(200)
 
     // check that endpoint returns updated wallet
-    for (const paybutton of newPaybuttonsWithoutAddresses) {
-      paybutton.updatedAt = expect.anything()
-      paybutton.createdAt = expect.anything()
-      paybutton.walletId = wallet.id
-    }
     expect(responseData).toMatchObject({
       ...wallet,
-      paybuttons: newPaybuttonsWithoutAddresses,
       addresses: newAddresses,
       createdAt: expect.anything(),
       updatedAt: expect.anything()
     })
 
-    // check that old paybuttons do not belong to any wallet
+    // check that old addresses do not belong to any wallet
     const getPaybuttonsOptions: RequestOptions = {
       method: 'GET' as RequestMethod,
       query: {}
     }
 
-    for (const id of oldPayButtonIds) {
+    for (const id of oldAddressesIds) {
       if (getPaybuttonsOptions.query != null) getPaybuttonsOptions.query.id = id
       const res = await testEndpoint(getPaybuttonsOptions, paybuttonIdEndpoint)
       const responseData = res._getJSONData()
