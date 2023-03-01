@@ -78,6 +78,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
       const el = document.getElementById('isXECDefault') as HTMLInputElement
       if (el === null) return
       el.checked = false
+      el.value = ''
     }
     if (hasAddressForNetworkId(BCH_NETWORK_ID)) {
       setIsBCHDefaultDisabled(false)
@@ -86,6 +87,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
       const el = document.getElementById('isBCHDefault') as HTMLInputElement
       if (el === null) return
       el.checked = false
+      el.value = ''
     }
   }
 
