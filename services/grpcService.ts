@@ -9,43 +9,20 @@ import {
   GetBlockInfoResponse
 } from 'grpc-bchrpc-node'
 
-import { getAddressPrefix } from '../utils/index'
-import { parseMempoolTx  } from 'services/transactionService'
-import { RESPONSE_MESSAGES, NETWORK_SLUGS } from '../constants/index'
-
-let grpcBCH = new GrpcClient({ url: process.env.GRPC_BCH_NODE_URL });
-
-export const getClientForAddress = (addressString: string): GrpcClient => {
-  const prefix = getAddressPrefix(addressString)
-  if (prefix === NETWORK_SLUGS.ecash) {
-    return new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL });
-  } else if (prefix === NETWORK_SLUGS.bitcoincash) {
-    return grpcBCH
-  } else {
-    throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
-  }
-}
-
-export const getClientForNetworkSlug = (networkSlug: string): GrpcClient => {
-  if (networkSlug === NETWORK_SLUGS.ecash) {
-    return new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL });
-  } else if (networkSlug === NETWORK_SLUGS.bitcoincash) {
-    return grpcBCH
-  } else {
-    throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
-  }
-}
+import { BlockchainClient, getObjectForNetworkSlug, getObjectForAddress } from './blockchainService'
+import { parseMempoolTx } from 'services/transactionService'
+import { KeyValueT } from '../constants/index'
 
 export interface OutputsList {
-  outpoint: object;
-  pubkeyScript: string;
-  value: number;
-  isCoinbase: boolean;
-  blockHeight: number;
-  slpToken: string | undefined;
+  outpoint: object
+  pubkeyScript: string
+  value: number
+  isCoinbase: boolean
+  blockHeight: number
+  slpToken: string | undefined
 }
 
-interface GetAddressParameters {
+export interface GetAddressParameters {
   address: string
   nbSkip?: number
   nbFetch?: number
@@ -54,116 +31,125 @@ interface GetAddressParameters {
   reversedHashOrder?: boolean
 }
 
-export const getBlockchainInfo = async (networkSlug: string): Promise<GetBlockchainInfoResponse.AsObject> => {
-  const client = getClientForNetworkSlug(networkSlug)
-  return (await client.getBlockchainInfo()).toObject();
-};
+export class GrpcBlockchainClient implements BlockchainClient {
+  grpcBCH: GrpcClient
+  grpcXEC: GrpcClient
+  clients: KeyValueT<GrpcClient>
 
-export const getBlockInfo = async (networkSlug: string, height: number): Promise<GetBlockInfoResponse.AsObject> => {
-  const client = getClientForNetworkSlug(networkSlug)
-  return (await client.getBlockInfo({index: height})).toObject();
-};
+  constructor () {
+    this.grpcBCH = new GrpcClient({ url: process.env.GRPC_BCH_NODE_URL })
+    this.grpcXEC = new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL })
 
-export const getAddress = async (
-  parameters: GetAddressParameters
-): Promise<GetAddressTransactionsResponse.AsObject> => {
-  const client = getClientForAddress(parameters.address)
-  return (await client.getAddressTransactions(parameters)).toObject();
-};
+    this.clients = {
+      bitcoincash: this.grpcBCH,
+      ecash: this.grpcXEC
+    }
+  }
 
-export const getUtxos = async (
-  address: string
-): Promise<GetAddressUnspentOutputsResponse.AsObject> => {
-  const client = getClientForAddress(address)
-  const res = (await client.getAddressUtxos({ address })).toObject();
-  return res;
-};
+  private getClientForAddress (addressString: string): GrpcClient {
+    return getObjectForAddress(addressString, this.clients)
+  }
 
-export const getBalance = async (address: string): Promise<number> => {
-  const { outputsList } = await getUtxos(address);
+  private getClientForNetworkSlug (networkSlug: string): GrpcClient {
+    return getObjectForNetworkSlug(networkSlug, this.clients)
+  }
 
-  let satoshis: number = 0;
-  outputsList.forEach((x) => {
-    satoshis += x.value;
-  });
-
-  return satoshis;
-};
-
-export const getTransactionDetails = async (
-  hash: string,
-  networkSlug: string,
-): Promise<GetTransactionResponse.AsObject> => {
-  const client = getClientForNetworkSlug(networkSlug)
-  const res = (
-    await client.getTransaction({ hash, reversedHashOrder: true })
-  ).toObject();
-  return res;
-};
-
-export const subscribeTransactions = async (
-  addresses: string[],
-  onTransactionNotification: (txn: Transaction.AsObject) => any,
-  onMempoolTransactionNotification: (txn: Transaction.AsObject) => any,
-  networkSlug: string,
-): Promise<void> => {
-  const createTxnStream = async (): Promise<void> => {
-    const client = getClientForNetworkSlug(networkSlug)
-    const confirmedStream = await client.subscribeTransactions({
-      includeMempoolAcceptance: false,
-      includeBlockAcceptance: true,
-      addresses: addresses,
-    });
-    const unconfirmedStream = await client.subscribeTransactions({
-      includeMempoolAcceptance: true,
-      includeBlockAcceptance: false,
-      addresses: addresses,
-    });
-
-    let nowDateString = (new Date()).toISOString()
-
-    // output for end, error or close of stream
-    void confirmedStream.on('end', async () => {
-      console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream ended`);
-    });
-    void confirmedStream.on('close', async () => {
-      console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream closed`);
-    });
-    void confirmedStream.on('error', async (error: any) => {
-      console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream error`, error);
-    });
-    void unconfirmedStream.on('end', async () => {
-      console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream ended`);
-    });
-    void unconfirmedStream.on('close', async () => {
-      console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream closed`);
-    });
-    void unconfirmedStream.on('error', async (error: any) => {
-      console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream error`, error);
-    });
-
-    // output for data stream
-    void confirmedStream.on('data', async (data: TransactionNotification) => {
-      let objectTxn = data.getConfirmedTransaction()!.toObject();
-      console.log(`${nowDateString}: got confirmed txn`, objectTxn);
-      onTransactionNotification(objectTxn);
-    });
-    void unconfirmedStream.on('data', async (data: TransactionNotification) => {
-      let unconfirmedTxn = data.getUnconfirmedTransaction()!.toObject();
-      let objectTxn = parseMempoolTx(unconfirmedTxn)
-      console.log(`${nowDateString}: got unconfirmed txn`, objectTxn);
-      onMempoolTransactionNotification(objectTxn);
-    });
-
-    console.log(`${nowDateString}: txn data stream established for addresses ${addresses.join(', ')}.`);
+  public async getBlockchainInfo (networkSlug: string): Promise<GetBlockchainInfoResponse.AsObject> {
+    const client = this.getClientForNetworkSlug(networkSlug)
+    return (await client.getBlockchainInfo()).toObject()
   };
-  await createTxnStream();
-};
 
-export default {
-  getAddress,
-  getUtxos,
-  subscribeTransactions,
-  getBalance,
-  getTransactionDetails,
-};
+  public async getBlockInfo (networkSlug: string, height: number): Promise<GetBlockInfoResponse.AsObject> {
+    const client = this.getClientForNetworkSlug(networkSlug)
+    return (await client.getBlockInfo({ index: height })).toObject()
+  };
+
+  public async getAddress (parameters: GetAddressParameters): Promise<GetAddressTransactionsResponse.AsObject> {
+    const client = this.getClientForAddress(parameters.address)
+    return (await client.getAddressTransactions(parameters)).toObject()
+  };
+
+  public async getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {
+    const client = this.getClientForAddress(address)
+    const res = (await client.getAddressUtxos({ address })).toObject()
+    return res
+  };
+
+  public async getBalance (address: string): Promise<number> {
+    const { outputsList } = await this.getUtxos(address)
+
+    let satoshis: number = 0
+    outputsList.forEach((x) => {
+      satoshis += x.value
+    })
+
+    return satoshis
+  };
+
+  public async getTransactionDetails (hash: string, networkSlug: string): Promise<GetTransactionResponse.AsObject> {
+    const client = this.getClientForNetworkSlug(networkSlug)
+    const res = (
+      await client.getTransaction({ hash, reversedHashOrder: true })
+    ).toObject()
+    return res
+  };
+
+  public async subscribeTransactions (
+    addresses: string[],
+    onTransactionNotification: (txn: Transaction.AsObject) => any,
+    onMempoolTransactionNotification: (txn: Transaction.AsObject) => any,
+    networkSlug: string
+  ): Promise<void> {
+    const createTxnStream = async (): Promise<void> => {
+      const client = this.getClientForNetworkSlug(networkSlug)
+      const confirmedStream = await client.subscribeTransactions({
+        includeMempoolAcceptance: false,
+        includeBlockAcceptance: true,
+        addresses
+      })
+      const unconfirmedStream = await client.subscribeTransactions({
+        includeMempoolAcceptance: true,
+        includeBlockAcceptance: false,
+        addresses
+      })
+
+      const nowDateString = (new Date()).toISOString()
+
+      // output for end, error or close of stream
+      void confirmedStream.on('end', () => {
+        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream ended`)
+      })
+      void confirmedStream.on('close', () => {
+        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream closed`)
+      })
+      void confirmedStream.on('error', (error: any) => {
+        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream error`, error)
+      })
+      void unconfirmedStream.on('end', () => {
+        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream ended`)
+      })
+      void unconfirmedStream.on('close', () => {
+        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream closed`)
+      })
+      void unconfirmedStream.on('error', (error: any) => {
+        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream error`, error)
+      })
+
+      // output for data stream
+      void confirmedStream.on('data', (data: TransactionNotification) => {
+        const objectTxn = data.getConfirmedTransaction()!.toObject()
+        console.log(`${nowDateString}: got confirmed txn`, objectTxn)
+        onTransactionNotification(objectTxn)
+      })
+      void unconfirmedStream.on('data', (data: TransactionNotification) => {
+        const unconfirmedTxn = data.getUnconfirmedTransaction()!.toObject()
+        const objectTxn = parseMempoolTx(unconfirmedTxn)
+        console.log(`${nowDateString}: got unconfirmed txn`, objectTxn)
+        onMempoolTransactionNotification(objectTxn)
+      })
+
+      console.log(`${nowDateString}: txn data stream established for addresses ${addresses.join(', ')}.`)
+    }
+    await createTxnStream()
+  };
+}
