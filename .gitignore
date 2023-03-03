@@ -33,7 +33,5 @@ yarn-error.log*
 # vercel
 .vercel
 
-package-lock.json
-
 jobs/out.log
 /prisma/seeds/prices.csv

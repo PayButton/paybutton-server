@@ -17,29 +17,29 @@ import Docs from 'assets/docs.png'
 // import Settings from 'assets/settings-icon.png'
 // import Help from 'assets/help-icon.png'
 import Logout from 'assets/logout-icon.png'
-const ThemeToggle = dynamic(() => import('./themetoggle'), {
-  ssr: false,
-});
+const ThemeToggle = dynamic(async () => await import('./themetoggle'), {
+  ssr: false
+})
 
 const MENU_ITEMS = [
   {
-    name:'Dashboard',
+    name: 'Dashboard',
     image: Dashboard
   },
   {
-    name:'Payments',
+    name: 'Payments',
     image: Payments
   },
   {
-    name:'Buttons',
+    name: 'Buttons',
     image: ButtonsIcon
   },
   {
-    name:'Wallets',
+    name: 'Wallets',
     image: Wallets
   },
   {
-    name:'Networks',
+    name: 'Networks',
     image: Networks
   },
   // {
@@ -55,22 +55,22 @@ const MENU_ITEMS = [
   //   image: Help
   // },
   {
-    name:'Logout',
+    name: 'Logout',
     image: Logout
-  },
+  }
 ]
 
-const Sidebar = ({chart, setChart, loggedin}) => {
-  const [menu, setMenu] = useState(false);
-  const useMediaQuery = (width) => {
-    const [targetReached, setTargetReached] = useState(false);
+const Sidebar: React.FC = ({ chart, setChart, loggedin }) => {
+  const [menu, setMenu] = useState(false)
+  const useMediaQuery = (width: number): boolean => {
+    const [targetReached, setTargetReached] = useState(false)
     const updateTarget = useCallback((e) => {
-      if (e.matches) {
-        setTargetReached(true);
+      if (e.matches === true) {
+        setTargetReached(true)
       } else {
-        setTargetReached(false);
+        setTargetReached(false)
       }
-    }, []);
+    }, [])
 
     useEffect(() => {
       const media = window.matchMedia(`(max-width: ${width}px)`)
@@ -83,38 +83,39 @@ const Sidebar = ({chart, setChart, loggedin}) => {
       return () => media.removeEventListener('change', e => updateTarget(e))
     }, [])
 
-    return targetReached;
-  };
+    return targetReached
+  }
 
   const isBreakpoint = useMediaQuery(960)
 
-  const setCheckBox = () => {
-    document.getElementById("menu__toggle").checked = false
+  const setCheckBox = (): void => {
+    document.getElementById('menu__toggle').checked = false
   }
 
   return (
   <>
-  {loggedin === undefined ? null :
-  <>
+  {loggedin === undefined
+    ? null
+    : <>
   {isBreakpoint &&
     <div className={style.topmenu}>
       <Link href='/dashboard' passHref>
-        <a><Image className={style.image} src={logoImageSource} alt='PayButton' width={120} height={22} /></a>
+        <Image className={style.image} src={logoImageSource} alt='PayButton' width={120} height={22} />
       </Link>
       <div className={style.menu_ctn_outer}>
-        <input id="menu__toggle" className={style.menu_ctn} type="checkbox" onClick={()=>setMenu(!menu)}/>
+        <input id="menu__toggle" className={style.menu_ctn} type="checkbox" onClick={() => setMenu(!menu)}/>
         <label className={style.menu_btn} htmlFor="menu__toggle">
           <span></span>
         </label>
       </div>
     </div>
   }
-    <aside className={menu ? `${style.aside} ${style.show_menu}`:style.aside} role='complementary'>
+    <aside className={menu ? `${style.aside} ${style.show_menu}` : style.aside} role='complementary'>
       <div>
         {!isBreakpoint &&
         <section className={style.section}>
           <Link href='/dashboard' passHref>
-            <a><Image className={style.image} src={logoImageSource} alt='PayButton' width={140} height={26} /></a>
+            <Image className={style.image} src={logoImageSource} alt='PayButton' width={140} height={26} />
           </Link>
         </section>
         }
@@ -146,6 +147,7 @@ const Sidebar = ({chart, setChart, loggedin}) => {
     </>
     }
   </>
-)}
+  )
+}
 
 export default Sidebar

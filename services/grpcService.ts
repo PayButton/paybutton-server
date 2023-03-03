@@ -9,7 +9,8 @@ import {
   GetBlockInfoResponse
 } from 'grpc-bchrpc-node'
 
-import { BlockchainClient, getObjectForNetworkSlug, getObjectForAddress } from './blockchainService'
+import { BlockchainClient } from './blockchainService'
+import { getObjectForNetworkSlug, getObjectForAddress } from '../utils/index'
 import { parseMempoolTx } from 'services/transactionService'
 import { KeyValueT } from '../constants/index'
 
@@ -20,15 +21,6 @@ export interface OutputsList {
   isCoinbase: boolean
   blockHeight: number
   slpToken: string | undefined
-}
-
-export interface GetAddressParameters {
-  address: string
-  nbSkip?: number
-  nbFetch?: number
-  height?: number
-  hash?: string
-  reversedHashOrder?: boolean
 }
 
 export class GrpcBlockchainClient implements BlockchainClient {

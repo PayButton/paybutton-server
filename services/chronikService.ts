@@ -1,9 +1,8 @@
 import { ChronikClient, ScriptType } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { BlockchainClient } from './blockchainService'
+import { BlockchainClient, GetAddressParameters } from './blockchainService'
 import { GetBlockchainInfoResponse, GetBlockInfoResponse, GetAddressTransactionsResponse, GetAddressUnspentOutputsResponse, GetTransactionResponse, Transaction } from 'grpc-bchrpc-node'
-import { GetAddressParameters } from './grpcService'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
