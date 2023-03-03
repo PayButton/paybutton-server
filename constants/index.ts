@@ -101,8 +101,8 @@ export const NETWORK_TICKERS: KeyValueT<string> = {
 export const NETWORK_IDS: KeyValueT<number> = { XEC: 1, BCH: 2 }
 export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
 
-export enum BLOCKCHAIN_CLIENTS_OPTIONS {'grpc', 'chronik'}
-export const BLOCKCHAIN_CLIENTS_CHOSEN: KeyValueT<number> = {
-  ecash: BLOCKCHAIN_CLIENTS_OPTIONS.grpc,
-  bitcoincash: BLOCKCHAIN_CLIENTS_OPTIONS.grpc
+export type BLOCKCHAIN_CLIENTS_OPTIONS = 'grpc' | 'chronik'
+export const BLOCKCHAIN_CLIENTS_CHOSEN: KeyValueT<BLOCKCHAIN_CLIENTS_OPTIONS> = {
+  ecash: 'grpc',
+  bitcoincash: 'grpc'
 }

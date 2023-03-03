@@ -39,9 +39,9 @@ function getBlockchainClient (network: string): BlockchainClient {
   if (!Object.keys(BLOCKCHAIN_CLIENTS_CHOSEN).includes(network)) { throw new Error(RESPONSE_MESSAGES.MISSING_BLOCKCHAIN_CLIENT_400.message) }
 
   switch (BLOCKCHAIN_CLIENTS_CHOSEN[network]) {
-    case BLOCKCHAIN_CLIENTS_OPTIONS.grpc:
+    case 'grpc' as BLOCKCHAIN_CLIENTS_OPTIONS:
       return new GrpcBlockchainClient()
-    case BLOCKCHAIN_CLIENTS_OPTIONS.chronik:
+    case 'chronik' as BLOCKCHAIN_CLIENTS_OPTIONS:
       return new ChronikBlockchainClient()
     default:
       throw new Error(RESPONSE_MESSAGES.NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400.message)
