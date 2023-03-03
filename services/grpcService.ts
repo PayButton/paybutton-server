@@ -24,17 +24,12 @@ export interface OutputsList {
 }
 
 export class GrpcBlockchainClient implements BlockchainClient {
-  grpcBCH: GrpcClient
-  grpcXEC: GrpcClient
   clients: KeyValueT<GrpcClient>
 
   constructor () {
-    this.grpcBCH = new GrpcClient({ url: process.env.GRPC_BCH_NODE_URL })
-    this.grpcXEC = new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL })
-
     this.clients = {
-      bitcoincash: this.grpcBCH,
-      ecash: this.grpcXEC
+      bitcoincash: new GrpcClient({ url: process.env.GRPC_BCH_NODE_URL }),
+      ecash: new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL })
     }
   }
 

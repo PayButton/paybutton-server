@@ -25,7 +25,7 @@ const MenuItem = ({ name, image }: MenuItemProps): FunctionComponent<MenuItemPro
   return (
     <li className={computedStyle}>
       {name === 'Logout'
-        ? <div className={style.link} onClick={() => handleLogout}>
+        ? <div className={style.link} onClick={() => { void handleLogout() }}>
         <div className={style.imagectn}><Image className={style.image} src={image} alt='PayButton' width={15} height={15} /></div>{name}
         </div>
         : <Link href={href} passHref>
