@@ -9,7 +9,7 @@ import {
   GetBlockInfoResponse
 } from 'grpc-bchrpc-node'
 
-import { BlockchainClient } from './blockchainService'
+import { BlockchainClient, GetAddressParameters } from './blockchainService'
 import { getObjectForNetworkSlug, getObjectForAddress } from '../utils/index'
 import { parseMempoolTx } from 'services/transactionService'
 import { KeyValueT } from '../constants/index'
