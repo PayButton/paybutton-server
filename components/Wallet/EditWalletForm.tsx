@@ -1,36 +1,34 @@
 import React, { ReactElement, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { WalletPATCHParameters } from 'utils/validators'
-import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import Image from 'next/image'
 import style from '../Wallet/wallet.module.css'
 import style_pb from '../Paybutton/paybutton.module.css'
 import EditIcon from 'assets/edit-icon.png'
 import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
+import { AddressWithPaybuttons } from 'services/addressService'
 import axios from 'axios'
 import { appInfo } from 'config/appInfo'
 
 interface IProps {
   wallet: WalletWithAddressesWithPaybuttons
-  userPaybuttons: PaybuttonWithAddresses[]
+  userAddresses: AddressWithPaybuttons[]
   refreshWalletList: Function
 }
 
-export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletList }: IProps): ReactElement {
+export default function EditWalletForm ({ wallet, userAddresses, refreshWalletList }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<WalletPATCHParameters>()
   const [modal, setModal] = useState(false)
   const [isXECDefaultDisabled, setIsXECDefaultDisabled] = useState(true)
   const [isBCHDefaultDisabled, setIsBCHDefaultDisabled] = useState(true)
   const [error, setError] = useState('')
-  const thisWalletPaybuttonsIdList = userPaybuttons.filter(pb => pb.walletId === wallet.id).map(pb => pb.id)
+  const thisWalletAddressIdList = userAddresses.filter(addr => addr.walletId === wallet.id).map(addr => addr.id)
 
-  const [selectedPaybuttonIdList, setSelectedPaybuttonIdList] = useState(
-    thisWalletPaybuttonsIdList
-  )
+  const [selectedAddressIdList, setSelectedAddressIdList] = useState([] as number[])
 
   async function onSubmit (params: WalletPATCHParameters): Promise<void> {
-    params.paybuttonIdList = selectedPaybuttonIdList
+    params.addressIdList = selectedAddressIdList
     if (params.name === '' || params.name === undefined) {
       params.name = wallet.name
     }
@@ -43,28 +41,28 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
     }
   }
 
-  function handleSelectedPaybuttonsChange (checked: boolean, paybuttonId: number): void {
-    if (selectedPaybuttonIdList.includes(paybuttonId) && !checked) {
-      setSelectedPaybuttonIdList(
-        selectedPaybuttonIdList.filter(id => id !== paybuttonId)
+  function handleSelectedAddressesChange (checked: boolean, addressId: number): void {
+    if (selectedAddressIdList.includes(addressId) && !checked) {
+      setSelectedAddressIdList(
+        selectedAddressIdList.filter(id => id !== addressId)
       )
     }
-    if (!selectedPaybuttonIdList.includes(paybuttonId) && checked) {
-      setSelectedPaybuttonIdList(
-        [...selectedPaybuttonIdList, paybuttonId]
+    if (!selectedAddressIdList.includes(addressId) && checked) {
+      setSelectedAddressIdList(
+        [...selectedAddressIdList, addressId]
       )
     }
   }
 
   function hasAddressForNetworkId (networkId: number): boolean {
     let ret = false
-    if (selectedPaybuttonIdList === undefined) return false
-    for (const selectedPaybuttonId of selectedPaybuttonIdList) {
-      const paybutton = userPaybuttons.find((pb) => pb.id === selectedPaybuttonId)
-      if (paybutton === undefined) {
-        continue
-      }
-      if (paybutton.addresses.some((addr) => addr.address.networkId === networkId)) {
+    if (selectedAddressIdList === undefined) return false
+    for (const selectedAddressId of selectedAddressIdList) {
+      const address = userAddresses.find((addr) => addr.id === selectedAddressId)
+      if (
+        address !== undefined &&
+        address.networkId === networkId
+      ) {
         ret = true
         break
       }
@@ -80,6 +78,7 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
       const el = document.getElementById('isXECDefault') as HTMLInputElement
       if (el === null) return
       el.checked = false
+      el.value = ''
     }
     if (hasAddressForNetworkId(BCH_NETWORK_ID)) {
       setIsBCHDefaultDisabled(false)
@@ -88,20 +87,21 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
       const el = document.getElementById('isBCHDefault') as HTMLInputElement
       if (el === null) return
       el.checked = false
+      el.value = ''
     }
   }
 
   useEffect(() => {
     setModal(false)
     reset()
-  }, [wallet, userPaybuttons])
+  }, [wallet, userAddresses])
 
   useEffect(() => {
     disableDefaultInputFields()
-  }, [selectedPaybuttonIdList])
+  }, [selectedAddressIdList])
 
   useEffect(() => {
-    setSelectedPaybuttonIdList(thisWalletPaybuttonsIdList)
+    setSelectedAddressIdList(thisWalletAddressIdList)
   }, [modal])
 
   return (
@@ -125,18 +125,23 @@ export default function EditWalletForm ({ wallet, userPaybuttons, refreshWalletL
                     name='name'
                     placeholder={wallet.name}
                   />
-                  <h4>Paybuttons</h4>
+                  <h4>Addresses</h4>
                   <div className={style.buttonlist_ctn}>
-                    {userPaybuttons.map((pb, index) => (
-                      <div className={style.input_field} key={`edit-pb-${pb.id}`}>
+                    {userAddresses.map((addr, index) => (
+                      <div className={style.input_field} key={`edit-addr-${addr.id}`}>
                         <input
                           type='checkbox'
-                          value={pb.id}
-                          id={`paybuttonIdList.${index}`}
-                          defaultChecked={pb.walletId === wallet.id}
-                          onChange={ (e) => handleSelectedPaybuttonsChange(e.target.checked, pb.id) }
+                          value={addr.id}
+                          id={`addressIdList.${index}`}
+                          defaultChecked={addr.walletId === wallet.id}
+                          onChange={ (e) => handleSelectedAddressesChange(e.target.checked, addr.id) }
                         />
-                        <label htmlFor={`paybuttonIdList.${index}`}>{pb.name}</label>
+                        <label htmlFor={`addressIdList.${index}`}>
+                          {addr.paybuttons.map((conn) => (
+                            <div className={style.buttonpill}>{conn.paybutton.name}</div>
+                          ))}
+                          <div className={style.addresslabel}>{addr.address}</div>
+                        </label>
                       </div>
                     ))}
                   </div>

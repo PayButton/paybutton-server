@@ -7,17 +7,17 @@ import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EditWalletForm from './EditWalletForm'
 import { WalletWithAddressesWithPaybuttons, WalletPaymentInfo } from 'services/walletService'
-import { PaybuttonWithAddresses } from 'services/paybuttonService'
+import { AddressWithPaybuttons } from 'services/addressService'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 interface IProps {
   wallet: WalletWithAddressesWithPaybuttons
   paymentInfo: WalletPaymentInfo
-  userPaybuttons: PaybuttonWithAddresses[]
+  userAddresses: AddressWithPaybuttons[]
   refreshWalletList: Function
 }
 
-const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userPaybuttons, refreshWalletList }: IProps) => {
+const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userAddresses, refreshWalletList }: IProps) => {
   const networks = wallet.addresses.map((addr) => addr.networkId)
   const differentPaybuttons = wallet.addresses.map(addr =>
     addr.paybuttons.map(conn => conn.paybutton)
@@ -42,7 +42,7 @@ const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userPaybutt
           {wallet.userProfile?.isBCHDefault === true && <div className={style.default_wallet}>Default BCH Wallet</div>}
           <EditWalletForm
             wallet={wallet}
-            userPaybuttons={userPaybuttons}
+            userAddresses={userAddresses}
             refreshWalletList={refreshWalletList}
           />
         </div>

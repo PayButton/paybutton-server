@@ -7,10 +7,26 @@ import { getNetworkFromSlug } from 'services/networkService'
 const addressFullType = Prisma.validator<Prisma.AddressArgs>()({
   include: { transactions: true, network: true }
 })
+type AddressWithTransactionsAndNetwork = Prisma.AddressGetPayload<typeof addressFullType>
 
-type AddressFullType = Prisma.AddressGetPayload<typeof addressFullType>
+const addressWithTransactions = Prisma.validator<Prisma.AddressArgs>()({
+  include: { transactions: true }
+})
+type AddressWithTransactions = Prisma.AddressGetPayload<typeof addressWithTransactions>
 
-export async function fetchAddressBySubstring (substring: string): Promise<AddressFullType> {
+export const includePaybuttonsNested = {
+  paybuttons: {
+    include: {
+      paybutton: true
+    }
+  }
+}
+const addressWithPaybuttons = Prisma.validator<Prisma.AddressArgs>()({
+  include: includePaybuttonsNested
+})
+export type AddressWithPaybuttons = Prisma.AddressGetPayload<typeof addressWithPaybuttons>
+
+export async function fetchAddressBySubstring (substring: string): Promise<AddressWithTransactionsAndNetwork> {
   const results = await prisma.address.findMany({
     where: {
       address: {
@@ -39,23 +55,6 @@ export async function addressExistsBySubstring (substring: string): Promise<bool
   }
   return true
 }
-
-const addressWithTransactions = Prisma.validator<Prisma.AddressArgs>()({
-  include: { transactions: true }
-})
-type AddressWithTransactions = Prisma.AddressGetPayload<typeof addressWithTransactions>
-
-const includePaybuttonsNested = {
-  paybuttons: {
-    include: {
-      paybutton: true
-    }
-  }
-}
-const addressWithPaybuttons = Prisma.validator<Prisma.AddressArgs>()({
-  include: includePaybuttonsNested
-})
-export type AddressWithPaybuttons = Prisma.AddressGetPayload<typeof addressWithPaybuttons>
 
 export async function fetchAllUserAddresses (userId: string, includeTransactions = false, includePaybuttons = false): Promise<AddressWithTransactions[]> {
   return await prisma.address.findMany({
@@ -102,7 +101,7 @@ export async function fetchAllAddressesForNetworkId (networkId: number, includeT
   })
 }
 
-export async function fetchAddressesInList (prefixedAddressList: string[]): Promise<AddressFullType[]> {
+export async function fetchAddressesInList (prefixedAddressList: string[]): Promise<AddressWithTransactionsAndNetwork[]> {
   return await prisma.address.findMany({
     where: {
       address: {
