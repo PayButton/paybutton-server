@@ -2,7 +2,7 @@ import xecaddr from 'xecaddrjs'
 import { Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES } from '../constants/index'
 import * as bitcoinjs from 'bitcoinjs-lib'
-import { NETWORK_SLUGS, USD_QUOTE_ID } from 'constants/index'
+import { NETWORK_SLUGS, USD_QUOTE_ID, KeyValueT } from 'constants/index'
 
 export const removeAddressPrefix = function (addressString: string): string {
   if (addressString.includes(':')) {
@@ -120,4 +120,15 @@ export async function fileExists (fsModule: any, filePath: string): Promise<bool
 
 export function isEmpty (value: string): boolean {
   return value === '' || value === null || value === undefined
+}
+
+export function getObjectForAddress<T> (addressString: string, objects: KeyValueT<T>): T {
+  const prefix = getAddressPrefix(addressString)
+  if (!Object.keys(objects).includes(prefix)) { throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message) }
+  return objects[prefix]
+}
+
+export function getObjectForNetworkSlug<T> (networkSlug: string, objects: KeyValueT<T>): T {
+  if (!Object.keys(NETWORK_SLUGS).includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message) }
+  return objects[networkSlug]
 }
