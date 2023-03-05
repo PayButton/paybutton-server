@@ -20,28 +20,6 @@ export interface UpdateWalletInput {
   userId: string
 }
 
-const includeAddressesAndPaybuttons = { // DEPRECATED
-  userProfile: {
-    select: {
-      userProfileId: true,
-      isXECDefault: true,
-      isBCHDefault: true
-    }
-  },
-  paybuttons: true,
-  addresses: {
-    select: {
-      id: true,
-      address: true,
-      networkId: true
-    }
-  }
-}
-const walletWithAddressesAndPaybuttons = Prisma.validator<Prisma.WalletArgs>()( // DEPRECATED
-  { include: includeAddressesAndPaybuttons }
-)
-export type WalletWithAddressesAndPaybuttons = Prisma.WalletGetPayload<typeof walletWithAddressesAndPaybuttons> // DEPRECATED
-
 const includeAddressesWithPaybuttons = {
   userProfile: {
     select: {
