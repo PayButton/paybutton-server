@@ -2,7 +2,7 @@ import React from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import { PaybuttonList, PaybuttonForm } from 'components/Paybutton'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
-import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
+import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import { PaybuttonPOSTParameters } from 'utils/validators'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
@@ -44,7 +44,7 @@ interface PaybuttonsProps {
 
 interface PaybuttonsState {
   paybuttons: PaybuttonWithAddresses[]
-  wallets: WalletWithAddressesAndPaybuttons[]
+  wallets: WalletWithAddressesWithPaybuttons[]
   error: String
 }
 
