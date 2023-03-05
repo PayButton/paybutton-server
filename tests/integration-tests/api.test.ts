@@ -28,6 +28,8 @@ import {
   createCurrentPrices
 } from 'tests/utils'
 
+// foo
+
 import { RESPONSE_MESSAGES, NETWORK_SLUGS } from 'constants/index'
 
 jest.mock('../../utils/setSession', () => {
