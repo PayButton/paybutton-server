@@ -1,5 +1,5 @@
 import { NextApiResponse, NextApiRequest } from 'next/types'
-import { getTransactionDetails } from 'services/grpcService'
+import { getTransactionDetails } from 'services/blockchainService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
