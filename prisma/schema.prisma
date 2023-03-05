@@ -32,10 +32,8 @@ model Paybutton {
   uuid           String               @default(dbgenerated("(uuid())"))
   buttonData     String               @db.LongText
   providerUserId String?              @db.VarChar(255)
-  walletId       Int?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
-  wallet         Wallet?              @relation(fields: [walletId], references: [id], onUpdate: Restrict)
   addresses      AddressesOnButtons[]
 
   @@unique([name, providerUserId], map: "Paybutton_name_providerUserId_unique_constraint")
@@ -85,7 +83,6 @@ model Wallet {
   name           String                @db.VarChar(255)
   providerUserId String?               @db.VarChar(255)
   addresses      Address[]
-  paybuttons     Paybutton[]
   userProfile    WalletsOnUserProfile?
 
   @@unique([name, providerUserId], map: "Wallet_name_providerUserId_unique_constraint")
