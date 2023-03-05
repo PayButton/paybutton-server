@@ -1,7 +1,7 @@
 import React, { ReactElement, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { PaybuttonPOSTParameters } from 'utils/validators'
-import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
+import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import Image from 'next/image'
 import style from './paybutton.module.css'
 import Plus from 'assets/plus.png'
@@ -9,7 +9,7 @@ import Plus from 'assets/plus.png'
 interface IProps {
   onSubmit: Function
   paybuttons: []
-  wallets: WalletWithAddressesAndPaybuttons[]
+  wallets: WalletWithAddressesWithPaybuttons[]
   error: String
 }
 
