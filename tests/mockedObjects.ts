@@ -5,7 +5,7 @@ import {
   UnspentOutput
 } from 'grpc-bchrpc-node'
 
-import { Prisma } from '@prisma/client'
+import { Prisma, Price } from '@prisma/client'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
 import { USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, NETWORK_SLUGS } from 'constants/index'
@@ -459,3 +459,42 @@ export const mockedCADPrice = {
   networkId: XEC_NETWORK_ID,
   quoteId: CAD_QUOTE_ID
 }
+
+export const mockPrices: Price[] = [
+  { // XECUSD
+    id: 0,
+    value: new Prisma.Decimal('0.00004095'),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    timestamp: 1664593200,
+    networkId: 1,
+    quoteId: 1
+  },
+  { // XECCAD
+    id: 0,
+    value: new Prisma.Decimal('0.00005663'),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    timestamp: 1664593200,
+    networkId: 1,
+    quoteId: 2
+  },
+  { // BCHUSD
+    id: 0,
+    value: new Prisma.Decimal('117.9081'),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    timestamp: 1664593200,
+    networkId: 2,
+    quoteId: 1
+  },
+  { // BCHCAD
+    id: 0,
+    value: new Prisma.Decimal('163.0735'),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    timestamp: 1664593200,
+    networkId: 2,
+    quoteId: 2
+  }
+]
