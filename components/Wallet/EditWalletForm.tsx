@@ -114,7 +114,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                         id='isXECDefault'
                         disabled={wallet.userProfile?.isXECDefault === true}
                       />
-                      <label htmlFor='xec-default' className={style.makedefault_margin}>Make Default XEC Wallet</label>
+                      <label htmlFor='xec-default' className={style.makedefault_margin}>Default XEC Wallet</label>
                     </div>
                     <div className={style.input_field}>
                       <input
@@ -124,7 +124,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                         id='isBCHDefault'
                         disabled={wallet.userProfile?.isBCHDefault === true}
                       />
-                      <label htmlFor='bch-default' className={style.makedefault_margin}>Make Default BCH Wallet</label>
+                      <label htmlFor='bch-default' className={style.makedefault_margin}>Default BCH Wallet</label>
                     </div>
                   </div>
 
