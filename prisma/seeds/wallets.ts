@@ -19,5 +19,12 @@ export const wallets = [
     updatedAt: new Date(),
     name: 'Bar Wallet',
     providerUserId: 'dev-uid'
+  },
+  {
+    id: 4,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    name: 'Default Wallet',
+    providerUserId: 'dev2-uid'
   }
 ]
