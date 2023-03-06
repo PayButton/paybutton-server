@@ -1,7 +1,6 @@
 import React, { ReactElement, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { WalletPATCHParameters } from 'utils/validators'
-import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import Image from 'next/image'
 import style from '../Wallet/wallet.module.css'
 import style_pb from '../Paybutton/paybutton.module.css'
@@ -20,8 +19,6 @@ interface IProps {
 export default function EditWalletForm ({ wallet, userAddresses, refreshWalletList }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<WalletPATCHParameters>()
   const [modal, setModal] = useState(false)
-  const [isXECDefaultDisabled, setIsXECDefaultDisabled] = useState(true)
-  const [isBCHDefaultDisabled, setIsBCHDefaultDisabled] = useState(true)
   const [error, setError] = useState('')
   const thisWalletAddressIdList = userAddresses.filter(addr => addr.walletId === wallet.id).map(addr => addr.id)
 
@@ -54,50 +51,12 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
     }
   }
 
-  function hasAddressForNetworkId (networkId: number): boolean {
-    let ret = false
-    if (selectedAddressIdList === undefined) return false
-    for (const selectedAddressId of selectedAddressIdList) {
-      const address = userAddresses.find((addr) => addr.id === selectedAddressId)
-      if (
-        address !== undefined &&
-        address.networkId === networkId
-      ) {
-        ret = true
-        break
-      }
-    }
-    return ret
-  }
-
-  function disableDefaultInputFields (): void {
-    if (hasAddressForNetworkId(XEC_NETWORK_ID)) {
-      setIsXECDefaultDisabled(false)
-    } else {
-      setIsXECDefaultDisabled(true)
-      const el = document.getElementById('isXECDefault') as HTMLInputElement
-      if (el === null) return
-      el.checked = false
-      el.value = ''
-    }
-    if (hasAddressForNetworkId(BCH_NETWORK_ID)) {
-      setIsBCHDefaultDisabled(false)
-    } else {
-      setIsBCHDefaultDisabled(true)
-      const el = document.getElementById('isBCHDefault') as HTMLInputElement
-      if (el === null) return
-      el.checked = false
-      el.value = ''
-    }
-  }
-
   useEffect(() => {
     setModal(false)
     reset()
   }, [wallet, userAddresses])
 
   useEffect(() => {
-    disableDefaultInputFields()
   }, [selectedAddressIdList])
 
   useEffect(() => {
@@ -153,9 +112,9 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                         defaultChecked={wallet.userProfile?.isXECDefault === true}
                         type="checkbox"
                         id='isXECDefault'
-                        disabled={ isXECDefaultDisabled }
+                        disabled={wallet.userProfile?.isXECDefault === true}
                       />
-                      <label htmlFor='xec-default' className={style.makedefault_margin}>Make Default XEC Wallet</label>
+                      <label htmlFor='xec-default' className={style.makedefault_margin}>Default XEC Wallet</label>
                     </div>
                     <div className={style.input_field}>
                       <input
@@ -163,9 +122,9 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                         defaultChecked={wallet.userProfile?.isBCHDefault === true}
                         type="checkbox"
                         id='isBCHDefault'
-                        disabled={ isBCHDefaultDisabled }
+                        disabled={wallet.userProfile?.isBCHDefault === true}
                       />
-                      <label htmlFor='bch-default' className={style.makedefault_margin}>Make Default BCH Wallet</label>
+                      <label htmlFor='bch-default' className={style.makedefault_margin}>Default BCH Wallet</label>
                     </div>
                   </div>
 
