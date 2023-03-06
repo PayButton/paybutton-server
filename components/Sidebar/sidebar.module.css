@@ -8,6 +8,9 @@
   position: relative;
   min-height: 100vh;
   width: 220px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
 }
 
 .ul {
@@ -15,7 +18,11 @@
 }
 
 .section {
-  padding-left: 25px;
+  padding: 0 0 0 25px;
+  margin: 0;
+  border-bottom: none;
+  border-top: none;
+  margin-bottom: 30px;
 }
 
 .section img {
