@@ -64,7 +64,6 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
         providerUserId: values.userId,
         name: values.name,
         buttonData: values.buttonData,
-        walletId: values.walletId,
         addresses: {
           create: values.prefixedAddressList.map((address) => {
             return {

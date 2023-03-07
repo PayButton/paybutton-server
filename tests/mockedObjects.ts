@@ -18,7 +18,6 @@ export const mockedPaybutton: PaybuttonWithAddresses = {
   uuid: '730bfa24-eb57-11ec-b722-0242ac150002',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-  walletId: 1,
   addresses: [
     {
       address: {
@@ -115,7 +114,6 @@ export const mockedPaybuttonList = [
     uuid: '730bfa24-eb57-11ec-b722-0242ac150002',
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-    walletId: null,
     addresses: [
       {
         address: mockedAddressList[0]
@@ -133,7 +131,6 @@ export const mockedPaybuttonList = [
     uuid: '133fb8aa-eb57-11ec-b722-0242ac150002',
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-    walletId: null,
     addresses: [
       {
         address: mockedAddressList[2]
@@ -189,7 +186,6 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
             uuid: 'bfe90894-b1f4-11ed-b556-0242ac120003',
             buttonData: '{"example": "value"}',
             providerUserId: 'dev-uid',
-            walletId: 1,
             createdAt: new Date('2022-05-27T15:18:42.000Z'),
             updatedAt: new Date('2022-05-27T15:18:42.000Z')
           }
@@ -205,7 +201,6 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
             uuid: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
             buttonData: '{}',
             providerUserId: 'dev-uid',
-            walletId: null,
             createdAt: new Date('2022-05-27T15:18:42.000Z'),
             updatedAt: new Date('2022-05-27T15:18:42.000Z')
           }
@@ -232,7 +227,6 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
             uuid: 'bfe90b48-b1f4-11ed-b556-0242ac120003',
             buttonData: '{}',
             providerUserId: 'dev-uid',
-            walletId: 1,
             createdAt: new Date('2022-05-27T15:18:42.000Z'),
             updatedAt: new Date('2022-05-27T15:18:42.000Z')
           }
@@ -248,7 +242,6 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
             uuid: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
             buttonData: '{}',
             providerUserId: 'dev-uid',
-            walletId: null,
             createdAt: new Date('2022-05-27T15:18:42.000Z'),
             updatedAt: new Date('2022-05-27T15:18:42.000Z')
           }

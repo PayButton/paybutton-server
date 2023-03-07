@@ -97,13 +97,6 @@ describe('Create services', () => {
     expect(result).toEqual(mockedWallet)
   })
 
-  it('Should succeed for already binded paybutton', async () => {
-    data.paybuttons[0].walletId = 1729
-    const result = await walletService.createWallet(data.createWalletInput)
-    expect(result).toEqual(mockedWallet)
-    data.paybuttons[0].walletId = null
-  })
-
   it('Should succeed for already binded address', async () => {
     data.address.walletId = 1729
     const result = await walletService.createWallet(data.createWalletInput)
