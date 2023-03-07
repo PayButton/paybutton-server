@@ -29,7 +29,7 @@ export interface BlockInfoData extends BlockchainInfoData {
 
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
-  getAddress: (parameters: GetAddressParameters) => Promise<GetAddressTransactionsResponse.AsObject>
+  getAddressTransactions: (parameters: GetAddressParameters) => Promise<GetAddressTransactionsResponse.AsObject>
   getUtxos: (address: string) => Promise<GetAddressUnspentOutputsResponse.AsObject>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfoData>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfoData>
@@ -64,8 +64,8 @@ export async function getBalance (address: string): Promise<number> {
   return await getObjectForAddress(address, BLOCKCHAIN_CLIENTS).getBalance(address)
 }
 
-export async function getAddress (parameters: GetAddressParameters): Promise<GetAddressTransactionsResponse.AsObject> {
-  return await getObjectForAddress(parameters.address, BLOCKCHAIN_CLIENTS).getAddress(parameters)
+export async function getAddressTransactions (parameters: GetAddressParameters): Promise<GetAddressTransactionsResponse.AsObject> {
+  return await getObjectForAddress(parameters.address, BLOCKCHAIN_CLIENTS).getAddressTransactions(parameters)
 }
 
 export async function getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {

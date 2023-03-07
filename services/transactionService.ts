@@ -1,7 +1,7 @@
 import { Transaction, MempoolTransaction } from 'grpc-bchrpc-node'
 import prisma from 'prisma/clientInstance'
 import { Prisma, Address } from '@prisma/client'
-import { getAddress } from 'services/blockchainService'
+import { getAddressTransactions } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from 'utils/index'
 import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
@@ -169,7 +169,7 @@ export async function syncTransactionsForAddress (addressString: string): Promis
   let seenTransactionsCount = 0
   let insertedTransactions: TransactionWithAddressAndPrices[] = []
   while (newTransactionsCount !== 0) {
-    const addressTransactions = await getAddress({
+    const addressTransactions = await getAddressTransactions({
       address: address.address,
       nbFetch: FETCH_N,
       nbSkip: seenTransactionsCount

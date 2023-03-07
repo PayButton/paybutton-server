@@ -30,7 +30,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     return { hash: blockInfo.hash, height: blockInfo.height, timestamp: parseInt(blockInfo.timestamp) }
   }
 
-  async getAddress (parameters: GetAddressParameters): Promise<GetAddressTransactionsResponse.AsObject> {
+  async getAddressTransactions (parameters: GetAddressParameters): Promise<GetAddressTransactionsResponse.AsObject> {
     throw new Error('Method not implemented.')
   }
 

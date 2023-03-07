@@ -52,7 +52,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     return { hash: blockInfo.hash, height: blockInfo.height, timestamp: blockInfo.timestamp }
   };
 
-  public async getAddress (parameters: GetAddressParameters): Promise<GetAddressTransactionsResponse.AsObject> {
+  public async getAddressTransactions (parameters: GetAddressParameters): Promise<GetAddressTransactionsResponse.AsObject> {
     const client = this.getClientForAddress(parameters.address)
     return (await client.getAddressTransactions(parameters)).toObject()
   };
