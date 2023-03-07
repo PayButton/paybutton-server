@@ -19,6 +19,7 @@ model Address {
   walletId     Int?
   network      Network              @relation(fields: [networkId], references: [id], onUpdate: Restrict)
   wallet       Wallet?              @relation(fields: [walletId], references: [id], onUpdate: Restrict)
+  userProfiles   AddressesOnUserProfiles[]
   lastSynced   DateTime?
   paybuttons   AddressesOnButtons[]
   transactions Transaction[]
@@ -83,6 +84,7 @@ model Wallet {
   name           String                @db.VarChar(255)
   providerUserId String?               @db.VarChar(255)
   addresses      Address[]
+  userAddresses  AddressesOnUserProfiles[]
   userProfile    WalletsOnUserProfile?
 
   @@unique([name, providerUserId], map: "Wallet_name_providerUserId_unique_constraint")
@@ -124,6 +126,19 @@ model PricesOnTransactions {
   @@id([priceId, transactionId])
 }
 
+model AddressesOnUserProfiles {
+  addressId     Int
+  userProfileId Int
+  walletId      Int?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  address       Address      @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  userProfile   UserProfile  @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  wallet        Wallet?      @relation(fields: [walletId], references: [id], onDelete: SetNull)
+
+  @@id([userProfileId, addressId])
+}
+
 model WalletsOnUserProfile {
   walletId      Int         @unique
   userProfileId Int
@@ -145,4 +160,5 @@ model UserProfile {
   updatedAt DateTime               @updatedAt
   userId    String                 @unique @db.VarChar(255)
   wallets   WalletsOnUserProfile[]
+  addresses   AddressesOnUserProfiles[]
 }
