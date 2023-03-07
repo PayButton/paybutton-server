@@ -17,6 +17,6 @@ export const addressUserConnectors = [
   {
     walletId: 3,
     addressId: 4,
-    userProfileId: 2
+    userProfileId: 1
   }
 ]
