@@ -1,22 +1,33 @@
 import { ChronikClient, ScriptType } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { BlockchainClient, GetAddressParameters } from './blockchainService'
-import { GetBlockchainInfoResponse, GetBlockInfoResponse, GetAddressTransactionsResponse, GetAddressUnspentOutputsResponse, GetTransactionResponse, Transaction } from 'grpc-bchrpc-node'
+import { BlockchainClient, GetAddressParameters, BlockchainInfoData, BlockInfoData } from './blockchainService'
+import { GetAddressTransactionsResponse, GetAddressUnspentOutputsResponse, GetTransactionResponse, Transaction } from 'grpc-bchrpc-node'
+import { NETWORK_SLUGS, RESPONSE_MESSAGES } from 'constants/index'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
+  availableNetworks: string[]
 
   constructor () {
     this.chronik = new ChronikClient('https://chronik.be.cash/xec')
+    this.availableNetworks = [NETWORK_SLUGS.ecash]
   }
 
-  async getBlockchainInfo (networkSlug: string): Promise<GetBlockchainInfoResponse.AsObject> {
-    throw new Error('Method not implemented.')
+  private validateNetwork (networkSlug: string): void {
+    if (!this.availableNetworks.includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message) }
   }
 
-  async getBlockInfo (networkSlug: string, height: number): Promise<GetBlockInfoResponse.AsObject> {
-    throw new Error('Method not implemented.')
+  async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfoData> {
+    this.validateNetwork(networkSlug)
+    const blockchainInfo = await this.chronik.blockchainInfo()
+    return { height: blockchainInfo.tipHeight, hash: blockchainInfo.tipHash }
+  }
+
+  async getBlockInfo (networkSlug: string, height: number): Promise<BlockInfoData> {
+    this.validateNetwork(networkSlug)
+    const blockInfo = await (await this.chronik.block(height)).blockInfo
+    return { hash: blockInfo.hash, height: blockInfo.height, timestamp: parseInt(blockInfo.timestamp) }
   }
 
   async getAddress (parameters: GetAddressParameters): Promise<GetAddressTransactionsResponse.AsObject> {
