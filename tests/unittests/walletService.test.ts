@@ -15,16 +15,7 @@ import {
 } from '../mockedObjects'
 
 const prismaMockPaybuttonAndAddressUpdate = (): void => {
-  prismaMock.paybutton.update.mockImplementation((_) => {
-    const { addresses, ...paybuttonWithNoAddresses } = mockedPaybuttonList.filter(pb => pb.id === _.where.id)[0] as any
-    return paybuttonWithNoAddresses
-  })
-  prisma.paybutton.update = prismaMock.paybutton.update
-  prismaMock.address.update.mockImplementation((_) => {
-    const { createdAt, updatedAt, lastSynced, walletId, ...addressesWithNoExtraProperties } = mockedAddressList.filter(addr => addr.id === _.where.id)[0] as any
-    return addressesWithNoExtraProperties
-  })
-
+  prismaMock.address.update.mockResolvedValue(mockedAddressList[0])
   prisma.address.update = prismaMock.address.update
 }
 
@@ -106,13 +97,6 @@ describe('Create services', () => {
     expect(result).toEqual(mockedWallet)
   })
 
-  it('Should succeed for already binded paybutton', async () => {
-    data.paybuttons[0].walletId = 1729
-    const result = await walletService.createWallet(data.createWalletInput)
-    expect(result).toEqual(mockedWallet)
-    data.paybuttons[0].walletId = null
-  })
-
   it('Should succeed for already binded address', async () => {
     data.address.walletId = 1729
     const result = await walletService.createWallet(data.createWalletInput)
@@ -133,7 +117,7 @@ describe('Update services', () => {
         name: 'mockedWallet',
         isXECDefault: undefined,
         isBCHDefault: undefined,
-        paybuttonIdList: [1],
+        addressIdList: [1],
         userId: 'mocked-uid'
       }
     }
@@ -160,10 +144,8 @@ describe('Update services', () => {
 
   it('Update wallet', async () => {
     const result = await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
-    const { addresses, ...paybuttonWithNoAddresses } = mockedPaybuttonList[0]
     expect(result).toEqual({
-      ...mockedWallet,
-      paybuttons: [paybuttonWithNoAddresses]
+      ...mockedWallet
     })
   })
 
@@ -216,68 +198,6 @@ describe('Update services', () => {
       await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
     } catch (e: any) {
       expect(e.message).toMatch(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
-    }
-  })
-})
-
-describe('Set wallet paybuttons', () => {
-  beforeEach(() => {
-    prismaMockPaybuttonAndAddressUpdate()
-  })
-  it('Update with same paybuttons', async () => {
-    const result = await walletService.setPaybuttonListForWallet(
-      prismaMock,
-      [mockedPaybutton],
-      mockedWallet
-    )
-    expect(result).toEqual(mockedWallet)
-  })
-  it('Update paybutton that already belongs to other wallet', async () => {
-    const result = await walletService.setPaybuttonListForWallet(
-      prismaMock,
-      [{
-        ...mockedPaybutton,
-        walletId: 999
-      }],
-      mockedWallet
-    )
-    expect(result).toEqual(mockedWallet)
-  })
-  it('Update for paybutton with address that already belongs to other wallet', async () => {
-    const newPaybuttonAddressesList = [
-      {
-        address: {
-          ...mockedPaybutton.addresses[0].address,
-          walletId: 999
-        }
-      },
-      {
-        address: mockedPaybutton.addresses[1].address
-      }
-    ]
-    const result = await walletService.setPaybuttonListForWallet(
-      prismaMock,
-      [{
-        ...mockedPaybutton,
-        addresses: newPaybuttonAddressesList
-      }],
-      mockedWallet
-    )
-    expect(result).toEqual(mockedWallet)
-  })
-  it('Fail for paybutton of different user than wallet', async () => {
-    expect.assertions(1)
-    try {
-      await walletService.setPaybuttonListForWallet(
-        prismaMock,
-        [{
-          ...mockedPaybutton,
-          providerUserId: 'alskdfjaçsldkjfalçskdfj'
-        }],
-        mockedWallet
-      )
-    } catch (e: any) {
-      expect(e.message).toMatch(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
     }
   })
 })

@@ -5,9 +5,9 @@ import {
   UnspentOutput
 } from 'grpc-bchrpc-node'
 
-import { Prisma } from '@prisma/client'
+import { Prisma, Price } from '@prisma/client'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
-import { WalletWithAddressesAndPaybuttons } from 'services/walletService'
+import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import { USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, NETWORK_SLUGS } from 'constants/index'
 
 export const mockedPaybutton: PaybuttonWithAddresses = {
@@ -18,7 +18,6 @@ export const mockedPaybutton: PaybuttonWithAddresses = {
   uuid: '730bfa24-eb57-11ec-b722-0242ac150002',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-  walletId: 1,
   addresses: [
     {
       address: {
@@ -115,7 +114,6 @@ export const mockedPaybuttonList = [
     uuid: '730bfa24-eb57-11ec-b722-0242ac150002',
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-    walletId: null,
     addresses: [
       {
         address: mockedAddressList[0]
@@ -133,7 +131,6 @@ export const mockedPaybuttonList = [
     uuid: '133fb8aa-eb57-11ec-b722-0242ac150002',
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-    walletId: null,
     addresses: [
       {
         address: mockedAddressList[2]
@@ -157,7 +154,7 @@ mockedBCHAddressWithPaybutton.paybuttons = [
 ]
 
 // Wallet
-export const mockedWallet: WalletWithAddressesAndPaybuttons = {
+export const mockedWallet: WalletWithAddressesWithPaybuttons = {
   id: 1,
   createdAt: new Date('2022-09-30T18:01:32.456Z'),
   updatedAt: new Date('2022-09-30T18:01:32.456Z'),
@@ -168,26 +165,88 @@ export const mockedWallet: WalletWithAddressesAndPaybuttons = {
     isBCHDefault: null,
     userProfileId: 1
   },
-  paybuttons: [{
-    id: 4,
-    providerUserId: 'mocked-uid',
-    name: 'mocked-name',
-    buttonData: 'mockedData',
-    uuid: '730bfa24-eb57-11ec-b722-0242ac150002',
-    createdAt: new Date('2022-05-27T15:18:42.000Z'),
-    updatedAt: new Date('2022-05-27T15:18:42.000Z'),
-    walletId: 1
-  }],
   addresses: [
     {
       id: 1,
       address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
-      networkId: 1
+      createdAt: new Date('2022-05-27T15:18:42.000Z'),
+      updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+      networkId: 1,
+      walletId: 8,
+      lastSynced: new Date('2022-05-27T15:18:42.000Z'),
+      paybuttons: [
+        {
+          paybuttonId: 1,
+          addressId: 1,
+          createdAt: new Date('2022-05-27T15:18:42.000Z'),
+          updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+          paybutton: {
+            id: 1,
+            name: 'Mocked Paybutton 1',
+            uuid: 'bfe90894-b1f4-11ed-b556-0242ac120003',
+            buttonData: '{"example": "value"}',
+            providerUserId: 'dev-uid',
+            createdAt: new Date('2022-05-27T15:18:42.000Z'),
+            updatedAt: new Date('2022-05-27T15:18:42.000Z')
+          }
+        },
+        {
+          paybuttonId: 3,
+          addressId: 1,
+          createdAt: new Date('2022-05-27T15:18:42.000Z'),
+          updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+          paybutton: {
+            id: 3,
+            name: 'Mocked Paybutton 2',
+            uuid: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
+            buttonData: '{}',
+            providerUserId: 'dev-uid',
+            createdAt: new Date('2022-05-27T15:18:42.000Z'),
+            updatedAt: new Date('2022-05-27T15:18:42.000Z')
+          }
+        }
+      ]
     },
     {
       id: 2,
       address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
-      networkId: 2
+      createdAt: new Date('2022-05-27T15:18:42.000Z'),
+      updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+      networkId: 2,
+      walletId: 1,
+      lastSynced: new Date('2022-05-27T15:18:42.000Z'),
+      paybuttons: [
+        {
+          paybuttonId: 2,
+          addressId: 2,
+          createdAt: new Date('2022-05-27T15:18:42.000Z'),
+          updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+          paybutton: {
+            id: 2,
+            name: 'Mocked Paybutton 3',
+            uuid: 'bfe90b48-b1f4-11ed-b556-0242ac120003',
+            buttonData: '{}',
+            providerUserId: 'dev-uid',
+            createdAt: new Date('2022-05-27T15:18:42.000Z'),
+            updatedAt: new Date('2022-05-27T15:18:42.000Z')
+          }
+        },
+        {
+          paybuttonId: 3,
+          addressId: 2,
+          createdAt: new Date('2022-05-27T15:18:42.000Z'),
+          updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+          paybutton: {
+            id: 3,
+            name: 'Mocked Paybutton 4',
+            uuid: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
+            buttonData: '{}',
+            providerUserId: 'dev-uid',
+            createdAt: new Date('2022-05-27T15:18:42.000Z'),
+            updatedAt: new Date('2022-05-27T15:18:42.000Z')
+          }
+        }
+      ]
     }
   ]
   // "paybuttons": [],
@@ -459,3 +518,42 @@ export const mockedCADPrice = {
   networkId: XEC_NETWORK_ID,
   quoteId: CAD_QUOTE_ID
 }
+
+export const mockPrices: Price[] = [
+  { // XECUSD
+    id: 0,
+    value: new Prisma.Decimal('0.00004095'),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    timestamp: 1664593200,
+    networkId: 1,
+    quoteId: 1
+  },
+  { // XECCAD
+    id: 0,
+    value: new Prisma.Decimal('0.00005663'),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    timestamp: 1664593200,
+    networkId: 1,
+    quoteId: 2
+  },
+  { // BCHUSD
+    id: 0,
+    value: new Prisma.Decimal('117.9081'),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    timestamp: 1664593200,
+    networkId: 2,
+    quoteId: 1
+  },
+  { // BCHCAD
+    id: 0,
+    value: new Prisma.Decimal('163.0735'),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    timestamp: 1664593200,
+    networkId: 2,
+    quoteId: 2
+  }
+]

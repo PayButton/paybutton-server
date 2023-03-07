@@ -18,5 +18,13 @@ export const walletUserConnectors = [
     isXECDefault: true,
     createdAt: new Date(),
     updatedAt: new Date()
+  },
+  {
+    walletId: 4,
+    userProfileId: 2,
+    isXECDefault: true,
+    isBCHDefault: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ]

@@ -130,7 +130,7 @@ export interface WalletPATCHParameters {
   userId?: string
   isXECDefault?: boolean
   isBCHDefault?: boolean
-  paybuttonIdList: number[]
+  addressIdList: number[]
 }
 
 export const parseWalletPOSTRequest = function (params: WalletPOSTParameters): CreateWalletInput {
@@ -149,11 +149,11 @@ export const parseWalletPOSTRequest = function (params: WalletPOSTParameters): C
 export const parseWalletPATCHRequest = function (params: WalletPATCHParameters): UpdateWalletInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
-  params.paybuttonIdList = params.paybuttonIdList.map((id: string | number) => Number(id))
+  params.addressIdList = params.addressIdList.map((id: string | number) => Number(id))
   return {
     name: params.name,
     userId: params.userId,
-    paybuttonIdList: params.paybuttonIdList,
+    addressIdList: params.addressIdList,
     isXECDefault: params.isXECDefault,
     isBCHDefault: params.isBCHDefault
   }
