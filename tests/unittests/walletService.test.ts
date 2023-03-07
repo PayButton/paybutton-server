@@ -46,7 +46,10 @@ describe('Fetch services', () => {
     const params: walletService.WalletWithAddressesWithPaybuttons = {
       ...mockedWallet,
       userProfile: null,
-      addresses: [mockedBCHAddressWithPaybutton]
+      userAddresses: [{
+        ...mockedWallet.userAddresses[0],
+        address: mockedBCHAddressWithPaybutton
+      }]
     }
     const result = await walletService.getWalletBalance(params)
     expect(result).toHaveProperty('XECBalance', new Prisma.Decimal('0'))
@@ -227,7 +230,7 @@ describe('Auxiliary functions', () => {
   })
   it('Mocked wallet has address only for XEC', () => {
     const otherWallet = { ...mockedWallet }
-    otherWallet.addresses = otherWallet.addresses.filter((addr) => addr.networkId === XEC_NETWORK_ID)
+    otherWallet.userAddresses = otherWallet.userAddresses.filter((addr) => addr.address.networkId === XEC_NETWORK_ID)
     expect(
       walletService.walletHasAddressForNetwork(otherWallet, XEC_NETWORK_ID)
     ).toBe(true)
@@ -237,7 +240,7 @@ describe('Auxiliary functions', () => {
   })
   it('Mocked wallet has address only for BCH', () => {
     const otherWallet = { ...mockedWallet }
-    otherWallet.addresses = otherWallet.addresses.filter((addr) => addr.networkId === BCH_NETWORK_ID)
+    otherWallet.userAddresses = otherWallet.userAddresses.filter((addr) => addr.address.networkId === BCH_NETWORK_ID)
     expect(
       walletService.walletHasAddressForNetwork(otherWallet, BCH_NETWORK_ID)
     ).toBe(true)
@@ -247,7 +250,7 @@ describe('Auxiliary functions', () => {
   })
   it('Mocked wallet has no addresses', () => {
     const otherWallet = { ...mockedWallet }
-    otherWallet.addresses = []
+    otherWallet.userAddresses = []
     expect(
       walletService.walletHasAddressForNetwork(otherWallet, BCH_NETWORK_ID)
     ).toBe(false)
