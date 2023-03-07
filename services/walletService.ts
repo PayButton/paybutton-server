@@ -88,13 +88,27 @@ export async function setAddressListForWallet (
   addressIdList: number[],
   wallet: WalletWithAddressesWithPaybuttons
 ): Promise<void> {
+  if (wallet.userProfile === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
+  }
   for (const addressId of addressIdList) {
-    await prisma.address.update({
+    await prisma.address.update({ // DEPRECATED
       data: {
         walletId: wallet.id
       },
       where: {
         id: addressId
+      }
+    })
+    await prisma.addressesOnUserProfiles.update({
+      data: {
+        walletId: wallet.id
+      },
+      where: {
+        userProfileId_addressId: {
+          userProfileId: wallet.userProfile.userProfileId,
+          addressId
+        }
       }
     })
   }
