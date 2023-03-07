@@ -1,4 +1,3 @@
-// import * as networkService from 'services/networkService'
 import * as addressService from 'services/addressService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
@@ -69,10 +68,14 @@ export const walletHasAddressForNetwork = (wallet: WalletWithAddressesWithPaybut
 
 async function removeAddressesFromWallet (
   prisma: Prisma.TransactionClient,
+  wallet: WalletWithAddressesWithPaybuttons,
   addressIdsToRemoveList: number[]
 ): Promise<void> {
+  if (wallet.userProfile === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
+  }
   for (const addressId of addressIdsToRemoveList) {
-    await prisma.address.update({
+    await prisma.address.update({ // DEPRECATED
       data: {
         walletId: null
       },
@@ -80,10 +83,22 @@ async function removeAddressesFromWallet (
         id: addressId
       }
     })
+
+    await prisma.addressesOnUserProfiles.update({
+      data: {
+        walletId: null
+      },
+      where: {
+        userProfileId_addressId: {
+          userProfileId: wallet.userProfile.userProfileId,
+          addressId
+        }
+      }
+    })
   }
 }
 
-export async function setAddressListForWallet (
+export async function connectAddressesToWallet (
   prisma: Prisma.TransactionClient,
   addressIdList: number[],
   wallet: WalletWithAddressesWithPaybuttons
@@ -92,15 +107,6 @@ export async function setAddressListForWallet (
     throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
   }
   for (const addressId of addressIdList) {
-    await prisma.address.update({ // DEPRECATED
-      data: {
-        walletId: wallet.id
-      },
-      where: {
-        id: addressId
-      }
-    })
-
     await prisma.addressesOnUserProfiles.upsert({
       create: {
         walletId: wallet.id,
@@ -118,10 +124,30 @@ export async function setAddressListForWallet (
       }
     })
   }
+}
+
+export async function setAddressListForWallet (
+  prisma: Prisma.TransactionClient,
+  addressIdList: number[],
+  wallet: WalletWithAddressesWithPaybuttons
+): Promise<void> {
+  for (const addressId of addressIdList) { // DEPRECATED
+    await prisma.address.update({
+      data: {
+        walletId: wallet.id
+      },
+      where: {
+        id: addressId
+      }
+    })
+  }
+
+  await connectAddressesToWallet(prisma, addressIdList, wallet)
 
   // remove addresses that are not on the list
   await removeAddressesFromWallet(
     prisma,
+    wallet,
     wallet.userAddresses.map(addr => addr.address.id).filter(addrId => !addressIdList.includes(addrId))
   )
 }
