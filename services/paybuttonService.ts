@@ -1,5 +1,6 @@
 import * as networkService from 'services/networkService'
 import * as addressService from 'services/addressService'
+import * as walletService from 'services/walletService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
