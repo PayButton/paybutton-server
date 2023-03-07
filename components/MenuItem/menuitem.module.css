@@ -21,6 +21,10 @@
   align-items: center;
 }
 
+.imagectn img {
+  border-radius: 0;
+}
+
 .active .imagectn img {
   filter: none !important;
 }
@@ -36,19 +40,19 @@
   transition: all ease-in-out 200ms;
 }
 
-body[data-theme="dark"] .li .imagectn img {
+body[data-theme='dark'] .li .imagectn img {
   filter: brightness(0) invert(1);
 }
 
-body[data-theme="dark"] .li:hover .imagectn img {
+body[data-theme='dark'] .li:hover .imagectn img {
   filter: none;
 }
 
-body[data-theme="dark"] .active {
+body[data-theme='dark'] .active {
   color: var(--primary-bg-color) !important;
 }
 
-body[data-theme="dark"] .li:hover {
+body[data-theme='dark'] .li:hover {
   color: var(--secondary-bg-color);
   background: var(--primary-text-color);
   transition: all ease-in-out 200ms;

@@ -2,6 +2,7 @@ import { Price, Prisma } from '@prisma/client'
 import { getAllPricesByNetworkTicker } from 'services/priceService'
 import { NETWORK_TICKERS, NETWORK_IDS, QUOTE_IDS, KeyValueT } from 'constants/index'
 import { readCsv, fileExists, isEmpty } from 'utils/index'
+import { mockPrices } from 'tests/mockedObjects'
 import moment from 'moment'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -84,6 +85,8 @@ async function getPricesFromFile (): Promise<PriceFileData[]> {
 }
 
 export async function getPrices (): Promise<Price[]> {
+  if (process.env.NODE_ENV === 'test') return mockPrices
+
   const quotes = Object.keys(QUOTE_IDS)
   const pricesFromFile = await getPricesFromFile()
 

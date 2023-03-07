@@ -70,7 +70,7 @@ const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userAddress
           <h6>Buttons</h6>
           <div className={style.buttons_list_ctn}>
             {differentPaybuttons.map(pb =>
-              <Link href={`/button/${pb.id}`}>{pb.name}</Link>
+              <Link href={`/button/${pb.id}`} key={pb.id}>{pb.name}</Link>
             )}
           </div>
         </div>
