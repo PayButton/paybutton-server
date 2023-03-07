@@ -11,12 +11,19 @@ import {
   mockedPaybutton,
   mockedNetwork,
   mockedAddressList,
-  mockedBCHAddressWithPaybutton
+  mockedBCHAddressWithPaybutton,
+  mockedAddressesOnUserProfile
 } from '../mockedObjects'
 
 const prismaMockPaybuttonAndAddressUpdate = (): void => {
   prismaMock.address.update.mockResolvedValue(mockedAddressList[0])
   prisma.address.update = prismaMock.address.update
+
+  prismaMock.addressesOnUserProfiles.update.mockResolvedValue(mockedAddressesOnUserProfile)
+  prisma.addressesOnUserProfiles.update = prismaMock.addressesOnUserProfiles.update
+
+  prismaMock.addressesOnUserProfiles.upsert.mockResolvedValue(mockedAddressesOnUserProfile)
+  prisma.addressesOnUserProfiles.upsert = prismaMock.addressesOnUserProfiles.upsert
 }
 
 describe('Fetch services', () => {

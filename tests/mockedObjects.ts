@@ -66,6 +66,55 @@ export const mockedXECAddress = {
   walletId: null
 }
 
+export const mockedAddressesOnUserProfile = {
+  addressId: 1,
+  userProfileId: 1,
+  walletId: 8,
+  createdAt: new Date('2022-05-27T15:18:42.000Z'),
+  updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+  address: {
+    id: 1,
+    address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
+    createdAt: new Date('2022-05-27T15:18:42.000Z'),
+    updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+    networkId: 1,
+    walletId: 8, // DEPRECATED
+    lastSynced: new Date('2022-05-27T15:18:42.000Z'),
+    paybuttons: [
+      {
+        paybuttonId: 1,
+        addressId: 1,
+        createdAt: new Date('2022-05-27T15:18:42.000Z'),
+        updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+        paybutton: {
+          id: 1,
+          name: 'Mocked Paybutton 1',
+          uuid: 'bfe90894-b1f4-11ed-b556-0242ac120003',
+          buttonData: '{"example": "value"}',
+          providerUserId: 'dev-uid',
+          createdAt: new Date('2022-05-27T15:18:42.000Z'),
+          updatedAt: new Date('2022-05-27T15:18:42.000Z')
+        }
+      },
+      {
+        paybuttonId: 3,
+        addressId: 1,
+        createdAt: new Date('2022-05-27T15:18:42.000Z'),
+        updatedAt: new Date('2022-05-27T15:18:42.000Z'),
+        paybutton: {
+          id: 3,
+          name: 'Mocked Paybutton 2',
+          uuid: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
+          buttonData: '{}',
+          providerUserId: 'dev-uid',
+          createdAt: new Date('2022-05-27T15:18:42.000Z'),
+          updatedAt: new Date('2022-05-27T15:18:42.000Z')
+        }
+      }
+    ]
+  }
+}
+
 export const mockedAddressList = [
   {
     id: 1,
