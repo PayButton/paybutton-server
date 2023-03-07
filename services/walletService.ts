@@ -100,8 +100,14 @@ export async function setAddressListForWallet (
         id: addressId
       }
     })
-    await prisma.addressesOnUserProfiles.update({
-      data: {
+
+    await prisma.addressesOnUserProfiles.upsert({
+      create: {
+        walletId: wallet.id,
+        userProfileId: wallet.userProfile.userProfileId,
+        addressId
+      },
+      update: {
         walletId: wallet.id
       },
       where: {
