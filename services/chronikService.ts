@@ -3,12 +3,13 @@ import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { BlockchainClient, GetAddressParameters } from './blockchainService'
 import { GetBlockchainInfoResponse, GetBlockInfoResponse, GetAddressTransactionsResponse, GetAddressUnspentOutputsResponse, GetTransactionResponse, Transaction } from 'grpc-bchrpc-node'
+import { CHRONIK_CLIENT_URL } from 'constants/index'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
 
   constructor () {
-    this.chronik = new ChronikClient('https://chronik.be.cash/xec')
+    this.chronik = new ChronikClient(CHRONIK_CLIENT_URL)
   }
 
   async getBlockchainInfo (networkSlug: string): Promise<GetBlockchainInfoResponse.AsObject> {

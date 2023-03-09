@@ -99,8 +99,10 @@ export const NETWORK_TICKERS: KeyValueT<string> = {
 export const NETWORK_IDS: KeyValueT<number> = { XEC: 1, BCH: 2 }
 export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
 
-export type BLOCKCHAIN_CLIENTS_OPTIONS = 'grpc' | 'chronik'
-export const BLOCKCHAIN_CLIENTS_CHOSEN: KeyValueT<BLOCKCHAIN_CLIENTS_OPTIONS> = {
+export type BLOCKCHAIN_CLIENT_OPTIONS = 'grpc' | 'chronik'
+export const NETWORK_BLOCKCHAIN_CLIENTS: KeyValueT<BLOCKCHAIN_CLIENT_OPTIONS> = {
   ecash: 'grpc',
   bitcoincash: 'grpc'
 }
+
+export const CHRONIK_CLIENT_URL = 'https://chronik.be.cash/xec'

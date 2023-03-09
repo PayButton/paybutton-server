@@ -122,13 +122,13 @@ export function isEmpty (value: string): boolean {
   return value === '' || value === null || value === undefined
 }
 
-export function getObjectForAddress<T> (addressString: string, objects: KeyValueT<T>): T {
+export function getObjectValueForAddress<T> (addressString: string, objects: KeyValueT<T>): T {
   const prefix = getAddressPrefix(addressString)
   if (!Object.keys(objects).includes(prefix)) { throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message) }
   return objects[prefix]
 }
 
-export function getObjectForNetworkSlug<T> (networkSlug: string, objects: KeyValueT<T>): T {
+export function getObjectValueForNetworkSlug<T> (networkSlug: string, objects: KeyValueT<T>): T {
   if (!Object.keys(NETWORK_SLUGS).includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message) }
   return objects[networkSlug]
 }
