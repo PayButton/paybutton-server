@@ -1,22 +1,13 @@
 import { GrpcBlockchainClient } from './grpcService'
+import { TxHistoryPage } from 'chronik-client'
 import { ChronikBlockchainClient } from './chronikService'
 import { getObjectForAddress, getObjectForNetworkSlug } from '../utils/index'
 import { RESPONSE_MESSAGES, KeyValueT, BLOCKCHAIN_CLIENTS_CHOSEN, BLOCKCHAIN_CLIENTS_OPTIONS } from '../constants/index'
 import {
   Transaction,
   GetTransactionResponse,
-  GetAddressTransactionsResponse,
   GetAddressUnspentOutputsResponse
 } from 'grpc-bchrpc-node'
-
-export interface GetAddressParameters {
-  address: string
-  nbSkip?: number
-  nbFetch?: number
-  height?: number
-  hash?: string
-  reversedHashOrder?: boolean
-}
 
 export interface BlockchainInfoData {
   height: number
@@ -29,7 +20,7 @@ export interface BlockInfoData extends BlockchainInfoData {
 
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
-  getAddressTransactions: (parameters: GetAddressParameters) => Promise<GetAddressTransactionsResponse.AsObject>
+  getAddressTransactions: (address: string, page?: number, pageSize?: number) => Promise<TxHistoryPage>
   getUtxos: (address: string) => Promise<GetAddressUnspentOutputsResponse.AsObject>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfoData>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfoData>
@@ -64,8 +55,8 @@ export async function getBalance (address: string): Promise<number> {
   return await getObjectForAddress(address, BLOCKCHAIN_CLIENTS).getBalance(address)
 }
 
-export async function getAddressTransactions (parameters: GetAddressParameters): Promise<GetAddressTransactionsResponse.AsObject> {
-  return await getObjectForAddress(parameters.address, BLOCKCHAIN_CLIENTS).getAddressTransactions(parameters)
+export async function getAddressTransactions (address: string, page?: number, pageSize?: number): Promise<TxHistoryPage> {
+  return await getObjectForAddress(address, BLOCKCHAIN_CLIENTS).getAddressTransactions(address, page, pageSize)
 }
 
 export async function getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {

@@ -4,7 +4,7 @@ import { NETWORK_SLUGS } from 'constants/index'
 
 describe('Test service returned objects consistency', () => {
   it('test getAddress for real address', async () => {
-    const res = await getAddressTransactions({ address: mockedBCHAddress.address })
+    const res = await getAddressTransactions(mockedBCHAddress.address)
     expect(res).toEqual(expect.objectContaining({
       confirmedTransactionsList: [
         mockedGrpc.transaction1.toObject(),

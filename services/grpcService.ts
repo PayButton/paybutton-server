@@ -3,14 +3,14 @@ import {
   TransactionNotification,
   Transaction,
   GetTransactionResponse,
-  GetAddressTransactionsResponse,
   GetAddressUnspentOutputsResponse
 } from 'grpc-bchrpc-node'
 
-import { BlockchainClient, GetAddressParameters, BlockchainInfoData, BlockInfoData } from './blockchainService'
+import { BlockchainClient, BlockchainInfoData, BlockInfoData } from './blockchainService'
 import { getObjectForNetworkSlug, getObjectForAddress } from '../utils/index'
 import { parseMempoolTx } from 'services/transactionService'
 import { KeyValueT, RESPONSE_MESSAGES } from '../constants/index'
+import { TxHistoryPage } from 'chronik-client'
 
 export interface OutputsList {
   outpoint: object
@@ -52,9 +52,11 @@ export class GrpcBlockchainClient implements BlockchainClient {
     return { hash: blockInfo.hash, height: blockInfo.height, timestamp: blockInfo.timestamp }
   };
 
-  public async getAddressTransactions (parameters: GetAddressParameters): Promise<GetAddressTransactionsResponse.AsObject> {
-    const client = this.getClientForAddress(parameters.address)
-    return (await client.getAddressTransactions(parameters)).toObject()
+  // DEPRECATED
+  public async getAddressTransactions (address: string, page?: number, pageSize?: number): Promise<TxHistoryPage> {
+    throw new Error('Method not implemented.')
+    // const client = this.getClientForAddress(parameters.address)
+    // return (await client.getAddressTransactions(parameters)).toObject()
   };
 
   public async getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {

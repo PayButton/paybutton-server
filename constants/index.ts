@@ -101,6 +101,6 @@ export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
 
 export type BLOCKCHAIN_CLIENTS_OPTIONS = 'grpc' | 'chronik'
 export const BLOCKCHAIN_CLIENTS_CHOSEN: KeyValueT<BLOCKCHAIN_CLIENTS_OPTIONS> = {
-  ecash: 'grpc',
-  bitcoincash: 'grpc'
+  ecash: 'chronik',
+  bitcoincash: 'chronik'
 }
