@@ -1,5 +1,5 @@
 import { NextApiResponse, NextApiRequest } from 'next'
-import { getBalance } from 'services/grpcService'
+import { getBalance } from 'services/blockchainService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { parseAddress } from 'utils/validators'
 import Cors from 'cors'

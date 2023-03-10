@@ -37,7 +37,9 @@ export const RESPONSE_MESSAGES = {
   QUOTE_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'quoteSlug' not provided." },
   NO_CURRENT_PRICES_FOUND_404: { statusCode: 404, message: 'Current prices not found.' },
   INVALID_QUOTE_SLUG_400: { statusCode: 400, message: 'Invalid quote slug.' },
-  INVALID_TICKER_400: { statusCode: 400, message: 'Invalid ticker.' }
+  INVALID_TICKER_400: { statusCode: 400, message: 'Invalid ticker.' },
+  MISSING_BLOCKCHAIN_CLIENT_400: { statusCode: 400, message: 'There is no blockchain client chosen for this network.' },
+  NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400: { statusCode: 400, message: 'Blockchain client was not instantiated.' }
 }
 
 export interface KeyValueT<T> {
@@ -96,3 +98,11 @@ export const NETWORK_TICKERS: KeyValueT<string> = {
 
 export const NETWORK_IDS: KeyValueT<number> = { XEC: 1, BCH: 2 }
 export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
+
+export type BLOCKCHAIN_CLIENT_OPTIONS = 'grpc' | 'chronik'
+export const NETWORK_BLOCKCHAIN_CLIENTS: KeyValueT<BLOCKCHAIN_CLIENT_OPTIONS> = {
+  ecash: 'grpc',
+  bitcoincash: 'grpc'
+}
+
+export const CHRONIK_CLIENT_URL = 'https://chronik.be.cash/xec'
