@@ -1,4 +1,4 @@
-export const connectors = [
+export const paybuttonAddressConnectors = [
   {
     addressId: 1,
     paybuttonId: 1

@@ -7,7 +7,7 @@ import {
 } from 'grpc-bchrpc-node'
 
 import { BlockchainClient, BlockchainInfoData, BlockInfoData } from './blockchainService'
-import { getObjectForNetworkSlug, getObjectForAddress } from '../utils/index'
+import { getObjectValueForNetworkSlug, getObjectValueForAddress } from '../utils/index'
 import { parseMempoolTx } from 'services/transactionService'
 import { KeyValueT, RESPONSE_MESSAGES } from '../constants/index'
 import { TxHistoryPage } from 'chronik-client'
@@ -32,11 +32,11 @@ export class GrpcBlockchainClient implements BlockchainClient {
   }
 
   private getClientForAddress (addressString: string): GrpcClient {
-    return getObjectForAddress(addressString, this.clients)
+    return getObjectValueForAddress(addressString, this.clients)
   }
 
   private getClientForNetworkSlug (networkSlug: string): GrpcClient {
-    return getObjectForNetworkSlug(networkSlug, this.clients)
+    return getObjectValueForNetworkSlug(networkSlug, this.clients)
   }
 
   public async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfoData> {

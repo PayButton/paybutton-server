@@ -1,8 +1,8 @@
 import { GrpcBlockchainClient } from './grpcService'
 import { TxHistoryPage } from 'chronik-client'
 import { ChronikBlockchainClient } from './chronikService'
-import { getObjectForAddress, getObjectForNetworkSlug } from '../utils/index'
-import { RESPONSE_MESSAGES, KeyValueT, BLOCKCHAIN_CLIENTS_CHOSEN, BLOCKCHAIN_CLIENTS_OPTIONS } from '../constants/index'
+import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils/index'
+import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CLIENT_OPTIONS } from '../constants/index'
 import {
   Transaction,
   GetTransactionResponse,
@@ -33,13 +33,13 @@ export interface BlockchainClient {
   ) => Promise<void>
 }
 
-function getBlockchainClient (network: string): BlockchainClient {
-  if (!Object.keys(BLOCKCHAIN_CLIENTS_CHOSEN).includes(network)) { throw new Error(RESPONSE_MESSAGES.MISSING_BLOCKCHAIN_CLIENT_400.message) }
+function getBlockchainClient (networkSlug: string): BlockchainClient {
+  if (!Object.keys(NETWORK_BLOCKCHAIN_CLIENTS).includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.MISSING_BLOCKCHAIN_CLIENT_400.message) }
 
-  switch (BLOCKCHAIN_CLIENTS_CHOSEN[network]) {
-    case 'grpc' as BLOCKCHAIN_CLIENTS_OPTIONS:
+  switch (NETWORK_BLOCKCHAIN_CLIENTS[networkSlug]) {
+    case 'grpc' as BLOCKCHAIN_CLIENT_OPTIONS:
       return new GrpcBlockchainClient()
-    case 'chronik' as BLOCKCHAIN_CLIENTS_OPTIONS:
+    case 'chronik' as BLOCKCHAIN_CLIENT_OPTIONS:
       return new ChronikBlockchainClient()
     default:
       throw new Error(RESPONSE_MESSAGES.NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400.message)
@@ -52,27 +52,27 @@ export const BLOCKCHAIN_CLIENTS: KeyValueT<BlockchainClient> = {
 }
 
 export async function getBalance (address: string): Promise<number> {
-  return await getObjectForAddress(address, BLOCKCHAIN_CLIENTS).getBalance(address)
+  return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getBalance(address)
 }
 
 export async function getAddressTransactions (address: string, page?: number, pageSize?: number): Promise<TxHistoryPage> {
-  return await getObjectForAddress(address, BLOCKCHAIN_CLIENTS).getAddressTransactions(address, page, pageSize)
+  return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getAddressTransactions(address, page, pageSize)
 }
 
 export async function getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {
-  return await getObjectForAddress(address, BLOCKCHAIN_CLIENTS).getUtxos(address)
+  return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getUtxos(address)
 }
 
 export async function getBlockchainInfo (networkSlug: string): Promise<BlockchainInfoData> {
-  return await getObjectForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockchainInfo(networkSlug)
+  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockchainInfo(networkSlug)
 }
 
 export async function getBlockInfo (networkSlug: string, height: number): Promise<BlockInfoData> {
-  return await getObjectForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockInfo(networkSlug, height)
+  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockInfo(networkSlug, height)
 }
 
 export async function getTransactionDetails (hash: string, networkSlug: string): Promise<GetTransactionResponse.AsObject> {
-  return await getObjectForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getTransactionDetails(hash, networkSlug)
+  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getTransactionDetails(hash, networkSlug)
 }
 
 export async function subscribeTransactions (
@@ -81,5 +81,5 @@ export async function subscribeTransactions (
   onMempoolTransactionNotification: (txn: Transaction.AsObject) => any,
   networkSlug: string
 ): Promise<void> {
-  return await getObjectForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).subscribeTransactions(addresses, onTransactionNotification, onMempoolTransactionNotification, networkSlug)
+  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).subscribeTransactions(addresses, onTransactionNotification, onMempoolTransactionNotification, networkSlug)
 }
