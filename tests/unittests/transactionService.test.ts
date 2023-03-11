@@ -1,7 +1,7 @@
 import prisma from 'prisma/clientInstance'
 import * as transactionService from 'services/transactionService'
 import { prismaMock } from 'prisma/mockedClient'
-import { mockedTransaction, mockedGrpc, mockedBCHAddress } from '../mockedObjects'
+import { mockedTransaction, mockedBlockchainTransactions, mockedBCHAddress } from '../mockedObjects'
 
 describe('Create services', () => {
   it('Return created transaction', async () => {
@@ -11,7 +11,7 @@ describe('Create services', () => {
     prisma.address.findMany = prismaMock.address.findMany
 
     const result = await transactionService.upsertTransaction(
-      mockedGrpc.transaction1.toObject(),
+      mockedBlockchainTransactions[0],
       mockedBCHAddress,
       true
     )
@@ -29,14 +29,14 @@ describe('Create services', () => {
 describe('Amount transactioned', () => {
   it('Negative transaction', async () => {
     const amount = await transactionService.getTransactionAmount(
-      mockedGrpc.transaction2.toObject(),
+      mockedBlockchainTransactions[1],
       mockedBCHAddress.address
     )
     expect(amount.toString()).toBe('-0.00000546')
   })
   it('Positive transaction', async () => {
     const amount = await transactionService.getTransactionAmount(
-      mockedGrpc.transaction1.toObject(),
+      mockedBlockchainTransactions[0],
       mockedBCHAddress.address
     )
     expect(amount.toString()).toBe('4.31247724')

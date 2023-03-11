@@ -1,16 +1,11 @@
-import { mockedGrpc, mockedBCHAddress, mockedXECAddress } from '../mockedObjects'
+import { mockedBlockchainTransactions, mockedBCHAddress, mockedXECAddress } from '../mockedObjects'
 import { getAddressTransactions, getUtxos, getBalance, getTransactionDetails } from '../../services/blockchainService'
 import { NETWORK_SLUGS } from 'constants/index'
 
 describe('Test service returned objects consistency', () => {
   it('test getAddress for real address', async () => {
     const res = await getAddressTransactions(mockedBCHAddress.address)
-    expect(res).toEqual(expect.objectContaining({
-      confirmedTransactionsList: [
-        mockedGrpc.transaction1.toObject(),
-        mockedGrpc.transaction2.toObject()
-      ]
-    }))
+    expect(res).toEqual(expect.objectContaining(mockedBlockchainTransactions))
   })
   it('test getUtxos', async () => {
     const res = await getUtxos(mockedXECAddress.address)

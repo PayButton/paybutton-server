@@ -1,7 +1,7 @@
-import MockGrpcClient from './mockGrpcClient'
+import MockChronikClient from './mockBlockchainClient'
 
-jest.mock('grpc-bchrpc-node', () => ({
-  ...jest.requireActual('grpc-bchrpc-node'),
+jest.mock('chronik-client', () => ({
+  ...jest.requireActual('chronik-client'),
   _HAS_NETWORK_INTEGRITY: false,
-  GrpcClient: jest.fn(() => new MockGrpcClient())
+  ChronikClient: jest.fn(() => new MockChronikClient())
 }))
