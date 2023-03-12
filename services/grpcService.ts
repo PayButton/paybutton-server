@@ -7,7 +7,7 @@ import {
   GetAddressUnspentOutputsResponse
 } from 'grpc-bchrpc-node'
 
-import { BlockchainClient, GetAddressParameters, BlockchainInfoData, BlockInfoData } from './blockchainService'
+import { BlockchainClient, GetAddressParameters, BlockchainInfo, BlockInfoData } from './blockchainService'
 import { getObjectValueForNetworkSlug, getObjectValueForAddress } from '../utils/index'
 import { parseMempoolTx } from 'services/transactionService'
 import { KeyValueT, RESPONSE_MESSAGES } from '../constants/index'
@@ -39,7 +39,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     return getObjectValueForNetworkSlug(networkSlug, this.clients)
   }
 
-  public async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfoData> {
+  public async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
     const client = this.getClientForNetworkSlug(networkSlug)
     const blockchainInfo = (await client.getBlockchainInfo()).toObject()
     return { height: blockchainInfo.bestHeight, hash: blockchainInfo.bestBlockHash }

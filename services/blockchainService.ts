@@ -18,12 +18,12 @@ export interface GetAddressParameters {
   reversedHashOrder?: boolean
 }
 
-export interface BlockchainInfoData {
+export interface BlockchainInfo {
   height: number
   hash: Uint8Array | string
 }
 
-export interface BlockInfoData extends BlockchainInfoData {
+export interface BlockInfoData extends BlockchainInfo {
   timestamp: number
 }
 
@@ -31,7 +31,7 @@ export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
   getAddress: (parameters: GetAddressParameters) => Promise<GetAddressTransactionsResponse.AsObject>
   getUtxos: (address: string) => Promise<GetAddressUnspentOutputsResponse.AsObject>
-  getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfoData>
+  getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfoData>
   getTransactionDetails: (hash: string, networkSlug: string) => Promise<GetTransactionResponse.AsObject>
   subscribeTransactions: (
@@ -72,7 +72,7 @@ export async function getUtxos (address: string): Promise<GetAddressUnspentOutpu
   return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getUtxos(address)
 }
 
-export async function getBlockchainInfo (networkSlug: string): Promise<BlockchainInfoData> {
+export async function getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
   return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockchainInfo(networkSlug)
 }
 

@@ -1,7 +1,7 @@
 import { ChronikClient, ScriptType } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { BlockchainClient, GetAddressParameters, BlockchainInfoData, BlockInfoData } from './blockchainService'
+import { BlockchainClient, GetAddressParameters, BlockchainInfo, BlockInfoData } from './blockchainService'
 import { GetAddressTransactionsResponse, GetAddressUnspentOutputsResponse, GetTransactionResponse, Transaction } from 'grpc-bchrpc-node'
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL } from 'constants/index'
 
@@ -18,7 +18,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     if (!this.availableNetworks.includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message) }
   }
 
-  async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfoData> {
+  async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
     this.validateNetwork(networkSlug)
     const blockchainInfo = await this.chronik.blockchainInfo()
     return { height: blockchainInfo.tipHeight, hash: blockchainInfo.tipHash }
@@ -26,7 +26,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
   async getBlockInfo (networkSlug: string, height: number): Promise<BlockInfoData> {
     this.validateNetwork(networkSlug)
-    const blockInfo = await (await this.chronik.block(height)).blockInfo
+    const blockInfo = (await this.chronik.block(height)).blockInfo
     return { hash: blockInfo.hash, height: blockInfo.height, timestamp: parseInt(blockInfo.timestamp) }
   }
 
