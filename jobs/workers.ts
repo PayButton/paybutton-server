@@ -8,7 +8,7 @@ import { Transaction } from 'grpc-bchrpc-node'
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
 import * as addressService from 'services/addressService'
-import * as grpcService from 'services/grpcService'
+import { subscribeTransactions } from 'services/blockchainService'
 
 const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void> => {
   // sync addresses
@@ -19,7 +19,7 @@ const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void
   )
   // subscribe addresses
   addressList.map(async (addr) => {
-    await grpcService.subscribeTransactions(
+    await subscribeTransactions(
       [addr.address],
       async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, true) },
       async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, false) },
