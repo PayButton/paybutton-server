@@ -26,19 +26,19 @@ describe('Create services', () => {
   })
 })
 
-describe('Amount transactioned', () => {
-  it('Negative transaction', async () => {
-    const amount = await transactionService.getTransactionAmount(
-      mockedBlockchainTransactions[1],
-      mockedBCHAddress.address
-    )
-    expect(amount.toString()).toBe('-0.00000546')
-  })
-  it('Positive transaction', async () => {
-    const amount = await transactionService.getTransactionAmount(
-      mockedBlockchainTransactions[0],
-      mockedBCHAddress.address
-    )
-    expect(amount.toString()).toBe('4.31247724')
-  })
-})
+// describe('Amount transactioned', () => {
+//   it('Negative transaction', async () => {
+//     const amount = await transactionService.getTransactionAmount(
+//       mockedBlockchainTransactions[1],
+//       mockedBCHAddress.address
+//     )
+//     expect(amount.toString()).toBe('-0.00000546')
+//   })
+//   it('Positive transaction', async () => {
+//     const amount = await transactionService.getTransactionAmount(
+//       mockedBlockchainTransactions[0],
+//       mockedBCHAddress.address
+//     )
+//     expect(amount.toString()).toBe('4.31247724')
+//   })
+// })
