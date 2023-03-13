@@ -56,6 +56,10 @@
 //   })
 // })
 
-describe('empty', () => {})
+describe('empty', () => {
+  it('a', () => {
+    expect(1).toEqual(1)
+  })
+})
 
 export {}
