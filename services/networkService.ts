@@ -20,7 +20,7 @@ async function isConnected (networkSlug: string): Promise<ConnectionInfo> {
   try {
     const blockchainInfo = await getBlockchainInfo(networkSlug)
     const lastBlockInfo = await getBlockInfo(networkSlug, blockchainInfo.bestHeight)
-    if (lastBlockInfo.info === undefined) throw new Error(RESPONSE_MESSAGES.COULD_NOT_GET_BLOCK_INFO.message)
+    if (lastBlockInfo.info === undefined) throw new Error(RESPONSE_MESSAGES.COULD_NOT_GET_BLOCK_INFO_500.message)
     const lastBlockTimestamp = lastBlockInfo.info?.timestamp
     return {
       connected: true,
