@@ -1,8 +1,8 @@
-import { ChronikClient, ScriptType, TxHistoryPage } from 'chronik-client'
+import { ChronikClient, ScriptType, Tx, TxHistoryPage, Utxo } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { BlockchainClient, BlockchainInfoData, BlockInfoData } from './blockchainService'
-import { GetAddressUnspentOutputsResponse, GetTransactionResponse, Transaction } from 'grpc-bchrpc-node'
+import { Transaction } from 'grpc-bchrpc-node'
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL } from 'constants/index'
 
 export class ChronikBlockchainClient implements BlockchainClient {
@@ -30,35 +30,29 @@ export class ChronikBlockchainClient implements BlockchainClient {
     return { hash: blockInfo.hash, height: blockInfo.height, timestamp: parseInt(blockInfo.timestamp) }
   }
 
-  // it will always fetch in anti-chronological order
+  async getUtxos (address: string): Promise<Utxo[]> {
+    const { type, hash160 } = toHash160(address)
+    const scriptsUtxos = await this.chronik.script(type, hash160).utxos()
+    return scriptsUtxos.reduce<Utxo[]>((acc, scriptUtxos) => [...acc, ...scriptUtxos.utxos], [])
+  }
+
+  public async getBalance (address: string): Promise<number> {
+    const utxos = await this.getUtxos(address)
+    return utxos.reduce((acc, utxo) => acc + parseInt(utxo.value), 0)
+  }
+
+  // anti-chronological order
   async getAddressTransactions (address: string, page?: number, pageSize?: number): Promise<TxHistoryPage> {
     const { type, hash160 } = toHash160(address)
     return await this.chronik.script(type, hash160).history(page, pageSize)
   }
 
-  async getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {
-    throw new Error('Method not implemented.')
-  }
-
-  async getTransactionDetails (hash: string, networkSlug: string): Promise<GetTransactionResponse.AsObject> {
-    throw new Error('Method not implemented.')
+  async getTransactionDetails (txId: string): Promise<Tx> {
+    return await this.chronik.tx(txId)
   }
 
   async subscribeTransactions (addresses: string[], onTransactionNotification: (txn: Transaction.AsObject) => any, onMempoolTransactionNotification: (txn: Transaction.AsObject) => any, networkSlug: string): Promise<void> {
     throw new Error('Method not implemented.')
-  }
-
-  public async getBalance (address: string): Promise<number> {
-    const { type, hash160 } = toHash160(address)
-    const utxos = await this.chronik.script(type, hash160).utxos()
-
-    let totalSatoshis = 0
-    // we should always get only one element since we have only one hash above
-    if (utxos.length > 0) {
-      for (const u of utxos[0].utxos) { totalSatoshis += parseInt(u.value) }
-    }
-
-    return totalSatoshis
   }
 }
 

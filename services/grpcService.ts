@@ -1,16 +1,14 @@
 import {
   GrpcClient,
   TransactionNotification,
-  Transaction,
-  GetTransactionResponse,
-  GetAddressUnspentOutputsResponse
+  Transaction
 } from 'grpc-bchrpc-node'
 
 import { BlockchainClient, BlockchainInfoData, BlockInfoData } from './blockchainService'
 import { getObjectValueForNetworkSlug, getObjectValueForAddress } from '../utils/index'
 import { parseMempoolTx } from 'services/transactionService'
 import { KeyValueT, RESPONSE_MESSAGES } from '../constants/index'
-import { TxHistoryPage } from 'chronik-client'
+import { Tx, TxHistoryPage, Utxo } from 'chronik-client'
 
 export interface OutputsList {
   outpoint: object
@@ -59,29 +57,35 @@ export class GrpcBlockchainClient implements BlockchainClient {
     // return (await client.getAddressTransactions(parameters)).toObject()
   };
 
-  public async getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {
-    const client = this.getClientForAddress(address)
-    const res = (await client.getAddressUtxos({ address })).toObject()
-    return res
+  // DEPRECATED
+  public async getUtxos (address: string): Promise<Utxo[]> {
+    throw new Error('Method not implemented.')
+    // const client = this.getClientForAddress(address)
+    // const res = (await client.getAddressUtxos({ address })).toObject()
+    // return res
   };
 
+  // DEPRECATED
   public async getBalance (address: string): Promise<number> {
-    const { outputsList } = await this.getUtxos(address)
+    throw new Error('Method not implemented.')
+    // const { outputsList } = await this.getUtxos(address)
 
-    let satoshis: number = 0
-    outputsList.forEach((x) => {
-      satoshis += x.value
-    })
+    // let satoshis: number = 0
+    // outputsList.forEach((x) => {
+    //   satoshis += x.value
+    // })
 
-    return satoshis
+    // return satoshis
   };
 
-  public async getTransactionDetails (hash: string, networkSlug: string): Promise<GetTransactionResponse.AsObject> {
-    const client = this.getClientForNetworkSlug(networkSlug)
-    const res = (
-      await client.getTransaction({ hash, reversedHashOrder: true })
-    ).toObject()
-    return res
+  // DEPRECATED
+  public async getTransactionDetails (txId: string): Promise<Tx> {
+    throw new Error('Method not implemented.')
+    // const client = this.getClientForNetworkSlug(networkSlug)
+    // const res = (
+    //   await client.getTransaction({ hash, reversedHashOrder: true })
+    // ).toObject()
+    // return res
   };
 
   public async subscribeTransactions (
