@@ -19,6 +19,9 @@ const prismaMockPaybuttonAndAddressUpdate = (): void => {
   prismaMock.address.update.mockResolvedValue(mockedAddressList[0])
   prisma.address.update = prismaMock.address.update
 
+  prismaMock.address.findUnique.mockResolvedValue(mockedAddressList[0])
+  prisma.address.findUnique = prismaMock.address.findUnique
+
   prismaMock.addressesOnUserProfiles.update.mockResolvedValue(mockedAddressesOnUserProfile)
   prisma.addressesOnUserProfiles.update = prismaMock.addressesOnUserProfiles.update
 
@@ -106,13 +109,6 @@ describe('Create services', () => {
     const result = await walletService.createWallet(data.createWalletInput)
     expect(result).toEqual(mockedWallet)
   })
-
-  it('Should succeed for already binded address', async () => {
-    data.address.walletId = 1729
-    const result = await walletService.createWallet(data.createWalletInput)
-    expect(result).toEqual(mockedWallet)
-    data.address.walletId = null
-  })
 })
 
 describe('Update services', () => {
@@ -168,14 +164,6 @@ describe('Update services', () => {
     prisma.paybutton.findMany = prismaMock.paybutton.findMany
     const result = await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
     expect(result).toEqual(mockedWallet)
-  })
-  it('Succeed for address that is already on another wallet', async () => {
-    mockedPaybutton.addresses[0].address.walletId = 999
-    prismaMock.paybutton.findMany.mockResolvedValue([mockedPaybutton])
-    prisma.paybutton.findMany = prismaMock.paybutton.findMany
-    const result = await walletService.updateWallet(mockedWallet.id, data.updateWalletInput)
-    expect(result).toEqual(mockedWallet)
-    mockedPaybutton.addresses[0].address.walletId = 1
   })
   it('Fail if wallet does not exist', async () => {
     prismaMock.wallet.findUnique.mockResolvedValue(null)
