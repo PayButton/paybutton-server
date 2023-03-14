@@ -11,12 +11,19 @@ import {
   mockedPaybutton,
   mockedNetwork,
   mockedAddressList,
-  mockedBCHAddressWithPaybutton
+  mockedBCHAddressWithPaybutton,
+  mockedAddressesOnUserProfile
 } from '../mockedObjects'
 
 const prismaMockPaybuttonAndAddressUpdate = (): void => {
   prismaMock.address.update.mockResolvedValue(mockedAddressList[0])
   prisma.address.update = prismaMock.address.update
+
+  prismaMock.addressesOnUserProfiles.update.mockResolvedValue(mockedAddressesOnUserProfile)
+  prisma.addressesOnUserProfiles.update = prismaMock.addressesOnUserProfiles.update
+
+  prismaMock.addressesOnUserProfiles.upsert.mockResolvedValue(mockedAddressesOnUserProfile)
+  prisma.addressesOnUserProfiles.upsert = prismaMock.addressesOnUserProfiles.upsert
 }
 
 describe('Fetch services', () => {
@@ -46,7 +53,10 @@ describe('Fetch services', () => {
     const params: walletService.WalletWithAddressesWithPaybuttons = {
       ...mockedWallet,
       userProfile: null,
-      addresses: [mockedBCHAddressWithPaybutton]
+      userAddresses: [{
+        ...mockedWallet.userAddresses[0],
+        address: mockedBCHAddressWithPaybutton
+      }]
     }
     const result = await walletService.getWalletBalance(params)
     expect(result).toHaveProperty('XECBalance', new Prisma.Decimal('0'))
@@ -227,7 +237,7 @@ describe('Auxiliary functions', () => {
   })
   it('Mocked wallet has address only for XEC', () => {
     const otherWallet = { ...mockedWallet }
-    otherWallet.addresses = otherWallet.addresses.filter((addr) => addr.networkId === XEC_NETWORK_ID)
+    otherWallet.userAddresses = otherWallet.userAddresses.filter((addr) => addr.address.networkId === XEC_NETWORK_ID)
     expect(
       walletService.walletHasAddressForNetwork(otherWallet, XEC_NETWORK_ID)
     ).toBe(true)
@@ -237,7 +247,7 @@ describe('Auxiliary functions', () => {
   })
   it('Mocked wallet has address only for BCH', () => {
     const otherWallet = { ...mockedWallet }
-    otherWallet.addresses = otherWallet.addresses.filter((addr) => addr.networkId === BCH_NETWORK_ID)
+    otherWallet.userAddresses = otherWallet.userAddresses.filter((addr) => addr.address.networkId === BCH_NETWORK_ID)
     expect(
       walletService.walletHasAddressForNetwork(otherWallet, BCH_NETWORK_ID)
     ).toBe(true)
@@ -247,7 +257,7 @@ describe('Auxiliary functions', () => {
   })
   it('Mocked wallet has no addresses', () => {
     const otherWallet = { ...mockedWallet }
-    otherWallet.addresses = []
+    otherWallet.userAddresses = []
     expect(
       walletService.walletHasAddressForNetwork(otherWallet, BCH_NETWORK_ID)
     ).toBe(false)

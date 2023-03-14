@@ -639,17 +639,21 @@ describe('GET /api/wallets/', () => {
     const responseData = res._getJSONData()
     expect(responseData[0].wallet.providerUserId).toBe(userB)
     expect(responseData.length).toBe(1)
-    expect(responseData[0].wallet.addresses).toEqual(
+    expect(responseData[0].wallet.userAddresses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          address: expect.any(String),
-          networkId: expect.any(Number),
-          id: expect.any(Number)
+          address: expect.objectContaining({
+            address: expect.any(String),
+            networkId: expect.any(Number),
+            id: expect.any(Number)
+          })
         }),
         expect.objectContaining({
-          address: expect.any(String),
-          networkId: expect.any(Number),
-          id: expect.any(Number)
+          address: expect.objectContaining({
+            address: expect.any(String),
+            networkId: expect.any(Number),
+            id: expect.any(Number)
+          })
         })
       ])
     )
@@ -787,12 +791,13 @@ describe('PATCH /api/wallet/[id]', () => {
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name + '-new'
-      baseRequestOptions.body.addressIdList = wallet.addresses.map((addr) => addr.id)
+      baseRequestOptions.body.addressIdList = wallet.userAddresses.map((addr) => addr.address.id)
     }
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     responseData.addresses = wallet.addresses // WIP
+    responseData.userAddresses = wallet.userAddresses // WIP
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         expectedAddressObject,
@@ -812,7 +817,7 @@ describe('PATCH /api/wallet/[id]', () => {
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = createdWallets[1].name
-      baseRequestOptions.body.addressIdList = wallet.addresses.map((addr) => addr.id)
+      baseRequestOptions.body.addressIdList = wallet.userAddresses.map((addr) => addr.address.id)
     }
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
@@ -825,13 +830,14 @@ describe('PATCH /api/wallet/[id]', () => {
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name
-      baseRequestOptions.body.addressIdList = wallet.addresses.map((addr) => addr.id)
+      baseRequestOptions.body.addressIdList = wallet.userAddresses.map((addr) => addr.address.id)
       baseRequestOptions.body.isXECDefault = true
     }
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     responseData.addresses = wallet.addresses // WIP
+    responseData.userAddresses = wallet.userAddresses // WIP
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         expectedAddressObject,
@@ -854,13 +860,14 @@ describe('PATCH /api/wallet/[id]', () => {
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name
-      baseRequestOptions.body.addressIdList = wallet.addresses.map((addr) => addr.id)
+      baseRequestOptions.body.addressIdList = wallet.userAddresses.map((addr) => addr.address.id)
       baseRequestOptions.body.isBCHDefault = true
     }
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     responseData.addresses = wallet.addresses // WIP
+    responseData.userAddresses = wallet.userAddresses // WIP
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         expectedAddressObject,
@@ -895,7 +902,7 @@ describe('PATCH /api/wallet/[id]', () => {
       })
       return rest
     })
-    const oldAddressesIds = wallet.addresses.map(addr => addr.id)
+    const oldAddressesIds = wallet.userAddresses.map(addr => addr.address.id)
     const newAddressesIds = newAddresses.map(addr => addr.id)
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name

@@ -1,4 +1,3 @@
-// import * as networkService from 'services/networkService'
 import * as addressService from 'services/addressService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
@@ -28,8 +27,17 @@ const includeAddressesWithPaybuttons = {
       isBCHDefault: true
     }
   },
-  addresses: {
+  addresses: { // DEPRECATED
     include: addressService.includePaybuttonsNested
+  },
+  userAddresses: {
+    include: {
+      address: {
+        include: {
+          paybuttons: addressService.includePaybuttonsNested.paybuttons
+        }
+      }
+    }
   }
 }
 const walletWithAddressesWithPaybuttons = Prisma.validator<Prisma.WalletArgs>()({
@@ -52,7 +60,7 @@ export const getDefaultForNetworkIds = (isXECDefault: boolean | undefined, isBCH
 }
 
 export const walletHasAddressForNetwork = (wallet: WalletWithAddressesWithPaybuttons, networkId: number): boolean => {
-  if (wallet.addresses.every((addr) => addr.networkId !== networkId)) {
+  if (wallet.userAddresses.every((addr) => addr.address.networkId !== networkId)) {
     return false
   }
   return true
@@ -60,15 +68,59 @@ export const walletHasAddressForNetwork = (wallet: WalletWithAddressesWithPaybut
 
 async function removeAddressesFromWallet (
   prisma: Prisma.TransactionClient,
+  wallet: WalletWithAddressesWithPaybuttons,
   addressIdsToRemoveList: number[]
 ): Promise<void> {
+  if (wallet.userProfile === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
+  }
   for (const addressId of addressIdsToRemoveList) {
-    await prisma.address.update({
+    await prisma.address.update({ // DEPRECATED
       data: {
         walletId: null
       },
       where: {
         id: addressId
+      }
+    })
+
+    await prisma.addressesOnUserProfiles.update({
+      data: {
+        walletId: null
+      },
+      where: {
+        userProfileId_addressId: {
+          userProfileId: wallet.userProfile.userProfileId,
+          addressId
+        }
+      }
+    })
+  }
+}
+
+export async function connectAddressesToWallet (
+  prisma: Prisma.TransactionClient,
+  addressIdList: number[],
+  wallet: WalletWithAddressesWithPaybuttons
+): Promise<void> {
+  if (wallet.userProfile === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
+  }
+  for (const addressId of addressIdList) {
+    await prisma.addressesOnUserProfiles.upsert({
+      create: {
+        walletId: wallet.id,
+        userProfileId: wallet.userProfile.userProfileId,
+        addressId
+      },
+      update: {
+        walletId: wallet.id
+      },
+      where: {
+        userProfileId_addressId: {
+          userProfileId: wallet.userProfile.userProfileId,
+          addressId
+        }
       }
     })
   }
@@ -79,7 +131,7 @@ export async function setAddressListForWallet (
   addressIdList: number[],
   wallet: WalletWithAddressesWithPaybuttons
 ): Promise<void> {
-  for (const addressId of addressIdList) {
+  for (const addressId of addressIdList) { // DEPRECATED
     await prisma.address.update({
       data: {
         walletId: wallet.id
@@ -90,10 +142,13 @@ export async function setAddressListForWallet (
     })
   }
 
+  await connectAddressesToWallet(prisma, addressIdList, wallet)
+
   // remove addresses that are not on the list
   await removeAddressesFromWallet(
     prisma,
-    wallet.addresses.map(addr => addr.id).filter(addrId => !addressIdList.includes(addrId))
+    wallet,
+    wallet.userAddresses.map(addr => addr.address.id).filter(addrId => !addressIdList.includes(addrId))
   )
 }
 
@@ -279,12 +334,12 @@ export async function getWalletBalance (wallet: WalletWithAddressesWithPaybutton
     BCHBalance: new Prisma.Decimal(0),
     paymentCount: 0
   }
-  for (const addr of wallet.addresses) {
-    const addrBalance = await addressService.getAddressPaymentInfo(addr.address)
-    if (addr.networkId === XEC_NETWORK_ID) {
+  for (const addr of wallet.userAddresses) {
+    const addrBalance = await addressService.getAddressPaymentInfo(addr.address.address)
+    if (addr.address.networkId === XEC_NETWORK_ID) {
       ret.XECBalance = ret.XECBalance.plus(addrBalance.balance)
     }
-    if (addr.networkId === BCH_NETWORK_ID) {
+    if (addr.address.networkId === BCH_NETWORK_ID) {
       ret.BCHBalance = ret.BCHBalance.plus(addrBalance.balance)
     }
     ret.paymentCount += addrBalance.paymentCount
