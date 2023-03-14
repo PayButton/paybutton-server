@@ -21,9 +21,26 @@ export const includePaybuttonsNested = {
     }
   }
 }
+
 const addressWithPaybuttons = Prisma.validator<Prisma.AddressArgs>()({
   include: includePaybuttonsNested
 })
+
+export function includeUserPaybuttonsNested (userId: string): Prisma.AddressInclude {
+  return {
+    paybuttons: {
+      include: {
+        paybutton: true
+      },
+      where: {
+        paybutton: {
+          providerUserId: userId
+        }
+      }
+    }
+  }
+}
+
 export type AddressWithPaybuttons = Prisma.AddressGetPayload<typeof addressWithPaybuttons>
 
 export async function fetchAddressBySubstring (substring: string): Promise<AddressWithTransactionsAndNetwork> {
@@ -57,15 +74,6 @@ export async function addressExistsBySubstring (substring: string): Promise<bool
 }
 
 export async function fetchAllUserAddresses (userId: string, includeTransactions = false, includePaybuttons = false): Promise<AddressWithTransactions[]> {
-  let userPaybuttons
-  if (includePaybuttons) {
-    userPaybuttons = includePaybuttonsNested.paybuttons as Prisma.AddressesOnButtonsFindManyArgs
-    userPaybuttons.where = {
-      paybutton: {
-        providerUserId: userId
-      }
-    }
-  }
   return await prisma.address.findMany({
     where: {
       paybuttons: {
@@ -78,7 +86,7 @@ export async function fetchAllUserAddresses (userId: string, includeTransactions
     },
     include: {
       transactions: includeTransactions,
-      paybuttons: includePaybuttons ? userPaybuttons : false
+      paybuttons: includePaybuttons ? includeUserPaybuttonsNested(userId).paybuttons : false
     }
   })
 }
