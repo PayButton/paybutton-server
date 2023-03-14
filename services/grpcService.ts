@@ -48,7 +48,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
   public async getBlockInfo (networkSlug: string, height: number): Promise<BlockInfo> {
     const client = this.getClientForNetworkSlug(networkSlug)
     const blockInfo = (await client.getBlockInfo({ index: height })).toObject()?.info
-    if (blockInfo === undefined) { throw new Error(RESPONSE_MESSAGES.COULD_NOT_GET_BLOCK_INFO.message) }
+    if (blockInfo === undefined) { throw new Error(RESPONSE_MESSAGES.COULD_NOT_GET_BLOCK_INFO_500.message) }
     return { hash: blockInfo.hash, height: blockInfo.height, timestamp: blockInfo.timestamp }
   };
 
