@@ -57,6 +57,15 @@ export async function addressExistsBySubstring (substring: string): Promise<bool
 }
 
 export async function fetchAllUserAddresses (userId: string, includeTransactions = false, includePaybuttons = false): Promise<AddressWithTransactions[]> {
+  let userPaybuttons
+  if (includePaybuttons) {
+    userPaybuttons = includePaybuttonsNested.paybuttons as Prisma.AddressesOnButtonsFindManyArgs
+    userPaybuttons.where = {
+      paybutton: {
+        providerUserId: userId
+      }
+    }
+  }
   return await prisma.address.findMany({
     where: {
       paybuttons: {
@@ -69,7 +78,7 @@ export async function fetchAllUserAddresses (userId: string, includeTransactions
     },
     include: {
       transactions: includeTransactions,
-      paybuttons: includePaybuttons ? includePaybuttonsNested.paybuttons : false
+      paybuttons: includePaybuttons ? userPaybuttons : false
     }
   })
 }
