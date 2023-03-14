@@ -796,7 +796,6 @@ describe('PATCH /api/wallet/[id]', () => {
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
-    responseData.addresses = wallet.addresses // WIP
     responseData.userAddresses = wallet.userAddresses // WIP
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
@@ -836,7 +835,6 @@ describe('PATCH /api/wallet/[id]', () => {
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
-    responseData.addresses = wallet.addresses // WIP
     responseData.userAddresses = wallet.userAddresses // WIP
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
@@ -866,7 +864,6 @@ describe('PATCH /api/wallet/[id]', () => {
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
-    responseData.addresses = wallet.addresses // WIP
     responseData.userAddresses = wallet.userAddresses // WIP
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
