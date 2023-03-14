@@ -1,14 +1,12 @@
 import {
-  GrpcClient,
-  TransactionNotification,
-  Transaction
+  GrpcClient
 } from 'grpc-bchrpc-node'
 
 import { BlockchainClient, BlockchainInfo, BlockInfo } from './blockchainService'
 import { getObjectValueForNetworkSlug, getObjectValueForAddress } from '../utils/index'
-import { parseMempoolTx } from 'services/transactionService'
 import { KeyValueT, RESPONSE_MESSAGES } from '../constants/index'
-import { Tx, TxHistoryPage, Utxo } from 'chronik-client'
+import { Tx, TxHistoryPage, Utxo, SubscribeMsg, WsEndpoint } from 'chronik-client'
+import * as ws from 'ws'
 
 export interface OutputsList {
   outpoint: object
@@ -88,62 +86,65 @@ export class GrpcBlockchainClient implements BlockchainClient {
     // return res
   };
 
+  // DEPRECATED
   public async subscribeTransactions (
     addresses: string[],
-    onTransactionNotification: (txn: Transaction.AsObject) => any,
-    onMempoolTransactionNotification: (txn: Transaction.AsObject) => any,
-    networkSlug: string
-  ): Promise<void> {
-    const createTxnStream = async (): Promise<void> => {
-      const client = this.getClientForNetworkSlug(networkSlug)
-      const confirmedStream = await client.subscribeTransactions({
-        includeMempoolAcceptance: false,
-        includeBlockAcceptance: true,
-        addresses
-      })
-      const unconfirmedStream = await client.subscribeTransactions({
-        includeMempoolAcceptance: true,
-        includeBlockAcceptance: false,
-        addresses
-      })
+    onMessage: (msg: SubscribeMsg) => void,
+    onConnect?: (e: ws.Event) => void,
+    onError?: (e: ws.ErrorEvent) => void,
+    onEnd?: (e: ws.Event) => void
+  ): Promise<WsEndpoint> {
+    throw new Error('Method not implemented.')
+    // const createTxnStream = async (): Promise<void> => {
+    //   const client = this.getClientForNetworkSlug(networkSlug)
+    //   const confirmedStream = await client.subscribeTransactions({
+    //     includeMempoolAcceptance: false,
+    //     includeBlockAcceptance: true,
+    //     addresses
+    //   })
+    //   const unconfirmedStream = await client.subscribeTransactions({
+    //     includeMempoolAcceptance: true,
+    //     includeBlockAcceptance: false,
+    //     addresses
+    //   })
 
-      const nowDateString = (new Date()).toISOString()
+    //   const nowDateString = (new Date()).toISOString()
 
-      // output for end, error or close of stream
-      void confirmedStream.on('end', () => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream ended`)
-      })
-      void confirmedStream.on('close', () => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream closed`)
-      })
-      void confirmedStream.on('error', (error: any) => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream error`, error)
-      })
-      void unconfirmedStream.on('end', () => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream ended`)
-      })
-      void unconfirmedStream.on('close', () => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream closed`)
-      })
-      void unconfirmedStream.on('error', (error: any) => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream error`, error)
-      })
+    //   // output for end, error or close of stream
+    //   void confirmedStream.on('end', () => {
+    //     console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream ended`)
+    //   })
+    //   void confirmedStream.on('close', () => {
+    //     console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream closed`)
+    //   })
+    //   void confirmedStream.on('error', (error: any) => {
+    //     console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream error`, error)
+    //   })
+    //   void unconfirmedStream.on('end', () => {
+    //     console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream ended`)
+    //   })
+    //   void unconfirmedStream.on('close', () => {
+    //     console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream closed`)
+    //   })
+    //   void unconfirmedStream.on('error', (error: any) => {
+    //     console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream error`, error)
+    //   })
 
-      // output for data stream
-      void confirmedStream.on('data', (data: TransactionNotification) => {
-        const objectTxn = data.getConfirmedTransaction()!.toObject()
-        console.log(`${nowDateString}: got confirmed txn`, objectTxn)
-        onTransactionNotification(objectTxn)
-      })
-      void unconfirmedStream.on('data', (data: TransactionNotification) => {
-        const unconfirmedTxn = data.getUnconfirmedTransaction()!.toObject()
-        const objectTxn = parseMempoolTx(unconfirmedTxn)
-        console.log(`${nowDateString}: got unconfirmed txn`, objectTxn)
-        onMempoolTransactionNotification(objectTxn)
-      })
+    //   // output for data stream
+    //   void confirmedStream.on('data', (data: TransactionNotification) => {
+    //     const objectTxn = data.getConfirmedTransaction()!.toObject()
+    //     console.log(`${nowDateString}: got confirmed txn`, objectTxn)
+    //     onTransactionNotification(objectTxn)
+    //   })
+    //   void unconfirmedStream.on('data', (data: TransactionNotification) => {
+    //     const unconfirmedTxn = data.getUnconfirmedTransaction()!.toObject()
+    //     const objectTxn = parseMempoolTx(unconfirmedTxn)
+    //     console.log(`${nowDateString}: got unconfirmed txn`, objectTxn)
+    //     onMempoolTransactionNotification(objectTxn)
+    //   })
 
-      console.log(`${nowDateString}: txn data stream established for addresses ${addresses.join(', ')}.`)
-    }
-    await createTxnStream()
+    //   console.log(`${nowDateString}: txn data stream established for addresses ${addresses.join(', ')}.`)
+    // }
+    // await createTxnStream()
   };
 }

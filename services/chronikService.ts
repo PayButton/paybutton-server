@@ -1,8 +1,8 @@
-import { ChronikClient, ScriptType, Tx, TxHistoryPage, Utxo } from 'chronik-client'
+import { ChronikClient, ScriptType, SubscribeMsg, Tx, TxHistoryPage, Utxo, WsConfig, WsEndpoint } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { BlockchainClient, BlockchainInfo, BlockInfo } from './blockchainService'
-import { Transaction } from 'grpc-bchrpc-node'
+import * as ws from 'ws'
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL } from 'constants/index'
 
 export class ChronikBlockchainClient implements BlockchainClient {
@@ -51,8 +51,30 @@ export class ChronikBlockchainClient implements BlockchainClient {
     return await this.chronik.tx(txId)
   }
 
-  async subscribeTransactions (addresses: string[], onTransactionNotification: (txn: Transaction.AsObject) => any, onMempoolTransactionNotification: (txn: Transaction.AsObject) => any, networkSlug: string): Promise<void> {
-    throw new Error('Method not implemented.')
+  async subscribeTransactions (
+    addresses: string[],
+    onMessage: (msg: SubscribeMsg) => void,
+    onConnect?: (e: ws.Event) => void,
+    onError?: (e: ws.ErrorEvent) => void,
+    onEnd?: (e: ws.Event) => void
+  ): Promise<WsEndpoint> {
+    if (addresses.length === 0) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
+
+    const wsConfig: WsConfig = {
+      onConnect,
+      onMessage,
+      onError,
+      onEnd,
+      autoReconnect: true
+    }
+    const wsEndpoint = this.chronik.ws(wsConfig)
+
+    addresses.forEach(address => {
+      const { type, hash160 } = toHash160(address)
+      wsEndpoint.subscribe(type, hash160)
+    })
+
+    return wsEndpoint
   }
 }
 

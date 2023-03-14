@@ -1,11 +1,9 @@
 import { GrpcBlockchainClient } from './grpcService'
-import { Tx, TxHistoryPage, Utxo } from 'chronik-client'
+import { Tx, TxHistoryPage, Utxo, SubscribeMsg, WsEndpoint } from 'chronik-client'
 import { ChronikBlockchainClient } from './chronikService'
 import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils/index'
 import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CLIENT_OPTIONS } from '../constants/index'
-import {
-  Transaction
-} from 'grpc-bchrpc-node'
+import * as ws from 'ws'
 
 export interface BlockchainInfo {
   height: number
@@ -25,10 +23,11 @@ export interface BlockchainClient {
   getTransactionDetails: (txId: string) => Promise<Tx>
   subscribeTransactions: (
     addresses: string[],
-    onTransactionNotification: (txn: Transaction.AsObject) => any,
-    onMempoolTransactionNotification: (txn: Transaction.AsObject) => any,
-    networkSlug: string
-  ) => Promise<void>
+    onMessage: (msg: SubscribeMsg) => void,
+    onConnect?: (e: ws.Event) => void,
+    onError?: (e: ws.ErrorEvent) => void,
+    onEnd?: (e: ws.Event) => void
+  ) => Promise<WsEndpoint>
 }
 
 function getBlockchainClient (networkSlug: string): BlockchainClient {
@@ -74,10 +73,18 @@ export async function getTransactionDetails (txId: string, networkSlug: string):
 }
 
 export async function subscribeTransactions (
+  networkSlug: string,
   addresses: string[],
-  onTransactionNotification: (txn: Transaction.AsObject) => any,
-  onMempoolTransactionNotification: (txn: Transaction.AsObject) => any,
-  networkSlug: string
-): Promise<void> {
-  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).subscribeTransactions(addresses, onTransactionNotification, onMempoolTransactionNotification, networkSlug)
+  onMessage: (msg: SubscribeMsg) => void,
+  onConnect?: (e: ws.Event) => void,
+  onError?: (e: ws.ErrorEvent) => void,
+  onEnd?: (e: ws.Event) => void
+): Promise<WsEndpoint> {
+  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).subscribeTransactions(
+    addresses,
+    onMessage,
+    onConnect,
+    onError,
+    onEnd
+  )
 }
