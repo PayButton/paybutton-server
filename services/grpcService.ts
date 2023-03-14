@@ -4,15 +4,13 @@ import {
   Transaction,
   GetTransactionResponse,
   GetAddressTransactionsResponse,
-  GetAddressUnspentOutputsResponse,
-  GetBlockchainInfoResponse,
-  GetBlockInfoResponse
+  GetAddressUnspentOutputsResponse
 } from 'grpc-bchrpc-node'
 
-import { BlockchainClient, GetAddressParameters } from './blockchainService'
+import { BlockchainClient, GetAddressParameters, BlockchainInfo, BlockInfo } from './blockchainService'
 import { getObjectValueForNetworkSlug, getObjectValueForAddress } from '../utils/index'
 import { parseMempoolTx } from 'services/transactionService'
-import { KeyValueT } from '../constants/index'
+import { KeyValueT, RESPONSE_MESSAGES } from '../constants/index'
 
 export interface OutputsList {
   outpoint: object
@@ -41,14 +39,17 @@ export class GrpcBlockchainClient implements BlockchainClient {
     return getObjectValueForNetworkSlug(networkSlug, this.clients)
   }
 
-  public async getBlockchainInfo (networkSlug: string): Promise<GetBlockchainInfoResponse.AsObject> {
+  public async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
     const client = this.getClientForNetworkSlug(networkSlug)
-    return (await client.getBlockchainInfo()).toObject()
+    const blockchainInfo = (await client.getBlockchainInfo()).toObject()
+    return { height: blockchainInfo.bestHeight, hash: blockchainInfo.bestBlockHash }
   };
 
-  public async getBlockInfo (networkSlug: string, height: number): Promise<GetBlockInfoResponse.AsObject> {
+  public async getBlockInfo (networkSlug: string, height: number): Promise<BlockInfo> {
     const client = this.getClientForNetworkSlug(networkSlug)
-    return (await client.getBlockInfo({ index: height })).toObject()
+    const blockInfo = (await client.getBlockInfo({ index: height })).toObject()?.info
+    if (blockInfo === undefined) { throw new Error(RESPONSE_MESSAGES.COULD_NOT_GET_BLOCK_INFO.message) }
+    return { hash: blockInfo.hash, height: blockInfo.height, timestamp: blockInfo.timestamp }
   };
 
   public async getAddress (parameters: GetAddressParameters): Promise<GetAddressTransactionsResponse.AsObject> {
