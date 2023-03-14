@@ -102,6 +102,10 @@ export async function connectAddressesToWallet (
     throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
   }
   for (const addressId of addressIdList) {
+    const addr = await prisma.address.findUnique({ where: { id: addressId } })
+    if (addr === null) {
+      throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
+    }
     await prisma.addressesOnUserProfiles.upsert({
       create: {
         walletId: wallet.id,
