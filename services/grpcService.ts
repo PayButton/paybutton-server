@@ -4,7 +4,7 @@ import {
   Transaction
 } from 'grpc-bchrpc-node'
 
-import { BlockchainClient, BlockchainInfoData, BlockInfoData } from './blockchainService'
+import { BlockchainClient, BlockchainInfo, BlockInfo } from './blockchainService'
 import { getObjectValueForNetworkSlug, getObjectValueForAddress } from '../utils/index'
 import { parseMempoolTx } from 'services/transactionService'
 import { KeyValueT, RESPONSE_MESSAGES } from '../constants/index'
@@ -37,13 +37,13 @@ export class GrpcBlockchainClient implements BlockchainClient {
     return getObjectValueForNetworkSlug(networkSlug, this.clients)
   }
 
-  public async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfoData> {
+  public async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
     const client = this.getClientForNetworkSlug(networkSlug)
     const blockchainInfo = (await client.getBlockchainInfo()).toObject()
     return { height: blockchainInfo.bestHeight, hash: blockchainInfo.bestBlockHash }
   };
 
-  public async getBlockInfo (networkSlug: string, height: number): Promise<BlockInfoData> {
+  public async getBlockInfo (networkSlug: string, height: number): Promise<BlockInfo> {
     const client = this.getClientForNetworkSlug(networkSlug)
     const blockInfo = (await client.getBlockInfo({ index: height })).toObject()?.info
     if (blockInfo === undefined) { throw new Error(RESPONSE_MESSAGES.COULD_NOT_GET_BLOCK_INFO.message) }
