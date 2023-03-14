@@ -40,10 +40,17 @@ const includeAddressesWithPaybuttons = {
     }
   }
 }
+
 const walletWithAddressesWithPaybuttons = Prisma.validator<Prisma.WalletArgs>()({
   include: includeAddressesWithPaybuttons
 })
 export type WalletWithAddressesWithPaybuttons = Prisma.WalletGetPayload<typeof walletWithAddressesWithPaybuttons>
+
+function filterOutOtherUsersPaybuttons (wallet: WalletWithAddressesWithPaybuttons): void {
+  for (const addr of wallet.userAddresses) {
+    addr.address.paybuttons = addr.address.paybuttons.filter((conn) => conn.paybutton.providerUserId === wallet.providerUserId)
+  }
+}
 
 export const getDefaultForNetworkIds = (isXECDefault: boolean | undefined, isBCHDefault: boolean | undefined): number[] => {
   const defaultForNetworkIds: number[] = []
@@ -203,6 +210,7 @@ export async function fetchWalletById (walletId: number | string): Promise<Walle
   if (wallet === null) {
     throw new Error(RESPONSE_MESSAGES.NO_WALLET_FOUND_404.message)
   }
+  filterOutOtherUsersPaybuttons(wallet)
   return wallet
 }
 
@@ -348,8 +356,10 @@ export async function getWalletBalance (wallet: WalletWithAddressesWithPaybutton
 }
 
 export async function fetchWalletArrayByUserId (userId: string): Promise<WalletWithAddressesWithPaybuttons[]> {
-  return await prisma.wallet.findMany({
+  const walletList = await prisma.wallet.findMany({
     where: { providerUserId: userId },
     include: includeAddressesWithPaybuttons
   })
+  walletList.forEach((w) => filterOutOtherUsersPaybuttons(w))
+  return walletList
 }
