@@ -20,7 +20,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
   const { register, handleSubmit, reset } = useForm<WalletPATCHParameters>()
   const [modal, setModal] = useState(false)
   const [error, setError] = useState('')
-  const thisWalletAddressIdList = userAddresses.filter(addr => addr.walletId === wallet.id).map(addr => addr.id)
+  const thisWalletAddressIdList = wallet.userAddresses.map((addr) => addr.addressId)
 
   const [selectedAddressIdList, setSelectedAddressIdList] = useState([] as number[])
 
@@ -92,7 +92,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                           type='checkbox'
                           value={addr.id}
                           id={`addressIdList.${index}`}
-                          defaultChecked={addr.walletId === wallet.id}
+                          defaultChecked={thisWalletAddressIdList.includes(addr.id)}
                           onChange={ (e) => handleSelectedAddressesChange(e.target.checked, addr.id) }
                         />
                         <label htmlFor={`addressIdList.${index}`}>
