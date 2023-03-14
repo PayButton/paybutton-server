@@ -20,7 +20,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
   const { register, handleSubmit, reset } = useForm<WalletPATCHParameters>()
   const [modal, setModal] = useState(false)
   const [error, setError] = useState('')
-  const thisWalletAddressIdList = userAddresses.filter(addr => addr.walletId === wallet.id).map(addr => addr.id)
+  const thisWalletAddressIdList = wallet.userAddresses.map((addr) => addr.addressId)
 
   const [selectedAddressIdList, setSelectedAddressIdList] = useState([] as number[])
 
