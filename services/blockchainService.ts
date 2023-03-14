@@ -7,12 +7,12 @@ import {
   Transaction
 } from 'grpc-bchrpc-node'
 
-export interface BlockchainInfoData {
+export interface BlockchainInfo {
   height: number
   hash: Uint8Array | string
 }
 
-export interface BlockInfoData extends BlockchainInfoData {
+export interface BlockInfo extends BlockchainInfo {
   timestamp: number
 }
 
@@ -20,8 +20,8 @@ export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
   getAddressTransactions: (address: string, page?: number, pageSize?: number) => Promise<TxHistoryPage>
   getUtxos: (address: string) => Promise<Utxo[]>
-  getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfoData>
-  getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfoData>
+  getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
+  getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
   getTransactionDetails: (txId: string) => Promise<Tx>
   subscribeTransactions: (
     addresses: string[],
@@ -61,11 +61,11 @@ export async function getUtxos (address: string): Promise<Utxo[]> {
   return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getUtxos(address)
 }
 
-export async function getBlockchainInfo (networkSlug: string): Promise<BlockchainInfoData> {
+export async function getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
   return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockchainInfo(networkSlug)
 }
 
-export async function getBlockInfo (networkSlug: string, height: number): Promise<BlockInfoData> {
+export async function getBlockInfo (networkSlug: string, height: number): Promise<BlockInfo> {
   return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockInfo(networkSlug, height)
 }
 
