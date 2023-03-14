@@ -16,9 +16,7 @@ model Address {
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
   networkId    Int
-  walletId     Int?
   network      Network              @relation(fields: [networkId], references: [id], onUpdate: Restrict)
-  wallet       Wallet?              @relation(fields: [walletId], references: [id], onUpdate: Restrict)
   userProfiles   AddressesOnUserProfiles[]
   lastSynced   DateTime?
   paybuttons   AddressesOnButtons[]
@@ -83,7 +81,6 @@ model Wallet {
   updatedAt      DateTime              @updatedAt
   name           String                @db.VarChar(255)
   providerUserId String?               @db.VarChar(255)
-  addresses      Address[]
   userAddresses  AddressesOnUserProfiles[]
   userProfile    WalletsOnUserProfile?
 
