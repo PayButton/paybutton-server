@@ -6,9 +6,7 @@ import {
   Transaction,
   GetTransactionResponse,
   GetAddressTransactionsResponse,
-  GetAddressUnspentOutputsResponse,
-  GetBlockchainInfoResponse,
-  GetBlockInfoResponse
+  GetAddressUnspentOutputsResponse
 } from 'grpc-bchrpc-node'
 
 export interface GetAddressParameters {
@@ -20,12 +18,21 @@ export interface GetAddressParameters {
   reversedHashOrder?: boolean
 }
 
+export interface BlockchainInfo {
+  height: number
+  hash: Uint8Array | string
+}
+
+export interface BlockInfo extends BlockchainInfo {
+  timestamp: number
+}
+
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
   getAddress: (parameters: GetAddressParameters) => Promise<GetAddressTransactionsResponse.AsObject>
   getUtxos: (address: string) => Promise<GetAddressUnspentOutputsResponse.AsObject>
-  getBlockchainInfo: (networkSlug: string) => Promise<GetBlockchainInfoResponse.AsObject>
-  getBlockInfo: (networkSlug: string, height: number) => Promise<GetBlockInfoResponse.AsObject>
+  getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
+  getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
   getTransactionDetails: (hash: string, networkSlug: string) => Promise<GetTransactionResponse.AsObject>
   subscribeTransactions: (
     addresses: string[],
@@ -65,11 +72,11 @@ export async function getUtxos (address: string): Promise<GetAddressUnspentOutpu
   return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getUtxos(address)
 }
 
-export async function getBlockchainInfo (networkSlug: string): Promise<GetBlockchainInfoResponse.AsObject> {
+export async function getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
   return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockchainInfo(networkSlug)
 }
 
-export async function getBlockInfo (networkSlug: string, height: number): Promise<GetBlockInfoResponse.AsObject> {
+export async function getBlockInfo (networkSlug: string, height: number): Promise<BlockInfo> {
   return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockInfo(networkSlug, height)
 }
 
