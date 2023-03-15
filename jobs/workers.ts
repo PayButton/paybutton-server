@@ -2,13 +2,15 @@ import { Worker, Job, Queue } from 'bullmq'
 import { Address } from '@prisma/client'
 import { redis } from 'redis/clientInstance'
 import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
-import { getAddressPrefix } from 'utils/index'
-import { Transaction } from 'grpc-bchrpc-node'
+// import { getAddressPrefix } from 'utils/index'
+// import { Transaction } from 'grpc-bchrpc-node'
 
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
 import * as addressService from 'services/addressService'
-import { subscribeTransactions } from 'services/blockchainService'
+// import { subscribeTransactions, getTransactionDetails } from 'services/blockchainService'
+// import { SubscribeMsg } from 'chronik-client'
+// import * as ws from 'ws'
 
 const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void> => {
   // sync addresses
@@ -17,15 +19,33 @@ const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void
       await transactionService.syncTransactionsAndPricesForAddress(addr.address)
     })
   )
-  // subscribe addresses
-  addressList.map(async (addr) => {
-    await subscribeTransactions(
-      [addr.address],
-      async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, true) },
-      async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, false) },
-      getAddressPrefix(addr.address)
-    )
-  })
+  /*
+	// subscribe addresses, network below just used to get the blockchain client, address may be of any network
+	let networkSlug = NETWORK_SLUGS.ecash
+	await subscribeTransactions(
+		networkSlug,
+		addressList.map(a => a.address),
+		(msg: SubscribeMsg) => {
+			if(msg.type === 'AddedToMempool'){
+				let transaction = await getTransactionDetails(msg.txid, networkSlug)
+				await transactionService.upsertTransaction(transaction,
+			}
+		},
+		(e: ws.Event) => {console.log(`WebSocket connected: ${e.type}`)},
+		(e: ws.ErrorEvent) => {console.log(`WebSocket error: ${e.type} | ${e.error} | ${e.message}`)},
+		(e: ws.Event) => {console.log(`WebSocket ended: ${e.type}`)}
+	)
+
+	// old
+	addressList.map(async (addr) => {
+		await subscribeTransactions(
+			[addr.address],
+			async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, true) },
+			async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, false) },
+			getAddressPrefix(addr.address)
+		)
+	})
+	*/
 }
 
 const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> => {
