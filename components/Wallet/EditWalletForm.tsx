@@ -139,7 +139,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
 
                   <div className={style_pb.btn_row2}>
                     {error !== '' && <div className={style_pb.error_message}>{error}</div>}
-                    {wallet.userProfile === null || (wallet.userProfile.isXECDefault === true ?? wallet.userProfile.isBCHDefault === true)
+                    {wallet.userProfile === null || (wallet.userProfile.isXECDefault === true || wallet.userProfile.isBCHDefault === true)
                       ? (<div></div>)
                       : (
                       <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style_pb.delete_btn}>Delete Wallet<div> <Image src={TrashIcon} alt='delete' /></div></button>
