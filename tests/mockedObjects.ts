@@ -406,14 +406,16 @@ export const mockedWalletList = [
     createdAt: new Date('2022-09-30T18:01:32.456Z'),
     updatedAt: new Date('2022-09-30T18:01:32.456Z'),
     name: 'mockedWallet',
-    providerUserId: 'mocked-uid'
+    providerUserId: 'mocked-uid',
+    userAddresses: []
   },
   {
     id: 2,
     createdAt: new Date('2022-09-30T18:01:32.456Z'),
     updatedAt: new Date('2022-09-30T18:01:32.456Z'),
     name: 'mockedWallet2',
-    providerUserId: 'mocked-uid'
+    providerUserId: 'mocked-uid',
+    userAddresses: []
   }
 ]
 
