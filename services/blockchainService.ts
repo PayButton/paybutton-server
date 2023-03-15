@@ -20,10 +20,10 @@ export interface BlockInfo extends BlockchainInfo {
 
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
-  getAddressTransactions: (address: string, page?: number, pageSize?: number) => Promise<TxHistoryPage>
-  getUtxos: (address: string) => Promise<GetAddressUnspentOutputsResponse.AsObject>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
+  getAddressTransactions: (address: string, page?: number, pageSize?: number) => Promise<TxHistoryPage>
+  getUtxos: (address: string) => Promise<GetAddressUnspentOutputsResponse.AsObject>
   getTransactionDetails: (hash: string, networkSlug: string) => Promise<GetTransactionResponse.AsObject>
   subscribeTransactions: (
     addresses: string[],
@@ -63,12 +63,11 @@ export async function getUtxos (address: string): Promise<GetAddressUnspentOutpu
   return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getUtxos(address)
 }
 
-export async function getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
-  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockchainInfo(networkSlug)
-}
-
-export async function getBlockInfo (networkSlug: string, height: number): Promise<BlockInfo> {
-  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockInfo(networkSlug, height)
+export async function getLastBlockTimestamp (networkSlug: string): Promise<number> {
+  const client = getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS)
+  const getBlockchainInfo = await client.getBlockchainInfo(networkSlug)
+  const lastBlockInfo = await client.getBlockInfo(networkSlug, getBlockchainInfo.height)
+  return lastBlockInfo.timestamp
 }
 
 export async function getTransactionDetails (hash: string, networkSlug: string): Promise<GetTransactionResponse.AsObject> {
