@@ -6,7 +6,6 @@ CREATE TABLE `Address` (
     `updatedAt` DATETIME(3) NOT NULL,
     `lastSynced` DATETIME(3) NULL,
     `networkId` INTEGER NOT NULL,
-    `walletId` INTEGER NULL,
 
     UNIQUE INDEX `Address_address_key`(`address`),
     INDEX `Address_networkId_fkey`(`networkId`),
@@ -160,9 +159,6 @@ ALTER TABLE `AddressesOnButtons` ADD CONSTRAINT `AddressesOnButtons_paybuttonId_
 
 -- AddForeignKey
 ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_addressId_fkey` FOREIGN KEY (`addressId`) REFERENCES `Address`(`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
-
--- AddForeignKey
-ALTER TABLE `Address` ADD CONSTRAINT `Address_walletId_fkey` FOREIGN KEY (`walletId`) REFERENCES `Wallet`(`id`) ON DELETE SET NULL ON UPDATE RESTRICT;
 
 -- AddForeignKey
 ALTER TABLE `WalletsOnUserProfile` ADD CONSTRAINT `WalletsOnUserProfile_walletId_fkey` FOREIGN KEY (`walletId`) REFERENCES `Wallet`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

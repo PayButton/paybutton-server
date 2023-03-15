@@ -421,7 +421,6 @@ describe('GET /api/addresses/', () => {
           address: expect.any(String),
           id: expect.any(Number),
           networkId: expect.any(Number),
-          walletId: null,
           lastSynced: null,
           createdAt: expect.any(String),
           updatedAt: expect.any(String)
@@ -430,7 +429,6 @@ describe('GET /api/addresses/', () => {
           address: expect.any(String),
           id: expect.any(Number),
           networkId: expect.any(Number),
-          walletId: null,
           lastSynced: null,
           createdAt: expect.any(String),
           updatedAt: expect.any(String)
@@ -574,7 +572,7 @@ describe('POST /api/wallets/', () => {
       isBCHDefault: null,
       userProfileId: 3
     })
-    expect(responseData.addresses).toEqual(
+    expect(responseData.userAddresses).toEqual(
       expect.arrayContaining([expectedAddressObject])
     )
   })
@@ -596,7 +594,7 @@ describe('POST /api/wallets/', () => {
       isBCHDefault: null,
       userProfileId: 3
     })
-    expect(responseData.addresses).toEqual(
+    expect(responseData.userAddresses).toEqual(
       expect.arrayContaining([expectedAddressObject])
     )
   })
@@ -661,7 +659,7 @@ describe('GET /api/wallets/', () => {
     expect(responseData[0]).toHaveProperty('paymentInfo')
     expect(responseData[0].wallet).toHaveProperty('providerUserId', 'test-other-u-id')
     expect(responseData[0].wallet).toHaveProperty('name')
-    expect(responseData[0].wallet).toHaveProperty('addresses')
+    expect(responseData[0].wallet).toHaveProperty('userAddresses')
     expect(responseData[0].wallet).toHaveProperty('userProfile')
     expect(responseData[0].paymentInfo).toHaveProperty('XECBalance')
     expect(responseData[0].paymentInfo).toHaveProperty('BCHBalance')
@@ -724,7 +722,7 @@ describe('GET /api/wallet/[id]', () => {
       const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
       const responseData = res._getJSONData()
       expect(res.statusCode).toBe(200)
-      expect(responseData.addresses).toEqual(
+      expect(responseData.userAddresses).toEqual(
         expect.arrayContaining([
           expectedAddressObject,
           expectedAddressObject
@@ -796,9 +794,8 @@ describe('PATCH /api/wallet/[id]', () => {
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
-    responseData.addresses = wallet.addresses // WIP
     responseData.userAddresses = wallet.userAddresses // WIP
-    expect(responseData.addresses).toEqual(
+    expect(responseData.userAddresses).toEqual(
       expect.arrayContaining([
         expectedAddressObject,
         expectedAddressObject
@@ -836,9 +833,8 @@ describe('PATCH /api/wallet/[id]', () => {
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
-    responseData.addresses = wallet.addresses // WIP
     responseData.userAddresses = wallet.userAddresses // WIP
-    expect(responseData.addresses).toEqual(
+    expect(responseData.userAddresses).toEqual(
       expect.arrayContaining([
         expectedAddressObject,
         expectedAddressObject
@@ -866,9 +862,8 @@ describe('PATCH /api/wallet/[id]', () => {
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
-    responseData.addresses = wallet.addresses // WIP
     responseData.userAddresses = wallet.userAddresses // WIP
-    expect(responseData.addresses).toEqual(
+    expect(responseData.userAddresses).toEqual(
       expect.arrayContaining([
         expectedAddressObject,
         expectedAddressObject
@@ -932,7 +927,7 @@ describe('PATCH /api/wallet/[id]', () => {
       const res = await testEndpoint(getPaybuttonsOptions, paybuttonIdEndpoint)
       const responseData = res._getJSONData()
       expect(res.statusCode).toBe(200)
-      expect(responseData.addresses).toEqual(
+      expect(responseData.userAddresses).toEqual(
         expect.arrayContaining([
           {
             address: expect.objectContaining({

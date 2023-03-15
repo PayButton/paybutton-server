@@ -27,9 +27,6 @@ const includeAddressesWithPaybuttons = {
       isBCHDefault: true
     }
   },
-  addresses: { // DEPRECATED
-    include: addressService.includePaybuttonsNested
-  },
   userAddresses: {
     include: {
       address: {
@@ -82,15 +79,6 @@ async function removeAddressesFromWallet (
     throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
   }
   for (const addressId of addressIdsToRemoveList) {
-    await prisma.address.update({ // DEPRECATED
-      data: {
-        walletId: null
-      },
-      where: {
-        id: addressId
-      }
-    })
-
     await prisma.addressesOnUserProfiles.update({
       data: {
         walletId: null
@@ -114,6 +102,10 @@ export async function connectAddressesToWallet (
     throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
   }
   for (const addressId of addressIdList) {
+    const addr = await prisma.address.findUnique({ where: { id: addressId } })
+    if (addr === null) {
+      throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
+    }
     await prisma.addressesOnUserProfiles.upsert({
       create: {
         walletId: wallet.id,
@@ -138,17 +130,6 @@ export async function setAddressListForWallet (
   addressIdList: number[],
   wallet: WalletWithAddressesWithPaybuttons
 ): Promise<void> {
-  for (const addressId of addressIdList) { // DEPRECATED
-    await prisma.address.update({
-      data: {
-        walletId: wallet.id
-      },
-      where: {
-        id: addressId
-      }
-    })
-  }
-
   await connectAddressesToWallet(prisma, addressIdList, wallet)
 
   // remove addresses that are not on the list
