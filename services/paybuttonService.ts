@@ -1,5 +1,6 @@
 import * as networkService from 'services/networkService'
 import * as addressService from 'services/addressService'
+import * as walletService from 'services/walletService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
@@ -53,8 +54,17 @@ async function getAddressObjectsToCreateOrConnect (prefixedAddressList: string[]
 export async function createPaybutton (values: CreatePaybuttonInput): Promise<PaybuttonWithAddresses> {
   return await prisma.$transaction(async (prisma) => {
     // Creates or updates the `Address` objects
+    const addressIdList: number[] = []
     for await (const address of values.prefixedAddressList) {
-      void await addressService.upsertAddress(address, values.walletId)
+      addressIdList.push(
+        (await addressService.upsertAddress(address, prisma)).id
+      )
+    }
+
+    if (values.walletId !== undefined) {
+      // Connects them to the wallet
+      const wallet = await walletService.fetchWalletById(values.walletId)
+      void await walletService.connectAddressesToWallet(prisma, addressIdList, wallet)
     }
 
     // Creates the `Paybutton`, the `AddressesOnButtons` objects
