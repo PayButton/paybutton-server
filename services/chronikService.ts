@@ -80,7 +80,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     maxTransfers = maxTransfers ?? Infinity
     const pageSize = FETCH_N
     let newTransactionsCount = -1
-    const page = 0
+    let page = 0
     const confirmedTransactions: Tx[] = []
     const unconfirmedTransactions: Tx[] = []
 
@@ -94,6 +94,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
       unconfirmedTransactions.push(...transactions.filter(t => t.block === undefined))
 
       newTransactionsCount = transactions.length
+      page += 1
+
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
     }
 

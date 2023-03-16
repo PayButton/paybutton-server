@@ -112,7 +112,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     maxTransfers = maxTransfers ?? Infinity
     const pageSize = FETCH_N
     let newTransactionsCount = -1
-    const page = 0
+    let page = 0
     const confirmedTransactions: Transaction.AsObject[] = []
     const unconfirmedTransactions: Transaction.AsObject[] = []
 
@@ -129,6 +129,8 @@ export class GrpcBlockchainClient implements BlockchainClient {
       unconfirmedTransactions.push(...transactions.unconfirmedTransactionsList.map(mempoolTx => this.parseMempoolTx(mempoolTx)))
 
       newTransactionsCount = transactions.confirmedTransactionsList.length
+      page += 1
+
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
     }
 
