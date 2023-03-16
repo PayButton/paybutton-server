@@ -21,22 +21,22 @@ export interface OutputsList {
   slpToken: string | undefined
 }
 
-export class GrpcBlockchainClient implements BlockchainClient {
-  clients: KeyValueT<GrpcClient>
+const grpcBCH = new GrpcClient({ url: process.env.GRPC_BCH_NODE_URL })
 
-  constructor () {
-    this.clients = {
-      bitcoincash: new GrpcClient({ url: process.env.GRPC_BCH_NODE_URL }),
-      ecash: new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL })
-    }
+export const getGrpcClients = (): KeyValueT<GrpcClient> => {
+  return {
+    bitcoincash: grpcBCH,
+    ecash: new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL })
   }
+}
 
+export class GrpcBlockchainClient implements BlockchainClient {
   private getClientForAddress (addressString: string): GrpcClient {
-    return getObjectValueForAddress(addressString, this.clients)
+    return getObjectValueForAddress(addressString, getGrpcClients())
   }
 
   private getClientForNetworkSlug (networkSlug: string): GrpcClient {
-    return getObjectValueForNetworkSlug(networkSlug, this.clients)
+    return getObjectValueForNetworkSlug(networkSlug, getGrpcClients())
   }
 
   public async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
