@@ -59,13 +59,20 @@ export const syncAllAddressTransactionsForNetworkWorker = async (queueName: stri
   })
 }
 
-export const syncCurrentAndPastPricesWorker = async (queueName: string): Promise<void> => {
+export const syncPricesWorker = async (queueName: string): Promise<void> => {
   const worker = new Worker(
     queueName,
     async (job) => {
-      console.log(`job ${job.id as string}: syncing current and past prices...`)
-      await priceService.syncCurrentPrices()
-      await priceService.syncPastDaysNewerPrices()
+      const syncType = job.data.syncType
+      console.log(`job ${job.id as string}: syncing ${syncType as string} prices...`)
+
+      if (syncType === 'past') {
+        await priceService.syncPastDaysNewerPrices()
+      } else if (syncType === 'current') {
+        await priceService.syncCurrentPrices()
+      } else {
+        console.log(`Unknown type of price sync: ${job.data.syncType as string}`)
+      }
     },
     {
       connection: redis,
@@ -73,13 +80,13 @@ export const syncCurrentAndPastPricesWorker = async (queueName: string): Promise
     }
   )
   worker.on('completed', job => {
-    console.log('syncing of current prices finished')
+    console.log(`syncing of ${job.data.syncType as string} prices finished`)
   })
 
   worker.on('failed', (job, err) => {
     if (job !== undefined) {
-      console.log('syncing of current prices FAILED')
-      console.log(`error for initial syncing of current prices: ${err.message}`)
+      console.log(`syncing of ${job.data.syncType as string} prices FAILED`)
+      console.log(`error for initial syncing of ${job.data.syncType as string} prices: ${err.message}`)
     }
   })
 }
