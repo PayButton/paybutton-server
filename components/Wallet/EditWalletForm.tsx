@@ -5,6 +5,7 @@ import Image from 'next/image'
 import style from '../Wallet/wallet.module.css'
 import style_pb from '../Paybutton/paybutton.module.css'
 import EditIcon from 'assets/edit-icon.png'
+import TrashIcon from 'assets/trash-icon.png'
 import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import { AddressWithPaybuttons } from 'services/addressService'
 import axios from 'axios'
@@ -19,8 +20,9 @@ interface IProps {
 export default function EditWalletForm ({ wallet, userAddresses, refreshWalletList }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<WalletPATCHParameters>()
   const [modal, setModal] = useState(false)
+  const [deleteModal, setDeleteModal] = useState(false)
   const [error, setError] = useState('')
-  const thisWalletAddressIdList = userAddresses.filter(addr => addr.walletId === wallet.id).map(addr => addr.id)
+  const thisWalletAddressIdList = wallet.userAddresses.map((addr) => addr.addressId)
 
   const [selectedAddressIdList, setSelectedAddressIdList] = useState([] as number[])
 
@@ -35,6 +37,13 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
       setError('')
     } catch (err: any) {
       setError(err.response.data.message)
+    }
+  }
+
+  async function onDelete (walletId: number): Promise<void> {
+    const res = await axios.delete<WalletWithAddressesWithPaybuttons>(`${appInfo.websiteDomain}/api/wallet/${walletId}`)
+    if (res.status === 200) {
+      refreshWalletList()
     }
   }
 
@@ -92,7 +101,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                           type='checkbox'
                           value={addr.id}
                           id={`addressIdList.${index}`}
-                          defaultChecked={addr.walletId === wallet.id}
+                          defaultChecked={thisWalletAddressIdList.includes(addr.id)}
                           onChange={ (e) => handleSelectedAddressesChange(e.target.checked, addr.id) }
                         />
                         <label htmlFor={`addressIdList.${index}`}>
@@ -128,12 +137,37 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                     </div>
                   </div>
 
-                  <div className={style_pb.btn_row}>
+                  <div className={style_pb.btn_row2}>
                     {error !== '' && <div className={style_pb.error_message}>{error}</div>}
-                    <button type='submit'>Submit</button>
-                    <button onClick={() => { setModal(false); reset() }} className={style_pb.cancel_btn}>Cancel</button>
+                    {wallet.userProfile === null || (wallet.userProfile.isXECDefault === true || wallet.userProfile.isBCHDefault === true)
+                      ? (<div></div>)
+                      : (
+                      <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style_pb.delete_btn}>Delete Wallet<div> <Image src={TrashIcon} alt='delete' /></div></button>
+                        )}
+                    <div>
+                      <button type='submit'>Submit</button>
+                      <button onClick={() => { setModal(false); reset() }} className={style_pb.cancel_btn}>Cancel</button>
+                    </div>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>)
+        : null}
+      {deleteModal
+        ? (
+          <div className={style_pb.form_ctn_outer}>
+            <div className={style_pb.form_ctn_inner}>
+              <h4>Delete {wallet.name}?</h4>
+              <div className={`${style_pb.form_ctn} ${style_pb.delete_button_form_ctn}`}>
+                <label htmlFor='name'>Are you sure you want to delete {wallet.name}?<br />This action cannot be undone.</label>
+                <div className={style_pb.btn_row}>
+                  <div>
+
+                    <button onClick={() => { void onDelete(wallet.id) }} className={style_pb.delete_confirm_btn}>Yes, Delete This Wallet</button>
+                    <button onClick={() => { setDeleteModal(false); reset(); setModal(true) }} className={style_pb.cancel_btn}>Cancel</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>)

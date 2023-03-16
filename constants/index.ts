@@ -32,14 +32,16 @@ export const RESPONSE_MESSAGES = {
   MISSING_PRICE_API_TOKEN_400: { statusCode: 400, message: 'Missing PRICE_API_TOKEN environment variable.' },
   MISSING_PRICE_FOR_TRANSACTION_400: { statusCode: 400, message: 'Missing price for transaction.' },
   INVALID_PRICE_STATE_400: { statusCode: 400, message: 'Missing expected quote price for transaction.' },
-  COULD_NOT_GET_BLOCK_INFO: { statusCode: 500, message: "Couldn't get block info." },
+  COULD_NOT_GET_BLOCK_INFO_500: { statusCode: 500, message: "Couldn't get block info." },
   NETWORK_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'networkSlug' not provided." },
   QUOTE_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'quoteSlug' not provided." },
   NO_CURRENT_PRICES_FOUND_404: { statusCode: 404, message: 'Current prices not found.' },
   INVALID_QUOTE_SLUG_400: { statusCode: 400, message: 'Invalid quote slug.' },
   INVALID_TICKER_400: { statusCode: 400, message: 'Invalid ticker.' },
   MISSING_BLOCKCHAIN_CLIENT_400: { statusCode: 400, message: 'There is no blockchain client chosen for this network.' },
-  NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400: { statusCode: 400, message: 'Blockchain client was not instantiated.' }
+  NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400: { statusCode: 400, message: 'Blockchain client was not instantiated.' },
+  DEFAULT_WALLET_CANNOT_BE_DELETED_400: { statusCode: 400, message: 'A default wallet cannot be deleted.' },
+  USER_PROFILE_NOT_FOUND_400: { statusCode: 400, message: 'User profile not found.' }
 }
 
 export interface KeyValueT<T> {
@@ -102,7 +104,7 @@ export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
 export type BLOCKCHAIN_CLIENT_OPTIONS = 'grpc' | 'chronik'
 export const NETWORK_BLOCKCHAIN_CLIENTS: KeyValueT<BLOCKCHAIN_CLIENT_OPTIONS> = {
   ecash: 'chronik',
-  bitcoincash: 'chronik'
+  bitcoincash: 'grpc'
 }
 
 export const CHRONIK_CLIENT_URL = 'https://chronik.be.cash/xec'

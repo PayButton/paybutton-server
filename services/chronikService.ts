@@ -1,10 +1,13 @@
 import { ChronikClient, ScriptType, SubscribeMsg, Tx, TxHistoryPage, Utxo, WsConfig, WsEndpoint } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { BlockchainClient, BlockchainInfo, BlockInfo } from './blockchainService'
+import { BlockchainClient, BlockchainInfo, BlockInfo, Transfer, TransfersResponse } from './blockchainService'
+import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL, FETCH_N, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD, FETCH_DELAY } from 'constants/index'
+import { Prisma, Address } from '@prisma/client'
+import xecaddr from 'xecaddrjs'
+import { satoshisToUnit } from 'utils/index'
+import { fetchAddressBySubstring } from './addressService'
 import * as ws from 'ws'
-import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL } from 'constants/index'
-
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
   availableNetworks: string[]
@@ -39,6 +42,80 @@ export class ChronikBlockchainClient implements BlockchainClient {
   public async getBalance (address: string): Promise<number> {
     const utxos = await this.getUtxos(address)
     return utxos.reduce((acc, utxo) => acc + parseInt(utxo.value), 0)
+  }
+
+  private txThesholdFilter (address: Address) {
+    return (t: Tx, index: number, array: Tx[]): boolean => {
+      return (
+        t.block === undefined ||
+				(parseInt(t.block?.timestamp) >= XEC_TIMESTAMP_THRESHOLD && address.networkId === XEC_NETWORK_ID) ||
+				(parseInt(t.block?.timestamp) >= BCH_TIMESTAMP_THRESHOLD && address.networkId === BCH_NETWORK_ID)
+      )
+    }
+  }
+
+  private async getTransactionAmount (transaction: Tx, addressString: string): Promise<Prisma.Decimal> {
+    let totalOutput = 0
+    let totalInput = 0
+    const addressFormat = xecaddr.detectAddressFormat(addressString)
+    const script = toHash160(addressString).hash160
+
+    for (const output of transaction.outputs) {
+      if (output.outputScript.includes(script)) {
+        totalOutput += parseInt(output.value)
+      }
+    }
+    for (const input of transaction.inputs) {
+      if (input?.outputScript?.includes(script) === true) {
+        totalInput += parseInt(input.value)
+      }
+    }
+    const satoshis = new Prisma.Decimal(totalOutput).minus(totalInput)
+    return await satoshisToUnit(
+      satoshis,
+      addressFormat
+    )
+  }
+
+  private async getTransferFromTransaction (transaction: Tx, addressString: string): Promise<Transfer> {
+    return {
+      txid: transaction.txid,
+      receivedAmount: await this.getTransactionAmount(transaction, addressString),
+      timestamp: transaction.block !== undefined ? parseInt(transaction.block.timestamp) : parseInt(transaction.timeFirstSeen)
+    }
+  }
+
+  // fetches in anti-chronological order
+  public async getAddressTransfers (addressString: string, maxTransfers?: number): Promise<TransfersResponse> {
+    const address = await fetchAddressBySubstring(addressString)
+    maxTransfers = maxTransfers ?? Infinity
+    const pageSize = FETCH_N
+    let newTransactionsCount = -1
+    let page = 0
+    const confirmedTransactions: Tx[] = []
+    const unconfirmedTransactions: Tx[] = []
+
+    while (confirmedTransactions.length < maxTransfers && newTransactionsCount !== 0) {
+      const { type, hash160 } = toHash160(address.address)
+      let transactions = (await this.chronik.script(type, hash160).history(page, pageSize)).txs
+
+      // remove transactions older than the networks
+      transactions = transactions.filter(this.txThesholdFilter(address))
+      confirmedTransactions.push(...transactions.filter(t => t.block !== undefined))
+      unconfirmedTransactions.push(...transactions.filter(t => t.block === undefined))
+
+      newTransactionsCount = transactions.length
+      page += 1
+
+      await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
+    }
+
+    confirmedTransactions.splice(maxTransfers)
+
+    return {
+      confirmed: await Promise.all(confirmedTransactions.map(async tx => await this.getTransferFromTransaction(tx, address.address))),
+      unconfirmed: await Promise.all(unconfirmedTransactions.map(async tx => await this.getTransferFromTransaction(tx, address.address)))
+    }
   }
 
   // anti-chronological order

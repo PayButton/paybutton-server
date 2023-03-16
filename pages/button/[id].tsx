@@ -76,6 +76,10 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
 
   async componentDidMount (): Promise<void> {
     await this.fetchPaybutton()
+  }
+
+  async fetchAllTransactions (): Promise<void> {
+    if (this.state.paybutton === undefined) return
     for (const connector of this.state.paybutton.addresses) {
       await this.fetchTransactions(connector.address.address)
     }
@@ -88,14 +92,12 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
     if (res.status === 200) {
       this.setState({
         paybutton: await res.json()
-      })
+      }, () => { void this.fetchAllTransactions() })
     }
   }
 
   refreshPaybutton = (): void => {
-    this.setState(() => {
-      void this.fetchPaybutton()
-    })
+    void this.fetchPaybutton()
   }
 
   async fetchTransactions (address: string): Promise<void> {

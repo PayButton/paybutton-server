@@ -1,6 +1,5 @@
-// import * as networkService from 'services/networkService'
 import * as addressService from 'services/addressService'
-import { Prisma } from '@prisma/client'
+import { Prisma, WalletsOnUserProfile } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
@@ -20,6 +19,11 @@ export interface UpdateWalletInput {
   userId: string
 }
 
+export interface DeleteWalletInput {
+  userId: string
+  walletId: number | string
+}
+
 const includeAddressesWithPaybuttons = {
   userProfile: {
     select: {
@@ -28,14 +32,27 @@ const includeAddressesWithPaybuttons = {
       isBCHDefault: true
     }
   },
-  addresses: {
-    include: addressService.includePaybuttonsNested
+  userAddresses: {
+    include: {
+      address: {
+        include: {
+          paybuttons: addressService.includePaybuttonsNested.paybuttons
+        }
+      }
+    }
   }
 }
+
 const walletWithAddressesWithPaybuttons = Prisma.validator<Prisma.WalletArgs>()({
   include: includeAddressesWithPaybuttons
 })
 export type WalletWithAddressesWithPaybuttons = Prisma.WalletGetPayload<typeof walletWithAddressesWithPaybuttons>
+
+function filterOutOtherUsersPaybuttons (wallet: WalletWithAddressesWithPaybuttons): void {
+  for (const addr of wallet.userAddresses) {
+    addr.address.paybuttons = addr.address.paybuttons.filter((conn) => conn.paybutton.providerUserId === wallet.providerUserId)
+  }
+}
 
 export const getDefaultForNetworkIds = (isXECDefault: boolean | undefined, isBCHDefault: boolean | undefined): number[] => {
   const defaultForNetworkIds: number[] = []
@@ -52,7 +69,7 @@ export const getDefaultForNetworkIds = (isXECDefault: boolean | undefined, isBCH
 }
 
 export const walletHasAddressForNetwork = (wallet: WalletWithAddressesWithPaybuttons, networkId: number): boolean => {
-  if (wallet.addresses.every((addr) => addr.networkId !== networkId)) {
+  if (wallet.userAddresses.every((addr) => addr.address.networkId !== networkId)) {
     return false
   }
   return true
@@ -60,15 +77,54 @@ export const walletHasAddressForNetwork = (wallet: WalletWithAddressesWithPaybut
 
 async function removeAddressesFromWallet (
   prisma: Prisma.TransactionClient,
+  wallet: WalletWithAddressesWithPaybuttons,
   addressIdsToRemoveList: number[]
 ): Promise<void> {
+  if (wallet.userProfile === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
+  }
   for (const addressId of addressIdsToRemoveList) {
-    await prisma.address.update({
+    await prisma.addressesOnUserProfiles.update({
       data: {
         walletId: null
       },
       where: {
-        id: addressId
+        userProfileId_addressId: {
+          userProfileId: wallet.userProfile.userProfileId,
+          addressId
+        }
+      }
+    })
+  }
+}
+
+export async function connectAddressesToWallet (
+  prisma: Prisma.TransactionClient,
+  addressIdList: number[],
+  wallet: WalletWithAddressesWithPaybuttons
+): Promise<void> {
+  if (wallet.userProfile === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
+  }
+  for (const addressId of addressIdList) {
+    const addr = await prisma.address.findUnique({ where: { id: addressId } })
+    if (addr === null) {
+      throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
+    }
+    await prisma.addressesOnUserProfiles.upsert({
+      create: {
+        walletId: wallet.id,
+        userProfileId: wallet.userProfile.userProfileId,
+        addressId
+      },
+      update: {
+        walletId: wallet.id
+      },
+      where: {
+        userProfileId_addressId: {
+          userProfileId: wallet.userProfile.userProfileId,
+          addressId
+        }
       }
     })
   }
@@ -79,21 +135,13 @@ export async function setAddressListForWallet (
   addressIdList: number[],
   wallet: WalletWithAddressesWithPaybuttons
 ): Promise<void> {
-  for (const addressId of addressIdList) {
-    await prisma.address.update({
-      data: {
-        walletId: wallet.id
-      },
-      where: {
-        id: addressId
-      }
-    })
-  }
+  await connectAddressesToWallet(prisma, addressIdList, wallet)
 
   // remove addresses that are not on the list
   await removeAddressesFromWallet(
     prisma,
-    wallet.addresses.map(addr => addr.id).filter(addrId => !addressIdList.includes(addrId))
+    wallet,
+    wallet.userAddresses.map(addr => addr.address.id).filter(addrId => !addressIdList.includes(addrId))
   )
 }
 
@@ -148,6 +196,7 @@ export async function fetchWalletById (walletId: number | string): Promise<Walle
   if (wallet === null) {
     throw new Error(RESPONSE_MESSAGES.NO_WALLET_FOUND_404.message)
   }
+  filterOutOtherUsersPaybuttons(wallet)
   return wallet
 }
 
@@ -279,12 +328,12 @@ export async function getWalletBalance (wallet: WalletWithAddressesWithPaybutton
     BCHBalance: new Prisma.Decimal(0),
     paymentCount: 0
   }
-  for (const addr of wallet.addresses) {
-    const addrBalance = await addressService.getAddressPaymentInfo(addr.address)
-    if (addr.networkId === XEC_NETWORK_ID) {
+  for (const addr of wallet.userAddresses) {
+    const addrBalance = await addressService.getAddressPaymentInfo(addr.address.address)
+    if (addr.address.networkId === XEC_NETWORK_ID) {
       ret.XECBalance = ret.XECBalance.plus(addrBalance.balance)
     }
-    if (addr.networkId === BCH_NETWORK_ID) {
+    if (addr.address.networkId === BCH_NETWORK_ID) {
       ret.BCHBalance = ret.BCHBalance.plus(addrBalance.balance)
     }
     ret.paymentCount += addrBalance.paymentCount
@@ -292,9 +341,93 @@ export async function getWalletBalance (wallet: WalletWithAddressesWithPaybutton
   return ret
 }
 
+export async function getUserDefaultWalletForNetworkId (userProfileId: number, networkId: number): Promise<WalletWithAddressesWithPaybuttons> {
+  let userWalletProfile: WalletsOnUserProfile | null
+  if (networkId === BCH_NETWORK_ID) {
+    userWalletProfile = await prisma.walletsOnUserProfile.findUnique({
+      where: {
+        WalletsOnUserProfile_userProfileId_isBCHDefault_unique_constraint: {
+          userProfileId,
+          isBCHDefault: true
+        }
+      }
+    })
+  } else if (networkId === XEC_NETWORK_ID) {
+    userWalletProfile = await prisma.walletsOnUserProfile.findUnique({
+      where: {
+        WalletsOnUserProfile_userProfileId_isXECDefault_unique_constraint: {
+          userProfileId,
+          isXECDefault: true
+        }
+      }
+    })
+  } else {
+    throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_ID_400.message)
+  }
+
+  if (userWalletProfile === null) {
+    throw new Error(RESPONSE_MESSAGES.USER_PROFILE_NOT_FOUND_400.message)
+  }
+  return await fetchWalletById(userWalletProfile.walletId)
+}
+
+export async function moveAddressesToDefaultWallet (wallet: WalletWithAddressesWithPaybuttons): Promise<void> {
+  if (wallet.userProfile === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
+  }
+  const XECDefaultWallet = await getUserDefaultWalletForNetworkId(wallet.userProfile?.userProfileId, XEC_NETWORK_ID)
+  const BCHDefaultWallet = await getUserDefaultWalletForNetworkId(wallet.userProfile?.userProfileId, BCH_NETWORK_ID)
+  for (const addr of wallet.userAddresses) {
+    // Get id of default wallet to move
+    let defaultWalletId: number
+    if (addr.address.networkId === BCH_NETWORK_ID) {
+      defaultWalletId = BCHDefaultWallet.id
+    } else if (addr.address.networkId === XEC_NETWORK_ID) {
+      defaultWalletId = XECDefaultWallet.id
+    } else {
+      throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_ID_400.message)
+    }
+
+    await prisma.addressesOnUserProfiles.update({
+      data: {
+        walletId: defaultWalletId
+      },
+      where: {
+        userProfileId_addressId: {
+          userProfileId: wallet.userProfile.userProfileId,
+          addressId: addr.addressId
+        }
+      }
+    })
+  }
+}
+
+export async function deleteWallet (params: DeleteWalletInput): Promise<WalletWithAddressesWithPaybuttons> {
+  const wallet = await fetchWalletById(params.walletId)
+  if (wallet !== null && wallet.providerUserId !== params.userId) {
+    throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
+  }
+  if (wallet.userProfile?.isBCHDefault === true || wallet.userProfile?.isXECDefault === true) {
+    throw new Error(RESPONSE_MESSAGES.DEFAULT_WALLET_CANNOT_BE_DELETED_400.message)
+  }
+  return await prisma.$transaction(async (prisma) => {
+    await moveAddressesToDefaultWallet(wallet)
+    const w = await prisma.wallet.delete({
+      where: {
+        id: Number(params.walletId)
+      },
+      include: includeAddressesWithPaybuttons
+    })
+    filterOutOtherUsersPaybuttons(w)
+    return w
+  })
+}
+
 export async function fetchWalletArrayByUserId (userId: string): Promise<WalletWithAddressesWithPaybuttons[]> {
-  return await prisma.wallet.findMany({
+  const walletList = await prisma.wallet.findMany({
     where: { providerUserId: userId },
     include: includeAddressesWithPaybuttons
   })
+  walletList.forEach((w) => filterOutOtherUsersPaybuttons(w))
+  return walletList
 }

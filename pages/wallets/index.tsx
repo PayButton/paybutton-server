@@ -8,7 +8,6 @@ import { GetServerSideProps } from 'next'
 import WalletCard from 'components/Wallet/WalletCard'
 import WalletForm from 'components/Wallet/WalletForm'
 import { WalletWithPaymentInfo } from 'services/walletService'
-import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { AddressWithPaybuttons } from 'services/addressService'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
@@ -45,7 +44,6 @@ interface WalletsProps {
 
 interface WalletsState {
   walletsWithPaymentInfo: WalletWithPaymentInfo[]
-  userPaybuttons: PaybuttonWithAddresses[]
   userAddresses: AddressWithPaybuttons[]
 }
 
@@ -62,7 +60,6 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
     super(props)
     this.state = {
       walletsWithPaymentInfo: [],
-      userPaybuttons: [],
       userAddresses: []
     }
   }
@@ -75,9 +72,6 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
     const walletsResponse = await fetch(`/api/wallets?userId=${this.props.userId}`, {
       method: 'GET'
     })
-    const paybuttonsResponse = await fetch(`/api/paybuttons?userId=${this.props.userId}`, {
-      method: 'GET'
-    })
     const addressesResponse = await fetch(`/api/addresses?userId=${this.props.userId}&includePaybuttons=1`, {
       method: 'GET'
     })
@@ -86,12 +80,7 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
         walletsWithPaymentInfo: await walletsResponse.json()
       })
     }
-    if (paybuttonsResponse.status === 200) {
-      this.setState({
-        userPaybuttons: await paybuttonsResponse.json()
-      })
-    }
-    if (paybuttonsResponse.status === 200) {
+    if (addressesResponse.status === 200) {
       this.setState({
         userAddresses: await addressesResponse.json()
       })
@@ -127,7 +116,6 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
             wallet={walletWithPaymentInfo.wallet}
             paymentInfo={walletWithPaymentInfo.paymentInfo}
             userAddresses={this.state.userAddresses}
-            userPaybuttons={this.state.userPaybuttons}
             refreshWalletList={this.refreshWalletList}
             key={walletWithPaymentInfo.wallet.name}
           />

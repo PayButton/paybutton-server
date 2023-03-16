@@ -21,9 +21,26 @@ export const includePaybuttonsNested = {
     }
   }
 }
+
 const addressWithPaybuttons = Prisma.validator<Prisma.AddressArgs>()({
   include: includePaybuttonsNested
 })
+
+export function includeUserPaybuttonsNested (userId: string): Prisma.AddressInclude {
+  return {
+    paybuttons: {
+      include: {
+        paybutton: true
+      },
+      where: {
+        paybutton: {
+          providerUserId: userId
+        }
+      }
+    }
+  }
+}
+
 export type AddressWithPaybuttons = Prisma.AddressGetPayload<typeof addressWithPaybuttons>
 
 export async function fetchAddressBySubstring (substring: string): Promise<AddressWithTransactionsAndNetwork> {
@@ -69,7 +86,7 @@ export async function fetchAllUserAddresses (userId: string, includeTransactions
     },
     include: {
       transactions: includeTransactions,
-      paybuttons: includePaybuttons ? includePaybuttonsNested.paybuttons : false
+      paybuttons: includePaybuttons ? includeUserPaybuttonsNested(userId).paybuttons : false
     }
   })
 }
@@ -115,20 +132,23 @@ export async function fetchAddressesInList (prefixedAddressList: string[]): Prom
   })
 }
 
-export async function upsertAddress (addressString: string, walletId?: number, includeTransactions = false): Promise<AddressWithTransactions> {
+export async function upsertAddress (
+  addressString: string,
+  prismaTransaction?: Prisma.TransactionClient,
+  includeTransactions = false
+): Promise<AddressWithTransactions> {
   const prefix = addressString.split(':')[0].toLowerCase()
   const network = await getNetworkFromSlug(prefix)
-  return await prisma.address.upsert({
+  const localPrisma = prismaTransaction ?? prisma
+  return await localPrisma.address.upsert({
     where: {
       address: addressString
     },
     create: {
       address: addressString.toLowerCase(),
-      networkId: Number(network.id),
-      walletId
+      networkId: Number(network.id)
     },
     update: {
-      walletId
     },
     include: { transactions: includeTransactions }
   })
