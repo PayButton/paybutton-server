@@ -1,11 +1,12 @@
 import { GrpcBlockchainClient } from './grpcService'
-import { Tx, TxHistoryPage, Utxo } from 'chronik-client'
+import { Tx, Utxo } from 'chronik-client'
 import { ChronikBlockchainClient } from './chronikService'
 import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils/index'
 import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CLIENT_OPTIONS } from '../constants/index'
 import {
   Transaction
 } from 'grpc-bchrpc-node'
+import { Prisma } from '@prisma/client'
 
 export interface BlockchainInfo {
   height: number
@@ -16,9 +17,20 @@ export interface BlockInfo extends BlockchainInfo {
   timestamp: number
 }
 
+export interface TransfersResponse {
+  confirmed: Transfer[]
+  unconfirmed: Transfer[]
+}
+
+export interface Transfer {
+  txid: string
+  timestamp: number
+  receivedAmount: Prisma.Decimal
+}
+
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
-  getAddressTransactions: (address: string, page?: number, pageSize?: number) => Promise<TxHistoryPage>
+  getAddressTransfers: (addressString: string, maxTransfers?: number) => Promise<TransfersResponse>
   getUtxos: (address: string) => Promise<Utxo[]>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
@@ -53,20 +65,19 @@ export async function getBalance (address: string): Promise<number> {
   return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getBalance(address)
 }
 
-export async function getAddressTransactions (address: string, page?: number, pageSize?: number): Promise<TxHistoryPage> {
-  return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getAddressTransactions(address, page, pageSize)
+export async function getAddressTransfers (addressString: string, maxTransfers?: number): Promise<TransfersResponse> {
+  return await getObjectValueForAddress(addressString, BLOCKCHAIN_CLIENTS).getAddressTransfers(addressString, maxTransfers)
 }
 
 export async function getUtxos (address: string): Promise<Utxo[]> {
   return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getUtxos(address)
 }
 
-export async function getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
-  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockchainInfo(networkSlug)
-}
-
-export async function getBlockInfo (networkSlug: string, height: number): Promise<BlockInfo> {
-  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockInfo(networkSlug, height)
+export async function getLastBlockTimestamp (networkSlug: string): Promise<number> {
+  const client = getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS)
+  const getBlockchainInfo = await client.getBlockchainInfo(networkSlug)
+  const lastBlockInfo = await client.getBlockInfo(networkSlug, getBlockchainInfo.height)
+  return lastBlockInfo.timestamp
 }
 
 export async function getTransactionDetails (txId: string, networkSlug: string): Promise<Tx> {

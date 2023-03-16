@@ -1,57 +1,13 @@
-import { Transaction, MempoolTransaction } from 'grpc-bchrpc-node'
 import prisma from 'prisma/clientInstance'
 import { Prisma, Address } from '@prisma/client'
-import { getAddressTransactions } from 'services/blockchainService'
+import { getAddressTransfers, Transfer } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
-import { satoshisToUnit } from 'utils/index'
 import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
 import { syncPricesFromTransactionList, QuoteValues } from 'services/priceService'
-import { FETCH_N_TIMEOUT, RESPONSE_MESSAGES, FETCH_N, FETCH_DELAY, USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, BCH_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD, BCH_TIMESTAMP_THRESHOLD, N_OF_QUOTES } from 'constants/index'
+import { FETCH_N_TIMEOUT, RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import _ from 'lodash'
-import xecaddr from 'xecaddrjs'
-import { Tx } from 'chronik-client'
-import { toHash160 } from './chronikService'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
-
-export const parseMempoolTx = function (mempoolTx: MempoolTransaction.AsObject): Transaction.AsObject {
-  const tx = mempoolTx.transaction!
-  tx.timestamp = mempoolTx.addedTime
-  return tx
-}
-
-const txThesholdFilter = (address: Address) => {
-  return (t: Tx, index: number, array: Tx[]): boolean => {
-    return (
-      t.block === undefined ||
-      (parseInt(t.block?.timestamp) >= XEC_TIMESTAMP_THRESHOLD && address.networkId === XEC_NETWORK_ID) ||
-      (parseInt(t.block?.timestamp) >= BCH_TIMESTAMP_THRESHOLD && address.networkId === BCH_NETWORK_ID)
-    )
-  }
-}
-
-export async function getTransactionAmount (transaction: Tx, addressString: string): Promise<Prisma.Decimal> {
-  let totalOutput = 0
-  let totalInput = 0
-  const addressFormat = xecaddr.detectAddressFormat(addressString)
-  const script = toHash160(addressString).hash160
-
-  for (const output of transaction.outputs) {
-    if (output.outputScript.includes(script)) {
-      totalOutput += parseInt(output.value)
-    }
-  }
-  for (const input of transaction.inputs) {
-    if (input?.outputScript?.includes(script) === true) {
-      totalInput += parseInt(input.value)
-    }
-  }
-  const satoshis = new Prisma.Decimal(totalOutput).minus(totalInput)
-  return await satoshisToUnit(
-    satoshis,
-    addressFormat
-  )
-}
 
 export async function getTransactionValue (transaction: TransactionWithAddressAndPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
@@ -118,17 +74,16 @@ export async function base64HashToHex (base64Hash: string): Promise<string> {
   )
 }
 
-export async function upsertTransaction (transaction: Tx, address: Address, confirmed = true): Promise<TransactionWithAddressAndPrices | undefined> {
-  const receivedAmount = await getTransactionAmount(transaction, address.address)
-  if (receivedAmount === new Prisma.Decimal(0)) { // out transactions
+export async function upsertTransaction (transfer: Transfer, address: Address, confirmed = true): Promise<TransactionWithAddressAndPrices | undefined> {
+  if (transfer.receivedAmount === new Prisma.Decimal(0)) { // out transactions
     return
   }
-  const hash = await base64HashToHex(transaction.txid)
+  const hash = await base64HashToHex(transfer.txid)
   const transactionParams = {
     hash,
-    amount: receivedAmount,
+    amount: transfer.receivedAmount,
     addressId: address.id,
-    timestamp: transaction.block !== undefined ? parseInt(transaction.block.timestamp) : parseInt(transaction.timeFirstSeen),
+    timestamp: transfer.timestamp,
     confirmed
   }
   return await prisma.transaction.upsert({
@@ -144,11 +99,11 @@ export async function upsertTransaction (transaction: Tx, address: Address, conf
   })
 }
 
-export async function upsertManyTransactionsForAddress (transactions: Tx[], address: Address, confirmed = true): Promise<TransactionWithAddressAndPrices[]> {
+export async function upsertManyTransactionsForAddress (transfers: Transfer[], address: Address, confirmed = true): Promise<TransactionWithAddressAndPrices[]> {
   const ret = await prisma.$transaction(async (_) => {
     const insertedTransactions: Array<TransactionWithAddressAndPrices | undefined> = await Promise.all(
-      transactions.map(async (transaction) => {
-        return await upsertTransaction(transaction, address, confirmed)
+      transfers.map(async (transfer) => {
+        return await upsertTransaction(transfer, address, confirmed)
       })
     )
     return insertedTransactions
@@ -160,26 +115,12 @@ export async function upsertManyTransactionsForAddress (transactions: Tx[], addr
 
 export async function syncTransactionsForAddress (addressString: string): Promise<TransactionWithAddressAndPrices[]> {
   const address = await fetchAddressBySubstring(addressString)
-  let insertedTransactions: TransactionWithAddressAndPrices[] = []
-  let pageToLoad = 0
-  let numPages = 1
 
-  while (pageToLoad <= numPages) {
-    const addressTransactions = await getAddressTransactions(address.address, pageToLoad, FETCH_N)
-    numPages = addressTransactions.numPages
-    pageToLoad += 1
-
-    // remove transactions older than the networks
-    const transactions = addressTransactions.txs.filter(txThesholdFilter(address))
-    const confirmedTransactions = transactions.filter(t => t.block !== undefined)
-    const unconfirmedTransactions = transactions.filter(t => t.block === undefined)
-
-    const newInsertedConfirmedTransactions = await upsertManyTransactionsForAddress(confirmedTransactions, address)
-    const newInsertedUnconfirmedTransactions = await upsertManyTransactionsForAddress(unconfirmedTransactions, address, false)
-    insertedTransactions = [...insertedTransactions, ...newInsertedConfirmedTransactions, ...newInsertedUnconfirmedTransactions]
-
-    await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
-  }
+  const addressTransfers = await getAddressTransfers(addressString)
+  const insertedTransactions: TransactionWithAddressAndPrices[] = [
+    ...await upsertManyTransactionsForAddress(addressTransfers.confirmed, address),
+    ...await upsertManyTransactionsForAddress(addressTransfers.unconfirmed, address, false)
+  ]
 
   await updateLastSynced(addressString)
   return insertedTransactions
