@@ -18,9 +18,9 @@ interface IProps {
 }
 
 const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userAddresses, refreshWalletList }: IProps) => {
-  const networks = wallet.addresses.map((addr) => addr.networkId)
-  const differentPaybuttons = wallet.addresses.map(addr =>
-    addr.paybuttons.map(conn => conn.paybutton)
+  const networks = wallet.userAddresses.map((addr) => addr.address.networkId)
+  const differentPaybuttons = wallet.userAddresses.map(addr =>
+    addr.address.paybuttons.map(conn => conn.paybutton)
   ).reduce(
     (accumulator, pbList) => accumulator.concat(pbList),
     []

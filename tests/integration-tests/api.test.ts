@@ -14,7 +14,7 @@ import balanceEndpoint from 'pages/api/address/balance/[address]'
 import dashboardEndpoint from 'pages/api/dashboard/index'
 import currentPriceEndpoint from 'pages/api/price/[networkSlug]'
 import currentPriceForQuoteEndpoint from 'pages/api/price/[networkSlug]/[quoteSlug]'
-import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
+import { WalletWithAddressesWithPaybuttons, fetchWalletById } from 'services/walletService'
 import {
   exampleAddresses,
   testEndpoint,
@@ -421,7 +421,6 @@ describe('GET /api/addresses/', () => {
           address: expect.any(String),
           id: expect.any(Number),
           networkId: expect.any(Number),
-          walletId: null,
           lastSynced: null,
           createdAt: expect.any(String),
           updatedAt: expect.any(String)
@@ -430,7 +429,6 @@ describe('GET /api/addresses/', () => {
           address: expect.any(String),
           id: expect.any(Number),
           networkId: expect.any(Number),
-          walletId: null,
           lastSynced: null,
           createdAt: expect.any(String),
           updatedAt: expect.any(String)
@@ -574,7 +572,7 @@ describe('POST /api/wallets/', () => {
       isBCHDefault: null,
       userProfileId: 3
     })
-    expect(responseData.addresses).toEqual(
+    expect(responseData.userAddresses).toEqual(
       expect.arrayContaining([expectedAddressObject])
     )
   })
@@ -596,7 +594,7 @@ describe('POST /api/wallets/', () => {
       isBCHDefault: null,
       userProfileId: 3
     })
-    expect(responseData.addresses).toEqual(
+    expect(responseData.userAddresses).toEqual(
       expect.arrayContaining([expectedAddressObject])
     )
   })
@@ -639,17 +637,21 @@ describe('GET /api/wallets/', () => {
     const responseData = res._getJSONData()
     expect(responseData[0].wallet.providerUserId).toBe(userB)
     expect(responseData.length).toBe(1)
-    expect(responseData[0].wallet.addresses).toEqual(
+    expect(responseData[0].wallet.userAddresses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          address: expect.any(String),
-          networkId: expect.any(Number),
-          id: expect.any(Number)
+          address: expect.objectContaining({
+            address: expect.any(String),
+            networkId: expect.any(Number),
+            id: expect.any(Number)
+          })
         }),
         expect.objectContaining({
-          address: expect.any(String),
-          networkId: expect.any(Number),
-          id: expect.any(Number)
+          address: expect.objectContaining({
+            address: expect.any(String),
+            networkId: expect.any(Number),
+            id: expect.any(Number)
+          })
         })
       ])
     )
@@ -657,7 +659,7 @@ describe('GET /api/wallets/', () => {
     expect(responseData[0]).toHaveProperty('paymentInfo')
     expect(responseData[0].wallet).toHaveProperty('providerUserId', 'test-other-u-id')
     expect(responseData[0].wallet).toHaveProperty('name')
-    expect(responseData[0].wallet).toHaveProperty('addresses')
+    expect(responseData[0].wallet).toHaveProperty('userAddresses')
     expect(responseData[0].wallet).toHaveProperty('userProfile')
     expect(responseData[0].paymentInfo).toHaveProperty('XECBalance')
     expect(responseData[0].paymentInfo).toHaveProperty('BCHBalance')
@@ -720,7 +722,7 @@ describe('GET /api/wallet/[id]', () => {
       const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
       const responseData = res._getJSONData()
       expect(res.statusCode).toBe(200)
-      expect(responseData.addresses).toEqual(
+      expect(responseData.userAddresses).toEqual(
         expect.arrayContaining([
           expectedAddressObject,
           expectedAddressObject
@@ -787,13 +789,13 @@ describe('PATCH /api/wallet/[id]', () => {
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name + '-new'
-      baseRequestOptions.body.addressIdList = wallet.addresses.map((addr) => addr.id)
+      baseRequestOptions.body.addressIdList = wallet.userAddresses.map((addr) => addr.address.id)
     }
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
-    responseData.addresses = wallet.addresses // WIP
-    expect(responseData.addresses).toEqual(
+    responseData.userAddresses = wallet.userAddresses // WIP
+    expect(responseData.userAddresses).toEqual(
       expect.arrayContaining([
         expectedAddressObject,
         expectedAddressObject
@@ -812,7 +814,7 @@ describe('PATCH /api/wallet/[id]', () => {
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = createdWallets[1].name
-      baseRequestOptions.body.addressIdList = wallet.addresses.map((addr) => addr.id)
+      baseRequestOptions.body.addressIdList = wallet.userAddresses.map((addr) => addr.address.id)
     }
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
@@ -825,14 +827,14 @@ describe('PATCH /api/wallet/[id]', () => {
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name
-      baseRequestOptions.body.addressIdList = wallet.addresses.map((addr) => addr.id)
+      baseRequestOptions.body.addressIdList = wallet.userAddresses.map((addr) => addr.address.id)
       baseRequestOptions.body.isXECDefault = true
     }
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
-    responseData.addresses = wallet.addresses // WIP
-    expect(responseData.addresses).toEqual(
+    responseData.userAddresses = wallet.userAddresses // WIP
+    expect(responseData.userAddresses).toEqual(
       expect.arrayContaining([
         expectedAddressObject,
         expectedAddressObject
@@ -854,14 +856,14 @@ describe('PATCH /api/wallet/[id]', () => {
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name
-      baseRequestOptions.body.addressIdList = wallet.addresses.map((addr) => addr.id)
+      baseRequestOptions.body.addressIdList = wallet.userAddresses.map((addr) => addr.address.id)
       baseRequestOptions.body.isBCHDefault = true
     }
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
-    responseData.addresses = wallet.addresses // WIP
-    expect(responseData.addresses).toEqual(
+    responseData.userAddresses = wallet.userAddresses // WIP
+    expect(responseData.userAddresses).toEqual(
       expect.arrayContaining([
         expectedAddressObject,
         expectedAddressObject
@@ -895,7 +897,7 @@ describe('PATCH /api/wallet/[id]', () => {
       })
       return rest
     })
-    const oldAddressesIds = wallet.addresses.map(addr => addr.id)
+    const oldAddressesIds = wallet.userAddresses.map(addr => addr.address.id)
     const newAddressesIds = newAddresses.map(addr => addr.id)
     if (baseRequestOptions.body != null) {
       baseRequestOptions.body.name = wallet.name
@@ -925,7 +927,7 @@ describe('PATCH /api/wallet/[id]', () => {
       const res = await testEndpoint(getPaybuttonsOptions, paybuttonIdEndpoint)
       const responseData = res._getJSONData()
       expect(res.statusCode).toBe(200)
-      expect(responseData.addresses).toEqual(
+      expect(responseData.userAddresses).toEqual(
         expect.arrayContaining([
           {
             address: expect.objectContaining({
@@ -941,6 +943,88 @@ describe('PATCH /api/wallet/[id]', () => {
       )
       expect(responseData.walletId).toBeNull()
     }
+  })
+})
+
+describe('DELETE /api/wallet/[id]', () => {
+  // Create 4 wallets
+  let createdWallets: WalletWithAddressesWithPaybuttons[]
+  let defaultBCHWallet: WalletWithAddressesWithPaybuttons
+  let defaultXECWallet: WalletWithAddressesWithPaybuttons
+  let baseRequestOptions: RequestOptions = {
+    method: 'DELETE' as RequestMethod,
+    query: {
+      id: null
+    }
+  }
+
+  beforeAll(async () => {
+    await clearPaybuttonsAndAddresses()
+    await clearWallets()
+    createdWallets = []
+    for (let i = 0; i < 4; i++) {
+      const pb = await createPaybuttonForUser('test-u-id')
+      if (i === 2) {
+        const wallet = await createWalletForUser('test-u-id', pb.addresses.map(conn => conn.address.id), false, true)
+        createdWallets.push(wallet)
+        defaultBCHWallet = wallet
+      } else if (i === 3) {
+        const wallet = await createWalletForUser('test-u-id', pb.addresses.map(conn => conn.address.id), true, false)
+        createdWallets.push(wallet)
+        defaultXECWallet = wallet
+      } else {
+        const wallet = await createWalletForUser('test-u-id', pb.addresses.map(conn => conn.address.id))
+        createdWallets.push(wallet)
+      }
+    }
+    const pb = await createPaybuttonForUser('test-u-id2')
+    const wallet = await createWalletForUser('test-u-id2', pb.addresses.map(conn => conn.address.id))
+    createdWallets.push(wallet)
+  })
+  beforeEach(async () => {
+    baseRequestOptions = {
+      method: 'DELETE' as RequestMethod,
+      query: {
+        id: null
+      }
+    }
+  })
+
+  it('Delete first wallet', async () => {
+    const wallet = createdWallets[0]
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
+    const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(200)
+    expect(responseData.id).toEqual(wallet.id)
+    expect(defaultBCHWallet.userAddresses.length + 1).toEqual(
+      (await fetchWalletById(defaultBCHWallet.id)).userAddresses.length
+    )
+    expect(defaultXECWallet.userAddresses.length + 1).toEqual(
+      (await fetchWalletById(defaultXECWallet.id)).userAddresses.length
+    )
+  })
+
+  it('Fail for inexistent wallet', async () => {
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 129837129873
+    const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(404)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NO_WALLET_FOUND_404.message)
+  })
+  it("Fail for deleting other user's wallet", async () => {
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = createdWallets[createdWallets.length - 1].id
+    const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
+  })
+  it('Fail for deleting default wallet', async () => {
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = createdWallets[3].id
+    const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.DEFAULT_WALLET_CANNOT_BE_DELETED_400.message)
   })
 })
 
