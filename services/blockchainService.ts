@@ -1,5 +1,4 @@
 import { GrpcBlockchainClient } from './grpcService'
-import { TxHistoryPage } from 'chronik-client'
 import { ChronikBlockchainClient } from './chronikService'
 import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils/index'
 import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CLIENT_OPTIONS } from '../constants/index'
@@ -8,6 +7,7 @@ import {
   GetTransactionResponse,
   GetAddressUnspentOutputsResponse
 } from 'grpc-bchrpc-node'
+import { Prisma } from '@prisma/client'
 
 export interface BlockchainInfo {
   height: number
@@ -18,11 +18,22 @@ export interface BlockInfo extends BlockchainInfo {
   timestamp: number
 }
 
+export interface TransfersResponse {
+  confirmed: Transfer[]
+  unconfirmed: Transfer[]
+}
+
+export interface Transfer {
+  txid: string
+  timestamp: number
+  receivedAmount: Prisma.Decimal
+}
+
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
-  getAddressTransactions: (address: string, page?: number, pageSize?: number) => Promise<TxHistoryPage>
+  getAddressTransfers: (addressString: string, maxTransfers?: number) => Promise<TransfersResponse>
   getUtxos: (address: string) => Promise<GetAddressUnspentOutputsResponse.AsObject>
   getTransactionDetails: (hash: string, networkSlug: string) => Promise<GetTransactionResponse.AsObject>
   subscribeTransactions: (
@@ -55,8 +66,8 @@ export async function getBalance (address: string): Promise<number> {
   return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getBalance(address)
 }
 
-export async function getAddressTransactions (address: string, page?: number, pageSize?: number): Promise<TxHistoryPage> {
-  return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getAddressTransactions(address, page, pageSize)
+export async function getAddressTransfers (addressString: string, maxTransfers?: number): Promise<TransfersResponse> {
+  return await getObjectValueForAddress(addressString, BLOCKCHAIN_CLIENTS).getAddressTransfers(addressString, maxTransfers)
 }
 
 export async function getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {
