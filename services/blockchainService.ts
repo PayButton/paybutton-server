@@ -1,5 +1,5 @@
 import { GrpcBlockchainClient } from './grpcService'
-import { Tx, Utxo, SubscribeMsg, WsEndpoint } from 'chronik-client'
+import { Tx, SubscribeMsg, WsEndpoint } from 'chronik-client'
 import { ChronikBlockchainClient } from './chronikService'
 import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils/index'
 import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CLIENT_OPTIONS } from '../constants/index'
@@ -29,7 +29,6 @@ export interface Transfer {
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
   getAddressTransfers: (addressString: string, maxTransfers?: number) => Promise<TransfersResponse>
-  getUtxos: (address: string) => Promise<Utxo[]>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
   getTransactionDetails: (txId: string) => Promise<Tx>
@@ -66,10 +65,6 @@ export async function getBalance (address: string): Promise<number> {
 
 export async function getAddressTransfers (addressString: string, maxTransfers?: number): Promise<TransfersResponse> {
   return await getObjectValueForAddress(addressString, BLOCKCHAIN_CLIENTS).getAddressTransfers(addressString, maxTransfers)
-}
-
-export async function getUtxos (address: string): Promise<Utxo[]> {
-  return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getUtxos(address)
 }
 
 export async function getLastBlockTimestamp (networkSlug: string): Promise<number> {

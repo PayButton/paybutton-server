@@ -1,7 +1,8 @@
 import {
   GrpcClient,
   Transaction,
-  MempoolTransaction
+  MempoolTransaction,
+  GetAddressUnspentOutputsResponse
 } from 'grpc-bchrpc-node'
 
 import { BlockchainClient, BlockchainInfo, BlockInfo, Transfer, TransfersResponse } from './blockchainService'
@@ -10,7 +11,7 @@ import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValue
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
-import { Tx, Utxo, SubscribeMsg, WsEndpoint } from 'chronik-client'
+import { Tx, SubscribeMsg, WsEndpoint } from 'chronik-client'
 import * as ws from 'ws'
 
 export interface OutputsList {
@@ -141,29 +142,25 @@ export class GrpcBlockchainClient implements BlockchainClient {
     }
   };
 
-  // DEPRECATED
-  public async getUtxos (address: string): Promise<Utxo[]> {
-    throw new Error('Method not implemented.')
-    // const client = this.getClientForAddress(address)
-    // const res = (await client.getAddressUtxos({ address })).toObject()
-    // return res
+  public async getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {
+    const client = this.getClientForAddress(address)
+    const res = (await client.getAddressUtxos({ address })).toObject()
+    return res
   };
 
-  // DEPRECATED
   public async getBalance (address: string): Promise<number> {
-    throw new Error('Method not implemented.')
-    // const { outputsList } = await this.getUtxos(address)
+    const { outputsList } = await this.getUtxos(address)
 
-    // let satoshis: number = 0
-    // outputsList.forEach((x) => {
-    //   satoshis += x.value
-    // })
+    let satoshis: number = 0
+    outputsList.forEach((x) => {
+      satoshis += x.value
+    })
 
-    // return satoshis
+    return satoshis
   };
 
-  // DEPRECATED
-  public async getTransactionDetails (txId: string): Promise<Tx> {
+  // WIP
+  public async getTransactionDetails (hash: string): Promise<Tx> {
     throw new Error('Method not implemented.')
     // const client = this.getClientForNetworkSlug(networkSlug)
     // const res = (
