@@ -126,11 +126,12 @@ export async function syncTransactionsForAddress (addressString: string): Promis
   return insertedTransactions
 }
 
-export async function syncTransactionsAndPricesForAddress (addressString: string): Promise<void> {
+export async function syncTransactionsAndPricesForAddress (addressString: string): Promise<TransactionWithAddressAndPrices[]> {
   const address = parseAddress(addressString)
   if (address === '' || address === undefined) {
     throw new Error(ADDRESS_NOT_PROVIDED_400.message)
   }
   const insertedTransactions = await syncTransactionsForAddress(address)
   await syncPricesFromTransactionList(insertedTransactions)
+  return insertedTransactions
 }
