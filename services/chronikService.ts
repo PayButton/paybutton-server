@@ -24,31 +24,27 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
   private getWsConfig (): WsConfig {
     return {
-      onConnect: (e: ws.Event) => { console.log(`WebSocket connected: ${e.type} (type)`) },
+      onConnect: (e: ws.Event) => { console.log(`Chronik WebSocket connected, message type: ${e.type}`) },
       onMessage: (msg: SubscribeMsg) => { void this.processWsMessage(msg) },
-      onError: (e: ws.ErrorEvent) => { console.log(`WebSocket error: ${e.type} (type) | ${e.message} (message) | ${e.error as string} (error)`) },
-      onEnd: (e: ws.Event) => { console.log(`WebSocket ended: ${e.type} (type)`) },
+      onError: (e: ws.ErrorEvent) => { console.log(`WebSocket error, message type: ${e.type} | message: ${e.message} | error: ${e.error as string}`) },
+      onEnd: (e: ws.Event) => { console.log(`WebSocket ended, message type: ${e.type}`) },
       autoReconnect: true
     }
   }
 
   private async processWsMessage (msg: SubscribeMsg): Promise<void> {
-    // create unconfirmed transaction
-    if (msg.type === 'AddedToMempool') {
+    // create unconfirmed or confirmed transaction
+    if (msg.type === 'AddedToMempool' || msg.type === 'Confirmed') {
       const transaction = await this.getTransactionDetails(msg.txid)
       const transfers = await this.getTransfersSubscribedAddressesFromTransaction(transaction)
       await Promise.all(
-        transfers.map(async transfer => await transactionService.upsertTransaction(transfer, false))
+        transfers.map(async transfer => await transactionService.upsertTransaction(transfer, msg.type === 'Confirmed'))
       )
     }
-    // delete transaction from our database
-    if (msg.type === 'RemovedFromMempool') {
+    // delete unconfirmed transaction from our database
+    if (msg.type === 'RemovedFromMempool' || msg.type === 'Confirmed') {
       const transactionsToDelete = await transactionService.fetchUnconfirmedTransactions(msg.txid)
       await transactionService.deleteTransactions(transactionsToDelete)
-    }
-    // change confirmed to true if already in our database, else, create a confirmed transaction
-    if (msg.type === 'Confirmed') {
-      console.log('a')
     }
   }
 
