@@ -1,10 +1,9 @@
 import { GrpcBlockchainClient } from './grpcService'
-import { Tx, SubscribeMsg, WsEndpoint } from 'chronik-client'
+import { Tx } from 'chronik-client'
 import { ChronikBlockchainClient } from './chronikService'
 import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils/index'
 import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CLIENT_OPTIONS } from '../constants/index'
-import * as ws from 'ws'
-import { Prisma } from '@prisma/client'
+import { Address, Prisma } from '@prisma/client'
 
 export interface BlockchainInfo {
   height: number
@@ -21,6 +20,7 @@ export interface TransfersResponse {
 }
 
 export interface Transfer {
+  address: Address
   txid: string
   timestamp: number
   receivedAmount: Prisma.Decimal
@@ -28,17 +28,11 @@ export interface Transfer {
 
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
-  getAddressTransfers: (addressString: string, maxTransfers?: number) => Promise<TransfersResponse>
+  getAddressTransfers: (address: Address, maxTransfers?: number) => Promise<TransfersResponse>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
   getTransactionDetails: (txId: string) => Promise<Tx>
-  subscribeTransactions: (
-    addresses: string[],
-    onMessage: (msg: SubscribeMsg) => void,
-    onConnect?: (e: ws.Event) => void,
-    onError?: (e: ws.ErrorEvent) => void,
-    onEnd?: (e: ws.Event) => void
-  ) => Promise<WsEndpoint>
+  subscribeAddressesAddTransactions: (addresses: Address[]) => Promise<void>
 }
 
 function getBlockchainClient (networkSlug: string): BlockchainClient {
@@ -63,8 +57,8 @@ export async function getBalance (address: string): Promise<number> {
   return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getBalance(address)
 }
 
-export async function getAddressTransfers (addressString: string, maxTransfers?: number): Promise<TransfersResponse> {
-  return await getObjectValueForAddress(addressString, BLOCKCHAIN_CLIENTS).getAddressTransfers(addressString, maxTransfers)
+export async function getAddressTransfers (address: Address, maxTransfers?: number): Promise<TransfersResponse> {
+  return await getObjectValueForAddress(address.address, BLOCKCHAIN_CLIENTS).getAddressTransfers(address, maxTransfers)
 }
 
 export async function getLastBlockTimestamp (networkSlug: string): Promise<number> {
@@ -78,19 +72,8 @@ export async function getTransactionDetails (txId: string, networkSlug: string):
   return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getTransactionDetails(txId)
 }
 
-export async function subscribeTransactions (
-  networkSlug: string,
-  addresses: string[],
-  onMessage: (msg: SubscribeMsg) => void,
-  onConnect?: (e: ws.Event) => void,
-  onError?: (e: ws.ErrorEvent) => void,
-  onEnd?: (e: ws.Event) => void
-): Promise<WsEndpoint> {
-  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).subscribeTransactions(
-    addresses,
-    onMessage,
-    onConnect,
-    onError,
-    onEnd
-  )
+export async function subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
+  await Promise.all(addresses.map(async address => {
+    await getObjectValueForAddress(address.address, BLOCKCHAIN_CLIENTS).subscribeAddressesAddTransactions(addresses)
+  }))
 }

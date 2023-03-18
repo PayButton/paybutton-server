@@ -1,5 +1,5 @@
 import prisma from 'prisma/clientInstance'
-import { Prisma, Address } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { getAddressTransfers, Transfer } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
@@ -74,7 +74,7 @@ export async function base64HashToHex (base64Hash: string): Promise<string> {
   )
 }
 
-export async function upsertTransaction (transfer: Transfer, address: Address, confirmed = true): Promise<TransactionWithAddressAndPrices | undefined> {
+export async function upsertTransaction (transfer: Transfer, confirmed = true): Promise<TransactionWithAddressAndPrices | undefined> {
   if (transfer.receivedAmount === new Prisma.Decimal(0)) { // out transactions
     return
   }
@@ -82,7 +82,7 @@ export async function upsertTransaction (transfer: Transfer, address: Address, c
   const transactionParams = {
     hash,
     amount: transfer.receivedAmount,
-    addressId: address.id,
+    addressId: transfer.address.id,
     timestamp: transfer.timestamp,
     confirmed
   }
@@ -90,7 +90,7 @@ export async function upsertTransaction (transfer: Transfer, address: Address, c
     where: {
       Transaction_hash_addressId_unique_constraint: {
         hash: transactionParams.hash,
-        addressId: address.id
+        addressId: transfer.address.id
       }
     },
     update: transactionParams,
@@ -99,11 +99,11 @@ export async function upsertTransaction (transfer: Transfer, address: Address, c
   })
 }
 
-export async function upsertManyTransactionsForAddress (transfers: Transfer[], address: Address, confirmed = true): Promise<TransactionWithAddressAndPrices[]> {
+export async function upsertManyTransactionsForAddress (transfers: Transfer[], confirmed = true): Promise<TransactionWithAddressAndPrices[]> {
   const ret = await prisma.$transaction(async (_) => {
     const insertedTransactions: Array<TransactionWithAddressAndPrices | undefined> = await Promise.all(
       transfers.map(async (transfer) => {
-        return await upsertTransaction(transfer, address, confirmed)
+        return await upsertTransaction(transfer, confirmed)
       })
     )
     return insertedTransactions
@@ -116,10 +116,10 @@ export async function upsertManyTransactionsForAddress (transfers: Transfer[], a
 export async function syncTransactionsForAddress (addressString: string): Promise<TransactionWithAddressAndPrices[]> {
   const address = await fetchAddressBySubstring(addressString)
 
-  const addressTransfers = await getAddressTransfers(addressString)
+  const addressTransfers = await getAddressTransfers(address)
   const insertedTransactions: TransactionWithAddressAndPrices[] = [
-    ...await upsertManyTransactionsForAddress(addressTransfers.confirmed, address),
-    ...await upsertManyTransactionsForAddress(addressTransfers.unconfirmed, address, false)
+    ...await upsertManyTransactionsForAddress(addressTransfers.confirmed),
+    ...await upsertManyTransactionsForAddress(addressTransfers.unconfirmed, false)
   ]
 
   await updateLastSynced(addressString)

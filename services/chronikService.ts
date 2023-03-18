@@ -6,15 +6,49 @@ import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL, FETCH_N, BCH_NETW
 import { Prisma, Address } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { satoshisToUnit } from 'utils/index'
-import { fetchAddressBySubstring } from './addressService'
+import * as transactionService from './transactionService'
 import * as ws from 'ws'
+
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
   availableNetworks: string[]
+  wsEndpoint: WsEndpoint
+  subscribedAdresses: Address[]
 
   constructor () {
     this.chronik = new ChronikClient(CHRONIK_CLIENT_URL)
     this.availableNetworks = [NETWORK_SLUGS.ecash]
+    this.subscribedAdresses = []
+    this.wsEndpoint = this.chronik.ws(this.getWsConfig())
+  }
+
+  private getWsConfig (): WsConfig {
+    return {
+      onConnect: (e: ws.Event) => { console.log(`WebSocket connected: ${e.type} (type)`) },
+      onMessage: (msg: SubscribeMsg) => { void this.processWsMessage(msg) },
+      onError: (e: ws.ErrorEvent) => { console.log(`WebSocket error: ${e.type} (type) | ${e.message} (message) | ${e.error as string} (error)`) },
+      onEnd: (e: ws.Event) => { console.log(`WebSocket ended: ${e.type} (type)`) },
+      autoReconnect: true
+    }
+  }
+
+  private async processWsMessage (msg: SubscribeMsg): Promise<void> {
+    // create unconfirmed transaction
+    if (msg.type === 'AddedToMempool') {
+      const transaction = await this.getTransactionDetails(msg.txid)
+      const transfers = await this.getTransfersSubscribedAddressesFromTransaction(transaction)
+      await Promise.all(
+        transfers.map(async transfer => await transactionService.upsertTransaction(transfer, false))
+      )
+    }
+    // delete msg.txid from our database
+    if (msg.type === 'RemovedFromMempool') {
+      console.log('a')
+    }
+    // change confirmed to true if already in our database, else, create a confirmed transaction
+    if (msg.type === 'Confirmed') {
+      console.log('a')
+    }
   }
 
   private validateNetwork (networkSlug: string): void {
@@ -77,17 +111,24 @@ export class ChronikBlockchainClient implements BlockchainClient {
     )
   }
 
-  private async getTransferFromTransaction (transaction: Tx, addressString: string): Promise<Transfer> {
+  private async getTransferFromTransaction (transaction: Tx, address: Address): Promise<Transfer> {
     return {
+      address,
       txid: transaction.txid,
-      receivedAmount: await this.getTransactionAmount(transaction, addressString),
+      receivedAmount: await this.getTransactionAmount(transaction, address.address),
       timestamp: transaction.block !== undefined ? parseInt(transaction.block.timestamp) : parseInt(transaction.timeFirstSeen)
     }
   }
 
+  private async getTransfersSubscribedAddressesFromTransaction (transaction: Tx): Promise<Transfer[]> {
+    const transfers = await Promise.all(this.subscribedAdresses.map(
+      async address => await this.getTransferFromTransaction(transaction, address)
+    ))
+    return transfers.filter(transfer => transfer.receivedAmount !== new Prisma.Decimal(0))
+  }
+
   // fetches in anti-chronological order
-  public async getAddressTransfers (addressString: string, maxTransfers?: number): Promise<TransfersResponse> {
-    const address = await fetchAddressBySubstring(addressString)
+  public async getAddressTransfers (address: Address, maxTransfers?: number): Promise<TransfersResponse> {
     maxTransfers = maxTransfers ?? Infinity
     const pageSize = FETCH_N
     let newTransactionsCount = -1
@@ -113,8 +154,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
     confirmedTransactions.splice(maxTransfers)
 
     return {
-      confirmed: await Promise.all(confirmedTransactions.map(async tx => await this.getTransferFromTransaction(tx, address.address))),
-      unconfirmed: await Promise.all(unconfirmedTransactions.map(async tx => await this.getTransferFromTransaction(tx, address.address)))
+      confirmed: await Promise.all(confirmedTransactions.map(async tx => await this.getTransferFromTransaction(tx, address))),
+      unconfirmed: await Promise.all(unconfirmedTransactions.map(async tx => await this.getTransferFromTransaction(tx, address)))
     }
   }
 
@@ -128,30 +169,14 @@ export class ChronikBlockchainClient implements BlockchainClient {
     return await this.chronik.tx(txId)
   }
 
-  async subscribeTransactions (
-    addresses: string[],
-    onMessage: (msg: SubscribeMsg) => void,
-    onConnect?: (e: ws.Event) => void,
-    onError?: (e: ws.ErrorEvent) => void,
-    onEnd?: (e: ws.Event) => void
-  ): Promise<WsEndpoint> {
+  async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
     if (addresses.length === 0) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
 
-    const wsConfig: WsConfig = {
-      onConnect,
-      onMessage,
-      onError,
-      onEnd,
-      autoReconnect: true
-    }
-    const wsEndpoint = this.chronik.ws(wsConfig)
-
     addresses.forEach(address => {
-      const { type, hash160 } = toHash160(address)
-      wsEndpoint.subscribe(type, hash160)
+      const { type, hash160 } = toHash160(address.address)
+      this.wsEndpoint.subscribe(type, hash160)
+      this.subscribedAdresses.push(address)
     })
-
-    return wsEndpoint
   }
 }
 

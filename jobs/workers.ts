@@ -2,42 +2,23 @@ import { Worker, Job, Queue } from 'bullmq'
 import { Address } from '@prisma/client'
 import { redis } from 'redis/clientInstance'
 import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
-// import { getAddressPrefix } from 'utils/index'
-// import { Transaction } from 'grpc-bchrpc-node'
-
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
 import * as addressService from 'services/addressService'
-// import { subscribeTransactions, getTransactionDetails } from 'services/blockchainService'
-// import { SubscribeMsg } from 'chronik-client'
-// import * as ws from 'ws'
+import * as blockchainService from 'services/blockchainService'
 
-const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void> => {
+const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<void> => {
   // sync addresses
   await Promise.all(
-    addressList.map(async (addr) => {
+    addresses.map(async (addr) => {
       await transactionService.syncTransactionsAndPricesForAddress(addr.address)
     })
   )
-  /*
-	// subscribe addresses, network below just used to get the blockchain client, address may be of any network
-	let networkSlug = NETWORK_SLUGS.ecash
-	await subscribeTransactions(
-		networkSlug,
-		addressList.map(a => a.address),
-		(msg: SubscribeMsg) => {
-			if(msg.type === 'AddedToMempool'){
-				let transaction = await getTransactionDetails(msg.txid, networkSlug)
-				await transactionService.upsertTransaction(transaction,
-			}
-		},
-		(e: ws.Event) => {console.log(`WebSocket connected: ${e.type}`)},
-		(e: ws.ErrorEvent) => {console.log(`WebSocket error: ${e.type} | ${e.error} | ${e.message}`)},
-		(e: ws.Event) => {console.log(`WebSocket ended: ${e.type}`)}
-	)
 
+  await blockchainService.subscribeAddressesAddTransactions(addresses)
+  /*
 	// old
-	addressList.map(async (addr) => {
+	addresses.map(async (addr) => {
 		await subscribeTransactions(
 			[addr.address],
 			async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, true) },
@@ -52,7 +33,7 @@ const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> 
   console.log(`job ${job.id as string}: syncing all addresses for network ${job.data.networkId as string}...`)
   try {
     const addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
-    await syncAndSubscribeAddressList(addresses)
+    await syncAndSubscribeAddresses(addresses)
   } catch (err: any) {
     throw new Error(`job ${job.id as string} failed with error ${err.message as string}`)
   }
@@ -110,7 +91,7 @@ export const syncUnsyncedAddressesWorker = async (queue: Queue): Promise<void> =
     async (job) => {
       const newAddresses = await addressService.fetchUnsyncedAddresses()
       if (newAddresses.length !== 0) {
-        await syncAndSubscribeAddressList(newAddresses)
+        await syncAndSubscribeAddresses(newAddresses)
         job.data.syncedAddresses = newAddresses
       }
 

@@ -10,9 +10,7 @@ import { getObjectValueForNetworkSlug, getObjectValueForAddress, satoshisToUnit,
 import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, RESPONSE_MESSAGES, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD } from '../constants/index'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
-import { fetchAddressBySubstring } from './addressService'
-import { Tx, SubscribeMsg, WsEndpoint } from 'chronik-client'
-import * as ws from 'ws'
+import { Tx } from 'chronik-client'
 
 export interface OutputsList {
   outpoint: object
@@ -99,16 +97,16 @@ export class GrpcBlockchainClient implements BlockchainClient {
     )
   }
 
-  private async getTransferFromTransaction (transaction: Transaction.AsObject, addressString: string): Promise<Transfer> {
+  private async getTransferFromTransaction (transaction: Transaction.AsObject, address: Address): Promise<Transfer> {
     return {
+      address,
       txid: transaction.hash as string,
-      receivedAmount: await this.getTransactionAmount(transaction, addressString),
+      receivedAmount: await this.getTransactionAmount(transaction, address.address),
       timestamp: transaction.timestamp
     }
   }
 
-  public async getAddressTransfers (addressString: string, maxTransfers?: number): Promise<TransfersResponse> {
-    const address = await fetchAddressBySubstring(addressString)
+  public async getAddressTransfers (address: Address, maxTransfers?: number): Promise<TransfersResponse> {
     maxTransfers = maxTransfers ?? Infinity
     const pageSize = FETCH_N
     let newTransactionsCount = -1
@@ -137,8 +135,8 @@ export class GrpcBlockchainClient implements BlockchainClient {
     confirmedTransactions.splice(maxTransfers)
 
     return {
-      confirmed: await Promise.all(confirmedTransactions.map(async tx => await this.getTransferFromTransaction(tx, address.address))),
-      unconfirmed: await Promise.all(unconfirmedTransactions.map(async tx => await this.getTransferFromTransaction(tx, address.address)))
+      confirmed: await Promise.all(confirmedTransactions.map(async tx => await this.getTransferFromTransaction(tx, address))),
+      unconfirmed: await Promise.all(unconfirmedTransactions.map(async tx => await this.getTransferFromTransaction(tx, address)))
     }
   };
 
@@ -169,14 +167,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     // return res
   };
 
-  // DEPRECATED
-  public async subscribeTransactions (
-    addresses: string[],
-    onMessage: (msg: SubscribeMsg) => void,
-    onConnect?: (e: ws.Event) => void,
-    onError?: (e: ws.ErrorEvent) => void,
-    onEnd?: (e: ws.Event) => void
-  ): Promise<WsEndpoint> {
+  public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
     throw new Error('Method not implemented.')
     // const createTxnStream = async (): Promise<void> => {
     //   const client = this.getClientForNetworkSlug(networkSlug)
