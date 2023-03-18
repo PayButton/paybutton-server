@@ -41,9 +41,10 @@ export class ChronikBlockchainClient implements BlockchainClient {
         transfers.map(async transfer => await transactionService.upsertTransaction(transfer, false))
       )
     }
-    // delete msg.txid from our database
+    // delete transaction from our database
     if (msg.type === 'RemovedFromMempool') {
-      console.log('a')
+      const transactionsToDelete = await transactionService.fetchUnconfirmedTransactions(msg.txid)
+      await transactionService.deleteTransactions(transactionsToDelete)
     }
     // change confirmed to true if already in our database, else, create a confirmed transaction
     if (msg.type === 'Confirmed') {

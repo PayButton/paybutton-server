@@ -113,6 +113,26 @@ export async function upsertManyTransactionsForAddress (transfers: Transfer[], c
   return ret.filter((t) => t !== undefined) as TransactionWithAddressAndPrices[]
 }
 
+export async function fetchUnconfirmedTransactions (txid: string): Promise<TransactionWithAddressAndPrices[]> {
+  return await prisma.transaction.findMany({
+    where: {
+      hash: await base64HashToHex(txid),
+      confirmed: false
+    },
+    include: includeAddressAndPrices
+  })
+}
+
+export async function deleteTransactions (transactions: TransactionWithAddressAndPrices[]): Promise<void> {
+  await Promise.all(transactions.map(
+    async transaction => await prisma.transaction.delete({
+      where: {
+        id: transaction.id
+      }
+    })
+  ))
+}
+
 export async function syncTransactionsForAddress (addressString: string): Promise<TransactionWithAddressAndPrices[]> {
   const address = await fetchAddressBySubstring(addressString)
 
