@@ -7,7 +7,7 @@ import {
   GetTransactionResponse,
   GetAddressUnspentOutputsResponse
 } from 'grpc-bchrpc-node'
-import { Prisma } from '@prisma/client'
+import { Address, Prisma } from '@prisma/client'
 
 export interface BlockchainInfo {
   height: number
@@ -24,9 +24,11 @@ export interface TransfersResponse {
 }
 
 export interface Transfer {
+  address: Address
   txid: string
   timestamp: number
   receivedAmount: Prisma.Decimal
+  confirmed?: boolean
 }
 
 export interface BlockchainClient {
