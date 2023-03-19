@@ -8,25 +8,12 @@ import * as addressService from 'services/addressService'
 import * as blockchainService from 'services/blockchainService'
 
 const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<void> => {
-  // sync addresses
   await Promise.all(
     addresses.map(async (addr) => {
       await transactionService.syncTransactionsAndPricesForAddress(addr.address)
     })
   )
-
   await blockchainService.subscribeAddressesAddTransactions(addresses)
-  /*
-	// old
-	addresses.map(async (addr) => {
-		await subscribeTransactions(
-			[addr.address],
-			async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, true) },
-			async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, false) },
-			getAddressPrefix(addr.address)
-		)
-	})
-	*/
 }
 
 const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> => {

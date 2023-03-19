@@ -6,8 +6,8 @@ import {
 } from 'grpc-bchrpc-node'
 
 import { BlockchainClient, BlockchainInfo, BlockInfo, Transfer, TransfersResponse } from './blockchainService'
-import { getObjectValueForNetworkSlug, getObjectValueForAddress, satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from '../utils/index'
-import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, RESPONSE_MESSAGES, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD } from '../constants/index'
+import { getObjectValueForNetworkSlug, getObjectValueForAddress, satoshisToUnit, pubkeyToAddress, removeAddressPrefix, getAddressPrefix } from '../utils/index'
+import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_SLUGS, RESPONSE_MESSAGES, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD } from '../constants/index'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { Tx } from 'chronik-client'
@@ -25,12 +25,20 @@ const grpcBCH = new GrpcClient({ url: process.env.GRPC_BCH_NODE_URL })
 
 export const getGrpcClients = (): KeyValueT<GrpcClient> => {
   return {
-    bitcoincash: grpcBCH,
-    ecash: new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL })
+    bitcoincash: grpcBCH
+    // ecash: new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL })
   }
 }
 
 export class GrpcBlockchainClient implements BlockchainClient {
+  availableNetworks: string[]
+  subscribedAddresses: KeyValueT<Address>
+
+  constructor () {
+    this.availableNetworks = [NETWORK_SLUGS.bitcoincash]
+    this.subscribedAddresses = {}
+  }
+
   private getClientForAddress (addressString: string): GrpcClient {
     return getObjectValueForAddress(addressString, getGrpcClients())
   }
@@ -107,6 +115,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
   }
 
   public async getAddressTransfers (address: Address, maxTransfers?: number): Promise<TransfersResponse> {
+    const client = this.getClientForAddress(address.address)
     maxTransfers = maxTransfers ?? Infinity
     const pageSize = FETCH_N
     let newTransactionsCount = -1
@@ -115,7 +124,6 @@ export class GrpcBlockchainClient implements BlockchainClient {
     const unconfirmedTransactions: Transaction.AsObject[] = []
 
     while (confirmedTransactions.length < maxTransfers && newTransactionsCount !== 0) {
-      const client = this.getClientForAddress(address.address)
       const transactions = (await client.getAddressTransactions({
         address: address.address,
         nbSkip: page * pageSize,
@@ -148,13 +156,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
 
   public async getBalance (address: string): Promise<number> {
     const { outputsList } = await this.getUtxos(address)
-
-    let satoshis: number = 0
-    outputsList.forEach((x) => {
-      satoshis += x.value
-    })
-
-    return satoshis
+    return outputsList.reduce((acc, output) => acc + output.value, 0)
   };
 
   // WIP
@@ -168,57 +170,87 @@ export class GrpcBlockchainClient implements BlockchainClient {
   };
 
   public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
-    throw new Error('Method not implemented.')
-    // const createTxnStream = async (): Promise<void> => {
-    //   const client = this.getClientForNetworkSlug(networkSlug)
-    //   const confirmedStream = await client.subscribeTransactions({
-    //     includeMempoolAcceptance: false,
-    //     includeBlockAcceptance: true,
-    //     addresses
-    //   })
-    //   const unconfirmedStream = await client.subscribeTransactions({
-    //     includeMempoolAcceptance: true,
-    //     includeBlockAcceptance: false,
-    //     addresses
-    //   })
+    if (addresses.length === 0) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
 
-    //   const nowDateString = (new Date()).toISOString()
+    const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address))
+    if (addressesAlreadySubscribed.length === addresses.length) throw new Error(RESPONSE_MESSAGES.ADDRESSES_ALREADY_SUBSCRIBED_400.message)
+    addressesAlreadySubscribed.forEach(address => {
+      console.log(`This address was already subscribed: ${address.address}`)
+    })
+    addresses = addresses.filter(address => !addressesAlreadySubscribed.includes(address))
 
-    //   // output for end, error or close of stream
-    //   void confirmedStream.on('end', () => {
-    //     console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream ended`)
-    //   })
-    //   void confirmedStream.on('close', () => {
-    //     console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream closed`)
-    //   })
-    //   void confirmedStream.on('error', (error: any) => {
-    //     console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream error`, error)
-    //   })
-    //   void unconfirmedStream.on('end', () => {
-    //     console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream ended`)
-    //   })
-    //   void unconfirmedStream.on('close', () => {
-    //     console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream closed`)
-    //   })
-    //   void unconfirmedStream.on('error', (error: any) => {
-    //     console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream error`, error)
-    //   })
+    const addressesInClients: KeyValueT<Address[]> = {}
+    this.availableNetworks.forEach(networkSlug => {
+      addressesInClients[networkSlug] = []
+    })
+    addresses.forEach(address => {
+      const prefix = getAddressPrefix(address.address)
+      if (!Object.keys(addressesInClients).includes(prefix)) { throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message) }
+      addressesInClients[prefix].push(address)
+    })
 
-    //   // output for data stream
-    //   void confirmedStream.on('data', (data: TransactionNotification) => {
-    //     const objectTxn = data.getConfirmedTransaction()!.toObject()
-    //     console.log(`${nowDateString}: got confirmed txn`, objectTxn)
-    //     onTransactionNotification(objectTxn)
-    //   })
-    //   void unconfirmedStream.on('data', (data: TransactionNotification) => {
-    //     const unconfirmedTxn = data.getUnconfirmedTransaction()!.toObject()
-    //     const objectTxn = parseMempoolTx(unconfirmedTxn)
-    //     console.log(`${nowDateString}: got unconfirmed txn`, objectTxn)
-    //     onMempoolTransactionNotification(objectTxn)
-    //   })
+    // const client = getObjectValueForAddress(address.address, getGrpcClients())
 
-    //   console.log(`${nowDateString}: txn data stream established for addresses ${addresses.join(', ')}.`)
+    addresses.forEach(address => {
+      this.subscribedAddresses[address.address] = address
+    })
+
+    // await subscribeTransactions(
+    // 		[addr.address],
+    // 		async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, true) },
+    // 		async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, false) },
+    // 		getAddressPrefix(addr.address)
+    // 	)
+
+    // 	const client = this.getClientForNetworkSlug(networkSlug)
+    // 	const confirmedStream = await client.subscribeTransactions({
+    // 		includeMempoolAcceptance: false,
+    // 		includeBlockAcceptance: true,
+    // 		addresses
+    // 	})
+    // 	const unconfirmedStream = await client.subscribeTransactions({
+    // 		includeMempoolAcceptance: true,
+    // 		includeBlockAcceptance: false,
+    // 		addresses
+    // 	})
+
+    // 	const nowDateString = (new Date()).toISOString()
+
+    // 	// output for end, error or close of stream
+    // 	void confirmedStream.on('end', () => {
+    // 		console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream ended`)
+    // 	})
+    // 	void confirmedStream.on('close', () => {
+    // 		console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream closed`)
+    // 	})
+    // 	void confirmedStream.on('error', (error: any) => {
+    // 		console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream error`, error)
+    // 	})
+    // 	void unconfirmedStream.on('end', () => {
+    // 		console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream ended`)
+    // 	})
+    // 	void unconfirmedStream.on('close', () => {
+    // 		console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream closed`)
+    // 	})
+    // 	void unconfirmedStream.on('error', (error: any) => {
+    // 		console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream error`, error)
+    // 	})
+
+    // 	// output for data stream
+    // 	void confirmedStream.on('data', (data: TransactionNotification) => {
+    // 		const objectTxn = data.getConfirmedTransaction()!.toObject()
+    // 		console.log(`${nowDateString}: got confirmed txn`, objectTxn)
+    // 		onTransactionNotification(objectTxn)
+    // 	})
+    // 	void unconfirmedStream.on('data', (data: TransactionNotification) => {
+    // 		const unconfirmedTxn = data.getUnconfirmedTransaction()!.toObject()
+    // 		const objectTxn = parseMempoolTx(unconfirmedTxn)
+    // 		console.log(`${nowDateString}: got unconfirmed txn`, objectTxn)
+    // 		onMempoolTransactionNotification(objectTxn)
+    // 	})
+
+    // 	console.log(`${nowDateString}: txn data stream established for addresses ${addresses.join(', ')}.`)
     // }
     // await createTxnStream()
-  };
+  }
 }

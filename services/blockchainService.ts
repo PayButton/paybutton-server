@@ -24,6 +24,7 @@ export interface Transfer {
   txid: string
   timestamp: number
   receivedAmount: Prisma.Decimal
+  confirmed?: boolean
 }
 
 export interface BlockchainClient {

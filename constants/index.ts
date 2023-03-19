@@ -41,7 +41,8 @@ export const RESPONSE_MESSAGES = {
   MISSING_BLOCKCHAIN_CLIENT_400: { statusCode: 400, message: 'There is no blockchain client chosen for this network.' },
   NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400: { statusCode: 400, message: 'Blockchain client was not instantiated.' },
   DEFAULT_WALLET_CANNOT_BE_DELETED_400: { statusCode: 400, message: 'A default wallet cannot be deleted.' },
-  USER_PROFILE_NOT_FOUND_400: { statusCode: 400, message: 'User profile not found.' }
+  USER_PROFILE_NOT_FOUND_400: { statusCode: 400, message: 'User profile not found.' },
+  ADDRESSES_ALREADY_SUBSCRIBED_400: { statusCode: 400, message: 'Addresses were already subscribed.' }
 }
 
 export interface KeyValueT<T> {

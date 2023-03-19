@@ -5,7 +5,7 @@ import { BlockchainClient, BlockchainInfo, BlockInfo, Transfer, TransfersRespons
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL, FETCH_N, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD, FETCH_DELAY } from 'constants/index'
 import { Prisma, Address } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
-import { satoshisToUnit } from 'utils/index'
+import { getAddressPrefix, satoshisToUnit } from 'utils/index'
 import * as transactionService from './transactionService'
 import * as ws from 'ws'
 
@@ -13,12 +13,12 @@ export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
   availableNetworks: string[]
   wsEndpoint: WsEndpoint
-  subscribedAdresses: Address[]
+  subscribedAddresses: Address[]
 
   constructor () {
     this.chronik = new ChronikClient(CHRONIK_CLIENT_URL)
     this.availableNetworks = [NETWORK_SLUGS.ecash]
-    this.subscribedAdresses = []
+    this.subscribedAddresses = []
     this.wsEndpoint = this.chronik.ws(this.getWsConfig())
   }
 
@@ -52,26 +52,32 @@ export class ChronikBlockchainClient implements BlockchainClient {
     if (!this.availableNetworks.includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message) }
   }
 
-  async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
+  private validateAddressNetwork (addressString: string): void {
+    const prefix = getAddressPrefix(addressString)
+    if (!this.availableNetworks.includes(prefix)) { throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message) }
+  }
+
+  public async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
     this.validateNetwork(networkSlug)
     const blockchainInfo = await this.chronik.blockchainInfo()
     return { height: blockchainInfo.tipHeight, hash: blockchainInfo.tipHash }
   }
 
-  async getBlockInfo (networkSlug: string, height: number): Promise<BlockInfo> {
+  public async getBlockInfo (networkSlug: string, height: number): Promise<BlockInfo> {
     this.validateNetwork(networkSlug)
     const blockInfo = (await this.chronik.block(height)).blockInfo
     return { hash: blockInfo.hash, height: blockInfo.height, timestamp: parseInt(blockInfo.timestamp) }
   }
 
-  async getUtxos (address: string): Promise<Utxo[]> {
-    const { type, hash160 } = toHash160(address)
+  private async getUtxos (addressString: string): Promise<Utxo[]> {
+    this.validateAddressNetwork(addressString)
+    const { type, hash160 } = toHash160(addressString)
     const scriptsUtxos = await this.chronik.script(type, hash160).utxos()
     return scriptsUtxos.reduce<Utxo[]>((acc, scriptUtxos) => [...acc, ...scriptUtxos.utxos], [])
   }
 
-  public async getBalance (address: string): Promise<number> {
-    const utxos = await this.getUtxos(address)
+  public async getBalance (addressString: string): Promise<number> {
+    const utxos = await this.getUtxos(addressString)
     return utxos.reduce((acc, utxo) => acc + parseInt(utxo.value), 0)
   }
 
@@ -118,7 +124,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
   }
 
   private async getTransfersSubscribedAddressesFromTransaction (transaction: Tx): Promise<Transfer[]> {
-    const transfers = await Promise.all(this.subscribedAdresses.map(
+    const transfers = await Promise.all(this.subscribedAddresses.map(
       async address => await this.getTransferFromTransaction(transaction, address)
     ))
     return transfers.filter(transfer => transfer.receivedAmount !== new Prisma.Decimal(0))
@@ -126,6 +132,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
   // fetches in anti-chronological order
   public async getAddressTransfers (address: Address, maxTransfers?: number): Promise<TransfersResponse> {
+    this.validateAddressNetwork(address.address)
+
     maxTransfers = maxTransfers ?? Infinity
     const pageSize = FETCH_N
     let newTransactionsCount = -1
@@ -157,22 +165,30 @@ export class ChronikBlockchainClient implements BlockchainClient {
   }
 
   // anti-chronological order
-  async getAddressTransactions (address: string, page?: number, pageSize?: number): Promise<TxHistoryPage> {
+  private async getAddressTransactions (address: string, page?: number, pageSize?: number): Promise<TxHistoryPage> {
     const { type, hash160 } = toHash160(address)
     return await this.chronik.script(type, hash160).history(page, pageSize)
   }
 
-  async getTransactionDetails (txId: string): Promise<Tx> {
+  public async getTransactionDetails (txId: string): Promise<Tx> {
     return await this.chronik.tx(txId)
   }
 
-  async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
+  public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
     if (addresses.length === 0) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
 
+    const addressesAlreadySubscribed = addresses.filter(address => this.subscribedAddresses.map(address => address.address).includes(address.address))
+    if (addressesAlreadySubscribed.length === addresses.length) throw new Error(RESPONSE_MESSAGES.ADDRESSES_ALREADY_SUBSCRIBED_400.message)
+    addressesAlreadySubscribed.forEach(address => {
+      console.log(`This address was already subscribed: ${address.address}`)
+    })
+    addresses = addresses.filter(address => !addressesAlreadySubscribed.includes(address))
+
     addresses.forEach(address => {
+      this.validateAddressNetwork(address.address)
       const { type, hash160 } = toHash160(address.address)
       this.wsEndpoint.subscribe(type, hash160)
-      this.subscribedAdresses.push(address)
+      this.subscribedAddresses.push(address)
     })
   }
 }
