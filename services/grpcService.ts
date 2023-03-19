@@ -2,7 +2,8 @@ import {
   GrpcClient,
   Transaction,
   MempoolTransaction,
-  GetAddressUnspentOutputsResponse
+  GetAddressUnspentOutputsResponse,
+  TransactionNotification
 } from 'grpc-bchrpc-node'
 
 import { BlockchainClient, BlockchainInfo, BlockInfo, Transfer, TransfersResponse } from './blockchainService'
@@ -11,6 +12,7 @@ import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValue
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { Tx } from 'chronik-client'
+import * as transactionService from './transactionService'
 
 export interface OutputsList {
   outpoint: object
@@ -114,6 +116,13 @@ export class GrpcBlockchainClient implements BlockchainClient {
     }
   }
 
+  private async getTransfersSubscribedAddressesFromTransaction (transaction: Transaction.AsObject): Promise<Transfer[]> {
+    const transfers = await Promise.all(Object.values(this.subscribedAddresses).map(
+      async address => await this.getTransferFromTransaction(transaction, address)
+    ))
+    return transfers.filter(transfer => transfer.receivedAmount !== new Prisma.Decimal(0))
+  }
+
   public async getAddressTransfers (address: Address, maxTransfers?: number): Promise<TransfersResponse> {
     const client = this.getClientForAddress(address.address)
     maxTransfers = maxTransfers ?? Infinity
@@ -189,68 +198,73 @@ export class GrpcBlockchainClient implements BlockchainClient {
       addressesInClients[prefix].push(address)
     })
 
-    // const client = getObjectValueForAddress(address.address, getGrpcClients())
+    for (const [key, value] of Object.entries(addressesInClients)) {
+      const client = getGrpcClients()[key]
+      const addressesToSubscribe = value.map(address => address.address)
 
-    addresses.forEach(address => {
-      this.subscribedAddresses[address.address] = address
-    })
+      const confirmedStream = await client.subscribeTransactions({
+        includeMempoolAcceptance: false,
+        includeBlockAcceptance: true,
+        addresses: addressesToSubscribe
+      })
+      const unconfirmedStream = await client.subscribeTransactions({
+        includeMempoolAcceptance: true,
+        includeBlockAcceptance: false,
+        addresses: addressesToSubscribe
+      })
 
-    // await subscribeTransactions(
-    // 		[addr.address],
-    // 		async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, true) },
-    // 		async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, false) },
-    // 		getAddressPrefix(addr.address)
-    // 	)
+      const nowDateString = (new Date()).toISOString()
 
-    // 	const client = this.getClientForNetworkSlug(networkSlug)
-    // 	const confirmedStream = await client.subscribeTransactions({
-    // 		includeMempoolAcceptance: false,
-    // 		includeBlockAcceptance: true,
-    // 		addresses
-    // 	})
-    // 	const unconfirmedStream = await client.subscribeTransactions({
-    // 		includeMempoolAcceptance: true,
-    // 		includeBlockAcceptance: false,
-    // 		addresses
-    // 	})
+      // output for end, error or close of stream
+      void confirmedStream.on('end', () => {
+        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream ended`)
+      })
+      void confirmedStream.on('close', () => {
+        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream closed`)
+      })
+      void confirmedStream.on('error', (error: any) => {
+        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream error`, error)
+      })
+      void unconfirmedStream.on('end', () => {
+        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream ended`)
+      })
+      void unconfirmedStream.on('close', () => {
+        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream closed`)
+      })
+      void unconfirmedStream.on('error', (error: any) => {
+        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream error`, error)
+      })
 
-    // 	const nowDateString = (new Date()).toISOString()
+      // output for data stream
+      void confirmedStream.on('data', (data: TransactionNotification) => {
+        void this.processSubscribedNotification(data)
+      })
 
-    // 	// output for end, error or close of stream
-    // 	void confirmedStream.on('end', () => {
-    // 		console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream ended`)
-    // 	})
-    // 	void confirmedStream.on('close', () => {
-    // 		console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream closed`)
-    // 	})
-    // 	void confirmedStream.on('error', (error: any) => {
-    // 		console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream error`, error)
-    // 	})
-    // 	void unconfirmedStream.on('end', () => {
-    // 		console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream ended`)
-    // 	})
-    // 	void unconfirmedStream.on('close', () => {
-    // 		console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream closed`)
-    // 	})
-    // 	void unconfirmedStream.on('error', (error: any) => {
-    // 		console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream error`, error)
-    // 	})
+      // subscribed addresses
+      value.forEach(address => {
+        this.subscribedAddresses[address.address] = address
+      })
+    }
+  }
 
-    // 	// output for data stream
-    // 	void confirmedStream.on('data', (data: TransactionNotification) => {
-    // 		const objectTxn = data.getConfirmedTransaction()!.toObject()
-    // 		console.log(`${nowDateString}: got confirmed txn`, objectTxn)
-    // 		onTransactionNotification(objectTxn)
-    // 	})
-    // 	void unconfirmedStream.on('data', (data: TransactionNotification) => {
-    // 		const unconfirmedTxn = data.getUnconfirmedTransaction()!.toObject()
-    // 		const objectTxn = parseMempoolTx(unconfirmedTxn)
-    // 		console.log(`${nowDateString}: got unconfirmed txn`, objectTxn)
-    // 		onMempoolTransactionNotification(objectTxn)
-    // 	})
+  private async processSubscribedNotification (data: TransactionNotification): Promise<void> {
+    // add confirmed transactions to database
+    const transaction = data.getConfirmedTransaction()!.toObject()
+    const transfers = await this.getTransfersSubscribedAddressesFromTransaction(transaction)
+    await Promise.all(
+      transfers.map(async transfer => await transactionService.upsertTransaction(transfer, true))
+    )
 
-    // 	console.log(`${nowDateString}: txn data stream established for addresses ${addresses.join(', ')}.`)
-    // }
-    // await createTxnStream()
+    // remove confirmed transactions from unconfirmed transactions
+    const transactionsToDelete = await transactionService.fetchUnconfirmedTransactions(transaction.hash as string)
+    await transactionService.deleteTransactions(transactionsToDelete)
+
+    // add unconfirmed transactions to database
+    const unconfirmedTransaction = data.getUnconfirmedTransaction()!.toObject()
+    const parsedUnconfirmedTransaction = this.parseMempoolTx(unconfirmedTransaction)
+    const unconfirmedTransfers = await this.getTransfersSubscribedAddressesFromTransaction(parsedUnconfirmedTransaction)
+    await Promise.all(
+      unconfirmedTransfers.map(async transfer => await transactionService.upsertTransaction(transfer, false))
+    )
   }
 }
