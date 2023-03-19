@@ -24,7 +24,7 @@ export interface TransfersResponse {
 }
 
 export interface Transfer {
-  address: Address
+  address?: Address
   txid: string
   timestamp: number
   receivedAmount: Prisma.Decimal
