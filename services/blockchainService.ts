@@ -74,7 +74,7 @@ export async function getTransactionDetails (txId: string, networkSlug: string):
 }
 
 export async function subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
-  await Promise.all(addresses.map(async address => {
-    await getObjectValueForAddress(address.address, BLOCKCHAIN_CLIENTS).subscribeAddressesAddTransactions(addresses)
-  }))
+  // get first address network (all belong to the same network)
+  const client = await getObjectValueForAddress(addresses[0].address, BLOCKCHAIN_CLIENTS)
+  await client.subscribeAddressesAddTransactions(addresses)
 }

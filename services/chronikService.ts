@@ -127,7 +127,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     const transfers = await Promise.all(this.subscribedAddresses.map(
       async address => await this.getTransferFromTransaction(transaction, address)
     ))
-    return transfers.filter(transfer => transfer.receivedAmount !== new Prisma.Decimal(0))
+    return transfers.filter(transfer => transfer.receivedAmount.toNumber() !== 0)
   }
 
   // fetches in anti-chronological order
