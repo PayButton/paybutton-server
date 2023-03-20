@@ -23,6 +23,7 @@ export interface TransfersResponse {
   unconfirmed: Transfer[]
 }
 
+// WIP - implement/use optional fields
 export interface Transfer {
   address?: Address
   txid: string
