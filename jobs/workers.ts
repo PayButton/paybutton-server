@@ -12,11 +12,9 @@ import { subscribeTransactions } from 'services/blockchainService'
 
 const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void> => {
   // sync addresses
-  await Promise.all(
-    addressList.map(async (addr) => {
-      await transactionService.syncTransactionsAndPricesForAddress(addr.address)
-    })
-  )
+  for (const addr of addressList) {
+    await transactionService.syncTransactionsAndPricesForAddress(addr.address)
+  }
   // subscribe addresses
   addressList.map(async (addr) => {
     await subscribeTransactions(
