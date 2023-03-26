@@ -14,9 +14,8 @@ CREATE TABLE `Address` (
 
 -- CreateTable
 CREATE TABLE `Paybutton` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `id` VARCHAR(191) NOT NULL DEFAULT (uuid()),
     `name` VARCHAR(255) NOT NULL,
-    `uuid` VARCHAR(191) NOT NULL DEFAULT (uuid()),
     `buttonData` LONGTEXT NOT NULL,
     `providerUserId` VARCHAR(255) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -28,7 +27,7 @@ CREATE TABLE `Paybutton` (
 
 -- CreateTable
 CREATE TABLE `AddressesOnButtons` (
-    `paybuttonId` INTEGER NOT NULL,
+    `paybuttonId` VARCHAR(191) NOT NULL,
     `addressId` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
