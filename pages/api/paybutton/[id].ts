@@ -47,7 +47,7 @@ export default async (
     try {
       const values = req.body
       const updatePaybuttonInput = parsePaybuttonPATCHRequest(values)
-      const paybutton = await paybuttonService.updatePaybutton(Number(paybuttonId), updatePaybuttonInput)
+      const paybutton = await paybuttonService.updatePaybutton(paybuttonId, updatePaybuttonInput)
       res.status(200).json(paybutton)
     } catch (err: any) {
       const parsedError = parseError(err)

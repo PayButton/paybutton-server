@@ -1032,7 +1032,7 @@ describe('GET /api/paybutton/[id]', () => {
   // Create 4 paybuttons, 3 for one user and 1 for another.
   const userA = 'test-u-id'
   const userB = 'test-other-u-id'
-  let createdPaybuttonsIds: number[]
+  let createdPaybuttonsIds: string[]
   beforeAll(async () => {
     await clearPaybuttonsAndAddresses()
     createdPaybuttonsIds = []
@@ -1075,9 +1075,8 @@ describe('GET /api/paybutton/[id]', () => {
     }
   })
 
-  it('Not find paybutton for next id', async () => {
-    const nextId = createdPaybuttonsIds[createdPaybuttonsIds.length - 1] + 1
-    if (baseRequestOptions.query != null) baseRequestOptions.query.id = nextId
+  it('Not find paybutton for nonexistent id', async () => {
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 'nonexistent-uuid'
     const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
     expect(res.statusCode).toBe(404)
     const responseData = res._getJSONData()
@@ -1089,7 +1088,7 @@ describe('DELETE /api/paybutton/[id]', () => {
   // Create 4 paybuttons, 3 for one user and 1 for another.
   const userA = 'test-u-id'
   const userB = 'test-other-u-id'
-  let createdPaybuttonsIds: number[]
+  let createdPaybuttonsIds: string[]
   beforeAll(async () => {
     await clearPaybuttonsAndAddresses()
     createdPaybuttonsIds = []
