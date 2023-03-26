@@ -280,7 +280,7 @@ describe('PATCH /api/paybutton/', () => {
     expect(responseData.message).toBe(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message)
   })
   it('Should fail for non non-existent button', async () => {
-    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 9128371987912
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 'nonexistent-uuid'
     baseRequestOptions.body = {
       name: 'some-different-name',
       addresses: undefined
@@ -1120,7 +1120,7 @@ describe('DELETE /api/paybutton/[id]', () => {
   })
 
   it('Fail to delete non-existent paybutton', async () => {
-    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 999999
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 'nonexistent-uuid'
     const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(404)
