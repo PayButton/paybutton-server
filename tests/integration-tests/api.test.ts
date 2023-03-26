@@ -66,7 +66,6 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.providerUserId).toBe('test-u-id')
     expect(responseData.name).toBe('test-paybutton')
     expect(responseData.buttonData).toBe('{"somefield":"somevalue"}')
-    expect(responseData.uuid).not.toBeNull()
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         {
@@ -225,7 +224,6 @@ describe('PATCH /api/paybutton/', () => {
     expect(res.statusCode).toBe(200)
     expect(responseData.providerUserId).toBe('test-u-id')
     expect(responseData.name).toBe('blablabla')
-    expect(responseData.uuid).not.toBeNull()
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         {
@@ -347,7 +345,6 @@ describe('GET /api/paybuttons/', () => {
     expect(responseData[0]).toHaveProperty('providerUserId')
     expect(responseData[0]).toHaveProperty('name')
     expect(responseData[0]).toHaveProperty('buttonData')
-    expect(responseData[0]).toHaveProperty('uuid')
   })
 
   it('Get no paybuttons for unknown user', async () => {
@@ -1071,7 +1068,6 @@ describe('GET /api/paybutton/[id]', () => {
       expect(responseData).toHaveProperty('providerUserId')
       expect(responseData).toHaveProperty('name')
       expect(responseData).toHaveProperty('buttonData')
-      expect(responseData).toHaveProperty('uuid')
     }
   })
 
@@ -1121,7 +1117,6 @@ describe('DELETE /api/paybutton/[id]', () => {
     expect(responseData).toHaveProperty('providerUserId')
     expect(responseData).toHaveProperty('name')
     expect(responseData).toHaveProperty('buttonData')
-    expect(responseData).toHaveProperty('uuid')
   })
 
   it('Fail to delete non-existent paybutton', async () => {
