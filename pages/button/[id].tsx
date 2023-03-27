@@ -117,7 +117,7 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
     void ThirdPartyEmailPassword.redirectToAuth()
   }
 
-  async onDelete (paybuttonId: number): Promise<void> {
+  async onDelete (paybuttonId: string): Promise<void> {
     const res = await axios.delete<PaybuttonWithAddresses>(`${appInfo.websiteDomain}/api/paybutton/${paybuttonId}`)
     if (res.status === 200) {
       void Router.push(`${appInfo.websiteDomain}/buttons/`)

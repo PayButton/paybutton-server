@@ -118,7 +118,7 @@ const getAllMonths = function (paymentList: Payment[]): AllMonths {
 
 export interface ButtonDisplayData {
   name: string
-  id: number
+  id: string
 }
 
 interface Payment {

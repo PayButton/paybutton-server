@@ -20,7 +20,7 @@ export interface CreatePaybuttonInput {
 
 export interface DeletePaybuttonInput {
   userId: string
-  paybuttonId: number | string
+  paybuttonId: string
 }
 
 const includeAddresses = {
@@ -97,13 +97,13 @@ export async function deletePaybutton (values: DeletePaybuttonInput): Promise<Pa
   }
   return await prisma.paybutton.delete({
     where: {
-      id: Number(values.paybuttonId)
+      id: values.paybuttonId
     },
     include: includeAddresses
   })
 }
 
-export async function fetchPaybuttonArrayByIds (paybuttonIdList: number[]): Promise<PaybuttonWithAddresses[]> {
+export async function fetchPaybuttonArrayByIds (paybuttonIdList: string[]): Promise<PaybuttonWithAddresses[]> {
   const paybuttonArray = await prisma.paybutton.findMany({
     where: {
       id: {
@@ -118,9 +118,9 @@ export async function fetchPaybuttonArrayByIds (paybuttonIdList: number[]): Prom
   return paybuttonArray
 }
 
-export async function fetchPaybuttonById (paybuttonId: number | string): Promise<PaybuttonWithAddresses | null> {
+export async function fetchPaybuttonById (paybuttonId: string): Promise<PaybuttonWithAddresses | null> {
   return await prisma.paybutton.findUnique({
-    where: { id: Number(paybuttonId) },
+    where: { id: paybuttonId },
     include: includeAddresses
   })
 }
@@ -132,7 +132,7 @@ export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Payb
   })
 }
 
-export async function updatePaybutton (paybuttonId: number, params: UpdatePaybuttonInput): Promise<PaybuttonWithAddresses> {
+export async function updatePaybutton (paybuttonId: string, params: UpdatePaybuttonInput): Promise<PaybuttonWithAddresses> {
   const updateData: Prisma.PaybuttonUpdateInput = {}
   if (params.name !== undefined && params.name !== '') {
     updateData.name = params.name
