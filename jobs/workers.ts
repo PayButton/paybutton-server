@@ -2,13 +2,10 @@ import { Worker, Job, Queue } from 'bullmq'
 import { Address } from '@prisma/client'
 import { redis } from 'redis/clientInstance'
 import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
-import { getAddressPrefix } from 'utils/index'
-import { Transaction } from 'grpc-bchrpc-node'
 
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
 import * as addressService from 'services/addressService'
-import { subscribeTransactions } from 'services/blockchainService'
 
 const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void> => {
   // sync addresses
@@ -18,14 +15,17 @@ const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void
     })
   )
   // subscribe addresses
+  // WIP: this will be refactored in PR 411-6
+  /*
   addressList.map(async (addr) => {
     await subscribeTransactions(
       [addr.address],
-      async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, true) },
-      async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, false) },
+      async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr) },
+      async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr) },
       getAddressPrefix(addr.address)
     )
   })
+  */
 }
 
 const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> => {

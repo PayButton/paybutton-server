@@ -110,16 +110,15 @@ export class GrpcBlockchainClient implements BlockchainClient {
     }
   }
 
-  public async getAddressTransactions (addressString: string, maxTransfers?: number): Promise<TransactionsResponse> {
+  public async getAddressTransactions (addressString: string, start: number = 0, maxTransactions: number = Infinity): Promise<TransactionsResponse> {
     const address = await fetchAddressBySubstring(addressString)
-    maxTransfers = maxTransfers ?? Infinity
     const pageSize = FETCH_N
     let newTransactionsCount = -1
-    let page = 0
+    let page = Math.floor(start / pageSize)
     const confirmedTransactions: Transaction.AsObject[] = []
     const unconfirmedTransactions: Transaction.AsObject[] = []
 
-    while (confirmedTransactions.length < maxTransfers && newTransactionsCount !== 0) {
+    while (confirmedTransactions.length < maxTransactions && newTransactionsCount !== 0) {
       const client = this.getClientForAddress(address.address)
       const transactions = (await client.getAddressTransactions({
         address: address.address,
@@ -137,7 +136,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
     }
 
-    confirmedTransactions.splice(maxTransfers)
+    confirmedTransactions.splice(maxTransactions)
 
     return {
       confirmed: await Promise.all(confirmedTransactions.map(async tx => await this.getTransactionPrismaFromTransaction(tx, address.address, true))),

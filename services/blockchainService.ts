@@ -37,7 +37,7 @@ export interface TransactionsResponse {
 
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
-  getAddressTransactions: (addressString: string, maxTransfers?: number) => Promise<TransactionsResponse>
+  getAddressTransactions: (addressString: string, start: number, maxTransactions: number) => Promise<TransactionsResponse>
   getUtxos: (address: string) => Promise<GetAddressUnspentOutputsResponse.AsObject>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
@@ -72,8 +72,8 @@ export async function getBalance (address: string): Promise<number> {
   return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getBalance(address)
 }
 
-export async function getAddressTransactions (addressString: string, maxTransfers?: number): Promise<TransactionsResponse> {
-  return await getObjectValueForAddress(addressString, BLOCKCHAIN_CLIENTS).getAddressTransactions(addressString, maxTransfers)
+export async function getAddressTransactions (addressString: string, start: number, maxTransactions: number): Promise<TransactionsResponse> {
+  return await getObjectValueForAddress(addressString, BLOCKCHAIN_CLIENTS).getAddressTransactions(addressString, start, maxTransactions)
 }
 
 export async function getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {

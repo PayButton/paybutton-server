@@ -4,7 +4,7 @@ import { getAddressTransactions, TransactionPrisma } from 'services/blockchainSe
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
 import { syncPricesFromTransactionList, QuoteValues } from 'services/priceService'
-import { FETCH_N_TIMEOUT, RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { FETCH_N_TIMEOUT, RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, DEFAULT_NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY } from 'constants/index'
 import _ from 'lodash'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
@@ -113,25 +113,26 @@ export async function upsertManyTransactionsForAddress (transactions: Transactio
   return ret.filter((t) => t !== undefined) as TransactionWithAddressAndPrices[]
 }
 
-export async function syncTransactionsForAddress (addressString: string): Promise<TransactionWithAddressAndPrices[]> {
+export async function syncTransactionsForAddress (addressString: string, start: number = 0, maxTransactions: number = Infinity): Promise<TransactionWithAddressAndPrices[]> {
   const address = await fetchAddressBySubstring(addressString)
 
-  const addressTransfers = await getAddressTransactions(addressString)
+  const addressTransactions = await getAddressTransactions(addressString, start, maxTransactions)
   const insertedTransactions: TransactionWithAddressAndPrices[] = [
-    ...await upsertManyTransactionsForAddress(addressTransfers.confirmed, address),
-    ...await upsertManyTransactionsForAddress(addressTransfers.unconfirmed, address)
+    ...await upsertManyTransactionsForAddress(addressTransactions.confirmed, address),
+    ...await upsertManyTransactionsForAddress(addressTransactions.unconfirmed, address)
   ]
 
-  await updateLastSynced(addressString)
+  if (maxTransactions === Infinity || addressTransactions.confirmed.length < maxTransactions) { await updateLastSynced(addressString) } else { void syncTransactionsForAddress(addressString, start + addressTransactions.confirmed.length) }
+
   return insertedTransactions
 }
 
-export async function syncTransactionsAndPricesForAddress (addressString: string): Promise<TransactionWithAddressAndPrices[]> {
+export async function syncTransactionsAndPricesForAddress (addressString: string, maxTransactions: number = DEFAULT_NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY): Promise<TransactionWithAddressAndPrices[]> {
   const address = parseAddress(addressString)
   if (address === '' || address === undefined) {
     throw new Error(ADDRESS_NOT_PROVIDED_400.message)
   }
-  const insertedTransactions = await syncTransactionsForAddress(address)
+  const insertedTransactions = await syncTransactionsForAddress(address, 0, maxTransactions)
   await syncPricesFromTransactionList(insertedTransactions)
   return insertedTransactions
 }
