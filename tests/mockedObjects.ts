@@ -66,7 +66,7 @@ export const mockedXECAddress = {
 export const mockedAddressesOnUserProfile = {
   addressId: 1,
   userProfileId: 1,
-  walletId: 8,
+  walletId: '570fbb7e-fc7f-4096-8541-e68405cf9b56',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   address: {
@@ -196,7 +196,7 @@ mockedBCHAddressWithPaybutton.paybuttons = [
 
 // Wallet
 export const mockedWallet: WalletWithAddressesWithPaybuttons = {
-  id: 1,
+  id: '0da1977f-d65b-43a7-a7c8-b2a1f01da7a0',
   createdAt: new Date('2022-09-30T18:01:32.456Z'),
   updatedAt: new Date('2022-09-30T18:01:32.456Z'),
   name: 'mockedWallet',
@@ -210,7 +210,7 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
     {
       addressId: 1,
       userProfileId: 1,
-      walletId: 8,
+      walletId: '570fbb7e-fc7f-4096-8541-e68405cf9b56',
       createdAt: new Date('2022-05-27T15:18:42.000Z'),
       updatedAt: new Date('2022-05-27T15:18:42.000Z'),
       address: {
@@ -255,7 +255,7 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
     {
       addressId: 2,
       userProfileId: 1,
-      walletId: 1,
+      walletId: '0da1977f-d65b-43a7-a7c8-b2a1f01da7a0',
       createdAt: new Date('2022-05-27T15:18:42.000Z'),
       updatedAt: new Date('2022-05-27T15:18:42.000Z'),
       address: {
@@ -302,7 +302,7 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
 
 export const mockedWalletList = [
   {
-    id: 1,
+    id: '0da1977f-d65b-43a7-a7c8-b2a1f01da7a0',
     createdAt: new Date('2022-09-30T18:01:32.456Z'),
     updatedAt: new Date('2022-09-30T18:01:32.456Z'),
     name: 'mockedWallet',
@@ -310,7 +310,7 @@ export const mockedWalletList = [
     userAddresses: []
   },
   {
-    id: 2,
+    id: '1f79bbe4-1c56-48af-b703-b22efd629104',
     createdAt: new Date('2022-09-30T18:01:32.456Z'),
     updatedAt: new Date('2022-09-30T18:01:32.456Z'),
     name: 'mockedWallet2',
@@ -320,7 +320,7 @@ export const mockedWalletList = [
 ]
 
 export const mockedWalletsOnUserProfile = {
-  walletId: 1,
+  walletId: '1f79bbe4-1c56-48af-b703-b22efd629104',
   userProfileId: 1,
   isXECDefault: null,
   isBCHDefault: null,
@@ -366,7 +366,7 @@ export const mockedTransaction = {
     createdAt: new Date('2022-11-02T15:18:42.000Z'),
     updatedAt: new Date('2022-11-02T15:18:42.000Z'),
     networkId: 1,
-    walletId: 1
+    walletId: '0da1977f-d65b-43a7-a7c8-b2a1f01da7a0'
   },
   amount: new Prisma.Decimal('4.31247724'),
   timestamp: 1657130467,
