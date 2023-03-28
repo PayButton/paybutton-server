@@ -21,7 +21,7 @@ export interface UpdateWalletInput {
 
 export interface DeleteWalletInput {
   userId: string
-  walletId: number | string
+  walletId: string
 }
 
 const includeAddressesWithPaybuttons = {
@@ -188,7 +188,7 @@ export async function createDefaultWalletForUser (userId: string): Promise<Walle
   return wallet
 }
 
-export async function fetchWalletById (walletId: number | string): Promise<WalletWithAddressesWithPaybuttons> {
+export async function fetchWalletById (walletId: string): Promise<WalletWithAddressesWithPaybuttons> {
   const wallet = await prisma.wallet.findUnique({
     where: { id: Number(walletId) },
     include: includeAddressesWithPaybuttons
