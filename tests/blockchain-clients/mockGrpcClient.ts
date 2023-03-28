@@ -1,7 +1,4 @@
-import { Tx } from 'chronik-client'
-import { mockedBlockchainTransactions } from './mockedObjects'
-
-export default class MockChronikClient {
+export default class MockGrpcClient {
   private _checkNetworkIntegrity = false
 
   public get checkNetworkIntegrity (): boolean {
@@ -12,11 +9,12 @@ export default class MockChronikClient {
     this._checkNetworkIntegrity = value
   }
 
+  // WIP
+  /*
   getAddressTransactions (_: any): Tx[] {
     return mockedBlockchainTransactions
   }
 
-  /*
   getAddressUtxos (_: object): GetAddressUnspentOutputsResponse {
     const res = new GetAddressUnspentOutputsResponse()
     res.setOutputsList([
@@ -58,5 +56,5 @@ export default class MockChronikClient {
     }))
     return res
   }
-	*/
+  */
 }
