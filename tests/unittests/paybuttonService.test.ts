@@ -8,7 +8,7 @@ describe('Fetch services', () => {
     prismaMock.paybutton.findUnique.mockResolvedValue(mockedPaybutton)
     prisma.paybutton.findUnique = prismaMock.paybutton.findUnique
 
-    const result = await paybuttonService.fetchPaybuttonById(4)
+    const result = await paybuttonService.fetchPaybuttonById(mockedPaybutton.id)
     expect(result).toEqual(mockedPaybutton)
   })
 
@@ -59,7 +59,7 @@ describe('Delete services', () => {
 
     const deletePaybuttonInput = {
       userId: 'mocked-uid',
-      paybuttonId: 3
+      paybuttonId: 'mocked-uuid'
     }
     const result = await paybuttonService.deletePaybutton(deletePaybuttonInput)
     expect(result).toEqual(mockedPaybutton)
@@ -87,7 +87,7 @@ describe('Update services', () => {
       name: 'mocked-name',
       prefixedAddressList: ['mockednetwork:mockaddress']
     }
-    const result = await paybuttonService.updatePaybutton(1, updatePaybuttonInput)
+    const result = await paybuttonService.updatePaybutton('mocked-uuid', updatePaybuttonInput)
     expect(result).toEqual(mockedPaybutton)
   })
 })

@@ -4,11 +4,10 @@ import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import { USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, NETWORK_SLUGS } from 'constants/index'
 
 export const mockedPaybutton: PaybuttonWithAddresses = {
-  id: 4,
+  id: '730bfa24-eb57-11ec-b722-0242ac150002',
   providerUserId: 'mocked-uid',
   name: 'mocked-name',
   buttonData: 'mockedData',
-  uuid: '730bfa24-eb57-11ec-b722-0242ac150002',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   addresses: [
@@ -42,7 +41,7 @@ export const mockedBCHAddress = {
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   networkId: 2,
   lastSynced: null,
-  paybuttonId: 1,
+  paybuttonId: 'bfe90894-b1f4-11ed-b556-0242ac120003',
   walletId: null
 }
 
@@ -53,7 +52,7 @@ export const mockedXECAddress = {
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   lastSynced: null,
   networkId: 1,
-  paybuttonId: 1,
+  paybuttonId: 'bfe90894-b1f4-11ed-b556-0242ac120003',
   walletId: null
 }
 
@@ -72,14 +71,13 @@ export const mockedAddressesOnUserProfile = {
     lastSynced: new Date('2022-05-27T15:18:42.000Z'),
     paybuttons: [
       {
-        paybuttonId: 1,
+        paybuttonId: 'bfe90894-b1f4-11ed-b556-0242ac120003',
         addressId: 1,
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
         paybutton: {
-          id: 1,
+          id: 'bfe90894-b1f4-11ed-b556-0242ac120003',
           name: 'Mocked Paybutton 1',
-          uuid: 'bfe90894-b1f4-11ed-b556-0242ac120003',
           buttonData: '{"example": "value"}',
           providerUserId: 'dev-uid',
           createdAt: new Date('2022-05-27T15:18:42.000Z'),
@@ -87,14 +85,13 @@ export const mockedAddressesOnUserProfile = {
         }
       },
       {
-        paybuttonId: 3,
+        paybuttonId: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
         addressId: 1,
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
         paybutton: {
-          id: 3,
+          id: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
           name: 'Mocked Paybutton 2',
-          uuid: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
           buttonData: '{}',
           providerUserId: 'dev-uid',
           createdAt: new Date('2022-05-27T15:18:42.000Z'),
@@ -146,11 +143,10 @@ export const mockedAddressList = [
 
 export const mockedPaybuttonList = [
   {
-    id: 1,
+    id: '730bfa24-eb57-11ec-b722-0242ac150002',
     providerUserId: 'mocked-uid',
     name: 'mocked-name-1',
     buttonData: 'mockedData',
-    uuid: '730bfa24-eb57-11ec-b722-0242ac150002',
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     addresses: [
@@ -163,11 +159,10 @@ export const mockedPaybuttonList = [
     ]
   },
   {
-    id: 2,
+    id: '133fb8aa-eb57-11ec-b722-0242ac150002',
     providerUserId: 'mocked-uid',
     name: 'mocked-name-2',
     buttonData: 'mockedData',
-    uuid: '133fb8aa-eb57-11ec-b722-0242ac150002',
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     addresses: [
@@ -220,14 +215,13 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
         lastSynced: new Date('2022-05-27T15:18:42.000Z'),
         paybuttons: [
           {
-            paybuttonId: 1,
+            paybuttonId: 'bfe90894-b1f4-11ed-b556-0242ac120003',
             addressId: 1,
             createdAt: new Date('2022-05-27T15:18:42.000Z'),
             updatedAt: new Date('2022-05-27T15:18:42.000Z'),
             paybutton: {
-              id: 1,
+              id: 'bfe90894-b1f4-11ed-b556-0242ac120003',
               name: 'Mocked Paybutton 1',
-              uuid: 'bfe90894-b1f4-11ed-b556-0242ac120003',
               buttonData: '{"example": "value"}',
               providerUserId: 'dev-uid',
               createdAt: new Date('2022-05-27T15:18:42.000Z'),
@@ -235,14 +229,13 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
             }
           },
           {
-            paybuttonId: 3,
+            paybuttonId: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
             addressId: 1,
             createdAt: new Date('2022-05-27T15:18:42.000Z'),
             updatedAt: new Date('2022-05-27T15:18:42.000Z'),
             paybutton: {
-              id: 3,
+              id: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
               name: 'Mocked Paybutton 2',
-              uuid: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
               buttonData: '{}',
               providerUserId: 'dev-uid',
               createdAt: new Date('2022-05-27T15:18:42.000Z'),
@@ -267,14 +260,13 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
         lastSynced: new Date('2022-05-27T15:18:42.000Z'),
         paybuttons: [
           {
-            paybuttonId: 2,
+            paybuttonId: 'bfe90b48-b1f4-11ed-b556-0242ac120003',
             addressId: 2,
             createdAt: new Date('2022-05-27T15:18:42.000Z'),
             updatedAt: new Date('2022-05-27T15:18:42.000Z'),
             paybutton: {
-              id: 2,
+              id: 'bfe90b48-b1f4-11ed-b556-0242ac120003',
               name: 'Mocked Paybutton 3',
-              uuid: 'bfe90b48-b1f4-11ed-b556-0242ac120003',
               buttonData: '{}',
               providerUserId: 'dev-uid',
               createdAt: new Date('2022-05-27T15:18:42.000Z'),
@@ -282,14 +274,13 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
             }
           },
           {
-            paybuttonId: 3,
+            paybuttonId: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
             addressId: 2,
             createdAt: new Date('2022-05-27T15:18:42.000Z'),
             updatedAt: new Date('2022-05-27T15:18:42.000Z'),
             paybutton: {
-              id: 3,
+              id: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
               name: 'Mocked Paybutton 4',
-              uuid: 'bfe92acd-b1f4-11ed-b556-0242ac120003',
               buttonData: '{}',
               providerUserId: 'dev-uid',
               createdAt: new Date('2022-05-27T15:18:42.000Z'),

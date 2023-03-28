@@ -26,9 +26,8 @@ model Address {
 }
 
 model Paybutton {
-  id             Int                  @id @default(autoincrement())
+  id             String               @id @default(dbgenerated("(uuid())"))
   name           String               @db.VarChar(255)
-  uuid           String               @default(dbgenerated("(uuid())"))
   buttonData     String               @db.LongText
   providerUserId String?              @db.VarChar(255)
   createdAt      DateTime             @default(now())
@@ -39,7 +38,7 @@ model Paybutton {
 }
 
 model AddressesOnButtons {
-  paybuttonId Int
+  paybuttonId String
   addressId   Int
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

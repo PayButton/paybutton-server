@@ -108,3 +108,5 @@ export const NETWORK_BLOCKCHAIN_CLIENTS: KeyValueT<BLOCKCHAIN_CLIENT_OPTIONS> = 
 }
 
 export const CHRONIK_CLIENT_URL = 'https://chronik.be.cash/xec'
+
+export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 15000

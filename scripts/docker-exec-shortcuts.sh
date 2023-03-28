@@ -49,6 +49,7 @@ case "$command" in
         ;;
     "jobsrestart" | "jr")
         eval "$base_command_node" tmux kill-session -t initJobs && echo Jobs stoped, restarting... || echo No jobs running, starting...
+        yarn docker cr
         eval "$base_command_node" sh ./scripts/init-jobs.sh
         ;;
     "yarn" | "y")
@@ -84,6 +85,9 @@ case "$command" in
     "cache" | "c")
         eval "$base_command_cache" redis-cli
         ;;
+    "cachereset" | "cr")
+        eval "$base_command_cache" redis-cli FLUSHALL
+        ;;
     "cacheshell" | "cs")
         eval "$base_command_cache" ash -l
         ;;
@@ -112,6 +116,7 @@ case "$command" in
         echo "  pg, prismagenerate          [$node_container_name]     run \`prisma generate\` to generate client from scheme"
         echo "  c, cache                    [$cache_container_name]   enter the redis command-line interface"
         echo "  cs, cacheshell              [$node_container_name]     enter the redis container"
+        echo "  cr, cachereset              [$node_container_name]     clear the redis cache"
         echo "  jw, jobswatch               [$node_container_name]     watch jobs logs"
         echo "  js, jobsstop                [$node_container_name]     stop jobs"
         echo "  jr, jobsrestart             [$node_container_name]     restart jobs"

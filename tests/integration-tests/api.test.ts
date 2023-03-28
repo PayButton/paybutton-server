@@ -66,7 +66,6 @@ describe('POST /api/paybutton/', () => {
     expect(responseData.providerUserId).toBe('test-u-id')
     expect(responseData.name).toBe('test-paybutton')
     expect(responseData.buttonData).toBe('{"somefield":"somevalue"}')
-    expect(responseData.uuid).not.toBeNull()
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         {
@@ -225,7 +224,6 @@ describe('PATCH /api/paybutton/', () => {
     expect(res.statusCode).toBe(200)
     expect(responseData.providerUserId).toBe('test-u-id')
     expect(responseData.name).toBe('blablabla')
-    expect(responseData.uuid).not.toBeNull()
     expect(responseData.addresses).toEqual(
       expect.arrayContaining([
         {
@@ -282,7 +280,7 @@ describe('PATCH /api/paybutton/', () => {
     expect(responseData.message).toBe(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message)
   })
   it('Should fail for non non-existent button', async () => {
-    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 9128371987912
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 'nonexistent-uuid'
     baseRequestOptions.body = {
       name: 'some-different-name',
       addresses: undefined
@@ -347,7 +345,6 @@ describe('GET /api/paybuttons/', () => {
     expect(responseData[0]).toHaveProperty('providerUserId')
     expect(responseData[0]).toHaveProperty('name')
     expect(responseData[0]).toHaveProperty('buttonData')
-    expect(responseData[0]).toHaveProperty('uuid')
   })
 
   it('Get no paybuttons for unknown user', async () => {
@@ -1032,7 +1029,7 @@ describe('GET /api/paybutton/[id]', () => {
   // Create 4 paybuttons, 3 for one user and 1 for another.
   const userA = 'test-u-id'
   const userB = 'test-other-u-id'
-  let createdPaybuttonsIds: number[]
+  let createdPaybuttonsIds: string[]
   beforeAll(async () => {
     await clearPaybuttonsAndAddresses()
     createdPaybuttonsIds = []
@@ -1071,13 +1068,11 @@ describe('GET /api/paybutton/[id]', () => {
       expect(responseData).toHaveProperty('providerUserId')
       expect(responseData).toHaveProperty('name')
       expect(responseData).toHaveProperty('buttonData')
-      expect(responseData).toHaveProperty('uuid')
     }
   })
 
-  it('Not find paybutton for next id', async () => {
-    const nextId = createdPaybuttonsIds[createdPaybuttonsIds.length - 1] + 1
-    if (baseRequestOptions.query != null) baseRequestOptions.query.id = nextId
+  it('Not find paybutton for nonexistent id', async () => {
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 'nonexistent-uuid'
     const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
     expect(res.statusCode).toBe(404)
     const responseData = res._getJSONData()
@@ -1089,7 +1084,7 @@ describe('DELETE /api/paybutton/[id]', () => {
   // Create 4 paybuttons, 3 for one user and 1 for another.
   const userA = 'test-u-id'
   const userB = 'test-other-u-id'
-  let createdPaybuttonsIds: number[]
+  let createdPaybuttonsIds: string[]
   beforeAll(async () => {
     await clearPaybuttonsAndAddresses()
     createdPaybuttonsIds = []
@@ -1122,11 +1117,10 @@ describe('DELETE /api/paybutton/[id]', () => {
     expect(responseData).toHaveProperty('providerUserId')
     expect(responseData).toHaveProperty('name')
     expect(responseData).toHaveProperty('buttonData')
-    expect(responseData).toHaveProperty('uuid')
   })
 
   it('Fail to delete non-existent paybutton', async () => {
-    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 999999
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 'nonexistent-uuid'
     const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(404)
