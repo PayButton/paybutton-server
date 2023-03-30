@@ -31,7 +31,7 @@ export const createWalletForUser = async (userId: string, addressIdList: number[
   return await createWallet({ userId, name, addressIdList, isXECDefault, isBCHDefault })
 }
 
-export const createPaybuttonForUser = async (userId: string, addressList?: string[], walletId?: number): Promise<PaybuttonWithAddresses> => {
+export const createPaybuttonForUser = async (userId: string, addressList?: string[], walletId?: string): Promise<PaybuttonWithAddresses> => {
   let prefixedAddressList = [
     'bitcoincash:' + addressRandexp.gen(),
     'ecash:' + addressRandexp.gen()

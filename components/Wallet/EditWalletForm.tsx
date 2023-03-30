@@ -40,7 +40,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
     }
   }
 
-  async function onDelete (walletId: number): Promise<void> {
+  async function onDelete (walletId: string): Promise<void> {
     const res = await axios.delete<WalletWithAddressesWithPaybuttons>(`${appInfo.websiteDomain}/api/wallet/${walletId}`)
     if (res.status === 200) {
       refreshWalletList()
