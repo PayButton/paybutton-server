@@ -113,7 +113,7 @@ export async function upsertManyTransactionsForAddress (transactions: Transactio
   return ret.filter((t) => t !== undefined) as TransactionWithAddressAndPrices[]
 }
 
-export async function syncTransactionsForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
+async function syncTransactionsForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
   const address = await fetchAddressBySubstring(parameters.addressString)
 
   const addressTransactions = await getAddressTransactions(parameters)
@@ -141,7 +141,12 @@ export async function syncTransactionsAndPricesForAddress (addressString: string
   if (address === '' || address === undefined) {
     throw new Error(ADDRESS_NOT_PROVIDED_400.message)
   }
-  const insertedTransactions = await syncTransactionsForAddress(address, 0, maxTransactions)
+  const parameters = {
+    addressString: address,
+    start: 0,
+    maxTransactions
+  }
+  const insertedTransactions = await syncTransactionsForAddress(parameters)
   await syncPricesFromTransactionList(insertedTransactions)
   return insertedTransactions
 }
