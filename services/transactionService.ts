@@ -4,7 +4,7 @@ import { getAddressTransactions } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
 import { syncPricesFromTransactionList, QuoteValues } from 'services/priceService'
-import { FETCH_N_TIMEOUT, RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, DEFAULT_NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY } from 'constants/index'
+import { FETCH_N_TIMEOUT, RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import _ from 'lodash'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
@@ -127,7 +127,7 @@ export async function syncTransactionsForAddress (addressString: string, start: 
   return insertedTransactions
 }
 
-export async function syncTransactionsAndPricesForAddress (addressString: string, maxTransactions: number = DEFAULT_NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY): Promise<TransactionWithAddressAndPrices[]> {
+export async function syncTransactionsAndPricesForAddress (addressString: string, maxTransactions: number): Promise<TransactionWithAddressAndPrices[]> {
   const address = parseAddress(addressString)
   if (address === '' || address === undefined) {
     throw new Error(ADDRESS_NOT_PROVIDED_400.message)

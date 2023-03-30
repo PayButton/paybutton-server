@@ -1,6 +1,6 @@
 import { NextApiResponse, NextApiRequest } from 'next'
 import { parseAddress } from 'utils/validators'
-import { RESPONSE_MESSAGES } from 'constants/index'
+import { NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY, RESPONSE_MESSAGES } from 'constants/index'
 import { fetchAddressTransactions, syncTransactionsAndPricesForAddress } from 'services/transactionService'
 import { upsertAddress, addressExistsBySubstring } from 'services/addressService'
 import Cors from 'cors'
@@ -43,7 +43,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
         if (serverOnly) throw new Error(NO_ADDRESS_FOUND_404.message)
 
         await upsertAddress(address)
-        await syncTransactionsAndPricesForAddress(address)
+        await syncTransactionsAndPricesForAddress(address, NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY)
       }
       const transactions = await fetchAddressTransactions(address)
 

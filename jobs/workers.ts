@@ -11,7 +11,7 @@ const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void
   // sync addresses
   await Promise.all(
     addressList.map(async (addr) => {
-      await transactionService.syncTransactionsAndPricesForAddress(addr.address)
+      await transactionService.syncTransactionsAndPricesForAddress(addr.address, Infinity)
     })
   )
   // subscribe addresses
