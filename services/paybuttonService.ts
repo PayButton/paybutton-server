@@ -12,7 +12,7 @@ export interface UpdatePaybuttonInput {
 
 export interface CreatePaybuttonInput {
   userId: string
-  walletId?: number
+  walletId?: string
   name: string
   buttonData: string
   prefixedAddressList: string[]

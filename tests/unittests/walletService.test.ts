@@ -34,7 +34,7 @@ describe('Fetch services', () => {
     prismaMock.wallet.findUnique.mockResolvedValue(mockedWallet)
     prisma.wallet.findUnique = prismaMock.wallet.findUnique
 
-    const result = await walletService.fetchWalletById(4)
+    const result = await walletService.fetchWalletById(mockedWallet.id)
     expect(result).toEqual(mockedWallet)
   })
 

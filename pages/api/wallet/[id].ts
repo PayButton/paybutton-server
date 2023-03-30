@@ -28,7 +28,7 @@ export default async (
       const params = req.body
       params.userId = userId
       const updateWalletInput = parseWalletPATCHRequest(params)
-      const wallet = await walletService.updateWallet(Number(walletId), updateWalletInput)
+      const wallet = await walletService.updateWallet(walletId, updateWalletInput)
       res.status(200).json(wallet)
     } catch (err: any) {
       const parsedError = parseError(err)

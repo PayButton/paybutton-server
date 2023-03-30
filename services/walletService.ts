@@ -21,7 +21,7 @@ export interface UpdateWalletInput {
 
 export interface DeleteWalletInput {
   userId: string
-  walletId: number | string
+  walletId: string
 }
 
 const includeAddressesWithPaybuttons = {
@@ -147,7 +147,7 @@ export async function setAddressListForWallet (
 
 export async function createWallet (values: CreateWalletInput): Promise<WalletWithAddressesWithPaybuttons> {
   const defaultForNetworkIds = getDefaultForNetworkIds(values.isXECDefault, values.isBCHDefault)
-  const newWalletId: number = await prisma.$transaction(async (prisma) => {
+  const newWalletId: string = await prisma.$transaction(async (prisma) => {
     const w = await prisma.wallet.create({
       data: {
         providerUserId: values.userId,
@@ -188,9 +188,9 @@ export async function createDefaultWalletForUser (userId: string): Promise<Walle
   return wallet
 }
 
-export async function fetchWalletById (walletId: number | string): Promise<WalletWithAddressesWithPaybuttons> {
+export async function fetchWalletById (walletId: string): Promise<WalletWithAddressesWithPaybuttons> {
   const wallet = await prisma.wallet.findUnique({
-    where: { id: Number(walletId) },
+    where: { id: walletId },
     include: includeAddressesWithPaybuttons
   })
   if (wallet === null) {
@@ -282,7 +282,7 @@ export async function setDefaultWallet (wallet: WalletWithAddressesWithPaybutton
   return wallet
 }
 
-export async function updateWallet (walletId: number, params: UpdateWalletInput): Promise<WalletWithAddressesWithPaybuttons> {
+export async function updateWallet (walletId: string, params: UpdateWalletInput): Promise<WalletWithAddressesWithPaybuttons> {
   const wallet = await fetchWalletById(walletId)
 
   if (wallet.userProfile === null) {
@@ -379,7 +379,7 @@ export async function moveAddressesToDefaultWallet (wallet: WalletWithAddressesW
   const BCHDefaultWallet = await getUserDefaultWalletForNetworkId(wallet.userProfile?.userProfileId, BCH_NETWORK_ID)
   for (const addr of wallet.userAddresses) {
     // Get id of default wallet to move
-    let defaultWalletId: number
+    let defaultWalletId: string
     if (addr.address.networkId === BCH_NETWORK_ID) {
       defaultWalletId = BCHDefaultWallet.id
     } else if (addr.address.networkId === XEC_NETWORK_ID) {
@@ -414,7 +414,7 @@ export async function deleteWallet (params: DeleteWalletInput): Promise<WalletWi
     await moveAddressesToDefaultWallet(wallet)
     const w = await prisma.wallet.delete({
       where: {
-        id: Number(params.walletId)
+        id: params.walletId
       },
       include: includeAddressesWithPaybuttons
     })

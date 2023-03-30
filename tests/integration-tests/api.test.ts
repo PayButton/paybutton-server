@@ -55,7 +55,7 @@ describe('POST /api/paybutton/', () => {
       addresses: `${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
       name: 'test-paybutton',
       buttonData: '{"somefield":"somevalue"}',
-      walletId: '1'
+      walletId: '80fcbeb5-f6bd-4b3b-aca8-d604a670e978'
     }
   }
 
@@ -88,7 +88,7 @@ describe('POST /api/paybutton/', () => {
   it('Create a paybutton empty JSON for buttonData', async () => {
     baseRequestOptions.body = {
       name: 'test-paybutton-no-button-data',
-      walletId: '1',
+      walletId: '80fcbeb5-f6bd-4b3b-aca8-d604a670e978',
       addresses: `ectest:${exampleAddresses.ectest}`
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -125,7 +125,7 @@ describe('POST /api/paybutton/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-paybutton',
-      walletId: '1',
+      walletId: '80fcbeb5-f6bd-4b3b-aca8-d604a670e978',
       addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
@@ -696,7 +696,7 @@ describe('GET /api/wallets/', () => {
 
 describe('GET /api/wallet/[id]', () => {
   // Create 4 wallets
-  let createdWalletsIds: number[]
+  let createdWalletsIds: string[]
   beforeAll(async () => {
     await clearPaybuttonsAndAddresses()
     await clearWallets()
@@ -730,9 +730,8 @@ describe('GET /api/wallet/[id]', () => {
     }
   })
 
-  it('Not find wallet for next id', async () => {
-    const nextId = createdWalletsIds[createdWalletsIds.length - 1] + 1
-    if (baseRequestOptions.query != null) baseRequestOptions.query.id = nextId
+  it('Not find wallet for unknown id', async () => {
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 'mockeduuid-does-not-exist'
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     expect(res.statusCode).toBe(404)
     const responseData = res._getJSONData()
@@ -1003,7 +1002,7 @@ describe('DELETE /api/wallet/[id]', () => {
   })
 
   it('Fail for inexistent wallet', async () => {
-    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 129837129873
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = 'mockeduuid-does-not-exist'
     const res = await testEndpoint(baseRequestOptions, walletIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(404)
