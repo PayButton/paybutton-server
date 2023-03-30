@@ -1,7 +1,7 @@
 import { ChronikClient, ScriptType } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { BlockchainClient, BlockchainInfo, BlockInfo, TransactionsResponse } from './blockchainService'
+import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, GetAddressTransactionsResponse } from './blockchainService'
 import { GetAddressUnspentOutputsResponse, GetTransactionResponse, Transaction } from 'grpc-bchrpc-node'
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL } from 'constants/index'
 
@@ -30,7 +30,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     return { hash: blockInfo.hash, height: blockInfo.height, timestamp: parseInt(blockInfo.timestamp) }
   }
 
-  async getAddressTransactions (addressString: string, start: number, maxTransactions: number): Promise<TransactionsResponse> {
+  async getAddressTransactions (parameters: GetAddressTransactionsParameters): Promise<GetAddressTransactionsResponse> {
     throw new Error('Method not implemented.')
   }
 

@@ -7,10 +7,10 @@ import {
   MempoolTransaction
 } from 'grpc-bchrpc-node'
 
-import { BlockchainClient, BlockchainInfo, BlockInfo, TransactionsResponse, TransactionPrisma } from './blockchainService'
+import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, GetAddressTransactionsResponse } from './blockchainService'
 import { getObjectValueForNetworkSlug, getObjectValueForAddress, satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from '../utils/index'
 import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, RESPONSE_MESSAGES, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD } from '../constants/index'
-import { Address, Prisma } from '@prisma/client'
+import { Address, Prisma, Transaction as TransactionPrisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
 
@@ -110,15 +110,15 @@ export class GrpcBlockchainClient implements BlockchainClient {
     }
   }
 
-  public async getAddressTransactions (addressString: string, start: number = 0, maxTransactions: number = Infinity): Promise<TransactionsResponse> {
-    const address = await fetchAddressBySubstring(addressString)
+  public async getAddressTransactions (parameters: GetAddressTransactionsParameters): Promise<GetAddressTransactionsResponse> {
+    const address = await fetchAddressBySubstring(parameters.addressString)
     const pageSize = FETCH_N
     let newTransactionsCount = -1
-    let page = Math.floor(start / pageSize)
+    let page = Math.floor(parameters.start / pageSize)
     const confirmedTransactions: Transaction.AsObject[] = []
     const unconfirmedTransactions: Transaction.AsObject[] = []
 
-    while (confirmedTransactions.length < maxTransactions && newTransactionsCount !== 0) {
+    while (confirmedTransactions.length < parameters.maxTransactions && newTransactionsCount !== 0) {
       const client = this.getClientForAddress(address.address)
       const transactions = (await client.getAddressTransactions({
         address: address.address,
@@ -136,7 +136,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
     }
 
-    confirmedTransactions.splice(maxTransactions)
+    confirmedTransactions.splice(parameters.maxTransactions)
 
     return {
       confirmed: await Promise.all(confirmedTransactions.map(async tx => await this.getTransactionPrismaFromTransaction(tx, address.address, true))),

@@ -1,6 +1,6 @@
 import prisma from 'prisma/clientInstance'
-import { Prisma, Address } from '@prisma/client'
-import { getAddressTransactions, TransactionPrisma } from 'services/blockchainService'
+import { Prisma, Address, Transaction as TransactionPrisma } from '@prisma/client'
+import { getAddressTransactions } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
 import { syncPricesFromTransactionList, QuoteValues } from 'services/priceService'
@@ -116,7 +116,7 @@ export async function upsertManyTransactionsForAddress (transactions: Transactio
 export async function syncTransactionsForAddress (addressString: string, start: number = 0, maxTransactions: number = Infinity): Promise<TransactionWithAddressAndPrices[]> {
   const address = await fetchAddressBySubstring(addressString)
 
-  const addressTransactions = await getAddressTransactions(addressString, start, maxTransactions)
+  const addressTransactions = await getAddressTransactions({ addressString, start, maxTransactions })
   const insertedTransactions: TransactionWithAddressAndPrices[] = [
     ...await upsertManyTransactionsForAddress(addressTransactions.confirmed, address),
     ...await upsertManyTransactionsForAddress(addressTransactions.unconfirmed, address)
