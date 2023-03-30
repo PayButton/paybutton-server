@@ -99,7 +99,8 @@ export class GrpcBlockchainClient implements BlockchainClient {
     )
   }
 
-  private async getTransactionPrismaFromTransaction (transaction: Transaction.AsObject, addressString: string, confirmed: boolean): Promise<TransactionPrisma> {
+  // WIP: this should be private in the future
+  public async getTransactionPrismaFromTransaction (transaction: Transaction.AsObject, addressString: string, confirmed: boolean): Promise<TransactionPrisma> {
     return {
       hash: transaction.hash as string,
       amount: await this.getTransactionAmount(transaction, addressString),
