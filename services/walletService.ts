@@ -341,7 +341,7 @@ export async function getWalletBalance (wallet: WalletWithAddressesWithPaybutton
   return ret
 }
 
-export async function getUserDefaultWalletForNetworkId (userProfileId: number, networkId: number): Promise<WalletWithAddressesWithPaybuttons> {
+export async function getUserDefaultWalletForNetworkId (userProfileId: string, networkId: number): Promise<WalletWithAddressesWithPaybuttons> {
   let userWalletProfile: WalletsOnUserProfile | null
   if (networkId === BCH_NETWORK_ID) {
     userWalletProfile = await prisma.walletsOnUserProfile.findUnique({
