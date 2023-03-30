@@ -124,7 +124,7 @@ model PricesOnTransactions {
 
 model AddressesOnUserProfiles {
   addressId     Int
-  userProfileId Int
+  userProfileId String
   walletId      String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
@@ -137,7 +137,7 @@ model AddressesOnUserProfiles {
 
 model WalletsOnUserProfile {
   walletId      String      @unique
-  userProfileId Int
+  userProfileId String
   isXECDefault  Boolean?
   isBCHDefault  Boolean?
   createdAt     DateTime    @default(now())
@@ -151,7 +151,7 @@ model WalletsOnUserProfile {
 }
 
 model UserProfile {
-  id        Int                    @id @default(autoincrement())
+  id        String                 @id @default(dbgenerated("(uuid())"))
   createdAt DateTime               @default(now())
   updatedAt DateTime               @updatedAt
   userId    String                 @unique @db.VarChar(255)

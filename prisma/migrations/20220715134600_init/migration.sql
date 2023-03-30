@@ -75,7 +75,7 @@ CREATE TABLE `Wallet` (
 
 -- CreateTable
 CREATE TABLE `UserProfile` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `id` VARCHAR(191) NOT NULL DEFAULT (uuid()),
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     `userId` VARCHAR(255) NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE `UserProfile` (
 -- CreateTable
 CREATE TABLE `WalletsOnUserProfile` (
     `walletId` VARCHAR(191) NOT NULL,
-    `userProfileId` INTEGER NOT NULL,
+    `userProfileId` VARCHAR(191) NOT NULL,
     `isXECDefault` BOOLEAN NULL,
     `isBCHDefault` BOOLEAN NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -139,7 +139,7 @@ CREATE TABLE `Quote` (
 -- CreateTable
 CREATE TABLE `AddressesOnUserProfiles` (
     `addressId` INTEGER NOT NULL,
-    `userProfileId` INTEGER NOT NULL,
+    `userProfileId` VARCHAR(191) NOT NULL,
     `walletId` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
