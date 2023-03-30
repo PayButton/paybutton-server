@@ -1,6 +1,6 @@
 import prisma from 'prisma/clientInstance'
 import { Prisma, Address, Transaction as TransactionPrisma } from '@prisma/client'
-import { getAddressTransactions } from 'services/blockchainService'
+import { getAddressTransactions, GetAddressTransactionsParameters } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
 import { syncPricesFromTransactionList, QuoteValues } from 'services/priceService'
@@ -113,16 +113,25 @@ export async function upsertManyTransactionsForAddress (transactions: Transactio
   return ret.filter((t) => t !== undefined) as TransactionWithAddressAndPrices[]
 }
 
-export async function syncTransactionsForAddress (addressString: string, start: number = 0, maxTransactions: number = Infinity): Promise<TransactionWithAddressAndPrices[]> {
-  const address = await fetchAddressBySubstring(addressString)
+export async function syncTransactionsForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
+  const address = await fetchAddressBySubstring(parameters.addressString)
 
-  const addressTransactions = await getAddressTransactions({ addressString, start, maxTransactions })
+  const addressTransactions = await getAddressTransactions(parameters)
   const insertedTransactions: TransactionWithAddressAndPrices[] = [
     ...await upsertManyTransactionsForAddress(addressTransactions.confirmed, address),
     ...await upsertManyTransactionsForAddress(addressTransactions.unconfirmed, address)
   ]
 
-  if (maxTransactions === Infinity || addressTransactions.confirmed.length < maxTransactions) { await updateLastSynced(addressString) } else { void syncTransactionsForAddress(addressString, start + addressTransactions.confirmed.length) }
+  if (parameters.maxTransactions === Infinity || addressTransactions.confirmed.length < parameters.maxTransactions) {
+    await updateLastSynced(parameters.addressString)
+  } else {
+    const newParameters = {
+      addressString: parameters.addressString,
+      start: parameters.start + addressTransactions.confirmed.length,
+      maxTransactions: Infinity
+    }
+    void syncTransactionsForAddress(newParameters)
+  }
 
   return insertedTransactions
 }
