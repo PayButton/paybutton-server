@@ -7,7 +7,7 @@ import {
   GetTransactionResponse,
   GetAddressUnspentOutputsResponse
 } from 'grpc-bchrpc-node'
-import { Transaction as TransactionPrisma } from '@prisma/client'
+import { TransactionWithAddressAndPrices } from './transactionService'
 
 export interface BlockchainInfo {
   height: number
@@ -24,14 +24,9 @@ export interface GetAddressTransactionsParameters {
   maxTransactions: number
 }
 
-export interface GetAddressTransactionsResponse {
-  confirmed: TransactionPrisma[]
-  unconfirmed: TransactionPrisma[]
-}
-
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
-  getAddressTransactions: (parameters: GetAddressTransactionsParameters) => Promise<GetAddressTransactionsResponse>
+  syncTransactionsAndPricesForAddress: (parameters: GetAddressTransactionsParameters) => Promise<TransactionWithAddressAndPrices[]>
   getUtxos: (address: string) => Promise<GetAddressUnspentOutputsResponse.AsObject>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
@@ -66,8 +61,8 @@ export async function getBalance (address: string): Promise<number> {
   return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getBalance(address)
 }
 
-export async function getAddressTransactions (parameters: GetAddressTransactionsParameters): Promise<GetAddressTransactionsResponse> {
-  return await getObjectValueForAddress(parameters.addressString, BLOCKCHAIN_CLIENTS).getAddressTransactions(parameters)
+export async function syncTransactionsAndPricesForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
+  return await getObjectValueForAddress(parameters.addressString, BLOCKCHAIN_CLIENTS).syncTransactionsAndPricesForAddress(parameters)
 }
 
 export async function getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {

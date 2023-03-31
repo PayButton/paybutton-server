@@ -1,9 +1,10 @@
 import { ChronikClient, ScriptType } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, GetAddressTransactionsResponse } from './blockchainService'
+import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters } from './blockchainService'
 import { GetAddressUnspentOutputsResponse, GetTransactionResponse, Transaction } from 'grpc-bchrpc-node'
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL } from 'constants/index'
+import { TransactionWithAddressAndPrices } from './transactionService'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
@@ -30,7 +31,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     return { hash: blockInfo.hash, height: blockInfo.height, timestamp: parseInt(blockInfo.timestamp) }
   }
 
-  async getAddressTransactions (parameters: GetAddressTransactionsParameters): Promise<GetAddressTransactionsResponse> {
+  async syncTransactionsAndPricesForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
     throw new Error('Method not implemented.')
   }
 
