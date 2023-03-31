@@ -116,12 +116,11 @@ export class GrpcBlockchainClient implements BlockchainClient {
   public async syncTransactionsAndPricesForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
     const address = await fetchAddressBySubstring(parameters.addressString)
     const pageSize = FETCH_N
-    let newTransactionsCount = -1
     let totalFetchedConfirmedTransactions = 0
     let page = Math.floor(parameters.start / pageSize)
     let insertedTransactions: TransactionWithAddressAndPrices[] = []
 
-    while (totalFetchedConfirmedTransactions < parameters.maxTransactions && newTransactionsCount !== 0) {
+    while (totalFetchedConfirmedTransactions < parameters.maxTransactions) {
       const client = this.getClientForAddress(address.address)
       const transactions = (await client.getAddressTransactions({
         address: address.address,
@@ -129,16 +128,16 @@ export class GrpcBlockchainClient implements BlockchainClient {
         nbFetch: pageSize
       })).toObject()
 
+      if (transactions.confirmedTransactionsList.length === 0 && transactions.unconfirmedTransactionsList.length === 0) break
+
       // remove transactions older than the networks
       const confirmedTransactions = transactions.confirmedTransactionsList.filter(this.txThesholdFilter(address))
       const unconfirmedTransactions = transactions.unconfirmedTransactionsList.map(mempoolTx => this.parseMempoolTx(mempoolTx))
-
-      newTransactionsCount = confirmedTransactions.length
-      totalFetchedConfirmedTransactions += newTransactionsCount
+      totalFetchedConfirmedTransactions += confirmedTransactions.length
       page += 1
 
       if (totalFetchedConfirmedTransactions > parameters.maxTransactions) {
-        confirmedTransactions.splice(totalFetchedConfirmedTransactions - parameters.maxTransactions)
+        confirmedTransactions.splice(confirmedTransactions.length - (totalFetchedConfirmedTransactions - parameters.maxTransactions))
       }
 
       const transactionsToPersist = [
