@@ -75,7 +75,7 @@ model Transaction {
 }
 
 model Wallet {
-  id             Int                   @id @default(autoincrement())
+  id             String                @id @default(dbgenerated("(uuid())"))
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
   name           String                @db.VarChar(255)
@@ -124,8 +124,8 @@ model PricesOnTransactions {
 
 model AddressesOnUserProfiles {
   addressId     Int
-  userProfileId Int
-  walletId      Int?
+  userProfileId String
+  walletId      String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   address       Address      @relation(fields: [addressId], references: [id], onDelete: Cascade)
@@ -136,8 +136,8 @@ model AddressesOnUserProfiles {
 }
 
 model WalletsOnUserProfile {
-  walletId      Int         @unique
-  userProfileId Int
+  walletId      String      @unique
+  userProfileId String
   isXECDefault  Boolean?
   isBCHDefault  Boolean?
   createdAt     DateTime    @default(now())
@@ -151,7 +151,7 @@ model WalletsOnUserProfile {
 }
 
 model UserProfile {
-  id        Int                    @id @default(autoincrement())
+  id        String                 @id @default(dbgenerated("(uuid())"))
   createdAt DateTime               @default(now())
   updatedAt DateTime               @updatedAt
   userId    String                 @unique @db.VarChar(255)
