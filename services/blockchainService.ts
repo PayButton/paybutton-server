@@ -21,7 +21,7 @@ export interface BlockInfo extends BlockchainInfo {
 export interface GetAddressTransactionsParameters {
   addressString: string
   start: number
-  maxTransactions: number
+  maxTransactionsToReturn: number
 }
 
 export interface BlockchainClient {

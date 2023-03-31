@@ -120,7 +120,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     let page = Math.floor(parameters.start / pageSize)
     let insertedTransactions: TransactionWithAddressAndPrices[] = []
 
-    while (totalFetchedConfirmedTransactions < parameters.maxTransactions) {
+    while (totalFetchedConfirmedTransactions < parameters.maxTransactionsToReturn) {
       const client = this.getClientForAddress(address.address)
       const transactions = (await client.getAddressTransactions({
         address: address.address,
@@ -136,8 +136,8 @@ export class GrpcBlockchainClient implements BlockchainClient {
       totalFetchedConfirmedTransactions += confirmedTransactions.length
       page += 1
 
-      if (totalFetchedConfirmedTransactions > parameters.maxTransactions) {
-        confirmedTransactions.splice(confirmedTransactions.length - (totalFetchedConfirmedTransactions - parameters.maxTransactions))
+      if (totalFetchedConfirmedTransactions > parameters.maxTransactionsToReturn) {
+        confirmedTransactions.splice(confirmedTransactions.length - (totalFetchedConfirmedTransactions - parameters.maxTransactionsToReturn))
       }
 
       const transactionsToPersist = [

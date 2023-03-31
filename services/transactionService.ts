@@ -111,23 +111,23 @@ export async function upsertManyTransactionsForAddress (transactions: Transactio
   return ret.filter((t) => t !== undefined) as TransactionWithAddressAndPrices[]
 }
 
-export async function syncAllTransactionsAndPricesForAddress (addressString: string, returnMaxTransactions: number): Promise<TransactionWithAddressAndPrices[]> {
+export async function syncAllTransactionsAndPricesForAddress (addressString: string, maxTransactionsToReturn: number): Promise<TransactionWithAddressAndPrices[]> {
   addressString = parseAddress(addressString)
   const parameters = {
     addressString,
     start: 0,
-    maxTransactions: returnMaxTransactions
+    maxTransactionsToReturn
   }
 
   const insertedTransactions: TransactionWithAddressAndPrices[] = await syncTransactionsAndPricesForAddress(parameters)
 
-  if (parameters.maxTransactions === Infinity || insertedTransactions.filter(t => t.confirmed).length < parameters.maxTransactions) {
+  if (parameters.maxTransactionsToReturn === Infinity || insertedTransactions.filter(t => t.confirmed).length < parameters.maxTransactionsToReturn) {
     await updateLastSynced(addressString)
   } else {
     const newParameters: GetAddressTransactionsParameters = {
       addressString,
       start: insertedTransactions.filter(t => t.confirmed).length,
-      maxTransactions: Infinity
+      maxTransactionsToReturn: Infinity
     }
     void syncTransactionsAndPricesForAddress(newParameters)
   }
