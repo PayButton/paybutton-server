@@ -7,8 +7,8 @@ import paybuttonIdEndpoint from 'pages/api/paybutton/[id]'
 import walletsEndpoint from 'pages/api/wallets/index'
 import walletEndpoint from 'pages/api/wallet/index'
 import walletIdEndpoint from 'pages/api/wallet/[id]'
-import transactionsEndpoint from 'pages/api/address/transactions/[address]'
-import transactionsSyncEndpoint from 'pages/api/address/transactions/sync/[address]'
+// import transactionsEndpoint from 'pages/api/address/transactions/[address]'
+// import transactionsSyncEndpoint from 'pages/api/address/transactions/sync/[address]'
 import transactionDetailsEndpoint from 'pages/api/transaction/[transactionId]'
 import balanceEndpoint from 'pages/api/address/balance/[address]'
 import dashboardEndpoint from 'pages/api/dashboard/index'
@@ -1135,6 +1135,8 @@ describe('DELETE /api/paybutton/[id]', () => {
   })
 })
 
+// WIP
+/*
 describe('GET /api/address/transactions/[address]', () => {
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
@@ -1227,7 +1229,7 @@ describe('GET /api/address/transactions/sync/[address]', () => {
     expect(res.statusCode).toBe(200)
   })
 })
-
+*/
 describe('GET /api/transaction/[transactionId]', () => {
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,

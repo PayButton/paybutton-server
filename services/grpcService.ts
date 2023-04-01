@@ -3,14 +3,18 @@ import {
   TransactionNotification,
   Transaction,
   GetTransactionResponse,
-  GetAddressTransactionsResponse,
-  GetAddressUnspentOutputsResponse
+  GetAddressUnspentOutputsResponse,
+  MempoolTransaction
 } from 'grpc-bchrpc-node'
 
-import { BlockchainClient, GetAddressParameters, BlockchainInfo, BlockInfo } from './blockchainService'
-import { getObjectValueForNetworkSlug, getObjectValueForAddress } from '../utils/index'
-import { parseMempoolTx } from 'services/transactionService'
-import { KeyValueT, RESPONSE_MESSAGES } from '../constants/index'
+import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters } from './blockchainService'
+import { getObjectValueForNetworkSlug, getObjectValueForAddress, satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from '../utils/index'
+import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, RESPONSE_MESSAGES, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD } from '../constants/index'
+import { Address, Prisma, Transaction as TransactionPrisma } from '@prisma/client'
+import xecaddr from 'xecaddrjs'
+import { fetchAddressBySubstring } from './addressService'
+import { TransactionWithAddressAndPrices, upsertManyTransactionsForAddress } from './transactionService'
+import { syncPricesFromTransactionList } from './priceService'
 
 export interface OutputsList {
   outpoint: object
@@ -52,9 +56,106 @@ export class GrpcBlockchainClient implements BlockchainClient {
     return { hash: blockInfo.hash, height: blockInfo.height, timestamp: blockInfo.timestamp }
   };
 
-  public async getAddress (parameters: GetAddressParameters): Promise<GetAddressTransactionsResponse.AsObject> {
-    const client = this.getClientForAddress(parameters.address)
-    return (await client.getAddressTransactions(parameters)).toObject()
+  private txThesholdFilter (address: Address) {
+    return (t: Transaction.AsObject, index: number, array: Transaction.AsObject[]): boolean => {
+      return (
+        (t.timestamp >= XEC_TIMESTAMP_THRESHOLD && address.networkId === XEC_NETWORK_ID) ||
+        (t.timestamp >= BCH_TIMESTAMP_THRESHOLD && address.networkId === BCH_NETWORK_ID)
+      )
+    }
+  }
+
+  private parseMempoolTx (mempoolTx: MempoolTransaction.AsObject): Transaction.AsObject {
+    const tx = mempoolTx.transaction!
+    tx.timestamp = mempoolTx.addedTime
+    return tx
+  }
+
+  private async getTransactionAmount (transaction: Transaction.AsObject, addressString: string): Promise<Prisma.Decimal> {
+    let totalOutput = 0
+    let totalInput = 0
+    const addressFormat = xecaddr.detectAddressFormat(addressString)
+    const unprefixedAddress = removeAddressPrefix(addressString)
+
+    for (const output of transaction.outputsList) {
+      let outAddress: string | undefined = removeAddressPrefix(output.address)
+      if (output.scriptClass === 'pubkey') {
+        outAddress = await pubkeyToAddress(outAddress, addressFormat)
+        if (outAddress !== undefined) outAddress = removeAddressPrefix(outAddress)
+      }
+      if (unprefixedAddress === outAddress) {
+        totalOutput += output.value
+      }
+    }
+    for (const input of transaction.inputsList) {
+      let addressFromPkey = await pubkeyToAddress(input.address, addressFormat)
+      if (addressFromPkey !== undefined) addressFromPkey = removeAddressPrefix(addressFromPkey)
+      if (unprefixedAddress === removeAddressPrefix(input.address) || unprefixedAddress === addressFromPkey) {
+        totalInput += input.value
+      }
+    }
+    const satoshis = new Prisma.Decimal(totalOutput).minus(totalInput)
+    return await satoshisToUnit(
+      satoshis,
+      addressFormat
+    )
+  }
+
+  // WIP: this should be private in the future
+  public async getTransactionPrismaFromTransaction (transaction: Transaction.AsObject, addressString: string, confirmed: boolean): Promise<TransactionPrisma> {
+    return {
+      hash: transaction.hash as string,
+      amount: await this.getTransactionAmount(transaction, addressString),
+      timestamp: transaction.timestamp,
+      addressId: 0,
+      id: 0,
+      confirmed
+    }
+  }
+
+  public async syncTransactionsAndPricesForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
+    const address = await fetchAddressBySubstring(parameters.addressString)
+    const pageSize = FETCH_N
+    let totalFetchedConfirmedTransactions = 0
+    let page = Math.floor(parameters.start / pageSize)
+    let insertedTransactions: TransactionWithAddressAndPrices[] = []
+
+    while (totalFetchedConfirmedTransactions < parameters.maxTransactionsToReturn) {
+      const client = this.getClientForAddress(address.address)
+      const transactions = (await client.getAddressTransactions({
+        address: address.address,
+        nbSkip: page * pageSize,
+        nbFetch: pageSize
+      })).toObject()
+
+      if (transactions.confirmedTransactionsList.length === 0 && transactions.unconfirmedTransactionsList.length === 0) break
+
+      // remove transactions older than the networks
+      const confirmedTransactions = transactions.confirmedTransactionsList.filter(this.txThesholdFilter(address))
+      const unconfirmedTransactions = transactions.unconfirmedTransactionsList.map(mempoolTx => this.parseMempoolTx(mempoolTx))
+      totalFetchedConfirmedTransactions += confirmedTransactions.length
+      page += 1
+
+      if (totalFetchedConfirmedTransactions > parameters.maxTransactionsToReturn) {
+        confirmedTransactions.splice(confirmedTransactions.length - (totalFetchedConfirmedTransactions - parameters.maxTransactionsToReturn))
+      }
+
+      const transactionsToPersist = [
+        ...await Promise.all(
+          confirmedTransactions.map(async tx => await this.getTransactionPrismaFromTransaction(tx, address.address, true))
+        ),
+        ...await Promise.all(
+          unconfirmedTransactions.map(async tx => await this.getTransactionPrismaFromTransaction(tx, address.address, false))
+        )
+      ]
+      const persistedTransactions = await upsertManyTransactionsForAddress(transactionsToPersist, address)
+      await syncPricesFromTransactionList(persistedTransactions)
+      insertedTransactions = [...insertedTransactions, ...persistedTransactions]
+
+      await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
+    }
+
+    return insertedTransactions
   };
 
   public async getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {
@@ -131,7 +232,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
       })
       void unconfirmedStream.on('data', (data: TransactionNotification) => {
         const unconfirmedTxn = data.getUnconfirmedTransaction()!.toObject()
-        const objectTxn = parseMempoolTx(unconfirmedTxn)
+        const objectTxn = this.parseMempoolTx(unconfirmedTxn)
         console.log(`${nowDateString}: got unconfirmed txn`, objectTxn)
         onMempoolTransactionNotification(objectTxn)
       })

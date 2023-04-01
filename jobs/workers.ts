@@ -2,27 +2,35 @@ import { Worker, Job, Queue } from 'bullmq'
 import { Address } from '@prisma/client'
 import { redis } from 'redis/clientInstance'
 import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
-import { getAddressPrefix } from 'utils/index'
-import { Transaction } from 'grpc-bchrpc-node'
 
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
 import * as addressService from 'services/addressService'
-import { subscribeTransactions } from 'services/blockchainService'
+import { GrpcBlockchainClient } from 'services/grpcService'
+import { Transaction } from 'grpc-bchrpc-node'
+import { getAddressPrefix } from 'utils'
 
 const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void> => {
   // sync addresses
   await Promise.all(
     addressList.map(async (addr) => {
-      await transactionService.syncTransactionsAndPricesForAddress(addr.address)
+      await transactionService.syncAllTransactionsAndPricesForAddress(addr.address, Infinity)
     })
   )
   // subscribe addresses
+  // WIP: this assumes grpc is the only one being used, when chronik goes live this has to be changed
+  const grpc = new GrpcBlockchainClient()
   addressList.map(async (addr) => {
-    await subscribeTransactions(
+    await grpc.subscribeTransactions(
       [addr.address],
-      async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, true) },
-      async (txn: Transaction.AsObject) => { await transactionService.upsertTransaction(txn, addr, false) },
+      async (txn: Transaction.AsObject) => {
+        const transactionPrisma = await grpc.getTransactionPrismaFromTransaction(txn, addr.address, true)
+        await transactionService.upsertTransaction(transactionPrisma, addr)
+      },
+      async (txn: Transaction.AsObject) => {
+        const transactionPrisma = await grpc.getTransactionPrismaFromTransaction(txn, addr.address, false)
+        await transactionService.upsertTransaction(transactionPrisma, addr)
+      },
       getAddressPrefix(addr.address)
     )
   })

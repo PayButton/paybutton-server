@@ -5,18 +5,9 @@ import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CL
 import {
   Transaction,
   GetTransactionResponse,
-  GetAddressTransactionsResponse,
   GetAddressUnspentOutputsResponse
 } from 'grpc-bchrpc-node'
-
-export interface GetAddressParameters {
-  address: string
-  nbSkip?: number
-  nbFetch?: number
-  height?: number
-  hash?: string
-  reversedHashOrder?: boolean
-}
+import { TransactionWithAddressAndPrices } from './transactionService'
 
 export interface BlockchainInfo {
   height: number
@@ -27,9 +18,15 @@ export interface BlockInfo extends BlockchainInfo {
   timestamp: number
 }
 
+export interface GetAddressTransactionsParameters {
+  addressString: string
+  start: number
+  maxTransactionsToReturn: number
+}
+
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
-  getAddress: (parameters: GetAddressParameters) => Promise<GetAddressTransactionsResponse.AsObject>
+  syncTransactionsAndPricesForAddress: (parameters: GetAddressTransactionsParameters) => Promise<TransactionWithAddressAndPrices[]>
   getUtxos: (address: string) => Promise<GetAddressUnspentOutputsResponse.AsObject>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
@@ -64,8 +61,8 @@ export async function getBalance (address: string): Promise<number> {
   return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getBalance(address)
 }
 
-export async function getAddress (parameters: GetAddressParameters): Promise<GetAddressTransactionsResponse.AsObject> {
-  return await getObjectValueForAddress(parameters.address, BLOCKCHAIN_CLIENTS).getAddress(parameters)
+export async function syncTransactionsAndPricesForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
+  return await getObjectValueForAddress(parameters.addressString, BLOCKCHAIN_CLIENTS).syncTransactionsAndPricesForAddress(parameters)
 }
 
 export async function getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {
