@@ -57,7 +57,7 @@ CREATE TABLE `Transaction` (
     `addressId` VARCHAR(191) NOT NULL,
     `confirmed` BOOLEAN NOT NULL DEFAULT FALSE,
 
-    UNIQUE INDEX `Transaction_hash_key`(`hash`),
+    UNIQUE INDEX `Transaction_hash_addressId_key`(`hash`, `addressId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
