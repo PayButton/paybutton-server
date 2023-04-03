@@ -61,7 +61,7 @@ model Network {
 }
 
 model Transaction {
-  id        Int                    @id @default(autoincrement())
+  id        String                 @id @default(dbgenerated("(uuid())"))
   hash      String                 @db.VarChar(255)
   amount    Decimal                @db.Decimal(24, 8)
   confirmed Boolean                @default(false)
@@ -113,7 +113,7 @@ model Price {
 
 model PricesOnTransactions {
   priceId       Int
-  transactionId Int
+  transactionId String
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   price         Price       @relation(fields: [priceId], references: [id], onUpdate: Cascade, onDelete: Cascade)
