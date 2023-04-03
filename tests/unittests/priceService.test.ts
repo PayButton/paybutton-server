@@ -21,7 +21,7 @@ describe('Sync price from transaction', () => {
     mockedAxios.get.mockResolvedValue({ data: { success: false } })
     const res = await priceService.syncTransactionPriceValues({
       networkId: 1,
-      transactionId: 1,
+      transactionId: 'mocked-uuid',
       timestamp: 1
     })
     expect(res).toBeUndefined()
@@ -32,7 +32,7 @@ describe('Sync price from transaction', () => {
     try {
       await priceService.syncTransactionPriceValues({
         networkId: 1,
-        transactionId: 1,
+        transactionId: 'mocked-uuid',
         timestamp: 1
       })
     } catch (e: any) {
@@ -46,7 +46,7 @@ describe('Sync price from transaction', () => {
     try {
       await priceService.syncTransactionPriceValues({
         networkId: 1,
-        transactionId: 1,
+        transactionId: 'mocked-uuid',
         timestamp: 1
       })
     } catch (e: any) {
@@ -60,7 +60,7 @@ describe('Sync price from transaction', () => {
     prisma.price.findMany = prismaMock.price.findMany
     const res = await priceService.syncTransactionPriceValues({
       networkId: 1,
-      transactionId: 1,
+      transactionId: 'mocked-uuid',
       timestamp: 1
     })
     expect(res).toStrictEqual({
