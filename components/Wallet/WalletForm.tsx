@@ -19,7 +19,7 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId }
   const { register, handleSubmit, reset } = useForm<WalletPOSTParameters>()
   const [modal, setModal] = useState(false)
   const [error, setError] = useState('')
-  const [selectedAddressIdList, setSelectedAddressIdList] = useState([] as number[])
+  const [selectedAddressIdList, setSelectedAddressIdList] = useState([] as string[])
 
   async function onSubmit (params: WalletPOSTParameters): Promise<void> {
     params.userId = userId
@@ -33,7 +33,7 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId }
     }
   }
 
-  function handleSelectedAddressesChange(checked: boolean, addressId: number): void {
+  function handleSelectedAddressesChange(checked: boolean, addressId: string): void {
     const addressIsSelected = selectedAddressIdList.includes(addressId)
     if (addressIsSelected && checked === false) {
       setSelectedAddressIdList(

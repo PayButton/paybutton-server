@@ -468,7 +468,7 @@ describe('GET /api/addresses/', () => {
 const expectedAddressObject = expect.any(Object) // WIP add detail
 
 describe('POST /api/wallets/', () => {
-  const addressIdList: number[] = []
+  const addressIdList: string[] = []
   beforeAll(async () => {
     await clearPaybuttonsAndAddresses()
     await clearWallets()
