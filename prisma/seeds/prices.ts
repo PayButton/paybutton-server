@@ -15,16 +15,16 @@ interface PriceFileData extends KeyValueT<string> {
   priceInUSD: string
 }
 
+const writeFile = promisify(fs.writeFile)
+
 export const PATH_PRICE_CSV_FILE = path.join('prisma', 'seeds', 'prices.csv')
 
-async function writeToFile (fileName: string, content: PriceFileData[]): Promise<void> {
-  const writeFile = promisify(fs.writeFile)
-
+async function writePricesToFile (content: PriceFileData[]): Promise<void> {
   const headers = ['ticker', 'date', 'priceInCAD', 'priceInUSD']
   const rows = content.map(({ ticker, date, priceInCAD, priceInUSD }) => [ticker, date, priceInCAD, priceInUSD])
   const csv = [headers, ...rows].map(row => row.join(',')).join('\n')
 
-  await writeFile(fileName, csv, 'utf8')
+  await writeFile(PATH_PRICE_CSV_FILE, csv, 'utf8')
 }
 
 export async function createPricesFile (): Promise<void> {
@@ -54,7 +54,7 @@ export async function createPricesFile (): Promise<void> {
     if (a.date > b.date) return 1
     return 0
   })
-  await writeToFile(PATH_PRICE_CSV_FILE, prices)
+  await writePricesToFile(prices)
 
   const finish = moment()
   console.log(`\n\nstart: ${start.format('HH:mm:ss')}\nfinish: ${finish.format('HH:mm:ss')}\nduration: ${(finish.diff(start) / 1000).toFixed(2)} seconds`)
