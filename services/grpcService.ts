@@ -1,7 +1,7 @@
 import {
   GrpcClient,
   TransactionNotification,
-  Transaction,
+  Transaction as GrpcTransaction,
   GetTransactionResponse,
   GetAddressUnspentOutputsResponse,
   MempoolTransaction
@@ -10,7 +10,7 @@ import {
 import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters } from './blockchainService'
 import { getObjectValueForNetworkSlug, getObjectValueForAddress, satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from '../utils/index'
 import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, RESPONSE_MESSAGES, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD } from '../constants/index'
-import { Address, Prisma, Transaction as TransactionPrisma } from '@prisma/client'
+import { Address, Prisma, Transaction } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
 import { TransactionWithAddressAndPrices, upsertManyTransactionsForAddress } from './transactionService'
@@ -57,7 +57,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
   };
 
   private txThesholdFilter (address: Address) {
-    return (t: Transaction.AsObject, index: number, array: Transaction.AsObject[]): boolean => {
+    return (t: GrpcTransaction.AsObject, index: number, array: GrpcTransaction.AsObject[]): boolean => {
       return (
         (t.timestamp >= XEC_TIMESTAMP_THRESHOLD && address.networkId === XEC_NETWORK_ID) ||
         (t.timestamp >= BCH_TIMESTAMP_THRESHOLD && address.networkId === BCH_NETWORK_ID)
@@ -65,13 +65,13 @@ export class GrpcBlockchainClient implements BlockchainClient {
     }
   }
 
-  private parseMempoolTx (mempoolTx: MempoolTransaction.AsObject): Transaction.AsObject {
+  private parseMempoolTx (mempoolTx: MempoolTransaction.AsObject): GrpcTransaction.AsObject {
     const tx = mempoolTx.transaction!
     tx.timestamp = mempoolTx.addedTime
     return tx
   }
 
-  private async getTransactionAmount (transaction: Transaction.AsObject, addressString: string): Promise<Prisma.Decimal> {
+  private async getTransactionAmount (transaction: GrpcTransaction.AsObject, addressString: string): Promise<Prisma.Decimal> {
     let totalOutput = 0
     let totalInput = 0
     const addressFormat = xecaddr.detectAddressFormat(addressString)
@@ -102,7 +102,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
   }
 
   // WIP: this should be private in the future
-  public async getTransactionPrismaFromTransaction (transaction: Transaction.AsObject, addressString: string, confirmed: boolean): Promise<TransactionPrisma> {
+  public async getTransactionFromGrpcTransaction (transaction: GrpcTransaction.AsObject, addressString: Address, confirmed: boolean): Promise<Transaction> {
     return {
       hash: transaction.hash as string,
       amount: await this.getTransactionAmount(transaction, addressString),
@@ -142,10 +142,10 @@ export class GrpcBlockchainClient implements BlockchainClient {
 
       const transactionsToPersist = [
         ...await Promise.all(
-          confirmedTransactions.map(async tx => await this.getTransactionPrismaFromTransaction(tx, address.address, true))
+          confirmedTransactions.map(async tx => await this.getTransactionFromGrpcTransaction(tx, address, true))
         ),
         ...await Promise.all(
-          unconfirmedTransactions.map(async tx => await this.getTransactionPrismaFromTransaction(tx, address.address, false))
+          unconfirmedTransactions.map(async tx => await this.getTransactionFromGrpcTransaction(tx, address, false))
         )
       ]
       const persistedTransactions = await upsertManyTransactionsForAddress(transactionsToPersist, address)
@@ -185,8 +185,8 @@ export class GrpcBlockchainClient implements BlockchainClient {
 
   public async subscribeTransactions (
     addresses: string[],
-    onTransactionNotification: (txn: Transaction.AsObject) => any,
-    onMempoolTransactionNotification: (txn: Transaction.AsObject) => any,
+    onTransactionNotification: (txn: GrpcTransaction.AsObject) => any,
+    onMempoolTransactionNotification: (txn: GrpcTransaction.AsObject) => any,
     networkSlug: string
   ): Promise<void> {
     const createTxnStream = async (): Promise<void> => {
