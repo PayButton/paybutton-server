@@ -7,7 +7,7 @@ import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
 import * as addressService from 'services/addressService'
 import { GrpcBlockchainClient } from 'services/grpcService'
-import { Transaction as TransactionGrpc } from 'grpc-bchrpc-node'
+import { Transaction } from 'grpc-bchrpc-node'
 import { getAddressPrefix } from 'utils'
 
 const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void> => {
@@ -23,11 +23,11 @@ const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void
   addressList.map(async (addr) => {
     await grpc.subscribeTransactions(
       [addr.address],
-      async (txn: TransactionGrpc.AsObject) => {
+      async (txn: Transaction.AsObject) => {
         const transactionPrisma = await grpc.getTransactionFromGrpcTransaction(txn, addr, true)
         await transactionService.upsertTransaction(transactionPrisma, addr)
       },
-      async (txn: TransactionGrpc.AsObject) => {
+      async (txn: Transaction.AsObject) => {
         const transactionPrisma = await grpc.getTransactionFromGrpcTransaction(txn, addr, false)
         await transactionService.upsertTransaction(transactionPrisma, addr)
       },
