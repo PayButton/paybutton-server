@@ -81,7 +81,7 @@ describe('Create services', () => {
     createWalletInput: {
       userId: 'mocked-uid',
       name: 'mockedWallet-name',
-      addressIdList: [1]
+      addressIdList: ['0a03a880-86fe-4d82-9aa2-8df270cf032d']
     }
   }
 
@@ -123,7 +123,7 @@ describe('Update services', () => {
         name: 'mockedWallet',
         isXECDefault: undefined,
         isBCHDefault: undefined,
-        addressIdList: [1],
+        addressIdList: ['0a03a880-86fe-4d82-9aa2-8df270cf032d'],
         userId: 'mocked-uid'
       }
     }
