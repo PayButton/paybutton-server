@@ -416,7 +416,7 @@ describe('GET /api/addresses/', () => {
       expect.arrayContaining([
         expect.objectContaining({
           address: expect.any(String),
-          id: expect.any(Number),
+          id: expect.any(String),
           networkId: expect.any(Number),
           lastSynced: null,
           createdAt: expect.any(String),
@@ -424,7 +424,7 @@ describe('GET /api/addresses/', () => {
         }),
         expect.objectContaining({
           address: expect.any(String),
-          id: expect.any(Number),
+          id: expect.any(String),
           networkId: expect.any(Number),
           lastSynced: null,
           createdAt: expect.any(String),
@@ -468,7 +468,7 @@ describe('GET /api/addresses/', () => {
 const expectedAddressObject = expect.any(Object) // WIP add detail
 
 describe('POST /api/wallets/', () => {
-  const addressIdList: number[] = []
+  const addressIdList: string[] = []
   beforeAll(async () => {
     await clearPaybuttonsAndAddresses()
     await clearWallets()
@@ -543,7 +543,7 @@ describe('POST /api/wallets/', () => {
     baseRequestOptions.body = {
       userId: 'test-u-id',
       name: 'test-wallet2',
-      addressIdList: [1, 99999999999]
+      addressIdList: ['uuid-non-existent1', 'uuid-non-existent2']
 
     }
     const res = await testEndpoint(baseRequestOptions, walletEndpoint)
@@ -640,14 +640,14 @@ describe('GET /api/wallets/', () => {
           address: expect.objectContaining({
             address: expect.any(String),
             networkId: expect.any(Number),
-            id: expect.any(Number)
+            id: expect.any(String)
           })
         }),
         expect.objectContaining({
           address: expect.objectContaining({
             address: expect.any(String),
             networkId: expect.any(Number),
-            id: expect.any(Number)
+            id: expect.any(String)
           })
         })
       ])

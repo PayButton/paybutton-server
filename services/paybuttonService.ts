@@ -54,7 +54,7 @@ async function getAddressObjectsToCreateOrConnect (prefixedAddressList: string[]
 export async function createPaybutton (values: CreatePaybuttonInput): Promise<PaybuttonWithAddresses> {
   return await prisma.$transaction(async (prisma) => {
     // Creates or updates the `Address` objects
-    const addressIdList: number[] = []
+    const addressIdList: string[] = []
     for await (const address of values.prefixedAddressList) {
       addressIdList.push(
         (await addressService.upsertAddress(address, prisma)).id

@@ -11,7 +11,7 @@ datasource db {
 }
 
 model Address {
-  id           Int                  @id @default(autoincrement())
+  id           String               @id @default(dbgenerated("(uuid())"))
   address      String               @unique @db.VarChar(255)
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
@@ -39,7 +39,7 @@ model Paybutton {
 
 model AddressesOnButtons {
   paybuttonId String
-  addressId   Int
+  addressId   String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   address     Address   @relation(fields: [addressId], references: [id])
@@ -66,7 +66,7 @@ model Transaction {
   amount    Decimal                @db.Decimal(24, 8)
   confirmed Boolean                @default(false)
   timestamp Int
-  addressId Int
+  addressId String
   address   Address                @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Restrict)
   prices    PricesOnTransactions[]
 
@@ -123,7 +123,7 @@ model PricesOnTransactions {
 }
 
 model AddressesOnUserProfiles {
-  addressId     Int
+  addressId     String
   userProfileId String
   walletId      String?
   createdAt     DateTime     @default(now())

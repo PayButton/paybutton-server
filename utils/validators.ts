@@ -117,7 +117,7 @@ export interface WalletPOSTParameters {
   name?: string
   isXECDefault?: boolean
   isBCHDefault?: boolean
-  addressIdList: number[]
+  addressIdList: string[]
 }
 
 export interface PaybuttonPATCHParameters {
@@ -130,13 +130,12 @@ export interface WalletPATCHParameters {
   userId?: string
   isXECDefault?: boolean
   isBCHDefault?: boolean
-  addressIdList: number[]
+  addressIdList: string[]
 }
 
 export const parseWalletPOSTRequest = function (params: WalletPOSTParameters): CreateWalletInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
-  params.addressIdList = params.addressIdList.map((id: string | number) => Number(id))
   return {
     userId: params.userId,
     name: params.name,
@@ -149,7 +148,6 @@ export const parseWalletPOSTRequest = function (params: WalletPOSTParameters): C
 export const parseWalletPATCHRequest = function (params: WalletPATCHParameters): UpdateWalletInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
-  params.addressIdList = params.addressIdList.map((id: string | number) => Number(id))
   return {
     name: params.name,
     userId: params.userId,

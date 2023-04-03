@@ -8,14 +8,14 @@ export interface CreateWalletInput {
   name: string
   isXECDefault?: boolean
   isBCHDefault?: boolean
-  addressIdList: number[]
+  addressIdList: string[]
 }
 
 export interface UpdateWalletInput {
   name: string
   isXECDefault?: boolean
   isBCHDefault?: boolean
-  addressIdList: number[]
+  addressIdList: string[]
   userId: string
 }
 
@@ -78,7 +78,7 @@ export const walletHasAddressForNetwork = (wallet: WalletWithAddressesWithPaybut
 async function removeAddressesFromWallet (
   prisma: Prisma.TransactionClient,
   wallet: WalletWithAddressesWithPaybuttons,
-  addressIdsToRemoveList: number[]
+  addressIdsToRemoveList: string[]
 ): Promise<void> {
   if (wallet.userProfile === null) {
     throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
@@ -100,7 +100,7 @@ async function removeAddressesFromWallet (
 
 export async function connectAddressesToWallet (
   prisma: Prisma.TransactionClient,
-  addressIdList: number[],
+  addressIdList: string[],
   wallet: WalletWithAddressesWithPaybuttons
 ): Promise<void> {
   if (wallet.userProfile === null) {
@@ -132,7 +132,7 @@ export async function connectAddressesToWallet (
 
 export async function setAddressListForWallet (
   prisma: Prisma.TransactionClient,
-  addressIdList: number[],
+  addressIdList: string[],
   wallet: WalletWithAddressesWithPaybuttons
 ): Promise<void> {
   await connectAddressesToWallet(prisma, addressIdList, wallet)

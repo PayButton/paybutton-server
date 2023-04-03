@@ -24,7 +24,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
   const [error, setError] = useState('')
   const thisWalletAddressIdList = wallet.userAddresses.map((addr) => addr.addressId)
 
-  const [selectedAddressIdList, setSelectedAddressIdList] = useState([] as number[])
+  const [selectedAddressIdList, setSelectedAddressIdList] = useState([] as string[])
 
   async function onSubmit (params: WalletPATCHParameters): Promise<void> {
     params.addressIdList = selectedAddressIdList
@@ -47,7 +47,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
     }
   }
 
-  function handleSelectedAddressesChange (checked: boolean, addressId: number): void {
+  function handleSelectedAddressesChange (checked: boolean, addressId: string): void {
     if (selectedAddressIdList.includes(addressId) && !checked) {
       setSelectedAddressIdList(
         selectedAddressIdList.filter(id => id !== addressId)
