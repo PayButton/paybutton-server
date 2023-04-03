@@ -1,5 +1,5 @@
 import prisma from 'prisma/clientInstance'
-import { Prisma, Address, Transaction } from '@prisma/client'
+import { Prisma, Address } from '@prisma/client'
 import { syncTransactionsAndPricesForAddress, GetAddressTransactionsParameters } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
@@ -72,7 +72,7 @@ export async function base64HashToHex (base64Hash: string): Promise<string> {
   )
 }
 
-export async function upsertTransaction (transaction: Transaction, address: Address): Promise<TransactionWithAddressAndPrices | undefined> {
+export async function upsertTransaction (transaction: Prisma.TransactionUncheckedCreateInput, address: Address): Promise<TransactionWithAddressAndPrices | undefined> {
   if (transaction.amount === new Prisma.Decimal(0)) { // out transactions
     return
   }
@@ -97,7 +97,7 @@ export async function upsertTransaction (transaction: Transaction, address: Addr
   })
 }
 
-export async function upsertManyTransactionsForAddress (transactions: Transaction[], address: Address): Promise<TransactionWithAddressAndPrices[]> {
+export async function upsertManyTransactionsForAddress (transactions: Prisma.TransactionUncheckedCreateInput[], address: Address): Promise<TransactionWithAddressAndPrices[]> {
   const ret = await prisma.$transaction(async (_) => {
     const insertedTransactions: Array<TransactionWithAddressAndPrices | undefined> = await Promise.all(
       transactions.map(async (transaction) => {

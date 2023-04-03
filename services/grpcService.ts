@@ -10,7 +10,7 @@ import {
 import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters } from './blockchainService'
 import { getObjectValueForNetworkSlug, getObjectValueForAddress, satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from '../utils/index'
 import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, RESPONSE_MESSAGES, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD } from '../constants/index'
-import { Address, Prisma, Transaction } from '@prisma/client'
+import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
 import { TransactionWithAddressAndPrices, upsertManyTransactionsForAddress } from './transactionService'
@@ -102,13 +102,12 @@ export class GrpcBlockchainClient implements BlockchainClient {
   }
 
   // WIP: this should be private in the future
-  public async getTransactionFromGrpcTransaction (transaction: GrpcTransaction.AsObject, address: Address, confirmed: boolean): Promise<Transaction> {
+  public async getTransactionFromGrpcTransaction (transaction: GrpcTransaction.AsObject, address: Address, confirmed: boolean): Promise<Prisma.TransactionUncheckedCreateInput> {
     return {
       hash: transaction.hash as string,
       amount: await this.getTransactionAmount(transaction, address.address),
       timestamp: transaction.timestamp,
       addressId: address.id,
-      id: 0,
       confirmed
     }
   }
