@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE `Address` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `id` VARCHAR(191) NOT NULL DEFAULT (uuid()),
     `address` VARCHAR(255) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE `Paybutton` (
 -- CreateTable
 CREATE TABLE `AddressesOnButtons` (
     `paybuttonId` VARCHAR(191) NOT NULL,
-    `addressId` INTEGER NOT NULL,
+    `addressId` VARCHAR(191) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -54,7 +54,7 @@ CREATE TABLE `Transaction` (
     `hash` VARCHAR(255) NOT NULL,
     `amount` DECIMAL(24, 8) NOT NULL,
     `timestamp` INTEGER NOT NULL,
-    `addressId` INTEGER NOT NULL,
+    `addressId` VARCHAR(191) NOT NULL,
     `confirmed` BOOLEAN NOT NULL DEFAULT FALSE,
 
     UNIQUE INDEX `Transaction_hash_key`(`hash`),
@@ -138,7 +138,7 @@ CREATE TABLE `Quote` (
 
 -- CreateTable
 CREATE TABLE `AddressesOnUserProfiles` (
-    `addressId` INTEGER NOT NULL,
+    `addressId` VARCHAR(191) NOT NULL,
     `userProfileId` VARCHAR(191) NOT NULL,
     `walletId` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
