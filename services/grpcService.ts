@@ -102,12 +102,12 @@ export class GrpcBlockchainClient implements BlockchainClient {
   }
 
   // WIP: this should be private in the future
-  public async getTransactionFromGrpcTransaction (transaction: GrpcTransaction.AsObject, addressString: Address, confirmed: boolean): Promise<Transaction> {
+  public async getTransactionFromGrpcTransaction (transaction: GrpcTransaction.AsObject, address: Address, confirmed: boolean): Promise<Transaction> {
     return {
       hash: transaction.hash as string,
-      amount: await this.getTransactionAmount(transaction, addressString),
+      amount: await this.getTransactionAmount(transaction, address.address),
       timestamp: transaction.timestamp,
-      addressId: 0,
+      addressId: address.id,
       id: 0,
       confirmed
     }
