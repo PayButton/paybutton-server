@@ -225,14 +225,14 @@ export interface QuoteValues {
 export interface CreatePricesFromTransactionInput {
   timestamp: number
   networkId: number
-  transactionId: number
+  transactionId: string
   values?: QuoteValues
 }
 
 export interface SyncTransactionPricesInput {
   networkId: number
   timestamp: number
-  transactionId: number
+  transactionId: string
 }
 
 export async function createTransactionPrices (params: CreatePricesFromTransactionInput): Promise<void> {

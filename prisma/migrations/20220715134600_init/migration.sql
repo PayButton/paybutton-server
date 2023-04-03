@@ -50,14 +50,14 @@ CREATE TABLE `Network` (
 
 -- CreateTable
 CREATE TABLE `Transaction` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `id` VARCHAR(191) NOT NULL DEFAULT (uuid()),
     `hash` VARCHAR(255) NOT NULL,
     `amount` DECIMAL(24, 8) NOT NULL,
     `timestamp` INTEGER NOT NULL,
     `addressId` VARCHAR(191) NOT NULL,
     `confirmed` BOOLEAN NOT NULL DEFAULT FALSE,
 
-    UNIQUE INDEX `Transaction_hash_key`(`hash`),
+    UNIQUE INDEX `Transaction_hash_addressId_key`(`hash`, `addressId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -116,7 +116,7 @@ CREATE TABLE `Price` (
 -- CreateTable
 CREATE TABLE `PricesOnTransactions` (
     `priceId` INTEGER NOT NULL,
-    `transactionId` INTEGER NOT NULL,
+    `transactionId` VARCHAR(191) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 

@@ -341,7 +341,7 @@ export const mockedNetwork = {
 // Transaction
 export const mockedPriceOnTransaction = {
   priceId: 1,
-  transactionId: 1,
+  transactionId: 'mocked-uuid',
   createdAt: new Date('2022-11-02T15:18:42.000Z'),
   updatedAt: new Date('2022-11-02T15:18:42.000Z'),
   price: {
@@ -356,7 +356,7 @@ export const mockedPriceOnTransaction = {
 }
 
 export const mockedTransaction = {
-  id: 1,
+  id: 'mocked-uuid',
   hash: 'Yh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
   addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
   confirmed: true,
@@ -377,7 +377,7 @@ export const mockedTransaction = {
 
 export const mockedTransactionList = [
   {
-    id: 1,
+    id: 'mocked-uuid',
     hash: 'Yh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
     confirmed: true,
     addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
@@ -385,7 +385,7 @@ export const mockedTransactionList = [
     timestamp: 1657130467
   },
   {
-    id: 2,
+    id: 'mocked-uuid2',
     hash: 'hh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
     confirmed: true,
     addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
@@ -393,7 +393,7 @@ export const mockedTransactionList = [
     timestamp: 1657130467
   },
   {
-    id: 3,
+    id: 'mocked-uuid3',
     hash: '5h5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
     confirmed: true,
     addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
