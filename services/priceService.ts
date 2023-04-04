@@ -3,7 +3,7 @@ import axios from 'axios'
 import { appInfo } from 'config/appInfo'
 import { Prisma, Price } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
-import { NETWORK_IDS, HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT } from 'constants/index'
+import { HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT } from 'constants/index'
 import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
 import moment from 'moment'
 
@@ -130,24 +130,25 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
 
   const lastDateInDB = moment.unix(lastPrice.timestamp)
   const date = moment().startOf('day')
-  const datesToRetrieve: moment.Moment[] = []
+  const daysToRetrieve: string[] = []
 
   while (date.isAfter(lastDateInDB)) {
-    datesToRetrieve.push(date.clone())
+    daysToRetrieve.push(date.format(PRICE_API_DATE_FORMAT))
     date.add(-1, 'day')
   }
 
+  const allXECPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.ecash)
+  const allBCHPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.bitcoincash)
   await Promise.all(
-    Object.values(NETWORK_TICKERS).map(async (networkTicker) =>
-      datesToRetrieve.map(async date => {
-        const price = await getPriceForDayAndNetworkTicker(date, networkTicker)
-        if (price != null) {
-          await upsertPricesForNetworkId(price, NETWORK_IDS[networkTicker], date.unix())
-        } else {
-          console.error(`API gave a null response for ticker: ${NETWORK_IDS[networkTicker]}, date: ${date.format(HUMAN_READABLE_DATE_FORMAT)}`)
-        }
-      })
-    ))
+    allXECPrices.filter(p => p.day in daysToRetrieve).map(async price =>
+      await upsertPricesForNetworkId(price, XEC_NETWORK_ID, date.unix())
+    )
+  )
+  await Promise.all(
+    allBCHPrices.filter(p => p.day in daysToRetrieve).map(async price =>
+      await upsertPricesForNetworkId(price, BCH_NETWORK_ID, date.unix())
+    )
+  )
 }
 
 export async function syncCurrentPrices (): Promise<boolean> {
