@@ -51,17 +51,11 @@ const getPaymentWeekKey = (userId: string, payment: Payment): string => {
 }
 
 export const userHasCachedPayments = async (userId: string): Promise<boolean> => {
-  return await redis.exists(`${userId}:payment:cachedWeekKeys`) === 1
+  return (await redis.keys(`${userId}:payment:*`)).length > 0
 }
 
 const getCachedWeekKeys = async (userId: string): Promise<string[]> => {
-  const cachedWeekKeys = await redis.get(`${userId}:payment:cachedWeekKeys`)
-  if (cachedWeekKeys === null) return []
-  return JSON.parse(cachedWeekKeys)
-}
-
-const cacheWeekKeys = async (userId: string, weekKeys: string[]): Promise<void> => {
-  await redis.set(`${userId}:payment:cachedWeekKeys`, JSON.stringify(weekKeys))
+  return await redis.keys(`${userId}:payment:*`)
 }
 
 export const getCachedPayments = async (userId: string): Promise<Payment[]> => {
@@ -88,7 +82,6 @@ export const cachePayments = async (userId: string, paymentList: Payment[]): Pro
     }
   }
 
-  await cacheWeekKeys(userId, Object.keys(paymentsByWeek))
   await Promise.all(
     Object.keys(paymentsByWeek).map(async key =>
       await redis.set(key, JSON.stringify(paymentsByWeek[key]))
