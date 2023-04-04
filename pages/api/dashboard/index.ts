@@ -5,39 +5,10 @@ import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
-
-interface ChartData {
-  labels: string[]
-  datasets: [
-    {
-      data: number[] | Prisma.Decimal[]
-      borderColor: string
-    }
-  ]
-}
-
-interface PeriodData {
-  revenue: ChartData
-  payments: ChartData
-  totalRevenue: Prisma.Decimal
-  totalPayments: number
-}
+import { ChartData, PeriodData, DashboardData, Payment } from 'redis/dashboardCache'
 
 interface AllMonths {
   months: number
-}
-
-interface DashboardData {
-  thirtyDays: PeriodData
-  year: PeriodData
-  sevenDays: PeriodData
-  all: PeriodData
-  paymentList: Payment[]
-  total: {
-    revenue: Prisma.Decimal
-    payments: number
-    buttons: number
-  }
 }
 
 const getChartLabels = function (n: number, periodString: string, formatString = 'M/D'): string[] {
@@ -119,14 +90,6 @@ const getAllMonths = function (paymentList: Payment[]): AllMonths {
 export interface ButtonDisplayData {
   name: string
   id: string
-}
-
-interface Payment {
-  timestamp: number
-  value: Prisma.Decimal
-  networkId: number
-  hash: string
-  buttonDisplayDataList: ButtonDisplayData[]
 }
 
 const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
