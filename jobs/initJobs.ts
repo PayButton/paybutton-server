@@ -1,6 +1,6 @@
 import { XEC_NETWORK_ID, BCH_NETWORK_ID, CURRENT_PRICE_SYNC_DELAY } from 'constants/index'
 import { Queue, FlowProducer } from 'bullmq'
-import { redis } from 'redis/clientInstance'
+import { redisBullMQ } from 'redis/clientInstance'
 import {
   syncAllAddressTransactionsForNetworkWorker,
   syncPricesWorker,
@@ -9,16 +9,16 @@ import {
 
 const main = async (): Promise<void> => {
   // sync all db addresses transactions
-  const initTransactionsSync = new Queue('initTransactionsSync', { connection: redis })
+  const initTransactionsSync = new Queue('initTransactionsSync', { connection: redisBullMQ })
 
   // sync current prices
-  const pricesSync = new Queue('pricesSync', { connection: redis })
+  const pricesSync = new Queue('pricesSync', { connection: redisBullMQ })
 
   // try to sync new addresses periodically
-  const newAddressesSync = new Queue('newAddressesSync', { connection: redis })
+  const newAddressesSync = new Queue('newAddressesSync', { connection: redisBullMQ })
 
   // create flow
-  const flowProducer = new FlowProducer({ connection: redis })
+  const flowProducer = new FlowProducer({ connection: redisBullMQ })
 
   await flowProducer.add({
     name: 'syncUnsyncedAddresses',
