@@ -1,7 +1,8 @@
 import { Network, Prisma } from '@prisma/client'
-import { RESPONSE_MESSAGES, NETWORK_SLUGS } from 'constants/index'
+import { RESPONSE_MESSAGES, NETWORK_SLUGS, NETWORK_IDS } from 'constants/index'
 import prisma from 'prisma/clientInstance'
 import { getBlockchainInfo, getBlockInfo } from 'services/blockchainService'
+import { fetchAllUserAddresses } from 'services/addressService'
 
 export async function getNetworkFromSlug (slug: string): Promise<Network> {
   const network = await prisma.network.findUnique({ where: { slug } })
@@ -62,4 +63,16 @@ export async function getAllNetworkSlugs (): Promise<string[] | null> {
     }
   })
   return networks.map((obj: { slug: string }) => obj.slug)
+}
+
+export async function getUserNetworks (userId: string): Promise<Network[] | null> {
+  const allNetworkIds = Object.values(NETWORK_IDS)
+  const networks = await prisma.network.findMany({ where: { id: { in: allNetworkIds } } })
+  const userAddresses = await fetchAllUserAddresses(userId)
+  const userNetworkIds = new Set()
+  for (const addr of userAddresses) {
+    userNetworkIds.add(addr.networkId)
+    if (userNetworkIds.size === allNetworkIds.length) break
+  }
+  return networks.filter(n => userNetworkIds.has(n.id))
 }
