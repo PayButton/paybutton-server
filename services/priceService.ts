@@ -139,14 +139,16 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
 
   await Promise.all(
     Object.values(NETWORK_TICKERS).map(async (networkTicker) =>
-      datesToRetrieve.map(async date => {
-        const price = await getPriceForDayAndNetworkTicker(date, networkTicker)
-        if (price != null) {
-          await upsertPricesForNetworkId(price, NETWORK_IDS[networkTicker], date.unix())
-        } else {
-          console.error(`API gave a null response for ticker: ${NETWORK_IDS[networkTicker]}, date: ${date.format(HUMAN_READABLE_DATE_FORMAT)}`)
-        }
-      })
+      await Promise.all(
+        datesToRetrieve.map(async date => {
+          const price = await getPriceForDayAndNetworkTicker(date, networkTicker)
+          if (price != null) {
+            await upsertPricesForNetworkId(price, NETWORK_IDS[networkTicker], date.unix())
+          } else {
+            console.error(`API gave a null response for ticker: ${NETWORK_IDS[networkTicker]}, date: ${date.format(HUMAN_READABLE_DATE_FORMAT)}`)
+          }
+        })
+      )
     ))
 }
 
