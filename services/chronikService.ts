@@ -1,4 +1,5 @@
 import { ChronikClient, ScriptType } from 'chronik-client'
+// @ts-expect-error
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters } from './blockchainService'
