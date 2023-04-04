@@ -1,6 +1,6 @@
 import { redis } from 'redis/clientInstance'
 import { Prisma } from '@prisma/client'
-import { PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
+import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
 import moment from 'moment'
 
 export interface ChartData {
@@ -46,24 +46,49 @@ export interface Payment {
   buttonDisplayDataList: ButtonDisplayData[]
 }
 
-const getPaymentWeekKey = (payment: Payment): string => {
-  return moment.unix(payment.timestamp).format(PAYMENT_WEEK_KEY_FORMAT)
+const getPaymentWeekKey = (userId: string, payment: Payment): string => {
+  return `${userId}:payment:${moment.unix(payment.timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
 }
 
-export const getPaymentsByWeek = (paymentList: Payment[]): KeyValueT<Payment[]> => {
+export const userHasCachedPayments = async (userId: string): Promise<boolean> => {
+  return await redis.exists(`${userId}:payment:cachedWeekKeys`) === 1
+}
+
+const getCachedWeekKeys = async (userId: string): Promise<string[]> => {
+  const cachedWeekKeys = await redis.get(`${userId}:payment:cachedWeekKeys`)
+  if (cachedWeekKeys === null) return []
+  return JSON.parse(cachedWeekKeys)
+}
+
+const cacheWeekKeys = async (userId: string, weekKeys: string[]): Promise<void> => {
+  await redis.set(`${userId}:payment:cachedWeekKeys`, JSON.stringify(weekKeys))
+}
+
+export const getCachedPayments = async (userId: string): Promise<Payment[]> => {
+  const weekKeys = await getCachedWeekKeys(userId)
+  const allPayments: Payment[] = []
+  for (const weekKey of weekKeys) {
+    const paymentsString = await redis.get(weekKey)
+    if (paymentsString === null) {
+      throw new Error(RESPONSE_MESSAGES.CACHED_PAYMENT_NOT_FOUND_404.message)
+    }
+    allPayments.concat(JSON.parse(paymentsString))
+  }
+  return allPayments
+}
+
+export const cachePayments = async (userId: string, paymentList: Payment[]): Promise<void> => {
   const paymentsByWeek: KeyValueT<Payment[]> = {}
   for (const payment of paymentList) {
-    const weekKey = getPaymentWeekKey(payment)
+    const weekKey = getPaymentWeekKey(userId, payment)
     if (weekKey in paymentsByWeek) {
       paymentsByWeek[weekKey].push(payment)
     } else {
       paymentsByWeek[weekKey] = [payment]
     }
   }
-  return paymentsByWeek
-}
 
-export const cachePaymentsByWeek = async (paymentsByWeek: KeyValueT<Payment[]>): Promise<void> => {
+  await cacheWeekKeys(userId, Object.keys(paymentsByWeek))
   await Promise.all(
     Object.keys(paymentsByWeek).map(async key =>
       await redis.set(key, JSON.stringify(paymentsByWeek[key]))
