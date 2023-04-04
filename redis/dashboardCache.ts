@@ -60,13 +60,13 @@ const getCachedWeekKeys = async (userId: string): Promise<string[]> => {
 
 export const getCachedPayments = async (userId: string): Promise<Payment[]> => {
   const weekKeys = await getCachedWeekKeys(userId)
-  const allPayments: Payment[] = []
+  let allPayments: Payment[] = []
   for (const weekKey of weekKeys) {
     const paymentsString = await redis.get(weekKey)
     if (paymentsString === null) {
       throw new Error(RESPONSE_MESSAGES.CACHED_PAYMENT_NOT_FOUND_404.message)
     }
-    allPayments.concat(JSON.parse(paymentsString))
+    allPayments = allPayments.concat(JSON.parse(paymentsString))
   }
   return allPayments
 }
