@@ -138,13 +138,13 @@ const generatePaymentList = async (userId: string, buttons: paybuttonService.Pay
 
   const ret = paymentList.filter((p) => p.value > new Prisma.Decimal(0))
   // save on cache
-  await cachePayments(ret)
+  await cachePayments(userId, ret)
 
   return ret
 }
 
 const getPaymentList = async (userId: string, buttons: paybuttonService.PaybuttonWithAddresses[]): Promise<Payment[]> => {
-  if (await userHasCachedPayments(userId)) return await generatePaymentList(userId, buttons)
+  if (!await userHasCachedPayments(userId)) return await generatePaymentList(userId, buttons)
   return await getCachedPayments(userId)
 }
 
