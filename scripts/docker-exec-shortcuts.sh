@@ -46,10 +46,11 @@ case "$command" in
         ;;
     "jobsstop" | "js")
         eval "$base_command_node" tmux kill-session -t initJobs && echo Jobs stoped. || echo No jobs running.
+        yarn docker cbr && echo Cleaned jobs cache.
         ;;
     "jobsrestart" | "jr")
-        eval "$base_command_node" tmux kill-session -t initJobs && echo Jobs stoped, restarting... || echo No jobs running, starting...
-        yarn docker cbr
+        yarn docker js
+        echo "Starting jobs..."
         eval "$base_command_node" sh ./scripts/init-jobs.sh
         ;;
     "yarn" | "y")
