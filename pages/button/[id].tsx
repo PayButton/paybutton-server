@@ -1,6 +1,6 @@
 import React from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
-import Page from 'components/Page'
+import Loading from 'components/Loading'
 import Router from 'next/router'
 import { PaybuttonDetail } from 'components/Paybutton'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
@@ -136,7 +136,7 @@ class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
       )
     }
     return (
-      <Page />
+      <Loading />
     )
   }
 }
