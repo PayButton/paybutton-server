@@ -7,6 +7,7 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import style from './dashboard.module.css'
 import { formatQuoteValue } from 'utils/index'
+import Loading from 'components/Loading'
 import { USD_QUOTE_ID } from 'constants/index'
 const Chart = dynamic(async () => await import('./Chart'), {
   ssr: false
@@ -71,7 +72,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
     fetchData().catch(console.error)
   }, [])
 
-  if (dashboardData === undefined || activePeriod === undefined) return <></>
+  if (dashboardData === undefined || activePeriod === undefined) return <Loading/>
 
   return (
     <ThirdPartyEmailPasswordAuthNoSSR>
