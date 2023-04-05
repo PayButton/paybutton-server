@@ -35,3 +35,4 @@ yarn-error.log*
 
 jobs/out.log
 /prisma/seeds/prices.csv
+redis/dump.rdb

@@ -1,6 +1,6 @@
 import { Worker, Job, Queue } from 'bullmq'
 import { Address } from '@prisma/client'
-import { redis } from 'redis/clientInstance'
+import { redisBullMQ } from 'redis/clientInstance'
 import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
 
 import * as transactionService from 'services/transactionService'
@@ -51,7 +51,7 @@ export const syncAllAddressTransactionsForNetworkWorker = async (queueName: stri
     queueName,
     syncAllAddressTransactionsForNetworkJob,
     {
-      connection: redis,
+      connection: redisBullMQ,
       lockDuration: DEFAULT_WORKER_LOCK_DURATION
     }
   )
@@ -83,7 +83,7 @@ export const syncPricesWorker = async (queueName: string): Promise<void> => {
       }
     },
     {
-      connection: redis,
+      connection: redisBullMQ,
       lockDuration: DEFAULT_WORKER_LOCK_DURATION
     }
   )
@@ -117,7 +117,7 @@ export const syncUnsyncedAddressesWorker = async (queue: Queue): Promise<void> =
       )
     },
     {
-      connection: redis,
+      connection: redisBullMQ,
       lockDuration: DEFAULT_WORKER_LOCK_DURATION
     }
   )

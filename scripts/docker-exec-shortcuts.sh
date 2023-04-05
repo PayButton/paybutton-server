@@ -46,10 +46,11 @@ case "$command" in
         ;;
     "jobsstop" | "js")
         eval "$base_command_node" tmux kill-session -t initJobs && echo Jobs stoped. || echo No jobs running.
+        yarn docker cbr && echo Cleaned jobs cache.
         ;;
     "jobsrestart" | "jr")
-        eval "$base_command_node" tmux kill-session -t initJobs && echo Jobs stoped, restarting... || echo No jobs running, starting...
-        yarn docker cr
+        yarn docker js
+        echo "Starting jobs..."
         eval "$base_command_node" sh ./scripts/init-jobs.sh
         ;;
     "yarn" | "y")
@@ -85,6 +86,9 @@ case "$command" in
     "cache" | "c")
         eval "$base_command_cache" redis-cli
         ;;
+    "cachebullmqreset" | "cbr")
+        eval "$base_command_cache" redis-cli -n 1 FLUSHDB
+        ;;
     "cachereset" | "cr")
         eval "$base_command_cache" redis-cli FLUSHALL
         ;;
@@ -117,6 +121,7 @@ case "$command" in
         echo "  c, cache                    [$cache_container_name]   enter the redis command-line interface"
         echo "  cs, cacheshell              [$node_container_name]     enter the redis container"
         echo "  cr, cachereset              [$node_container_name]     clear the redis cache"
+        echo "  cbr, cachebullmqreset       [$node_container_name]     clear the bullMQ redis database"
         echo "  jw, jobswatch               [$node_container_name]     watch jobs logs"
         echo "  js, jobsstop                [$node_container_name]     stop jobs"
         echo "  jr, jobsrestart             [$node_container_name]     restart jobs"
