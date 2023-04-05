@@ -15,6 +15,6 @@ jobs:
       - name: Install Dependencies
         run: yarn
       - name: Spin up required database containers
-        run: docker-compose up -d db users-service
+        run: docker-compose up -d db users-service cache
       - name: Run integration tests
         run: make test-integration

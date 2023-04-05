@@ -41,7 +41,8 @@ export const RESPONSE_MESSAGES = {
   MISSING_BLOCKCHAIN_CLIENT_400: { statusCode: 400, message: 'There is no blockchain client chosen for this network.' },
   NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400: { statusCode: 400, message: 'Blockchain client was not instantiated.' },
   DEFAULT_WALLET_CANNOT_BE_DELETED_400: { statusCode: 400, message: 'A default wallet cannot be deleted.' },
-  USER_PROFILE_NOT_FOUND_400: { statusCode: 400, message: 'User profile not found.' }
+  USER_PROFILE_NOT_FOUND_400: { statusCode: 400, message: 'User profile not found.' },
+  CACHED_PAYMENT_NOT_FOUND_404: { statusCode: 404, message: 'Cached payment not found.' }
 }
 
 export interface KeyValueT<T> {
@@ -111,3 +112,5 @@ export const CHRONIK_CLIENT_URL = 'https://chronik.be.cash/xec'
 
 export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 15000
 export const NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY = 200
+
+export const PAYMENT_WEEK_KEY_FORMAT = 'YYYY:WW'
