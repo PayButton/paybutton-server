@@ -36,4 +36,5 @@ test-unit:
 test-integration:
 	sleep 15
 	sed -i "s/db/localhost/g" .env.test
+	sed -i "s/paybutton-cache/localhost/g" .env.test
 	yarn ci:integration:test
