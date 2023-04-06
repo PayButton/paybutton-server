@@ -86,6 +86,9 @@ case "$command" in
     "cache" | "c")
         eval "$base_command_cache" redis-cli
         ;;
+    "cachemainreset" | "cmr")
+        eval "$base_command_cache" redis-cli -n 0 FLUSHDB
+        ;;
     "cachebullmqreset" | "cbr")
         eval "$base_command_cache" redis-cli -n 1 FLUSHDB
         ;;
@@ -120,7 +123,8 @@ case "$command" in
         echo "  pg, prismagenerate          [$node_container_name]     run \`prisma generate\` to generate client from scheme"
         echo "  c, cache                    [$cache_container_name]   enter the redis command-line interface"
         echo "  cs, cacheshell              [$node_container_name]     enter the redis container"
-        echo "  cr, cachereset              [$node_container_name]     clear the redis cache"
+        echo "  cr, cachereset              [$node_container_name]     clear the whole redis cache"
+        echo "  cmr, cachemainreset         [$node_container_name]     clear the main redis cache"
         echo "  cbr, cachebullmqreset       [$node_container_name]     clear the bullMQ redis database"
         echo "  jw, jobswatch               [$node_container_name]     watch jobs logs"
         echo "  js, jobsstop                [$node_container_name]     stop jobs"
