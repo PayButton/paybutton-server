@@ -5,7 +5,7 @@ import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
-import { ChartData, PeriodData, DashboardData, Payment, cachePayments, userHasCachedPayments, getCachedPayments } from 'redis/dashboardCache'
+import { ChartData, PeriodData, DashboardData, Payment, cachePayments, userHasCachedPayments, getCachedPayments, getPaymentsFromTransactionsAndAddresses } from 'redis/dashboardCache'
 
 interface AllMonths {
   months: number
@@ -92,65 +92,29 @@ export interface ButtonDisplayData {
   id: string
 }
 
-const generatePaymentList = async (userId: string, buttons: paybuttonService.PaybuttonWithAddresses[]): Promise<Payment[]> => {
-  const addresses = await addressService.fetchAllUserAddresses(userId, true)
+const generatePaymentList = async (userId: string): Promise<Payment[]> => {
+  const addresses = await addressService.fetchAllUserAddresses(userId, true, true) as addressService.AddressWithTransactionsAndPaybuttons[]
   const XECAddressIds = addresses.filter((addr) => addr.networkId === XEC_NETWORK_ID).map((addr) => addr.id)
   const BCHAddressIds = addresses.filter((addr) => addr.networkId === BCH_NETWORK_ID).map((addr) => addr.id)
   const XECTransactions = await transactionService.fetchAddressListTransactions(XECAddressIds)
   const BCHTransactions = await transactionService.fetchAddressListTransactions(BCHAddressIds)
 
-  const paymentList: Payment[] = []
-  for (const t of BCHTransactions) {
-    const BCHValue = (await transactionService.getTransactionValue(t)).usd
-    paymentList.push({
-      timestamp: t.timestamp,
-      value: BCHValue,
-      networkId: t.address.networkId,
-      hash: t.hash,
-      buttonDisplayDataList: buttons.filter(button => button.addresses.some(add => add.address.id === t.addressId)).map(
-        (b) => {
-          return {
-            name: b.name,
-            id: b.id
-          }
-        }
-      )
-
-    })
-  }
-  for (const t of XECTransactions) {
-    const XECValue = (await transactionService.getTransactionValue(t)).usd
-    paymentList.push({
-      timestamp: t.timestamp,
-      value: XECValue,
-      networkId: t.address.networkId,
-      hash: t.hash,
-      buttonDisplayDataList: buttons.filter(button => button.addresses.some(add => add.address.id === t.addressId)).map(
-        (b) => {
-          return {
-            name: b.name,
-            id: b.id
-          }
-        }
-      )
-    })
-  }
-
-  const ret = paymentList.filter((p) => p.value > new Prisma.Decimal(0))
+  let paymentList = await getPaymentsFromTransactionsAndAddresses(BCHTransactions, addresses)
+  paymentList = paymentList.concat(await getPaymentsFromTransactionsAndAddresses(XECTransactions, addresses))
   // save on cache
-  await cachePayments(userId, ret)
+  await cachePayments(userId, paymentList)
 
-  return ret
+  return paymentList
 }
 
-const getPaymentList = async (userId: string, buttons: paybuttonService.PaybuttonWithAddresses[]): Promise<Payment[]> => {
-  if (!await userHasCachedPayments(userId)) return await generatePaymentList(userId, buttons)
+const getPaymentList = async (userId: string): Promise<Payment[]> => {
+  if (!await userHasCachedPayments(userId)) return await generatePaymentList(userId)
   return await getCachedPayments(userId)
 }
 
 const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
   const buttons = await paybuttonService.fetchPaybuttonArrayByUserId(userId)
-  const paymentList = await getPaymentList(userId, buttons)
+  const paymentList = await getPaymentList(userId)
 
   const totalRevenue = paymentList.map((p) => p.value).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
   const allmonths: AllMonths = getAllMonths(paymentList)
