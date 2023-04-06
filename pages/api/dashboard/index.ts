@@ -5,7 +5,7 @@ import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
-import { ChartData, PeriodData, DashboardData, Payment, cachePayments, userHasCachedPayments, getCachedPayments, getPaymentsFromTransactionsAndButtons } from 'redis/dashboardCache'
+import { ChartData, PeriodData, DashboardData, Payment, cachePayments, userHasCachedPayments, getCachedPayments, getPaymentsFromTransactionsAndAddresses } from 'redis/dashboardCache'
 
 interface AllMonths {
   months: number
@@ -99,8 +99,8 @@ const generatePaymentList = async (userId: string): Promise<Payment[]> => {
   const XECTransactions = await transactionService.fetchAddressListTransactions(XECAddressIds)
   const BCHTransactions = await transactionService.fetchAddressListTransactions(BCHAddressIds)
 
-  let paymentList = await getPaymentsFromTransactionsAndButtons(BCHTransactions, addresses)
-  paymentList = paymentList.concat(await getPaymentsFromTransactionsAndButtons(XECTransactions, addresses))
+  let paymentList = await getPaymentsFromTransactionsAndAddresses(BCHTransactions, addresses)
+  paymentList = paymentList.concat(await getPaymentsFromTransactionsAndAddresses(XECTransactions, addresses))
   // save on cache
   await cachePayments(userId, paymentList)
 

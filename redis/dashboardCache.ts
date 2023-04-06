@@ -60,7 +60,7 @@ const getCachedWeekKeys = async (userId: string): Promise<string[]> => {
   return await redis.keys(`${userId}:payment:*`)
 }
 
-export const getPaymentsFromTransactionsAndButtons = async (transactionList: TransactionWithAddressAndPrices[], addresses: AddressWithPaybuttons[]): Promise<Payment[]> => {
+export const getPaymentsFromTransactionsAndAddresses = async (transactionList: TransactionWithAddressAndPrices[], addresses: AddressWithPaybuttons[]): Promise<Payment[]> => {
   const paymentList: Payment[] = []
   for (const t of transactionList) {
     const XECValue = (await getTransactionValue(t)).usd
