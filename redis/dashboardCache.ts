@@ -1,7 +1,7 @@
 import { redis } from 'redis/clientInstance'
 import { Prisma } from '@prisma/client'
 import { getTransactionValue, TransactionWithAddressAndPrices } from 'services/transactionService'
-import { PaybuttonWithAddresses } from 'services/paybuttonService'
+import { AddressWithPaybuttons } from 'services/addressService'
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
 import moment from 'moment'
 
@@ -60,20 +60,22 @@ const getCachedWeekKeys = async (userId: string): Promise<string[]> => {
   return await redis.keys(`${userId}:payment:*`)
 }
 
-export const getPaymentsFromTransactionsAndButtons = async (transactionList: TransactionWithAddressAndPrices[], buttons: PaybuttonWithAddresses[]): Promise<Payment[]> => {
+export const getPaymentsFromTransactionsAndButtons = async (transactionList: TransactionWithAddressAndPrices[], addresses: AddressWithPaybuttons[]): Promise<Payment[]> => {
   const paymentList: Payment[] = []
   for (const t of transactionList) {
     const XECValue = (await getTransactionValue(t)).usd
+    const txAddress = addresses.find(addr => addr.id === t.addressId)
+    if (txAddress === undefined) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_FOR_TRANSACTION_404.message)
     paymentList.push({
       timestamp: t.timestamp,
       value: XECValue,
       networkId: t.address.networkId,
       hash: t.hash,
-      buttonDisplayDataList: buttons.filter(button => button.addresses.some(addr => addr.address.id === t.addressId)).map(
-        (b) => {
+      buttonDisplayDataList: txAddress.paybuttons.map(
+        (conn) => {
           return {
-            name: b.name,
-            id: b.id
+            name: conn.paybutton.name,
+            id: conn.paybutton.id
           }
         }
       )
