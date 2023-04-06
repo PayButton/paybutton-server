@@ -10,6 +10,15 @@ import { GrpcBlockchainClient } from 'services/grpcService'
 import { Transaction } from 'grpc-bchrpc-node'
 import { getAddressPrefix } from 'utils'
 
+const grpc = new GrpcBlockchainClient()
+
+const subscribeGrpcTxJob = (address: Address, confirmed: boolean): (txn: Transaction.AsObject) => Promise<any> => {
+  return async (txn: Transaction.AsObject) => {
+    const transactionPrisma = await grpc.getTransactionFromGrpcTransaction(txn, address, confirmed)
+    await transactionService.upsertTransaction(transactionPrisma, address)
+  }
+}
+
 const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void> => {
   // sync addresses
   await Promise.all(
@@ -19,18 +28,11 @@ const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void
   )
   // subscribe addresses
   // WIP: this assumes grpc is the only one being used, when chronik goes live this has to be changed
-  const grpc = new GrpcBlockchainClient()
   addressList.map(async (addr) => {
     await grpc.subscribeTransactions(
       [addr.address],
-      async (txn: Transaction.AsObject) => {
-        const transactionPrisma = await grpc.getTransactionFromGrpcTransaction(txn, addr, true)
-        await transactionService.upsertTransaction(transactionPrisma, addr)
-      },
-      async (txn: Transaction.AsObject) => {
-        const transactionPrisma = await grpc.getTransactionFromGrpcTransaction(txn, addr, false)
-        await transactionService.upsertTransaction(transactionPrisma, addr)
-      },
+      subscribeGrpcTxJob(addr, true),
+      subscribeGrpcTxJob(addr, false),
       getAddressPrefix(addr.address)
     )
   })
