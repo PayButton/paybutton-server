@@ -4,14 +4,15 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 import { fetchAddressTransactions } from 'services/transactionService'
 import { getNetworkFromSlug } from 'services/networkService'
 
-const addressFullType = Prisma.validator<Prisma.AddressArgs>()({
+const addressWithTransactionAndNetwork = Prisma.validator<Prisma.AddressArgs>()({
   include: { transactions: true, network: true }
 })
-type AddressWithTransactionsAndNetwork = Prisma.AddressGetPayload<typeof addressFullType>
+type AddressWithTransactionsAndNetwork = Prisma.AddressGetPayload<typeof addressWithTransactionAndNetwork>
 
 const addressWithTransactions = Prisma.validator<Prisma.AddressArgs>()({
   include: { transactions: true }
 })
+
 type AddressWithTransactions = Prisma.AddressGetPayload<typeof addressWithTransactions>
 
 export const includePaybuttonsNested = {
@@ -43,6 +44,12 @@ export function includeUserPaybuttonsNested (userId: string): Prisma.AddressIncl
 
 export type AddressWithPaybuttons = Prisma.AddressGetPayload<typeof addressWithPaybuttons>
 
+const addressWithTransactionsAndPaybuttons = Prisma.validator<Prisma.AddressArgs>()({
+  include: { transactions: true, paybuttons: includePaybuttonsNested.paybuttons }
+})
+
+export type AddressWithTransactionsAndPaybuttons = Prisma.AddressGetPayload<typeof addressWithTransactionsAndPaybuttons>
+
 export async function fetchAddressBySubstring (substring: string): Promise<AddressWithTransactionsAndNetwork> {
   const results = await prisma.address.findMany({
     where: {
@@ -73,7 +80,11 @@ export async function addressExistsBySubstring (substring: string): Promise<bool
   return true
 }
 
-export async function fetchAllUserAddresses (userId: string, includeTransactions = false, includePaybuttons = false): Promise<AddressWithTransactions[]> {
+export async function fetchAllUserAddresses (userId: string, includeTransactions = false, includePaybuttons = false): Promise<
+Address[]
+| AddressWithTransactions[]
+| AddressWithPaybuttons[]
+| AddressWithTransactionsAndPaybuttons[]> {
   return await prisma.address.findMany({
     where: {
       paybuttons: {
