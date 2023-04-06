@@ -63,12 +63,12 @@ const getCachedWeekKeys = async (userId: string): Promise<string[]> => {
 export const getPaymentsFromTransactionsAndAddresses = async (transactionList: TransactionWithAddressAndPrices[], addresses: AddressWithPaybuttons[]): Promise<Payment[]> => {
   const paymentList: Payment[] = []
   for (const t of transactionList) {
-    const XECValue = (await getTransactionValue(t)).usd
+    const value = (await getTransactionValue(t)).usd
     const txAddress = addresses.find(addr => addr.id === t.addressId)
     if (txAddress === undefined) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_FOR_TRANSACTION_404.message)
     paymentList.push({
       timestamp: t.timestamp,
-      value: XECValue,
+      value,
       networkId: t.address.networkId,
       hash: t.hash,
       buttonDisplayDataList: txAddress.paybuttons.map(
