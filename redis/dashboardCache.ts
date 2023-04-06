@@ -1,5 +1,7 @@
 import { redis } from 'redis/clientInstance'
 import { Prisma } from '@prisma/client'
+import { getTransactionValue, TransactionWithAddressAndPrices } from 'services/transactionService'
+import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
 import moment from 'moment'
 
@@ -56,6 +58,29 @@ export const userHasCachedPayments = async (userId: string): Promise<boolean> =>
 
 const getCachedWeekKeys = async (userId: string): Promise<string[]> => {
   return await redis.keys(`${userId}:payment:*`)
+}
+
+export const getPaymentsFromTransactionsAndButtons = async (transactionList: TransactionWithAddressAndPrices[], buttons: PaybuttonWithAddresses[]): Promise<Payment[]> => {
+  const paymentList: Payment[] = []
+  for (const t of transactionList) {
+    const XECValue = (await getTransactionValue(t)).usd
+    paymentList.push({
+      timestamp: t.timestamp,
+      value: XECValue,
+      networkId: t.address.networkId,
+      hash: t.hash,
+      buttonDisplayDataList: buttons.filter(button => button.addresses.some(addr => addr.address.id === t.addressId)).map(
+        (b) => {
+          return {
+            name: b.name,
+            id: b.id
+          }
+        }
+      )
+    })
+  }
+
+  return paymentList.filter((p) => p.value > new Prisma.Decimal(0))
 }
 
 export const getCachedPayments = async (userId: string): Promise<Payment[]> => {

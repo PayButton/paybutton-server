@@ -5,7 +5,7 @@ import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
-import { ChartData, PeriodData, DashboardData, Payment, cachePayments, userHasCachedPayments, getCachedPayments } from 'redis/dashboardCache'
+import { ChartData, PeriodData, DashboardData, Payment, cachePayments, userHasCachedPayments, getCachedPayments, getPaymentsFromTransactionsAndButtons } from 'redis/dashboardCache'
 
 interface AllMonths {
   months: number
@@ -99,48 +99,12 @@ const generatePaymentList = async (userId: string, buttons: paybuttonService.Pay
   const XECTransactions = await transactionService.fetchAddressListTransactions(XECAddressIds)
   const BCHTransactions = await transactionService.fetchAddressListTransactions(BCHAddressIds)
 
-  const paymentList: Payment[] = []
-  for (const t of BCHTransactions) {
-    const BCHValue = (await transactionService.getTransactionValue(t)).usd
-    paymentList.push({
-      timestamp: t.timestamp,
-      value: BCHValue,
-      networkId: t.address.networkId,
-      hash: t.hash,
-      buttonDisplayDataList: buttons.filter(button => button.addresses.some(add => add.address.id === t.addressId)).map(
-        (b) => {
-          return {
-            name: b.name,
-            id: b.id
-          }
-        }
-      )
-
-    })
-  }
-  for (const t of XECTransactions) {
-    const XECValue = (await transactionService.getTransactionValue(t)).usd
-    paymentList.push({
-      timestamp: t.timestamp,
-      value: XECValue,
-      networkId: t.address.networkId,
-      hash: t.hash,
-      buttonDisplayDataList: buttons.filter(button => button.addresses.some(add => add.address.id === t.addressId)).map(
-        (b) => {
-          return {
-            name: b.name,
-            id: b.id
-          }
-        }
-      )
-    })
-  }
-
-  const ret = paymentList.filter((p) => p.value > new Prisma.Decimal(0))
+  let paymentList = await getPaymentsFromTransactionsAndButtons(BCHTransactions, buttons)
+  paymentList = paymentList.concat(await getPaymentsFromTransactionsAndButtons(XECTransactions, buttons))
   // save on cache
-  await cachePayments(userId, ret)
+  await cachePayments(userId, paymentList)
 
-  return ret
+  return paymentList
 }
 
 const getPaymentList = async (userId: string, buttons: paybuttonService.PaybuttonWithAddresses[]): Promise<Payment[]> => {
