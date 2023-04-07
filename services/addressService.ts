@@ -126,22 +126,21 @@ export async function fetchAllAddresses (includeTransactions = false): Promise<A
   })
 }
 
-export async function fetchUnsyncedAddresses (): Promise<Address[]> {
+export async function fetchUnsyncedAddresses (): Promise<AddressWithPaybuttonsAndUserProfiles[]> {
   return await prisma.address.findMany({
     where: {
       lastSynced: null
-    }
+    },
+    include: includePaybuttonsAndUserProfilesNested.include
   })
 }
 
-export async function fetchAllAddressesForNetworkId (networkId: number, includeTransactions = false): Promise<AddressWithTransactions[]> {
+export async function fetchAllAddressesForNetworkId (networkId: number): Promise<AddressWithPaybuttonsAndUserProfiles[]> {
   return await prisma.address.findMany({
     where: {
       networkId
     },
-    include: {
-      transactions: includeTransactions
-    }
+    include: includePaybuttonsAndUserProfilesNested.include
   })
 }
 
