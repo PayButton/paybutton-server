@@ -147,11 +147,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
 export function toHash160 (address: string): {type: ScriptType, hash160: string} {
   try {
-    // decode address hash
     const { type, hash } = decode(address)
-    // encode the address hash to legacy format (bitcoin)
     const legacyAdress = bs58.encode(hash)
-    // convert legacy to hash160
     const addrHash160 = Buffer.from(bs58.decode(legacyAdress)).toString(
       'hex'
     )
@@ -190,7 +187,6 @@ export function outputScriptToAddress (outputScript: String): string | boolean {
       return false
   }
 
-  // Test hash160 for correct length
   if (hash160.length !== 40) {
     return false
   }
@@ -204,7 +200,6 @@ export function outputScriptToAddress (outputScript: String): string | boolean {
     hash160Uint8Array[i] = buffer[i]
   }
 
-  // Encode ecash: address
   const ecashAddress = encode(
     'ecash',
     addressType,
