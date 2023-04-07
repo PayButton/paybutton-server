@@ -1,7 +1,6 @@
 import { Worker, Job, Queue } from 'bullmq'
-import { Address } from '@prisma/client'
 import { redisBullMQ } from 'redis/clientInstance'
-import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
+import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION, RESPONSE_MESSAGES } from 'constants/index'
 
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
@@ -9,17 +8,25 @@ import * as addressService from 'services/addressService'
 import { GrpcBlockchainClient } from 'services/grpcService'
 import { Transaction } from 'grpc-bchrpc-node'
 import { getAddressPrefix } from 'utils'
+import { getPaymentsFromTransactionsAndAddresses, cachePayments } from 'redis/dashboardCache'
 
 const grpc = new GrpcBlockchainClient()
 
-const subscribeGrpcTxJob = (address: Address, confirmed: boolean): (txn: Transaction.AsObject) => Promise<any> => {
+const subscribeGrpcTxJob = (address: addressService.AddressWithPaybuttonsAndUserProfiles, confirmed: boolean): (txn: Transaction.AsObject) => Promise<any> => {
   return async (txn: Transaction.AsObject) => {
-    const transactionPrisma = await grpc.getTransactionFromGrpcTransaction(txn, address, confirmed)
-    await transactionService.upsertTransaction(transactionPrisma, address)
+    const transactionCreateInput = await grpc.getTransactionFromGrpcTransaction(txn, address, confirmed)
+    const tx = await transactionService.upsertTransaction(transactionCreateInput, address)
+    if (tx === undefined) {
+      throw new Error(RESPONSE_MESSAGES.FAILED_TO_UPSERT_TRANSACTION_500.message)
+    }
+    const payments = await getPaymentsFromTransactionsAndAddresses([tx], [address])
+    for (const userProfile of address.userProfiles) {
+      await cachePayments(userProfile.userProfile.userId, payments)
+    }
   }
 }
 
-const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void> => {
+const syncAndSubscribeAddressList = async (addressList: addressService.AddressWithPaybuttonsAndUserProfiles[]): Promise<void> => {
   // sync addresses
   await Promise.all(
     addressList.map(async (addr) => {
