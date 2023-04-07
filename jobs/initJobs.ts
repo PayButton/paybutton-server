@@ -1,4 +1,4 @@
-import { XEC_NETWORK_ID, BCH_NETWORK_ID, CURRENT_PRICE_SYNC_DELAY } from 'constants/index'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID, CURRENT_PRICE_SYNC_DELAY, SYNC_TXS_JOBS_RETRY_DELAY, SYNC_TXS_JOBS_MAX_RETRIES } from 'constants/index'
 import { Queue, FlowProducer } from 'bullmq'
 import { redisBullMQ } from 'redis/clientInstance'
 import {
@@ -8,10 +8,10 @@ import {
 } from './workers'
 
 const RETRY_OPTS = {
-  attempts: 5,
+  attempts: SYNC_TXS_JOBS_MAX_RETRIES,
   backoff: {
     type: 'exponential',
-    delay: 2000
+    delay: SYNC_TXS_JOBS_RETRY_DELAY
   }
 }
 
@@ -76,8 +76,7 @@ const main = async (): Promise<void> => {
     { syncType: 'past' },
     {
       removeOnFail: false,
-      jobId: 'syncPastPrices',
-      ...RETRY_OPTS
+      jobId: 'syncPastPrices'
     }
   )
 
