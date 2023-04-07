@@ -50,6 +50,22 @@ const addressWithTransactionsAndPaybuttons = Prisma.validator<Prisma.AddressArgs
 
 export type AddressWithTransactionsAndPaybuttons = Prisma.AddressGetPayload<typeof addressWithTransactionsAndPaybuttons>
 
+const includePaybuttonsAndUserProfilesNested = {
+  include: {
+    userProfiles: {
+      include: {
+        userProfile: true
+      }
+    },
+    paybuttons: includePaybuttonsNested.paybuttons
+  }
+}
+
+const addressWithPaybuttonsAndUserProfiles = Prisma.validator<Prisma.AddressArgs>()(
+  includePaybuttonsAndUserProfilesNested
+)
+export type AddressWithPaybuttonsAndUserProfiles = Prisma.AddressGetPayload<typeof addressWithPaybuttonsAndUserProfiles>
+
 export async function fetchAddressBySubstring (substring: string): Promise<AddressWithTransactionsAndNetwork> {
   const results = await prisma.address.findMany({
     where: {
