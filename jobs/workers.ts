@@ -30,7 +30,12 @@ const syncAndSubscribeAddressList = async (addressList: addressService.AddressWi
   // sync addresses
   await Promise.all(
     addressList.map(async (addr) => {
-      await transactionService.syncAllTransactionsForAddress(addr.address, Infinity)
+      const insertedTransactions = await transactionService.syncAllTransactionsForAddress(addr.address, Infinity)
+      // cache transactions
+      const payments = await getPaymentsFromTransactionsAndAddresses(insertedTransactions, [addr])
+      for (const userProfile of addr.userProfiles) {
+        await cachePayments(userProfile.userProfile.userId, payments)
+      }
     })
   )
   // subscribe addresses
