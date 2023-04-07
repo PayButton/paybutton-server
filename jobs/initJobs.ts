@@ -7,6 +7,14 @@ import {
   syncUnsyncedAddressesWorker
 } from './workers'
 
+const RETRY_OPTS = {
+  attempts: 5,
+  backoff: {
+    type: 'exponential',
+    delay: 2000
+  }
+}
+
 const main = async (): Promise<void> => {
   // sync all db addresses transactions
   const initTransactionsSync = new Queue('initTransactionsSync', { connection: redisBullMQ })
@@ -26,20 +34,29 @@ const main = async (): Promise<void> => {
     data: {},
     opts: {
       removeOnComplete: false,
-      removeOnFail: false,
-      jobId: 'syncUnsyncedAddresses'
+      removeOnFail: { count: 3 },
+      jobId: 'syncUnsyncedAddresses',
+      ...RETRY_OPTS
     },
     children: [
       {
         name: 'syncXECAddresses',
         data: { networkId: XEC_NETWORK_ID },
-        opts: { removeOnFail: false, jobId: 'syncXECAddresses' },
+        opts: {
+          removeOnFail: false,
+          jobId: 'syncXECAddresses',
+          ...RETRY_OPTS
+        },
         queueName: initTransactionsSync.name
       },
       {
         name: 'syncBCHAddresses',
         data: { networkId: BCH_NETWORK_ID },
-        opts: { removeOnFail: false, jobId: 'syncBCHAddresses' },
+        opts: {
+          removeOnFail: false,
+          jobId: 'syncBCHAddresses',
+          ...RETRY_OPTS
+        },
         queueName: initTransactionsSync.name
       }
     ]
@@ -59,7 +76,8 @@ const main = async (): Promise<void> => {
     { syncType: 'past' },
     {
       removeOnFail: false,
-      jobId: 'syncPastPrices'
+      jobId: 'syncPastPrices',
+      ...RETRY_OPTS
     }
   )
 
