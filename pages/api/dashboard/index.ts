@@ -99,8 +99,8 @@ const generatePaymentList = async (userId: string): Promise<Payment[]> => {
   const XECTransactions = await transactionService.fetchAddressListTransactions(XECAddressIds)
   const BCHTransactions = await transactionService.fetchAddressListTransactions(BCHAddressIds)
 
-  let paymentList = await getPaymentsFromTransactionsAndAddresses(BCHTransactions, addresses)
-  paymentList = paymentList.concat(await getPaymentsFromTransactionsAndAddresses(XECTransactions, addresses))
+  let paymentList = await getPaymentsFromTransactionsAndAddresses(BCHTransactions)
+  paymentList = paymentList.concat(await getPaymentsFromTransactionsAndAddresses(XECTransactions))
   // save on cache
   await cachePayments(userId, paymentList)
 
