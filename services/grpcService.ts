@@ -157,21 +157,15 @@ export class GrpcBlockchainClient implements BlockchainClient {
     return insertedTransactions
   };
 
-  public async getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {
+  private async getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {
     const client = this.getClientForAddress(address)
     const res = (await client.getAddressUtxos({ address })).toObject()
     return res
   };
 
   public async getBalance (address: string): Promise<number> {
-    const { outputsList } = await this.getUtxos(address)
-
-    let satoshis: number = 0
-    outputsList.forEach((x) => {
-      satoshis += x.value
-    })
-
-    return satoshis
+    const utxos = (await this.getUtxos(address)).outputsList
+    return utxos.reduce((acc, utxo) => acc + utxo.value, 0)
   };
 
   public async getTransactionDetails (hash: string, networkSlug: string): Promise<GetTransactionResponse.AsObject> {

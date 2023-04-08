@@ -1,5 +1,5 @@
-import { mockedBCHAddress, mockedXECAddress } from '../mockedObjects'
-import { getUtxos, getBalance, getTransactionDetails } from '../../services/blockchainService'
+import { mockedBCHAddress } from '../mockedObjects'
+import { getBalance, getTransactionDetails } from '../../services/blockchainService'
 import { NETWORK_SLUGS } from 'constants/index'
 
 describe('Test service returned objects consistency', () => {
@@ -15,32 +15,6 @@ describe('Test service returned objects consistency', () => {
     }))
   })
   */
-  it('test getUtxos', async () => {
-    const res = await getUtxos(mockedXECAddress.address)
-    expect(res).toEqual(expect.objectContaining({
-      outputsList: expect.arrayContaining([
-        {
-          outpoint: undefined,
-          pubkeyScript: 'dqkUYF1GSq6KqSQSKPbQtcOJWRBPEFaIrA==',
-          value: 547,
-          isCoinbase: false,
-          blockHeight: 684161
-        },
-        {
-          pubkeyScript: 'dqkUYF1GSq6KqSQSKPbQtcOJWRBPEFaIrA==',
-          value: 122,
-          isCoinbase: false,
-          blockHeight: 657711
-        },
-        expect.objectContaining({
-          pubkeyScript: 'dqkUYF1GSq6KqSQSKPbQtcOJWRBPEFaIrA==',
-          value: 1111,
-          isCoinbase: false,
-          blockHeight: 596627
-        })
-      ])
-    }))
-  })
   it('test getBalance', async () => {
     const res = await getBalance(mockedBCHAddress.address)
     expect(res).toBe(1780)
