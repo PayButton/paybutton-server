@@ -101,7 +101,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     )
   }
 
-  // WIP: this should be private in the future
+  // WIP: this should be private in the future (after 411-6)
   public async getTransactionFromGrpcTransaction (transaction: GrpcTransaction.AsObject, address: Address, confirmed: boolean): Promise<Prisma.TransactionUncheckedCreateInput> {
     return {
       hash: transaction.hash as string,
@@ -129,7 +129,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
 
       if (transactions.confirmedTransactionsList.length === 0 && transactions.unconfirmedTransactionsList.length === 0) break
 
-      // remove transactions older than the networks
+      // remove transactions older than the network
       const confirmedTransactions = transactions.confirmedTransactionsList.filter(this.txThesholdFilter(address))
       const unconfirmedTransactions = transactions.unconfirmedTransactionsList.map(mempoolTx => this.parseMempoolTx(mempoolTx))
       totalFetchedConfirmedTransactions += confirmedTransactions.length
