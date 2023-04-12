@@ -22,7 +22,7 @@ describe('Test service returned objects consistency', () => {
   it('test getTransactionDetails', async () => {
     const res = await getTransactionDetails(mockedBCHAddress.address, NETWORK_SLUGS.bitcoincash)
     expect(res).toEqual({
-      txid: 'hu9m3BZg/zlxis7ehc0x/+9qELXC8dkbimOtc5v598s=',
+      hash: 'hu9m3BZg/zlxis7ehc0x/+9qELXC8dkbimOtc5v598s=',
       version: 2,
       block: { hash: '', height: 0, timestamp: '1653653100' },
       inputs: [],

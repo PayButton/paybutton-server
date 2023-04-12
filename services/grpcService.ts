@@ -14,6 +14,7 @@ import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
 import { TransactionWithAddressAndPrices, upsertManyTransactionsForAddress } from './transactionService'
 import { syncPricesFromTransactionList } from './priceService'
+import { Decimal } from '@prisma/client/runtime'
 
 export interface OutputsList {
   outpoint: object
@@ -167,14 +168,14 @@ export class GrpcBlockchainClient implements BlockchainClient {
     return utxos.reduce((acc, utxo) => acc + utxo.value, 0)
   };
 
-  public async getTransactionDetails (txId: string, networkSlug: string): Promise<TransactionDetails> {
+  public async getTransactionDetails (hash: string, networkSlug: string): Promise<TransactionDetails> {
     const client = this.getClientForNetworkSlug(networkSlug)
     const tx = (
-      await client.getTransaction({ hash: txId, reversedHashOrder: true })
+      await client.getTransaction({ hash, reversedHashOrder: true })
     ).toObject().transaction as GrpcTransaction.AsObject
 
     const details: TransactionDetails = {
-      txid: tx.hash as string,
+      hash: tx.hash as string,
       version: tx.version,
       block: {
         hash: tx.blockHash as string,
@@ -186,13 +187,13 @@ export class GrpcBlockchainClient implements BlockchainClient {
     }
     for (const input of tx.inputsList) {
       details.inputs.push({
-        value: input.value,
+        value: new Decimal(input.value),
         address: input.address
       })
     }
     for (const output of tx.outputsList) {
       details.outputs.push({
-        value: output.value,
+        value: new Decimal(output.value),
         address: output.address
       })
     }

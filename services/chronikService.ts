@@ -10,6 +10,7 @@ import xecaddr from 'xecaddrjs'
 import { satoshisToUnit } from 'utils'
 import { fetchAddressBySubstring } from './addressService'
 import { syncPricesFromTransactionList } from './priceService'
+import { Decimal } from '@prisma/client/runtime'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
@@ -130,11 +131,11 @@ export class ChronikBlockchainClient implements BlockchainClient {
     return utxos.reduce((acc, utxo) => acc + parseInt(utxo.value), 0)
   }
 
-  async getTransactionDetails (txId: string, networkSlug: string): Promise<TransactionDetails> {
-    const tx = await this.chronik.tx(txId)
+  async getTransactionDetails (hash: string, networkSlug: string): Promise<TransactionDetails> {
+    const tx = await this.chronik.tx(hash)
 
     const details: TransactionDetails = {
-      txid: tx.txid,
+      hash: tx.txid,
       version: tx.version,
       block: {
         hash: tx.block?.hash,
@@ -146,14 +147,14 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
     for (const input of tx.inputs) {
       details.inputs.push({
-        value: parseInt(input.value),
-        outputScript: input.outputScript
+        value: new Decimal(input.value),
+        address: outputScriptToAddress(input.outputScript)
       })
     }
     for (const output of tx.outputs) {
       details.outputs.push({
-        value: parseInt(output.value),
-        outputScript: output.outputScript
+        value: new Decimal(output.value),
+        address: outputScriptToAddress(output.outputScript)
       })
     }
     return details
@@ -178,11 +179,12 @@ export function toHash160 (address: string): {type: ScriptType, hash160: string}
   }
 }
 
-export function outputScriptToAddress (outputScript: String): string | boolean {
-  // returns P2SH or P2PKH address
+export function outputScriptToAddress (outputScript: String | undefined): string {
+  // returns P2SH or P2PKH address, empty string otherwise
   // P2PKH addresses are in outputScript of type 76a914...88ac
   // P2SH addresses are in outputScript of type a914...87
-  // Return false if cannot determine P2PKH or P2SH address
+
+  if (outputScript == null) return ''
 
   const typeTestSlice = outputScript.slice(0, 4)
   let addressType
@@ -203,11 +205,11 @@ export function outputScriptToAddress (outputScript: String): string | boolean {
       )
       break
     default:
-      return false
+      return ''
   }
 
   if (hash160.length !== 40) {
-    return false
+    return ''
   }
 
   const buffer = Buffer.from(hash160, 'hex')
