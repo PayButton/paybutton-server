@@ -56,4 +56,4 @@ services:
     volumes:
       - ./redis:/data/redis:z
       - ./scripts:/data/scripts
-    command: sh ./scripts/redis-start.sh
+    command: sh -c "sed -i 's/\\r//g' ./scripts/redis-start.sh && sh -x ./scripts/redis-start.sh"
