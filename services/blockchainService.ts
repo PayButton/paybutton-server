@@ -3,8 +3,7 @@ import { ChronikBlockchainClient } from './chronikService'
 import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils/index'
 import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CLIENT_OPTIONS } from '../constants/index'
 import {
-  Transaction,
-  GetTransactionResponse
+  Transaction
 } from 'grpc-bchrpc-node'
 import { TransactionWithAddressAndPrices } from './transactionService'
 
@@ -23,12 +22,30 @@ export interface GetAddressTransactionsParameters {
   maxTransactionsToReturn: number
 }
 
+interface InputOutput {
+  value: number
+  outputScript?: string
+  address?: string
+}
+
+export interface TransactionDetails {
+  txid: string
+  version: number
+  inputs: InputOutput[]
+  outputs: InputOutput[]
+  block: {
+    height?: number
+    hash?: string
+    timestamp?: string
+  }
+}
+
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
   syncTransactionsAndPricesForAddress: (parameters: GetAddressTransactionsParameters) => Promise<TransactionWithAddressAndPrices[]>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
-  getTransactionDetails: (hash: string, networkSlug: string) => Promise<GetTransactionResponse.AsObject>
+  getTransactionDetails: (txId: string, networkSlug: string) => Promise<TransactionDetails>
   subscribeTransactions: (
     addresses: string[],
     onTransactionNotification: (txn: Transaction.AsObject) => any,
@@ -71,8 +88,8 @@ export async function getBlockInfo (networkSlug: string, height: number): Promis
   return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockInfo(networkSlug, height)
 }
 
-export async function getTransactionDetails (hash: string, networkSlug: string): Promise<GetTransactionResponse.AsObject> {
-  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getTransactionDetails(hash, networkSlug)
+export async function getTransactionDetails (txId: string, networkSlug: string): Promise<TransactionDetails> {
+  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getTransactionDetails(txId, networkSlug)
 }
 
 export async function subscribeTransactions (

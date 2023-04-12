@@ -1,8 +1,8 @@
 import { ChronikClient, ScriptType, Tx, Utxo } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters } from './blockchainService'
-import { GetTransactionResponse, Transaction } from 'grpc-bchrpc-node'
+import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
+import { Transaction } from 'grpc-bchrpc-node'
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N } from 'constants/index'
 import { TransactionWithAddressAndPrices, upsertManyTransactionsForAddress } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
@@ -130,8 +130,33 @@ export class ChronikBlockchainClient implements BlockchainClient {
     return utxos.reduce((acc, utxo) => acc + parseInt(utxo.value), 0)
   }
 
-  async getTransactionDetails (hash: string, networkSlug: string): Promise<GetTransactionResponse.AsObject> {
-    throw new Error('Method not implemented.')
+  async getTransactionDetails (txId: string, networkSlug: string): Promise<TransactionDetails> {
+    const tx = await this.chronik.tx(txId)
+
+    const details: TransactionDetails = {
+      txid: tx.txid,
+      version: tx.version,
+      block: {
+        hash: tx.block?.hash,
+        height: tx.block?.height,
+        timestamp: tx.block?.timestamp
+      },
+      inputs: [],
+      outputs: []
+    }
+    for (const input of tx.inputs) {
+      details.inputs.push({
+        value: parseInt(input.value),
+        outputScript: input.outputScript
+      })
+    }
+    for (const output of tx.outputs) {
+      details.outputs.push({
+        value: parseInt(output.value),
+        outputScript: output.outputScript
+      })
+    }
+    return details
   }
 
   async subscribeTransactions (addresses: string[], onTransactionNotification: (txn: Transaction.AsObject) => any, onMempoolTransactionNotification: (txn: Transaction.AsObject) => any, networkSlug: string): Promise<void> {
