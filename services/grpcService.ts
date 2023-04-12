@@ -111,7 +111,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     }
   }
 
-  public async syncTransactionsAndPricesForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
+  public async syncTransactionsForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
     const address = await fetchAddressBySubstring(parameters.addressString)
     const pageSize = FETCH_N
     let totalFetchedConfirmedTransactions = 0

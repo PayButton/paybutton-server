@@ -1,6 +1,6 @@
 import prisma from 'prisma/clientInstance'
 import { Prisma, Address } from '@prisma/client'
-import { syncTransactionsAndPricesForAddress, GetAddressTransactionsParameters } from 'services/blockchainService'
+import { syncTransactionsForAddress, GetAddressTransactionsParameters } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
 import { QuoteValues } from 'services/priceService'
@@ -111,7 +111,7 @@ export async function upsertManyTransactionsForAddress (transactions: Prisma.Tra
   return ret.filter((t) => t !== undefined) as TransactionWithAddressAndPrices[]
 }
 
-export async function syncAllTransactionsAndPricesForAddress (addressString: string, maxTransactionsToReturn: number): Promise<TransactionWithAddressAndPrices[]> {
+export async function syncAllTransactionsForAddress (addressString: string, maxTransactionsToReturn: number): Promise<TransactionWithAddressAndPrices[]> {
   addressString = parseAddress(addressString)
   const parameters = {
     addressString,
@@ -119,7 +119,7 @@ export async function syncAllTransactionsAndPricesForAddress (addressString: str
     maxTransactionsToReturn
   }
 
-  const insertedTransactions: TransactionWithAddressAndPrices[] = await syncTransactionsAndPricesForAddress(parameters)
+  const insertedTransactions: TransactionWithAddressAndPrices[] = await syncTransactionsForAddress(parameters)
 
   if (parameters.maxTransactionsToReturn === Infinity || insertedTransactions.filter(t => t.confirmed).length < parameters.maxTransactionsToReturn) {
     await updateLastSynced(addressString)
@@ -129,7 +129,7 @@ export async function syncAllTransactionsAndPricesForAddress (addressString: str
       start: insertedTransactions.filter(t => t.confirmed).length,
       maxTransactionsToReturn: Infinity
     }
-    void syncTransactionsAndPricesForAddress(newParameters)
+    void syncTransactionsForAddress(newParameters)
   }
 
   return insertedTransactions
