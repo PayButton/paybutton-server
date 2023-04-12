@@ -166,8 +166,8 @@ export class GrpcBlockchainClient implements BlockchainClient {
   };
 
   public async getBalance (address: string): Promise<number> {
-    const utxos = (await this.getUtxos(address)).outputsList
-    return utxos.reduce((acc, utxo) => acc + utxo.value, 0)
+    const outputsList = (await this.getUtxos(address)).outputsList
+    return outputsList.reduce((acc, output) => acc + output.value, 0)
   };
 
   public async getTransactionDetails (hash: string, networkSlug: string): Promise<GetTransactionResponse.AsObject> {
