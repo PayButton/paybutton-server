@@ -129,9 +129,11 @@ export class GrpcBlockchainClient implements BlockchainClient {
 
       if (transactions.confirmedTransactionsList.length === 0 && transactions.unconfirmedTransactionsList.length === 0) break
 
-      // remove transactions older than the network
+      // filter out transactions that happened before a certain date set in constants/index,
+      //   this date is understood as the beginning and we don't look past it
       const confirmedTransactions = transactions.confirmedTransactionsList.filter(this.txThesholdFilter(address))
       const unconfirmedTransactions = transactions.unconfirmedTransactionsList.map(mempoolTx => this.parseMempoolTx(mempoolTx))
+
       totalFetchedConfirmedTransactions += confirmedTransactions.length
       page += 1
 
