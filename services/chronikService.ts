@@ -179,12 +179,12 @@ export function toHash160 (address: string): {type: ScriptType, hash160: string}
   }
 }
 
-export function outputScriptToAddress (outputScript: String | undefined): string {
+export function outputScriptToAddress (outputScript: string | undefined): string | undefined {
   // returns P2SH or P2PKH address, empty string otherwise
   // P2PKH addresses are in outputScript of type 76a914...88ac
   // P2SH addresses are in outputScript of type a914...87
 
-  if (outputScript == null) return ''
+  if (outputScript === undefined) return undefined
 
   const typeTestSlice = outputScript.slice(0, 4)
   let addressType
@@ -205,12 +205,10 @@ export function outputScriptToAddress (outputScript: String | undefined): string
       )
       break
     default:
-      return ''
+      return undefined
   }
 
-  if (hash160.length !== 40) {
-    return ''
-  }
+  if (hash160.length !== 40) return undefined
 
   const buffer = Buffer.from(hash160, 'hex')
 

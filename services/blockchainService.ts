@@ -25,7 +25,7 @@ export interface GetAddressTransactionsParameters {
 
 interface InputOutput {
   value: Decimal
-  address: string
+  address?: string
 }
 
 export interface TransactionDetails {
