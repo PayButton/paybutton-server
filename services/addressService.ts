@@ -192,3 +192,18 @@ export async function updateLastSynced (addressString: string): Promise<void> {
     }
   })
 }
+
+export async function fetchAddressById (addressId: string): Promise<AddressWithPaybuttons> {
+  const result = await prisma.address.findUnique({
+    where: {
+      id: addressId
+    },
+    include: {
+      paybuttons: includePaybuttonsNested.paybuttons
+    }
+  })
+  if (result === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
+  }
+  return result
+}

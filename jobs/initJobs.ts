@@ -1,4 +1,4 @@
-import { XEC_NETWORK_ID, BCH_NETWORK_ID, CURRENT_PRICE_SYNC_DELAY } from 'constants/index'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID, CURRENT_PRICE_SYNC_DELAY, SYNC_TXS_JOBS_RETRY_DELAY, SYNC_TXS_JOBS_MAX_RETRIES } from 'constants/index'
 import { Queue, FlowProducer } from 'bullmq'
 import { redisBullMQ } from 'redis/clientInstance'
 import {
@@ -6,6 +6,14 @@ import {
   syncPricesWorker,
   syncUnsyncedAddressesWorker
 } from './workers'
+
+const RETRY_OPTS = {
+  attempts: SYNC_TXS_JOBS_MAX_RETRIES,
+  backoff: {
+    type: 'exponential',
+    delay: SYNC_TXS_JOBS_RETRY_DELAY
+  }
+}
 
 const main = async (): Promise<void> => {
   // sync all db addresses transactions
@@ -26,20 +34,29 @@ const main = async (): Promise<void> => {
     data: {},
     opts: {
       removeOnComplete: false,
-      removeOnFail: false,
-      jobId: 'syncUnsyncedAddresses'
+      removeOnFail: { count: 3 },
+      jobId: 'syncUnsyncedAddresses',
+      ...RETRY_OPTS
     },
     children: [
       {
         name: 'syncXECAddresses',
         data: { networkId: XEC_NETWORK_ID },
-        opts: { removeOnFail: false, jobId: 'syncXECAddresses' },
+        opts: {
+          removeOnFail: false,
+          jobId: 'syncXECAddresses',
+          ...RETRY_OPTS
+        },
         queueName: initTransactionsSync.name
       },
       {
         name: 'syncBCHAddresses',
         data: { networkId: BCH_NETWORK_ID },
-        opts: { removeOnFail: false, jobId: 'syncBCHAddresses' },
+        opts: {
+          removeOnFail: false,
+          jobId: 'syncBCHAddresses',
+          ...RETRY_OPTS
+        },
         queueName: initTransactionsSync.name
       }
     ]

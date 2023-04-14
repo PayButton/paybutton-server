@@ -91,7 +91,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
       const { type, hash160 } = toHash160(address.address)
       let transactions = (await this.chronik.script(type, hash160).history(page, pageSize)).txs
 
-      // remove transactions older than the networks
+      // filter out transactions that happened before a certain date set in constants/index,
+      //   this date is understood as the beginning and we don't look past it
       transactions = transactions.filter(this.txThesholdFilter(address))
 
       if (transactions.length === 0) break
