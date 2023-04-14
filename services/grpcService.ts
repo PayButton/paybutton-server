@@ -129,9 +129,11 @@ export class GrpcBlockchainClient implements BlockchainClient {
 
       if (transactions.confirmedTransactionsList.length === 0 && transactions.unconfirmedTransactionsList.length === 0) break
 
-      // remove transactions older than the network
+      // filter out transactions that happened before a certain date set in constants/index,
+      //   this date is understood as the beginning and we don't look past it
       const confirmedTransactions = transactions.confirmedTransactionsList.filter(this.txThesholdFilter(address))
       const unconfirmedTransactions = transactions.unconfirmedTransactionsList.map(mempoolTx => this.parseMempoolTx(mempoolTx))
+
       totalFetchedConfirmedTransactions += confirmedTransactions.length
       page += 1
 
@@ -157,21 +159,15 @@ export class GrpcBlockchainClient implements BlockchainClient {
     return insertedTransactions
   };
 
-  public async getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {
+  private async getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {
     const client = this.getClientForAddress(address)
     const res = (await client.getAddressUtxos({ address })).toObject()
     return res
   };
 
   public async getBalance (address: string): Promise<number> {
-    const { outputsList } = await this.getUtxos(address)
-
-    let satoshis: number = 0
-    outputsList.forEach((x) => {
-      satoshis += x.value
-    })
-
-    return satoshis
+    const outputsList = (await this.getUtxos(address)).outputsList
+    return outputsList.reduce((acc, output) => acc + output.value, 0)
   };
 
   public async getTransactionDetails (hash: string, networkSlug: string): Promise<GetTransactionResponse.AsObject> {
