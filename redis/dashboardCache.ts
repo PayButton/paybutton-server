@@ -1,7 +1,7 @@
 import { redis } from 'redis/clientInstance'
 import { Prisma } from '@prisma/client'
 import { getTransactionValue, TransactionWithAddressAndPrices } from 'services/transactionService'
-import { AddressWithPaybuttons } from 'services/addressService'
+import { fetchAddressById } from 'services/addressService'
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
 import moment from 'moment'
 
@@ -60,11 +60,11 @@ const getCachedWeekKeys = async (userId: string): Promise<string[]> => {
   return await redis.keys(`${userId}:payment:*`)
 }
 
-export const getPaymentsFromTransactionsAndAddresses = async (transactionList: TransactionWithAddressAndPrices[], addresses: AddressWithPaybuttons[]): Promise<Payment[]> => {
+export const getPaymentsFromTransactions = async (transactionList: TransactionWithAddressAndPrices[]): Promise<Payment[]> => {
   const paymentList: Payment[] = []
   for (const t of transactionList) {
     const value = (await getTransactionValue(t)).usd
-    const txAddress = addresses.find(addr => addr.id === t.addressId)
+    const txAddress = await fetchAddressById(t.addressId)
     if (txAddress === undefined) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_FOR_TRANSACTION_404.message)
     paymentList.push({
       timestamp: t.timestamp,

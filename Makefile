@@ -17,6 +17,9 @@ check-logs-dev:
 check-logs-db:
 	docker logs -f paybutton-db
 
+check-logs-cache:
+	docker logs -f paybutton-cache
+
 check-logs-users:
 	docker logs -f paybutton-users-service
 
