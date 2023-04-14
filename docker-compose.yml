@@ -50,7 +50,6 @@ services:
     container_name: paybutton-cache
     image: redis:6.2-alpine
     restart: always
-    user: 1000:1000
     ports:
       - 6379:6379
     volumes:
