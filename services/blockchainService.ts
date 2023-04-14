@@ -80,12 +80,11 @@ export async function syncTransactionsAndPricesForAddress (parameters: GetAddres
   return await getObjectValueForAddress(parameters.addressString, BLOCKCHAIN_CLIENTS).syncTransactionsAndPricesForAddress(parameters)
 }
 
-export async function getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
-  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockchainInfo(networkSlug)
-}
-
-export async function getBlockInfo (networkSlug: string, height: number): Promise<BlockInfo> {
-  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockInfo(networkSlug, height)
+export async function getLastBlockTimestamp (networkSlug: string): Promise<number> {
+  const client = getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS)
+  const getBlockchainInfo = await client.getBlockchainInfo(networkSlug)
+  const lastBlockInfo = await client.getBlockInfo(networkSlug, getBlockchainInfo.height)
+  return lastBlockInfo.timestamp
 }
 
 export async function getTransactionDetails (hash: string, networkSlug: string): Promise<TransactionDetails> {
