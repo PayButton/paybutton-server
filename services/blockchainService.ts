@@ -25,7 +25,6 @@ export interface GetAddressTransactionsParameters {
 
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
-  syncTransactionsAndPricesForAddress: (parameters: GetAddressTransactionsParameters) => Promise<TransactionWithAddressAndPrices[]>
   syncTransactionsForAddress: (parameters: GetAddressTransactionsParameters) => Promise<TransactionWithAddressAndPrices[]>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
