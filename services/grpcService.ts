@@ -14,7 +14,6 @@ import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
 import { TransactionWithAddressAndPrices, upsertManyTransactionsForAddress } from './transactionService'
-import { syncPricesFromTransactionList } from './priceService'
 
 export interface OutputsList {
   outpoint: object
@@ -112,7 +111,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     }
   }
 
-  public async syncTransactionsAndPricesForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
+  public async syncTransactionsForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
     const address = await fetchAddressBySubstring(parameters.addressString)
     const pageSize = FETCH_N
     let totalFetchedConfirmedTransactions = 0
@@ -149,8 +148,9 @@ export class GrpcBlockchainClient implements BlockchainClient {
           unconfirmedTransactions.map(async tx => await this.getTransactionFromGrpcTransaction(tx, address, false))
         )
       ]
+      console.time('upserting transactions')
       const persistedTransactions = await upsertManyTransactionsForAddress(transactionsToPersist, address)
-      await syncPricesFromTransactionList(persistedTransactions)
+      console.timeEnd('upserting transactions')
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
