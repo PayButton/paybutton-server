@@ -161,7 +161,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
   }
 
   public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
-    throw new Error('Method not implemented.')
+    // TODO
+    console.log('Method not implemented.')
   }
 }
 

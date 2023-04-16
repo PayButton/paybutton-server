@@ -16,6 +16,7 @@ import { fetchAddressBySubstring } from './addressService'
 import { TransactionWithAddressAndPrices, upsertManyTransactionsForAddress } from './transactionService'
 import { Decimal } from '@prisma/client/runtime'
 import * as transactionService from './transactionService'
+import { syncPricesFromTransactionList } from './priceService'
 
 export interface OutputsList {
   outpoint: object
@@ -160,6 +161,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
       ]
       console.time('upserting transactions')
       const persistedTransactions = await upsertManyTransactionsForAddress(transactionsToPersist, address)
+      await syncPricesFromTransactionList(persistedTransactions)
       console.timeEnd('upserting transactions')
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
@@ -213,7 +215,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
   };
 
   public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
-    if (addresses.length === 0) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
+    if (addresses.length === 0) return
 
     const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address))
     if (addressesAlreadySubscribed.length === addresses.length) throw new Error(RESPONSE_MESSAGES.ADDRESSES_ALREADY_SUBSCRIBED_400.message)
@@ -293,18 +295,25 @@ export class GrpcBlockchainClient implements BlockchainClient {
   }
 
   private async processSubscribedNotification (data: TransactionNotification): Promise<void> {
-    // get new confirmed transactions
-    const transaction = data.getConfirmedTransaction()!.toObject()
-    const addressWithConfirmedTransactions = await this.getPrismaTransactionsForSubscribedAddresses(transaction, true)
+    let addressWithConfirmedTransactions: AddressWithTransaction[] = []
+    let addressWithUnconfirmedTransactions: AddressWithTransaction[] = []
 
-    // remove unconfirmed transactions that have now been confirmed
-    const transactionsToDelete = await transactionService.fetchUnconfirmedTransactions(transaction.hash as string)
-    await transactionService.deleteTransactions(transactionsToDelete)
+    // get new confirmed transactions
+    const confirmedTransaction = data.getConfirmedTransaction()?.toObject()
+    if (confirmedTransaction != null) {
+      addressWithConfirmedTransactions = await this.getPrismaTransactionsForSubscribedAddresses(confirmedTransaction, true)
+
+      // remove unconfirmed transactions that have now been confirmed
+      const transactionsToDelete = await transactionService.fetchUnconfirmedTransactions(confirmedTransaction.hash as string)
+      await transactionService.deleteTransactions(transactionsToDelete)
+    }
 
     // get new unconfirmed transactions
-    const unconfirmedTransaction = data.getUnconfirmedTransaction()!.toObject()
-    const parsedUnconfirmedTransaction = this.parseMempoolTx(unconfirmedTransaction)
-    const addressWithUnconfirmedTransactions = await this.getPrismaTransactionsForSubscribedAddresses(parsedUnconfirmedTransaction, false)
+    const unconfirmedTransaction = data.getUnconfirmedTransaction()?.toObject()
+    if (unconfirmedTransaction != null) {
+      const parsedUnconfirmedTransaction = this.parseMempoolTx(unconfirmedTransaction)
+      addressWithUnconfirmedTransactions = await this.getPrismaTransactionsForSubscribedAddresses(parsedUnconfirmedTransaction, false)
+    }
 
     await Promise.all(
       [...addressWithUnconfirmedTransactions, ...addressWithConfirmedTransactions].map(async addressWithTransaction => {

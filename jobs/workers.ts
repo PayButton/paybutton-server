@@ -8,20 +8,47 @@ import * as priceService from 'services/priceService'
 import * as addressService from 'services/addressService'
 import { subscribeAddressesAddTransactions } from 'services/blockchainService'
 
-const syncAndSubscribeAddressList = async (addresses: Address[]): Promise<void> => {
+export const subscribeAllAddresses = async (job: Job): Promise<void> => {
+  console.log(`job ${job.id as string}: subscribing all addresses`)
+  try {
+    const addresses = await addressService.fetchAllAddresses()
+    await subscribeAddressesAddTransactions(addresses)
+  } catch (err: any) {
+    throw new Error(`job ${job.id as string} failed with error ${err.message as string}`)
+  }
+}
+
+export const subscribeAllAddressesWorker = async (queueName: string): Promise<void> => {
+  const worker = new Worker(
+    queueName,
+    subscribeAllAddresses,
+    {
+      connection: redisBullMQ,
+      lockDuration: DEFAULT_WORKER_LOCK_DURATION
+    }
+  )
+  worker.on('completed', job => {
+    console.log('all addresses subscribed')
+  })
+
+  worker.on('failed', (job, err) => {
+    console.log(`addresses subscription failed: ${err.message}`)
+  })
+}
+
+const syncAddressList = async (addresses: Address[]): Promise<void> => {
   await Promise.all(
     addresses.map(async (addr) => {
       await transactionService.syncAllTransactionsForAddress(addr.address, Infinity)
     })
   )
-  await subscribeAddressesAddTransactions(addresses)
 }
 
 const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> => {
   console.log(`job ${job.id as string}: syncing all addresses for network ${job.data.networkId as string}...`)
   try {
     const addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
-    await syncAndSubscribeAddressList(addresses)
+    await syncAddressList(addresses)
   } catch (err: any) {
     throw new Error(`job ${job.id as string} failed with error ${err.message as string}`)
   }
@@ -86,7 +113,7 @@ export const syncUnsyncedAddressesWorker = async (queue: Queue): Promise<void> =
     async (job) => {
       const newAddresses = await addressService.fetchUnsyncedAddresses()
       if (newAddresses.length !== 0) {
-        await syncAndSubscribeAddressList(newAddresses)
+        await syncAddressList(newAddresses)
         job.data.syncedAddresses = newAddresses
       }
 

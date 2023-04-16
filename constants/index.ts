@@ -109,13 +109,13 @@ export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
 
 export type BLOCKCHAIN_CLIENT_OPTIONS = 'grpc' | 'chronik'
 export const NETWORK_BLOCKCHAIN_CLIENTS: KeyValueT<BLOCKCHAIN_CLIENT_OPTIONS> = {
-  ecash: 'grpc',
+  ecash: 'chronik',
   bitcoincash: 'grpc'
 }
 
 export const CHRONIK_CLIENT_URL = 'https://chronik.be.cash/xec'
 
-export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 15000
+export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 45000
 export const NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY = 200
 
 export const PAYMENT_WEEK_KEY_FORMAT = 'YYYY:WW'

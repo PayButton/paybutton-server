@@ -3,6 +3,7 @@ import { Queue, FlowProducer } from 'bullmq'
 import { redisBullMQ } from 'redis/clientInstance'
 import {
   syncAllAddressTransactionsForNetworkWorker,
+  subscribeAllAddressesWorker,
   syncPricesWorker,
   syncUnsyncedAddressesWorker
 } from './workers'
@@ -18,6 +19,8 @@ const RETRY_OPTS = {
 const main = async (): Promise<void> => {
   // sync all db addresses transactions
   const initTransactionsSync = new Queue('initTransactionsSync', { connection: redisBullMQ })
+
+  const subscribeTransactionsSync = new Queue('subscribeTransactionsSync', { connection: redisBullMQ })
 
   // sync current prices
   const pricesSync = new Queue('pricesSync', { connection: redisBullMQ })
@@ -67,7 +70,19 @@ const main = async (): Promise<void> => {
                   jobId: 'syncPastPrices',
                   ...RETRY_OPTS
                 },
-                queueName: pricesSync.name
+                queueName: pricesSync.name,
+                children: [
+                  {
+                    name: 'subscribeAllAddresses',
+                    data: {},
+                    opts: {
+                      removeOnFail: false,
+                      jobId: 'subscribeAllAddresses',
+                      ...RETRY_OPTS
+                    },
+                    queueName: subscribeTransactionsSync.name
+                  }
+                ]
               }
             ]
           }
@@ -89,6 +104,7 @@ const main = async (): Promise<void> => {
 
   await syncPricesWorker(pricesSync.name)
   await syncAllAddressTransactionsForNetworkWorker(initTransactionsSync.name)
+  await subscribeAllAddressesWorker(subscribeTransactionsSync.name)
   await syncUnsyncedAddressesWorker(newAddressesSync)
 }
 
