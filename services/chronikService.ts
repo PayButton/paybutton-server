@@ -80,7 +80,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
-  public async syncTransactionsAndPricesForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
+  public async syncTransactionsForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
     const address = await fetchAddressBySubstring(parameters.addressString)
     const pageSize = FETCH_N
     let totalFetchedConfirmedTransactions = 0
@@ -180,11 +180,8 @@ export function toHash160 (address: string): {type: ScriptType, hash160: string}
   }
 }
 
+// returns P2SH (type 76a914...88ac) or P2PKH (type a914...87) address
 export function outputScriptToAddress (outputScript: string | undefined): string | undefined {
-  // returns P2SH or P2PKH address, empty string otherwise
-  // P2PKH addresses are in outputScript of type 76a914...88ac
-  // P2SH addresses are in outputScript of type a914...87
-
   if (outputScript === undefined) return undefined
 
   const typeTestSlice = outputScript.slice(0, 4)

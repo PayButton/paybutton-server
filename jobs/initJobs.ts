@@ -40,16 +40,6 @@ const main = async (): Promise<void> => {
     },
     children: [
       {
-        name: 'syncXECAddresses',
-        data: { networkId: XEC_NETWORK_ID },
-        opts: {
-          removeOnFail: false,
-          jobId: 'syncXECAddresses',
-          ...RETRY_OPTS
-        },
-        queueName: initTransactionsSync.name
-      },
-      {
         name: 'syncBCHAddresses',
         data: { networkId: BCH_NETWORK_ID },
         opts: {
@@ -57,7 +47,31 @@ const main = async (): Promise<void> => {
           jobId: 'syncBCHAddresses',
           ...RETRY_OPTS
         },
-        queueName: initTransactionsSync.name
+        queueName: initTransactionsSync.name,
+        children: [
+          {
+            name: 'syncXECAddresses',
+            data: { networkId: XEC_NETWORK_ID },
+            opts: {
+              removeOnFail: false,
+              jobId: 'syncXECAddresses',
+              ...RETRY_OPTS
+            },
+            queueName: initTransactionsSync.name,
+            children: [
+              {
+                name: 'syncPastPrices',
+                data: { syncType: 'past' },
+                opts: {
+                  removeOnFail: false,
+                  jobId: 'syncPastPrices',
+                  ...RETRY_OPTS
+                },
+                queueName: pricesSync.name
+              }
+            ]
+          }
+        ]
       }
     ]
   })
@@ -70,13 +84,6 @@ const main = async (): Promise<void> => {
       repeat: {
         every: CURRENT_PRICE_SYNC_DELAY
       }
-    }
-  )
-  await pricesSync.add('syncPastPrices',
-    { syncType: 'past' },
-    {
-      removeOnFail: false,
-      jobId: 'syncPastPrices'
     }
   )
 
