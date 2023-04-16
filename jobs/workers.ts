@@ -6,36 +6,15 @@ import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION } from 'constant
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
 import * as addressService from 'services/addressService'
-import { GrpcBlockchainClient } from 'services/grpcService'
-import { Transaction } from 'grpc-bchrpc-node'
-import { getAddressPrefix } from 'utils'
+import { subscribeAddressesAddTransactions } from 'services/blockchainService'
 
-const grpc = new GrpcBlockchainClient()
-
-const subscribeGrpcTxJob = (address: Address, confirmed: boolean): (txn: Transaction.AsObject) => Promise<any> => {
-  return async (txn: Transaction.AsObject) => {
-    const transactionPrisma = await grpc.getTransactionFromGrpcTransaction(txn, address, confirmed)
-    await transactionService.upsertTransaction(transactionPrisma, address)
-  }
-}
-
-const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void> => {
-  // sync addresses
+const syncAndSubscribeAddressList = async (addresses: Address[]): Promise<void> => {
   await Promise.all(
-    addressList.map(async (addr) => {
+    addresses.map(async (addr) => {
       await transactionService.syncAllTransactionsForAddress(addr.address, Infinity)
     })
   )
-  // subscribe addresses
-  // WIP: this assumes grpc is the only one being used, when chronik goes live this has to be changed
-  addressList.map(async (addr) => {
-    await grpc.subscribeTransactions(
-      [addr.address],
-      subscribeGrpcTxJob(addr, true),
-      subscribeGrpcTxJob(addr, false),
-      getAddressPrefix(addr.address)
-    )
-  })
+  await subscribeAddressesAddTransactions(addresses)
 }
 
 const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> => {
