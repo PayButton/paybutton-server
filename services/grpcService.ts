@@ -12,6 +12,7 @@ import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValue
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
+import { syncPricesFromTransactionList } from './priceService'
 import { TransactionWithAddressAndPrices, upsertManyTransactionsForAddress } from './transactionService'
 import { Decimal } from '@prisma/client/runtime'
 
@@ -151,6 +152,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
       console.time('upserting transactions')
       const persistedTransactions = await upsertManyTransactionsForAddress(transactionsToPersist, address)
       console.timeEnd('upserting transactions')
+      await syncPricesFromTransactionList(persistedTransactions)
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
