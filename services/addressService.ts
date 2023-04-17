@@ -15,6 +15,18 @@ const addressWithTransactions = Prisma.validator<Prisma.AddressArgs>()({
 
 type AddressWithTransactions = Prisma.AddressGetPayload<typeof addressWithTransactions>
 
+const addressWithUserProfiles = Prisma.validator<Prisma.AddressArgs>()({
+  include: {
+    userProfiles: {
+      include: {
+        userProfile: true
+      }
+    }
+  }
+})
+
+export type AddressWithUserProfiles = Prisma.AddressGetPayload<typeof addressWithUserProfiles>
+
 export const includePaybuttonsNested = {
   paybuttons: {
     include: {
