@@ -127,7 +127,7 @@ export async function upsertManyTransactionsForAddress (transactions: Prisma.Tra
   const txs = await prisma.$transaction(async (_) => {
     const insertedTransactions: Array<TransactionWithAddressAndPrices | undefined> = await Promise.all(
       transactions.map(async (transaction) => {
-        return await upsertTransaction(transaction, address, cache)
+        return await upsertTransaction(transaction, address, false)
       })
     )
     return insertedTransactions
