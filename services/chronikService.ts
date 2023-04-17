@@ -1,8 +1,8 @@
 import { ChronikClient, ScriptType, Tx, Utxo } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters } from './blockchainService'
-import { GetTransactionResponse, Transaction } from 'grpc-bchrpc-node'
+import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
+import { Transaction } from 'grpc-bchrpc-node'
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N } from 'constants/index'
 import { TransactionWithAddressAndPrices, upsertManyTransactionsForAddress } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
@@ -10,6 +10,7 @@ import xecaddr from 'xecaddrjs'
 import { satoshisToUnit } from 'utils'
 import { fetchAddressBySubstring } from './addressService'
 import { syncPricesFromTransactionList } from './priceService'
+import { Decimal } from '@prisma/client/runtime'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
@@ -131,8 +132,33 @@ export class ChronikBlockchainClient implements BlockchainClient {
     return utxos.reduce((acc, utxo) => acc + parseInt(utxo.value), 0)
   }
 
-  async getTransactionDetails (hash: string, networkSlug: string): Promise<GetTransactionResponse.AsObject> {
-    throw new Error('Method not implemented.')
+  async getTransactionDetails (hash: string, networkSlug: string): Promise<TransactionDetails> {
+    const tx = await this.chronik.tx(hash)
+
+    const details: TransactionDetails = {
+      hash: tx.txid,
+      version: tx.version,
+      block: {
+        hash: tx.block?.hash,
+        height: tx.block?.height,
+        timestamp: tx.block?.timestamp
+      },
+      inputs: [],
+      outputs: []
+    }
+    for (const input of tx.inputs) {
+      details.inputs.push({
+        value: new Decimal(input.value),
+        address: outputScriptToAddress(input.outputScript)
+      })
+    }
+    for (const output of tx.outputs) {
+      details.outputs.push({
+        value: new Decimal(output.value),
+        address: outputScriptToAddress(output.outputScript)
+      })
+    }
+    return details
   }
 
   async subscribeTransactions (addresses: string[], onTransactionNotification: (txn: Transaction.AsObject) => any, onMempoolTransactionNotification: (txn: Transaction.AsObject) => any, networkSlug: string): Promise<void> {
@@ -154,11 +180,9 @@ export function toHash160 (address: string): {type: ScriptType, hash160: string}
   }
 }
 
-export function outputScriptToAddress (outputScript: String): string | boolean {
-  // returns P2SH or P2PKH address
-  // P2PKH addresses are in outputScript of type 76a914...88ac
-  // P2SH addresses are in outputScript of type a914...87
-  // Return false if cannot determine P2PKH or P2SH address
+// returns P2SH (type 76a914...88ac) or P2PKH (type a914...87) address
+export function outputScriptToAddress (outputScript: string | undefined): string | undefined {
+  if (outputScript === undefined) return undefined
 
   const typeTestSlice = outputScript.slice(0, 4)
   let addressType
@@ -179,12 +203,10 @@ export function outputScriptToAddress (outputScript: String): string | boolean {
       )
       break
     default:
-      return false
+      return undefined
   }
 
-  if (hash160.length !== 40) {
-    return false
-  }
+  if (hash160.length !== 40) return undefined
 
   const buffer = Buffer.from(hash160, 'hex')
 

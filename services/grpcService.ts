@@ -2,18 +2,18 @@ import {
   GrpcClient,
   TransactionNotification,
   Transaction as GrpcTransaction,
-  GetTransactionResponse,
   GetAddressUnspentOutputsResponse,
   MempoolTransaction
 } from 'grpc-bchrpc-node'
 
-import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters } from './blockchainService'
+import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
 import { getObjectValueForNetworkSlug, getObjectValueForAddress, satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from '../utils/index'
 import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, RESPONSE_MESSAGES, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD } from '../constants/index'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
 import { TransactionWithAddressAndPrices, upsertManyTransactionsForAddress } from './transactionService'
+import { Decimal } from '@prisma/client/runtime'
 
 export interface OutputsList {
   outpoint: object
@@ -170,12 +170,36 @@ export class GrpcBlockchainClient implements BlockchainClient {
     return outputsList.reduce((acc, output) => acc + output.value, 0)
   };
 
-  public async getTransactionDetails (hash: string, networkSlug: string): Promise<GetTransactionResponse.AsObject> {
+  public async getTransactionDetails (hash: string, networkSlug: string): Promise<TransactionDetails> {
     const client = this.getClientForNetworkSlug(networkSlug)
-    const res = (
+    const tx = (
       await client.getTransaction({ hash, reversedHashOrder: true })
-    ).toObject()
-    return res
+    ).toObject().transaction as GrpcTransaction.AsObject
+
+    const details: TransactionDetails = {
+      hash: tx.hash as string,
+      version: tx.version,
+      block: {
+        hash: tx.blockHash as string,
+        height: tx.blockHeight,
+        timestamp: `${tx.timestamp}`
+      },
+      inputs: [],
+      outputs: []
+    }
+    for (const input of tx.inputsList) {
+      details.inputs.push({
+        value: new Decimal(input.value),
+        address: input.address
+      })
+    }
+    for (const output of tx.outputsList) {
+      details.outputs.push({
+        value: new Decimal(output.value),
+        address: output.address
+      })
+    }
+    return details
   };
 
   public async subscribeTransactions (

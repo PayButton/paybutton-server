@@ -3,10 +3,10 @@ import { ChronikBlockchainClient } from './chronikService'
 import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils/index'
 import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CLIENT_OPTIONS } from '../constants/index'
 import {
-  Transaction,
-  GetTransactionResponse
+  Transaction
 } from 'grpc-bchrpc-node'
 import { TransactionWithAddressAndPrices } from './transactionService'
+import { Decimal } from '@prisma/client/runtime'
 
 export interface BlockchainInfo {
   height: number
@@ -23,12 +23,29 @@ export interface GetAddressTransactionsParameters {
   maxTransactionsToReturn: number
 }
 
+interface InputOutput {
+  value: Decimal
+  address?: string
+}
+
+export interface TransactionDetails {
+  hash: string
+  version: number
+  inputs: InputOutput[]
+  outputs: InputOutput[]
+  block: {
+    height?: number
+    hash?: string
+    timestamp?: string
+  }
+}
+
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
   syncTransactionsForAddress: (parameters: GetAddressTransactionsParameters) => Promise<TransactionWithAddressAndPrices[]>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
-  getTransactionDetails: (hash: string, networkSlug: string) => Promise<GetTransactionResponse.AsObject>
+  getTransactionDetails: (hash: string, networkSlug: string) => Promise<TransactionDetails>
   subscribeTransactions: (
     addresses: string[],
     onTransactionNotification: (txn: Transaction.AsObject) => any,
@@ -71,7 +88,7 @@ export async function getBlockInfo (networkSlug: string, height: number): Promis
   return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockInfo(networkSlug, height)
 }
 
-export async function getTransactionDetails (hash: string, networkSlug: string): Promise<GetTransactionResponse.AsObject> {
+export async function getTransactionDetails (hash: string, networkSlug: string): Promise<TransactionDetails> {
   return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getTransactionDetails(hash, networkSlug)
 }
 
