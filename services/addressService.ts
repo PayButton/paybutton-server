@@ -73,11 +73,6 @@ const includePaybuttonsAndUserProfilesNested = {
   }
 }
 
-const addressWithPaybuttonsAndUserProfiles = Prisma.validator<Prisma.AddressArgs>()(
-  includePaybuttonsAndUserProfilesNested
-)
-export type AddressWithPaybuttonsAndUserProfiles = Prisma.AddressGetPayload<typeof addressWithPaybuttonsAndUserProfiles>
-
 const includeTransactionNetworkUserProfile = {
   include: {
     transactions: true,
@@ -152,7 +147,7 @@ export async function fetchAllAddresses (includeTransactions = false): Promise<A
   })
 }
 
-export async function fetchUnsyncedAddresses (): Promise<AddressWithPaybuttonsAndUserProfiles[]> {
+export async function fetchUnsyncedAddresses (): Promise<AddressWithUserProfiles[]> {
   return await prisma.address.findMany({
     where: {
       lastSynced: null
@@ -161,7 +156,7 @@ export async function fetchUnsyncedAddresses (): Promise<AddressWithPaybuttonsAn
   })
 }
 
-export async function fetchAllAddressesForNetworkId (networkId: number): Promise<AddressWithPaybuttonsAndUserProfiles[]> {
+export async function fetchAllAddressesForNetworkId (networkId: number): Promise<AddressWithUserProfiles[]> {
   return await prisma.address.findMany({
     where: {
       networkId
