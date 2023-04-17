@@ -1,6 +1,6 @@
 import { Worker, Job, Queue } from 'bullmq'
 import { redisBullMQ } from 'redis/clientInstance'
-import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION, RESPONSE_MESSAGES } from 'constants/index'
+import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
 
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
@@ -8,34 +8,21 @@ import * as addressService from 'services/addressService'
 import { GrpcBlockchainClient } from 'services/grpcService'
 import { Transaction } from 'grpc-bchrpc-node'
 import { getAddressPrefix } from 'utils'
-import { getPaymentsFromTransactionsAndAddresses, cachePayments } from 'redis/dashboardCache'
 
 const grpc = new GrpcBlockchainClient()
 
-const subscribeGrpcTxJob = (address: addressService.AddressWithPaybuttonsAndUserProfiles, confirmed: boolean): (txn: Transaction.AsObject) => Promise<any> => {
+const subscribeGrpcTxJob = (address: addressService.AddressWithUserProfiles, confirmed: boolean): (txn: Transaction.AsObject) => Promise<any> => {
   return async (txn: Transaction.AsObject) => {
     const transactionCreateInput = await grpc.getTransactionFromGrpcTransaction(txn, address, confirmed)
-    const tx = await transactionService.upsertTransaction(transactionCreateInput, address)
-    if (tx === undefined) {
-      throw new Error(RESPONSE_MESSAGES.FAILED_TO_UPSERT_TRANSACTION_500.message)
-    }
-    const payments = await getPaymentsFromTransactionsAndAddresses([tx], [address])
-    for (const userProfile of address.userProfiles) {
-      await cachePayments(userProfile.userProfile.userId, payments)
-    }
+    await transactionService.upsertTransaction(transactionCreateInput, address)
   }
 }
 
-const syncAndSubscribeAddressList = async (addressList: addressService.AddressWithPaybuttonsAndUserProfiles[]): Promise<void> => {
+const syncAndSubscribeAddressList = async (addressList: addressService.AddressWithUserProfiles[]): Promise<void> => {
   // sync addresses
   await Promise.all(
     addressList.map(async (addr) => {
-      const insertedTransactions = await transactionService.syncAllTransactionsForAddress(addr.address, Infinity)
-      // cache transactions
-      const payments = await getPaymentsFromTransactionsAndAddresses(insertedTransactions, [addr])
-      for (const userProfile of addr.userProfiles) {
-        await cachePayments(userProfile.userProfile.userId, payments)
-      }
+      await transactionService.syncAllTransactionsForAddress(addr.address, Infinity)
     })
   )
   // subscribe addresses
