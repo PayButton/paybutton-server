@@ -3,7 +3,7 @@ import { Prisma, Address } from '@prisma/client'
 import { syncTransactionsForAddress, GetAddressTransactionsParameters } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
-import { QuoteValues } from 'services/priceService'
+import { QuoteValues, connectTransactionToPrices } from 'services/priceService'
 import { FETCH_N_TIMEOUT, RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import _ from 'lodash'
 
@@ -72,7 +72,7 @@ export async function base64HashToHex (base64Hash: string): Promise<string> {
   )
 }
 
-export async function upsertTransaction (transaction: Prisma.TransactionUncheckedCreateInput, address: Address): Promise<TransactionWithAddressAndPrices | undefined> {
+export async function upsertTransaction (transaction: Prisma.TransactionUncheckedCreateInput, address: Address, includePrices = false): Promise<TransactionWithAddressAndPrices | undefined> {
   if (transaction.amount === new Prisma.Decimal(0)) { // out transactions
     return
   }
@@ -84,7 +84,7 @@ export async function upsertTransaction (transaction: Prisma.TransactionUnchecke
     timestamp: transaction.timestamp,
     confirmed: transaction.confirmed
   }
-  return await prisma.transaction.upsert({
+  const upsertedTx = await prisma.transaction.upsert({
     where: {
       Transaction_hash_addressId_unique_constraint: {
         hash: transactionParams.hash,
@@ -95,13 +95,18 @@ export async function upsertTransaction (transaction: Prisma.TransactionUnchecke
     create: transactionParams,
     include: includeAddressAndPrices
   })
+  if (includePrices) {
+    void connectTransactionToPrices(upsertedTx, address.networkId)
+    return fetchTransactionById(upsertedTx.id)
+  }
+  return upsertedTx
 }
 
-export async function upsertManyTransactionsForAddress (transactions: Prisma.TransactionUncheckedCreateInput[], address: Address): Promise<TransactionWithAddressAndPrices[]> {
+export async function upsertManyTransactionsForAddress (transactions: Prisma.TransactionUncheckedCreateInput[], address: Address, includePrices = false): Promise<TransactionWithAddressAndPrices[]> {
   const ret = await prisma.$transaction(async (_) => {
     const insertedTransactions: Array<TransactionWithAddressAndPrices | undefined> = await Promise.all(
       transactions.map(async (transaction) => {
-        return await upsertTransaction(transaction, address)
+        return await upsertTransaction(transaction, address, includePrices)
       })
     )
     return insertedTransactions
