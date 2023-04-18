@@ -290,7 +290,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
       }
     ))
     return addressWithTransactions.filter(
-      addressWithTransaction => addressWithTransaction.transaction.amount !== new Prisma.Decimal(0)
+      addressWithTransaction => addressWithTransaction.transaction.amount > new Prisma.Decimal(0)
     )
   }
 
