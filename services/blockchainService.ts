@@ -82,8 +82,8 @@ export async function syncTransactionsForAddress (parameters: GetAddressTransact
 
 export async function getLastBlockTimestamp (networkSlug: string): Promise<number> {
   const client = getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS)
-  const getBlockchainInfo = await client.getBlockchainInfo(networkSlug)
-  const lastBlockInfo = await client.getBlockInfo(networkSlug, getBlockchainInfo.height)
+  const blockchainInfo = await client.getBlockchainInfo(networkSlug)
+  const lastBlockInfo = await client.getBlockInfo(networkSlug, blockchainInfo.height)
   return lastBlockInfo.timestamp
 }
 
