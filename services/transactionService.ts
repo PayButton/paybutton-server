@@ -3,8 +3,8 @@ import { Prisma } from '@prisma/client'
 import { syncTransactionsForAddress, GetAddressTransactionsParameters } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
-import { QuoteValues } from 'services/priceService'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { QuoteValues, connectTransactionToPrices } from 'services/priceService'
+import { FETCH_N_TIMEOUT, RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
 
@@ -73,14 +73,20 @@ export async function base64HashToHex (base64Hash: string): Promise<string> {
   )
 }
 
-export async function createTransaction (transactionData: Prisma.TransactionUncheckedCreateInput): Promise<TransactionWithAddressAndPrices | undefined> {
+export async function createTransaction (transactionData: Prisma.TransactionUncheckedCreateInput, includePrices = false): Promise<TransactionWithAddressAndPrices | undefined> {
   if (transactionData.amount === new Prisma.Decimal(0)) { // out transactions
     return
   }
-  return await prisma.transaction.create({
+  transactionData.hash = await base64HashToHex(transactionData.hash)
+  const createdTx = await prisma.transaction.create({
     data: transactionData,
     include: includeAddressAndPrices
   })
+  if (includePrices) {
+    void connectTransactionToPrices(createdTx)
+    return fetchTransactionById(createdTx.id)
+  }
+  return createdTx
 }
 
 async function addUUIDToTransactions (transactions: Prisma.TransactionUncheckedCreateInput[]): Promise<string[]> {
@@ -99,6 +105,9 @@ export async function createManyTransactions (transactionsData: Prisma.Transacti
   await prisma.transaction.createMany({
     data: transactionsData
   })
+  if (includePrices) {
+    void connectTransactionsToPricesByUIIDList(uuidList)
+  }
   return await prisma.transaction.findMany({
     where: {
       id: {
