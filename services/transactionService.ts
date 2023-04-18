@@ -61,6 +61,19 @@ export async function fetchAddressTransactions (addressString: string): Promise<
   return _.orderBy(transactions, ['timestamp'], ['desc'])
 }
 
+export async function fetchTransactionById (id: string): Promise<TransactionWithAddressAndPrices> {
+  const tx = await prisma.transaction.findUnique({
+    where: {
+      id
+    },
+    include: includeAddressAndPrices
+  })
+  if (tx === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
+  }
+  return tx
+}
+
 export async function base64HashToHex (base64Hash: string): Promise<string> {
   return (
     atob(base64Hash)
