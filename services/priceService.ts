@@ -1,7 +1,7 @@
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import axios from 'axios'
 import { appInfo } from 'config/appInfo'
-import { Prisma, Price } from '@prisma/client'
+import { Prisma, Transaction, Price } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT } from 'constants/index'
 import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
@@ -236,6 +236,59 @@ export interface SyncTransactionPricesInput {
   networkId: number
   timestamp: number
   transactionId: string
+}
+
+// expects prices to already exist, returns true if successful
+export async function connectTransactionToPrices (tx: Transaction, networkId: number): Promise<boolean> {
+  const priceTimestamp = flattenTimestamp(tx.timestamp)
+  const cadPrice = await prisma.price.findUnique({
+    where: {
+      Price_timestamp_quoteId_networkId_unique_constraint: {
+        quoteId: CAD_QUOTE_ID,
+        networkId,
+        timestamp: priceTimestamp
+      }
+    }
+  })
+  const usdPrice = await prisma.price.findUnique({
+    where: {
+      Price_timestamp_quoteId_networkId_unique_constraint: {
+        quoteId: USD_QUOTE_ID,
+        networkId,
+        timestamp: priceTimestamp
+      }
+    }
+  })
+  if (cadPrice === null || usdPrice === null) {
+    return false
+  }
+  void await prisma.pricesOnTransactions.upsert({
+    where: {
+      priceId_transactionId: {
+        priceId: usdPrice.id,
+        transactionId: tx.id
+      }
+    },
+    create: {
+      transactionId: tx.id,
+      priceId: usdPrice.id
+    },
+    update: {}
+  })
+  void await prisma.pricesOnTransactions.upsert({
+    where: {
+      priceId_transactionId: {
+        priceId: cadPrice.id,
+        transactionId: tx.id
+      }
+    },
+    create: {
+      transactionId: tx.id,
+      priceId: cadPrice.id
+    },
+    update: {}
+  })
+  return true
 }
 
 export async function createTransactionPrices (params: CreatePricesFromTransactionInput): Promise<void> {

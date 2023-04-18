@@ -24,6 +24,7 @@ export const RESPONSE_MESSAGES = {
   ADDRESS_NOT_PROVIDED_400: { statusCode: 400, message: "'address' not provided." },
   INVALID_ADDRESS_400: { statusCode: 400, message: 'Invalid address.' },
   NO_ADDRESS_FOUND_404: { statusCode: 404, message: 'No address found.' },
+  NO_TRANSACTION_FOUND_404: { statusCode: 404, message: 'No transaction found.' },
   NO_BUTTON_FOUND_404: { statusCode: 404, message: 'No button found.' },
   NO_WALLET_FOUND_404: { statusCode: 404, message: 'No wallet found.' },
   NO_USER_PROFILE_FOUND_ON_WALLET_404: { statusCode: 404, message: 'No user profile found for wallet.' },
