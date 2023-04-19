@@ -6,7 +6,7 @@ import {
   Transaction
 } from 'grpc-bchrpc-node'
 import { TransactionWithAddressAndPrices } from './transactionService'
-import { Decimal } from '@prisma/client/runtime'
+import { Prisma } from '@prisma/client'
 
 export interface BlockchainInfo {
   height: number
@@ -24,7 +24,7 @@ export interface GetAddressTransactionsParameters {
 }
 
 interface InputOutput {
-  value: Decimal
+  value: Prisma.Decimal
   address?: string
 }
 
