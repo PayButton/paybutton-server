@@ -4,7 +4,7 @@ import bs58 from 'bs58'
 import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
 import { Transaction } from 'grpc-bchrpc-node'
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N } from 'constants/index'
-import { TransactionWithAddressAndPrices, upsertManyTransactionsForAddress } from './transactionService'
+import { TransactionWithAddressAndPrices, createManyTransactionsForAddress } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { satoshisToUnit } from 'utils'
@@ -110,7 +110,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         [...confirmedTransactions, ...unconfirmedTransactions].map(async tx => await this.getTransactionFromChronikTransaction(tx, address))
       )
 
-      const persistedTransactions = await upsertManyTransactionsForAddress(transactionsToPersist, address)
+      const persistedTransactions = await createManyTransactionsForAddress(transactionsToPersist)
       await syncPricesFromTransactionList(persistedTransactions)
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
