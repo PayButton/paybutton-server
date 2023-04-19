@@ -1,7 +1,7 @@
 import { Network, Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES, NETWORK_SLUGS, NETWORK_IDS } from 'constants/index'
 import prisma from 'prisma/clientInstance'
-import { getBlockchainInfo, getBlockInfo } from 'services/blockchainService'
+import { getLastBlockTimestamp } from 'services/blockchainService'
 import { fetchAllUserAddresses } from 'services/addressService'
 
 export async function getNetworkFromSlug (slug: string): Promise<Network> {
@@ -19,12 +19,9 @@ export interface NetworkWithConnectionInfo extends Network, ConnectionInfo {}
 
 async function isConnected (networkSlug: string): Promise<ConnectionInfo> {
   try {
-    const blockchainInfo = await getBlockchainInfo(networkSlug)
-    const lastBlockInfo = await getBlockInfo(networkSlug, blockchainInfo.height)
-    const lastBlockTimestamp = lastBlockInfo.timestamp
     return {
       connected: true,
-      lastBlockTimestamp
+      lastBlockTimestamp: await getLastBlockTimestamp(networkSlug)
     }
   } catch (e: any) {
     return {
