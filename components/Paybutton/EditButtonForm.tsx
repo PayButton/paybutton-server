@@ -21,6 +21,8 @@ export default function EditButtonForm ({ paybutton, onDelete, refreshPaybutton 
   const [modal, setModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState(false)
   const [error, setError] = useState('')
+  const [name, setName] = useState(paybutton.name)
+  const [addresses, setAddresses] = useState(paybutton.addresses.map((conn) => conn.address.address).join('\n'))
 
   useEffect(() => {
     setModal(false)
@@ -57,14 +59,14 @@ export default function EditButtonForm ({ paybutton, onDelete, refreshPaybutton 
             <div className={style.form_ctn}>
               <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
                 <label htmlFor='name'>Button Name</label>
-                <input {...register('name')} type='text' id='name' name='name' placeholder={paybutton.name}/>
+                <input {...register('name')} type='text' id='name' name='name' value={name} onChange={(e) => setName(e.target.value)} />
                 <label className={style.labelMargin} htmlFor='addresses'>
                   Addresses
                 </label>
-                  <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')}/>
+                  <textarea {...register('addresses')} id='addresses' name='addresses' value={addresses} onChange={(e) => setAddresses(e.target.value)} />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
                 <div className={style.btn_row2}>
-                  {(error === undefined) ? null : <div className={style.error_message}>{error}</div>}
+                  {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
                   <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
                   <div>
       <button type='submit'>Submit</button>
