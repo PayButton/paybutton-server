@@ -59,11 +59,11 @@ export default function EditButtonForm ({ paybutton, onDelete, refreshPaybutton 
             <div className={style.form_ctn}>
               <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
                 <label htmlFor='name'>Button Name</label>
-                <input {...register('name')} type='text' id='name' name='name' value={name} onChange={(e) => setName(e.target.value)} />
+                <input {...register('name')} type='text' id='name' name='name' placeholder={paybutton.name} value={name} onChange={(e) => setName(e.target.value)} />
                 <label className={style.labelMargin} htmlFor='addresses'>
                   Addresses
                 </label>
-                  <textarea {...register('addresses')} id='addresses' name='addresses' value={addresses} onChange={(e) => setAddresses(e.target.value)} />
+                  <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')} value={addresses} onChange={(e) => setAddresses(e.target.value)} />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
                 <div className={style.btn_row2}>
                   {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
