@@ -21,7 +21,7 @@ const TableContainer = ({ columns, data }) => {
     {
       columns,
       data,
-      initialState: { pageIndex: 0, pageSize: 10 }
+      initialState: { pageIndex: 0, pageSize: 10, sortBy: [{ id: 'timestamp', desc: true }] }
     },
     useSortBy,
     usePagination
