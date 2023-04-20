@@ -43,8 +43,7 @@ export const RESPONSE_MESSAGES = {
   DEFAULT_WALLET_CANNOT_BE_DELETED_400: { statusCode: 400, message: 'A default wallet cannot be deleted.' },
   USER_PROFILE_NOT_FOUND_400: { statusCode: 400, message: 'User profile not found.' },
   CACHED_PAYMENT_NOT_FOUND_404: { statusCode: 404, message: 'Cached payment not found.' },
-  NO_ADDRESS_FOUND_FOR_TRANSACTION_404: { statusCode: 404, message: 'No address found for transaction.' },
-  ADDRESSES_ALREADY_SUBSCRIBED_400: { statusCode: 400, message: 'Addresses were already subscribed.' }
+  NO_ADDRESS_FOUND_FOR_TRANSACTION_404: { statusCode: 404, message: 'No address found for transaction.' }
 }
 
 export interface KeyValueT<T> {
@@ -95,9 +94,10 @@ export const SYNC_TXS_JOBS_RETRY_DELAY = 2000
 export const BCH_TIMESTAMP_THRESHOLD = 1501588800 // 2017 Aug 1, 12PM
 export const XEC_TIMESTAMP_THRESHOLD = 1605398400 // 2020 Nov 15, 12AM
 
+export const DEFAULT_WORKER_LOCK_DURATION = 120000
 // Wait time (in ms) between sync of current prices
 export const CURRENT_PRICE_SYNC_DELAY = 60000
-export const DEFAULT_WORKER_LOCK_DURATION = 120000
+export const SUBSCRIBE_ADDRESSES_RETRY_DELAY = 60000
 
 export const NETWORK_TICKERS: KeyValueT<string> = {
   ecash: 'XEC',

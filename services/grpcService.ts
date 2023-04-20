@@ -218,7 +218,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     if (addresses.length === 0) return
 
     const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address))
-    if (addressesAlreadySubscribed.length === addresses.length) throw new Error(RESPONSE_MESSAGES.ADDRESSES_ALREADY_SUBSCRIBED_400.message)
+    if (addressesAlreadySubscribed.length === addresses.length) return
     addressesAlreadySubscribed.forEach(address => {
       console.log(`This address was already subscribed: ${address.address}`)
     })
