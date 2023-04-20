@@ -3,7 +3,6 @@ import { ChronikBlockchainClient } from './chronikService'
 import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils/index'
 import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CLIENT_OPTIONS, NETWORK_IDS, NETWORK_TICKERS } from '../constants/index'
 import { TransactionWithAddressAndPrices } from './transactionService'
-import { Decimal } from '@prisma/client/runtime'
 import { Address, Prisma } from '@prisma/client'
 
 export interface BlockchainInfo {
@@ -22,7 +21,7 @@ export interface GetAddressTransactionsParameters {
 }
 
 interface InputOutput {
-  value: Decimal
+  value: Prisma.Decimal
   address?: string
 }
 

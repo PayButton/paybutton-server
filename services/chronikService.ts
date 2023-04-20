@@ -9,7 +9,6 @@ import xecaddr from 'xecaddrjs'
 import { satoshisToUnit } from 'utils'
 import { fetchAddressBySubstring } from './addressService'
 import { syncPricesFromTransactionList } from './priceService'
-import { Decimal } from '@prisma/client/runtime'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
@@ -147,13 +146,13 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
     for (const input of tx.inputs) {
       details.inputs.push({
-        value: new Decimal(input.value),
+        value: new Prisma.Decimal(input.value),
         address: outputScriptToAddress(input.outputScript)
       })
     }
     for (const output of tx.outputs) {
       details.outputs.push({
-        value: new Decimal(output.value),
+        value: new Prisma.Decimal(output.value),
         address: outputScriptToAddress(output.outputScript)
       })
     }

@@ -114,8 +114,7 @@ describe('parseError', () => {
   it('Prisma unique name constraint violation turns into custom error', () => {
     const error = new Prisma.PrismaClientKnownRequestError(
       'Error message: Paybutton_name_providerUserId_unique_constraint',
-      'P2002',
-      'foo'
+      { code: 'P2002', clientVersion: 'foo' }
     )
     expect(v.parseError(error)).toStrictEqual(new Error(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message))
   })

@@ -13,9 +13,7 @@ import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValue
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
-import { TransactionWithAddressAndPrices, upsertManyTransactionsForAddress } from './transactionService'
-import { Decimal } from '@prisma/client/runtime'
-import * as transactionService from './transactionService'
+import { deleteTransactions, fetchUnconfirmedTransactions, TransactionWithAddressAndPrices, upsertManyTransactionsForAddress, upsertTransaction } from './transactionService'
 import { syncPricesFromTransactionList } from './priceService'
 
 export interface OutputsList {
@@ -201,13 +199,13 @@ export class GrpcBlockchainClient implements BlockchainClient {
     }
     for (const input of tx.inputsList) {
       details.inputs.push({
-        value: new Decimal(input.value),
+        value: new Prisma.Decimal(input.value),
         address: input.address
       })
     }
     for (const output of tx.outputsList) {
       details.outputs.push({
-        value: new Decimal(output.value),
+        value: new Prisma.Decimal(output.value),
         address: output.address
       })
     }
@@ -304,8 +302,8 @@ export class GrpcBlockchainClient implements BlockchainClient {
       addressWithConfirmedTransactions = await this.getPrismaTransactionsForSubscribedAddresses(confirmedTransaction, true)
 
       // remove unconfirmed transactions that have now been confirmed
-      const transactionsToDelete = await transactionService.fetchUnconfirmedTransactions(confirmedTransaction.hash as string)
-      await transactionService.deleteTransactions(transactionsToDelete)
+      const transactionsToDelete = await fetchUnconfirmedTransactions(confirmedTransaction.hash as string)
+      await deleteTransactions(transactionsToDelete)
     }
 
     // get new unconfirmed transactions
@@ -317,7 +315,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
 
     await Promise.all(
       [...addressWithUnconfirmedTransactions, ...addressWithConfirmedTransactions].map(async addressWithTransaction => {
-        return await transactionService.upsertTransaction(addressWithTransaction.transaction, addressWithTransaction.address)
+        return await upsertTransaction(addressWithTransaction.transaction, addressWithTransaction.address)
       })
     )
   }
