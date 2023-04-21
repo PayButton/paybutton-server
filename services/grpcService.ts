@@ -103,7 +103,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
   // WIP: this should be private in the future (after 411-6)
   public async getTransactionFromGrpcTransaction (transaction: GrpcTransaction.AsObject, address: Address, confirmed: boolean): Promise<Prisma.TransactionUncheckedCreateInput> {
     return {
-      hash: await base64HashToHex(transaction.hash),
+      hash: await base64HashToHex(transaction.hash as string),
       amount: await this.getTransactionAmount(transaction, address.address),
       timestamp: transaction.timestamp,
       addressId: address.id,
