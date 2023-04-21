@@ -1,4 +1,4 @@
-import { TransactionWithAddressAndPrices } from 'services/transactionService'
+import { TransactionWithAddressAndPrices, getTransactionNetworkId } from 'services/transactionService'
 import axios from 'axios'
 import { appInfo } from 'config/appInfo'
 import { Prisma, Transaction, Price } from '@prisma/client'
@@ -239,8 +239,9 @@ export interface SyncTransactionPricesInput {
 }
 
 // expects prices to already exist, returns true if successful
-export async function connectTransactionToPrices (tx: Transaction, networkId: number): Promise<boolean> {
+export async function connectTransactionToPrices (tx: Transaction): Promise<boolean> {
   const priceTimestamp = flattenTimestamp(tx.timestamp)
+  const networkId = await getTransactionNetworkId(tx)
   const cadPrice = await prisma.price.findUnique({
     where: {
       Price_timestamp_quoteId_networkId_unique_constraint: {
