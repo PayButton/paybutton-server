@@ -1,7 +1,7 @@
-import { TransactionWithAddressAndPrices, getTransactionNetworkId, fetchTransactionById } from 'services/transactionService'
+import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import axios from 'axios'
 import { appInfo } from 'config/appInfo'
-import { Prisma, Transaction, Price } from '@prisma/client'
+import { Prisma, Price } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT } from 'constants/index'
 import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
@@ -17,6 +17,11 @@ function flattenTimestamp (timestamp: number): number {
 interface IResponseData {
   Price_in_CAD: string
   Price_in_USD: string
+}
+
+interface AllPrices {
+  cad: Price
+  usd: Price
 }
 
 interface IResponseDataDaily extends IResponseData {
@@ -238,27 +243,14 @@ export interface SyncTransactionPricesInput {
   transactionId: string
 }
 
-export async function connectTransactionsToPricesByIdList (idList: string[]): Promise<boolean> {
-  return await prisma.$transaction(async (p) => {
-    const promises = idList.map(async (id) => {
-      const tx = await fetchTransactionById(id)
-      return await connectTransactionToPrices(tx, p)
-    })
-    const results = await Promise.all(promises)
-    return results.every((b) => b)
-  })
-}
-
-// expects prices to already exist, returns true if successful
-export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient): Promise<boolean> {
-  const priceTimestamp = flattenTimestamp(tx.timestamp)
-  const networkId = await getTransactionNetworkId(tx)
+export async function fetchPricesForNetworkAndTimestamp (networkId: number, timestamp: number, prisma: Prisma.TransactionClient): Promise<AllPrices> {
+  timestamp = flattenTimestamp(timestamp)
   const cadPrice = await prisma.price.findUnique({
     where: {
       Price_timestamp_quoteId_networkId_unique_constraint: {
         quoteId: CAD_QUOTE_ID,
         networkId,
-        timestamp: priceTimestamp
+        timestamp
       }
     }
   })
@@ -267,40 +259,17 @@ export async function connectTransactionToPrices (tx: Transaction, prisma: Prism
       Price_timestamp_quoteId_networkId_unique_constraint: {
         quoteId: USD_QUOTE_ID,
         networkId,
-        timestamp: priceTimestamp
+        timestamp
       }
     }
   })
   if (cadPrice === null || usdPrice === null) {
-    return false
+    throw new Error(RESPONSE_MESSAGES.NO_PRICES_FOUND_404.message)
   }
-  void await prisma.pricesOnTransactions.upsert({
-    where: {
-      priceId_transactionId: {
-        priceId: usdPrice.id,
-        transactionId: tx.id
-      }
-    },
-    create: {
-      transactionId: tx.id,
-      priceId: usdPrice.id
-    },
-    update: {}
-  })
-  void await prisma.pricesOnTransactions.upsert({
-    where: {
-      priceId_transactionId: {
-        priceId: cadPrice.id,
-        transactionId: tx.id
-      }
-    },
-    create: {
-      transactionId: tx.id,
-      priceId: cadPrice.id
-    },
-    update: {}
-  })
-  return true
+  return {
+    cad: cadPrice,
+    usd: usdPrice
+  }
 }
 
 export async function createTransactionPrices (params: CreatePricesFromTransactionInput): Promise<void> {

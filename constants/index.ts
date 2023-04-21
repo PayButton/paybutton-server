@@ -38,6 +38,7 @@ export const RESPONSE_MESSAGES = {
   NETWORK_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'networkSlug' not provided." },
   QUOTE_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'quoteSlug' not provided." },
   NO_CURRENT_PRICES_FOUND_404: { statusCode: 404, message: 'Current prices not found.' },
+  NO_PRICES_FOUND_404: { statusCode: 404, message: 'Prices not found.' },
   INVALID_QUOTE_SLUG_400: { statusCode: 400, message: 'Invalid quote slug.' },
   INVALID_TICKER_400: { statusCode: 400, message: 'Invalid ticker.' },
   MISSING_BLOCKCHAIN_CLIENT_400: { statusCode: 400, message: 'There is no blockchain client chosen for this network.' },
