@@ -1,4 +1,4 @@
-import { TransactionWithAddressAndPrices, getTransactionNetworkId } from 'services/transactionService'
+import { TransactionWithAddressAndPrices, getTransactionNetworkId, fetchTransactionById } from 'services/transactionService'
 import axios from 'axios'
 import { appInfo } from 'config/appInfo'
 import { Prisma, Transaction, Price } from '@prisma/client'
@@ -236,8 +236,19 @@ export interface SyncTransactionPricesInput {
   transactionId: string
 }
 
+export async function connectTransactionsToPricesByIdList (idList: string[]): Promise<boolean> {
+  return await prisma.$transaction(async (p) => {
+    const promises = idList.map(async (id) => {
+      const tx = await fetchTransactionById(id)
+      return await connectTransactionToPrices(tx, p)
+    })
+    const results = await Promise.all(promises)
+    return results.every((b) => b)
+  })
+}
+
 // expects prices to already exist, returns true if successful
-export async function connectTransactionToPrices (tx: Transaction): Promise<boolean> {
+export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient): Promise<boolean> {
   const priceTimestamp = flattenTimestamp(tx.timestamp)
   const networkId = await getTransactionNetworkId(tx)
   const cadPrice = await prisma.price.findUnique({
