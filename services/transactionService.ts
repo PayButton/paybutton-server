@@ -1,10 +1,11 @@
 import prisma from 'prisma/clientInstance'
-import { Prisma, Address } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { syncTransactionsForAddress, GetAddressTransactionsParameters } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
 import { QuoteValues } from 'services/priceService'
-import { FETCH_N_TIMEOUT, RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
 
 export async function getTransactionValue (transaction: TransactionWithAddressAndPrices): Promise<QuoteValues> {
@@ -72,43 +73,40 @@ export async function base64HashToHex (base64Hash: string): Promise<string> {
   )
 }
 
-export async function upsertTransaction (transaction: Prisma.TransactionUncheckedCreateInput, address: Address): Promise<TransactionWithAddressAndPrices | undefined> {
-  if (transaction.amount === new Prisma.Decimal(0)) { // out transactions
+export async function createTransaction (transactionData: Prisma.TransactionUncheckedCreateInput): Promise<TransactionWithAddressAndPrices | undefined> {
+  if (transactionData.amount === new Prisma.Decimal(0)) { // out transactions
     return
   }
-  const hash = await base64HashToHex(transaction.hash)
-  const transactionParams = {
-    hash,
-    amount: transaction.amount,
-    addressId: address.id,
-    timestamp: transaction.timestamp,
-    confirmed: transaction.confirmed
-  }
-  return await prisma.transaction.upsert({
-    where: {
-      Transaction_hash_addressId_unique_constraint: {
-        hash: transactionParams.hash,
-        addressId: address.id
-      }
-    },
-    update: transactionParams,
-    create: transactionParams,
+  return await prisma.transaction.create({
+    data: transactionData,
     include: includeAddressAndPrices
   })
 }
 
-export async function upsertManyTransactionsForAddress (transactions: Prisma.TransactionUncheckedCreateInput[], address: Address): Promise<TransactionWithAddressAndPrices[]> {
-  const ret = await prisma.$transaction(async (_) => {
-    const insertedTransactions: Array<TransactionWithAddressAndPrices | undefined> = await Promise.all(
-      transactions.map(async (transaction) => {
-        return await upsertTransaction(transaction, address)
-      })
-    )
-    return insertedTransactions
-  }, {
-    timeout: FETCH_N_TIMEOUT
+async function addUUIDToTransactions (transactions: Prisma.TransactionUncheckedCreateInput[]): Promise<string[]> {
+  const txsLen = transactions.length
+  const uuidList = []
+  for (let i = 0; i < txsLen; i++) {
+    const id = uuid()
+    transactions[i].id = id
+    uuidList.push(id)
+  }
+  return uuidList
+}
+
+export async function createManyTransactions (transactionsData: Prisma.TransactionUncheckedCreateInput[]): Promise<TransactionWithAddressAndPrices[]> {
+  const uuidList = await addUUIDToTransactions(transactionsData)
+  await prisma.transaction.createMany({
+    data: transactionsData
   })
-  return ret.filter((t) => t !== undefined) as TransactionWithAddressAndPrices[]
+  return await prisma.transaction.findMany({
+    where: {
+      id: {
+        in: uuidList
+      }
+    },
+    include: includeAddressAndPrices
+  })
 }
 
 export async function syncAllTransactionsForAddress (addressString: string, maxTransactionsToReturn: number): Promise<TransactionWithAddressAndPrices[]> {
