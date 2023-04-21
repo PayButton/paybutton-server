@@ -77,7 +77,6 @@ export async function createTransaction (transactionData: Prisma.TransactionUnch
   if (transactionData.amount === new Prisma.Decimal(0)) { // out transactions
     return
   }
-  transactionData.hash = await base64HashToHex(transactionData.hash)
   return await prisma.transaction.create({
     data: transactionData,
     include: includeAddressAndPrices
