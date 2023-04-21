@@ -3,7 +3,7 @@ import { Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, GetAddressTransactionsParameters } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced, fetchAddressById } from 'services/addressService'
-import { QuoteValues, connectTransactionToPrices, connectTransactionsToPricesByIdList } from 'services/priceService'
+import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
@@ -129,6 +129,47 @@ async function addUUIDToTransactions (transactions: Prisma.TransactionUncheckedC
     uuidList.push(id)
   }
   return uuidList
+}
+
+export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient): Promise<void> {
+  const networkId = await getTransactionNetworkId(tx)
+  const allPrices = await fetchPricesForNetworkAndTimestamp(networkId, tx.timestamp, prisma)
+  void await prisma.pricesOnTransactions.upsert({
+    where: {
+      priceId_transactionId: {
+        priceId: allPrices.usd.id,
+        transactionId: tx.id
+      }
+    },
+    create: {
+      transactionId: tx.id,
+      priceId: allPrices.usd.id
+    },
+    update: {}
+  })
+  void await prisma.pricesOnTransactions.upsert({
+    where: {
+      priceId_transactionId: {
+        priceId: allPrices.cad.id,
+        transactionId: tx.id
+      }
+    },
+    create: {
+      transactionId: tx.id,
+      priceId: allPrices.cad.id
+    },
+    update: {}
+  })
+}
+
+export async function connectTransactionsToPricesByIdList (idList: string[]): Promise<void> {
+  return await prisma.$transaction(async (p) => {
+    const promises = idList.map(async (id) => {
+      const tx = await fetchTransactionById(id)
+      return await connectTransactionToPrices(tx, p)
+    })
+    void await Promise.all(promises)
+  })
 }
 
 export async function createManyTransactions (transactionsData: Prisma.TransactionUncheckedCreateInput[], includePrices = false): Promise<TransactionWithAddressAndPrices[]> {
