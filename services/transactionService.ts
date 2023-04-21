@@ -95,7 +95,7 @@ async function addUUIDToTransactions (transactions: Prisma.TransactionUncheckedC
   return uuidList
 }
 
-export async function createManyTransactionsForAddress (transactionsData: Prisma.TransactionUncheckedCreateInput[]): Promise<TransactionWithAddressAndPrices[]> {
+export async function createManyTransactions (transactionsData: Prisma.TransactionUncheckedCreateInput[]): Promise<TransactionWithAddressAndPrices[]> {
   const uuidList = await addUUIDToTransactions(transactionsData)
   await prisma.transaction.createMany({
     data: transactionsData
