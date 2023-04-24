@@ -13,7 +13,6 @@ import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
 import { TransactionWithAddressAndPrices, createManyTransactions, base64HashToHex } from './transactionService'
-import { syncPricesFromTransactionList } from './priceService'
 
 export interface OutputsList {
   outpoint: object
@@ -150,8 +149,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
       ]
       const t = Date.now()
       console.time(`creating transactions ${t}`)
-      const persistedTransactions = await createManyTransactions(transactionsToPersist)
-      await syncPricesFromTransactionList(persistedTransactions)
+      const persistedTransactions = await createManyTransactions(transactionsToPersist, true)
       console.timeEnd(`creating transactions ${t}`)
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
