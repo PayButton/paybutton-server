@@ -56,6 +56,19 @@ export function includeUserPaybuttonsNested (userId: string): Prisma.AddressIncl
 
 export type AddressWithPaybuttons = Prisma.AddressGetPayload<typeof addressWithPaybuttons>
 
+const addressWithPaybuttonsAndUserProfiles = Prisma.validator<Prisma.AddressArgs>()({
+  include: {
+    ...includePaybuttonsNested,
+    userProfiles: {
+      include: {
+        userProfile: true
+      }
+    }
+  }
+})
+
+export type AddressWithPaybuttonsAndUserProfiles = Prisma.AddressGetPayload<typeof addressWithPaybuttonsAndUserProfiles>
+
 const addressWithTransactionsAndPaybuttons = Prisma.validator<Prisma.AddressArgs>()({
   include: { transactions: true, paybuttons: includePaybuttonsNested.paybuttons }
 })

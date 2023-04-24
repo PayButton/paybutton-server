@@ -109,7 +109,10 @@ export class ChronikBlockchainClient implements BlockchainClient {
         [...confirmedTransactions, ...unconfirmedTransactions].map(async tx => await this.getTransactionFromChronikTransaction(tx, address))
       )
 
-      const persistedTransactions = await createManyTransactions(transactionsToPersist, true)
+      const persistedTransactions = await createManyTransactions(
+        transactionsToPersist,
+        address.userProfiles.map(u => u.userProfile.userId)
+      )
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
