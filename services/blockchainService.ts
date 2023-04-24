@@ -6,7 +6,7 @@ import {
   Transaction
 } from 'grpc-bchrpc-node'
 import { TransactionWithAddressAndPrices } from './transactionService'
-import { Decimal } from '@prisma/client/runtime'
+import { Prisma } from '@prisma/client'
 
 export interface BlockchainInfo {
   height: number
@@ -24,7 +24,7 @@ export interface GetAddressTransactionsParameters {
 }
 
 interface InputOutput {
-  value: Decimal
+  value: Prisma.Decimal
   address?: string
 }
 
@@ -80,12 +80,11 @@ export async function syncTransactionsForAddress (parameters: GetAddressTransact
   return await getObjectValueForAddress(parameters.addressString, BLOCKCHAIN_CLIENTS).syncTransactionsForAddress(parameters)
 }
 
-export async function getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
-  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockchainInfo(networkSlug)
-}
-
-export async function getBlockInfo (networkSlug: string, height: number): Promise<BlockInfo> {
-  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getBlockInfo(networkSlug, height)
+export async function getLastBlockTimestamp (networkSlug: string): Promise<number> {
+  const client = getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS)
+  const blockchainInfo = await client.getBlockchainInfo(networkSlug)
+  const lastBlockInfo = await client.getBlockInfo(networkSlug, blockchainInfo.height)
+  return lastBlockInfo.timestamp
 }
 
 export async function getTransactionDetails (hash: string, networkSlug: string): Promise<TransactionDetails> {

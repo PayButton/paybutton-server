@@ -12,9 +12,7 @@ import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValue
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
-import { syncPricesFromTransactionList } from './priceService'
-import { TransactionWithAddressAndPrices, upsertManyTransactionsForAddress } from './transactionService'
-import { Decimal } from '@prisma/client/runtime'
+import { TransactionWithAddressAndPrices, createManyTransactions, base64HashToHex } from './transactionService'
 
 export interface OutputsList {
   outpoint: object
@@ -104,7 +102,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
   // WIP: this should be private in the future (after 411-6)
   public async getTransactionFromGrpcTransaction (transaction: GrpcTransaction.AsObject, address: Address, confirmed: boolean): Promise<Prisma.TransactionUncheckedCreateInput> {
     return {
-      hash: transaction.hash as string,
+      hash: await base64HashToHex(transaction.hash as string),
       amount: await this.getTransactionAmount(transaction, address.address),
       timestamp: transaction.timestamp,
       addressId: address.id,
@@ -149,10 +147,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
           unconfirmedTransactions.map(async tx => await this.getTransactionFromGrpcTransaction(tx, address, false))
         )
       ]
-      console.time('upserting transactions')
-      const persistedTransactions = await upsertManyTransactionsForAddress(transactionsToPersist, address)
-      console.timeEnd('upserting transactions')
-      await syncPricesFromTransactionList(persistedTransactions)
+      const persistedTransactions = await createManyTransactions(transactionsToPersist, true)
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
@@ -191,13 +186,13 @@ export class GrpcBlockchainClient implements BlockchainClient {
     }
     for (const input of tx.inputsList) {
       details.inputs.push({
-        value: new Decimal(input.value),
+        value: new Prisma.Decimal(input.value),
         address: input.address
       })
     }
     for (const output of tx.outputsList) {
       details.outputs.push({
-        value: new Decimal(output.value),
+        value: new Prisma.Decimal(output.value),
         address: output.address
       })
     }

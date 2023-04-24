@@ -229,13 +229,13 @@ export async function updateLastSynced (addressString: string): Promise<void> {
   })
 }
 
-export async function fetchAddressById (addressId: string): Promise<AddressWithPaybuttons> {
+export async function fetchAddressById (addressId: string, includePaybuttons = false): Promise<AddressWithPaybuttons | Address> {
   const result = await prisma.address.findUnique({
     where: {
       id: addressId
     },
     include: {
-      paybuttons: includePaybuttonsNested.paybuttons
+      paybuttons: includePaybuttons ? includePaybuttonsNested.paybuttons : false
     }
   })
   if (result === null) {

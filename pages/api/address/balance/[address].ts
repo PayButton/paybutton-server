@@ -5,7 +5,7 @@ import { parseAddress } from 'utils/validators'
 import Cors from 'cors'
 import { satoshisToUnit } from 'utils'
 import xecaddr from 'xecaddrjs'
-import { Decimal } from '@prisma/client/runtime'
+import { Prisma } from '@prisma/client'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
 const cors = Cors({
@@ -34,7 +34,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
     try {
       const address = parseAddress(req.query.address as string)
       const response = await getBalance(address)
-      const balance = await satoshisToUnit(new Decimal(response), xecaddr.detectAddressFormat(address))
+      const balance = await satoshisToUnit(new Prisma.Decimal(response), xecaddr.detectAddressFormat(address))
       res.status(200).send(balance)
     } catch (err: any) {
       switch (err.message) {

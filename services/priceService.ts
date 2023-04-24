@@ -1,9 +1,8 @@
-import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import axios from 'axios'
 import { appInfo } from 'config/appInfo'
-import { Prisma, Transaction, Price } from '@prisma/client'
+import { Prisma, Price } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
-import { HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT } from 'constants/index'
+import { HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
 import moment from 'moment'
 
@@ -17,6 +16,11 @@ function flattenTimestamp (timestamp: number): number {
 interface IResponseData {
   Price_in_CAD: string
   Price_in_USD: string
+}
+
+interface AllPrices {
+  cad: Price
+  usd: Price
 }
 
 interface IResponseDataDaily extends IResponseData {
@@ -192,33 +196,6 @@ export async function getCurrentPricesForNetworkId (networkId: number): Promise<
   }
 }
 
-export async function syncPricesFromTransactionList (transactions: TransactionWithAddressAndPrices[]): Promise<void> {
-  const promisedValuesList: Array<Promise<QuoteValues | undefined>> = []
-  const syncParamsList: SyncTransactionPricesInput[] = []
-  // create promises to request prices
-  for (const transaction of transactions) {
-    const syncParams: SyncTransactionPricesInput = {
-      networkId: transaction.address.networkId,
-      timestamp: flattenTimestamp(transaction.timestamp),
-      transactionId: transaction.id
-    }
-    syncParamsList.push(syncParams)
-    promisedValuesList.push(syncTransactionPriceValues(syncParams))
-  }
-  // send the requests
-  const valuesList = await Promise.all(promisedValuesList)
-  // save it on the database
-  const createPricesInputList: CreatePricesFromTransactionInput[] = syncParamsList.map((syncParams, idx) => {
-    return {
-      ...syncParams,
-      values: valuesList[idx]
-    }
-  })
-  for (const createPricesInput of createPricesInputList) {
-    await createTransactionPrices(createPricesInput)
-  }
-}
-
 export interface QuoteValues {
   'usd': Prisma.Decimal
   'cad': Prisma.Decimal
@@ -236,15 +213,14 @@ export interface SyncTransactionPricesInput {
   transactionId: string
 }
 
-// expects prices to already exist, returns true if successful
-export async function connectTransactionToPrices (tx: Transaction, networkId: number): Promise<boolean> {
-  const priceTimestamp = flattenTimestamp(tx.timestamp)
+export async function fetchPricesForNetworkAndTimestamp (networkId: number, timestamp: number, prisma: Prisma.TransactionClient): Promise<AllPrices> {
+  timestamp = flattenTimestamp(timestamp)
   const cadPrice = await prisma.price.findUnique({
     where: {
       Price_timestamp_quoteId_networkId_unique_constraint: {
         quoteId: CAD_QUOTE_ID,
         networkId,
-        timestamp: priceTimestamp
+        timestamp
       }
     }
   })
@@ -253,188 +229,15 @@ export async function connectTransactionToPrices (tx: Transaction, networkId: nu
       Price_timestamp_quoteId_networkId_unique_constraint: {
         quoteId: USD_QUOTE_ID,
         networkId,
-        timestamp: priceTimestamp
+        timestamp
       }
     }
   })
   if (cadPrice === null || usdPrice === null) {
-    return false
+    throw new Error(RESPONSE_MESSAGES.NO_PRICES_FOUND_404.message)
   }
-  void await prisma.pricesOnTransactions.upsert({
-    where: {
-      priceId_transactionId: {
-        priceId: usdPrice.id,
-        transactionId: tx.id
-      }
-    },
-    create: {
-      transactionId: tx.id,
-      priceId: usdPrice.id
-    },
-    update: {}
-  })
-  void await prisma.pricesOnTransactions.upsert({
-    where: {
-      priceId_transactionId: {
-        priceId: cadPrice.id,
-        transactionId: tx.id
-      }
-    },
-    create: {
-      transactionId: tx.id,
-      priceId: cadPrice.id
-    },
-    update: {}
-  })
-  return true
-}
-
-export async function createTransactionPrices (params: CreatePricesFromTransactionInput): Promise<void> {
-  // Create USD price, if it does not already exist
-  return await prisma.$transaction(async (prisma) => {
-    if (params.values === undefined) return
-    const usdPrice = await prisma.price.upsert({
-      where: {
-        Price_timestamp_quoteId_networkId_unique_constraint: {
-          quoteId: USD_QUOTE_ID,
-          networkId: params.networkId,
-          timestamp: params.timestamp
-        }
-      },
-      create: {
-        value: params.values.usd,
-        timestamp: params.timestamp,
-        network: {
-          connect: {
-            id: params.networkId
-          }
-        },
-        quote: {
-          connect: {
-            id: USD_QUOTE_ID
-          }
-        }
-      },
-      update: {}
-    })
-    // Connect it with transaction, if not already connected
-    void await prisma.pricesOnTransactions.upsert({
-      where: {
-        priceId_transactionId: {
-          priceId: usdPrice.id,
-          transactionId: params.transactionId
-        }
-      },
-      create: {
-        transactionId: params.transactionId,
-        priceId: usdPrice.id
-      },
-      update: {}
-    })
-
-    // Create CAD price, if it does not already exist
-    const cadPrice = await prisma.price.upsert({
-      where: {
-        Price_timestamp_quoteId_networkId_unique_constraint: {
-          quoteId: CAD_QUOTE_ID,
-          networkId: params.networkId,
-          timestamp: params.timestamp
-        }
-      },
-      create: {
-        value: params.values.cad,
-        timestamp: params.timestamp,
-        network: {
-          connect: {
-            id: params.networkId
-          }
-        },
-        quote: {
-          connect: {
-            id: CAD_QUOTE_ID
-          }
-        }
-      },
-      update: {}
-    })
-    // Connect it with transaction, if not already connected
-    void await prisma.pricesOnTransactions.upsert({
-      where: {
-        priceId_transactionId: {
-          priceId: cadPrice.id,
-          transactionId: params.transactionId
-        }
-      },
-      create: {
-        transactionId: params.transactionId,
-        priceId: cadPrice.id
-      },
-      update: {}
-    })
-  },
-  {
-    timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT
-  }
-  )
-}
-
-export async function syncTransactionPriceValues (params: SyncTransactionPricesInput): Promise<QuoteValues | undefined> {
-  const existentPrices = await prisma.price.findMany({
-    where: {
-      networkId: params.networkId,
-      timestamp: flattenTimestamp(params.timestamp)
-    }
-  })
-
-  if (existentPrices.length === N_OF_QUOTES) {
-    let cadPrice, usdPrice
-    for (const price of existentPrices) {
-      void await prisma.pricesOnTransactions.upsert({
-        where: {
-          priceId_transactionId: {
-            priceId: price.id,
-            transactionId: params.transactionId
-          }
-        },
-        create: {
-          transactionId: params.transactionId,
-          priceId: price.id
-        },
-        update: {}
-      })
-      if (price.quoteId === USD_QUOTE_ID) {
-        usdPrice = price.value
-      } else if (price.quoteId === CAD_QUOTE_ID) {
-        cadPrice = price.value
-      }
-    }
-    if (cadPrice === undefined || usdPrice === undefined) {
-      throw new Error(RESPONSE_MESSAGES.INVALID_PRICE_STATE_400.message)
-    }
-    return {
-      cad: cadPrice,
-      usd: usdPrice
-    }
-  }
-
-  let res
-
-  if (params.networkId === XEC_NETWORK_ID) {
-    res = await axios.get(getPriceURLForDayAndNetworkTicker(moment.unix(params.timestamp), 'XEC'))
-  } else if (params.networkId === BCH_NETWORK_ID) {
-    res = await axios.get(getPriceURLForDayAndNetworkTicker(moment.unix(params.timestamp), 'BCH'))
-  } else {
-    throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_ID_400.message)
-  }
-  const responseData = res.data
-  if (responseData.success === false) {
-    return undefined
-  }
-  const usdPriceString = responseData.Price_in_USD
-  const cadPriceString = responseData.Price_in_CAD
-
   return {
-    usd: new Prisma.Decimal(usdPriceString),
-    cad: new Prisma.Decimal(cadPriceString)
+    cad: cadPrice,
+    usd: usdPrice
   }
 }

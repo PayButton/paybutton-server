@@ -14,7 +14,7 @@ const grpc = new GrpcBlockchainClient()
 const subscribeGrpcTxJob = (address: addressService.AddressWithUserProfiles, confirmed: boolean): (txn: Transaction.AsObject) => Promise<any> => {
   return async (txn: Transaction.AsObject) => {
     const transactionCreateInput = await grpc.getTransactionFromGrpcTransaction(txn, address, confirmed)
-    await transactionService.upsertTransaction(transactionCreateInput, address)
+    await transactionService.createTransaction(transactionCreateInput)
   }
 }
 
