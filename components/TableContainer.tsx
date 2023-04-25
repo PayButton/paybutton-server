@@ -1,7 +1,7 @@
 import React from 'react'
 import { useTable, useSortBy, usePagination } from 'react-table'
 
-const TableContainer = ({ columns, data }) => {
+const TableContainer = ({ columns, data }): JSX.Element => {
   const {
     getTableProps,
     getTableBodyProps,
@@ -21,17 +21,17 @@ const TableContainer = ({ columns, data }) => {
     {
       columns,
       data,
-      initialState: { pageIndex: 0, pageSize: 10 }
+      initialState: { pageIndex: 0, pageSize: 10, sortBy: [{ id: 'timestamp', desc: true }] }
     },
     useSortBy,
     usePagination
   )
 
-  const generateSortingIndicator = column => {
-    return column.isSorted ? (column.isSortedDesc ? <div className='table-sort-arrow-down' /> : <div className='table-sort-arrow-up' />) : null
+  const generateSortingIndicator = (column: any): JSX.Element | null => {
+    return column.isSorted === true ? (column.isSortedDesc === true ? <div className='table-sort-arrow-down' /> : <div className='table-sort-arrow-up' />) : null
   }
 
-  const onChangeInSelect = event => {
+  const onChangeInSelect = (event: any): void => {
     setPageSize(Number(event.target.value))
   }
 
@@ -40,9 +40,9 @@ const TableContainer = ({ columns, data }) => {
     <div className="paybutton-table-ctn">
       <table {...getTableProps()}>
         <thead>
-          {headerGroups.map((headerGroup) => (
+          {headerGroups.map((headerGroup: any) => (
             <tr {...headerGroup.getHeaderGroupProps()}>
-              {headerGroup.headers.map((column) => (
+              {headerGroup.headers.map((column: any) => (
                 <th {...column.getHeaderProps(column.getSortByToggleProps())}>
                   {column.render('Header')}
                   {generateSortingIndicator(column)}
@@ -54,11 +54,11 @@ const TableContainer = ({ columns, data }) => {
         </thead>
 
         <tbody {...getTableBodyProps()}>
-          {page.map((row) => {
+          {page.map((row: any) => {
             prepareRow(row)
             return (
               <tr {...row.getRowProps()}>
-                {row.cells.map((cell) => {
+                {row.cells.map((cell: any) => {
                   return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
                 })}
               </tr>
@@ -71,26 +71,26 @@ const TableContainer = ({ columns, data }) => {
 <div className='table-navigation-ctn'>
     <button
       onClick={() => gotoPage(0)}
-      disabled={!canPreviousPage}
+      disabled={!(canPreviousPage as boolean)}
     >
-      {"<<"}
+      {'<<'}
     </button>
     <button
       onClick={previousPage}
-      disabled={!canPreviousPage}
+      disabled={!(canPreviousPage as boolean)}
     >
-      {"<"}
+      {'<'}
     </button>
-    <div className='pageof-table'>Page {pageIndex + 1} of {pageOptions.length}</div>
-    <button color="primary" onClick={nextPage} disabled={!canNextPage}>
-      {">"}
+    <div className='pageof-table'>Page {(pageIndex as number) + 1} of {pageOptions.length}</div>
+    <button color="primary" onClick={nextPage} disabled={!(canNextPage as boolean)}>
+      {'>'}
     </button>
     <button
       color="primary"
       onClick={() => gotoPage(pageCount - 1)}
-      disabled={!canNextPage}
+      disabled={!(canNextPage as boolean)}
     >
-      {">>"}
+      {'>>'}
     </button>
 
    <div className='table-select-ctn'>

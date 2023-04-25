@@ -308,6 +308,30 @@ body[data-theme='dark'] .form_ctn_outer {
   justify-content: space-between;
 }
 
+.title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.walletcard_icons {
+  display: flex;
+  align-items: center;
+  border-left: 1px solid var(--primary-text-color);
+  margin-left: 10px;
+}
+
+.walletcard_icons div:first-child {
+  margin-left: 10px;
+}
+
+.walletcard_icons div {
+  margin-left: 5px;
+  width: 25px;
+  display: flex;
+  align-items: center;
+}
+
 @media (max-width: 960px) {
   .arrow {
     display: none;

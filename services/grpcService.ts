@@ -13,7 +13,7 @@ import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValue
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
-import { deleteTransactions, fetchUnconfirmedTransactions, TransactionWithAddressAndPrices, upsertManyTransactionsForAddress, upsertTransaction } from './transactionService'
+import { TransactionWithAddressAndPrices, createTransaction, createManyTransactions, base64HashToHex, deleteTransactions, fetchUnconfirmedTransactions } from './transactionService'
 import { syncPricesFromTransactionList } from './priceService'
 
 export interface OutputsList {
@@ -112,7 +112,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
   // WIP: this should be private in the future (after 411-6)
   public async getTransactionFromGrpcTransaction (transaction: GrpcTransaction.AsObject, address: Address, confirmed: boolean): Promise<Prisma.TransactionUncheckedCreateInput> {
     return {
-      hash: transaction.hash as string,
+      hash: await base64HashToHex(transaction.hash as string),
       amount: await this.getTransactionAmount(transaction, address.address),
       timestamp: transaction.timestamp,
       addressId: address.id,
@@ -157,10 +157,11 @@ export class GrpcBlockchainClient implements BlockchainClient {
           unconfirmedTransactions.map(async tx => await this.getTransactionFromGrpcTransaction(tx, address, false))
         )
       ]
-      console.time('upserting transactions')
-      const persistedTransactions = await upsertManyTransactionsForAddress(transactionsToPersist, address)
+      const t = Date.now()
+      console.time(`creating transactions ${t}`)
+      const persistedTransactions = await createManyTransactions(transactionsToPersist)
       await syncPricesFromTransactionList(persistedTransactions)
-      console.timeEnd('upserting transactions')
+      console.timeEnd(`creating transactions ${t}`)
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
@@ -311,7 +312,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
 
     await Promise.all(
       [...addressWithUnconfirmedTransactions, ...addressWithConfirmedTransactions].map(async addressWithTransaction => {
-        return await upsertTransaction(addressWithTransaction.transaction, addressWithTransaction.address)
+        return await createTransaction(addressWithTransaction.transaction)
       })
     )
   }
