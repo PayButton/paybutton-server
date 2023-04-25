@@ -1,5 +1,5 @@
 import xecaddr from 'xecaddrjs'
-import { Prisma } from '@prisma/client'
+import { Address, Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES } from '../constants/index'
 import * as bitcoinjs from 'bitcoinjs-lib'
 import { NETWORK_SLUGS, USD_QUOTE_ID, KeyValueT } from 'constants/index'
@@ -131,4 +131,21 @@ export function getObjectValueForAddress<T> (addressString: string, objects: Key
 export function getObjectValueForNetworkSlug<T> (networkSlug: string, objects: KeyValueT<T>): T {
   if (!Object.keys(NETWORK_SLUGS).includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message) }
   return objects[networkSlug]
+}
+
+export const groupAddressesByNetwork = (availableNetworks: string[], addresses: Address[]): KeyValueT<Address[]> => {
+  const addressesByNetwork: KeyValueT<Address[]> = {}
+
+  // initializes empty array for each network
+  availableNetworks.forEach(networkSlug => {
+    addressesByNetwork[networkSlug] = []
+  })
+
+  // inserts in each array those addresses that belong to each network
+  addresses.forEach(address => {
+    const prefix = getAddressPrefix(address.address)
+    if (!Object.keys(addressesByNetwork).includes(prefix)) { throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message) }
+    addressesByNetwork[prefix].push(address)
+  })
+  return addressesByNetwork
 }

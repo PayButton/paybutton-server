@@ -8,7 +8,7 @@ import {
 } from 'grpc-bchrpc-node'
 
 import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
-import { getObjectValueForNetworkSlug, getObjectValueForAddress, satoshisToUnit, pubkeyToAddress, removeAddressPrefix, getAddressPrefix } from '../utils/index'
+import { getObjectValueForNetworkSlug, getObjectValueForAddress, satoshisToUnit, pubkeyToAddress, removeAddressPrefix, groupAddressesByNetwork } from '../utils/index'
 import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_SLUGS, RESPONSE_MESSAGES, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD } from '../constants/index'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
@@ -222,19 +222,11 @@ export class GrpcBlockchainClient implements BlockchainClient {
     })
     addresses = addresses.filter(address => !addressesAlreadySubscribed.includes(address))
 
-    const addressesInClients: KeyValueT<Address[]> = {}
-    this.availableNetworks.forEach(networkSlug => {
-      addressesInClients[networkSlug] = []
-    })
-    addresses.forEach(address => {
-      const prefix = getAddressPrefix(address.address)
-      if (!Object.keys(addressesInClients).includes(prefix)) { throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message) }
-      addressesInClients[prefix].push(address)
-    })
+    const addressesByNetwork: KeyValueT<Address[]> = groupAddressesByNetwork(this.availableNetworks, addresses)
 
-    for (const [key, value] of Object.entries(addressesInClients)) {
-      const client = getGrpcClients()[key]
-      const addressesToSubscribe = value.map(address => address.address)
+    for (const [network, networkAddresses] of Object.entries(addressesByNetwork)) {
+      const client = getGrpcClients()[network]
+      const addressesToSubscribe = networkAddresses.map(address => address.address)
       const confirmedStream = await client.subscribeTransactions({
         includeMempoolAcceptance: false,
         includeBlockAcceptance: true,
@@ -245,34 +237,38 @@ export class GrpcBlockchainClient implements BlockchainClient {
         includeBlockAcceptance: false,
         addresses: addressesToSubscribe
       })
-
       const nowDateString = (new Date()).toISOString()
+
       // output for end, error or close of stream
       void confirmedStream.on('end', () => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream ended`)
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} confirmed stream ended`)
       })
       void confirmedStream.on('close', () => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream closed`)
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} confirmed stream closed`)
       })
       void confirmedStream.on('error', (error: any) => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream error`, error)
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} confirmed stream error`, error)
       })
       void unconfirmedStream.on('end', () => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream ended`)
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} unconfirmed stream ended`)
       })
       void unconfirmedStream.on('close', () => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream closed`)
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} unconfirmed stream closed`)
       })
       void unconfirmedStream.on('error', (error: any) => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream error`, error)
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} unconfirmed stream error`, error)
       })
 
       // output for data stream
       void confirmedStream.on('data', (data: TransactionNotification) => {
         void this.processSubscribedNotification(data)
       })
+      void unconfirmedStream.on('data', (data: TransactionNotification) => {
+        void this.processSubscribedNotification(data)
+      })
+
       // subscribed addresses
-      value.forEach(address => {
+      networkAddresses.forEach(address => {
         this.subscribedAddresses[address.address] = address
       })
     }

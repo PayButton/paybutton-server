@@ -8,7 +8,7 @@ import * as priceService from 'services/priceService'
 import * as addressService from 'services/addressService'
 import { subscribeAddressesAddTransactions } from 'services/blockchainService'
 
-export const subscribeAllAddresses = async (job: Job): Promise<void> => {
+export const subscribeAddresses = async (job: Job): Promise<void> => {
   console.log(`job ${job.id as string}: subscribing all addresses`)
   try {
     const addresses = await addressService.fetchAllAddresses()
@@ -18,10 +18,10 @@ export const subscribeAllAddresses = async (job: Job): Promise<void> => {
   }
 }
 
-export const subscribeAllAddressesWorker = async (queueName: string): Promise<void> => {
+export const subscribeAddressesWorker = async (queueName: string): Promise<void> => {
   const worker = new Worker(
     queueName,
-    subscribeAllAddresses,
+    subscribeAddresses,
     {
       connection: redisBullMQ,
       lockDuration: DEFAULT_WORKER_LOCK_DURATION

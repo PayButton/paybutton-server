@@ -3,7 +3,7 @@ import { Queue, FlowProducer, FlowJob } from 'bullmq'
 import { redisBullMQ } from 'redis/clientInstance'
 import {
   syncAllAddressTransactionsForNetworkWorker,
-  subscribeAllAddressesWorker,
+  subscribeAddressesWorker,
   syncPricesWorker,
   syncUnsyncedAddressesWorker
 } from './workers'
@@ -20,7 +20,7 @@ const main = async (): Promise<void> => {
   const pricesQueue = new Queue('pricesSync', { connection: redisBullMQ })
   const initTransactionsQueue = new Queue('initTransactionsSync', { connection: redisBullMQ })
   const newAddressesQueue = new Queue('newAddressesSync', { connection: redisBullMQ })
-  const subscribeTransactionsQueue = new Queue('subscribeTransactionsSync', { connection: redisBullMQ })
+  const subscribeAddressesQueue = new Queue('subscribeAddressesSync', { connection: redisBullMQ })
 
   const flowJobPrices: FlowJob = {
     queueName: pricesQueue.name,
@@ -63,21 +63,21 @@ const main = async (): Promise<void> => {
       ...RETRY_OPTS
     }
   }
-  const flowJobSubscribeTransactions: FlowJob = {
-    queueName: subscribeTransactionsQueue.name,
+  const flowJobSubscribeAddresses: FlowJob = {
+    queueName: subscribeAddressesQueue.name,
     data: {},
-    name: 'subscribeTransactionsFlow',
+    name: 'subscribeAddressesFlow',
     opts: {
       removeOnComplete: false,
       removeOnFail: { count: 3 },
-      jobId: 'subscribeTransactions',
+      jobId: 'subscribeAddresses',
       ...RETRY_OPTS
     }
   }
 
   const flowProducer = new FlowProducer({ connection: redisBullMQ })
   await flowProducer.add({
-    ...flowJobSubscribeTransactions,
+    ...flowJobSubscribeAddresses,
     children: [
       {
         ...flowJobSyncUnsyncedAddresses,
@@ -107,10 +107,10 @@ const main = async (): Promise<void> => {
     }
   )
 
-  await subscribeTransactionsQueue.add('subscribeAllAddresses',
+  await subscribeAddressesQueue.add('subscribeAddresses',
     {},
     {
-      jobId: 'subscribeAllAddresses',
+      jobId: 'subscribeAddresses',
       removeOnFail: false,
       repeat: {
         every: SUBSCRIBE_ADDRESSES_RETRY_DELAY
@@ -120,7 +120,7 @@ const main = async (): Promise<void> => {
 
   await syncPricesWorker(pricesQueue.name)
   await syncAllAddressTransactionsForNetworkWorker(initTransactionsQueue.name)
-  await subscribeAllAddressesWorker(subscribeTransactionsQueue.name)
+  await subscribeAddressesWorker(subscribeAddressesQueue.name)
   await syncUnsyncedAddressesWorker(newAddressesQueue)
 }
 
