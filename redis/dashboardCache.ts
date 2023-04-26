@@ -60,7 +60,7 @@ const getCachedWeekKeys = async (userId: string): Promise<string[]> => {
   return await redis.keys(`${userId}:payment:*`)
 }
 
-export const getPaymentsFromTransactions = async (transactionList: TransactionWithAddressAndPrices[]): Promise<Payment[]> => {
+const getPaymentsFromTransactions = async (transactionList: TransactionWithAddressAndPrices[]): Promise<Payment[]> => {
   const paymentList: Payment[] = []
   for (const t of transactionList) {
     const value = (await getTransactionValue(t)).usd
@@ -98,7 +98,7 @@ export const getCachedPayments = async (userId: string): Promise<Payment[]> => {
   return allPayments
 }
 
-export const cachePayments = async (userId: string, paymentList: Payment[]): Promise<void> => {
+const cachePayments = async (userId: string, paymentList: Payment[]): Promise<void> => {
   const paymentsByWeek: KeyValueT<Payment[]> = {}
   for (const payment of paymentList) {
     const weekKey = getPaymentWeekKey(userId, payment)
@@ -116,9 +116,10 @@ export const cachePayments = async (userId: string, paymentList: Payment[]): Pro
   )
 }
 
-export const cacheTransactionsForUsers = async (transactionList: TransactionWithAddressAndPrices[], userIdList: string[]): Promise<void> => {
+export const cacheTransactionsForUsers = async (transactionList: TransactionWithAddressAndPrices[], userIdList: string[]): Promise<Payment[]> => {
   const payments = await getPaymentsFromTransactions(transactionList)
   await Promise.all(userIdList.map(async (userId) =>
     await cachePayments(userId, payments)
   ))
+  return payments
 }
