@@ -144,13 +144,15 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
   const allXECPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.ecash)
   const allBCHPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.bitcoincash)
   await Promise.all(
-    allXECPrices.filter(p => p.day in daysToRetrieve).map(async price =>
-      await upsertPricesForNetworkId(price, XEC_NETWORK_ID, date.unix())
+    allXECPrices.filter(p => daysToRetrieve.includes(p.day)).map(async price => {
+      return await upsertPricesForNetworkId(price, XEC_NETWORK_ID, moment(price.day).unix())
+    }
     )
   )
   await Promise.all(
-    allBCHPrices.filter(p => p.day in daysToRetrieve).map(async price =>
-      await upsertPricesForNetworkId(price, BCH_NETWORK_ID, date.unix())
+    allBCHPrices.filter(p => daysToRetrieve.includes(p.day)).map(async price => {
+      return await upsertPricesForNetworkId(price, BCH_NETWORK_ID, moment(price.day).unix())
+    }
     )
   )
 }
