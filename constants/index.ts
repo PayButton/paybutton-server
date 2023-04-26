@@ -85,7 +85,7 @@ export const SUPPORTED_QUOTES = [ // avoids hitting the DB every time for data t
 
 export const HUMAN_READABLE_DATE_FORMAT = 'YYYY-MM-DD'
 
-export const PRICE_API_DATE_FORMAT = 'YYYYMMDD'
+export const PRICE_API_DATE_FORMAT = 'YYYY-MM-DD'
 export const PRICE_API_TIMEOUT = 40 * 1000 // 40 seconds
 export const PRICE_API_MAX_RETRIES = 3
 
