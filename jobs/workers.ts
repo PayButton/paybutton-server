@@ -1,7 +1,7 @@
 import { Worker, Job, Queue } from 'bullmq'
 import { Address } from '@prisma/client'
 import { redisBullMQ } from 'redis/clientInstance'
-import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
+import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION, RESPONSE_MESSAGES } from 'constants/index'
 
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
@@ -9,6 +9,7 @@ import * as addressService from 'services/addressService'
 import { GrpcBlockchainClient } from 'services/grpcService'
 import { Transaction } from 'grpc-bchrpc-node'
 import { getAddressPrefix } from 'utils'
+import { parseError } from 'utils/validators'
 
 const grpc = new GrpcBlockchainClient()
 
@@ -44,7 +45,12 @@ const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> 
     const addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
     await syncAndSubscribeAddressList(addresses)
   } catch (err: any) {
-    throw new Error(`job ${job.id as string} failed with error ${err.message as string}`)
+    const parsedError = parseError(err)
+    if (parsedError.message === RESPONSE_MESSAGES.TRANSACTION_ALREADY_EXISTS_FOR_ADDRESS_400.message) {
+      console.log(`initial syncing of network ${job.data.networkId as string} encountered known transaction, skipping...`)
+    } else {
+      throw new Error(`job ${job.id as string} failed with error ${err.message as string}`)
+    }
   }
 }
 
