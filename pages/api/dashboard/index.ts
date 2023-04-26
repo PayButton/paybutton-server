@@ -5,7 +5,7 @@ import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
-import { ChartData, PeriodData, DashboardData, Payment, cachePayments, userHasCachedPayments, getCachedPayments, getPaymentsFromTransactions } from 'redis/dashboardCache'
+import { ChartData, PeriodData, DashboardData, Payment, userHasCachedPayments, getCachedPayments, cacheTransactionsForUsers } from 'redis/dashboardCache'
 
 interface AllMonths {
   months: number
@@ -96,15 +96,11 @@ const generatePaymentList = async (userId: string): Promise<Payment[]> => {
   const addresses = await addressService.fetchAllUserAddresses(userId, true, true) as addressService.AddressWithTransactionsAndPaybuttons[]
   const XECAddressIds = addresses.filter((addr) => addr.networkId === XEC_NETWORK_ID).map((addr) => addr.id)
   const BCHAddressIds = addresses.filter((addr) => addr.networkId === BCH_NETWORK_ID).map((addr) => addr.id)
-  const XECTransactions = await transactionService.fetchAddressListTransactions(XECAddressIds)
-  const BCHTransactions = await transactionService.fetchAddressListTransactions(BCHAddressIds)
+  let transactions = await transactionService.fetchAddressListTransactions(XECAddressIds)
+  transactions = transactions.concat(await transactionService.fetchAddressListTransactions(BCHAddressIds))
 
-  let paymentList = await getPaymentsFromTransactions(BCHTransactions)
-  paymentList = paymentList.concat(await getPaymentsFromTransactions(XECTransactions))
   // save on cache
-  await cachePayments(userId, paymentList)
-
-  return paymentList
+  return await cacheTransactionsForUsers(transactions, [userId])
 }
 
 const getPaymentList = async (userId: string): Promise<Payment[]> => {
