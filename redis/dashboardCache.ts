@@ -97,7 +97,7 @@ const getPaymentFromTx = async (tx: TransactionWithPrices): Promise<Payment> => 
   }
 }
 
-const getPaymentsByWeek = async (addressId: string, payments: Payment[]): Promise<KeyValueT<Payment[]>> => {
+const getPaymentsByWeek = (addressId: string, payments: Payment[]): KeyValueT<Payment[]> => {
   const paymentsGroupedByKey: KeyValueT<Payment[]> = {}
   for (const payment of payments) {
     const weekKey = getPaymentsWeekKey(addressId, payment)
@@ -117,7 +117,7 @@ const getGroupedPaymentsFromAddress = async (address: AddressWithTransactionsWit
     paymentList.push(payment)
   }
   paymentList = paymentList.filter((p) => p.value > new Prisma.Decimal(0))
-  return await getPaymentsByWeek(address.id, paymentList)
+  return getPaymentsByWeek(address.id, paymentList)
 }
 
 export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[]> => {
@@ -140,6 +140,16 @@ const cacheGroupedPayments = async (paymentsGroupedByKey: KeyValueT<Payment[]>):
     )
   )
 }
+const cacheGroupedPaymentsAppend = async (paymentsGroupedByKey: KeyValueT<Payment[]>): Promise<void> => {
+  await Promise.all(
+    Object.keys(paymentsGroupedByKey).map(async key => {
+      const paymentsString = await redis.get(key)
+      let cachedPayments = (paymentsString === null) ? [] : JSON.parse(paymentsString)
+      cachedPayments = cachedPayments.concat(paymentsGroupedByKey)
+      await redis.set(key, JSON.stringify(cachedPayments))
+    })
+  )
+}
 
 export const cacheAddress = async (address: AddressWithTransactionsWithPrices): Promise<void> => {
   const paymentsGroupedByKey = await getGroupedPaymentsFromAddress(address)
@@ -150,8 +160,8 @@ export const cacheManyTxs = async (txs: TransactionWithAddressAndPrices[]): Prom
   for (const tx of txs) {
     const payment = await getPaymentFromTx(tx)
     if (payment.value !== new Prisma.Decimal(0)) {
-      const paymentsGroupedByKey = await getPaymentsByWeek(tx.address.id, [payment])
-      await cacheGroupedPayments(paymentsGroupedByKey)
+      const paymentsGroupedByKey = getPaymentsByWeek(tx.address.id, [payment])
+      void await cacheGroupedPaymentsAppend(paymentsGroupedByKey)
     }
   }
 }
