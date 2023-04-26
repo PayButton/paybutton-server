@@ -1,7 +1,7 @@
 import { redis } from 'redis/clientInstance'
 import { Prisma } from '@prisma/client'
-import { getTransactionValue, TransactionWithAddressAndPrices } from 'services/transactionService'
-import { fetchAddressById, AddressWithPaybuttons } from 'services/addressService'
+import { getTransactionValue } from 'services/transactionService'
+import { AddressWithTransactionsWithPrices, fetchAllUserAddresses, fetchAddressById, AddressWithPaybuttons } from 'services/addressService'
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
 import moment from 'moment'
 
@@ -48,28 +48,45 @@ export interface Payment {
   buttonDisplayDataList: ButtonDisplayData[]
 }
 
-const getPaymentWeekKey = (userId: string, payment: Payment): string => {
-  return `${userId}:payment:${moment.unix(payment.timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
+const getPaymentsWeekKey = (addressId: string, payment: Payment): string => {
+  return `${addressId}:payments:${moment.unix(payment.timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
 }
 
-export const userHasCachedPayments = async (userId: string): Promise<boolean> => {
-  return (await redis.keys(`${userId}:payment:*`)).length > 0
+export const getUserUncachedAddresses = async (userId: string): Promise<AddressWithTransactionsWithPrices[]> => {
+  const addresses = await fetchAllUserAddresses(userId, true) as AddressWithTransactionsWithPrices[]
+  const ret: AddressWithTransactionsWithPrices[] = []
+  for (const addr of addresses) {
+    const keys = await getCachedWeekKeysForAddress(addr.id)
+    if (keys.length === 0) {
+      ret.push(addr)
+    }
+  }
+  return ret
 }
 
-const getCachedWeekKeys = async (userId: string): Promise<string[]> => {
-  return await redis.keys(`${userId}:payment:*`)
+const getCachedWeekKeysForAddress = async (addressId: string): Promise<string[]> => {
+  return await redis.keys(`${addressId}:payments:*`)
 }
 
-const getPaymentsFromTransactions = async (transactionList: TransactionWithAddressAndPrices[]): Promise<Payment[]> => {
+const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
+  const addresses = await fetchAllUserAddresses(userId)
+  let ret: string[] = []
+  for (const addr of addresses) {
+    ret = ret.concat(await getCachedWeekKeysForAddress(addr.id))
+  }
+  return ret
+}
+
+const getPaymentsFromAddress = async (address: AddressWithTransactionsWithPrices): Promise<Payment[]> => {
   const paymentList: Payment[] = []
-  for (const t of transactionList) {
+  for (const t of address.transactions) {
     const value = (await getTransactionValue(t)).usd
     const txAddress = await fetchAddressById(t.addressId, true) as AddressWithPaybuttons
     if (txAddress === undefined) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_FOR_TRANSACTION_404.message)
     paymentList.push({
       timestamp: t.timestamp,
       value,
-      networkId: t.address.networkId,
+      networkId: address.networkId,
       hash: t.hash,
       buttonDisplayDataList: txAddress.paybuttons.map(
         (conn) => {
@@ -85,8 +102,8 @@ const getPaymentsFromTransactions = async (transactionList: TransactionWithAddre
   return paymentList.filter((p) => p.value > new Prisma.Decimal(0))
 }
 
-export const getCachedPayments = async (userId: string): Promise<Payment[]> => {
-  const weekKeys = await getCachedWeekKeys(userId)
+export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[]> => {
+  const weekKeys = await getCachedWeekKeysForUser(userId)
   let allPayments: Payment[] = []
   for (const weekKey of weekKeys) {
     const paymentsString = await redis.get(weekKey)
@@ -98,10 +115,11 @@ export const getCachedPayments = async (userId: string): Promise<Payment[]> => {
   return allPayments
 }
 
-const cachePayments = async (userId: string, paymentList: Payment[]): Promise<void> => {
+export const cacheAddress = async (address: AddressWithTransactionsWithPrices): Promise<Payment[]> => {
+  const payments = await getPaymentsFromAddress(address)
   const paymentsByWeek: KeyValueT<Payment[]> = {}
-  for (const payment of paymentList) {
-    const weekKey = getPaymentWeekKey(userId, payment)
+  for (const payment of payments) {
+    const weekKey = getPaymentsWeekKey(address.id, payment)
     if (weekKey in paymentsByWeek) {
       paymentsByWeek[weekKey].push(payment)
     } else {
@@ -114,12 +132,5 @@ const cachePayments = async (userId: string, paymentList: Payment[]): Promise<vo
       await redis.set(key, JSON.stringify(paymentsByWeek[key]))
     )
   )
-}
-
-export const cacheTransactionsForUsers = async (transactionList: TransactionWithAddressAndPrices[], userIdList: string[]): Promise<Payment[]> => {
-  const payments = await getPaymentsFromTransactions(transactionList)
-  await Promise.all(userIdList.map(async (userId) =>
-    await cachePayments(userId, payments)
-  ))
   return payments
 }

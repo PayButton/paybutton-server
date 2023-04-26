@@ -13,7 +13,23 @@ const addressWithTransactions = Prisma.validator<Prisma.AddressArgs>()({
   include: { transactions: true }
 })
 
-type AddressWithTransactions = Prisma.AddressGetPayload<typeof addressWithTransactions>
+export type AddressWithTransactions = Prisma.AddressGetPayload<typeof addressWithTransactions>
+
+const addressWithTransactionsWithPrices = Prisma.validator<Prisma.AddressArgs>()({
+  include: {
+    transactions: {
+      include: {
+        prices: {
+          include: {
+            price: true
+          }
+        }
+      }
+    }
+  }
+})
+
+export type AddressWithTransactionsWithPrices = Prisma.AddressGetPayload<typeof addressWithTransactionsWithPrices>
 
 export const includePaybuttonsNested = {
   paybuttons: {
