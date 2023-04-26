@@ -16,8 +16,7 @@ const subscribeGrpcTxJob = (address: addressService.AddressWithUserProfiles, con
   return async (txn: Transaction.AsObject) => {
     const transactionCreateInput = await grpc.getTransactionFromGrpcTransaction(txn, address, confirmed)
     await transactionService.createTransaction(
-      transactionCreateInput,
-      address.userProfiles.map(u => u.userProfile.userId)
+      transactionCreateInput
     )
   }
 }

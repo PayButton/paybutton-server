@@ -110,8 +110,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       )
 
       const persistedTransactions = await createManyTransactions(
-        transactionsToPersist,
-        address.userProfiles.map(u => u.userProfile.userId)
+        transactionsToPersist
       )
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
