@@ -8,7 +8,7 @@ import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'cons
 import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
 
-export async function getTransactionValue (transaction: TransactionWithAddressAndPrices): Promise<QuoteValues> {
+export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
@@ -25,14 +25,24 @@ export async function getTransactionValue (transaction: TransactionWithAddressAn
   return ret
 }
 
-const includeAddressAndPrices = {
-  address: true,
+const includePrices = {
   prices: {
     include: {
       price: true
     }
   }
 }
+
+const includeAddressAndPrices = {
+  address: true,
+  ...includePrices
+}
+
+const transactionWithPrices = Prisma.validator<Prisma.TransactionArgs>()(
+  { include: includePrices }
+)
+
+export type TransactionWithPrices = Prisma.TransactionGetPayload<typeof transactionWithPrices>
 
 const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionArgs>()(
   { include: includeAddressAndPrices }
