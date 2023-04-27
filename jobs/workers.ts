@@ -8,69 +8,42 @@ import * as priceService from 'services/priceService'
 import * as addressService from 'services/addressService'
 import { subscribeAddressesAddTransactions } from 'services/blockchainService'
 
-export const subscribeAddresses = async (job: Job): Promise<void> => {
-  console.log(`job ${job.id as string}: subscribing all addresses`)
-  try {
-    const addresses = await addressService.fetchAllAddresses()
-    await subscribeAddressesAddTransactions(addresses)
-  } catch (err: any) {
-    throw new Error(`job ${job.id as string} failed with error ${err.message as string}`)
-  }
-}
-
-export const subscribeAddressesWorker = async (queueName: string): Promise<void> => {
-  const worker = new Worker(
-    queueName,
-    subscribeAddresses,
-    {
-      connection: redisBullMQ,
-      lockDuration: DEFAULT_WORKER_LOCK_DURATION
-    }
-  )
-  worker.on('completed', job => {
-    console.log('all addresses subscribed')
-  })
-
-  worker.on('failed', (job, err) => {
-    console.log(`addresses subscription failed: ${err.message}`)
-  })
-}
-
-const syncAddressList = async (addresses: Address[]): Promise<void> => {
+const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<void> => {
   await Promise.all(
     addresses.map(async (addr) => {
+      await subscribeAddressesAddTransactions([addr])
       await transactionService.syncAllTransactionsForAddress(addr.address, Infinity)
     })
   )
 }
 
-const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> => {
-  console.log(`job ${job.id as string}: syncing all addresses for network ${job.data.networkId as string}...`)
+const syncAndSubscribeAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> => {
+  console.log(`job ${job.id as string}: syncing and subscribing all addresses for network ${job.data.networkId as string}...`)
   try {
     const addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
-    await syncAddressList(addresses)
+    await syncAndSubscribeAddresses(addresses)
   } catch (err: any) {
     throw new Error(`job ${job.id as string} failed with error ${err.message as string}`)
   }
 }
 
-export const syncAllAddressTransactionsForNetworkWorker = async (queueName: string): Promise<void> => {
+export const syncAndSubscribeAllAddressTransactionsForNetworkWorker = async (queueName: string): Promise<void> => {
   const worker = new Worker(
     queueName,
-    syncAllAddressTransactionsForNetworkJob,
+    syncAndSubscribeAllAddressTransactionsForNetworkJob,
     {
       connection: redisBullMQ,
       lockDuration: DEFAULT_WORKER_LOCK_DURATION
     }
   )
   worker.on('completed', job => {
-    console.log(`initial syncing finished for network ${job.data.networkId as string}`)
+    console.log(`initial syncing and subscribing finished for network ${job.data.networkId as string}`)
   })
 
   worker.on('failed', (job, err) => {
     if (job !== undefined) {
-      console.log(`initial syncing FAILED for network ${job.data.networkId as string}`)
-      console.log(`error for initial syncing of network ${job.data.networkId as string}: ${err.message}`)
+      console.log(`initial syncing and subscribing FAILED for network ${job.data.networkId as string}`)
+      console.log(`error for initial syncing and subscribing of network ${job.data.networkId as string}: ${err.message}`)
     }
   })
 }
@@ -107,19 +80,19 @@ export const syncPricesWorker = async (queueName: string): Promise<void> => {
   })
 }
 
-export const syncUnsyncedAddressesWorker = async (queue: Queue): Promise<void> => {
+export const syncAndSubscribeUnsyncedAddressesWorker = async (queue: Queue): Promise<void> => {
   const worker = new Worker(
     queue.name,
     async (job) => {
       const newAddresses = await addressService.fetchUnsyncedAddresses()
       if (newAddresses.length !== 0) {
-        await syncAddressList(newAddresses)
+        await syncAndSubscribeAddresses(newAddresses)
         job.data.syncedAddresses = newAddresses
       }
 
       // add same job to the queue again, so it runs repeating
       await queue.add(
-        'syncUnsyncedAddresses',
+        'syncAndSubscribeUnsyncedAddresses',
         {},
         { delay: SYNC_NEW_ADDRESSES_DELAY }
       )
@@ -131,7 +104,7 @@ export const syncUnsyncedAddressesWorker = async (queue: Queue): Promise<void> =
   )
   worker.on('completed', job => {
     if (job.data.syncedAddresses === undefined) {
-      console.log('no new addresses to sync')
+      console.log('no new addresses to sync and subscribe')
     } else {
       console.log('synced', job.data.syncedAddresses)
       job.data.syncedAddresses = undefined
@@ -140,8 +113,8 @@ export const syncUnsyncedAddressesWorker = async (queue: Queue): Promise<void> =
 
   worker.on('failed', (job, err) => {
     if (job !== undefined) {
-      console.log('automatic syncing of address FAILED')
-      console.log(`error for automatic syncing of addresses: ${err.message}`)
+      console.log('automatic syncing and subscribing of address FAILED')
+      console.log(`error for automatic syncing and subscribing of addresses: ${err.message}`)
     }
   })
 }

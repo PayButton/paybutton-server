@@ -39,7 +39,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
   subscribedAddresses: KeyValueT<Address>
 
   constructor () {
-    this.availableNetworks = [NETWORK_SLUGS.bitcoincash]
+    this.availableNetworks = [NETWORK_SLUGS.bitcoincash, NETWORK_SLUGS.ecash]
     this.subscribedAddresses = {}
   }
 
