@@ -91,17 +91,6 @@ const addressWithTransactionsAndPaybuttons = Prisma.validator<Prisma.AddressArgs
 
 export type AddressWithTransactionsAndPaybuttons = Prisma.AddressGetPayload<typeof addressWithTransactionsAndPaybuttons>
 
-const includePaybuttonsAndUserProfilesNested = {
-  include: {
-    userProfiles: {
-      include: {
-        userProfile: true
-      }
-    },
-    paybuttons: includePaybuttonsNested.paybuttons
-  }
-}
-
 const includeTransactionNetworkUserProfile = {
   include: {
     transactions: true,
@@ -119,14 +108,17 @@ const addressWithTransactionNetworkUserProfile = Prisma.validator<Prisma.Address
 )
 export type AddressWithTransactionNetworkUserProfile = Prisma.AddressGetPayload<typeof addressWithTransactionNetworkUserProfile>
 
-export async function fetchAddressBySubstring (substring: string): Promise<AddressWithTransactionNetworkUserProfile> {
+export async function fetchAddressBySubstring (substring: string): Promise<AddressWithTransactionsAndNetwork> {
   const results = await prisma.address.findMany({
     where: {
       address: {
         contains: substring
       }
     },
-    ...includeTransactionNetworkUserProfile
+    include: {
+      network: true,
+      transactions: true
+    }
   })
   if (results.length === 0) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
   return results[0]
@@ -176,21 +168,19 @@ export async function fetchAllAddresses (includeTransactions = false): Promise<A
   })
 }
 
-export async function fetchUnsyncedAddresses (): Promise<AddressWithUserProfiles[]> {
+export async function fetchUnsyncedAddresses (): Promise<Address[]> {
   return await prisma.address.findMany({
     where: {
       lastSynced: null
-    },
-    include: includePaybuttonsAndUserProfilesNested.include
+    }
   })
 }
 
-export async function fetchAllAddressesForNetworkId (networkId: number): Promise<AddressWithUserProfiles[]> {
+export async function fetchAllAddressesForNetworkId (networkId: number): Promise<Address[]> {
   return await prisma.address.findMany({
     where: {
       networkId
-    },
-    include: includePaybuttonsAndUserProfilesNested.include
+    }
   })
 }
 

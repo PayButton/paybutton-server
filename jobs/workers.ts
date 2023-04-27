@@ -1,4 +1,5 @@
 import { Worker, Job, Queue } from 'bullmq'
+import { Address } from '@prisma/client'
 import { redisBullMQ } from 'redis/clientInstance'
 import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION, RESPONSE_MESSAGES } from 'constants/index'
 
@@ -12,16 +13,14 @@ import { parseError } from 'utils/validators'
 
 const grpc = new GrpcBlockchainClient()
 
-const subscribeGrpcTxJob = (address: addressService.AddressWithUserProfiles, confirmed: boolean): (txn: Transaction.AsObject) => Promise<any> => {
+const subscribeGrpcTxJob = (address: Address, confirmed: boolean): (txn: Transaction.AsObject) => Promise<any> => {
   return async (txn: Transaction.AsObject) => {
     const transactionCreateInput = await grpc.getTransactionFromGrpcTransaction(txn, address, confirmed)
-    await transactionService.createTransaction(
-      transactionCreateInput
-    )
+    await transactionService.createTransaction(transactionCreateInput)
   }
 }
 
-const syncAndSubscribeAddressList = async (addressList: addressService.AddressWithUserProfiles[]): Promise<void> => {
+const syncAndSubscribeAddressList = async (addressList: Address[]): Promise<void> => {
   // sync addresses
   await Promise.all(
     addressList.map(async (addr) => {
