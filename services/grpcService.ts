@@ -3,16 +3,17 @@ import {
   TransactionNotification,
   Transaction as GrpcTransaction,
   GetAddressUnspentOutputsResponse,
-  MempoolTransaction
+  MempoolTransaction,
+  Transaction
 } from 'grpc-bchrpc-node'
 
-import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
-import { getObjectValueForNetworkSlug, getObjectValueForAddress, satoshisToUnit, pubkeyToAddress, removeAddressPrefix } from '../utils/index'
-import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, RESPONSE_MESSAGES, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD } from '../constants/index'
+import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
+import { getObjectValueForNetworkSlug, getObjectValueForAddress, satoshisToUnit, pubkeyToAddress, removeAddressPrefix, groupAddressesByNetwork } from '../utils/index'
+import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_SLUGS, RESPONSE_MESSAGES, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD } from '../constants/index'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
-import { TransactionWithAddressAndPrices, createManyTransactions, base64HashToHex } from './transactionService'
+import { TransactionWithAddressAndPrices, createTransaction, createManyTransactions, base64HashToHex, deleteTransactions, fetchUnconfirmedTransactions } from './transactionService'
 
 export interface OutputsList {
   outpoint: object
@@ -33,6 +34,14 @@ export const getGrpcClients = (): KeyValueT<GrpcClient> => {
 }
 
 export class GrpcBlockchainClient implements BlockchainClient {
+  availableNetworks: string[]
+  subscribedAddresses: KeyValueT<Address>
+
+  constructor () {
+    this.availableNetworks = [NETWORK_SLUGS.bitcoincash, NETWORK_SLUGS.ecash]
+    this.subscribedAddresses = {}
+  }
+
   private getClientForAddress (addressString: string): GrpcClient {
     return getObjectValueForAddress(addressString, getGrpcClients())
   }
@@ -202,62 +211,107 @@ export class GrpcBlockchainClient implements BlockchainClient {
     return details
   };
 
-  public async subscribeTransactions (
-    addresses: string[],
-    onTransactionNotification: (txn: GrpcTransaction.AsObject) => any,
-    onMempoolTransactionNotification: (txn: GrpcTransaction.AsObject) => any,
-    networkSlug: string
-  ): Promise<void> {
-    const createTxnStream = async (): Promise<void> => {
-      const client = this.getClientForNetworkSlug(networkSlug)
+  public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
+    if (addresses.length === 0) return
+
+    const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address))
+    if (addressesAlreadySubscribed.length === addresses.length) return
+    addressesAlreadySubscribed.forEach(address => {
+      console.log(`This address was already subscribed: ${address.address}`)
+    })
+    addresses = addresses.filter(address => !addressesAlreadySubscribed.includes(address))
+
+    const addressesByNetwork: KeyValueT<Address[]> = groupAddressesByNetwork(this.availableNetworks, addresses)
+
+    for (const [network, networkAddresses] of Object.entries(addressesByNetwork)) {
+      const client = getGrpcClients()[network]
+      const addressesToSubscribe = networkAddresses.map(address => address.address)
       const confirmedStream = await client.subscribeTransactions({
         includeMempoolAcceptance: false,
         includeBlockAcceptance: true,
-        addresses
+        addresses: addressesToSubscribe
       })
       const unconfirmedStream = await client.subscribeTransactions({
         includeMempoolAcceptance: true,
         includeBlockAcceptance: false,
-        addresses
+        addresses: addressesToSubscribe
       })
-
       const nowDateString = (new Date()).toISOString()
 
       // output for end, error or close of stream
       void confirmedStream.on('end', () => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream ended`)
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} confirmed stream ended`)
       })
       void confirmedStream.on('close', () => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream closed`)
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} confirmed stream closed`)
       })
       void confirmedStream.on('error', (error: any) => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} confirmed stream error`, error)
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} confirmed stream error`, error)
       })
       void unconfirmedStream.on('end', () => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream ended`)
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} unconfirmed stream ended`)
       })
       void unconfirmedStream.on('close', () => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream closed`)
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} unconfirmed stream closed`)
       })
       void unconfirmedStream.on('error', (error: any) => {
-        console.log(`${nowDateString}: addresses ${addresses.join(', ')} unconfirmed stream error`, error)
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} unconfirmed stream error`, error)
       })
 
       // output for data stream
       void confirmedStream.on('data', (data: TransactionNotification) => {
-        const objectTxn = data.getConfirmedTransaction()!.toObject()
-        console.log(`${nowDateString}: got confirmed txn`, objectTxn)
-        onTransactionNotification(objectTxn)
+        void this.processSubscribedNotification(data)
       })
       void unconfirmedStream.on('data', (data: TransactionNotification) => {
-        const unconfirmedTxn = data.getUnconfirmedTransaction()!.toObject()
-        const objectTxn = this.parseMempoolTx(unconfirmedTxn)
-        console.log(`${nowDateString}: got unconfirmed txn`, objectTxn)
-        onMempoolTransactionNotification(objectTxn)
+        void this.processSubscribedNotification(data)
       })
 
-      console.log(`${nowDateString}: txn data stream established for addresses ${addresses.join(', ')}.`)
+      // subscribed addresses
+      networkAddresses.forEach(address => {
+        this.subscribedAddresses[address.address] = address
+      })
     }
-    await createTxnStream()
-  };
+  }
+
+  private async getPrismaTransactionsForSubscribedAddresses (transaction: Transaction.AsObject, confirmed: boolean): Promise<AddressWithTransaction[]> {
+    const addressWithTransactions: AddressWithTransaction[] = await Promise.all(Object.values(this.subscribedAddresses).map(
+      async address => {
+        return {
+          address,
+          transaction: await this.getTransactionFromGrpcTransaction(transaction, address, confirmed)
+        }
+      }
+    ))
+    return addressWithTransactions.filter(
+      addressWithTransaction => addressWithTransaction.transaction.amount > new Prisma.Decimal(0)
+    )
+  }
+
+  private async processSubscribedNotification (data: TransactionNotification): Promise<void> {
+    let addressWithConfirmedTransactions: AddressWithTransaction[] = []
+    let addressWithUnconfirmedTransactions: AddressWithTransaction[] = []
+
+    // get new confirmed transactions
+    const confirmedTransaction = data.getConfirmedTransaction()?.toObject()
+    if (confirmedTransaction != null) {
+      addressWithConfirmedTransactions = await this.getPrismaTransactionsForSubscribedAddresses(confirmedTransaction, true)
+
+      // remove unconfirmed transactions that have now been confirmed
+      const transactionsToDelete = await fetchUnconfirmedTransactions(confirmedTransaction.hash as string)
+      await deleteTransactions(transactionsToDelete)
+    }
+
+    // get new unconfirmed transactions
+    const unconfirmedTransaction = data.getUnconfirmedTransaction()?.toObject()
+    if (unconfirmedTransaction != null) {
+      const parsedUnconfirmedTransaction = this.parseMempoolTx(unconfirmedTransaction)
+      addressWithUnconfirmedTransactions = await this.getPrismaTransactionsForSubscribedAddresses(parsedUnconfirmedTransaction, false)
+    }
+
+    await Promise.all(
+      [...addressWithUnconfirmedTransactions, ...addressWithConfirmedTransactions].map(async addressWithTransaction => {
+        return await createTransaction(addressWithTransaction.transaction)
+      })
+    )
+  }
 }

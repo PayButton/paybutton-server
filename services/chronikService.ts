@@ -2,7 +2,6 @@ import { ChronikClient, ScriptType, Tx, Utxo } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
-import { Transaction } from 'grpc-bchrpc-node'
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N } from 'constants/index'
 import { TransactionWithAddressAndPrices, createManyTransactions, base64HashToHex } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
@@ -158,8 +157,9 @@ export class ChronikBlockchainClient implements BlockchainClient {
     return details
   }
 
-  async subscribeTransactions (addresses: string[], onTransactionNotification: (txn: Transaction.AsObject) => any, onMempoolTransactionNotification: (txn: Transaction.AsObject) => any, networkSlug: string): Promise<void> {
-    throw new Error('Method not implemented.')
+  public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
+    // TODO
+    console.log('Method not implemented.')
   }
 }
 

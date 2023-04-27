@@ -19,7 +19,7 @@ export default ({ paybutton, onDelete, refreshPaybutton }: IProps): FunctionComp
       <div className={`${style.paybutton_card} ${style.paybutton_card_no_hover}`}>
         <div className={style.button_detail_header}>
         <div className={style.title}>
-          <h5>{paybutton.name}</h5>   
+          <h5>{paybutton.name}</h5>
           <div className={style.walletcard_icons}>
             {checkNetwork(paybutton, XEC_NETWORK_ID) && <div><Image src={XECIcon} alt='XEC' /></div>}
             {checkNetwork(paybutton, BCH_NETWORK_ID) && <div><Image src={BCHIcon} alt='BCH' /></div>}

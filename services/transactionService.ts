@@ -223,3 +223,23 @@ export async function syncAllTransactionsForAddress (addressString: string, maxT
 
   return insertedTransactions
 }
+
+export async function fetchUnconfirmedTransactions (hash: string): Promise<TransactionWithAddressAndPrices[]> {
+  return await prisma.transaction.findMany({
+    where: {
+      hash: await base64HashToHex(hash),
+      confirmed: false
+    },
+    include: includeAddressAndPrices
+  })
+}
+
+export async function deleteTransactions (transactions: TransactionWithAddressAndPrices[]): Promise<void> {
+  await Promise.all(transactions.map(
+    async transaction => await prisma.transaction.delete({
+      where: {
+        id: transaction.id
+      }
+    })
+  ))
+}
