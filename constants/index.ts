@@ -10,6 +10,7 @@ export const RESPONSE_MESSAGES = {
   NAME_NOT_PROVIDED_400: { statusCode: 400, message: "'name' not provided." },
   PAYBUTTON_NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Button name already exists.' },
   WALLET_NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Wallet name already exists.' },
+  TRANSACTION_ALREADY_EXISTS_FOR_ADDRESS_400: { statusCode: 400, message: 'Transaction already exists for address.' },
   ADDRESSES_NOT_PROVIDED_400: { statusCode: 400, message: "'addresses' not provided." },
   BUTTON_IDS_NOT_PROVIDED_400: { statusCode: 400, message: 'Paybuttons were not provided.' },
   ADDRESS_IDS_NOT_PROVIDED_400: { statusCode: 400, message: 'Addresses were not provided.' },
@@ -23,6 +24,7 @@ export const RESPONSE_MESSAGES = {
   ADDRESS_NOT_PROVIDED_400: { statusCode: 400, message: "'address' not provided." },
   INVALID_ADDRESS_400: { statusCode: 400, message: 'Invalid address.' },
   NO_ADDRESS_FOUND_404: { statusCode: 404, message: 'No address found.' },
+  NO_TRANSACTION_FOUND_404: { statusCode: 404, message: 'No transaction found.' },
   NO_BUTTON_FOUND_404: { statusCode: 404, message: 'No button found.' },
   NO_WALLET_FOUND_404: { statusCode: 404, message: 'No wallet found.' },
   NO_USER_PROFILE_FOUND_ON_WALLET_404: { statusCode: 404, message: 'No user profile found for wallet.' },
@@ -36,6 +38,7 @@ export const RESPONSE_MESSAGES = {
   NETWORK_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'networkSlug' not provided." },
   QUOTE_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'quoteSlug' not provided." },
   NO_CURRENT_PRICES_FOUND_404: { statusCode: 404, message: 'Current prices not found.' },
+  NO_PRICES_FOUND_404: { statusCode: 404, message: 'Prices not found.' },
   INVALID_QUOTE_SLUG_400: { statusCode: 400, message: 'Invalid quote slug.' },
   INVALID_TICKER_400: { statusCode: 400, message: 'Invalid ticker.' },
   MISSING_BLOCKCHAIN_CLIENT_400: { statusCode: 400, message: 'There is no blockchain client chosen for this network.' },
@@ -84,7 +87,7 @@ export const SUPPORTED_QUOTES = [ // avoids hitting the DB every time for data t
 
 export const HUMAN_READABLE_DATE_FORMAT = 'YYYY-MM-DD'
 
-export const PRICE_API_DATE_FORMAT = 'YYYYMMDD'
+export const PRICE_API_DATE_FORMAT = 'YYYY-MM-DD'
 export const PRICE_API_TIMEOUT = 40 * 1000 // 40 seconds
 export const PRICE_API_MAX_RETRIES = 3
 

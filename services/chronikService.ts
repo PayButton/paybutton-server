@@ -8,7 +8,6 @@ import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { satoshisToUnit } from 'utils'
 import { fetchAddressBySubstring } from './addressService'
-import { syncPricesFromTransactionList } from './priceService'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
@@ -109,8 +108,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         [...confirmedTransactions, ...unconfirmedTransactions].map(async tx => await this.getTransactionFromChronikTransaction(tx, address))
       )
 
-      const persistedTransactions = await createManyTransactions(transactionsToPersist)
-      await syncPricesFromTransactionList(persistedTransactions)
+      const persistedTransactions = await createManyTransactions(transactionsToPersist, true)
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))

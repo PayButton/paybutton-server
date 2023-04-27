@@ -1,14 +1,14 @@
 import prisma from 'prisma/clientInstance'
-import { Prisma } from '@prisma/client'
+import { Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, GetAddressTransactionsParameters } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
-import { fetchAddressBySubstring, updateLastSynced } from 'services/addressService'
-import { QuoteValues } from 'services/priceService'
+import { fetchAddressBySubstring, updateLastSynced, fetchAddressById } from 'services/addressService'
+import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
 
-export async function getTransactionValue (transaction: TransactionWithAddressAndPrices): Promise<QuoteValues> {
+export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
@@ -25,14 +25,24 @@ export async function getTransactionValue (transaction: TransactionWithAddressAn
   return ret
 }
 
-const includeAddressAndPrices = {
-  address: true,
+const includePrices = {
   prices: {
     include: {
       price: true
     }
   }
 }
+
+const includeAddressAndPrices = {
+  address: true,
+  ...includePrices
+}
+
+const transactionWithPrices = Prisma.validator<Prisma.TransactionArgs>()(
+  { include: includePrices }
+)
+
+export type TransactionWithPrices = Prisma.TransactionGetPayload<typeof transactionWithPrices>
 
 const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionArgs>()(
   { include: includeAddressAndPrices }
@@ -61,6 +71,38 @@ export async function fetchAddressTransactions (addressString: string): Promise<
   return _.orderBy(transactions, ['timestamp'], ['desc'])
 }
 
+export async function fetchTransactionById (id: string): Promise<TransactionWithAddressAndPrices> {
+  const tx = await prisma.transaction.findUnique({
+    where: {
+      id
+    },
+    include: includeAddressAndPrices
+  })
+  if (tx === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
+  }
+  return tx
+}
+
+export async function fetchManyTransactionsById (idList: string[]): Promise<TransactionWithAddressAndPrices[]> {
+  const tx = await prisma.transaction.findMany({
+    where: {
+      id: {
+        in: idList
+      }
+    },
+    include: includeAddressAndPrices
+  })
+  if (tx === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
+  }
+  return tx
+}
+
+export async function getTransactionNetworkId (tx: Transaction): Promise<number> {
+  return (await fetchAddressById(tx.addressId)).networkId
+}
+
 export async function base64HashToHex (base64Hash: string): Promise<string> {
   return (
     atob(base64Hash)
@@ -73,14 +115,19 @@ export async function base64HashToHex (base64Hash: string): Promise<string> {
   )
 }
 
-export async function createTransaction (transactionData: Prisma.TransactionUncheckedCreateInput): Promise<TransactionWithAddressAndPrices | undefined> {
+export async function createTransaction (transactionData: Prisma.TransactionUncheckedCreateInput, includePrices = false): Promise<TransactionWithAddressAndPrices | undefined> {
   if (transactionData.amount === new Prisma.Decimal(0)) { // out transactions
     return
   }
-  return await prisma.transaction.create({
+  const createdTx = await prisma.transaction.create({
     data: transactionData,
     include: includeAddressAndPrices
   })
+  if (includePrices) {
+    void connectTransactionToPrices(createdTx, prisma)
+    return await fetchTransactionById(createdTx.id)
+  }
+  return createdTx
 }
 
 async function addUUIDToTransactions (transactions: Prisma.TransactionUncheckedCreateInput[]): Promise<string[]> {
@@ -94,11 +141,55 @@ async function addUUIDToTransactions (transactions: Prisma.TransactionUncheckedC
   return uuidList
 }
 
-export async function createManyTransactions (transactionsData: Prisma.TransactionUncheckedCreateInput[]): Promise<TransactionWithAddressAndPrices[]> {
+export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient): Promise<void> {
+  const networkId = await getTransactionNetworkId(tx)
+  const allPrices = await fetchPricesForNetworkAndTimestamp(networkId, tx.timestamp, prisma)
+  void await prisma.pricesOnTransactions.upsert({
+    where: {
+      priceId_transactionId: {
+        priceId: allPrices.usd.id,
+        transactionId: tx.id
+      }
+    },
+    create: {
+      transactionId: tx.id,
+      priceId: allPrices.usd.id
+    },
+    update: {}
+  })
+  void await prisma.pricesOnTransactions.upsert({
+    where: {
+      priceId_transactionId: {
+        priceId: allPrices.cad.id,
+        transactionId: tx.id
+      }
+    },
+    create: {
+      transactionId: tx.id,
+      priceId: allPrices.cad.id
+    },
+    update: {}
+  })
+}
+
+export async function connectTransactionsToPricesByIdList (idList: string[]): Promise<void> {
+  return await prisma.$transaction(async (p) => {
+    const promises = idList.map(async (id) => {
+      const tx = await fetchTransactionById(id)
+      return await connectTransactionToPrices(tx, p)
+    })
+    void await Promise.all(promises)
+  })
+}
+
+export async function createManyTransactions (transactionsData: Prisma.TransactionUncheckedCreateInput[], includePrices = false): Promise<TransactionWithAddressAndPrices[]> {
   const uuidList = await addUUIDToTransactions(transactionsData)
   await prisma.transaction.createMany({
     data: transactionsData
   })
+  if (includePrices) {
+    void connectTransactionsToPricesByIdList(uuidList)
+  }
   return await prisma.transaction.findMany({
     where: {
       id: {

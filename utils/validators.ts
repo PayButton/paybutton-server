@@ -65,6 +65,8 @@ export const parseError = function (error: Error): Error {
           return new Error(RESPONSE_MESSAGES.PAYBUTTON_NAME_ALREADY_EXISTS_400.message)
         } else if (error.message.includes('Wallet_name_providerUserId_unique_constraint')) {
           return new Error(RESPONSE_MESSAGES.WALLET_NAME_ALREADY_EXISTS_400.message)
+        } else if (error.message.includes('Transaction_hash_addressId_key')) {
+          return new Error(RESPONSE_MESSAGES.TRANSACTION_ALREADY_EXISTS_FOR_ADDRESS_400.message)
         }
         break
       case 'P2025':
