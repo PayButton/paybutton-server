@@ -1,10 +1,10 @@
-import { XEC_NETWORK_ID, BCH_NETWORK_ID, CURRENT_PRICE_SYNC_DELAY, SYNC_TXS_JOBS_RETRY_DELAY, SYNC_TXS_JOBS_MAX_RETRIES } from 'constants/index'
-import { Queue, FlowProducer } from 'bullmq'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID, CURRENT_PRICE_REPEAT_DELAY, SYNC_TXS_JOBS_RETRY_DELAY, SYNC_TXS_JOBS_MAX_RETRIES } from 'constants/index'
+import { Queue, FlowProducer, FlowJob } from 'bullmq'
 import { redisBullMQ } from 'redis/clientInstance'
 import {
-  syncAllAddressTransactionsForNetworkWorker,
+  syncAndSubscribeAllAddressTransactionsForNetworkWorker,
   syncPricesWorker,
-  syncUnsyncedAddressesWorker
+  syncAndSubscribeUnsyncedAddressesWorker
 } from './workers'
 
 const RETRY_OPTS = {
@@ -16,80 +16,82 @@ const RETRY_OPTS = {
 }
 
 const main = async (): Promise<void> => {
-  // sync all db addresses transactions
-  const initTransactionsSync = new Queue('initTransactionsSync', { connection: redisBullMQ })
+  const pricesQueue = new Queue('pricesSync', { connection: redisBullMQ })
+  const initTransactionsQueue = new Queue('initTransactionsSync', { connection: redisBullMQ })
+  const newAddressesQueue = new Queue('newAddressesSync', { connection: redisBullMQ })
 
-  // sync current prices
-  const pricesSync = new Queue('pricesSync', { connection: redisBullMQ })
-
-  // try to sync new addresses periodically
-  const newAddressesSync = new Queue('newAddressesSync', { connection: redisBullMQ })
-
-  // create flow
-  const flowProducer = new FlowProducer({ connection: redisBullMQ })
-
-  await flowProducer.add({
-    name: 'syncUnsyncedAddresses',
-    queueName: newAddressesSync.name,
+  const flowJobPrices: FlowJob = {
+    queueName: pricesQueue.name,
+    data: { syncType: 'past' },
+    name: 'syncPastPricesFlow',
+    opts: {
+      removeOnFail: false,
+      jobId: 'syncPastPrices',
+      ...RETRY_OPTS
+    }
+  }
+  const flowJobSyncAndSubscribeXECAddresses: FlowJob = {
+    queueName: initTransactionsQueue.name,
+    data: { networkId: XEC_NETWORK_ID },
+    name: 'syncAndSubscribeXECAddressesFlow',
+    opts: {
+      removeOnFail: false,
+      jobId: 'syncAndSubscribeXECAddresses',
+      ...RETRY_OPTS
+    }
+  }
+  const flowJobSyncAndSubscribeBCHAddresses: FlowJob = {
+    queueName: initTransactionsQueue.name,
+    data: { networkId: BCH_NETWORK_ID },
+    name: 'syncAndSubscribeBCHAddressesFlow',
+    opts: {
+      removeOnFail: false,
+      jobId: 'syncAndSubscribeBCHAddresses',
+      ...RETRY_OPTS
+    }
+  }
+  const flowJobSyncAndSubscribeUnsyncedAddresses: FlowJob = {
+    queueName: newAddressesQueue.name,
     data: {},
+    name: 'syncAndSubscribeUnsyncedAddressesFlow',
     opts: {
       removeOnComplete: false,
       removeOnFail: { count: 3 },
-      jobId: 'syncUnsyncedAddresses',
+      jobId: 'syncAndSubscribeUnsyncedAddresses',
       ...RETRY_OPTS
-    },
+    }
+  }
+
+  const flowProducer = new FlowProducer({ connection: redisBullMQ })
+  await flowProducer.add({
+    ...flowJobSyncAndSubscribeUnsyncedAddresses,
     children: [
       {
-        name: 'syncBCHAddresses',
-        data: { networkId: BCH_NETWORK_ID },
-        opts: {
-          removeOnFail: false,
-          jobId: 'syncBCHAddresses',
-          ...RETRY_OPTS
-        },
-        queueName: initTransactionsSync.name,
+        ...flowJobSyncAndSubscribeBCHAddresses,
         children: [
           {
-            name: 'syncXECAddresses',
-            data: { networkId: XEC_NETWORK_ID },
-            opts: {
-              removeOnFail: false,
-              jobId: 'syncXECAddresses',
-              ...RETRY_OPTS
-            },
-            queueName: initTransactionsSync.name,
-            children: [
-              {
-                name: 'syncPastPrices',
-                data: { syncType: 'past' },
-                opts: {
-                  removeOnFail: false,
-                  jobId: 'syncPastPrices',
-                  ...RETRY_OPTS
-                },
-                queueName: pricesSync.name
-              }
-            ]
+            ...flowJobSyncAndSubscribeXECAddresses,
+            children: [flowJobPrices]
           }
         ]
       }
     ]
   })
 
-  await pricesSync.add('syncCurrentPrices',
+  await pricesQueue.add('syncCurrentPrices',
     { syncType: 'current' },
     {
-      removeOnFail: false,
       jobId: 'syncCurrentPrices',
+      removeOnFail: false,
       repeat: {
-        every: CURRENT_PRICE_SYNC_DELAY
+        every: CURRENT_PRICE_REPEAT_DELAY
       }
     }
   )
 
-  await syncPricesWorker(pricesSync.name)
-  await syncAllAddressTransactionsForNetworkWorker(initTransactionsSync.name)
-  await syncUnsyncedAddressesWorker(newAddressesSync)
+  await syncPricesWorker(pricesQueue.name)
+  await syncAndSubscribeAllAddressTransactionsForNetworkWorker(initTransactionsQueue.name)
+  await syncAndSubscribeUnsyncedAddressesWorker(newAddressesQueue)
 }
 
 void main()

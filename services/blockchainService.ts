@@ -1,12 +1,9 @@
 import { GrpcBlockchainClient } from './grpcService'
 import { ChronikBlockchainClient } from './chronikService'
 import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils/index'
-import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CLIENT_OPTIONS } from '../constants/index'
-import {
-  Transaction
-} from 'grpc-bchrpc-node'
+import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CLIENT_OPTIONS, NETWORK_IDS, NETWORK_TICKERS } from '../constants/index'
 import { TransactionWithAddressAndPrices } from './transactionService'
-import { Prisma } from '@prisma/client'
+import { Address, Prisma } from '@prisma/client'
 
 export interface BlockchainInfo {
   height: number
@@ -40,18 +37,18 @@ export interface TransactionDetails {
   }
 }
 
+export interface AddressWithTransaction {
+  address: Address
+  transaction: Prisma.TransactionUncheckedCreateInput
+}
+
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
   syncTransactionsForAddress: (parameters: GetAddressTransactionsParameters) => Promise<TransactionWithAddressAndPrices[]>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
   getTransactionDetails: (hash: string, networkSlug: string) => Promise<TransactionDetails>
-  subscribeTransactions: (
-    addresses: string[],
-    onTransactionNotification: (txn: Transaction.AsObject) => any,
-    onMempoolTransactionNotification: (txn: Transaction.AsObject) => any,
-    networkSlug: string
-  ) => Promise<void>
+  subscribeAddressesAddTransactions: (addresses: Address[]) => Promise<void>
 }
 
 function getBlockchainClient (networkSlug: string): BlockchainClient {
@@ -91,11 +88,12 @@ export async function getTransactionDetails (hash: string, networkSlug: string):
   return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getTransactionDetails(hash, networkSlug)
 }
 
-export async function subscribeTransactions (
-  addresses: string[],
-  onTransactionNotification: (txn: Transaction.AsObject) => any,
-  onMempoolTransactionNotification: (txn: Transaction.AsObject) => any,
-  networkSlug: string
-): Promise<void> {
-  return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).subscribeTransactions(addresses, onTransactionNotification, onMempoolTransactionNotification, networkSlug)
+export async function subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
+  await Promise.all(
+    Object.keys(BLOCKCHAIN_CLIENTS).map(async networkSlug => {
+      const addressesOfNetwork = addresses.filter(address => address.networkId === NETWORK_IDS[NETWORK_TICKERS[networkSlug]])
+      const client = BLOCKCHAIN_CLIENTS[networkSlug]
+      await client.subscribeAddressesAddTransactions(addressesOfNetwork)
+    })
+  )
 }

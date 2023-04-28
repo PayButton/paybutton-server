@@ -98,9 +98,9 @@ export const SYNC_TXS_JOBS_RETRY_DELAY = 2000
 export const BCH_TIMESTAMP_THRESHOLD = 1501588800 // 2017 Aug 1, 12PM
 export const XEC_TIMESTAMP_THRESHOLD = 1605398400 // 2020 Nov 15, 12AM
 
-// Wait time (in ms) between sync of current prices
-export const CURRENT_PRICE_SYNC_DELAY = 60000
 export const DEFAULT_WORKER_LOCK_DURATION = 120000
+// Wait time (in ms) between sync of current prices
+export const CURRENT_PRICE_REPEAT_DELAY = 60000
 
 export const NETWORK_TICKERS: KeyValueT<string> = {
   ecash: 'XEC',
@@ -118,7 +118,7 @@ export const NETWORK_BLOCKCHAIN_CLIENTS: KeyValueT<BLOCKCHAIN_CLIENT_OPTIONS> = 
 
 export const CHRONIK_CLIENT_URL = 'https://chronik.be.cash/xec'
 
-export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 15000
+export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 45000
 export const NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY = 200
 
 export const PAYMENT_WEEK_KEY_FORMAT = 'YYYY:WW'
