@@ -1,7 +1,7 @@
 import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN, NETWORK_TICKERS } from '../constants/index'
 import { Prisma } from '@prisma/client'
-import { CreatePaybuttonInput, UpdatePaybuttonInput } from '../services/paybuttonService'
-import { CreateWalletInput, UpdateWalletInput } from '../services/walletService'
+import { type CreatePaybuttonInput, type UpdatePaybuttonInput } from '../services/paybuttonService'
+import { type CreateWalletInput, type UpdateWalletInput } from '../services/walletService'
 import { getAddressPrefix } from './index'
 import { appInfo } from 'config/appInfo'
 import xecaddr from 'xecaddrjs'
@@ -125,6 +125,7 @@ export interface WalletPOSTParameters {
 export interface PaybuttonPATCHParameters {
   name?: string
   addresses?: string
+  userId?: string
 }
 
 export interface WalletPATCHParameters {
@@ -159,9 +160,12 @@ export const parseWalletPATCHRequest = function (params: WalletPATCHParameters):
   }
 }
 
-export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters): UpdatePaybuttonInput {
+export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters, paybuttonId: string): UpdatePaybuttonInput {
+  if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   const ret: UpdatePaybuttonInput = {
-    name: params.name
+    name: params.name,
+    userId: params.userId,
+    paybuttonId
   }
 
   if (params.addresses !== '' && params.addresses !== undefined) {

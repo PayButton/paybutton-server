@@ -46,8 +46,12 @@ export default async (
   if (req.method === 'PATCH') {
     try {
       const values = req.body
-      const updatePaybuttonInput = parsePaybuttonPATCHRequest(values)
-      const paybutton = await paybuttonService.updatePaybutton(paybuttonId, updatePaybuttonInput)
+      const params = {
+        ...values,
+        userId
+      }
+      const updatePaybuttonInput = parsePaybuttonPATCHRequest(params, paybuttonId)
+      const paybutton = await paybuttonService.updatePaybutton(updatePaybuttonInput)
       res.status(200).json(paybutton)
     } catch (err: any) {
       const parsedError = parseError(err)

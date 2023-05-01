@@ -4,9 +4,10 @@ import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES, NETWORK_IDS_FROM_SLUGS } from 'constants/index'
 import { getObjectValueForNetworkSlug } from 'utils/index'
 import { connectAddressToUser, disconnectAddressFromUser } from 'services/addressesOnUserProfileService'
-
 export interface UpdatePaybuttonInput {
+  paybuttonId: string
   name?: string
+  userId: string
   prefixedAddressList?: string[]
 }
 
@@ -195,7 +196,7 @@ export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Payb
   })
 }
 
-export async function updatePaybutton (paybuttonId: string, params: UpdatePaybuttonInput): Promise<PaybuttonWithAddresses> {
+export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<PaybuttonWithAddresses> {
   const updateData: Prisma.PaybuttonUpdateInput = {}
   if (params.name !== undefined && params.name !== '') {
     updateData.name = params.name
@@ -221,7 +222,7 @@ export async function updatePaybutton (paybuttonId: string, params: UpdatePaybut
     if (params.prefixedAddressList !== undefined && params.prefixedAddressList.length !== 0) {
       void await prisma.addressesOnButtons.deleteMany({
         where: {
-          paybuttonId
+          paybuttonId: params.paybuttonId
         }
       })
     }
@@ -233,7 +234,6 @@ export async function updatePaybutton (paybuttonId: string, params: UpdatePaybut
       addressIdListToAdd,
       addressIdListToRemove,
       paybuttonIdToIgnore: values.paybuttonId,
-      params.
     })
      */
     return await prisma.paybutton.update({
