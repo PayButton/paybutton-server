@@ -157,10 +157,10 @@ export async function createWallet (values: CreateWalletInput): Promise<WalletWi
             userProfile: {
               connectOrCreate: {
                 where: {
-                  userId: values.userId
+                  id: values.userId
                 },
                 create: {
-                  userId: values.userId
+                  id: values.userId
                 }
               }
             }
