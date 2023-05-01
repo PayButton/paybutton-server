@@ -151,7 +151,7 @@ model WalletsOnUserProfile {
 }
 
 model UserProfile {
-  id        String                    @id
+  id        String                    @id @db.VarChar(255)
   createdAt DateTime                  @default(now())
   updatedAt DateTime                  @updatedAt
   wallets   WalletsOnUserProfile[]
