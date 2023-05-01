@@ -11,13 +11,13 @@ datasource db {
 }
 
 model Address {
-  id           String               @id @default(dbgenerated("(uuid())"))
-  address      String               @unique @db.VarChar(255)
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  id           String                    @id @default(dbgenerated("(uuid())"))
+  address      String                    @unique @db.VarChar(255)
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
   networkId    Int
-  network      Network              @relation(fields: [networkId], references: [id], onUpdate: Restrict)
-  userProfiles   AddressesOnUserProfiles[]
+  network      Network                   @relation(fields: [networkId], references: [id], onUpdate: Restrict)
+  userProfiles AddressesOnUserProfiles[]
   lastSynced   DateTime?
   paybuttons   AddressesOnButtons[]
   transactions Transaction[]
@@ -75,11 +75,11 @@ model Transaction {
 }
 
 model Wallet {
-  id             String                @id @default(dbgenerated("(uuid())"))
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
-  name           String                @db.VarChar(255)
-  providerUserId String?               @db.VarChar(255)
+  id             String                    @id @default(dbgenerated("(uuid())"))
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  name           String                    @db.VarChar(255)
+  providerUserId String?                   @db.VarChar(255)
   userAddresses  AddressesOnUserProfiles[]
   userProfile    WalletsOnUserProfile?
 
@@ -126,11 +126,11 @@ model AddressesOnUserProfiles {
   addressId     String
   userProfileId String
   walletId      String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  address       Address      @relation(fields: [addressId], references: [id], onDelete: Cascade)
-  userProfile   UserProfile  @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
-  wallet        Wallet?      @relation(fields: [walletId], references: [id], onDelete: SetNull)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  address       Address     @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  wallet        Wallet?     @relation(fields: [walletId], references: [id], onDelete: SetNull)
 
   @@id([userProfileId, addressId])
 }
@@ -151,9 +151,9 @@ model WalletsOnUserProfile {
 }
 
 model UserProfile {
-  id        String                 @id
-  createdAt DateTime               @default(now())
-  updatedAt DateTime               @updatedAt
+  id        String                    @id
+  createdAt DateTime                  @default(now())
+  updatedAt DateTime                  @updatedAt
   wallets   WalletsOnUserProfile[]
-  addresses   AddressesOnUserProfiles[]
+  addresses AddressesOnUserProfiles[]
 }
