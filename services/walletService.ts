@@ -1,5 +1,5 @@
 import * as addressService from 'services/addressService'
-import { Prisma, WalletsOnUserProfile } from '@prisma/client'
+import { Prisma, type WalletsOnUserProfile, type Wallet } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { connectAddressToUser } from 'services/addressesOnUserProfileService'
 import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
@@ -55,6 +55,33 @@ function filterOutOtherUsersPaybuttons (wallet: WalletWithAddressesWithPaybutton
   }
 }
 
+export const fetchUserDefaultWalletForNetwork = async (userId: string, networkId: number): Promise<Wallet> => {
+  let defaultCondition = {}
+  if (networkId === XEC_NETWORK_ID) {
+    defaultCondition = {
+      WalletsOnUserProfile_userId_isXECDefault_unique_constraint: {
+        userId,
+        isXECDefault: true
+      }
+    }
+  } else if (networkId === BCH_NETWORK_ID) {
+    defaultCondition = {
+      WalletsOnUserProfile_userId_isBCHDefault_unique_constraint: {
+        userId,
+        isBCHDefault: true
+      }
+    }
+  }
+  return (await prisma.walletsOnUserProfile.findUniqueOrThrow({
+    where: {
+      ...defaultCondition
+    },
+    include: {
+      wallet: true
+    }
+  })).wallet
+}
+
 export const getDefaultForNetworkIds = (isXECDefault: boolean | undefined, isBCHDefault: boolean | undefined): number[] => {
   const defaultForNetworkIds: number[] = []
   // set default for XEC
@@ -107,13 +134,15 @@ export async function connectAddressesToWallet (
   if (wallet.userProfile === null) {
     throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
   }
-  for (const addressId of addressIdList) {
-    const addr = await prisma.address.findUnique({ where: { id: addressId } })
-    if (addr === null) {
-      throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
-    }
-    void await connectAddressToUser(addressId, wallet.userProfile.userId, wallet.id)
-  }
+  void await Promise.all(
+    addressIdList.map(async (addressId) => {
+      const addr = await prisma.address.findUnique({ where: { id: addressId } })
+      if (addr === null) {
+        throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
+      }
+      await connectAddressToUser(addressId, wallet.userProfile!.userId, wallet.id)
+    })
+  )
 }
 
 export async function setAddressListForWallet (
@@ -133,33 +162,30 @@ export async function setAddressListForWallet (
 
 export async function createWallet (values: CreateWalletInput): Promise<WalletWithAddressesWithPaybuttons> {
   const defaultForNetworkIds = getDefaultForNetworkIds(values.isXECDefault, values.isBCHDefault)
-  const newWalletId: string = await prisma.$transaction(async (prisma) => {
-    const w = await prisma.wallet.create({
-      data: {
-        providerUserId: values.userId,
-        name: values.name,
-        userProfile: {
-          create: {
-            userProfile: {
-              connectOrCreate: {
-                where: {
-                  id: values.userId
-                },
-                create: {
-                  id: values.userId
-                }
+  const newWallet = await prisma.wallet.create({
+    data: {
+      providerUserId: values.userId,
+      name: values.name,
+      userProfile: {
+        create: {
+          userProfile: {
+            connectOrCreate: {
+              where: {
+                id: values.userId
+              },
+              create: {
+                id: values.userId
               }
             }
           }
         }
-      },
-      include: includeAddressesWithPaybuttons
-    })
-    await setAddressListForWallet(prisma, values.addressIdList, w)
-    return w.id
+      }
+    },
+    include: includeAddressesWithPaybuttons
   })
+  await setAddressListForWallet(prisma, values.addressIdList, newWallet)
   return await setDefaultWallet(
-    await fetchWalletById(newWalletId),
+    await fetchWalletById(newWallet.id),
     defaultForNetworkIds
   )
 }
@@ -414,6 +440,6 @@ export async function fetchWalletArrayByUserId (userId: string): Promise<WalletW
     where: { providerUserId: userId },
     include: includeAddressesWithPaybuttons
   })
-  walletList.forEach((w) => filterOutOtherUsersPaybuttons(w))
+  walletList.forEach((w) => { filterOutOtherUsersPaybuttons(w) })
   return walletList
 }

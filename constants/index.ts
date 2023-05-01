@@ -27,6 +27,7 @@ export const RESPONSE_MESSAGES = {
   NO_TRANSACTION_FOUND_404: { statusCode: 404, message: 'No transaction found.' },
   NO_BUTTON_FOUND_404: { statusCode: 404, message: 'No button found.' },
   NO_WALLET_FOUND_404: { statusCode: 404, message: 'No wallet found.' },
+  NO_WALLET_FOUND_FOR_USER_ADDRESS_404: { statusCode: 404, message: 'No wallet found for user address.' },
   NO_USER_PROFILE_FOUND_ON_WALLET_404: { statusCode: 404, message: 'No user profile found for wallet.' },
   NO_USER_PROFILE_FOUND_ON_PAYBUTTON_404: { statusCode: 404, message: 'No user profile found for paybutton.' },
   MULTIPLE_ADDRESSES_FOUND_400: { statusCode: 400, message: 'Multiple addresses found.' },
@@ -47,6 +48,7 @@ export const RESPONSE_MESSAGES = {
   DEFAULT_WALLET_CANNOT_BE_DELETED_400: { statusCode: 400, message: 'A default wallet cannot be deleted.' },
   USER_PROFILE_NOT_FOUND_400: { statusCode: 400, message: 'User profile not found.' },
   CACHED_PAYMENT_NOT_FOUND_404: { statusCode: 404, message: 'Cached payment not found.' },
+  NO_CONTEXT_TO_INFER_USER_ADRESS_WALLET_400: { statusCode: 400, message: 'Trying to update the wallet for a user address without contex.' },
   NO_ADDRESS_FOUND_FOR_TRANSACTION_404: { statusCode: 404, message: 'No address found for transaction.' }
 }
 
