@@ -50,9 +50,7 @@ export const RESPONSE_MESSAGES = {
   NO_ADDRESS_FOUND_FOR_TRANSACTION_404: { statusCode: 404, message: 'No address found for transaction.' }
 }
 
-export interface KeyValueT<T> {
-  [key: string]: T
-}
+export type KeyValueT<T> = Record<string, T>
 
 export const NETWORK_SLUGS: KeyValueT<string> = {
   ecash: 'ecash',
@@ -60,6 +58,10 @@ export const NETWORK_SLUGS: KeyValueT<string> = {
   ectest: 'ectest',
   bchtest: 'bchtest',
   bchreg: 'bchreg'
+}
+export const NETWORK_IDS_FROM_SLUGS: KeyValueT<number> = {
+  ecash: 1,
+  bitcoincash: 2
 }
 
 // When fetching some address transactions, number of transactions to fetch at a time.
