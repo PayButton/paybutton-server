@@ -65,7 +65,7 @@ export const mockedXECAddress = {
 
 export const mockedAddressesOnUserProfile = {
   addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
-  userProfileId: 'ddde6236-bde3-425f-b0fc-13a007cc584b',
+  userId: 'ddde6236-bde3-425f-b0fc-13a007cc584b',
   walletId: '570fbb7e-fc7f-4096-8541-e68405cf9b56',
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
@@ -204,12 +204,12 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
   userProfile: {
     isXECDefault: null,
     isBCHDefault: null,
-    userProfileId: 'ddde6236-bde3-425f-b0fc-13a007cc584b'
+    userId: 'ddde6236-bde3-425f-b0fc-13a007cc584b'
   },
   userAddresses: [
     {
       addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
-      userProfileId: 'ddde6236-bde3-425f-b0fc-13a007cc584b',
+      userId: 'ddde6236-bde3-425f-b0fc-13a007cc584b',
       walletId: '570fbb7e-fc7f-4096-8541-e68405cf9b56',
       createdAt: new Date('2022-05-27T15:18:42.000Z'),
       updatedAt: new Date('2022-05-27T15:18:42.000Z'),
@@ -254,7 +254,7 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
     },
     {
       addressId: 'a37b9a8c-d262-468b-b1dd-571434a16308',
-      userProfileId: 'ddde6236-bde3-425f-b0fc-13a007cc584b',
+      userId: 'ddde6236-bde3-425f-b0fc-13a007cc584b',
       walletId: '0da1977f-d65b-43a7-a7c8-b2a1f01da7a0',
       createdAt: new Date('2022-05-27T15:18:42.000Z'),
       updatedAt: new Date('2022-05-27T15:18:42.000Z'),
@@ -321,7 +321,7 @@ export const mockedWalletList = [
 
 export const mockedWalletsOnUserProfile = {
   walletId: '1f79bbe4-1c56-48af-b703-b22efd629104',
-  userProfileId: 'ddde6236-bde3-425f-b0fc-13a007cc584b',
+  userId: 'ddde6236-bde3-425f-b0fc-13a007cc584b',
   isXECDefault: null,
   isBCHDefault: null,
   createdAt: new Date('2022-05-27T15:18:42.000Z'),

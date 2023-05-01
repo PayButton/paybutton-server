@@ -124,30 +124,30 @@ model PricesOnTransactions {
 
 model AddressesOnUserProfiles {
   addressId     String
-  userProfileId String
+  userId String
   walletId      String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   address       Address     @relation(fields: [addressId], references: [id], onDelete: Cascade)
-  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  userProfile   UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
   wallet        Wallet?     @relation(fields: [walletId], references: [id], onDelete: SetNull)
 
-  @@id([userProfileId, addressId])
+  @@id([userId, addressId])
 }
 
 model WalletsOnUserProfile {
   walletId      String      @unique
-  userProfileId String
+  userId String
   isXECDefault  Boolean?
   isBCHDefault  Boolean?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   wallet        Wallet      @relation(fields: [walletId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  userProfile   UserProfile @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
 
-  @@id([walletId, userProfileId])
-  @@unique([userProfileId, isBCHDefault], name: "WalletsOnUserProfile_userProfileId_isBCHDefault_unique_constraint")
-  @@unique([userProfileId, isXECDefault], name: "WalletsOnUserProfile_userProfileId_isXECDefault_unique_constraint")
+  @@id([walletId, userId])
+  @@unique([userId, isBCHDefault], name: "WalletsOnUserProfile_userId_isBCHDefault_unique_constraint")
+  @@unique([userId, isXECDefault], name: "WalletsOnUserProfile_userId_isXECDefault_unique_constraint")
 }
 
 model UserProfile {
