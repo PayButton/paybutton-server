@@ -1,6 +1,7 @@
 import * as addressService from 'services/addressService'
 import { Prisma, WalletsOnUserProfile } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
+import { connectAddressToUser } from 'services/addressesOnUserProfileService'
 import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 export interface CreateWalletInput {
@@ -111,22 +112,7 @@ export async function connectAddressesToWallet (
     if (addr === null) {
       throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
     }
-    await prisma.addressesOnUserProfiles.upsert({
-      create: {
-        walletId: wallet.id,
-        userId: wallet.userProfile.userId,
-        addressId
-      },
-      update: {
-        walletId: wallet.id
-      },
-      where: {
-        userId_addressId: {
-          userId: wallet.userProfile.userId,
-          addressId
-        }
-      }
-    })
+    void await connectAddressToUser(addressId, wallet.userProfile.userId, wallet.id)
   }
 }
 

@@ -3,6 +3,7 @@ import * as addressService from 'services/addressService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
+import { connectAddressToUser, disconnectAddressFromUser } from 'services/addressesOnUserProfileService'
 
 export interface UpdatePaybuttonInput {
   name?: string
@@ -75,14 +76,7 @@ async function removePaybuttonAddressUserConnectors (paybutton: PaybuttonWithAdd
   const paybuttonAddressesIds = paybutton.addresses.map(addr => addr.address.id)
   const oldAddresses = paybuttonAddressesIds.filter(id => !flattedUserOtherAddressesIds.includes(id))
   await Promise.all(oldAddresses.map(async (id) => {
-    await prisma.addressesOnUserProfiles.delete({
-      where: {
-        userId_addressId: {
-          userId: paybutton.providerUserId!,
-          addressId: id
-        }
-      }
-    })
+    await disconnectAddressFromUser(id, paybutton.providerUserId!)
   }))
 }
 
@@ -94,21 +88,9 @@ async function addPaybuttonAddressUserConnectors (paybutton: PaybuttonWithAddres
   const userAddressesIds = userAddresses.map(addr => addr.id)
   const paybuttonAddresses = paybutton.addresses.map(addr => addr.address)
   const newAddresses = paybuttonAddresses.filter(addr => !userAddressesIds.includes(addr.id))
+  console.log('oia os novo', newAddresses)
   void await Promise.all(newAddresses.map(async (address) => {
-    void await prisma.addressesOnUserProfiles.upsert({
-      create: {
-        walletId,
-        userId: paybutton.providerUserId!,
-        addressId: address.id
-      },
-      update: walletId !== null ? { walletId } : {},
-      where: {
-        userId_addressId: {
-          userId: paybutton.providerUserId!,
-          addressId: address.id
-        }
-      }
-    })
+    void await connectAddressToUser(address.id, paybutton.providerUserId!, walletId)
   }))
 }
 
