@@ -10,10 +10,9 @@ import { checkNetwork } from './PaybuttonList'
 
 interface IProps {
   paybutton: PaybuttonWithAddresses
-  onDelete: Function
   refreshPaybutton: Function
 }
-export default ({ paybutton, onDelete, refreshPaybutton }: IProps): FunctionComponent => {
+export default ({ paybutton, refreshPaybutton }: IProps): FunctionComponent => {
   return (
     <div className={style.paybutton_list_ctn}>
       <div className={`${style.paybutton_card} ${style.paybutton_card_no_hover}`}>
@@ -26,7 +25,7 @@ export default ({ paybutton, onDelete, refreshPaybutton }: IProps): FunctionComp
           </div>
         </div>
           <div>
-            <EditButtonForm paybutton={paybutton} onDelete={onDelete} refreshPaybutton={refreshPaybutton}/>
+            <EditButtonForm paybutton={paybutton} refreshPaybutton={refreshPaybutton}/>
           </div>
         </div>
           <div>
