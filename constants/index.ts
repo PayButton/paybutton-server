@@ -28,6 +28,7 @@ export const RESPONSE_MESSAGES = {
   NO_BUTTON_FOUND_404: { statusCode: 404, message: 'No button found.' },
   NO_WALLET_FOUND_404: { statusCode: 404, message: 'No wallet found.' },
   NO_USER_PROFILE_FOUND_ON_WALLET_404: { statusCode: 404, message: 'No user profile found for wallet.' },
+  NO_USER_PROFILE_FOUND_ON_PAYBUTTON_404: { statusCode: 404, message: 'No user profile found for paybutton.' },
   MULTIPLE_ADDRESSES_FOUND_400: { statusCode: 400, message: 'Multiple addresses found.' },
   RESOURCE_DOES_NOT_BELONG_TO_USER_400: { statusCode: 400, message: 'Resource does not belong to user.' },
   MISSING_PRICE_API_URL_400: { statusCode: 400, message: 'Missing PRICE_API_URL environment variable.' },
