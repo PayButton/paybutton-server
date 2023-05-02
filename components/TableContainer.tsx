@@ -1,7 +1,7 @@
-import React from 'react'
 import { useTable, useSortBy, usePagination } from 'react-table'
 
 const TableContainer = ({ columns, data }): JSX.Element => {
+  const localStoragePageSize = localStorage.getItem('pageSize') !== null ? +localStorage.getItem('pageSize') : 10
   const {
     getTableProps,
     getTableBodyProps,
@@ -21,7 +21,7 @@ const TableContainer = ({ columns, data }): JSX.Element => {
     {
       columns,
       data,
-      initialState: { pageIndex: 0, pageSize: 10, sortBy: [{ id: 'timestamp', desc: true }] }
+      initialState: { pageIndex: 0, pageSize: localStoragePageSize, sortBy: [{ id: 'timestamp', desc: true }] }
     },
     useSortBy,
     usePagination
@@ -33,6 +33,7 @@ const TableContainer = ({ columns, data }): JSX.Element => {
 
   const onChangeInSelect = (event: any): void => {
     setPageSize(Number(event.target.value))
+    localStorage.setItem('pageSize', event.target.value.toString())
   }
 
   return (
@@ -95,7 +96,7 @@ const TableContainer = ({ columns, data }): JSX.Element => {
 
    <div className='table-select-ctn'>
       <select value={pageSize} onChange={onChangeInSelect}>
-        {[10, 20, 30, 40, 50].map(pageSize => (
+        {[10, 25, 50, 100].map(pageSize => (
           <option key={pageSize} value={pageSize}>
             Show {pageSize}
           </option>
