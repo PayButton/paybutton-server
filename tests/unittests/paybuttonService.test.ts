@@ -1,7 +1,7 @@
 import prisma from 'prisma/clientInstance'
 import * as paybuttonService from 'services/paybuttonService'
 import { prismaMock } from 'prisma/mockedClient'
-import { mockedPaybutton, mockedPaybuttonList, mockedNetwork } from '../mockedObjects'
+import { mockedPaybutton, mockedPaybuttonList, mockedNetwork, mockedWalletsOnUserProfile } from '../mockedObjects'
 
 describe('Fetch services', () => {
   it('Should fetch paybutton by id', async () => {
@@ -25,6 +25,8 @@ describe('Create services', () => {
   it('Should return paybutton nested', async () => {
     prismaMock.paybutton.create.mockResolvedValue(mockedPaybutton)
     prisma.paybutton.create = prismaMock.paybutton.create
+    prismaMock.addressesOnUserProfiles.upsert.mockResolvedValue(mockedWalletsOnUserProfile)
+    prisma.addressesOnUserProfiles.upsert = prismaMock.addressesOnUserProfiles.upsert
 
     prismaMock.$transaction.mockImplementation(
       (fn: (prisma: any) => any) => {
@@ -56,6 +58,15 @@ describe('Delete services', () => {
 
     prismaMock.paybutton.findUnique.mockResolvedValue(mockedPaybutton)
     prisma.paybutton.findUnique = prismaMock.paybutton.findUnique
+
+    prismaMock.addressesOnUserProfiles.delete.mockResolvedValue(mockedWalletsOnUserProfile)
+    prisma.addressesOnUserProfiles.delete = prismaMock.addressesOnUserProfiles.delete
+    prismaMock.$transaction.mockImplementation(
+      (fn: (prisma: any) => any) => {
+        return fn(prisma)
+      }
+    )
+    prisma.$transaction = prismaMock.$transaction
 
     const deletePaybuttonInput = {
       userId: 'mocked-uid',

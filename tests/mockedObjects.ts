@@ -322,6 +322,7 @@ export const mockedWalletList = [
 export const mockedWalletsOnUserProfile = {
   walletId: '1f79bbe4-1c56-48af-b703-b22efd629104',
   userId: 'ddde6236-bde3-425f-b0fc-13a007cc584b',
+  addressId: '-',
   isXECDefault: null,
   isBCHDefault: null,
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
