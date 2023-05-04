@@ -1,21 +1,26 @@
-import { ChronikClient, ScriptType, Tx, Utxo } from 'chronik-client'
+import { ChronikClient, ScriptType, SubscribeMsg, Tx, Utxo, WsConfig, WsEndpoint } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
-import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N } from 'constants/index'
-import { TransactionWithAddressAndPrices, createManyTransactions, base64HashToHex } from './transactionService'
+import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
+import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT } from 'constants/index'
+import { TransactionWithAddressAndPrices, createManyTransactions, base64HashToHex, deleteTransactions, fetchUnconfirmedTransactions, createTransaction } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
-import { satoshisToUnit } from 'utils'
+import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
 import { fetchAddressBySubstring } from './addressService'
+import * as ws from 'ws'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
   availableNetworks: string[]
+  subscribedAddresses: KeyValueT<Address>
+  wsEndpoint: WsEndpoint
 
   constructor () {
     this.chronik = new ChronikClient(CHRONIK_CLIENT_URL)
     this.availableNetworks = [NETWORK_SLUGS.ecash]
+    this.subscribedAddresses = {}
+    this.wsEndpoint = this.chronik.ws(this.getWsConfig())
   }
 
   private validateNetwork (networkSlug: string): void {
@@ -157,9 +162,67 @@ export class ChronikBlockchainClient implements BlockchainClient {
     return details
   }
 
+  private getWsConfig (): WsConfig {
+    return {
+      onConnect: (e: ws.Event) => { console.log(`Chronik WebSocket connected, message type: ${e.type}`) },
+      onMessage: (msg: SubscribeMsg) => { void this.processWsMessage(msg) },
+      onError: (e: ws.ErrorEvent) => { console.log(`WebSocket error, message type: ${e.type} | message: ${e.message} | error: ${e.error as string}`) },
+      onEnd: (e: ws.Event) => { console.log(`WebSocket ended, message type: ${e.type}`) },
+      autoReconnect: true
+    }
+  }
+
+  private async processWsMessage (msg: SubscribeMsg): Promise<void> {
+    // delete unconfirmed transaction from our database
+    if (msg.type === 'RemovedFromMempool' || msg.type === 'Confirmed') {
+      const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
+      await deleteTransactions(transactionsToDelete)
+    }
+    // create unconfirmed or confirmed transaction
+    if (msg.type === 'AddedToMempool' || msg.type === 'Confirmed') {
+      const transaction = await await this.chronik.tx(msg.txid)
+      const addressWithTransactions = await this.getPrismaTransactionsForSubscribedAddresses(transaction)
+      await Promise.all(
+        addressWithTransactions.map(async addressWithTransaction => {
+          return await createTransaction(addressWithTransaction.transaction)
+        })
+      )
+    }
+  }
+
+  private async getPrismaTransactionsForSubscribedAddresses (transaction: Tx): Promise<AddressWithTransaction[]> {
+    const addressWithTransactions: AddressWithTransaction[] = await Promise.all(Object.values(this.subscribedAddresses).map(
+      async address => {
+        return {
+          address,
+          transaction: await this.getTransactionFromChronikTransaction(transaction, address)
+        }
+      }
+    ))
+    return addressWithTransactions.filter(
+      addressWithTransaction => addressWithTransaction.transaction.amount > new Prisma.Decimal(0)
+    )
+  }
+
   public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
-    // TODO
-    console.log('Method not implemented.')
+    if (addresses.length === 0) return
+
+    const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address))
+    if (addressesAlreadySubscribed.length === addresses.length) return
+    addressesAlreadySubscribed.forEach(address => {
+      console.log(`This address was already subscribed: ${address.address}`)
+    })
+    addresses = addresses.filter(address => !addressesAlreadySubscribed.includes(address))
+
+    const addressesByNetwork: KeyValueT<Address[]> = groupAddressesByNetwork(this.availableNetworks, addresses)
+
+    for (const [, networkAddresses] of Object.entries(addressesByNetwork)) {
+      networkAddresses.forEach(address => {
+        const { type, hash160 } = toHash160(address.address)
+        this.wsEndpoint.subscribe(type, hash160)
+        this.subscribedAddresses[address.address] = address
+      })
+    }
   }
 }
 
