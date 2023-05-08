@@ -75,28 +75,26 @@ CREATE TABLE `Wallet` (
 
 -- CreateTable
 CREATE TABLE `UserProfile` (
-    `id` VARCHAR(191) NOT NULL DEFAULT (uuid()),
+    `id` VARCHAR(255) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
-    `userId` VARCHAR(255) NOT NULL,
 
-    UNIQUE INDEX `UserProfile_userId_key`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `WalletsOnUserProfile` (
     `walletId` VARCHAR(191) NOT NULL,
-    `userProfileId` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
     `isXECDefault` BOOLEAN NULL,
     `isBCHDefault` BOOLEAN NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `WalletsOnUserProfile_walletId_key`(`walletId`),
-    UNIQUE INDEX `WalletsOnUserProfile_userProfileId_isXECDefault_key`(`userProfileId`, `isXECDefault`),
-    UNIQUE INDEX `WalletsOnUserProfile_userProfileId_isBCHDefault_key`(`userProfileId`, `isBCHDefault`),
-    PRIMARY KEY (`walletId`, `userProfileId`)
+    UNIQUE INDEX `WalletsOnUserProfile_userId_isXECDefault_key`(`userId`, `isXECDefault`),
+    UNIQUE INDEX `WalletsOnUserProfile_userId_isBCHDefault_key`(`userId`, `isBCHDefault`),
+    PRIMARY KEY (`walletId`, `userId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -139,12 +137,12 @@ CREATE TABLE `Quote` (
 -- CreateTable
 CREATE TABLE `AddressesOnUserProfiles` (
     `addressId` VARCHAR(191) NOT NULL,
-    `userProfileId` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
     `walletId` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
-    PRIMARY KEY (`userProfileId`, `addressId`)
+    PRIMARY KEY (`userId`, `addressId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
@@ -163,7 +161,7 @@ ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_addressId_fkey` FOREIGN KE
 ALTER TABLE `WalletsOnUserProfile` ADD CONSTRAINT `WalletsOnUserProfile_walletId_fkey` FOREIGN KEY (`walletId`) REFERENCES `Wallet`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `WalletsOnUserProfile` ADD CONSTRAINT `WalletsOnUserProfile_userProfileId_fkey` FOREIGN KEY (`userProfileId`) REFERENCES `UserProfile`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `WalletsOnUserProfile` ADD CONSTRAINT `WalletsOnUserProfile_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `UserProfile`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Price` ADD CONSTRAINT `Price_networkId_fkey` FOREIGN KEY (`networkId`) REFERENCES `Network`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
@@ -184,4 +182,4 @@ ALTER TABLE `AddressesOnUserProfiles` ADD CONSTRAINT `AddressesOnUserProfiles_ad
 ALTER TABLE `AddressesOnUserProfiles` ADD CONSTRAINT `AddressesOnUserProfiles_walletId_fkey` FOREIGN KEY (`walletId`) REFERENCES `Wallet`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `AddressesOnUserProfiles` ADD CONSTRAINT `AddressesOnUserProfiles_userProfileId_fkey` FOREIGN KEY (`userProfileId`) REFERENCES `UserProfile`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `AddressesOnUserProfiles` ADD CONSTRAINT `AddressesOnUserProfiles_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `UserProfile`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

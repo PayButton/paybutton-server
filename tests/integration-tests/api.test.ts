@@ -510,7 +510,7 @@ describe('POST /api/wallets/', () => {
     expect(responseData.userProfile).toStrictEqual({
       isXECDefault: null,
       isBCHDefault: null,
-      userProfileId: expect.any(String)
+      userId: expect.any(String)
     })
     void expect(countWallets()).resolves.toBe(1)
   })
@@ -567,7 +567,7 @@ describe('POST /api/wallets/', () => {
     expect(responseData.userProfile).toStrictEqual({
       isXECDefault: null,
       isBCHDefault: null,
-      userProfileId: expect.any(String)
+      userId: expect.any(String)
     })
     expect(responseData.userAddresses).toEqual(
       expect.arrayContaining([expectedAddressObject])
@@ -589,7 +589,7 @@ describe('POST /api/wallets/', () => {
     expect(responseData.userProfile).toStrictEqual({
       isXECDefault: null,
       isBCHDefault: null,
-      userProfileId: expect.any(String)
+      userId: expect.any(String)
     })
     expect(responseData.userAddresses).toEqual(
       expect.arrayContaining([expectedAddressObject])

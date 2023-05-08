@@ -12,14 +12,12 @@ export const createDevUserRawQueryList = [
 
 export const userProfiles = [
   {
-    id: 'e5352ec4-c8ab-4ba2-a3d9-2455ccccab25',
-    userId: 'dev-uid',
+    id: 'dev-uid',
     createdAt: new Date(),
     updatedAt: new Date()
   },
   {
-    id: '2f51c061-9c5a-48b9-8212-98a8a6c079df',
-    userId: 'dev2-uid',
+    id: 'dev2-uid',
     createdAt: new Date(),
     updatedAt: new Date()
   }

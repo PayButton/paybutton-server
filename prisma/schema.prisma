@@ -11,13 +11,13 @@ datasource db {
 }
 
 model Address {
-  id           String               @id @default(dbgenerated("(uuid())"))
-  address      String               @unique @db.VarChar(255)
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  id           String                    @id @default(dbgenerated("(uuid())"))
+  address      String                    @unique @db.VarChar(255)
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
   networkId    Int
-  network      Network              @relation(fields: [networkId], references: [id], onUpdate: Restrict)
-  userProfiles   AddressesOnUserProfiles[]
+  network      Network                   @relation(fields: [networkId], references: [id], onUpdate: Restrict)
+  userProfiles AddressesOnUserProfiles[]
   lastSynced   DateTime?
   paybuttons   AddressesOnButtons[]
   transactions Transaction[]
@@ -75,11 +75,11 @@ model Transaction {
 }
 
 model Wallet {
-  id             String                @id @default(dbgenerated("(uuid())"))
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
-  name           String                @db.VarChar(255)
-  providerUserId String?               @db.VarChar(255)
+  id             String                    @id @default(dbgenerated("(uuid())"))
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  name           String                    @db.VarChar(255)
+  providerUserId String?                   @db.VarChar(255)
   userAddresses  AddressesOnUserProfiles[]
   userProfile    WalletsOnUserProfile?
 
@@ -124,37 +124,36 @@ model PricesOnTransactions {
 
 model AddressesOnUserProfiles {
   addressId     String
-  userProfileId String
+  userId String
   walletId      String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  address       Address      @relation(fields: [addressId], references: [id], onDelete: Cascade)
-  userProfile   UserProfile  @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
-  wallet        Wallet?      @relation(fields: [walletId], references: [id], onDelete: SetNull)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  address       Address     @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  userProfile   UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet        Wallet?     @relation(fields: [walletId], references: [id], onDelete: SetNull)
 
-  @@id([userProfileId, addressId])
+  @@id([userId, addressId])
 }
 
 model WalletsOnUserProfile {
   walletId      String      @unique
-  userProfileId String
+  userId String
   isXECDefault  Boolean?
   isBCHDefault  Boolean?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   wallet        Wallet      @relation(fields: [walletId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  userProfile   UserProfile @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
 
-  @@id([walletId, userProfileId])
-  @@unique([userProfileId, isBCHDefault], name: "WalletsOnUserProfile_userProfileId_isBCHDefault_unique_constraint")
-  @@unique([userProfileId, isXECDefault], name: "WalletsOnUserProfile_userProfileId_isXECDefault_unique_constraint")
+  @@id([walletId, userId])
+  @@unique([userId, isBCHDefault], name: "WalletsOnUserProfile_userId_isBCHDefault_unique_constraint")
+  @@unique([userId, isXECDefault], name: "WalletsOnUserProfile_userId_isXECDefault_unique_constraint")
 }
 
 model UserProfile {
-  id        String                 @id @default(dbgenerated("(uuid())"))
-  createdAt DateTime               @default(now())
-  updatedAt DateTime               @updatedAt
-  userId    String                 @unique @db.VarChar(255)
+  id        String                    @id @db.VarChar(255)
+  createdAt DateTime                  @default(now())
+  updatedAt DateTime                  @updatedAt
   wallets   WalletsOnUserProfile[]
-  addresses   AddressesOnUserProfiles[]
+  addresses AddressesOnUserProfiles[]
 }

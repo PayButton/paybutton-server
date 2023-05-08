@@ -27,7 +27,7 @@ export interface DeleteWalletInput {
 const includeAddressesWithPaybuttons = {
   userProfile: {
     select: {
-      userProfileId: true,
+      userId: true,
       isXECDefault: true,
       isBCHDefault: true
     }
@@ -89,8 +89,8 @@ async function removeAddressesFromWallet (
         walletId: null
       },
       where: {
-        userProfileId_addressId: {
-          userProfileId: wallet.userProfile.userProfileId,
+        userId_addressId: {
+          userId: wallet.userProfile.userId,
           addressId
         }
       }
@@ -114,15 +114,15 @@ export async function connectAddressesToWallet (
     await prisma.addressesOnUserProfiles.upsert({
       create: {
         walletId: wallet.id,
-        userProfileId: wallet.userProfile.userProfileId,
+        userId: wallet.userProfile.userId,
         addressId
       },
       update: {
         walletId: wallet.id
       },
       where: {
-        userProfileId_addressId: {
-          userProfileId: wallet.userProfile.userProfileId,
+        userId_addressId: {
+          userId: wallet.userProfile.userId,
           addressId
         }
       }
@@ -157,10 +157,10 @@ export async function createWallet (values: CreateWalletInput): Promise<WalletWi
             userProfile: {
               connectOrCreate: {
                 where: {
-                  userId: values.userId
+                  id: values.userId
                 },
                 create: {
-                  userId: values.userId
+                  id: values.userId
                 }
               }
             }
@@ -208,9 +208,9 @@ export async function setDefaultWallet (wallet: WalletWithAddressesWithPaybutton
     // see if any wallet is already the default
     const prevXECDefault = await prisma.walletsOnUserProfile.findUnique({
       where: {
-        WalletsOnUserProfile_userProfileId_isXECDefault_unique_constraint: {
+        WalletsOnUserProfile_userId_isXECDefault_unique_constraint: {
           isXECDefault: true,
-          userProfileId: wallet.userProfile.userProfileId
+          userId: wallet.userProfile.userId
         }
       }
     })
@@ -246,9 +246,9 @@ export async function setDefaultWallet (wallet: WalletWithAddressesWithPaybutton
     // see if any wallet is already the default
     const prevBCHDefault = await prisma.walletsOnUserProfile.findUnique({
       where: {
-        WalletsOnUserProfile_userProfileId_isBCHDefault_unique_constraint: {
+        WalletsOnUserProfile_userId_isBCHDefault_unique_constraint: {
           isBCHDefault: true,
-          userProfileId: wallet.userProfile.userProfileId
+          userId: wallet.userProfile.userId
         }
       }
     })
@@ -341,13 +341,13 @@ export async function getWalletBalance (wallet: WalletWithAddressesWithPaybutton
   return ret
 }
 
-export async function getUserDefaultWalletForNetworkId (userProfileId: string, networkId: number): Promise<WalletWithAddressesWithPaybuttons> {
+export async function getUserDefaultWalletForNetworkId (userId: string, networkId: number): Promise<WalletWithAddressesWithPaybuttons> {
   let userWalletProfile: WalletsOnUserProfile | null
   if (networkId === BCH_NETWORK_ID) {
     userWalletProfile = await prisma.walletsOnUserProfile.findUnique({
       where: {
-        WalletsOnUserProfile_userProfileId_isBCHDefault_unique_constraint: {
-          userProfileId,
+        WalletsOnUserProfile_userId_isBCHDefault_unique_constraint: {
+          userId,
           isBCHDefault: true
         }
       }
@@ -355,8 +355,8 @@ export async function getUserDefaultWalletForNetworkId (userProfileId: string, n
   } else if (networkId === XEC_NETWORK_ID) {
     userWalletProfile = await prisma.walletsOnUserProfile.findUnique({
       where: {
-        WalletsOnUserProfile_userProfileId_isXECDefault_unique_constraint: {
-          userProfileId,
+        WalletsOnUserProfile_userId_isXECDefault_unique_constraint: {
+          userId,
           isXECDefault: true
         }
       }
@@ -375,8 +375,8 @@ export async function moveAddressesToDefaultWallet (wallet: WalletWithAddressesW
   if (wallet.userProfile === null) {
     throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
   }
-  const XECDefaultWallet = await getUserDefaultWalletForNetworkId(wallet.userProfile?.userProfileId, XEC_NETWORK_ID)
-  const BCHDefaultWallet = await getUserDefaultWalletForNetworkId(wallet.userProfile?.userProfileId, BCH_NETWORK_ID)
+  const XECDefaultWallet = await getUserDefaultWalletForNetworkId(wallet.userProfile?.userId, XEC_NETWORK_ID)
+  const BCHDefaultWallet = await getUserDefaultWalletForNetworkId(wallet.userProfile?.userId, BCH_NETWORK_ID)
   for (const addr of wallet.userAddresses) {
     // Get id of default wallet to move
     let defaultWalletId: string
@@ -393,8 +393,8 @@ export async function moveAddressesToDefaultWallet (wallet: WalletWithAddressesW
         walletId: defaultWalletId
       },
       where: {
-        userProfileId_addressId: {
-          userProfileId: wallet.userProfile.userProfileId,
+        userId_addressId: {
+          userId: wallet.userProfile.userId,
           addressId: addr.addressId
         }
       }
