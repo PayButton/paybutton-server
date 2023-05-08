@@ -11,16 +11,16 @@ stop-dev:
 reset-dev:
 	make stop-dev && make dev
 
-check-logs-dev:
+logs-dev:
 	docker logs -f paybutton-dev
 
-check-logs-db:
+logs-db:
 	docker logs -f paybutton-db
 
-check-logs-cache:
+logs-cache:
 	docker logs -f paybutton-cache
 
-check-logs-users:
+logs-users:
 	docker logs -f paybutton-users-service
 
 lint:
