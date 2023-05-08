@@ -1,6 +1,7 @@
 import * as addressService from 'services/addressService'
 import { Prisma, WalletsOnUserProfile } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
+import { connectAddressToUser } from 'services/addressesOnUserProfileService'
 import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 export interface CreateWalletInput {
@@ -111,22 +112,7 @@ export async function connectAddressesToWallet (
     if (addr === null) {
       throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
     }
-    await prisma.addressesOnUserProfiles.upsert({
-      create: {
-        walletId: wallet.id,
-        userId: wallet.userProfile.userId,
-        addressId
-      },
-      update: {
-        walletId: wallet.id
-      },
-      where: {
-        userId_addressId: {
-          userId: wallet.userProfile.userId,
-          addressId
-        }
-      }
-    })
+    void await connectAddressToUser(addressId, wallet.userProfile.userId, wallet.id)
   }
 }
 
@@ -147,33 +133,30 @@ export async function setAddressListForWallet (
 
 export async function createWallet (values: CreateWalletInput): Promise<WalletWithAddressesWithPaybuttons> {
   const defaultForNetworkIds = getDefaultForNetworkIds(values.isXECDefault, values.isBCHDefault)
-  const newWalletId: string = await prisma.$transaction(async (prisma) => {
-    const w = await prisma.wallet.create({
-      data: {
-        providerUserId: values.userId,
-        name: values.name,
-        userProfile: {
-          create: {
-            userProfile: {
-              connectOrCreate: {
-                where: {
-                  id: values.userId
-                },
-                create: {
-                  id: values.userId
-                }
+  const wallet = await prisma.wallet.create({
+    data: {
+      providerUserId: values.userId,
+      name: values.name,
+      userProfile: {
+        create: {
+          userProfile: {
+            connectOrCreate: {
+              where: {
+                id: values.userId
+              },
+              create: {
+                id: values.userId
               }
             }
           }
         }
-      },
-      include: includeAddressesWithPaybuttons
-    })
-    await setAddressListForWallet(prisma, values.addressIdList, w)
-    return w.id
+      }
+    },
+    include: includeAddressesWithPaybuttons
   })
+  await setAddressListForWallet(prisma, values.addressIdList, wallet)
   return await setDefaultWallet(
-    await fetchWalletById(newWalletId),
+    await fetchWalletById(wallet.id),
     defaultForNetworkIds
   )
 }

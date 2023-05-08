@@ -8,19 +8,20 @@ import s from '../Wallet/wallet.module.css'
 import EditIcon from 'assets/edit-icon.png'
 import TrashIcon from 'assets/trash-icon.png'
 import axios from 'axios'
+import Router from 'next/router'
 import { appInfo } from 'config/appInfo'
 
 interface IProps {
-  onDelete: Function
   paybutton: PaybuttonWithAddresses
   refreshPaybutton: Function
 }
 
-export default function EditButtonForm ({ paybutton, onDelete, refreshPaybutton }: IProps): ReactElement {
+export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<PaybuttonPOSTParameters>()
   const [modal, setModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState(false)
   const [error, setError] = useState('')
+  const [deleteError, setDeleteError] = useState('')
   const [name, setName] = useState(paybutton.name)
   const [addresses, setAddresses] = useState(paybutton.addresses.map((conn) => conn.address.address).join('\n'))
 
@@ -42,6 +43,17 @@ export default function EditButtonForm ({ paybutton, onDelete, refreshPaybutton 
       refreshPaybutton()
     } catch (err: any) {
       setError(err.response.data.message)
+    }
+  }
+
+  async function onDelete (paybuttonId: string): Promise<void> {
+    try {
+      const res = await axios.delete<PaybuttonWithAddresses>(`${appInfo.websiteDomain}/api/paybutton/${paybuttonId}`)
+      if (res.status === 200) {
+        void Router.push(`${appInfo.websiteDomain}/buttons/`)
+      }
+    } catch (err: any) {
+      setDeleteError(err.response.data.message)
     }
   }
 
@@ -87,9 +99,10 @@ export default function EditButtonForm ({ paybutton, onDelete, refreshPaybutton 
             <div className={`${style.form_ctn} ${style.delete_button_form_ctn}`}>
                 <label htmlFor='name'>Are you sure you want to delete {paybutton.name}?<br />This action cannot be undone.</label>
                 <div className={style.btn_row}>
+                  {(deleteError === undefined || deleteError === '') ? null : <div className={style.error_message}>{deleteError}</div>}
                   <div>
 
-                    <button onClick={() => { onDelete(paybutton.id) }} className={style.delete_confirm_btn}>Yes, Delete This Button</button>
+                    <button onClick={() => { void onDelete(paybutton.id) }} className={style.delete_confirm_btn}>Yes, Delete This Button</button>
                     <button onClick={() => { setDeleteModal(false); reset(); setModal(true) }} className={style.cancel_btn}>Cancel</button>
                   </div>
                 </div>

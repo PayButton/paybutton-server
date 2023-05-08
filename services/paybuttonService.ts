@@ -1,9 +1,9 @@
 import * as networkService from 'services/networkService'
 import * as addressService from 'services/addressService'
-import * as walletService from 'services/walletService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
+import { connectAddressToUser, disconnectAddressFromUser } from 'services/addressesOnUserProfileService'
 
 export interface UpdatePaybuttonInput {
   name?: string
@@ -51,21 +51,72 @@ async function getAddressObjectsToCreateOrConnect (prefixedAddressList: string[]
   )
 }
 
+interface UpdateAddressUserConnectorsParams {
+  userId: string
+  addressIdListToAdd: string[]
+  addressIdListToRemove: string[]
+  paybuttonIdToIgnore?: string
+  walletId?: string
+}
+
+async function updateAddressUserConnectors ({
+  userId,
+  addressIdListToAdd,
+  addressIdListToRemove,
+  paybuttonIdToIgnore,
+  walletId
+}: UpdateAddressUserConnectorsParams): Promise<void> {
+  const otherAddressesIds = (await prisma.address.findMany({
+    where: {
+      paybuttons: {
+        some: {
+          paybutton: {
+            providerUserId: userId,
+            id: {
+              not: paybuttonIdToIgnore
+            }
+          }
+        }
+      }
+    },
+    select: {
+      id: true
+    }
+  })).map(obj => obj.id)
+  void await Promise.all(addressIdListToAdd
+    .map(async (id) => {
+      await connectAddressToUser(id, userId, walletId)
+    })
+  )
+  void await Promise.all(addressIdListToRemove
+    .filter((id) => !otherAddressesIds.includes(id)) // addresses that don't exist in another buttons
+    .map(async (id) => {
+      await disconnectAddressFromUser(id, userId)
+    })
+  )
+}
+
 export async function createPaybutton (values: CreatePaybuttonInput): Promise<PaybuttonWithAddresses> {
-  return await prisma.$transaction(async (prisma) => {
-    // Creates or updates the `Address` objects
-    const addressIdList: string[] = []
-    for await (const address of values.prefixedAddressList) {
+  // Creates or updates the `Address` objects
+  // This has to be done before, or the connection
+  // on relation tables to these addresses will fail
+  const addressIdList: string[] = []
+  void await Promise.all(
+    values.prefixedAddressList.map(async (address) => {
       addressIdList.push(
         (await addressService.upsertAddress(address, prisma)).id
       )
-    }
-
-    if (values.walletId !== undefined) {
-      // Connects them to the wallet
-      const wallet = await walletService.fetchWalletById(values.walletId)
-      void await walletService.connectAddressesToWallet(prisma, addressIdList, wallet)
-    }
+    })
+  )
+  return await prisma.$transaction(async (prisma) => {
+    // Creates or updates the `addressesOnUserProfile` objects
+    await updateAddressUserConnectors({
+      userId: values.userId,
+      addressIdListToAdd: addressIdList,
+      addressIdListToRemove: [],
+      paybuttonIdToIgnore: undefined,
+      walletId: values.walletId
+    })
 
     // Creates the `Paybutton`, the `AddressesOnButtons` objects
     // and connects it to the the `Address` object.
@@ -90,16 +141,28 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
     })
   })
 }
+
 export async function deletePaybutton (values: DeletePaybuttonInput): Promise<PaybuttonWithAddresses> {
   const paybutton = await fetchPaybuttonById(values.paybuttonId)
   if (paybutton !== null && paybutton.providerUserId !== values.userId) {
     throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
   }
-  return await prisma.paybutton.delete({
-    where: {
-      id: values.paybuttonId
-    },
-    include: includeAddresses
+  const addressIdListToRemove = paybutton?.addresses.map(conn => conn.address.id) ?? []
+  return await prisma.$transaction(async (prisma) => {
+    // Creates or updates the `addressesOnUserProfile` objects
+    await updateAddressUserConnectors({
+      userId: values.userId,
+      addressIdListToAdd: [],
+      addressIdListToRemove,
+      paybuttonIdToIgnore: values.paybuttonId
+    })
+
+    return await prisma.paybutton.delete({
+      where: {
+        id: values.paybuttonId
+      },
+      include: includeAddresses
+    })
   })
 }
 
@@ -162,6 +225,17 @@ export async function updatePaybutton (paybuttonId: string, params: UpdatePaybut
         }
       })
     }
+
+    // Creates or updates the `addressesOnUserProfile` objects
+    /* WIP
+    await updateAddressUserConnectors({
+      userId: values.userId,
+      addressIdListToAdd,
+      addressIdListToRemove,
+      paybuttonIdToIgnore: values.paybuttonId,
+      params.
+    })
+     */
     return await prisma.paybutton.update({
       where: {
         id: paybuttonId
