@@ -1,6 +1,6 @@
 import { redis } from 'redis/clientInstance'
 import { Prisma } from '@prisma/client'
-import { getTransactionValue } from 'services/transactionService'
+import { getTransactionValue, TransactionWithAddressAndPrices, TransactionWithPrices } from 'services/transactionService'
 import { AddressWithTransactionsWithPrices, fetchAllUserAddresses, fetchAddressById, AddressWithPaybuttons } from 'services/addressService'
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
 import moment from 'moment'
@@ -77,29 +77,47 @@ const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
   return ret
 }
 
-const getPaymentsFromAddress = async (address: AddressWithTransactionsWithPrices): Promise<Payment[]> => {
-  const paymentList: Payment[] = []
-  for (const t of address.transactions) {
-    const value = (await getTransactionValue(t)).usd
-    const txAddress = await fetchAddressById(t.addressId, true) as AddressWithPaybuttons
-    if (txAddress === undefined) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_FOR_TRANSACTION_404.message)
-    paymentList.push({
-      timestamp: t.timestamp,
-      value,
-      networkId: address.networkId,
-      hash: t.hash,
-      buttonDisplayDataList: txAddress.paybuttons.map(
-        (conn) => {
-          return {
-            name: conn.paybutton.name,
-            id: conn.paybutton.id
-          }
+const getPaymentFromTx = async (tx: TransactionWithPrices): Promise<Payment> => {
+  const value = (await getTransactionValue(tx)).usd
+  const txAddress = await fetchAddressById(tx.addressId, true) as AddressWithPaybuttons
+  if (txAddress === undefined) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_FOR_TRANSACTION_404.message)
+  return {
+    timestamp: tx.timestamp,
+    value,
+    networkId: txAddress.networkId,
+    hash: tx.hash,
+    buttonDisplayDataList: txAddress.paybuttons.map(
+      (conn) => {
+        return {
+          name: conn.paybutton.name,
+          id: conn.paybutton.id
         }
-      )
-    })
+      }
+    )
   }
+}
 
-  return paymentList.filter((p) => p.value > new Prisma.Decimal(0))
+const getPaymentsByWeek = (addressId: string, payments: Payment[]): KeyValueT<Payment[]> => {
+  const paymentsGroupedByKey: KeyValueT<Payment[]> = {}
+  for (const payment of payments) {
+    const weekKey = getPaymentsWeekKey(addressId, payment)
+    if (weekKey in paymentsGroupedByKey) {
+      paymentsGroupedByKey[weekKey].push(payment)
+    } else {
+      paymentsGroupedByKey[weekKey] = [payment]
+    }
+  }
+  return paymentsGroupedByKey
+}
+
+const getGroupedPaymentsFromAddress = async (address: AddressWithTransactionsWithPrices): Promise<KeyValueT<Payment[]>> => {
+  let paymentList: Payment[] = []
+  for (const tx of address.transactions) {
+    const payment = await getPaymentFromTx(tx)
+    paymentList.push(payment)
+  }
+  paymentList = paymentList.filter((p) => p.value > new Prisma.Decimal(0))
+  return getPaymentsByWeek(address.id, paymentList)
 }
 
 export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[]> => {
@@ -115,22 +133,35 @@ export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[
   return allPayments
 }
 
-export const cacheAddress = async (address: AddressWithTransactionsWithPrices): Promise<Payment[]> => {
-  const payments = await getPaymentsFromAddress(address)
-  const paymentsByWeek: KeyValueT<Payment[]> = {}
-  for (const payment of payments) {
-    const weekKey = getPaymentsWeekKey(address.id, payment)
-    if (weekKey in paymentsByWeek) {
-      paymentsByWeek[weekKey].push(payment)
-    } else {
-      paymentsByWeek[weekKey] = [payment]
-    }
-  }
-
+const cacheGroupedPayments = async (paymentsGroupedByKey: KeyValueT<Payment[]>): Promise<void> => {
   await Promise.all(
-    Object.keys(paymentsByWeek).map(async key =>
-      await redis.set(key, JSON.stringify(paymentsByWeek[key]))
+    Object.keys(paymentsGroupedByKey).map(async key =>
+      await redis.set(key, JSON.stringify(paymentsGroupedByKey[key]))
     )
   )
-  return payments
+}
+const cacheGroupedPaymentsAppend = async (paymentsGroupedByKey: KeyValueT<Payment[]>): Promise<void> => {
+  await Promise.all(
+    Object.keys(paymentsGroupedByKey).map(async key => {
+      const paymentsString = await redis.get(key)
+      let cachedPayments = (paymentsString === null) ? [] : JSON.parse(paymentsString)
+      cachedPayments = cachedPayments.concat(paymentsGroupedByKey[key])
+      await redis.set(key, JSON.stringify(cachedPayments))
+    })
+  )
+}
+
+export const cacheAddress = async (address: AddressWithTransactionsWithPrices): Promise<void> => {
+  const paymentsGroupedByKey = await getGroupedPaymentsFromAddress(address)
+  await cacheGroupedPayments(paymentsGroupedByKey)
+}
+
+export const cacheManyTxs = async (txs: TransactionWithAddressAndPrices[]): Promise<void> => {
+  for (const tx of txs) {
+    const payment = await getPaymentFromTx(tx)
+    if (payment.value !== new Prisma.Decimal(0)) {
+      const paymentsGroupedByKey = getPaymentsByWeek(tx.address.id, [payment])
+      void await cacheGroupedPaymentsAppend(paymentsGroupedByKey)
+    }
+  }
 }
