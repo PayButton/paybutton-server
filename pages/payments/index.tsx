@@ -101,7 +101,6 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
               </div>
             )}
              </div>
-
           )
         }
       },
