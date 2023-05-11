@@ -95,11 +95,12 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
         accessor: 'buttonDisplayDataList',
         Cell: (cellProps) => {
           return (
-            <> {cellProps.cell.value.map((buttonDisplayData: ButtonDisplayData) =>
+            <div className='payments-btn-cell'> {cellProps.cell.value.map((buttonDisplayData: ButtonDisplayData) =>
               <div style={{ textAlign: 'center' }} className="table-button" key={buttonDisplayData.id}>
               <Link href={`/button/${buttonDisplayData.id}`}>{buttonDisplayData.name}</Link>
               </div>
-            )} </>
+            )}
+             </div>
 
           )
         }
