@@ -9,18 +9,21 @@ import xecaddr from 'xecaddrjs'
 import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
 import { fetchAddressBySubstring } from './addressService'
 import * as ws from 'ws'
+import { Socket } from 'socket.io'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
   availableNetworks: string[]
   subscribedAddresses: KeyValueT<Address>
   wsEndpoint: WsEndpoint
+  socket?: Socket
 
   constructor () {
     this.chronik = new ChronikClient(CHRONIK_CLIENT_URL)
     this.availableNetworks = [NETWORK_SLUGS.ecash]
     this.subscribedAddresses = {}
     this.wsEndpoint = this.chronik.ws(this.getWsConfig())
+    this.socket = undefined
   }
 
   private validateNetwork (networkSlug: string): void {
@@ -80,6 +83,10 @@ export class ChronikBlockchainClient implements BlockchainClient {
       addressId: address.id,
       confirmed: transaction.block !== undefined
     }
+  }
+
+  public setSocket (socket: Socket): void {
+    this.socket = socket
   }
 
   public async syncTransactionsForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
@@ -181,11 +188,18 @@ export class ChronikBlockchainClient implements BlockchainClient {
     if (msg.type === 'AddedToMempool' || msg.type === 'Confirmed') {
       const transaction = await this.chronik.tx(msg.txid)
       const addressWithTransactions = await this.getPrismaTransactionsForSubscribedAddresses(transaction)
+      const updatedAddresses: string[] = []
       await Promise.all(
         addressWithTransactions.map(async addressWithTransaction => {
+          updatedAddresses.push(addressWithTransaction.address.address)
           return await createTransaction(addressWithTransaction.transaction)
         })
       )
+      if (this.socket === undefined) {
+        console.warn('Chronik processed transaction without broadcasting to socket clients')
+      } else {
+        this.socket.broadcast.emit('new-tx', updatedAddresses)
+      }
     }
   }
 

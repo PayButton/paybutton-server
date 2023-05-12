@@ -4,6 +4,7 @@ import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils
 import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CLIENT_OPTIONS, NETWORK_IDS, NETWORK_TICKERS } from '../constants/index'
 import { TransactionWithAddressAndPrices } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
+import { Socket } from 'socket.io'
 
 export interface BlockchainInfo {
   height: number
@@ -49,6 +50,7 @@ export interface BlockchainClient {
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
   getTransactionDetails: (hash: string, networkSlug: string) => Promise<TransactionDetails>
   subscribeAddressesAddTransactions: (addresses: Address[]) => Promise<void>
+  setSocket: (socket: Socket) => void
 }
 
 function getBlockchainClient (networkSlug: string): BlockchainClient {

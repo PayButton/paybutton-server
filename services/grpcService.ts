@@ -37,6 +37,7 @@ export const getGrpcClients = (): KeyValueT<GrpcClient> => {
 export class GrpcBlockchainClient implements BlockchainClient {
   availableNetworks: string[]
   subscribedAddresses: KeyValueT<Address>
+  socket?: Socket
 
   constructor () {
     this.availableNetworks = [NETWORK_SLUGS.bitcoincash, NETWORK_SLUGS.ecash]
@@ -49,6 +50,10 @@ export class GrpcBlockchainClient implements BlockchainClient {
 
   private getClientForNetworkSlug (networkSlug: string): GrpcClient {
     return getObjectValueForNetworkSlug(networkSlug, getGrpcClients())
+  }
+
+  public setSocket (socket: Socket): void {
+    this.socket = socket
   }
 
   public async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
@@ -209,7 +214,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     return details
   };
 
-  public async subscribeAddressesAddTransactions (addresses: Address[], socket: Socket): Promise<void> {
+  public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
     if (addresses.length === 0) return
 
     const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address))
@@ -244,7 +249,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
 
       // output for data stream
       void stream.on('data', (data: TransactionNotification) => {
-        void this.processSubscribedNotification(data, socket)
+        void this.processSubscribedNotification(data)
       })
 
       // subscribed addresses
@@ -268,7 +273,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     )
   }
 
-  private async processSubscribedNotification (data: TransactionNotification, socket: Socket): Promise<void> {
+  private async processSubscribedNotification (data: TransactionNotification): Promise<void> {
     let addressWithConfirmedTransactions: AddressWithTransaction[] = []
     let addressWithUnconfirmedTransactions: AddressWithTransaction[] = []
 
@@ -296,6 +301,10 @@ export class GrpcBlockchainClient implements BlockchainClient {
         return await createTransaction(addressWithTransaction.transaction)
       })
     )
-    socket.broadcast.emit('new-tx', updatedAddresses)
+    if (this.socket === undefined) {
+      console.warn('Grpc processed transaction without broadcasting to socket clients')
+    } else {
+      this.socket.broadcast.emit('new-tx', updatedAddresses)
+    }
   }
 }
