@@ -18,7 +18,6 @@ class RedisMocked {
 }
 
 const getRedisClient = (isBullMQ = false): IORedis | RedisMocked => {
-  console.log('env', process.env)
   if (process.env.NODE_ENV === 'test') {
     return new RedisMocked()
   }
