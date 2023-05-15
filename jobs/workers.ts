@@ -9,26 +9,37 @@ import * as addressService from 'services/addressService'
 import { subscribeAddressesAddTransactions } from 'services/blockchainService'
 import { parseError } from 'utils/validators'
 
-const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<void> => {
+const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<string[]> => {
+  const failedAddresses: string[] = []
   await Promise.all(
     addresses.map(async (addr) => {
-      await subscribeAddressesAddTransactions([addr])
-      await transactionService.syncAllTransactionsForAddress(addr.address, Infinity)
+      try {
+        await subscribeAddressesAddTransactions([addr])
+        await transactionService.syncAllTransactionsForAddress(addr.address, Infinity)
+      } catch (err: any) {
+        failedAddresses.push(addr.address)
+      }
     })
   )
+  return failedAddresses
 }
 
 const syncAndSubscribeAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> => {
   console.log(`job ${job.id as string}: syncing and subscribing all addresses for network ${job.data.networkId as string}...`)
+  let failedAddresses: string [] = []
   try {
     const addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
-    await syncAndSubscribeAddresses(addresses)
+    failedAddresses = await syncAndSubscribeAddresses(addresses)
   } catch (err: any) {
     const parsedError = parseError(err)
     if (parsedError.message === RESPONSE_MESSAGES.TRANSACTION_ALREADY_EXISTS_FOR_ADDRESS_400.message) {
       console.log(`initial syncing of network ${job.data.networkId as string} encountered known transaction, skipping...`)
     } else {
-      throw new Error(`job ${job.id as string} failed with error ${err.message as string}`)
+      if (failedAddresses.length > 0) {
+        console.error(`ERROR: (skipping anyway) initial syncing of network ${job.data.networkId as string} FAILED for addresses ${JSON.stringify(failedAddresses)}: ${err.message as string}`)
+      } else {
+        console.error(`ERROR: (skipping anyway) initial syncing of network ${job.data.networkId as string} FAILED: ${err.message as string}`)
+      }
     }
   }
 }
@@ -92,8 +103,11 @@ export const syncAndSubscribeUnsyncedAddressesWorker = async (queue: Queue): Pro
     async (job) => {
       const newAddresses = await addressService.fetchUnsyncedAddresses()
       if (newAddresses.length !== 0) {
-        await syncAndSubscribeAddresses(newAddresses)
-        job.data.syncedAddresses = newAddresses
+        const failedAddresses = await syncAndSubscribeAddresses(newAddresses)
+        if (failedAddresses.length > 0) {
+          console.error(`automatic syncing of addresses failed for addresses: ${JSON.stringify(failedAddresses)}`)
+        }
+        job.data.syncedAddresses = newAddresses.filter(addr => !failedAddresses.includes(addr.address))
       }
 
       // add same job to the queue again, so it runs repeating
