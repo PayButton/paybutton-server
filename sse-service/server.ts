@@ -31,13 +31,16 @@ app.post('/broadcast-new-tx', express.json(), (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Unauthorized' })
   }
 
-  const addressList = req.body.addressList
-  if (addressList === undefined || addressList === '') {
+  const addressList: string[] = req.body.addressList
+  if (addressList === undefined || addressList.length === 0) {
     return res.status(400).json({ error: 'Could not broadcast empty addressList' })
   }
 
   clients.forEach(client =>
-    client.write(`new-tx: ${JSON.stringify(addressList)}\n\n`)
+    addressList.forEach(addr => {
+      client.write(`event: tx-${addr}\n`)
+      client.write('data: newtx\n\n')
+    })
   )
 
   res.json({ statusCode: 200, message: `Message broadcasted to ${clients.length}` })

@@ -1,20 +1,16 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import Page from 'components/Page'
-import Router from 'next/router'
 import { PaybuttonDetail } from 'components/Paybutton'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { AddressTransactions } from 'components/Transaction'
-import { Transaction } from '@prisma/client'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 
-import { useState, useEffect, useRef } from "react";
 import { useRouter } from 'next/router'
-
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -51,13 +47,6 @@ interface PaybuttonProps {
   paybuttonId: string
 }
 
-interface PaybuttonState {
-  transactions: {
-    [address: string]: Transaction
-  }
-  paybutton: PaybuttonWithAddresses | undefined
-}
-
 export default function Home ({ paybuttonId }: PaybuttonProps): React.ReactElement {
   return (
     <ThirdPartyEmailPasswordAuthNoSSR>
@@ -66,93 +55,63 @@ export default function Home ({ paybuttonId }: PaybuttonProps): React.ReactEleme
   )
 }
 
-const ProtectedPage = (props: PaybuttonProps) => {
-  const [transactions, setTransactions] = useState({});
-  const [paybutton, setPaybutton] = useState(undefined as PaybuttonWithAddresses | undefined);
-  // const [streamReader, setStreamReader] = useState(undefined as ReadableStreamDefaultReader);
+const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
+  const [transactions, setTransactions] = useState({})
+  const [paybutton, setPaybutton] = useState(undefined as PaybuttonWithAddresses | undefined)
   const router = useRouter()
 
-  const fetchTransactions = async (address: string) => {
+  const fetchTransactions = async (address: string): Promise<void> => {
     const res = await fetch(`/api/address/transactions/${address}`, {
       method: 'GET'
     })
     const ok = await res.json()
     if (res.status === 200) {
-      setTransactions(prevTransactions => ({ ...prevTransactions, [address]: ok }));
+      setTransactions(prevTransactions => ({ ...prevTransactions, [address]: ok }))
     }
   }
 
-  const fetchPaybutton = async () => {
+  const fetchPaybutton = async (): Promise<void> => {
     const res = await fetch(`/api/paybutton/${props.paybuttonId}`, {
       method: 'GET'
     })
     if (res.status === 200) {
-      const paybuttonData = await res.json();
-      setPaybutton(paybuttonData);
+      const paybuttonData = await res.json()
+      setPaybutton(paybuttonData)
     }
   }
 
-  const createReader = async (addressString: string): Promise<void> => {
-    console.log('hmm')
-    //const res = await fetch(`http://localhost:5000/events`)
-    const es = new EventSource('http://localhost:5000/events');
-    es.onmessage = (msg: Event) => console.log('opa', msg)
-    //const reader = res.body?.getReader()
-    //console.log('hmm', reader)
-    //if (reader === undefined) throw Error("WIP")
-   // setStreamReader(reader)
-  }
-
-  /*
-  const listen = async (addressString: string): Promise<void> => {
-    const decoder = new TextDecoder();
-    while (true) {
-      const { done, value } = await streamReader.read();
-      if (done) {
-        console.log('Stream complete');
-        break
-      }
-
-      let data = decoder.decode(value)
-      console.log('uiauiuaiu', data);
-      //await fetchAllTransactions()
+  const createListeners = async (es: EventSource, addressList: string[]): Promise<void> => {
+    for (const addr of addressList) {
+      es.addEventListener(`tx-${addr}`,
+        (msg: Event) => {
+          console.log('opa', msg)
+        }
+      )
     }
   }
-  */
 
-  const refreshPaybutton = () => {
-    fetchPaybutton();
-  }
-
-  const handleLogout = async () => {
-    await ThirdPartyEmailPassword.signOut()
-    ThirdPartyEmailPassword.redirectToAuth()
+  const refreshPaybutton = (): void => {
+    void fetchPaybutton()
   }
 
   useEffect(() => {
-    fetchPaybutton();
+    void fetchPaybutton()
   }, [])
-  /* 
-  useEffect(() => {
-    if (streamReader) {
-      streamReader.cancel();
-    }
-  }, [streamReader]);
-  */ 
 
   useEffect(() => {
-    if (paybutton) {
-      console.log('oia,', paybutton)
+    if (paybutton != null) {
+      const addressesToListen: string[] = []
       for (const connector of paybutton.addresses) {
-        fetchTransactions(connector.address.address)
+        void fetchTransactions(connector.address.address)
+        addressesToListen.push(connector.address.address)
       }
-      createReader('WIP')
-      // Fetch all transactions and updates here
-      // You may need to adjust this according to your needs
+      const es = new EventSource('http://localhost:5000/events')
+      void createListeners(es, addressesToListen)
+      return () => es.close()
     }
-  }, [paybutton]);
+  }, [paybutton])
 
-  if (paybutton && Object.keys(transactions).length !== 0) {
+  if ((paybutton != null) && Object.keys(transactions).length !== 0) {
     return (
       <>
         <div className='back_btn' onClick={() => router.back()}>Back</div>
@@ -166,4 +125,3 @@ const ProtectedPage = (props: PaybuttonProps) => {
     <Page />
   )
 }
-
