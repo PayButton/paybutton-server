@@ -12,6 +12,10 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from 'next/router'
+
+
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
     resolve(ThirdPartyEmailPassword.ThirdPartyEmailPasswordAuth)
@@ -62,72 +66,104 @@ export default function Home ({ paybuttonId }: PaybuttonProps): React.ReactEleme
   )
 }
 
-class ProtectedPage extends React.Component<PaybuttonProps, PaybuttonState> {
-  constructor (props: PaybuttonProps) {
-    super(props)
-    this.props = props
-    this.state = {
-      transactions: {},
-      paybutton: undefined
-    }
-  }
+const ProtectedPage = (props: PaybuttonProps) => {
+  const [transactions, setTransactions] = useState({});
+  const [paybutton, setPaybutton] = useState(undefined as PaybuttonWithAddresses | undefined);
+  // const [streamReader, setStreamReader] = useState(undefined as ReadableStreamDefaultReader);
+  const router = useRouter()
 
-  async componentDidMount (): Promise<void> {
-    await this.fetchPaybutton()
-  }
-
-  async fetchAllTransactions (): Promise<void> {
-    if (this.state.paybutton === undefined) return
-    for (const connector of this.state.paybutton.addresses) {
-      await this.fetchTransactions(connector.address.address)
-    }
-  }
-
-  async fetchPaybutton (): Promise<void> {
-    const res = await fetch(`/api/paybutton/${this.props.paybuttonId}`, {
-      method: 'GET'
-    })
-    if (res.status === 200) {
-      this.setState({
-        paybutton: await res.json()
-      }, () => { void this.fetchAllTransactions() })
-    }
-  }
-
-  refreshPaybutton = (): void => {
-    void this.fetchPaybutton()
-  }
-
-  async fetchTransactions (address: string): Promise<void> {
+  const fetchTransactions = async (address: string) => {
     const res = await fetch(`/api/address/transactions/${address}`, {
       method: 'GET'
     })
     const ok = await res.json()
     if (res.status === 200) {
-      const state = this.state
-      state.transactions[address] = ok
-      this.setState(state)
+      setTransactions(prevTransactions => ({ ...prevTransactions, [address]: ok }));
     }
   }
 
-  async handleLogout (): Promise<void> {
+  const fetchPaybutton = async () => {
+    const res = await fetch(`/api/paybutton/${props.paybuttonId}`, {
+      method: 'GET'
+    })
+    if (res.status === 200) {
+      const paybuttonData = await res.json();
+      setPaybutton(paybuttonData);
+    }
+  }
+
+  const createReader = async (addressString: string): Promise<void> => {
+    console.log('hmm')
+    //const res = await fetch(`http://localhost:5000/events`)
+    const es = new EventSource('http://localhost:5000/events');
+    es.onmessage = (msg: Event) => console.log('opa', msg)
+    //const reader = res.body?.getReader()
+    //console.log('hmm', reader)
+    //if (reader === undefined) throw Error("WIP")
+   // setStreamReader(reader)
+  }
+
+  /*
+  const listen = async (addressString: string): Promise<void> => {
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await streamReader.read();
+      if (done) {
+        console.log('Stream complete');
+        break
+      }
+
+      let data = decoder.decode(value)
+      console.log('uiauiuaiu', data);
+      //await fetchAllTransactions()
+    }
+  }
+  */
+
+  const refreshPaybutton = () => {
+    fetchPaybutton();
+  }
+
+  const handleLogout = async () => {
     await ThirdPartyEmailPassword.signOut()
-    void ThirdPartyEmailPassword.redirectToAuth()
+    ThirdPartyEmailPassword.redirectToAuth()
   }
 
-  render (): React.ReactElement {
-    if (this.state.paybutton !== undefined && Object.keys(this.state.transactions).length !== 0) {
-      return (
-        <>
-          <div className='back_btn' onClick={() => Router.back()}>Back</div>
-          <PaybuttonDetail paybutton={this.state.paybutton} refreshPaybutton={this.refreshPaybutton}/>
-          <h4>Transactions</h4>
-          <AddressTransactions addressTransactions={this.state.transactions} />
-        </>
-      )
+  useEffect(() => {
+    fetchPaybutton();
+  }, [])
+  /* 
+  useEffect(() => {
+    if (streamReader) {
+      streamReader.cancel();
     }
+  }, [streamReader]);
+  */ 
+
+  useEffect(() => {
+    if (paybutton) {
+      console.log('oia,', paybutton)
+      for (const connector of paybutton.addresses) {
+        fetchTransactions(connector.address.address)
+      }
+      createReader('WIP')
+      // Fetch all transactions and updates here
+      // You may need to adjust this according to your needs
+    }
+  }, [paybutton]);
+
+  if (paybutton && Object.keys(transactions).length !== 0) {
     return (
-      <Page />
+      <>
+        <div className='back_btn' onClick={() => router.back()}>Back</div>
+        <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton}/>
+        <h4>Transactions</h4>
+        <AddressTransactions addressTransactions={transactions} />
+      </>
     )
   }
+  return (
+    <Page />
+  )
 }
+
