@@ -10,7 +10,6 @@ import { redirectToAuth } from 'supertokens-auth-react/recipe/thirdpartyemailpas
 import ErrorBoundary from 'components/ErrorBoundary'
 import Head from 'next/head'
 import Page from 'components/Page'
-import { io } from 'socket.io-client'
 
 if (typeof window !== 'undefined') {
   SuperTokensReact.init(SuperTokensConfig.frontendConfig())
@@ -32,18 +31,9 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
     }
     void doRefresh()
   }, [pageProps.fromSupertokens])
-
-  useEffect(() => {
-    const socket = io('http://localhost:3000')
-    socket.on('connect', () => {
-      console.log('connected to websocket server')
-    })
-  }, [])
-
   if (pageProps.fromSupertokens === 'needs-refresh') {
     return null
   }
-
   return (
     <>
       <Head>
