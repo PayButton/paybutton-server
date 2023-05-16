@@ -164,7 +164,6 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
   private getWsConfig (): WsConfig {
     return {
-      onConnect: (e: ws.Event) => { console.log(`Chronik WebSocket connected, message type: ${e.type}`) },
       onMessage: (msg: SubscribeMsg) => { void this.processWsMessage(msg) },
       onError: (e: ws.ErrorEvent) => { console.log(`WebSocket error, message type: ${e.type} | message: ${e.message} | error: ${e.error as string}`) },
       onEnd: (e: ws.Event) => { console.log(`WebSocket ended, message type: ${e.type}`) },
