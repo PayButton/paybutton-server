@@ -9,6 +9,7 @@ import xecaddr from 'xecaddrjs'
 import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
 import { fetchAddressBySubstring } from './addressService'
 import * as ws from 'ws'
+import { broadcastTxInsertion } from 'sse-service/client'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
@@ -181,11 +182,14 @@ export class ChronikBlockchainClient implements BlockchainClient {
     if (msg.type === 'AddedToMempool' || msg.type === 'Confirmed') {
       const transaction = await this.chronik.tx(msg.txid)
       const addressWithTransactions = await this.getPrismaTransactionsForSubscribedAddresses(transaction)
+      const updatedAddresses: string[] = []
       await Promise.all(
         addressWithTransactions.map(async addressWithTransaction => {
+          updatedAddresses.push(addressWithTransaction.address.address)
           return await createTransaction(addressWithTransaction.transaction)
         })
       )
+      await broadcastTxInsertion(updatedAddresses)
     }
   }
 
