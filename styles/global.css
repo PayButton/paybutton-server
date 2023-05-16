@@ -162,6 +162,12 @@ body[data-theme='dark'] button {
   margin-left: 22px;
 }
 
+.payments-btn-cell {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .table-button a {
   border: 1px solid var(--primary-bg-color);
   padding: 2px 10px;
@@ -169,7 +175,7 @@ body[data-theme='dark'] button {
   display: inline-block;
   font-size: 12px;
   word-break: keep-all;
-  margin: 0;
+  margin: 2px;
   box-sizing: border-box;
   transition: all ease-in-out 200ms;
 }
