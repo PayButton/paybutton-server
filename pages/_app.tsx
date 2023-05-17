@@ -16,7 +16,8 @@ if (typeof window !== 'undefined') {
 }
 
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
-  const [chart, setChart] = useState(true)
+
+  const [chart, setChart] = useState(true);
 
   useEffect(() => {
     async function doRefresh (): Promise<void> {
