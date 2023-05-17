@@ -156,10 +156,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
           unconfirmedTransactions.map(async tx => await this.getTransactionFromGrpcTransaction(tx, address, false))
         )
       ]
-      const t = Date.now()
-      console.time(`creating transactions ${t}`)
-      const persistedTransactions = await createManyTransactions(transactionsToPersist, true)
-      console.timeEnd(`creating transactions ${t}`)
+      const persistedTransactions = await createManyTransactions(transactionsToPersist)
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))

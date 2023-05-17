@@ -31,6 +31,18 @@ const addressWithTransactionsWithPrices = Prisma.validator<Prisma.AddressArgs>()
 
 export type AddressWithTransactionsWithPrices = Prisma.AddressGetPayload<typeof addressWithTransactionsWithPrices>
 
+const addressWithUserProfiles = Prisma.validator<Prisma.AddressArgs>()({
+  include: {
+    userProfiles: {
+      include: {
+        userProfile: true
+      }
+    }
+  }
+})
+
+export type AddressWithUserProfiles = Prisma.AddressGetPayload<typeof addressWithUserProfiles>
+
 export const includePaybuttonsNested = {
   paybuttons: {
     include: {
@@ -60,11 +72,41 @@ export function includeUserPaybuttonsNested (userId: string): Prisma.AddressIncl
 
 export type AddressWithPaybuttons = Prisma.AddressGetPayload<typeof addressWithPaybuttons>
 
+const addressWithPaybuttonsAndUserProfiles = Prisma.validator<Prisma.AddressArgs>()({
+  include: {
+    ...includePaybuttonsNested,
+    userProfiles: {
+      include: {
+        userProfile: true
+      }
+    }
+  }
+})
+
+export type AddressWithPaybuttonsAndUserProfiles = Prisma.AddressGetPayload<typeof addressWithPaybuttonsAndUserProfiles>
+
 const addressWithTransactionsAndPaybuttons = Prisma.validator<Prisma.AddressArgs>()({
   include: { transactions: true, paybuttons: includePaybuttonsNested.paybuttons }
 })
 
 export type AddressWithTransactionsAndPaybuttons = Prisma.AddressGetPayload<typeof addressWithTransactionsAndPaybuttons>
+
+const includeTransactionNetworkUserProfile = {
+  include: {
+    transactions: true,
+    network: true,
+    userProfiles: {
+      include: {
+        userProfile: true
+      }
+    }
+  }
+}
+
+const addressWithTransactionNetworkUserProfile = Prisma.validator<Prisma.AddressArgs>()(
+  includeTransactionNetworkUserProfile
+)
+export type AddressWithTransactionNetworkUserProfile = Prisma.AddressGetPayload<typeof addressWithTransactionNetworkUserProfile>
 
 export async function fetchAddressBySubstring (substring: string): Promise<AddressWithTransactionsAndNetwork> {
   const results = await prisma.address.findMany({
@@ -134,13 +176,10 @@ export async function fetchUnsyncedAddresses (): Promise<Address[]> {
   })
 }
 
-export async function fetchAllAddressesForNetworkId (networkId: number, includeTransactions = false): Promise<AddressWithTransactions[]> {
+export async function fetchAllAddressesForNetworkId (networkId: number): Promise<Address[]> {
   return await prisma.address.findMany({
     where: {
       networkId
-    },
-    include: {
-      transactions: includeTransactions
     }
   })
 }

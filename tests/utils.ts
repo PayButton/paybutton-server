@@ -5,6 +5,7 @@ import { createWallet, WalletWithAddressesWithPaybuttons } from 'services/wallet
 import { upsertCurrentPricesForNetworkId } from 'services/priceService'
 import { SUPPORTED_ADDRESS_PATTERN } from 'constants/index'
 import RandExp from 'randexp'
+import { UserProfile } from '@prisma/client'
 
 export const testEndpoint = async (requestOptions: httpMocks.RequestOptions, endpoint: Function): Promise<httpMocks.MockResponse<any>> => {
   const req = httpMocks.createRequest(requestOptions)
@@ -29,6 +30,14 @@ const addressRandexp = new RandExp(SUPPORTED_ADDRESS_PATTERN)
 export const createWalletForUser = async (userId: string, addressIdList: string[], isXECDefault = false, isBCHDefault = false): Promise<WalletWithAddressesWithPaybuttons> => {
   const name = Math.random().toString(36).slice(2)
   return await createWallet({ userId, name, addressIdList, isXECDefault, isBCHDefault })
+}
+
+export const createUserProfile = async (userId: string): Promise<UserProfile> => {
+  return await prisma.userProfile.create({
+    data: {
+      id: userId
+    }
+  })
 }
 
 export const createPaybuttonForUser = async (userId: string, addressList?: string[], walletId?: string): Promise<PaybuttonWithAddresses> => {

@@ -25,17 +25,26 @@ import {
   countPaybuttons,
   countAddresses,
   countWallets,
-  createCurrentPrices
+  createCurrentPrices,
+  createUserProfile
 } from 'tests/utils'
 
 import { RESPONSE_MESSAGES, NETWORK_SLUGS } from 'constants/index'
-
+const setUpUsers = async (): Promise<void> => {
+  await createUserProfile('test-u-id')
+  await createUserProfile('test-u-id2')
+  await createUserProfile('test-other-u-id')
+}
 jest.mock('../../utils/setSession', () => {
   return {
     setSession: (req: any, res: any) => {
       req.session = { userId: 'test-u-id' }
     }
   }
+})
+
+beforeAll(async () => {
+  await setUpUsers()
 })
 
 afterAll(async () => {
