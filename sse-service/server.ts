@@ -36,12 +36,10 @@ app.post('/broadcast-new-tx', express.json(), (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Could not broadcast empty addressList' })
   }
 
-  clients.forEach(client =>
-    addressList.forEach(addr => {
-      client.write(`event: tx-${addr}\n`)
-      client.write('data: newtx\n\n')
-    })
-  )
+  clients.forEach(client => {
+    client.write('event: new-tx\n')
+    client.write(`data: ${JSON.stringify(addressList)}\n\n`)
+  })
 
   res.json({ statusCode: 200, message: `Message broadcasted to ${clients.length}` })
 })
