@@ -10,6 +10,7 @@ services:
     build: .
     ports:
       - "3000:3000"
+      - "5000:5000"
     volumes:
       - .:/home/node/src
     command: sh ./scripts/paybutton-server-start.sh
