@@ -3,7 +3,7 @@ export async function broadcastTxInsertion (addressList: string[]): Promise<Resp
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Auth-Key': process.env.AUTH_KEY ?? ''
+      'X-Auth-Key': process.env.SSE_AUTH_KEY ?? ''
     },
     body: JSON.stringify({ addressList })
   })
