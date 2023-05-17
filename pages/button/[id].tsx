@@ -9,8 +9,10 @@ import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
-
 import { useRouter } from 'next/router'
+import { BroadcastTxData } from 'sse-service/client'
+import { KeyValueT } from 'constants/index'
+import { TransactionWithAddressAndPrices } from 'services/transactionService'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -56,7 +58,7 @@ export default function Home ({ paybuttonId }: PaybuttonProps): React.ReactEleme
 }
 
 const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
-  const [transactions, setTransactions] = useState({})
+  const [transactions, setTransactions] = useState<KeyValueT<TransactionWithAddressAndPrices[]>>({})
   const [paybutton, setPaybutton] = useState(undefined as PaybuttonWithAddresses | undefined)
   const router = useRouter()
 
@@ -83,13 +85,17 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
   const createListeners = async (es: EventSource, addressList: string[]): Promise<void> => {
     es.addEventListener('new-tx',
       (event: MessageEvent) => {
-        const updatedAddresses: string[] = JSON.parse(event.data)
+        const insertedTxs: BroadcastTxData = JSON.parse(event.data)
+        const updatedAddresses: string[] = Object.keys(insertedTxs)
         const affectedAddresses = addressList.filter(el => updatedAddresses.includes(el))
         const refresh = affectedAddresses.length > 0
         if (paybutton != null && refresh) {
           console.log('refreshing txs...')
           for (const addr of affectedAddresses) {
-            void fetchTransactions(addr)
+            setTransactions(prevTransactions => ({
+              ...prevTransactions,
+              [addr]: [...prevTransactions[addr], insertedTxs[addr]]
+            }))
           }
         }
       })
