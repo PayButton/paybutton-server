@@ -14,7 +14,7 @@ import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
 import { TransactionWithAddressAndPrices, createTransaction, createManyTransactions, base64HashToHex, deleteTransactions, fetchUnconfirmedTransactions } from './transactionService'
-import { broadcastTxInsertion } from 'sse-service/client'
+import { BroadcastTxData, broadcastTxInsertion } from 'sse-service/client'
 
 export interface OutputsList {
   outpoint: object
@@ -289,13 +289,16 @@ export class GrpcBlockchainClient implements BlockchainClient {
       addressWithUnconfirmedTransactions = await this.getPrismaTransactionsForSubscribedAddresses(parsedUnconfirmedTransaction, false)
     }
 
-    const updatedAddresses: string[] = []
+    const insertedTxs: BroadcastTxData = {}
     await Promise.all(
       [...addressWithUnconfirmedTransactions, ...addressWithConfirmedTransactions].map(async addressWithTransaction => {
-        updatedAddresses.push(addressWithTransaction.address.address)
-        return await createTransaction(addressWithTransaction.transaction)
+        const tx = await createTransaction(addressWithTransaction.transaction)
+        if (tx !== undefined) {
+          insertedTxs[addressWithTransaction.address.address] = tx
+        }
+        return tx
       })
     )
-    await broadcastTxInsertion(updatedAddresses)
+    await broadcastTxInsertion(insertedTxs)
   }
 }
