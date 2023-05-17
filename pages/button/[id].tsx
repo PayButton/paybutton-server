@@ -81,18 +81,18 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
   }
 
   const createListeners = async (es: EventSource, addressList: string[]): Promise<void> => {
-    for (const addr of addressList) {
-      es.addEventListener(`tx-${addr}`,
-        (event: MessageEvent) => {
-          if (paybutton != null && event.data === 'newtx') {
-            console.log('refreshin txs...')
-            for (const connector of paybutton.addresses) {
-              void fetchTransactions(connector.address.address)
-            }
+    es.addEventListener('new-tx',
+      (event: MessageEvent) => {
+        const updatedAddresses: string[] = JSON.parse(event.data)
+        const affectedAddresses = addressList.filter(el => updatedAddresses.includes(el))
+        const refresh = affectedAddresses.length > 0
+        if (paybutton != null && refresh) {
+          console.log('refreshing txs...')
+          for (const addr of affectedAddresses) {
+            void fetchTransactions(addr)
           }
         }
-      )
-    }
+      })
   }
 
   const refreshPaybutton = (): void => {
