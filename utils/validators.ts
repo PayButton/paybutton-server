@@ -98,10 +98,10 @@ export const parsePaybuttonPOSTRequest = function (params: PaybuttonPOSTParamete
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   if (params.addresses === '' || params.addresses === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
-  const walletId: string | undefined = params.walletId
   if (params.walletId === '' || params.walletId === undefined) {
     throw new Error(RESPONSE_MESSAGES.WALLET_ID_NOT_PROVIDED_400.message)
   }
+  const walletId = params.walletId
 
   const parsedAddresses = parseAddressTextBlock(params.addresses)
   const parsedButtonData = parseButtonData(params.buttonData)

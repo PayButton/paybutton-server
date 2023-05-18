@@ -39,18 +39,29 @@ const paybuttonWithAddresses = Prisma.validator<Prisma.PaybuttonArgs>()(
 
 export type PaybuttonWithAddresses = Prisma.PaybuttonGetPayload<typeof paybuttonWithAddresses>
 
-async function getAddressObjectsToCreateOrConnect (prefixedAddressList: string[]): Promise<Prisma.AddressUncheckedCreateWithoutPaybuttonsInput[]> {
-  return await Promise.all(
-    prefixedAddressList.map(
-      async (addressWithPrefix) => {
-        const prefix = addressWithPrefix.split(':')[0].toLowerCase()
-        const networkId = getObjectValueForNetworkSlug(prefix, NETWORK_IDS_FROM_SLUGS)
-        return {
-          address: addressWithPrefix.toLowerCase(),
-          networkId: Number(networkId)
+async function getAddressObjectsToCreateOrConnect (prefixedAddressList: string[]): Promise<Prisma.AddressesOnButtonsUpdateManyWithoutPaybuttonNestedInput> {
+  return {
+    create: (await Promise.all(
+      prefixedAddressList.map(
+        async (addressWithPrefix) => {
+          const prefix = addressWithPrefix.split(':')[0].toLowerCase()
+          const networkId = getObjectValueForNetworkSlug(prefix, NETWORK_IDS_FROM_SLUGS)
+          return {
+            address: addressWithPrefix.toLowerCase(),
+            networkId: Number(networkId)
+          }
+        })
+    )).map((address) => {
+      return {
+        address: {
+          connectOrCreate: {
+            where: { address: address.address },
+            create: address
+          }
         }
-      })
-  )
+      }
+    })
+  }
 }
 
 interface UpdateAddressUserConnectorsParams {
@@ -61,16 +72,19 @@ interface UpdateAddressUserConnectorsParams {
   walletId?: string
 }
 
-async function inferWalletIdForPaybuttonNewAddress (userId: string, paybuttonId: string, addressId: string): Promise<string> {
+async function inferWalletIdForPaybuttonNewAddress (userId: string, paybuttonId: string, newAddressId: string, addressIdListToAdd: string[]): Promise<string> {
   const paybutton = await fetchPaybuttonById(paybuttonId)
   if (paybutton!.addresses.length !== 0) {
-    const firstAddress = paybutton!.addresses[0].address
-    const wallet = await fetchAddressWallet(userId, firstAddress.id)
+    const firstOtherAddress = paybutton!
+      .addresses
+      .filter(addr => !addressIdListToAdd.includes(addr.address.id))[0]
+      .address
+    const wallet = await fetchAddressWallet(userId, firstOtherAddress.id)
     if (wallet !== null) {
       return wallet.id
     }
   }
-  const address = await addressService.fetchAddressById(addressId)
+  const address = await addressService.fetchAddressById(newAddressId)
   return (await fetchUserDefaultWalletForNetwork(userId, address.networkId)).id
 }
 
@@ -98,13 +112,16 @@ async function updateAddressUserConnectors ({
       id: true
     }
   })).map(obj => obj.id)
+
+  // Create new or update wallet of `AddressesOnUserProfiles`
   void await Promise.all(addressIdListToAdd
     .map(async (id) => {
+      // Infer wallet to other newly added addresses
       if (walletId == null) {
         if (paybuttonIdToIgnore == null) {
           throw new Error(RESPONSE_MESSAGES.NO_CONTEXT_TO_INFER_USER_ADRESS_WALLET_400.message)
         }
-        walletId = await inferWalletIdForPaybuttonNewAddress(userId, paybuttonIdToIgnore, id)
+        walletId = await inferWalletIdForPaybuttonNewAddress(userId, paybuttonIdToIgnore, id, addressIdListToAdd)
       }
       await connectAddressToUser(id, userId, walletId)
     })
@@ -218,24 +235,18 @@ export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Payb
 
 export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<PaybuttonWithAddresses> {
   const updateData: Prisma.PaybuttonUpdateInput = {}
+  // Keep name if none was sent
   if (params.name !== undefined && params.name !== '') {
     updateData.name = params.name
   }
+
+  // Set data to create `AddressesOnButtons` objects
   if (params.prefixedAddressList !== undefined && params.prefixedAddressList.length !== 0) {
     const addressesToCreateOrConnect = await getAddressObjectsToCreateOrConnect(params.prefixedAddressList)
-    updateData.addresses = {
-      create: addressesToCreateOrConnect.map((address) => {
-        return {
-          address: {
-            connectOrCreate: {
-              where: { address: address.address },
-              create: address
-            }
-          }
-        }
-      })
-    }
+    updateData.addresses = addressesToCreateOrConnect
   }
+
+  // List with paybuttons addresses ids, before updating
   const paybuttonOldAddressesIds = (await prisma.address.findMany({
     where: {
       paybuttons: {
@@ -249,6 +260,7 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
     }
   })).map(obj => obj.id)
 
+  // Commit db update of the paybutton and `AddressesOnButtons`
   const paybutton = await prisma.$transaction(async (prisma) => {
     // remove previous address connections, if new address list sent
     if (params.prefixedAddressList !== undefined && params.prefixedAddressList.length !== 0) {
@@ -267,6 +279,8 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
       include: includeAddresses
     })
   })
+
+  // List with new paybuttons addresses ids, after updating
   const paybuttonNewAddressesIds = (await prisma.address.findMany({
     where: {
       paybuttons: {
