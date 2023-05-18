@@ -162,7 +162,7 @@ export async function setAddressListForWallet (
 
 export async function createWallet (values: CreateWalletInput): Promise<WalletWithAddressesWithPaybuttons> {
   const defaultForNetworkIds = getDefaultForNetworkIds(values.isXECDefault, values.isBCHDefault)
-  const newWallet = await prisma.wallet.create({
+  const wallet = await prisma.wallet.create({
     data: {
       providerUserId: values.userId,
       name: values.name,
@@ -183,9 +183,9 @@ export async function createWallet (values: CreateWalletInput): Promise<WalletWi
     },
     include: includeAddressesWithPaybuttons
   })
-  await setAddressListForWallet(prisma, values.addressIdList, newWallet)
+  await setAddressListForWallet(prisma, values.addressIdList, wallet)
   return await setDefaultWallet(
-    await fetchWalletById(newWallet.id),
+    await fetchWalletById(wallet.id),
     defaultForNetworkIds
   )
 }
