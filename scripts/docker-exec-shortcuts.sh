@@ -53,6 +53,17 @@ case "$command" in
         echo "Starting jobs..."
         eval "$base_command_node" sh ./scripts/init-jobs.sh
         ;;
+    "serverwatch" | "sw")
+        eval "$base_command_node" watch -n 1 'cat sse-service/out.log'
+        ;;
+    "serverstop" | "ss")
+        eval "$base_command_node" tmux kill-session -t sse && echo SSE server stoped. || echo SSE server not running.
+        ;;
+    "serverrestart" | "sr")
+        yarn docker ss
+        echo "Starting SSE server..."
+        eval "$base_command_node" sh ./scripts/init-sse-server.sh
+        ;;
     "yarn" | "y")
         eval "$base_command_node" yarn "$@"
         ;;
@@ -129,6 +140,9 @@ case "$command" in
         echo "  jw, jobswatch               [$node_container_name]     watch jobs logs"
         echo "  js, jobsstop                [$node_container_name]     stop jobs"
         echo "  jr, jobsrestart             [$node_container_name]     restart jobs"
+        echo "  sw, serverwatch            [$node_container_name]     watch SSE server logs"
+        echo "  ss, serverstop             [$node_container_name]     stop SSE server"
+        echo "  sr, serverrestart          [$node_container_name]     restart SSE server"
         ;;
 esac
 
