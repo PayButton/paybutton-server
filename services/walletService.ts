@@ -134,15 +134,13 @@ export async function connectAddressesToWallet (
   if (wallet.userProfile === null) {
     throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_ON_WALLET_404.message)
   }
-  void await Promise.all(
-    addressIdList.map(async (addressId) => {
-      const addr = await prisma.address.findUnique({ where: { id: addressId } })
-      if (addr === null) {
-        throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
-      }
-      await connectAddressToUser(addressId, wallet.userProfile!.userId, wallet.id)
-    })
-  )
+  for (const addressId of addressIdList) {
+    const addr = await prisma.address.findUnique({ where: { id: addressId } })
+    if (addr === null) {
+      throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
+    }
+    await connectAddressToUser(addressId, wallet.userProfile!.userId, wallet.id)
+  }
 }
 
 export async function setAddressListForWallet (
@@ -304,7 +302,7 @@ export async function updateWallet (walletId: string, params: UpdateWalletInput)
   const defaultForNetworkIds = getDefaultForNetworkIds(params.isXECDefault, params.isBCHDefault)
 
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
-  await prisma.$transaction(async (prisma) => {
+  const updatedWallet = await prisma.$transaction(async (prisma) => {
     const updatedWallet = await prisma.wallet.update({
       where: {
         id: wallet.id
@@ -314,9 +312,9 @@ export async function updateWallet (walletId: string, params: UpdateWalletInput)
       },
       include: includeAddressesWithPaybuttons
     })
-    await setAddressListForWallet(prisma, params.addressIdList, updatedWallet)
     return updatedWallet
   })
+  await setAddressListForWallet(prisma, params.addressIdList, updatedWallet)
   return await setDefaultWallet(
     await fetchWalletById(walletId),
     defaultForNetworkIds
