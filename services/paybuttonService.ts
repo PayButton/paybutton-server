@@ -280,7 +280,7 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
     })
   })
 
-  // List with new paybuttons addresses ids, after updating
+  // List with paybuttons addresses ids, after updating
   const paybuttonNewAddressesIds = (await prisma.address.findMany({
     where: {
       paybuttons: {

@@ -438,6 +438,6 @@ export async function fetchWalletArrayByUserId (userId: string): Promise<WalletW
     where: { providerUserId: userId },
     include: includeAddressesWithPaybuttons
   })
-  walletList.forEach((w) => { filterOutOtherUsersPaybuttons(w) })
+  walletList.forEach((w) => filterOutOtherUsersPaybuttons(w))
   return walletList
 }
