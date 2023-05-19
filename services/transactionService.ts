@@ -104,7 +104,7 @@ export async function getTransactionNetworkId (tx: Transaction): Promise<number>
   return (await fetchAddressById(tx.addressId)).networkId
 }
 
-export async function base64HashToHex (base64Hash: string): Promise<string> {
+export function base64HashToHex (base64Hash: string): string {
   return (
     atob(base64Hash)
       .split('')
@@ -231,7 +231,7 @@ export async function syncAllTransactionsForAddress (addressString: string, maxT
 export async function fetchUnconfirmedTransactions (hash: string): Promise<TransactionWithAddressAndPrices[]> {
   return await prisma.transaction.findMany({
     where: {
-      hash: await base64HashToHex(hash),
+      hash,
       confirmed: false
     },
     include: includeAddressAndPrices
