@@ -14,7 +14,7 @@ export async function getTransactionValue (transaction: TransactionWithPrices): 
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
   }
-  if (transaction.prices.length !== N_OF_QUOTES) throw new Error(`txid${transaction.id}, ts${transaction.timestamp} ${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}`)
+  if (transaction.prices.length !== N_OF_QUOTES) throw new Error(`txid${transaction.id}, ts${transaction.timestamp} ${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}: found ${transaction.prices.length}.`)
   for (const p of transaction.prices) {
     if (p.price.quoteId === USD_QUOTE_ID) {
       ret.usd = ret.usd.plus(p.price.value.times(transaction.amount))
