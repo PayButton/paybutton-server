@@ -3,7 +3,7 @@ import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT } from 'constants/index'
-import { TransactionWithAddressAndPrices, createManyTransactions, base64HashToHex, deleteTransactions, fetchUnconfirmedTransactions, createTransaction } from './transactionService'
+import { TransactionWithAddressAndPrices, createManyTransactions, deleteTransactions, fetchUnconfirmedTransactions, createTransaction } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
@@ -74,7 +74,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
   private async getTransactionFromChronikTransaction (transaction: Tx, address: Address): Promise<Prisma.TransactionUncheckedCreateInput> {
     return {
-      hash: await base64HashToHex(transaction.txid),
+      hash: await transaction.txid,
       amount: await this.getTransactionAmount(transaction, address.address),
       timestamp: transaction.block !== undefined ? parseInt(transaction.block.timestamp) : parseInt(transaction.timeFirstSeen),
       addressId: address.id,
