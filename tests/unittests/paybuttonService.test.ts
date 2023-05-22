@@ -46,7 +46,8 @@ describe('Create services', () => {
       userId: 'mocked-uid',
       name: 'mocked-name',
       prefixedAddressList: ['mockednetwork:mockaddress'],
-      buttonData: ''
+      buttonData: '',
+      walletId: 'mocked-wallet-uuid'
     }
     const result = await paybuttonService.createPaybutton(createPaybuttonInput)
     expect(result).toEqual(mockedPaybutton)
@@ -102,9 +103,11 @@ describe('Update services', () => {
     const updatePaybuttonInput = {
       userId: 'mocked-uid',
       name: 'mocked-name',
-      prefixedAddressList: ['mockednetwork:mockaddress']
+      paybuttonId: 'mocked-uuid',
+      walletId: 'mocked-wallet-uuid',
+      prefixedAddressList: ['ecash:mockaddress']
     }
-    const result = await paybuttonService.updatePaybutton('mocked-uuid', updatePaybuttonInput)
+    const result = await paybuttonService.updatePaybutton(updatePaybuttonInput)
     expect(result).toEqual(mockedPaybutton)
   })
 })
