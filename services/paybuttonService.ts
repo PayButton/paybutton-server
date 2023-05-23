@@ -74,8 +74,8 @@ interface UpdateAddressUserConnectorsParams {
 
 async function inferWalletIdForPaybuttonNewAddress (userId: string, paybuttonId: string, newAddressId: string, addressIdListToAdd: string[]): Promise<string> {
   const paybutton = await fetchPaybuttonById(paybuttonId)
-  if (paybutton!.addresses.length !== 0) {
-    const firstOtherAddress = paybutton!
+  if (paybutton.addresses.length !== 0) {
+    const firstOtherAddress = paybutton
       .addresses
       .filter(addr => !addressIdListToAdd.includes(addr.address.id))[0]
       .address
@@ -182,7 +182,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
 
 export async function deletePaybutton (values: DeletePaybuttonInput): Promise<PaybuttonWithAddresses> {
   const paybutton = await fetchPaybuttonById(values.paybuttonId)
-  if (paybutton !== null && paybutton.providerUserId !== values.userId) {
+  if (paybutton.providerUserId !== values.userId) {
     throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
   }
   const addressIdListToRemove = paybutton?.addresses.map(conn => conn.address.id) ?? []
@@ -219,11 +219,15 @@ export async function fetchPaybuttonArrayByIds (paybuttonIdList: string[]): Prom
   return paybuttonArray
 }
 
-export async function fetchPaybuttonById (paybuttonId: string): Promise<PaybuttonWithAddresses | null> {
-  return await prisma.paybutton.findUnique({
-    where: { id: paybuttonId },
-    include: includeAddresses
-  })
+export async function fetchPaybuttonById (paybuttonId: string): Promise<PaybuttonWithAddresses> {
+  try {
+    return await prisma.paybutton.findUniqueOrThrow({
+      where: { id: paybuttonId },
+      include: includeAddresses
+    })
+  } catch {
+    throw new Error(RESPONSE_MESSAGES.NOT_FOUND_404.message)
+  }
 }
 
 export async function fetchPaybuttonArrayByUserId (userId: string): Promise<PaybuttonWithAddresses[]> {

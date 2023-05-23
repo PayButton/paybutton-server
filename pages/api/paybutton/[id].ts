@@ -13,7 +13,6 @@ export default async (
   if (req.method === 'GET') {
     try {
       const paybutton = await paybuttonService.fetchPaybuttonById(paybuttonId)
-      if (paybutton == null) throw new Error(RESPONSE_MESSAGES.NOT_FOUND_404.message)
       res.status(200).json(paybutton)
     } catch (err: any) {
       switch (err.message) {
