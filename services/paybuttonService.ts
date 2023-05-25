@@ -223,14 +223,10 @@ export async function fetchPaybuttonArrayByIds (paybuttonIdList: string[]): Prom
 }
 
 export async function fetchPaybuttonById (paybuttonId: string): Promise<PaybuttonWithAddresses> {
-  try {
-    return await prisma.paybutton.findUniqueOrThrow({
-      where: { id: paybuttonId },
-      include: includeAddresses
-    })
-  } catch {
-    throw new Error(RESPONSE_MESSAGES.NOT_FOUND_404.message)
-  }
+  return await prisma.paybutton.findUniqueOrThrow({
+    where: { id: paybuttonId },
+    include: includeAddresses
+  })
 }
 
 export async function fetchPaybuttonArrayByUserId (userId: string): Promise<PaybuttonWithAddresses[]> {

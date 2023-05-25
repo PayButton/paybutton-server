@@ -72,7 +72,8 @@ export const parseError = function (error: Error): Error {
       case 'P2025':
         if (
           error.message.includes('prisma.paybutton.delete') ||
-          error.message.includes('prisma.paybutton.update')
+          error.message.includes('prisma.paybutton.update') ||
+          error.message.includes('No Paybutton found')
         ) {
           return new Error(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
         } else if (

@@ -15,9 +15,10 @@ export default async (
       const paybutton = await paybuttonService.fetchPaybuttonById(paybuttonId)
       res.status(200).json(paybutton)
     } catch (err: any) {
-      switch (err.message) {
-        case RESPONSE_MESSAGES.NOT_FOUND_404.message:
-          res.status(404).json(RESPONSE_MESSAGES.NOT_FOUND_404)
+      const parsedError = parseError(err)
+      switch (parsedError.message) {
+        case RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message:
+          res.status(404).json(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404)
           break
         default:
           res.status(500).json({ statusCode: 500, message: err.message })
