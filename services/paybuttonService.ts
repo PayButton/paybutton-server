@@ -121,9 +121,10 @@ async function updateAddressUserConnectors ({
       // Infer wallet to other newly added addresses
       if (walletId == null) {
         if (paybuttonIdToIgnore == null) {
-          throw new Error(RESPONSE_MESSAGES.NO_CONTEXT_TO_INFER_USER_ADRESS_WALLET_400.message)
+          walletId = undefined
+        } else {
+          walletId = await inferWalletIdForPaybuttonNewAddress(userId, paybuttonIdToIgnore, id, addressIdListToAdd)
         }
-        walletId = await inferWalletIdForPaybuttonNewAddress(userId, paybuttonIdToIgnore, id, addressIdListToAdd)
       }
       await connectAddressToUser(id, userId, walletId)
     })
