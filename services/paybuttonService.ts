@@ -75,13 +75,15 @@ interface UpdateAddressUserConnectorsParams {
 async function inferWalletIdForPaybuttonNewAddress (userId: string, paybuttonId: string, newAddressId: string, addressIdListToAdd: string[]): Promise<string> {
   const paybutton = await fetchPaybuttonById(paybuttonId)
   if (paybutton.addresses.length !== 0) {
-    const firstOtherAddress = paybutton
+    const otherAddressConns = paybutton
       .addresses
-      .filter(addr => !addressIdListToAdd.includes(addr.address.id))[0]
-      .address
-    const wallet = await fetchAddressWallet(userId, firstOtherAddress.id)
-    if (wallet !== null) {
-      return wallet.id
+      .filter(addr => !addressIdListToAdd.includes(addr.address.id))
+    if (otherAddressConns.length > 0) {
+      const firstOtherAddress = otherAddressConns[0].address
+      const wallet = await fetchAddressWallet(userId, firstOtherAddress.id)
+      if (wallet !== null) {
+        return wallet.id
+      }
     }
   }
   const address = await addressService.fetchAddressById(newAddressId)
