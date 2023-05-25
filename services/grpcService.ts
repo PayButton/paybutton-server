@@ -278,7 +278,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
       addressWithConfirmedTransactions = await this.getPrismaTransactionsForSubscribedAddresses(confirmedTransaction, true)
 
       // remove unconfirmed transactions that have now been confirmed
-      const transactionsToDelete = await fetchUnconfirmedTransactions(confirmedTransaction.hash as string)
+      const transactionsToDelete = await fetchUnconfirmedTransactions(base64HashToHex(confirmedTransaction.hash as string))
       await deleteTransactions(transactionsToDelete)
     }
 

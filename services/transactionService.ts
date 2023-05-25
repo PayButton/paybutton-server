@@ -14,7 +14,7 @@ export async function getTransactionValue (transaction: TransactionWithPrices): 
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
   }
-  if (transaction.prices.length !== N_OF_QUOTES) throw new Error(`txid${transaction.id}, ts${transaction.timestamp} ${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}`)
+  if (transaction.prices.length !== N_OF_QUOTES) throw new Error(`txid${transaction.id}, ts${transaction.timestamp} ${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}: found ${transaction.prices.length}.`)
   for (const p of transaction.prices) {
     if (p.price.quoteId === USD_QUOTE_ID) {
       ret.usd = ret.usd.plus(p.price.value.times(transaction.amount))
@@ -104,7 +104,7 @@ export async function getTransactionNetworkId (tx: Transaction): Promise<number>
   return (await fetchAddressById(tx.addressId)).networkId
 }
 
-export async function base64HashToHex (base64Hash: string): Promise<string> {
+export function base64HashToHex (base64Hash: string): string {
   return (
     atob(base64Hash)
       .split('')
@@ -231,7 +231,7 @@ export async function syncAllTransactionsForAddress (addressString: string, maxT
 export async function fetchUnconfirmedTransactions (hash: string): Promise<TransactionWithAddressAndPrices[]> {
   return await prisma.transaction.findMany({
     where: {
-      hash: await base64HashToHex(hash),
+      hash,
       confirmed: false
     },
     include: includeAddressAndPrices
