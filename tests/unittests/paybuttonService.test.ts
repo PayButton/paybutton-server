@@ -5,8 +5,8 @@ import { mockedPaybutton, mockedPaybuttonList, mockedNetwork, mockedWalletsOnUse
 
 describe('Fetch services', () => {
   it('Should fetch paybutton by id', async () => {
-    prismaMock.paybutton.findUnique.mockResolvedValue(mockedPaybutton)
-    prisma.paybutton.findUnique = prismaMock.paybutton.findUnique
+    prismaMock.paybutton.findUniqueOrThrow.mockResolvedValue(mockedPaybutton)
+    prisma.paybutton.findUniqueOrThrow = prismaMock.paybutton.findUniqueOrThrow
 
     const result = await paybuttonService.fetchPaybuttonById(mockedPaybutton.id)
     expect(result).toEqual(mockedPaybutton)
@@ -59,8 +59,8 @@ describe('Delete services', () => {
     prismaMock.paybutton.delete.mockResolvedValue(mockedPaybutton)
     prisma.paybutton.delete = prismaMock.paybutton.delete
 
-    prismaMock.paybutton.findUnique.mockResolvedValue(mockedPaybutton)
-    prisma.paybutton.findUnique = prismaMock.paybutton.findUnique
+    prismaMock.paybutton.findUniqueOrThrow.mockResolvedValue(mockedPaybutton)
+    prisma.paybutton.findUniqueOrThrow = prismaMock.paybutton.findUniqueOrThrow
 
     prismaMock.address.findMany.mockResolvedValue([])
     prisma.address.findMany = prismaMock.address.findMany
