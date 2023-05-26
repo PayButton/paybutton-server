@@ -14,7 +14,7 @@ import balanceEndpoint from 'pages/api/address/balance/[address]'
 import dashboardEndpoint from 'pages/api/dashboard/index'
 import currentPriceEndpoint from 'pages/api/price/[networkSlug]'
 import currentPriceForQuoteEndpoint from 'pages/api/price/[networkSlug]/[quoteSlug]'
-import { WalletWithAddressesWithPaybuttons, fetchWalletById } from 'services/walletService'
+import { WalletWithAddressesWithPaybuttons, fetchWalletById, createDefaultWalletForUser } from 'services/walletService'
 import {
   exampleAddresses,
   testEndpoint,
@@ -204,6 +204,8 @@ describe('PATCH /api/paybutton/', () => {
     createdPaybuttons = []
     const userA = 'test-u-id'
     const userB = 'test-other-u-id'
+    await createDefaultWalletForUser(userA)
+    await createDefaultWalletForUser(userB)
     for (let i = 0; i < 4; i++) {
       const userId = i === 3 ? userB : userA
       const paybutton = await createPaybuttonForUser(userId)
@@ -256,8 +258,8 @@ describe('PATCH /api/paybutton/', () => {
       addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
-    expect(res.statusCode).toBe(200)
     const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(200)
     expect(responseData.providerUserId).toBe('test-u-id')
     expect(responseData.name).toBe('blablabla')
     expect(responseData.addresses).toEqual(
@@ -1084,7 +1086,7 @@ describe('GET /api/paybutton/[id]', () => {
     const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
     expect(res.statusCode).toBe(404)
     const responseData = res._getJSONData()
-    expect(responseData.message).toBe(RESPONSE_MESSAGES.NOT_FOUND_404.message)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
   })
 })
 

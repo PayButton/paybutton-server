@@ -1,7 +1,7 @@
 import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN, NETWORK_TICKERS } from '../constants/index'
 import { Prisma } from '@prisma/client'
-import { CreatePaybuttonInput, UpdatePaybuttonInput } from '../services/paybuttonService'
-import { CreateWalletInput, UpdateWalletInput } from '../services/walletService'
+import { type CreatePaybuttonInput, type UpdatePaybuttonInput } from '../services/paybuttonService'
+import { type CreateWalletInput, type UpdateWalletInput } from '../services/walletService'
 import { getAddressPrefix } from './index'
 import { appInfo } from 'config/appInfo'
 import xecaddr from 'xecaddrjs'
@@ -72,7 +72,8 @@ export const parseError = function (error: Error): Error {
       case 'P2025':
         if (
           error.message.includes('prisma.paybutton.delete') ||
-          error.message.includes('prisma.paybutton.update')
+          error.message.includes('prisma.paybutton.update') ||
+          error.message.includes('No Paybutton found')
         ) {
           return new Error(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
         } else if (
@@ -98,10 +99,10 @@ export const parsePaybuttonPOSTRequest = function (params: PaybuttonPOSTParamete
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
   if (params.addresses === '' || params.addresses === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400.message)
-  const walletId: string | undefined = params.walletId
   if (params.walletId === '' || params.walletId === undefined) {
     throw new Error(RESPONSE_MESSAGES.WALLET_ID_NOT_PROVIDED_400.message)
   }
+  const walletId = params.walletId
 
   const parsedAddresses = parseAddressTextBlock(params.addresses)
   const parsedButtonData = parseButtonData(params.buttonData)
@@ -125,6 +126,7 @@ export interface WalletPOSTParameters {
 export interface PaybuttonPATCHParameters {
   name?: string
   addresses?: string
+  userId?: string
 }
 
 export interface WalletPATCHParameters {
@@ -159,9 +161,12 @@ export const parseWalletPATCHRequest = function (params: WalletPATCHParameters):
   }
 }
 
-export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters): UpdatePaybuttonInput {
+export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters, paybuttonId: string): UpdatePaybuttonInput {
+  if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   const ret: UpdatePaybuttonInput = {
-    name: params.name
+    name: params.name,
+    userId: params.userId,
+    paybuttonId
   }
 
   if (params.addresses !== '' && params.addresses !== undefined) {

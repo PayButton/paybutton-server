@@ -5,8 +5,8 @@ import { mockedPaybutton, mockedPaybuttonList, mockedNetwork, mockedWalletsOnUse
 
 describe('Fetch services', () => {
   it('Should fetch paybutton by id', async () => {
-    prismaMock.paybutton.findUnique.mockResolvedValue(mockedPaybutton)
-    prisma.paybutton.findUnique = prismaMock.paybutton.findUnique
+    prismaMock.paybutton.findUniqueOrThrow.mockResolvedValue(mockedPaybutton)
+    prisma.paybutton.findUniqueOrThrow = prismaMock.paybutton.findUniqueOrThrow
 
     const result = await paybuttonService.fetchPaybuttonById(mockedPaybutton.id)
     expect(result).toEqual(mockedPaybutton)
@@ -46,7 +46,8 @@ describe('Create services', () => {
       userId: 'mocked-uid',
       name: 'mocked-name',
       prefixedAddressList: ['mockednetwork:mockaddress'],
-      buttonData: ''
+      buttonData: '',
+      walletId: 'mocked-wallet-uuid'
     }
     const result = await paybuttonService.createPaybutton(createPaybuttonInput)
     expect(result).toEqual(mockedPaybutton)
@@ -58,8 +59,8 @@ describe('Delete services', () => {
     prismaMock.paybutton.delete.mockResolvedValue(mockedPaybutton)
     prisma.paybutton.delete = prismaMock.paybutton.delete
 
-    prismaMock.paybutton.findUnique.mockResolvedValue(mockedPaybutton)
-    prisma.paybutton.findUnique = prismaMock.paybutton.findUnique
+    prismaMock.paybutton.findUniqueOrThrow.mockResolvedValue(mockedPaybutton)
+    prisma.paybutton.findUniqueOrThrow = prismaMock.paybutton.findUniqueOrThrow
 
     prismaMock.address.findMany.mockResolvedValue([])
     prisma.address.findMany = prismaMock.address.findMany
@@ -102,9 +103,11 @@ describe('Update services', () => {
     const updatePaybuttonInput = {
       userId: 'mocked-uid',
       name: 'mocked-name',
-      prefixedAddressList: ['mockednetwork:mockaddress']
+      paybuttonId: 'mocked-uuid',
+      walletId: 'mocked-wallet-uuid',
+      prefixedAddressList: ['ecash:mockaddress']
     }
-    const result = await paybuttonService.updatePaybutton('mocked-uuid', updatePaybuttonInput)
+    const result = await paybuttonService.updatePaybutton(updatePaybuttonInput)
     expect(result).toEqual(mockedPaybutton)
   })
 })

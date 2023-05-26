@@ -1,5 +1,5 @@
 import * as addressService from 'services/addressService'
-import { Prisma, WalletsOnUserProfile } from '@prisma/client'
+import { Prisma, type WalletsOnUserProfile, type Wallet } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { connectAddressToUser } from 'services/addressesOnUserProfileService'
 import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
@@ -53,6 +53,33 @@ function filterOutOtherUsersPaybuttons (wallet: WalletWithAddressesWithPaybutton
   for (const addr of wallet.userAddresses) {
     addr.address.paybuttons = addr.address.paybuttons.filter((conn) => conn.paybutton.providerUserId === wallet.providerUserId)
   }
+}
+
+export const fetchUserDefaultWalletForNetwork = async (userId: string, networkId: number): Promise<Wallet> => {
+  let defaultCondition = {}
+  if (networkId === XEC_NETWORK_ID) {
+    defaultCondition = {
+      WalletsOnUserProfile_userId_isXECDefault_unique_constraint: {
+        userId,
+        isXECDefault: true
+      }
+    }
+  } else if (networkId === BCH_NETWORK_ID) {
+    defaultCondition = {
+      WalletsOnUserProfile_userId_isBCHDefault_unique_constraint: {
+        userId,
+        isBCHDefault: true
+      }
+    }
+  }
+  return (await prisma.walletsOnUserProfile.findUniqueOrThrow({
+    where: {
+      ...defaultCondition
+    },
+    include: {
+      wallet: true
+    }
+  })).wallet
 }
 
 export const getDefaultForNetworkIds = (isXECDefault: boolean | undefined, isBCHDefault: boolean | undefined): number[] => {
@@ -112,7 +139,7 @@ export async function connectAddressesToWallet (
     if (addr === null) {
       throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
     }
-    void await connectAddressToUser(addressId, wallet.userProfile.userId, wallet.id)
+    await connectAddressToUser(addressId, wallet.userProfile!.userId, wallet.id)
   }
 }
 
@@ -275,7 +302,7 @@ export async function updateWallet (walletId: string, params: UpdateWalletInput)
   const defaultForNetworkIds = getDefaultForNetworkIds(params.isXECDefault, params.isBCHDefault)
 
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.NAME_NOT_PROVIDED_400.message)
-  await prisma.$transaction(async (prisma) => {
+  const updatedWallet = await prisma.$transaction(async (prisma) => {
     const updatedWallet = await prisma.wallet.update({
       where: {
         id: wallet.id
@@ -285,9 +312,9 @@ export async function updateWallet (walletId: string, params: UpdateWalletInput)
       },
       include: includeAddressesWithPaybuttons
     })
-    await setAddressListForWallet(prisma, params.addressIdList, updatedWallet)
     return updatedWallet
   })
+  await setAddressListForWallet(prisma, params.addressIdList, updatedWallet)
   return await setDefaultWallet(
     await fetchWalletById(walletId),
     defaultForNetworkIds
