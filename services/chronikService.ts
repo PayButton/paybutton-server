@@ -9,6 +9,7 @@ import xecaddr from 'xecaddrjs'
 import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
 import { fetchAddressBySubstring } from './addressService'
 import * as ws from 'ws'
+import { BroadcastTxData, broadcastTxInsertion } from 'sse-service/client'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
@@ -180,17 +181,23 @@ export class ChronikBlockchainClient implements BlockchainClient {
     // create unconfirmed or confirmed transaction
     if (msg.type === 'AddedToMempool' || msg.type === 'Confirmed') {
       const transaction = await this.chronik.tx(msg.txid)
-      const addressWithTransactions = await this.getPrismaTransactionsForSubscribedAddresses(transaction)
+      const addressesWithTransactions = await this.getPrismaTransactionsForSubscribedAddresses(transaction)
+      const insertedTxs: BroadcastTxData = {}
       await Promise.all(
-        addressWithTransactions.map(async addressWithTransaction => {
-          return await createTransaction(addressWithTransaction.transaction)
+        addressesWithTransactions.map(async addressWithTransaction => {
+          const tx = await createTransaction(addressWithTransaction.transaction)
+          if (tx !== undefined) {
+            insertedTxs[addressWithTransaction.address.address] = tx
+          }
+          return tx
         })
       )
+      await broadcastTxInsertion(insertedTxs)
     }
   }
 
   private async getPrismaTransactionsForSubscribedAddresses (transaction: Tx): Promise<AddressWithTransaction[]> {
-    const addressWithTransactions: AddressWithTransaction[] = await Promise.all(Object.values(this.subscribedAddresses).map(
+    const addressesWithTransactions: AddressWithTransaction[] = await Promise.all(Object.values(this.subscribedAddresses).map(
       async address => {
         return {
           address,
@@ -198,7 +205,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         }
       }
     ))
-    return addressWithTransactions.filter(
+    return addressesWithTransactions.filter(
       addressWithTransaction => addressWithTransaction.transaction.amount > new Prisma.Decimal(0)
     )
   }

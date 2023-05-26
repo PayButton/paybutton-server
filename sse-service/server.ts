@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express'
 import { Server } from 'http'
 import cors from 'cors'
+import { BroadcastTxData } from './client'
 
 const app = express()
 app.use(cors())
@@ -31,14 +32,14 @@ app.post('/broadcast-new-tx', express.json(), (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Unauthorized' })
   }
 
-  const addressList: string[] = req.body.addressList
-  if (addressList === undefined || addressList.length === 0) {
-    return res.status(400).json({ error: 'Could not broadcast empty addressList' })
+  const insertedTxs: BroadcastTxData = req.body.insertedTxs
+  if (insertedTxs === undefined || Object.keys(insertedTxs).length === 0) {
+    return res.status(400).json({ error: 'Could not broadcast empty tx list' })
   }
 
   clients.forEach(client => {
     client.write('event: new-tx\n')
-    client.write(`data: ${JSON.stringify(addressList)}\n\n`)
+    client.write(`data: ${JSON.stringify(insertedTxs)}\n\n`)
   })
 
   res.json({ statusCode: 200, message: `Message broadcasted to ${clients.length}` })

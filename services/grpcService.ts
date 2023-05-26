@@ -14,6 +14,7 @@ import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
 import { TransactionWithAddressAndPrices, createTransaction, createManyTransactions, base64HashToHex, deleteTransactions, fetchUnconfirmedTransactions } from './transactionService'
+import { BroadcastTxData, broadcastTxInsertion } from 'sse-service/client'
 
 export interface OutputsList {
   outpoint: object
@@ -223,43 +224,26 @@ export class GrpcBlockchainClient implements BlockchainClient {
     for (const [network, networkAddresses] of Object.entries(addressesByNetwork)) {
       const client = getGrpcClients()[network]
       const addressesToSubscribe = networkAddresses.map(address => address.address)
-      const confirmedStream = await client.subscribeTransactions({
-        includeMempoolAcceptance: false,
-        includeBlockAcceptance: true,
-        addresses: addressesToSubscribe
-      })
-      const unconfirmedStream = await client.subscribeTransactions({
+      const stream = await client.subscribeTransactions({
         includeMempoolAcceptance: true,
-        includeBlockAcceptance: false,
+        includeBlockAcceptance: true,
         addresses: addressesToSubscribe
       })
       const nowDateString = (new Date()).toISOString()
 
       // output for end, error or close of stream
-      void confirmedStream.on('end', () => {
-        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} confirmed stream ended`)
+      void stream.on('end', () => {
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} stream ended`)
       })
-      void confirmedStream.on('close', () => {
-        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} confirmed stream closed`)
+      void stream.on('close', () => {
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} stream closed`)
       })
-      void confirmedStream.on('error', (error: any) => {
-        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} confirmed stream error`, error)
-      })
-      void unconfirmedStream.on('end', () => {
-        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} unconfirmed stream ended`)
-      })
-      void unconfirmedStream.on('close', () => {
-        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} unconfirmed stream closed`)
-      })
-      void unconfirmedStream.on('error', (error: any) => {
-        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} unconfirmed stream error`, error)
+      void stream.on('error', (error: any) => {
+        console.log(`${nowDateString}: addresses ${addressesToSubscribe.join(', ')} stream error`, error)
       })
 
       // output for data stream
-      void confirmedStream.on('data', (data: TransactionNotification) => {
-        void this.processSubscribedNotification(data)
-      })
-      void unconfirmedStream.on('data', (data: TransactionNotification) => {
+      void stream.on('data', (data: TransactionNotification) => {
         void this.processSubscribedNotification(data)
       })
 
@@ -305,10 +289,16 @@ export class GrpcBlockchainClient implements BlockchainClient {
       addressWithUnconfirmedTransactions = await this.getPrismaTransactionsForSubscribedAddresses(parsedUnconfirmedTransaction, false)
     }
 
+    const insertedTxs: BroadcastTxData = {}
     await Promise.all(
       [...addressWithUnconfirmedTransactions, ...addressWithConfirmedTransactions].map(async addressWithTransaction => {
-        return await createTransaction(addressWithTransaction.transaction)
+        const tx = await createTransaction(addressWithTransaction.transaction)
+        if (tx !== undefined) {
+          insertedTxs[addressWithTransaction.address.address] = tx
+        }
+        return tx
       })
     )
+    await broadcastTxInsertion(insertedTxs)
   }
 }
