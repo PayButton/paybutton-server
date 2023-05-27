@@ -12,6 +12,16 @@ import { createDevUserRawQueryList, userProfiles } from './seeds/devUser'
 import { getTxsFromFile } from './seeds/transactions'
 const prisma = new PrismaClient()
 
+async function ignoreDuplicate (callback: Function): Promise<void> {
+  try {
+    await callback()
+  } catch (err: any) {
+    if (err.code !== 'P2002') {
+      throw err
+    }
+  }
+}
+
 async function main (): Promise<void> {
   // create networks
   if (await prisma.network.count() === 0) {
@@ -54,25 +64,17 @@ async function main (): Promise<void> {
 
   // PRODUCTION
   if (process.env.NODE_ENV === 'production') {
-    try {
-      await prisma.address.createMany({ data: productionAddresses })
-    } catch (err: any) {
-      if (err.code !== 'P2002') {
-        throw err
-      }
-    }
+    await ignoreDuplicate(
+      async () => await prisma.address.createMany({ data: productionAddresses })
+    )
     const productionTxs = await getTxsFromFile()
     if (productionTxs !== undefined) {
-      try {
+      await ignoreDuplicate(async () => {
         await prisma.transaction.createMany({ data: productionTxs })
-      } catch (err: any) {
-        if (err.code !== 'P2002') {
-          throw err
+        for (const addrId of new Set(productionTxs.map(tx => tx.addressId))) {
+          await prisma.address.update({ where: { id: addrId }, data: { lastSynced: new Date() } })
         }
-      }
-      for (const addrId of new Set(productionTxs.map(tx => tx.addressId))) {
-        await prisma.address.update({ where: { id: addrId }, data: { lastSynced: new Date() } })
-      }
+      })
     } else {
       console.log('No production txs found to seed.')
     }
