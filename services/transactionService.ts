@@ -121,6 +121,7 @@ export async function createTransaction (
   if (transactionData.amount === new Prisma.Decimal(0)) { // out transactions
     return
   }
+  // we don't use `create` to ignore conflicts between the sync and the subscription
   const createdTx = await prisma.transaction.upsert({
     create: transactionData,
     include: includeAddressAndPrices,
@@ -181,7 +182,7 @@ export async function connectTransactionsListToPrices (txList: Transaction[]): P
 export async function createManyTransactions (
   transactionsData: Prisma.TransactionUncheckedCreateInput[]
 ): Promise<TransactionWithAddressAndPrices[]> {
-  // const uuidList = await addUUIDToTransactions(transactionsData)
+  // we don't use `createMany` to ignore conflicts between the sync and the subscription
   const insertedTransactions = await Promise.all(
     transactionsData.map(async tx =>
       await prisma.transaction.upsert({
