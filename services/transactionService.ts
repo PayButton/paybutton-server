@@ -6,7 +6,6 @@ import { fetchAddressBySubstring, updateLastSynced, fetchAddressById } from 'ser
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import { cacheManyTxs } from 'redis/dashboardCache'
-import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
 
 export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
@@ -132,17 +131,6 @@ export async function createTransaction (
   return tx
 }
 
-async function addUUIDToTransactions (transactions: Prisma.TransactionUncheckedCreateInput[]): Promise<string[]> {
-  const txsLen = transactions.length
-  const uuidList = []
-  for (let i = 0; i < txsLen; i++) {
-    const id = uuid()
-    transactions[i].id = id
-    uuidList.push(id)
-  }
-  return uuidList
-}
-
 export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient): Promise<void> {
   const networkId = await getTransactionNetworkId(tx)
   const allPrices = await fetchPricesForNetworkAndTimestamp(networkId, tx.timestamp, prisma)
@@ -174,10 +162,9 @@ export async function connectTransactionToPrices (tx: Transaction, prisma: Prism
   })
 }
 
-export async function connectTransactionsToPricesByIdList (idList: string[]): Promise<void> {
+export async function connectTransactionsListToPrices (txList: Transaction[]): Promise<void> {
   return await prisma.$transaction(async (p) => {
-    const promises = idList.map(async (id) => {
-      const tx = await fetchTransactionById(id)
+    const promises = txList.map(async (tx) => {
       return await connectTransactionToPrices(tx, p)
     })
     void await Promise.all(promises)
@@ -187,15 +174,26 @@ export async function connectTransactionsToPricesByIdList (idList: string[]): Pr
 export async function createManyTransactions (
   transactionsData: Prisma.TransactionUncheckedCreateInput[]
 ): Promise<TransactionWithAddressAndPrices[]> {
-  const uuidList = await addUUIDToTransactions(transactionsData)
-  await prisma.transaction.createMany({
-    data: transactionsData
-  })
-  void await connectTransactionsToPricesByIdList(uuidList)
+  // const uuidList = await addUUIDToTransactions(transactionsData)
+  const insertedTransactions = await Promise.all(
+    transactionsData.map(async tx =>
+      await prisma.transaction.upsert({
+        create: tx,
+        where: {
+          Transaction_hash_addressId_unique_constraint: {
+            hash: tx.hash,
+            addressId: tx.addressId
+          }
+        },
+        update: {}
+      })
+    )
+  )
+  void await connectTransactionsListToPrices(insertedTransactions)
   const txs = await prisma.transaction.findMany({
     where: {
       id: {
-        in: uuidList
+        in: insertedTransactions.map(tx => tx.id)
       }
     },
     include: includeAddressAndPrices
@@ -214,7 +212,10 @@ export async function syncAllTransactionsForAddress (addressString: string, maxT
 
   const insertedTransactions: TransactionWithAddressAndPrices[] = await syncTransactionsForAddress(parameters)
 
-  if (parameters.maxTransactionsToReturn === Infinity || insertedTransactions.filter(t => t.confirmed).length < parameters.maxTransactionsToReturn) {
+  if (
+    maxTransactionsToReturn === Infinity ||
+    insertedTransactions.filter(t => t.confirmed).length < maxTransactionsToReturn
+  ) {
     await updateLastSynced(addressString)
   } else {
     const newParameters: GetAddressTransactionsParameters = {
