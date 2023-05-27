@@ -121,9 +121,16 @@ export async function createTransaction (
   if (transactionData.amount === new Prisma.Decimal(0)) { // out transactions
     return
   }
-  const createdTx = await prisma.transaction.create({
-    data: transactionData,
-    include: includeAddressAndPrices
+  const createdTx = await prisma.transaction.upsert({
+    create: transactionData,
+    include: includeAddressAndPrices,
+    where: {
+      Transaction_hash_addressId_unique_constraint: {
+        hash: transactionData.hash,
+        addressId: transactionData.addressId
+      }
+    },
+    update: {}
   })
   void await connectTransactionToPrices(createdTx, prisma)
   const tx = await fetchTransactionById(createdTx.id)
