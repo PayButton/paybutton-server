@@ -36,3 +36,4 @@ yarn-error.log*
 /prisma/seeds/prices.csv
 redis/dump.rdb
 logs/
+prisma/seeds/productionTxs.csv
