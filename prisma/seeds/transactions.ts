@@ -24,15 +24,17 @@ export async function getTxsFromFile (): Promise<Prisma.TransactionCreateManyInp
     const csvContent = await readCsv(fs, PATH_TXS_CSV_FILE)
     const res: Prisma.TransactionCreateManyInput[] = []
 
-    const headers = csvContent[0]
     const data = csvContent.slice(1)
 
     for (const line of data) {
-      const newTx: any = {}
-      for (const header of headers) {
-        newTx[header] = line[headers.indexOf(header)]
+      const newTx: Prisma.TransactionCreateManyInput = {
+        hash: line[0],
+        amount: new Prisma.Decimal(line[1]),
+        timestamp: Number(line[2]),
+        addressId: line[3],
+        confirmed: Boolean(line[4])
       }
-      res.push(newTx as Prisma.TransactionCreateManyInput)
+      res.push(newTx)
     }
 
     return res
