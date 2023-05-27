@@ -1,5 +1,5 @@
 import { Worker, Job, Queue } from 'bullmq'
-import { Address } from '@prisma/client'
+import { Address, Prisma } from '@prisma/client'
 import { redisBullMQ } from 'redis/clientInstance'
 import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION, RESPONSE_MESSAGES, KeyValueT } from 'constants/index'
 
@@ -8,19 +8,29 @@ import * as priceService from 'services/priceService'
 import * as addressService from 'services/addressService'
 import { subscribeAddressesAddTransactions } from 'services/blockchainService'
 import { parseError } from 'utils/validators'
+import { productionAddresses } from 'prisma/seeds/addresses'
+import { addTxsToFile } from 'prisma/seeds/transactions'
 
 const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<KeyValueT<string>> => {
   const failedAddressesWithErrors: KeyValueT<string> = {}
+  let txsToSave: Prisma.TransactionCreateManyInput[] = []
+  const productionAddressesIds = productionAddresses.map(addr => addr.id)
   await Promise.all(
     addresses.map(async (addr) => {
       try {
         await subscribeAddressesAddTransactions([addr])
-        await transactionService.syncAllTransactionsForAddress(addr.address, Infinity)
+        const txs = await transactionService.syncAllTransactionsForAddress(addr.address, Infinity)
+        if (productionAddressesIds.includes(addr.id)) {
+          txsToSave = txsToSave.concat(txs)
+        }
       } catch (err: any) {
         failedAddressesWithErrors[addr.address] = err.stack
       }
     })
   )
+  if (txsToSave.length !== 0) {
+    await addTxsToFile(txsToSave)
+  }
   return failedAddressesWithErrors
 }
 
@@ -28,7 +38,8 @@ const syncAndSubscribeAllAddressTransactionsForNetworkJob = async (job: Job): Pr
   console.log(`job ${job.id as string}: syncing and subscribing all addresses for network ${job.data.networkId as string}...`)
   let failedAddressesWithErrors: KeyValueT<string> = {}
   try {
-    const addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
+    let addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
+    addresses = addresses.filter(addr => addr.lastSynced != null)
     failedAddressesWithErrors = await syncAndSubscribeAddresses(addresses)
   } catch (err: any) {
     const parsedError = parseError(err)
