@@ -54,10 +54,22 @@ async function main (): Promise<void> {
 
   // PRODUCTION
   if (process.env.NODE_ENV === 'production') {
-    await prisma.address.createMany({ data: productionAddresses })
+    try {
+      await prisma.address.createMany({ data: productionAddresses })
+    } catch (err: any) {
+      if (err.code !== 'P2002') {
+        throw err
+      }
+    }
     const productionTxs = await getTxsFromFile()
     if (productionTxs !== undefined) {
-      await prisma.transaction.createMany({ data: productionTxs })
+      try {
+        await prisma.transaction.createMany({ data: productionTxs })
+      } catch (err: any) {
+        if (err.code !== 'P2002') {
+          throw err
+        }
+      }
       for (const addrId of new Set(productionTxs.map(tx => tx.addressId))) {
         await prisma.address.update({ where: { id: addrId }, data: { lastSynced: new Date() } })
       }
