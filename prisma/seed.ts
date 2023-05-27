@@ -9,7 +9,7 @@ import { wallets } from './seeds/wallets'
 import { getPrices } from './seeds/prices'
 import { quotes } from './seeds/quotes'
 import { createDevUserRawQueryList, userProfiles } from './seeds/devUser'
-import { getTxs } from './seeds/transactions'
+import { getTxsFromFile } from './seeds/transactions'
 const prisma = new PrismaClient()
 
 async function main (): Promise<void> {
@@ -55,9 +55,12 @@ async function main (): Promise<void> {
   // PRODUCTION
   if (process.env.NODE_ENV === 'production') {
     await prisma.address.createMany({ data: productionAddresses })
-    const productionTxs = await getTxs()
+    const productionTxs = await getTxsFromFile()
     if (productionTxs !== undefined) {
       await prisma.transaction.createMany({ data: productionTxs })
+      for (const addrId of new Set(productionTxs.map(tx => tx.addressId))) {
+        await prisma.address.update({ where: { id: addrId }, data: { lastSynced: new Date() } })
+      }
     } else {
       console.log('No production txs found to seed.')
     }
