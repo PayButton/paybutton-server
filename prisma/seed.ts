@@ -10,6 +10,7 @@ import { getPrices } from './seeds/prices'
 import { quotes } from './seeds/quotes'
 import { createDevUserRawQueryList, userProfiles } from './seeds/devUser'
 import { getTxsFromFile } from './seeds/transactions'
+import { connectTransactionsListToPrices } from 'services/transactionService'
 const prisma = new PrismaClient()
 
 async function ignoreDuplicate (callback: Function): Promise<void> {
@@ -76,6 +77,14 @@ async function main (): Promise<void> {
         for (const addrId of new Set(productionTxs.map(tx => tx.addressId))) {
           await prisma.address.update({ where: { id: addrId }, data: { lastSynced: new Date() } })
         }
+        const insertedTxs = await prisma.transaction.findMany({
+          where: {
+            hash: {
+              in: productionTxs.map(tx => tx.hash)
+            }
+          }
+        })
+        void await connectTransactionsListToPrices(insertedTxs)
       })
     } else {
       console.log('No production txs found to seed.')
