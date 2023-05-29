@@ -18,6 +18,8 @@ async function ignoreDuplicate (callback: Function): Promise<void> {
   } catch (err: any) {
     if (err.code !== 'P2002') {
       throw err
+    } else {
+      console.warn('Ignored seeding duplicates when running', callback.name)
     }
   }
 }
@@ -70,7 +72,7 @@ async function main (): Promise<void> {
     const productionTxs = await getTxsFromFile()
     if (productionTxs !== undefined) {
       await ignoreDuplicate(async () => {
-        await prisma.transaction.createMany({ data: productionTxs })
+        await prisma.transaction.createMany({ data: productionTxs, skipDuplicates: true })
         for (const addrId of new Set(productionTxs.map(tx => tx.addressId))) {
           await prisma.address.update({ where: { id: addrId }, data: { lastSynced: new Date() } })
         }
