@@ -68,7 +68,8 @@ export const NETWORK_IDS_FROM_SLUGS: KeyValueT<number> = {
 }
 
 // When fetching some address transactions, number of transactions to fetch at a time.
-export const FETCH_N = 100
+// On chronik, the max allowed is 200
+export const FETCH_N = 200
 
 // When fetching the FETCH_N transactions, max time (in ms) to wait to upsert them.
 export const FETCH_N_TIMEOUT = 120000
