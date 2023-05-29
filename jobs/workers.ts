@@ -39,7 +39,7 @@ const syncAndSubscribeAllAddressTransactionsForNetworkJob = async (job: Job): Pr
   let failedAddressesWithErrors: KeyValueT<string> = {}
   try {
     let addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
-    addresses = addresses.filter(addr => addr.lastSynced != null)
+    addresses = addresses.filter(addr => addr.lastSynced == null)
     failedAddressesWithErrors = await syncAndSubscribeAddresses(addresses)
   } catch (err: any) {
     const parsedError = parseError(err)
