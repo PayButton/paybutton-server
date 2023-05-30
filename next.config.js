@@ -1,6 +1,7 @@
 const {
     PHASE_DEVELOPMENT_SERVER,
     PHASE_PRODUCTION_BUILD,
+    PHASE_PRODUCTION_SERVER,
   } = require('next/constants')
   
   // This uses phases as outlined here: https://nextjs.org/docs/#custom-configuration
@@ -8,18 +9,20 @@ const {
     // when started in development mode `next dev` or `npm run dev` regardless of the value of STAGING environmental variable
     const isDev = phase === PHASE_DEVELOPMENT_SERVER
     // when `next build` or `npm run build` is used
-    const isProd = phase === PHASE_PRODUCTION_BUILD && process.env.STAGING !== '1'
+    const isBuild = phase === PHASE_PRODUCTION_BUILD && process.env.STAGING !== '1'
+    // when `next start` or `npm run start` is used
+    const isProd = phase === PHASE_PRODUCTION_SERVER
     // when `next build` or `npm run build` is used
     const isStaging =
       phase === PHASE_PRODUCTION_BUILD && process.env.STAGING === '1'
   
-    console.log(`isDev:${isDev}  isProd:${isProd}   isStaging:${isStaging}`)
+    console.log(`isDev:${isDev}  isBuild:${isBuild}  isProd:${isProd}  isStaging:${isStaging}`)
     const branch = process.env.BRANCH || 'master'
     const base_url = process.env.BASE_URL || 'paybutton.io'
     const env = {
       APP_URL: (() => {
         if (isDev) return process.env.WEBSITE_DOMAIN ?? 'http://localhost:3000'
-        if (isProd) {
+        if (isProd || isBuild) {
           return branch === 'master' ? `https://${base_url}` : `https://${branch.replaceAll('/', '-')}.${base_url}`
         }
         return 'APP_URL:not (isDev,isProd && !isStaging,isProd && isStaging)'
