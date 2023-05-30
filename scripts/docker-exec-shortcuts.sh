@@ -47,7 +47,7 @@ case "$command" in
     "rootshellnode" | "rsn")
         eval "$base_command_node_root" ash -l
         ;;
-    "jobswatch" | "jw")
+    "jobslogs" | "jl")
         eval "$base_command_node" pm2 logs jobs
         ;;
     "jobsstop" | "js")
@@ -57,7 +57,7 @@ case "$command" in
     "jobsrestart" | "jr")
         eval "$base_command_node" pm2 --time restart jobs
         ;;
-    "serverwatch" | "sw")
+    "serverlogs" | "sl")
         eval "$base_command_node" pm2 logs SSEServer
         ;;
     "serverstop" | "ss")
@@ -141,10 +141,10 @@ case "$command" in
         echo "  cr, cachereset              [$node_container_name]     clear the whole redis cache"
         echo "  cmr, cachemainreset         [$node_container_name]     clear the main redis cache"
         echo "  cbr, cachebullmqreset       [$node_container_name]     clear the bullMQ redis database"
-        echo "  jw, jobswatch               [$node_container_name]     watch jobs logs"
+        echo "  jl, jobslogs                [$node_container_name]     watch jobs logs"
         echo "  js, jobsstop                [$node_container_name]     stop jobs"
         echo "  jr, jobsrestart             [$node_container_name]     restart jobs"
-        echo "  sw, serverwatch             [$node_container_name]     watch SSE server logs"
+        echo "  sl, serverlogs              [$node_container_name]     watch SSE server logs"
         echo "  ss, serverstop              [$node_container_name]     stop SSE server"
         echo "  sr, serverrestart           [$node_container_name]     restart SSE server"
         ;;
