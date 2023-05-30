@@ -2,9 +2,6 @@
 source .env
 source .env.local
 
-chmod 2755 /home/node/.pm2/logs
-chown node:node /home/node/.pm2/logs
-
 yarn || exit 1
 yarn prisma migrate dev || exit 1
 yarn prisma db seed || exit 1
