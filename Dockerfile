@@ -1,5 +1,5 @@
 FROM  --platform=linux/amd64 node:lts-alpine
-RUN apk add --no-cache python3 make g++ tmux openssl1.1-compat
+RUN apk add --no-cache python3 make g++ openssl1.1-compat
 RUN yarn global add pm2
 USER node
 WORKDIR /home/node/src/
