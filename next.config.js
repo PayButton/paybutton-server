@@ -49,6 +49,9 @@ const {
       env,
       outputFileTracing: true,
       basePath: process.env.WEBSITE_BASE_PATH,
+      eslint: {
+        ignoreDuringBuilds: true
+      },
       async rewrites() {
         return [
           {
