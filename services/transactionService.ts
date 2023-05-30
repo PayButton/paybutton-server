@@ -1,5 +1,5 @@
 import prisma from 'prisma/clientInstance'
-import { Prisma, Transaction } from '@prisma/client'
+import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, GetAddressTransactionsParameters } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced, fetchAddressById } from 'services/addressService'
@@ -210,8 +210,8 @@ export async function createManyTransactions (
   return txs
 }
 
-export async function syncAllTransactionsForAddress (addressString: string, maxTransactionsToReturn: number): Promise<TransactionWithAddressAndPrices[]> {
-  addressString = parseAddress(addressString)
+export async function syncAllTransactionsForAddress (address: Address, maxTransactionsToReturn: number): Promise<TransactionWithAddressAndPrices[]> {
+  const addressString = parseAddress(address.address)
   const parameters = {
     addressString,
     start: 0,

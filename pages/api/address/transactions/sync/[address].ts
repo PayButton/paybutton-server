@@ -34,8 +34,8 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
         throw new Error(ADDRESS_NOT_PROVIDED_400.message)
       }
       const addressString = parseAddress(req.query.address as string)
-      void await upsertAddress(addressString)
-      const transactions = await syncAllTransactionsForAddress(addressString, NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY)
+      const address = await upsertAddress(addressString)
+      const transactions = await syncAllTransactionsForAddress(address, NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY)
       res.status(200).send(transactions)
     } catch (err: any) {
       switch (err.message) {

@@ -19,7 +19,7 @@ const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<KeyValue
     addresses.map(async (addr) => {
       try {
         await subscribeAddressesAddTransactions([addr])
-        const txs = await transactionService.syncAllTransactionsForAddress(addr.address, Infinity)
+        const txs = await transactionService.syncAllTransactionsForAddress(addr, Infinity)
         if (productionAddressesIds.includes(addr.id)) {
           txsToSave = txsToSave.concat(txs)
         }
