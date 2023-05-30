@@ -74,9 +74,6 @@ async function main (): Promise<void> {
     if (productionTxs !== undefined) {
       await ignoreDuplicate(async () => {
         await prisma.transaction.createMany({ data: productionTxs, skipDuplicates: true })
-        for (const addrId of new Set(productionTxs.map(tx => tx.addressId))) {
-          await prisma.address.update({ where: { id: addrId }, data: { lastSynced: new Date() } })
-        }
         const insertedTxs = await prisma.transaction.findMany({
           where: {
             hash: {
