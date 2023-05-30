@@ -13,7 +13,7 @@ import { getTxsFromFile } from './seeds/transactions'
 import { connectTransactionsListToPrices } from 'services/transactionService'
 const prisma = new PrismaClient()
 
-async function ignoreDuplicate (callback: Function): Promise<void> {
+async function ignoreConflicts (callback: Function): Promise<void> {
   try {
     await callback()
   } catch (err: any) {
@@ -67,12 +67,12 @@ async function main (): Promise<void> {
 
   // PRODUCTION
   if (process.env.NODE_ENV === 'production') {
-    await ignoreDuplicate(
+    await ignoreConflicts(
       async () => await prisma.address.createMany({ data: productionAddresses })
     )
     const productionTxs = await getTxsFromFile()
     if (productionTxs !== undefined) {
-      await ignoreDuplicate(async () => {
+      await ignoreConflicts(async () => {
         await prisma.transaction.createMany({ data: productionTxs, skipDuplicates: true })
         const insertedTxs = await prisma.transaction.findMany({
           where: {
