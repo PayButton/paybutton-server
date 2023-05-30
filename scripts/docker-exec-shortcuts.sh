@@ -15,7 +15,7 @@ case "$command" in
         eval "$base_command_node" pm2 logs next
         ;;
     "nr" | "nextrestart")
-        eval "$base_command_node" pm2 restart next
+        eval "$base_command_node" pm2 --time restart next
         ;;
     "database" | "db")
         eval "$base_command_db" mariadb -u paybutton -ppaybutton -D paybutton "$@"
@@ -55,7 +55,7 @@ case "$command" in
         yarn docker cbr && echo Cleaned jobs cache.
         ;;
     "jobsrestart" | "jr")
-        eval "$base_command_node" pm2 restart jobs
+        eval "$base_command_node" pm2 --time restart jobs
         ;;
     "serverwatch" | "sw")
         eval "$base_command_node" pm2 logs SSEServer
@@ -64,7 +64,7 @@ case "$command" in
         eval "$base_command_node" pm2 stop SSEServer
         ;;
     "serverrestart" | "sr")
-        eval "$base_command_node" pm2 restart SSEServer
+        eval "$base_command_node" pm2 --time restart SSEServer
         ;;
     "yarn" | "y")
         eval "$base_command_node" yarn "$@"
