@@ -1,4 +1,8 @@
 #!/bin/sh
+echo pwd
+pwd
+echo ls
+ls
 
 . .env
 . .env.local
