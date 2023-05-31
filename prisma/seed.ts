@@ -10,7 +10,6 @@ import { getPrices } from './seeds/prices'
 import { quotes } from './seeds/quotes'
 import { createDevUserRawQueryList, userProfiles } from './seeds/devUser'
 import { getTxsFromFile } from './seeds/transactions'
-import { connectTransactionsListToPrices } from 'services/transactionService'
 const prisma = new PrismaClient()
 
 async function ignoreConflicts (callback: Function): Promise<void> {
@@ -74,14 +73,13 @@ async function main (): Promise<void> {
     if (productionTxs !== undefined) {
       await ignoreConflicts(async () => {
         await prisma.transaction.createMany({ data: productionTxs, skipDuplicates: true })
-        const insertedTxs = await prisma.transaction.findMany({
+        await prisma.transaction.findMany({
           where: {
             hash: {
               in: productionTxs.map(tx => tx.hash)
             }
           }
         })
-        void await connectTransactionsListToPrices(insertedTxs)
       })
     } else {
       console.log('No production txs found to seed.')
