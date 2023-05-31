@@ -9,7 +9,7 @@ import * as addressService from 'services/addressService'
 import { subscribeAddressesAddTransactions } from 'services/blockchainService'
 import { parseError } from 'utils/validators'
 import { productionAddresses } from 'prisma/seeds/addresses'
-import { addTxsToFile } from 'prisma/seeds/transactions'
+import { appendTxsToFile } from 'prisma/seeds/transactions'
 
 const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<KeyValueT<string>> => {
   const failedAddressesWithErrors: KeyValueT<string> = {}
@@ -29,7 +29,7 @@ const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<KeyValue
     })
   )
   if (txsToSave.length !== 0) {
-    await addTxsToFile(txsToSave)
+    await appendTxsToFile(txsToSave)
   }
   return failedAddressesWithErrors
 }

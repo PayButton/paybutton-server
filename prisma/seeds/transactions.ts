@@ -9,7 +9,7 @@ const appendFile = promisify(fs.appendFile)
 
 export const PATH_TXS_CSV_FILE = path.join('prisma', 'seeds', 'productionTxs.csv')
 
-export async function addTxsToFile (content: Prisma.TransactionCreateManyInput[]): Promise<void> {
+export async function appendTxsToFile (content: Prisma.TransactionCreateManyInput[]): Promise<void> {
   if (!await fileExists(fs, PATH_TXS_CSV_FILE)) {
     const headers = ['hash', 'amount', 'timestamp', 'addressId', 'confirmed'].join(',') + '\n'
     await writeFile(PATH_TXS_CSV_FILE, headers, 'utf8')
