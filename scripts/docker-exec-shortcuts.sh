@@ -42,10 +42,10 @@ case "$command" in
         eval "$base_command_node" yarn test --coverage --verbose  "$@"
         ;;
     "shellnode" | "sn")
-        eval "$base_command_node" ash -l
+        eval "$base_command_node" bash -l
         ;;
     "rootshellnode" | "rsn")
-        eval "$base_command_node_root" ash -l
+        eval "$base_command_node_root" bash -l
         ;;
     "jobslogs" | "jl")
         eval "$base_command_node" pm2 logs jobs
