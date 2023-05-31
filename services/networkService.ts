@@ -13,6 +13,9 @@ export async function getNetworkFromSlug (slug: string): Promise<Network> {
 export interface ConnectionInfo {
   connected: boolean
   lastBlockTimestamp?: number
+  id: number
+  title: string
+  ticker: string
 }
 
 export interface NetworkWithConnectionInfo extends Network, ConnectionInfo {}
@@ -72,4 +75,8 @@ export async function getUserNetworks (userId: string): Promise<Network[] | null
     if (userNetworkIds.size === allNetworkIds.length) break
   }
   return networks.filter(n => userNetworkIds.has(n.id))
+}
+
+export interface UserNetworksInfo {
+  ticker: string
 }
