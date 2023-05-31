@@ -260,3 +260,14 @@ export async function deleteTransactions (transactions: TransactionWithAddressAn
     })
   ))
 }
+
+export async function fetchAllTransactionsWithNoPrices (): Promise<Transaction[]> {
+  const x = await prisma.transaction.findMany({
+    where: {
+      prices: {
+        none: {}
+      }
+    }
+  })
+  return x
+}

@@ -107,6 +107,31 @@ export const syncPricesWorker = async (queueName: string): Promise<void> => {
   })
 }
 
+export const connectAllTransactionsToPricesWorker = async (queueName: string): Promise<void> => {
+  const worker = new Worker(
+    queueName,
+    async (job) => {
+      console.log(`job ${job.id as string}: connecting prices to transactions...`)
+      const txs = await transactionService.fetchAllTransactionsWithNoPrices()
+      void await transactionService.connectTransactionsListToPrices(txs)
+    },
+    {
+      connection: redisBullMQ,
+      lockDuration: DEFAULT_WORKER_LOCK_DURATION
+    }
+  )
+  worker.on('completed', job => {
+    console.log('connection of prices to txs finished')
+  })
+
+  worker.on('failed', (job, err) => {
+    if (job !== undefined) {
+      console.log('automatic connecting of txs to prices FAILED')
+      console.log(`error for connecting txs to prices: ${err.message}`)
+    }
+  })
+}
+
 export const syncAndSubscribeUnsyncedAddressesWorker = async (queue: Queue): Promise<void> => {
   const worker = new Worker(
     queue.name,
