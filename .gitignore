@@ -33,8 +33,7 @@ yarn-error.log*
 # vercel
 .vercel
 
-jobs/out.log
 /prisma/seeds/prices.csv
 redis/dump.rdb
-sse-service/out.log
+logs/
 prisma/seeds/productionTxs.csv

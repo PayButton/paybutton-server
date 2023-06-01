@@ -11,6 +11,12 @@ command="$1"
 
 shift
 case "$command" in
+    "nl" | "nextlogs")
+        eval "$base_command_node" pm2 logs next
+        ;;
+    "nr" | "nextrestart")
+        eval "$base_command_node" pm2 --time restart next
+        ;;
     "database" | "db")
         eval "$base_command_db" mariadb -u paybutton -ppaybutton -D paybutton "$@"
         ;;
@@ -35,34 +41,30 @@ case "$command" in
     "testcoverage" | "tc")
         eval "$base_command_node" yarn test --coverage --verbose  "$@"
         ;;
-    "nodeshell" | "ns")
-        eval "$base_command_node" ash -l
+    "shellnode" | "sn")
+        eval "$base_command_node" bash -l
         ;;
-    "noderootshell" | "nrs")
-        eval "$base_command_node_root" ash -l
+    "rootshellnode" | "rsn")
+        eval "$base_command_node_root" bash -l
         ;;
-    "jobswatch" | "jw")
-        eval "$base_command_node" watch -n 1 'cat jobs/out.log'
+    "jobslogs" | "jl")
+        eval "$base_command_node" pm2 logs jobs
         ;;
     "jobsstop" | "js")
-        eval "$base_command_node" tmux kill-session -t initJobs && echo Jobs stoped. || echo No jobs running.
+        eval "$base_command_node" pm2 stop jobs
         yarn docker cbr && echo Cleaned jobs cache.
         ;;
     "jobsrestart" | "jr")
-        yarn docker js
-        echo "Starting jobs..."
-        eval "$base_command_node" sh ./scripts/init-jobs.sh
+        eval "$base_command_node" pm2 --time restart jobs
         ;;
-    "serverwatch" | "sw")
-        eval "$base_command_node" watch -n 1 'cat sse-service/out.log'
+    "serverlogs" | "sl")
+        eval "$base_command_node" pm2 logs SSEServer
         ;;
     "serverstop" | "ss")
-        eval "$base_command_node" tmux kill-session -t sse && echo SSE server stoped. || echo SSE server not running.
+        eval "$base_command_node" pm2 stop SSEServer
         ;;
     "serverrestart" | "sr")
-        yarn docker ss
-        echo "Starting SSE server..."
-        eval "$base_command_node" sh ./scripts/init-sse-server.sh
+        eval "$base_command_node" pm2 --time restart SSEServer
         ;;
     "yarn" | "y")
         eval "$base_command_node" yarn "$@"
@@ -113,6 +115,8 @@ case "$command" in
         echo Avaiable commands:
         echo "  shortcut, command name      [container_name]    command description"
         echo " --- "
+        echo "  nr, nextrestart             [$node_container_name]     restart the nextJS server"
+        echo "  nl, nextlogs                [$node_container_name]     see the logs for the nextJS server"
         echo "  db, database                [$db_container_name]      enter the mariadb command-line using the main db"
         echo "  dbr, databaseroot           [$db_container_name]      enter the mariadb command-line as root"
         echo "  dbs, databaseshell          [$db_container_name]      enter the shell of the mariadb container"
@@ -121,8 +125,8 @@ case "$command" in
         echo "  t, test                     [$node_container_name]     run tests"
         echo "  tw, testwatch               [$node_container_name]     run tests watching it"
         echo "  tc, testcoverage            [$node_container_name]     test coverage"
-        echo "  ns, nodeshell               [$node_container_name]     enter the node container"
-        echo "  nrs, noderootshell          [$node_container_name]     enter the node container as root"
+        echo "  sn, shellnode               [$node_container_name]     enter the node container"
+        echo "  rsn, rootshellnode          [$node_container_name]     enter the node container as root"
         echo "  y, yarn                     [$node_container_name]     run \`yarn\` on the node container"
         echo "  ya, yarnadd                 [$node_container_name]     run \`yarn add ARGS\` on the node container"
         echo "  yad, yarnadddev             [$node_container_name]     run \`yarn add -D ARGS\` on the node container"
@@ -137,12 +141,12 @@ case "$command" in
         echo "  cr, cachereset              [$node_container_name]     clear the whole redis cache"
         echo "  cmr, cachemainreset         [$node_container_name]     clear the main redis cache"
         echo "  cbr, cachebullmqreset       [$node_container_name]     clear the bullMQ redis database"
-        echo "  jw, jobswatch               [$node_container_name]     watch jobs logs"
+        echo "  jl, jobslogs                [$node_container_name]     watch jobs logs"
         echo "  js, jobsstop                [$node_container_name]     stop jobs"
         echo "  jr, jobsrestart             [$node_container_name]     restart jobs"
-        echo "  sw, serverwatch            [$node_container_name]     watch SSE server logs"
-        echo "  ss, serverstop             [$node_container_name]     stop SSE server"
-        echo "  sr, serverrestart          [$node_container_name]     restart SSE server"
+        echo "  sl, serverlogs              [$node_container_name]     watch SSE server logs"
+        echo "  ss, serverstop              [$node_container_name]     stop SSE server"
+        echo "  sr, serverrestart           [$node_container_name]     restart SSE server"
         ;;
 esac
 

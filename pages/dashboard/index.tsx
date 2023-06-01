@@ -8,7 +8,7 @@ import { GetServerSideProps } from 'next'
 import style from './dashboard.module.css'
 import { formatQuoteValue } from 'utils/index'
 import { USD_QUOTE_ID } from 'constants/index'
-const Chart = dynamic(async () => await import('./Chart'), {
+const Chart = dynamic(async () => await import('components/Chart'), {
   ssr: false
 })
 
