@@ -15,4 +15,4 @@ if [ "$ENVIRONMENT" = "production" ]; then
 else
     pm2 start yarn --time --interpreter ash --name next -- dev || exit 1
 fi
-tail -f /dev/null
+pm2 logs next
