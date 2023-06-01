@@ -33,6 +33,12 @@ const Chart: NextPage<Props> = ({ data, usd }) => {
   const chartData = data
 
   function cssvar (name): string {
+    /*
+    if (typeof window !== "undefined") {
+      return getComputedStyle(document.body).getPropertyValue(name)
+    }
+    return "#000"
+      */
     return getComputedStyle(document.body).getPropertyValue(name)
   }
 
