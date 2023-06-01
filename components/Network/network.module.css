@@ -51,12 +51,11 @@
 
   .card_wrapper:nth-child(even) {
     padding-right: 0;
-    padding-left: 8px;
   }
 
   .card_wrapper:nth-child(odd) {
     padding-left: 0;
-    padding-right: 8px;
+    padding-right: 0px;
   }
 }
 
