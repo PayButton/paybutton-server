@@ -1,5 +1,6 @@
 FROM  --platform=linux/amd64 node:lts-alpine
-RUN apk add --no-cache python3 make g++ openssl1.1-compat
+RUN apk add --no-cache python3 make g++ openssl1.1-compat bash
+SHELL ["/bin/bash", "-c"]
 USER node
 RUN yarn global add pm2
 WORKDIR /home/node/src/
