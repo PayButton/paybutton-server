@@ -7,6 +7,7 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import { NetworkList } from 'components/Network'
 import { Network } from '@prisma/client'
+import { UserNetworksInfo } from 'services/networkService'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -44,6 +45,7 @@ interface NetworksProps {
 
 interface NetworksState {
   networks: Network[]
+  userNetworks: UserNetworksInfo[]
 }
 
 class ProtectedPage extends React.Component<NetworksProps, NetworksState> {
@@ -51,7 +53,8 @@ class ProtectedPage extends React.Component<NetworksProps, NetworksState> {
     super(props)
     this.props = props
     this.state = {
-      networks: []
+      networks: [],
+      userNetworks: []
     }
   }
 
@@ -63,9 +66,17 @@ class ProtectedPage extends React.Component<NetworksProps, NetworksState> {
     const res = await fetch('/api/networks/', {
       method: 'GET'
     })
+    const networksResponse = await fetch('/api/networks/user/', {
+      method: 'GET'
+    })
     if (res.status === 200) {
       this.setState({
         networks: await res.json()
+      })
+    }
+    if (networksResponse.status === 200) {
+      this.setState({
+        userNetworks: await networksResponse.json()
       })
     }
   }
@@ -75,7 +86,7 @@ class ProtectedPage extends React.Component<NetworksProps, NetworksState> {
       return (
         <>
           <h2>Networks</h2>
-          <NetworkList networks={this.state.networks} />
+          <NetworkList networks={this.state.networks} userNetworks={this.state.userNetworks} />
         </>
       )
     }

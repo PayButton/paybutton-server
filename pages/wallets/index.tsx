@@ -9,6 +9,7 @@ import WalletCard from 'components/Wallet/WalletCard'
 import WalletForm from 'components/Wallet/WalletForm'
 import { WalletWithPaymentInfo } from 'services/walletService'
 import { AddressWithPaybuttons } from 'services/addressService'
+import { UserNetworksInfo } from 'services/networkService'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -45,6 +46,7 @@ interface WalletsProps {
 interface WalletsState {
   walletsWithPaymentInfo: WalletWithPaymentInfo[]
   userAddresses: AddressWithPaybuttons[]
+  networksInfo: UserNetworksInfo[]
 }
 
 export default function Wallets ({ userId }: WalletsProps): React.ReactElement {
@@ -60,12 +62,14 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
     super(props)
     this.state = {
       walletsWithPaymentInfo: [],
-      userAddresses: []
+      userAddresses: [],
+      networksInfo: []
     }
   }
 
   async componentDidMount (): Promise<void> {
     await this.fetchWallets()
+    await this.fetchNetworks()
   }
 
   async fetchWallets (): Promise<void> {
@@ -83,6 +87,17 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
     if (addressesResponse.status === 200) {
       this.setState({
         userAddresses: await addressesResponse.json()
+      })
+    }
+  }
+
+  async fetchNetworks (): Promise<void> {
+    const networksResponse = await fetch('/api/networks/user/', {
+      method: 'GET'
+    })
+    if (networksResponse.status === 200) {
+      this.setState({
+        networksInfo: await networksResponse.json()
       })
     }
   }
@@ -118,10 +133,11 @@ class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
             userAddresses={this.state.userAddresses}
             refreshWalletList={this.refreshWalletList}
             key={walletWithPaymentInfo.wallet.name}
+            usedNetworks={this.state.networksInfo}
           />
         }
         )}
-        <WalletForm userAddresses={this.state.userAddresses} refreshWalletList={this.refreshWalletList} userId={this.props.userId}/>
+        <WalletForm userAddresses={this.state.userAddresses} refreshWalletList={this.refreshWalletList} userId={this.props.userId} usedNetworks={this.state.networksInfo}/>
         </div>
       </>
     )
