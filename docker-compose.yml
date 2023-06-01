@@ -13,7 +13,8 @@ services:
       - "5000:5000"
     volumes:
       - .:/home/node/src
-    command: sh ./scripts/paybutton-server-start.sh
+      - ./logs:/home/node/.pm2/logs
+    command: bash ./scripts/paybutton-server-start.sh
   db:
     container_name: paybutton-db
     image: mariadb
