@@ -85,6 +85,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
   public async syncTransactionsForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
     const address = await fetchAddressBySubstring(parameters.addressString)
+    const addressString = address.address
     const pageSize = FETCH_N
     let totalFetchedConfirmedTransactions = 0
     let page = Math.floor(parameters.start / pageSize)
@@ -92,7 +93,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     const latestTimestamp = await getLatestTxTimestampForAddress(address.id) ?? 0
 
     while (totalFetchedConfirmedTransactions < parameters.maxTransactionsToReturn) {
-      const { type, hash160 } = toHash160(address.address)
+      const { type, hash160 } = toHash160(addressString)
       let transactions = (await this.chronik.script(type, hash160).history(page, pageSize)).txs
 
       // filter out transactions that happened before a certain date set in constants/index,
@@ -118,6 +119,9 @@ export class ChronikBlockchainClient implements BlockchainClient {
       )
 
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
+      const broadcastTxData: BroadcastTxData = {}
+      broadcastTxData[addressString] = persistedTransactions
+      await broadcastTxInsertion(broadcastTxData)
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
