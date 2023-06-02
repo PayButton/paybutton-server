@@ -184,7 +184,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     // create unconfirmed or confirmed transaction
     if (msg.type === 'AddedToMempool' || msg.type === 'Confirmed') {
       const transaction = await this.chronik.tx(msg.txid)
-      const addressesWithTransactions = await this.getPrismaTransactionsForSubscribedAddresses(transaction)
+      const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
       const insertedTxs: BroadcastTxData = {}
       await Promise.all(
         addressesWithTransactions.map(async addressWithTransaction => {
@@ -199,7 +199,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
-  private async getPrismaTransactionsForSubscribedAddresses (transaction: Tx): Promise<AddressWithTransaction[]> {
+  private async getAddressesForTransaction (transaction: Tx): Promise<AddressWithTransaction[]> {
     const addressesWithTransactions: AddressWithTransaction[] = await Promise.all(Object.values(this.subscribedAddresses).map(
       async address => {
         return {
