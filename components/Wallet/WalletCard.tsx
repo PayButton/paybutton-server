@@ -9,15 +9,17 @@ import EditWalletForm from './EditWalletForm'
 import { WalletWithAddressesWithPaybuttons, WalletPaymentInfo } from 'services/walletService'
 import { AddressWithPaybuttons } from 'services/addressService'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
+import { UserNetworksInfo } from 'services/networkService'
 
 interface IProps {
   wallet: WalletWithAddressesWithPaybuttons
   paymentInfo: WalletPaymentInfo
   userAddresses: AddressWithPaybuttons[]
   refreshWalletList: Function
+  usedNetworks: UserNetworksInfo[]
 }
 
-const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userAddresses, refreshWalletList }: IProps) => {
+const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userAddresses, refreshWalletList, usedNetworks }: IProps) => {
   const networks = wallet.userAddresses.map((addr) => addr.address.networkId)
   const differentPaybuttons = wallet.userAddresses.map(addr =>
     addr.address.paybuttons.map(conn => conn.paybutton)
@@ -38,12 +40,13 @@ const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userAddress
           </div>
         </div>
         <div className={style.edit_button_ctn}>
-          {wallet.userProfile?.isXECDefault === true && <div className={style.default_wallet}>Default XEC Wallet</div>}
-          {wallet.userProfile?.isBCHDefault === true && <div className={style.default_wallet}>Default BCH Wallet</div>}
+          {wallet.userProfile?.isXECDefault === true && usedNetworks.some(network => network.ticker === 'xec') && <div className={style.default_wallet}>Default XEC Wallet</div>}
+          {wallet.userProfile?.isBCHDefault === true && usedNetworks.some(network => network.ticker === 'bch') && <div className={style.default_wallet}>Default BCH Wallet</div>}
           <EditWalletForm
             wallet={wallet}
             userAddresses={userAddresses}
             refreshWalletList={refreshWalletList}
+            usedNetworks={usedNetworks}
           />
         </div>
       </div>

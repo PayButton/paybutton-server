@@ -73,3 +73,7 @@ export async function getUserNetworks (userId: string): Promise<Network[] | null
   }
   return networks.filter(n => userNetworkIds.has(n.id))
 }
+
+export interface UserNetworksInfo {
+  ticker: string
+}

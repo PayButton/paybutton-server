@@ -112,7 +112,8 @@ const getPaymentsByWeek = (addressId: string, payments: Payment[]): KeyValueT<Pa
 
 const getGroupedPaymentsFromAddress = async (address: AddressWithTransactionsWithPrices): Promise<KeyValueT<Payment[]>> => {
   let paymentList: Payment[] = []
-  for (const tx of address.transactions) {
+  const zero = new Prisma.Decimal(0)
+  for (const tx of address.transactions.filter(tx => tx.amount > zero)) {
     const payment = await getPaymentFromTx(tx)
     paymentList.push(payment)
   }
@@ -157,7 +158,8 @@ export const cacheAddress = async (address: AddressWithTransactionsWithPrices): 
 }
 
 export const cacheManyTxs = async (txs: TransactionWithAddressAndPrices[]): Promise<void> => {
-  for (const tx of txs) {
+  const zero = new Prisma.Decimal(0)
+  for (const tx of txs.filter(tx => tx.amount > zero)) {
     const payment = await getPaymentFromTx(tx)
     if (payment.value !== new Prisma.Decimal(0)) {
       const paymentsGroupedByKey = getPaymentsByWeek(tx.address.id, [payment])

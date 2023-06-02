@@ -10,14 +10,16 @@ import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import { AddressWithPaybuttons } from 'services/addressService'
 import axios from 'axios'
 import { appInfo } from 'config/appInfo'
+import { UserNetworksInfo } from 'services/networkService'
 
 interface IProps {
   wallet: WalletWithAddressesWithPaybuttons
   userAddresses: AddressWithPaybuttons[]
   refreshWalletList: Function
+  usedNetworks: UserNetworksInfo[]
 }
 
-export default function EditWalletForm ({ wallet, userAddresses, refreshWalletList }: IProps): ReactElement {
+export default function EditWalletForm ({ wallet, userAddresses, refreshWalletList, usedNetworks }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<WalletPATCHParameters>()
   const [modal, setModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState(false)
@@ -115,6 +117,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                   </div>
                   <hr/>
                   <div className={style.makedefault_ctn} key={`edit-wallet-${wallet.id}`}>
+                  {usedNetworks.some(network => network.ticker === 'xec') &&
                     <div className={style.input_field}>
                       <input
                         {...register('isXECDefault')}
@@ -124,7 +127,8 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                         disabled={wallet.userProfile?.isXECDefault === true}
                       />
                       <label htmlFor='xec-default' className={style.makedefault_margin}>Default XEC Wallet</label>
-                    </div>
+                    </div>}
+                    {usedNetworks.some(network => network.ticker === 'bch') &&
                     <div className={style.input_field}>
                       <input
                         {...register('isBCHDefault')}
@@ -135,6 +139,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                       />
                       <label htmlFor='bch-default' className={style.makedefault_margin}>Default BCH Wallet</label>
                     </div>
+}
                   </div>
 
                   <div className={style_pb.btn_row2}>

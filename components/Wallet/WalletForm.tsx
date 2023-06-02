@@ -8,14 +8,16 @@ import style_pb from 'components/Paybutton/paybutton.module.css'
 import Plus from 'assets/plus.png'
 import axios from 'axios'
 import { appInfo } from 'config/appInfo'
+import { UserNetworksInfo } from 'services/networkService'
 
 interface IProps {
   userAddresses: AddressWithPaybuttons[]
   refreshWalletList: Function
   userId: string
+  usedNetworks: UserNetworksInfo[]
 }
 
-export default function WalletForm ({ userAddresses, refreshWalletList, userId }: IProps): ReactElement {
+export default function WalletForm ({ userAddresses, refreshWalletList, userId, usedNetworks }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<WalletPOSTParameters>()
   const [modal, setModal] = useState(false)
   const [error, setError] = useState('')
@@ -104,14 +106,17 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId }
                     ))}
                   </div>
                   <div className={style.makedefault_ctn} key={'wallet-create'}>
-                    <div className={style.input_field}>
-                      <input
-                        {...register('isXECDefault')}
-                        type="checkbox"
-                        id='isXECDefault'
-                      />
-                      <label htmlFor='xec-default' className={style.makedefault_margin}>Default XEC Wallet</label>
-                    </div>
+                    {usedNetworks.some(network => network.ticker === 'xec') &&
+                      <div className={style.input_field}>
+                        <input
+                          {...register('isXECDefault')}
+                          type="checkbox"
+                          id='isXECDefault'
+                        />
+                        <label htmlFor='xec-default' className={style.makedefault_margin}>Default XEC Wallet</label>
+                      </div>
+                    }
+                     {usedNetworks.some(network => network.ticker === 'bch') &&
                     <div className={style.input_field}>
                       <input
                         {...register('isBCHDefault')}
@@ -120,8 +125,8 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId }
                       />
                       <label htmlFor='bch-default' className={style.makedefault_margin}>Default BCH Wallet</label>
                     </div>
+                   }
                   </div>
-
                   <div className={style_pb.btn_row}>
                     {error !== '' && <div className={style_pb.error_message}>{error}</div>}
                     <button type='submit'>Submit</button>
@@ -131,7 +136,7 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId }
               </div>
             </div>
           </div>)
-          : null}
+        : null}
     </>
   )
 }
