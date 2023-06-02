@@ -56,6 +56,8 @@ CREATE TABLE `Transaction` (
     `timestamp` INTEGER NOT NULL,
     `addressId` VARCHAR(191) NOT NULL,
     `confirmed` BOOLEAN NOT NULL DEFAULT FALSE,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `Transaction_hash_addressId_key`(`hash`, `addressId`),
     PRIMARY KEY (`id`)
