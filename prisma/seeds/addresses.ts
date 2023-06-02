@@ -20,3 +20,11 @@ export const addresses = [
     networkId: 1
   }
 ]
+
+export const productionAddresses = [
+  {
+    id: 'd1266537-9c17-4ec5-b09f-b05a81811c60',
+    address: 'ecash:prfhcnyqnl5cgrnmlfmms675w93ld7mvvqd0y8lz07',
+    networkId: 1
+  }
+]

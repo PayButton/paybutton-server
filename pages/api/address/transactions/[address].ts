@@ -42,8 +42,8 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       if (!await addressExistsBySubstring(address)) {
         if (serverOnly) throw new Error(NO_ADDRESS_FOUND_404.message)
 
-        await upsertAddress(address)
-        await syncAllTransactionsForAddress(address, NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY)
+        const addressObject = await upsertAddress(address)
+        await syncAllTransactionsForAddress(addressObject, NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY)
       }
       const transactions = await fetchAddressTransactions(address)
 

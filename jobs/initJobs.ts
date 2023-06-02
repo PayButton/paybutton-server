@@ -4,8 +4,12 @@ import { redisBullMQ } from 'redis/clientInstance'
 import {
   syncAndSubscribeAllAddressTransactionsForNetworkWorker,
   syncPricesWorker,
-  syncAndSubscribeUnsyncedAddressesWorker
+  syncAndSubscribeUnsyncedAddressesWorker,
+  connectAllTransactionsToPricesWorker
 } from './workers'
+import EventEmitter from 'events'
+
+EventEmitter.defaultMaxListeners = 20
 
 const RETRY_OPTS = {
   attempts: SYNC_TXS_JOBS_MAX_RETRIES,
@@ -19,6 +23,7 @@ const main = async (): Promise<void> => {
   const pricesQueue = new Queue('pricesSync', { connection: redisBullMQ })
   const initTransactionsQueue = new Queue('initTransactionsSync', { connection: redisBullMQ })
   const newAddressesQueue = new Queue('newAddressesSync', { connection: redisBullMQ })
+  const connectPricesQueue = new Queue('connectPrices', { connection: redisBullMQ })
 
   const flowJobPrices: FlowJob = {
     queueName: pricesQueue.name,
@@ -50,6 +55,19 @@ const main = async (): Promise<void> => {
       ...RETRY_OPTS
     }
   }
+
+  const flowJobConnectAllTransactions: FlowJob = {
+    queueName: connectPricesQueue.name,
+    data: {},
+    name: 'connectAllTransactionsToPricesFlow',
+    opts: {
+      removeOnComplete: false,
+      removeOnFail: { count: 3 },
+      jobId: 'connectAllTransactionsToPrices',
+      ...RETRY_OPTS
+    }
+  }
+
   const flowJobSyncAndSubscribeUnsyncedAddresses: FlowJob = {
     queueName: newAddressesQueue.name,
     data: {},
@@ -67,11 +85,16 @@ const main = async (): Promise<void> => {
     ...flowJobSyncAndSubscribeUnsyncedAddresses,
     children: [
       {
-        ...flowJobSyncAndSubscribeBCHAddresses,
+        ...flowJobConnectAllTransactions,
         children: [
           {
-            ...flowJobSyncAndSubscribeXECAddresses,
-            children: [flowJobPrices]
+            ...flowJobSyncAndSubscribeBCHAddresses,
+            children: [
+              {
+                ...flowJobSyncAndSubscribeXECAddresses,
+                children: [flowJobPrices]
+              }
+            ]
           }
         ]
       }
@@ -92,6 +115,7 @@ const main = async (): Promise<void> => {
   await syncPricesWorker(pricesQueue.name)
   await syncAndSubscribeAllAddressTransactionsForNetworkWorker(initTransactionsQueue.name)
   await syncAndSubscribeUnsyncedAddressesWorker(newAddressesQueue)
+  await connectAllTransactionsToPricesWorker(connectPricesQueue.name)
 }
 
 void main()
