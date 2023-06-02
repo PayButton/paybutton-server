@@ -1,7 +1,7 @@
 import { KeyValueT } from 'constants/index'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 
-export type BroadcastTxData = KeyValueT<TransactionWithAddressAndPrices>
+export type BroadcastTxData = KeyValueT<TransactionWithAddressAndPrices[]>
 
 export async function broadcastTxInsertion (insertedTxs: BroadcastTxData): Promise<Response> {
   return await fetch('http://localhost:5000/broadcast-new-tx', {

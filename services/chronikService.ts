@@ -190,7 +190,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         addressesWithTransactions.map(async addressWithTransaction => {
           const tx = await createTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
-            insertedTxs[addressWithTransaction.address.address] = tx
+            insertedTxs[addressWithTransaction.address.address] = [tx]
           }
           return tx
         })
