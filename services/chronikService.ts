@@ -75,7 +75,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
   private async getTransactionFromChronikTransaction (transaction: Tx, address: Address): Promise<Prisma.TransactionUncheckedCreateInput> {
     return {
-      hash: await transaction.txid,
+      hash: transaction.txid,
       amount: await this.getTransactionAmount(transaction, address.address),
       timestamp: transaction.block !== undefined ? parseInt(transaction.block.timestamp) : parseInt(transaction.timeFirstSeen),
       addressId: address.id,
