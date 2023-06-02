@@ -2,24 +2,14 @@
   display: flex;
   margin-top: 25px;
   flex-wrap: wrap;
+  flex-direction: column;
 }
 
 .card_wrapper {
   margin-bottom: 15px;
   padding: 0 12px;
-  width: 33.333%;
-}
-
-.card_wrapper:nth-child(1),
-.card_wrapper:nth-child(4),
-.card_wrapper:nth-child(7) {
   padding-left: 0;
-}
-
-.card_wrapper:nth-child(3),
-.card_wrapper:nth-child(6),
-.card_wrapper:nth-child(9) {
-  padding-right: 0;
+  width: 33.333%;
 }
 
 .network_card {
@@ -43,6 +33,17 @@
   color: red;
 }
 
+.showNetworksCtn {
+  background-color: var(--secondary-bg-color);
+  order: 3;
+  height: 100%;
+  padding: 10px 20px;
+  align-self: flex-start;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
 @media (max-width: 1200px) {
   .card_wrapper {
     width: 50%;
@@ -50,12 +51,11 @@
 
   .card_wrapper:nth-child(even) {
     padding-right: 0;
-    padding-left: 8px;
   }
 
   .card_wrapper:nth-child(odd) {
     padding-left: 0;
-    padding-right: 8px;
+    padding-right: 0px;
   }
 }
 

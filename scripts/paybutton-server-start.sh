@@ -1,13 +1,10 @@
 #!/bin/sh
-echo pwd
-pwd
-echo ls
-ls
 . .env
 . .env.local
 yarn || exit 1
 yarn prisma migrate dev || exit 1
 yarn prisma db seed || exit 1
+rm logs/*
 pm2 start yarn --time --interpreter ash --name jobs -- initJobs || exit 1
 pm2 start yarn --time --interpreter ash --name SSEServer -- initSSEServer || exit 1
 if [ "$ENVIRONMENT" = "production" ]; then
