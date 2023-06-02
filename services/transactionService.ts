@@ -133,10 +133,13 @@ export async function createTransaction (
     },
     update: {}
   })
-  void await connectTransactionToPrices(createdTx, prisma)
-  const tx = await fetchTransactionById(createdTx.id)
-  void await cacheManyTxs([tx])
-  return tx
+  // only return if it was created, if it was updated return undefined
+  if (createdTx.createdAt === createdTx.updatedAt) {
+    void await connectTransactionToPrices(createdTx, prisma)
+    const txWithPrices = await fetchTransactionById(createdTx.id)
+    void await cacheManyTxs([txWithPrices])
+    return txWithPrices
+  }
 }
 
 export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient): Promise<void> {
@@ -187,9 +190,10 @@ export async function createManyTransactions (
   transactionsData: Prisma.TransactionUncheckedCreateInput[]
 ): Promise<TransactionWithAddressAndPrices[]> {
   // we don't use `createMany` to ignore conflicts between the sync and the subscription
-  const insertedTransactions = await Promise.all(
-    transactionsData.map(async tx =>
-      await prisma.transaction.upsert({
+  // and we don't return transactions that were updated, only ones that were created
+  const insertedTransactionsDistinguished = await Promise.all(
+    transactionsData.map(async tx => {
+      const upsertedTx = await prisma.transaction.upsert({
         create: tx,
         where: {
           Transaction_hash_addressId_unique_constraint: {
@@ -199,10 +203,17 @@ export async function createManyTransactions (
         },
         update: {}
       })
-    )
+      return {
+        tx: upsertedTx,
+        isCreated: upsertedTx.createdAt === upsertedTx.updatedAt
+      }
+    })
   )
+  const insertedTransactions = insertedTransactionsDistinguished
+    .filter(txD => !txD.isCreated)
+    .map(txD => txD.tx)
   void await connectTransactionsListToPrices(insertedTransactions)
-  const txs = await prisma.transaction.findMany({
+  const txsWithPrices = await prisma.transaction.findMany({
     where: {
       id: {
         in: insertedTransactions.map(tx => tx.id)
@@ -210,8 +221,8 @@ export async function createManyTransactions (
     },
     include: includeAddressAndPrices
   })
-  void await cacheManyTxs(txs)
-  return txs
+  void await cacheManyTxs(txsWithPrices)
+  return txsWithPrices
 }
 
 export async function syncAllTransactionsForAddress (address: Address, maxTransactionsToReturn: number): Promise<TransactionWithAddressAndPrices[]> {
