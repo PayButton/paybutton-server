@@ -1,8 +1,4 @@
 #!/bin/sh
-echo pwd
-pwd
-echo ls
-ls
 . .env
 . .env.local
 yarn || exit 1
