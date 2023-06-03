@@ -1,10 +1,10 @@
 import prisma from 'prisma/clientInstance'
-import { Prisma, Transaction } from '@prisma/client'
+import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, GetAddressTransactionsParameters } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced, fetchAddressById } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, PRICE_CONNECT_MAX_N } from 'constants/index'
 import { cacheManyTxs } from 'redis/dashboardCache'
 import _ from 'lodash'
 
@@ -171,12 +171,16 @@ export async function connectTransactionToPrices (tx: Transaction, prisma: Prism
 }
 
 export async function connectTransactionsListToPrices (txList: Transaction[]): Promise<void> {
-  return await prisma.$transaction(async (p) => {
-    const promises = txList.map(async (tx) => {
-      return await connectTransactionToPrices(tx, p)
-    })
-    void await Promise.all(promises)
-  })
+  let completedPromises = 0
+  while (completedPromises < txList.length) {
+    const promises = txList
+      .slice(completedPromises, completedPromises + PRICE_CONNECT_MAX_N)
+      .map(async (tx) =>
+        await connectTransactionToPrices(tx, prisma)
+      )
+    const completed = await Promise.all(promises)
+    completedPromises += completed.length
+  }
 }
 
 export async function createManyTransactions (
@@ -210,8 +214,8 @@ export async function createManyTransactions (
   return txs
 }
 
-export async function syncAllTransactionsForAddress (addressString: string, maxTransactionsToReturn: number): Promise<TransactionWithAddressAndPrices[]> {
-  addressString = parseAddress(addressString)
+export async function syncAllTransactionsForAddress (address: Address, maxTransactionsToReturn: number): Promise<TransactionWithAddressAndPrices[]> {
+  const addressString = parseAddress(address.address)
   const parameters = {
     addressString,
     start: 0,
@@ -255,4 +259,15 @@ export async function deleteTransactions (transactions: TransactionWithAddressAn
       }
     })
   ))
+}
+
+export async function fetchAllTransactionsWithNoPrices (): Promise<Transaction[]> {
+  const x = await prisma.transaction.findMany({
+    where: {
+      prices: {
+        none: {}
+      }
+    }
+  })
+  return x
 }

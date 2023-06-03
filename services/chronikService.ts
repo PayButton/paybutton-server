@@ -7,7 +7,7 @@ import { TransactionWithAddressAndPrices, createManyTransactions, deleteTransact
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
-import { fetchAddressBySubstring } from './addressService'
+import { fetchAddressBySubstring, getLatestTxTimestampForAddress } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData, broadcastTxInsertion } from 'sse-service/client'
 
@@ -89,6 +89,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     let totalFetchedConfirmedTransactions = 0
     let page = Math.floor(parameters.start / pageSize)
     let insertedTransactions: TransactionWithAddressAndPrices[] = []
+    const latestTimestamp = await getLatestTxTimestampForAddress(address.id) ?? 0
 
     while (totalFetchedConfirmedTransactions < parameters.maxTransactionsToReturn) {
       const { type, hash160 } = toHash160(address.address)
@@ -99,6 +100,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
       transactions = transactions.filter(this.txThesholdFilter(address))
 
       if (transactions.length === 0) break
+      const latestBlockTimestamp = Number(transactions[0].block?.timestamp)
+      if (latestBlockTimestamp < latestTimestamp) break
 
       const confirmedTransactions = transactions.filter(t => t.block !== undefined)
       const unconfirmedTransactions = transactions.filter(t => t.block === undefined)

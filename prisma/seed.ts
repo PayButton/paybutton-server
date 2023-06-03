@@ -12,7 +12,7 @@ import { createDevUserRawQueryList, userProfiles } from './seeds/devUser'
 import { getTxsFromFile } from './seeds/transactions'
 const prisma = new PrismaClient()
 
-async function ignoreDuplicate (callback: Function): Promise<void> {
+async function ignoreConflicts (callback: Function): Promise<void> {
   try {
     await callback()
   } catch (err: any) {
@@ -65,16 +65,20 @@ async function main (): Promise<void> {
   }
 
   // PRODUCTION
-  await ignoreDuplicate(
+  await ignoreConflicts(
     async () => await prisma.address.createMany({ data: productionAddresses })
   )
   const productionTxs = await getTxsFromFile()
   if (productionTxs !== undefined) {
-    await ignoreDuplicate(async () => {
+    await ignoreConflicts(async () => {
       await prisma.transaction.createMany({ data: productionTxs, skipDuplicates: true })
-      for (const addrId of new Set(productionTxs.map(tx => tx.addressId))) {
-        await prisma.address.update({ where: { id: addrId }, data: { lastSynced: new Date() } })
-      }
+      await prisma.transaction.findMany({
+        where: {
+          hash: {
+            in: productionTxs.map(tx => tx.hash)
+          }
+        }
+      })
     })
   } else {
     console.log('No production txs found to seed.')
