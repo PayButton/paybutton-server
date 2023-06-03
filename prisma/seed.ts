@@ -65,21 +65,19 @@ async function main (): Promise<void> {
   }
 
   // PRODUCTION
-  if (process.env.NODE_ENV === 'production') {
-    await ignoreDuplicate(
-      async () => await prisma.address.createMany({ data: productionAddresses })
-    )
-    const productionTxs = await getTxsFromFile()
-    if (productionTxs !== undefined) {
-      await ignoreDuplicate(async () => {
-        await prisma.transaction.createMany({ data: productionTxs, skipDuplicates: true })
-        for (const addrId of new Set(productionTxs.map(tx => tx.addressId))) {
-          await prisma.address.update({ where: { id: addrId }, data: { lastSynced: new Date() } })
-        }
-      })
-    } else {
-      console.log('No production txs found to seed.')
-    }
+  await ignoreDuplicate(
+    async () => await prisma.address.createMany({ data: productionAddresses })
+  )
+  const productionTxs = await getTxsFromFile()
+  if (productionTxs !== undefined) {
+    await ignoreDuplicate(async () => {
+      await prisma.transaction.createMany({ data: productionTxs, skipDuplicates: true })
+      for (const addrId of new Set(productionTxs.map(tx => tx.addressId))) {
+        await prisma.address.update({ where: { id: addrId }, data: { lastSynced: new Date() } })
+      }
+    })
+  } else {
+    console.log('No production txs found to seed.')
   }
 }
 
