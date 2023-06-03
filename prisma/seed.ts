@@ -65,25 +65,23 @@ async function main (): Promise<void> {
   }
 
   // PRODUCTION
-  if (process.env.NODE_ENV === 'production') {
-    await ignoreConflicts(
-      async () => await prisma.address.createMany({ data: productionAddresses })
-    )
-    const productionTxs = await getTxsFromFile()
-    if (productionTxs !== undefined) {
-      await ignoreConflicts(async () => {
-        await prisma.transaction.createMany({ data: productionTxs, skipDuplicates: true })
-        await prisma.transaction.findMany({
-          where: {
-            hash: {
-              in: productionTxs.map(tx => tx.hash)
-            }
+  await ignoreConflicts(
+    async () => await prisma.address.createMany({ data: productionAddresses })
+  )
+  const productionTxs = await getTxsFromFile()
+  if (productionTxs !== undefined) {
+    await ignoreConflicts(async () => {
+      await prisma.transaction.createMany({ data: productionTxs, skipDuplicates: true })
+      await prisma.transaction.findMany({
+        where: {
+          hash: {
+            in: productionTxs.map(tx => tx.hash)
           }
-        })
+        }
       })
-    } else {
-      console.log('No production txs found to seed.')
-    }
+    })
+  } else {
+    console.log('No production txs found to seed.')
   }
 }
 
