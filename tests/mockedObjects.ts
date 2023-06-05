@@ -371,6 +371,8 @@ export const mockedTransaction = {
   },
   amount: new Prisma.Decimal('4.31247724'),
   timestamp: 1657130467,
+  createdAt: new Date('2022-11-02T15:18:42.000Z'),
+  updatedAt: new Date('2022-11-02T15:18:42.000Z'),
   prices: [
     mockedPriceOnTransaction
   ]
@@ -382,6 +384,8 @@ export const mockedTransactionList = [
     hash: 'Yh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
     confirmed: true,
     addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
+    createdAt: new Date('2022-11-02T15:18:42.000Z'),
+    updatedAt: new Date('2022-11-02T15:18:42.000Z'),
     amount: new Prisma.Decimal('4.31247724'),
     timestamp: 1657130467
   },
@@ -390,6 +394,8 @@ export const mockedTransactionList = [
     hash: 'hh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
     confirmed: true,
     addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
+    createdAt: new Date('2022-11-02T15:18:42.000Z'),
+    updatedAt: new Date('2022-11-02T15:18:42.000Z'),
     amount: new Prisma.Decimal('1.5'),
     timestamp: 1657130467
   },
@@ -398,6 +404,8 @@ export const mockedTransactionList = [
     hash: '5h5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
     confirmed: true,
     addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
+    createdAt: new Date('2022-11-02T15:18:42.000Z'),
+    updatedAt: new Date('2022-11-02T15:18:42.000Z'),
     amount: new Prisma.Decimal('0.2'),
     timestamp: 1657130467
   }
