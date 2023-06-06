@@ -6,7 +6,7 @@ export const appInfo = {
   apiDomain: process.env.API_DOMAIN,
   websiteBasePath: `${websiteBasePath}/auth`,
   websiteDomain: process.env.WEBSITE_DOMAIN ?? 'localhost:3000',
-  sseBaseURL: process.env.SSE_BASE_URL ?? 'localhost:5000',
+  sseBaseURL: process.env.SSE_BASE_URL ?? 'http://localhost:5000',
   showTestNetworks: JSON.parse(process.env.SHOW_TEST_NETWORKS ?? 'false'),
   priceAPIURL: process.env.PRICE_API_URL ?? '',
   priceAPIToken: process.env.PRICE_API_TOKEN ?? '',
