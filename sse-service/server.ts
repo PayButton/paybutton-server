@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express'
 import { Server } from 'http'
 import cors from 'cors'
 import { BroadcastTxData } from './client'
+import { appInfo } from '../config/appInfo'
 
 const app = express()
 app.use(cors())
@@ -46,5 +47,5 @@ app.post('/broadcast-new-tx', express.json(), (req: Request, res: Response) => {
 })
 
 server.listen(5000, () => {
-  console.log('SSE service listening on http://localhost:5000')
+  console.log(`SSE service listening on ${appInfo.sseBaseURL}`)
 })
