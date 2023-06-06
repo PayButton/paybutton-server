@@ -6,6 +6,7 @@ import { appInfo } from '../config/appInfo'
 
 const app = express()
 app.use(cors())
+app.use(express.json({ limit: '1mb' }))
 app.options('/events', cors())
 const server = new Server(app)
 

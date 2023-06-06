@@ -96,8 +96,8 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
             setTransactions(prevTransactions => ({
               ...prevTransactions,
               [addr]: [...prevTransactions[addr]
-                .filter(tx => tx.hash !== insertedTxs[addr].hash), // avoid keeping unconfirmed tx together with confirmed
-              insertedTxs[addr]]
+                .filter(tx => !insertedTxs[addr].map(newTx => newTx.hash).includes(tx.hash)), // avoid keeping unconfirmed tx together with confirmed
+              ...insertedTxs[addr]]
             }))
           }
         }

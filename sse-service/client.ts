@@ -2,7 +2,7 @@ import { appInfo } from '../config/appInfo'
 import { KeyValueT } from 'constants/index'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 
-export type BroadcastTxData = KeyValueT<TransactionWithAddressAndPrices>
+export type BroadcastTxData = KeyValueT<TransactionWithAddressAndPrices[]>
 
 export async function broadcastTxInsertion (insertedTxs: BroadcastTxData): Promise<Response> {
   return await fetch(`${appInfo.sseBaseURL}/broadcast-new-tx`, {
