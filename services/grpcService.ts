@@ -254,7 +254,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     }
   }
 
-  private async getPrismaTransactionsForSubscribedAddresses (transaction: Transaction.AsObject, confirmed: boolean): Promise<AddressWithTransaction[]> {
+  private async getAddressesForTransaction (transaction: Transaction.AsObject, confirmed: boolean): Promise<AddressWithTransaction[]> {
     const addressWithTransactions: AddressWithTransaction[] = await Promise.all(Object.values(this.subscribedAddresses).map(
       async address => {
         return {
@@ -275,7 +275,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     // get new confirmed transactions
     const confirmedTransaction = data.getConfirmedTransaction()?.toObject()
     if (confirmedTransaction != null) {
-      addressWithConfirmedTransactions = await this.getPrismaTransactionsForSubscribedAddresses(confirmedTransaction, true)
+      addressWithConfirmedTransactions = await this.getAddressesForTransaction(confirmedTransaction, true)
 
       // remove unconfirmed transactions that have now been confirmed
       const transactionsToDelete = await fetchUnconfirmedTransactions(base64HashToHex(confirmedTransaction.hash as string))
@@ -286,7 +286,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     const unconfirmedTransaction = data.getUnconfirmedTransaction()?.toObject()
     if (unconfirmedTransaction != null) {
       const parsedUnconfirmedTransaction = this.parseMempoolTx(unconfirmedTransaction)
-      addressWithUnconfirmedTransactions = await this.getPrismaTransactionsForSubscribedAddresses(parsedUnconfirmedTransaction, false)
+      addressWithUnconfirmedTransactions = await this.getAddressesForTransaction(parsedUnconfirmedTransaction, false)
     }
 
     const insertedTxs: BroadcastTxData = {}
@@ -294,7 +294,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
       [...addressWithUnconfirmedTransactions, ...addressWithConfirmedTransactions].map(async addressWithTransaction => {
         const tx = await createTransaction(addressWithTransaction.transaction)
         if (tx !== undefined) {
-          insertedTxs[addressWithTransaction.address.address] = tx
+          insertedTxs[addressWithTransaction.address.address] = [tx]
         }
         return tx
       })

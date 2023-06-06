@@ -75,7 +75,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
   private async getTransactionFromChronikTransaction (transaction: Tx, address: Address): Promise<Prisma.TransactionUncheckedCreateInput> {
     return {
-      hash: await transaction.txid,
+      hash: transaction.txid,
       amount: await this.getTransactionAmount(transaction, address.address),
       timestamp: transaction.block !== undefined ? parseInt(transaction.block.timestamp) : parseInt(transaction.timeFirstSeen),
       addressId: address.id,
@@ -85,6 +85,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
   public async syncTransactionsForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
     const address = await fetchAddressBySubstring(parameters.addressString)
+    const addressString = address.address
     const pageSize = FETCH_N
     let totalFetchedConfirmedTransactions = 0
     let page = Math.floor(parameters.start / pageSize)
@@ -92,7 +93,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     const latestTimestamp = await getLatestTxTimestampForAddress(address.id) ?? 0
 
     while (totalFetchedConfirmedTransactions < parameters.maxTransactionsToReturn) {
-      const { type, hash160 } = toHash160(address.address)
+      const { type, hash160 } = toHash160(addressString)
       let transactions = (await this.chronik.script(type, hash160).history(page, pageSize)).txs
 
       // filter out transactions that happened before a certain date set in constants/index,
@@ -118,6 +119,9 @@ export class ChronikBlockchainClient implements BlockchainClient {
       )
 
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
+      const broadcastTxData: BroadcastTxData = {}
+      broadcastTxData[addressString] = persistedTransactions
+      await broadcastTxInsertion(broadcastTxData)
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
@@ -184,13 +188,13 @@ export class ChronikBlockchainClient implements BlockchainClient {
     // create unconfirmed or confirmed transaction
     if (msg.type === 'AddedToMempool' || msg.type === 'Confirmed') {
       const transaction = await this.chronik.tx(msg.txid)
-      const addressesWithTransactions = await this.getPrismaTransactionsForSubscribedAddresses(transaction)
+      const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
       const insertedTxs: BroadcastTxData = {}
       await Promise.all(
         addressesWithTransactions.map(async addressWithTransaction => {
           const tx = await createTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
-            insertedTxs[addressWithTransaction.address.address] = tx
+            insertedTxs[addressWithTransaction.address.address] = [tx]
           }
           return tx
         })
@@ -199,7 +203,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
-  private async getPrismaTransactionsForSubscribedAddresses (transaction: Tx): Promise<AddressWithTransaction[]> {
+  private async getAddressesForTransaction (transaction: Tx): Promise<AddressWithTransaction[]> {
     const addressesWithTransactions: AddressWithTransaction[] = await Promise.all(Object.values(this.subscribedAddresses).map(
       async address => {
         return {
