@@ -13,6 +13,7 @@ import { useRouter } from 'next/router'
 import { BroadcastTxData } from 'sse-service/client'
 import { KeyValueT } from 'constants/index'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
+import { appInfo } from 'config/appInfo'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -118,7 +119,7 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
         void fetchTransactions(connector.address.address)
         addressesToListen.push(connector.address.address)
       }
-      const es = new EventSource('http://localhost:5000/events')
+      const es = new EventSource(`${appInfo.sseBaseURL}/events`)
       void createListeners(es, addressesToListen)
       return () => es.close()
     }
