@@ -15,8 +15,12 @@ interface IProps {
   addressTransactions: {
     [address: string]: Transaction
   }
+  addressSynced: {
+    [address: string]: boolean
+  }
 }
-export default ({ addressTransactions }: IProps): FunctionComponent => {
+
+export default ({ addressTransactions, addressSynced }: IProps): FunctionComponent => {
   const columns = useMemo(
     () => [
       {
@@ -77,7 +81,10 @@ export default ({ addressTransactions }: IProps): FunctionComponent => {
         <div key={transactionAddress}>
           <div className={style.tablelabel}>{transactionAddress}</div>
           { addressTransactions[transactionAddress].length === 0
-            ? <div className={style.transaction_ctn}>No transactions yet</div>
+            ? <div className={style.transaction_ctn}> {
+              addressSynced[transactionAddress] ? 'No transactions yet' : 'Syncing address...'
+              }
+            </div>
             : <TableContainer columns={columns} data={addressTransactions[transactionAddress]} />
         }
       </div>

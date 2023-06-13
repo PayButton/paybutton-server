@@ -61,6 +61,7 @@ export default function Home ({ paybuttonId }: PaybuttonProps): React.ReactEleme
 const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
   const [transactions, setTransactions] = useState<KeyValueT<TransactionWithAddressAndPrices[]>>({})
   const [paybutton, setPaybutton] = useState(undefined as PaybuttonWithAddresses | undefined)
+  const [isSynced, setIsSynced] = useState<KeyValueT<boolean>>({})
   const router = useRouter()
 
   const fetchTransactions = async (address: string): Promise<void> => {
@@ -78,8 +79,13 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
       method: 'GET'
     })
     if (res.status === 200) {
-      const paybuttonData = await res.json()
+      const paybuttonData = await res.json() as PaybuttonWithAddresses
       setPaybutton(paybuttonData)
+      const newIsSynced = { ...isSynced }
+      paybuttonData.addresses.forEach(addr => {
+        newIsSynced[addr.address.address] = addr.address.lastSynced != null
+      })
+      setIsSynced(newIsSynced)
     }
   }
 
@@ -131,7 +137,7 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
         <div className='back_btn' onClick={() => router.back()}>Back</div>
         <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton}/>
         <h4>Transactions</h4>
-        <AddressTransactions addressTransactions={transactions} />
+        <AddressTransactions addressTransactions={transactions} addressSynced={isSynced}/>
       </>
     )
   }
