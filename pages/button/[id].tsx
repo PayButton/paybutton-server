@@ -61,6 +61,7 @@ export default function Home ({ paybuttonId }: PaybuttonProps): React.ReactEleme
 const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
   const [transactions, setTransactions] = useState<KeyValueT<TransactionWithAddressAndPrices[]>>({})
   const [paybutton, setPaybutton] = useState(undefined as PaybuttonWithAddresses | undefined)
+  const [isSynced, setIsSynced] = useState<KeyValueT<boolean>>({})
   const router = useRouter()
 
   const fetchTransactions = async (address: string): Promise<void> => {
@@ -73,13 +74,26 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
     }
   }
 
+  const updateIsSynced = (addressStringList: string[]): void => {
+    const newIsSynced = { ...isSynced }
+    addressStringList.forEach((addressString) => {
+      newIsSynced[addressString] = true
+    })
+    setIsSynced(newIsSynced)
+  }
+
   const fetchPaybutton = async (): Promise<void> => {
     const res = await fetch(`/api/paybutton/${props.paybuttonId}`, {
       method: 'GET'
     })
     if (res.status === 200) {
-      const paybuttonData = await res.json()
+      const paybuttonData = await res.json() as PaybuttonWithAddresses
       setPaybutton(paybuttonData)
+      const newIsSynced = { ...isSynced }
+      paybuttonData.addresses.forEach(addr => {
+        newIsSynced[addr.address.address] = addr.address.lastSynced != null
+      })
+      setIsSynced(newIsSynced)
     }
   }
 
@@ -88,6 +102,7 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
       (event: MessageEvent) => {
         const insertedTxs: BroadcastTxData = JSON.parse(event.data)
         const updatedAddresses: string[] = Object.keys(insertedTxs)
+        updateIsSynced(updatedAddresses)
         const affectedAddresses = addressList.filter(el => updatedAddresses.includes(el))
         const refresh = affectedAddresses.length > 0
         if (paybutton != null && refresh) {
@@ -131,7 +146,7 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
         <div className='back_btn' onClick={() => router.back()}>Back</div>
         <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton}/>
         <h4>Transactions</h4>
-        <AddressTransactions addressTransactions={transactions} />
+        <AddressTransactions addressTransactions={transactions} addressSynced={isSynced}/>
       </>
     )
   }
