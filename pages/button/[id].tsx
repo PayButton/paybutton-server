@@ -74,6 +74,14 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
     }
   }
 
+  const updateIsSynced = (addressStringList: string[]): void => {
+    const newIsSynced = { ...isSynced }
+    addressStringList.forEach((addressString) => {
+      newIsSynced[addressString] = true
+    })
+    setIsSynced(newIsSynced)
+  }
+
   const fetchPaybutton = async (): Promise<void> => {
     const res = await fetch(`/api/paybutton/${props.paybuttonId}`, {
       method: 'GET'
@@ -94,6 +102,7 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
       (event: MessageEvent) => {
         const insertedTxs: BroadcastTxData = JSON.parse(event.data)
         const updatedAddresses: string[] = Object.keys(insertedTxs)
+        updateIsSynced(updatedAddresses)
         const affectedAddresses = addressList.filter(el => updatedAddresses.includes(el))
         const refresh = affectedAddresses.length > 0
         if (paybutton != null && refresh) {
