@@ -144,7 +144,7 @@ export const syncAndSubscribeUnsyncedAddressesWorker = async (queue: Queue): Pro
         if (failedAddresses.length > 0) {
           console.error(`automatic syncing of addresses failed for addresses: ${JSON.stringify(failedAddressesWithErrors)}`)
         }
-        job.data.syncedAddresses = newAddresses.filter(addr => addr.address in failedAddresses)
+        job.data.syncedAddresses = newAddresses.filter(addr => !failedAddresses.includes(addr.address))
       }
 
       // add same job to the queue again, so it runs repeating
