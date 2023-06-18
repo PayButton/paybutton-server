@@ -7,7 +7,6 @@ import style from '../Wallet/wallet.module.css'
 import style_pb from 'components/Paybutton/paybutton.module.css'
 import Plus from 'assets/plus.png'
 import axios from 'axios'
-import { appInfo } from 'config/appInfo'
 import { UserNetworksInfo } from 'services/networkService'
 
 interface IProps {
@@ -27,8 +26,8 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId, 
     params.userId = userId
     params.addressIdList = selectedAddressIdList
     try {
-      void await axios.post(`${appInfo.websiteDomain}/api/wallet`, params)
-      refreshWalletList()
+      void await axios.post(`/api/wallet`, params)
+      void refreshWalletList()
       setError('')
     } catch (err: any) {
       setError(err.response.data.message)

@@ -9,7 +9,6 @@ import TrashIcon from 'assets/trash-icon.png'
 import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import { AddressWithPaybuttons } from 'services/addressService'
 import axios from 'axios'
-import { appInfo } from 'config/appInfo'
 import { UserNetworksInfo } from 'services/networkService'
 
 interface IProps {
@@ -34,7 +33,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
       params.name = wallet.name
     }
     try {
-      void await axios.patch(`${appInfo.websiteDomain}/api/wallet/${wallet.id}`, params)
+      void await axios.patch(`/api/wallet/${wallet.id}`, params)
       refreshWalletList()
       setError('')
     } catch (err: any) {
@@ -43,7 +42,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
   }
 
   async function onDelete (walletId: string): Promise<void> {
-    const res = await axios.delete<WalletWithAddressesWithPaybuttons>(`${appInfo.websiteDomain}/api/wallet/${walletId}`)
+    const res = await axios.delete<WalletWithAddressesWithPaybuttons>(`/api/wallet/${walletId}`)
     if (res.status === 200) {
       refreshWalletList()
     }
