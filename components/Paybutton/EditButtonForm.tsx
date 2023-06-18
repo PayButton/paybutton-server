@@ -39,7 +39,7 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
       params.name = paybutton.name
     }
     try {
-      void await axios.patch(`${appInfo.websiteDomain}/api/paybutton/${paybutton.id}`, params)
+      void await axios.patch(`/api/paybutton/${paybutton.id}`, params)
       refreshPaybutton()
     } catch (err: any) {
       setError(err.response.data.message)
@@ -48,7 +48,7 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
 
   async function onDelete (paybuttonId: string): Promise<void> {
     try {
-      const res = await axios.delete<PaybuttonWithAddresses>(`${appInfo.websiteDomain}/api/paybutton/${paybuttonId}`)
+      const res = await axios.delete<PaybuttonWithAddresses>(`/api/paybutton/${paybuttonId}`)
       if (res.status === 200) {
         void Router.push(`${appInfo.websiteDomain}/buttons/`)
       }
