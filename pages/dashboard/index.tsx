@@ -35,6 +35,7 @@ const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
+  console.log('a')
   supertokensNode.init(SuperTokensConfig.backendConfig())
   let session
   try {
@@ -59,6 +60,7 @@ interface PaybuttonsProps {
 }
 
 export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElement {
+  console.log('opa')
   const [dashboardData, setDashboardData] = useState()
   const [activePeriod, setActivePeriod] = useState()
   useEffect(() => {

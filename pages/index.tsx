@@ -19,13 +19,18 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   supertokensNode.init(SuperTokensConfig.backendConfig())
   let session
   try {
+    console.log('tentando session')
     session = await Session.getSession(context.req, context.res)
+    console.log('sucesso session')
   } catch (err: any) {
     if (err.type === Session.Error.TRY_REFRESH_TOKEN) {
+      console.log('1')
       return { props: { fromSupertokens: 'needs-refresh' } }
     } else if (err.type === Session.Error.UNAUTHORISED) {
+      console.log('2')
       return { props: {} }
     } else {
+      console.log('3')
       throw err
     }
   }
@@ -40,17 +45,19 @@ interface HomeProps {
 }
 
 function ProtectedPage (props: HomeProps): React.Component {
+  console.log('pp')
   return (
     <Dashboard />
   )
 }
 
 export default function Home (props: HomeProps): React.Component {
+  console.log('home')
   return (
-   
+
     <ThirdPartyEmailPasswordAuthNoSSR>
       <ProtectedPage userId={props.userId} />
     </ThirdPartyEmailPasswordAuthNoSSR>
-    
+
   )
 }

@@ -13,7 +13,9 @@ const SuperTokensComponentNoSSR = dynamic(
 
 export default function Auth() {
   useEffect(() => {
-    if (SuperTokens.canHandleRoute() === false) {
+    const isCanHandleRoute = SuperTokens.canHandleRoute()
+    console.log('can handle route?', isCanHandleRoute)
+    if (isCanHandleRoute === false) {
       redirectToAuth()
     }
   }, [])
@@ -26,6 +28,7 @@ export default function Auth() {
       </Head>
 
       <div className='login_ctn'>
+        <span> ok </span>
       <Image src={logoImageSource} alt='PayButton' width={200} height={37} />
         <SuperTokensComponentNoSSR />
       </div>
