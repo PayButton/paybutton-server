@@ -20,12 +20,16 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   let session
   try {
     session = await Session.getSession(context.req, context.res)
+    console.log('sucesso session')
   } catch (err: any) {
     if (err.type === Session.Error.TRY_REFRESH_TOKEN) {
+      console.log('1')
       return { props: { fromSupertokens: 'needs-refresh' } }
     } else if (err.type === Session.Error.UNAUTHORISED) {
+      console.log('2')
       return { props: {} }
     } else {
+      console.log('3')
       throw err
     }
   }

@@ -21,11 +21,15 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
 
   useEffect(() => {
     async function doRefresh (): Promise<void> {
+      console.log('vai tentar o refresh')
       if (pageProps.fromSupertokens === 'needs-refresh') {
+        console.log('needs')
         if (await Session.attemptRefreshingSession()) {
+          console.log('relaoding location')
           location.reload()
         } else {
           // user has been logged out
+          console.log('redir to auth')
           void redirectToAuth()
         }
       }
