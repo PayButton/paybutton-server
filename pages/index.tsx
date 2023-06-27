@@ -53,7 +53,7 @@ function ProtectedPage (props: HomeProps): React.Component {
 }
 
 export default function Home (props: HomeProps): React.Component {
-  console.log('home')
+  console.log('home', props)
   return (
 
     <ThirdPartyEmailPasswordAuthNoSSR>
