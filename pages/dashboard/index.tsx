@@ -60,7 +60,7 @@ interface PaybuttonsProps {
 }
 
 export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElement {
-  console.log('opa')
+  console.log('dashboard')
   const [dashboardData, setDashboardData] = useState()
   const [activePeriod, setActivePeriod] = useState()
   useEffect(() => {
