@@ -43,7 +43,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
         if (serverOnly) throw new Error(NO_ADDRESS_FOUND_404.message)
 
         const addressObject = await upsertAddress(address)
-        await syncAndSubscribeAddresses(addressObject, NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY)
+        await syncAndSubscribeAddresses([addressObject], NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY)
       }
       const transactions = await fetchAddressTransactions(address)
 

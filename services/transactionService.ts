@@ -254,8 +254,14 @@ export async function syncAllTransactionsForAddress (address: Address, maxTransa
   return insertedTransactions
 }
 
-export const syncAndSubscribeAddresses = async (addresses: Address[], maxTransactionsToReturn?: number): Promise<KeyValueT<string>> => {
+interface SyncAndSubscriptionReturn {
+  failedAddressesWithErrors: KeyValueT<string>
+  syncedTxs: KeyValueT<TransactionWithAddressAndPrices[]>
+}
+
+export const syncAndSubscribeAddresses = async (addresses: Address[], maxTransactionsToReturn?: number): Promise<SyncAndSubscriptionReturn> => {
   const failedAddressesWithErrors: KeyValueT<string> = {}
+  const syncedTxs: KeyValueT<TransactionWithAddressAndPrices[]> = {}
   let txsToSave: Prisma.TransactionCreateManyInput[] = []
   if (maxTransactionsToReturn === undefined) maxTransactionsToReturn = Infinity
 
@@ -264,9 +270,9 @@ export const syncAndSubscribeAddresses = async (addresses: Address[], maxTransac
     addresses.map(async (addr) => {
       try {
         await subscribeAddressesAddTransactions([addr])
-        const txs = await syncAllTransactionsForAddress(addr, maxTransactionsToReturn!)
+        syncedTxs[addr.address] = await syncAllTransactionsForAddress(addr, maxTransactionsToReturn!)
         if (productionAddressesIds.includes(addr.id)) {
-          txsToSave = txsToSave.concat(txs)
+          txsToSave = txsToSave.concat(syncedTxs[addr.address])
         }
       } catch (err: any) {
         failedAddressesWithErrors[addr.address] = err.stack
@@ -276,7 +282,10 @@ export const syncAndSubscribeAddresses = async (addresses: Address[], maxTransac
   if (txsToSave.length !== 0) {
     await appendTxsToFile(txsToSave)
   }
-  return failedAddressesWithErrors
+  return {
+    failedAddressesWithErrors,
+    syncedTxs
+  }
 }
 
 export async function fetchUnconfirmedTransactions (hash: string): Promise<TransactionWithAddressAndPrices[]> {

@@ -13,7 +13,7 @@ const syncAndSubscribeAllAddressTransactionsForNetworkJob = async (job: Job): Pr
   try {
     let addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
     addresses = addresses.filter(addr => addr.lastSynced == null)
-    failedAddressesWithErrors = await transactionService.syncAndSubscribeAddresses(addresses)
+    failedAddressesWithErrors = (await transactionService.syncAndSubscribeAddresses(addresses)).failedAddressesWithErrors
   } catch (err: any) {
     const parsedError = parseError(err)
     if (parsedError.message === RESPONSE_MESSAGES.TRANSACTION_ALREADY_EXISTS_FOR_ADDRESS_400.message) {
