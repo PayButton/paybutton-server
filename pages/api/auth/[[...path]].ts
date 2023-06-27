@@ -10,6 +10,10 @@ export default async function superTokens (req: Request, res: Response): Promise
   console.log('entrou no auth verify com', req.query)
   await superTokensNextWrapper(
     async (next) => {
+      res.setHeader(
+        "Cache-Control",
+        "no-cache, no-store, max-age=0, must-revalidate"
+      );
       console.log('entrou no auth verify mid com', req.query)
       await middleware()(req, res, next)
     },
