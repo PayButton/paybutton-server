@@ -35,8 +35,10 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
       }
     }
     void doRefresh()
+    console.log('refresh done')
   }, [pageProps.fromSupertokens])
   if (pageProps.fromSupertokens === 'needs-refresh') {
+    console.log("needs refresh!")
     return null
   }
   return (

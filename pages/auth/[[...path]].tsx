@@ -28,7 +28,7 @@ export default function Auth() {
       </Head>
 
       <div className='login_ctn'>
-        <span> ok </span>
+        <span> tmp </span>
       <Image src={logoImageSource} alt='PayButton' width={200} height={37} />
         <SuperTokensComponentNoSSR />
       </div>
