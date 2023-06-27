@@ -8,7 +8,6 @@ import Session from 'supertokens-node/recipe/session'
 import Dashboard from 'pages/dashboard'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
-  console.log('no ssr')
   new Promise((resolve, reject) =>
     console.log('no ssr will resolve')
     resolve(ThirdPartyEmailPassword.ThirdPartyEmailPasswordAuth)
