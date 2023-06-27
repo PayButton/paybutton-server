@@ -16,6 +16,7 @@ export default function Auth() {
     const isCanHandleRoute = SuperTokens.canHandleRoute()
     console.log('can handle route?', isCanHandleRoute)
     if (isCanHandleRoute === false) {
+      console.log('cant handle route!')
       redirectToAuth()
     }
   }, [])
