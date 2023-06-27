@@ -124,7 +124,9 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
 
 export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'GET') {
+    console.log('setting session')
     await setSession(req, res)
+    console.log('session set')
     const userId = req.session.userId
 
     res.status(200).json(await getUserDashboardData(userId))
