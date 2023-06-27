@@ -254,15 +254,17 @@ export async function syncAllTransactionsForAddress (address: Address, maxTransa
   return insertedTransactions
 }
 
-export const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<KeyValueT<string>> => {
+export const syncAndSubscribeAddresses = async (addresses: Address[], maxTransactionsToReturn?: number): Promise<KeyValueT<string>> => {
   const failedAddressesWithErrors: KeyValueT<string> = {}
   let txsToSave: Prisma.TransactionCreateManyInput[] = []
+  if (maxTransactionsToReturn === undefined) maxTransactionsToReturn = Infinity
+
   const productionAddressesIds = productionAddresses.map(addr => addr.id)
   await Promise.all(
     addresses.map(async (addr) => {
       try {
         await subscribeAddressesAddTransactions([addr])
-        const txs = await syncAllTransactionsForAddress(addr, Infinity)
+        const txs = await syncAllTransactionsForAddress(addr, maxTransactionsToReturn!)
         if (productionAddressesIds.includes(addr.id)) {
           txsToSave = txsToSave.concat(txs)
         }

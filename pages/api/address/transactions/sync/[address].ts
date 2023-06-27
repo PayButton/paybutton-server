@@ -1,7 +1,7 @@
 import { NextApiResponse, NextApiRequest } from 'next'
 import { parseAddress } from 'utils/validators'
 import { NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY, RESPONSE_MESSAGES } from 'constants/index'
-import { syncAllTransactionsForAddress } from 'services/transactionService'
+import { syncAndSubscribeAddresses } from 'services/transactionService'
 import { upsertAddress } from 'services/addressService'
 import Cors from 'cors'
 
@@ -35,7 +35,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       }
       const addressString = parseAddress(req.query.address as string)
       const address = await upsertAddress(addressString)
-      const transactions = await syncAllTransactionsForAddress(address, NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY)
+      const transactions = await syncAndSubscribeAddresses(address, NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY)
       res.status(200).send(transactions)
     } catch (err: any) {
       switch (err.message) {
