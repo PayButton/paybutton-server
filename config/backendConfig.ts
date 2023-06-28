@@ -1,6 +1,6 @@
 import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword'
 import SessionNode from 'supertokens-node/recipe/session'
-import { appInfo } from './appInfo'
+import { backEndAppInfo } from './appInfo'
 import { TypeInput } from 'supertokens-node/types'
 import * as walletService from 'services/walletService'
 
@@ -63,7 +63,7 @@ export const backendConfig = (): TypeInput => {
       apiKey: process.env.SUPERTOKENS_API_KEY,
       connectionURI
     },
-    appInfo,
+    appInfo: backEndAppInfo,
     recipeList: [
       ThirdPartyEmailPasswordNode.init({
         providers: getSocialLoginProviders(),
