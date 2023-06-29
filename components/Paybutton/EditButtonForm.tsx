@@ -9,7 +9,7 @@ import EditIcon from 'assets/edit-icon.png'
 import TrashIcon from 'assets/trash-icon.png'
 import axios from 'axios'
 import Router from 'next/router'
-import { appInfo } from 'config/appInfo'
+import config from 'config'
 
 interface IProps {
   paybutton: PaybuttonWithAddresses
@@ -50,7 +50,7 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
     try {
       const res = await axios.delete<PaybuttonWithAddresses>(`/api/paybutton/${paybuttonId}`)
       if (res.status === 200) {
-        void Router.push(`${appInfo.websiteDomain}/buttons/`)
+        void Router.push(`${config.websiteDomain}/buttons/`)
       }
     } catch (err: any) {
       setDeleteError(err.response.data.message)

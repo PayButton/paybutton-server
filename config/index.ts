@@ -1,7 +1,7 @@
 import localConfig from '../paybutton-config.json'
 
 interface Config {
-  appName?: string
+  appName: string
   apiDomain: string
   websiteDomain: string
 
