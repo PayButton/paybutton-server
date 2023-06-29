@@ -1056,9 +1056,11 @@ describe('GET /api/paybutton/[id]', () => {
   }
 
   it('Find paybutton for created ids', async () => {
-    for (const id of createdPaybuttonsIds) {
+    for (let i = 0; i < 4; i++) {
+      const id = createdPaybuttonsIds[i]
+      const userId = i === 3 ? userB : userA
       if (baseRequestOptions.query != null) baseRequestOptions.query.id = id
-      const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
+      const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint, userId)
       const responseData = res._getJSONData()
       expect(res.statusCode).toBe(200)
       expect(responseData.addresses).toEqual(
