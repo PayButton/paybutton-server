@@ -1,3 +1,5 @@
+const paybuttonConfig = require('./paybutton-config.json')
+
 const {
     PHASE_DEVELOPMENT_SERVER,
     PHASE_PRODUCTION_BUILD,
@@ -16,42 +18,12 @@ const {
     const isStaging =
       phase === PHASE_PRODUCTION_BUILD && process.env.STAGING === '1'
   
-    console.log(`isDev:${isDev}  isBuild:${isBuild}  isProd:${isProd}  isStaging:${isStaging}`)
     const branch = process.env.BRANCH || 'master'
-    const base_url = process.env.BASE_URL || 'paybutton.io'
-    const env = {
-      APP_URL: (() => {
-        if (isDev) return process.env.WEBSITE_DOMAIN ?? 'http://localhost:3000'
-        if (isProd || isBuild) {
-          return branch === 'master' ? `https://${base_url}` : `https://${branch.replaceAll('/', '-')}.${base_url}`
-        }
-        return 'APP_URL:not (isDev,isProd && !isStaging,isProd && isStaging)'
-      })(),
-      GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
-      GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
-      GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
-      FACEBOOK_CLIENT_ID: process.env.FACEBOOK_CLIENT_ID,
-      FACEBOOK_CLIENT_SECRET: process.env.FACEBOOK_CLIENT_SECRET,
-      APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID,
-      APPLE_KEY_ID: process.env.APPLE_KEY_ID,
-      APPLE_PRIVATE_KEY: process.env.APPLE_PRIVATE_KEY,
-      APPLE_TEAM_ID: process.env.APPLE_TEAM_ID,
-      SUPERTOKENS_API_KEY: process.env.SUPERTOKENS_API_KEY,
-      SUPERTOKENS_CONNECTION_URI: process.env.SUPERTOKENS_CONNECTION_URI,
-      GRPC_BCH_NODE_URL: process.env.GRPC_BCH_NODE_URL,
-      GRPC_XEC_NODE_URL: process.env.GRPC_XEC_NODE_URL,
-      WEBSITE_DOMAIN: process.env.WEBSITE_DOMAIN,
-      WEBSITE_BASE_PATH: process.env.WEBSITE_BASE_PATH,
-      API_DOMAIN: process.env.API_DOMAIN,
-      API_BASE_PATH: process.env.API_BASE_PATH,
-      APP_NAME: process.env.APP_NAME
-    }
+    console.log(`branch: ${branch}\nisDev:${isDev}  isBuild:${isBuild}  isProd:${isProd}  isStaging:${isStaging}`)
   
     return {
-      env,
       outputFileTracing: true,
-      basePath: process.env.WEBSITE_BASE_PATH,
+      basePath: paybuttonConfig.websiteBasePath,
       eslint: {
         ignoreDuringBuilds: true
       },
@@ -66,7 +38,7 @@ const {
           },
           {
             source: '/:path*',
-            destination: `${env.API_BASE_PATH}/:path*`,
+            destination: `${paybuttonConfig.apiBasePath}/:path*`,
           },
         ]
       },

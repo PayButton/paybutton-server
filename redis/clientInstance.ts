@@ -1,4 +1,4 @@
-import { appInfo } from 'config/appInfo'
+import config from 'config'
 import IORedis from 'ioredis'
 
 class RedisMocked {
@@ -22,13 +22,13 @@ const getRedisClient = (isBullMQ = false): IORedis | RedisMocked => {
     return new RedisMocked()
   }
   if (isBullMQ) {
-    return new IORedis(appInfo.redisURL, {
+    return new IORedis(config.redisURL, {
       maxRetriesPerRequest: null,
       db: 1
     })
   }
 
-  return new IORedis(appInfo.redisURL, {
+  return new IORedis(config.redisURL, {
     maxRetriesPerRequest: null
   })
 }
