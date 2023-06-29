@@ -4,6 +4,8 @@ interface Config {
   appName: string
   apiDomain: string
   websiteDomain: string
+  apiBasePath?: string
+  websiteBasePath?: string
 
   sseBaseURL: string
   sseAuthKey: string
