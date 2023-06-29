@@ -2,6 +2,8 @@ import { redis } from 'redis/clientInstance'
 import { Prisma } from '@prisma/client'
 import { getTransactionValue, TransactionWithAddressAndPrices, TransactionWithPrices } from 'services/transactionService'
 import { AddressWithTransactionsWithPrices, fetchAllUserAddresses, fetchAddressById, AddressWithPaybuttons } from 'services/addressService'
+import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
+
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
 import moment from 'moment'
 
@@ -123,13 +125,23 @@ const getGroupedPaymentsFromAddress = async (address: AddressWithTransactionsWit
 
 export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[]> => {
   const weekKeys = await getCachedWeekKeysForUser(userId)
+  const userButtonIds: string[] = (await fetchPaybuttonArrayByUserId(userId))
+    .map(p => p.id)
   let allPayments: Payment[] = []
   for (const weekKey of weekKeys) {
     const paymentsString = await redis.get(weekKey)
     if (paymentsString === null) {
       throw new Error(RESPONSE_MESSAGES.CACHED_PAYMENT_NOT_FOUND_404.message)
     }
-    allPayments = allPayments.concat(JSON.parse(paymentsString))
+    let weekPayments: Payment[] = JSON.parse(paymentsString)
+    weekPayments = weekPayments
+      .map(pay => {
+        pay.buttonDisplayDataList = pay.buttonDisplayDataList.filter(d =>
+          userButtonIds.includes(d.id)
+        )
+        return pay
+      })
+    allPayments = allPayments.concat(weekPayments)
   }
   return allPayments
 }
