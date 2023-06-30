@@ -148,7 +148,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
     values.prefixedAddressList.map(async (address) => {
       const upsertedAddress = await addressService.upsertAddress(address, prisma)
       addressIdList.push(upsertedAddress.id)
-      if (upsertedAddress.createdAt !== upsertedAddress.updatedAt) {
+      if (upsertedAddress.createdAt.getTime() !== upsertedAddress.updatedAt.getTime()) {
         updatedAddressIdList.push(upsertedAddress.id)
       }
     })
