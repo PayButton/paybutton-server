@@ -136,7 +136,7 @@ export async function createTransaction (
     update: {}
   })
   // only return if it was created, if it was updated return undefined
-  if (createdTx.createdAt === createdTx.updatedAt) {
+  if (createdTx.createdAt.getTime() === createdTx.updatedAt.getTime()) {
     void await connectTransactionToPrices(createdTx, prisma)
     const txWithPrices = await fetchTransactionById(createdTx.id)
     void await cacheManyTxs([txWithPrices])
@@ -207,7 +207,7 @@ export async function createManyTransactions (
       })
       return {
         tx: upsertedTx,
-        isCreated: upsertedTx.createdAt === upsertedTx.updatedAt
+        isCreated: upsertedTx.createdAt.getTime() === upsertedTx.updatedAt.getTime()
       }
     })
   )
