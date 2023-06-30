@@ -20,11 +20,15 @@ interface Config {
   priceAPIToken: string
   redisURL: string
   networkBlockchainClients: KeyValueT<BlockchainClientOptions>
+  networksUnderMaintenance: KeyValueT<boolean>
 }
 
 const readConfig = (): Config => {
   config = localConfig as unknown as Config
   config.appName = 'PayButton'
+  if (config.networksUnderMaintenance === undefined) {
+    config.networksUnderMaintenance = {}
+  }
   return config
 }
 
