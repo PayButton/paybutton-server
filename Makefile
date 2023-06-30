@@ -1,7 +1,6 @@
 git_hook_setup = cp .githooks/pre-commit .git/hooks/pre-commit
 git_diff_to_master = git diff --name-only --diff-filter=ACMRTUXB origin/master > DIFF
-create_test_paybutton_json = cp paybutton-config.json paybutton-config.json~ 2> /dev/null && echo { \"priceAPIURL\": \"foo\", \"priceAPIToken\": \"bar\" } > paybutton-config.json
-restore_paybutton_json = mv paybutton-config.json~ paybutton-config.json 2> /dev/null
+create_test_paybutton_json = echo { \"priceAPIURL\": \"foo\", \"priceAPIToken\": \"bar\", \"networkBlockchainClients\": { \"ecash\": \"chronik\", \"bitcoincash\": \"grpc\" }, \"chronikClientURL\": \"https://chronik.be.cash/xec\" } > paybutton-config.json
 
 dev:
 	$(git_hook_setup)
@@ -35,16 +34,15 @@ lint-master:
 	$(git_diff_to_master)
 	yarn eslint --stdin --stdin-filename DIFF
 
-
-test-unit:
+# WARNING: this shouldn't be run on local machine, only on github. It will replace your config file
+github-test-unit:
 	$(create_test_paybutton_json)
 	DATABASE_URL="mysql://paybutton-test:paybutton-test@db:3306/paybutton-test" npx ts-node -O '{"module":"commonjs"}' node_modules/jest/bin/jest.js tests/unittests --forceExit
-	$(restore_paybutton_json)
 
-test-integration:
+# WARNING: this shouldn't be run on local machine, only on github. It will replace your config file
+github-test-integration:
 	sleep 15
 	$(create_test_paybutton_json)
 	sed -i "s/db/localhost/g" .env.test
 	sed -i "s/paybutton-cache/localhost/g" .env.test
 	yarn ci:integration:test
-	$(restore_paybutton_json)
