@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { appInfo } from 'config/appInfo'
 import { Prisma, Price } from '@prisma/client'
+import config from 'config'
 import prisma from 'prisma/clientInstance'
 import { HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
@@ -73,13 +73,13 @@ export async function upsertCurrentPricesForNetworkId (responseData: IResponseDa
 function getPriceURLForDayAndNetworkTicker (day: moment.Moment, networkTicker: string): string {
   validatePriceAPIUrlAndToken()
   validateNetworkTicker(networkTicker)
-  return `${appInfo.priceAPIURL}/pricebydate/${appInfo.priceAPIToken}/${networkTicker}+${day.format(PRICE_API_DATE_FORMAT)}`
+  return `${config.priceAPIURL}/pricebydate/${config.priceAPIToken}/${networkTicker}+${day.format(PRICE_API_DATE_FORMAT)}`
 }
 
 function getAllPricesURLForNetworkTicker (networkTicker: string): string {
   validatePriceAPIUrlAndToken()
   validateNetworkTicker(networkTicker)
-  return `${appInfo.priceAPIURL}/dailyprices/${appInfo.priceAPIToken}/${networkTicker}`
+  return `${config.priceAPIURL}/dailyprices/${config.priceAPIToken}/${networkTicker}`
 }
 
 export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networkTicker: string, attempt: number = 1): Promise<IResponseData | null> {

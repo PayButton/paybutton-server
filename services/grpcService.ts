@@ -15,6 +15,7 @@ import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
 import { TransactionWithAddressAndPrices, createTransaction, createManyTransactions, base64HashToHex, deleteTransactions, fetchUnconfirmedTransactions } from './transactionService'
 import { BroadcastTxData, broadcastTxInsertion } from 'sse-service/client'
+import config from 'config'
 
 export interface OutputsList {
   outpoint: object
@@ -25,12 +26,12 @@ export interface OutputsList {
   slpToken: string | undefined
 }
 
-const grpcBCH = new GrpcClient({ url: process.env.GRPC_BCH_NODE_URL })
+const grpcBCH = new GrpcClient({ url: config.grpcBCHNodeURL })
 
 export const getGrpcClients = (): KeyValueT<GrpcClient> => {
   return {
     bitcoincash: grpcBCH,
-    ecash: new GrpcClient({ url: process.env.GRPC_XEC_NODE_URL })
+    ecash: new GrpcClient({ url: config.grpcXECNodeURL })
   }
 }
 
