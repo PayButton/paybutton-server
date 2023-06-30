@@ -4,7 +4,6 @@ import { redisBullMQ } from 'redis/clientInstance'
 import {
   syncAndSubscribeAllAddressTransactionsForNetworkWorker,
   syncPricesWorker,
-  syncAndSubscribeUnsyncedAddressesWorker,
   connectAllTransactionsToPricesWorker
 } from './workers'
 import EventEmitter from 'events'
@@ -22,7 +21,6 @@ const RETRY_OPTS = {
 const main = async (): Promise<void> => {
   const pricesQueue = new Queue('pricesSync', { connection: redisBullMQ })
   const initTransactionsQueue = new Queue('initTransactionsSync', { connection: redisBullMQ })
-  const newAddressesQueue = new Queue('newAddressesSync', { connection: redisBullMQ })
   const connectPricesQueue = new Queue('connectPrices', { connection: redisBullMQ })
 
   const flowJobPrices: FlowJob = {
@@ -68,33 +66,16 @@ const main = async (): Promise<void> => {
     }
   }
 
-  const flowJobSyncAndSubscribeUnsyncedAddresses: FlowJob = {
-    queueName: newAddressesQueue.name,
-    data: {},
-    name: 'syncAndSubscribeUnsyncedAddressesFlow',
-    opts: {
-      removeOnComplete: false,
-      removeOnFail: { count: 3 },
-      jobId: 'syncAndSubscribeUnsyncedAddresses',
-      ...RETRY_OPTS
-    }
-  }
-
   const flowProducer = new FlowProducer({ connection: redisBullMQ })
   await flowProducer.add({
-    ...flowJobSyncAndSubscribeUnsyncedAddresses,
+    ...flowJobConnectAllTransactions,
     children: [
       {
-        ...flowJobConnectAllTransactions,
+        ...flowJobSyncAndSubscribeBCHAddresses,
         children: [
           {
-            ...flowJobSyncAndSubscribeBCHAddresses,
-            children: [
-              {
-                ...flowJobSyncAndSubscribeXECAddresses,
-                children: [flowJobPrices]
-              }
-            ]
+            ...flowJobSyncAndSubscribeXECAddresses,
+            children: [flowJobPrices]
           }
         ]
       }
@@ -114,7 +95,6 @@ const main = async (): Promise<void> => {
 
   await syncPricesWorker(pricesQueue.name)
   await syncAndSubscribeAllAddressTransactionsForNetworkWorker(initTransactionsQueue.name)
-  await syncAndSubscribeUnsyncedAddressesWorker(newAddressesQueue)
   await connectAllTransactionsToPricesWorker(connectPricesQueue.name)
 }
 

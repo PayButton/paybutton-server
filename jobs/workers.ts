@@ -1,6 +1,6 @@
-import { Worker, Job, Queue } from 'bullmq'
+import { Worker, Job } from 'bullmq'
 import { redisBullMQ } from 'redis/clientInstance'
-import { SYNC_NEW_ADDRESSES_DELAY, DEFAULT_WORKER_LOCK_DURATION, RESPONSE_MESSAGES, KeyValueT } from 'constants/index'
+import { DEFAULT_WORKER_LOCK_DURATION, RESPONSE_MESSAGES, KeyValueT } from 'constants/index'
 
 import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
@@ -102,49 +102,6 @@ export const connectAllTransactionsToPricesWorker = async (queueName: string): P
     if (job !== undefined) {
       console.log('automatic connecting of txs to prices FAILED')
       console.log(`error for connecting txs to prices: ${err.message}`)
-    }
-  })
-}
-
-export const syncAndSubscribeUnsyncedAddressesWorker = async (queue: Queue): Promise<void> => {
-  const worker = new Worker(
-    queue.name,
-    async (job) => {
-      const newAddresses = await addressService.fetchUnsyncedAddresses()
-      if (newAddresses.length !== 0) {
-        const failedAddressesWithErrors = await transactionService.syncAndSubscribeAddresses(newAddresses)
-        const failedAddresses = Object.keys(failedAddressesWithErrors)
-        if (failedAddresses.length > 0) {
-          console.error(`automatic syncing of addresses failed for addresses: ${JSON.stringify(failedAddressesWithErrors)}`)
-        }
-        job.data.syncedAddresses = newAddresses.filter(addr => !failedAddresses.includes(addr.address))
-      }
-
-      // add same job to the queue again, so it runs repeating
-      await queue.add(
-        'syncAndSubscribeUnsyncedAddresses',
-        {},
-        { delay: SYNC_NEW_ADDRESSES_DELAY }
-      )
-    },
-    {
-      connection: redisBullMQ,
-      lockDuration: DEFAULT_WORKER_LOCK_DURATION
-    }
-  )
-  worker.on('completed', job => {
-    if (job.data.syncedAddresses === undefined) {
-      console.log('no new addresses to sync and subscribe')
-    } else {
-      console.log('synced', job.data.syncedAddresses)
-      job.data.syncedAddresses = undefined
-    }
-  })
-
-  worker.on('failed', (job, err) => {
-    if (job !== undefined) {
-      console.log('automatic syncing and subscribing of address FAILED')
-      console.log(`error for automatic syncing and subscribing of addresses: ${err.message}`)
     }
   })
 }
