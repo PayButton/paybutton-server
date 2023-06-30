@@ -179,3 +179,17 @@ export const cacheManyTxs = async (txs: TransactionWithAddressAndPrices[]): Prom
     }
   }
 }
+
+export const appendPaybuttonToAddressesCache = async (addressIdList: string[], buttonDisplayData: ButtonDisplayData): Promise<void> => {
+  for (const id of addressIdList) {
+    const keys = await getCachedWeekKeysForAddress(id)
+    for (const key of keys) {
+      const paymentsString = await redis.get(key)
+      const weekPayments: Payment[] = (paymentsString === null) ? [] : JSON.parse(paymentsString)
+      weekPayments.forEach((p) =>
+        p.buttonDisplayDataList.push(buttonDisplayData)
+      )
+      await redis.set(key, JSON.stringify(weekPayments))
+    }
+  }
+}
