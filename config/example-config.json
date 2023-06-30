@@ -16,8 +16,13 @@
   "showTestNetworks": false,
   "grpcBCHNodeURL": "bchd.greyh.at:8335",
   "grpcXECNodeURL": "grpc.fabien.cash:8335",
+  "chronikClientURL": "https://chronik.be.cash/xec",
   "priceAPIURL": "https://coin.dance/api/",
   // Coindance api secret token 
   "priceAPIToken": "XYZABC123XYZABC123XYZABC123444XYZABC1234", 
   "redisURL": "redis://paybutton-cache:6379"
+  "networkBlockchainClients": {
+    "ecash": "chronik",
+    "bitcoincash": "grpc"
+  }
 }

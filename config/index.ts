@@ -1,4 +1,7 @@
+import { KeyValueT } from 'constants/index'
 import localConfig from '../paybutton-config.json'
+
+export type BlockchainClientOptions = 'grpc' | 'chronik'
 
 interface Config {
   appName: string
@@ -11,15 +14,16 @@ interface Config {
   sseAuthKey: string
   showTestNetworks: false
   grpcBCHNodeURL: string
-  grpcBCHNodeTestURL: string
   grpcXECNodeURL: string
+  chronikClientURL: string
   priceAPIURL: string
   priceAPIToken: string
   redisURL: string
+  networkBlockchainClients: KeyValueT<BlockchainClientOptions>
 }
 
 const readConfig = (): Config => {
-  config = localConfig as Config
+  config = localConfig as unknown as Config
   config.appName = 'PayButton'
   return config
 }
