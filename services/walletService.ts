@@ -37,7 +37,11 @@ const includeAddressesWithPaybuttons = {
     include: {
       address: {
         include: {
-          paybuttons: addressService.includePaybuttonsNested.paybuttons
+          paybuttons: {
+            include: {
+              paybutton: true
+            }
+          }
         }
       }
     }

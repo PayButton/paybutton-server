@@ -13,12 +13,16 @@ export default async (
   if (req.method === 'GET') {
     try {
       const paybutton = await paybuttonService.fetchPaybuttonById(paybuttonId)
+      if (paybutton.providerUserId !== userId) throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
       res.status(200).json(paybutton)
     } catch (err: any) {
       const parsedError = parseError(err)
       switch (parsedError.message) {
         case RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message:
           res.status(404).json(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404)
+          break
+        case RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400)
           break
         default:
           res.status(500).json({ statusCode: 500, message: err.message })
