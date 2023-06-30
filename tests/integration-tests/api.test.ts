@@ -38,9 +38,7 @@ const setUpUsers = async (): Promise<void> => {
 jest.mock('../../utils/setSession', () => {
   return {
     setSession: (req: any, res: any) => {
-      if (req.session === undefined) {
-        req.session = { userId: 'test-u-id' }
-      } else if (req.session.userId === undefined) {
+      if (req.session?.userId === undefined) {
         req.session = { userId: 'test-u-id' }
       }
     }
