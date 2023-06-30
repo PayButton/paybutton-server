@@ -230,7 +230,8 @@ export async function getAddressPaymentInfo (addressString: string): Promise<Add
   const balance = transactionsAmounts.reduce((a, b) => {
     return a.plus(b)
   }, new Prisma.Decimal(0))
-  const paymentCount = transactionsAmounts.length
+  const zero = new Prisma.Decimal(0)
+  const paymentCount = transactionsAmounts.filter(t => t > zero).length
   return {
     balance,
     paymentCount
