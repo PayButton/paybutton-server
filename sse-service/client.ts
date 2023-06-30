@@ -1,4 +1,4 @@
-import config from 'config'
+import config from '../config/index'
 import { KeyValueT } from 'constants/index'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 

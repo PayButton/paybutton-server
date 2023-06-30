@@ -112,7 +112,7 @@ export const syncAndSubscribeUnsyncedAddressesWorker = async (queue: Queue): Pro
     async (job) => {
       const newAddresses = await addressService.fetchUnsyncedAddresses()
       if (newAddresses.length !== 0) {
-        const failedAddressesWithErrors = await syncAndSubscribeAddresses(newAddresses)
+        const failedAddressesWithErrors = await transactionService.syncAndSubscribeAddresses(newAddresses)
         const failedAddresses = Object.keys(failedAddressesWithErrors)
         if (failedAddresses.length > 0) {
           console.error(`automatic syncing of addresses failed for addresses: ${JSON.stringify(failedAddressesWithErrors)}`)
