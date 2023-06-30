@@ -3,6 +3,7 @@ import { RESPONSE_MESSAGES, NETWORK_SLUGS, NETWORK_IDS } from 'constants/index'
 import prisma from 'prisma/clientInstance'
 import { getLastBlockTimestamp } from 'services/blockchainService'
 import { fetchAllUserAddresses } from 'services/addressService'
+import config from 'config'
 
 export async function getNetworkFromSlug (slug: string): Promise<Network> {
   const network = await prisma.network.findUnique({ where: { slug } })
@@ -12,6 +13,7 @@ export async function getNetworkFromSlug (slug: string): Promise<Network> {
 
 export interface ConnectionInfo {
   connected: boolean
+  maintenance: boolean
   lastBlockTimestamp?: number
 }
 
@@ -21,11 +23,13 @@ async function isConnected (networkSlug: string): Promise<ConnectionInfo> {
   try {
     return {
       connected: true,
-      lastBlockTimestamp: await getLastBlockTimestamp(networkSlug)
+      lastBlockTimestamp: await getLastBlockTimestamp(networkSlug),
+      maintenance: config.networksUnderMaintenance[networkSlug]
     }
   } catch (e: any) {
     return {
-      connected: false
+      connected: false,
+      maintenance: config.networksUnderMaintenance[networkSlug]
     }
   }
 }

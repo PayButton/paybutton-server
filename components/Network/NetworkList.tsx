@@ -43,7 +43,9 @@ const NetworkComponent: FunctionComponent<IProps> = ({
                   </>
                     )
                   : (
-                  <div className={style.cardStatus}>Disconnected</div>
+                      network.maintenance
+                        ? <div className={style.cardStatus}>Under Maintenance</div>
+                        : <div className={style.cardStatus}>Disconnected</div>
                     )}
               </div>
             </div>
@@ -57,8 +59,9 @@ const NetworkComponent: FunctionComponent<IProps> = ({
               >
                 <div className={style.network_card_text}>
                   <div className={style.cardTitle}>{network.title}</div>
-                  {network.connected
-                    ? (
+                  {
+                    network.connected
+                      ? (
                     <>
                       <div
                         className={style.cardStatus}
@@ -73,10 +76,12 @@ const NetworkComponent: FunctionComponent<IProps> = ({
                           : '-'}
                       </div>
                     </>
-                      )
-                    : (
-                    <div className={style.cardStatus}>Disconnected</div>
-                      )}
+                        )
+                      : (
+                          network.maintenance
+                            ? <div className={style.cardStatus}>Under Maintenance</div>
+                            : <div className={style.cardStatus}>Disconnected</div>
+                        )}
                 </div>
               </div>
           )
