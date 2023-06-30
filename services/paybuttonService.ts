@@ -318,5 +318,32 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
     addressIdListToRemove,
     paybuttonIdToIgnore: params.paybuttonId
   })
+
+  // Get new addresses (for this button) that already exist in some
+  // other button. This will be important to update the cache.
+  const idListForAddressesThatAlreadyExisted = (await prisma.address.findMany({
+    where: {
+      paybuttons: {
+        some: {
+          paybuttonId: {
+            not: params.paybuttonId
+          }
+        }
+      },
+      id: {
+        in: addressIdListToAdd
+      }
+    },
+    select: {
+      id: true
+    }
+  })).map(obj => obj.id)
+  await appendPaybuttonToAddressesCache(idListForAddressesThatAlreadyExisted,
+    {
+      name: paybutton.name,
+      id: paybutton.id
+    }
+  )
+
   return paybutton
 }
