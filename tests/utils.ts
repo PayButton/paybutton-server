@@ -10,8 +10,10 @@ import { UserProfile } from '@prisma/client'
 export const testEndpoint = async (requestOptions: httpMocks.RequestOptions, endpoint: Function, userId?: string): Promise<httpMocks.MockResponse<any>> => {
   const req = httpMocks.createRequest(requestOptions)
   const res = httpMocks.createResponse()
-  req.session = {}
-  req.session.userId = userId
+  if (userId !== undefined) {
+    req.session = {}
+    req.session.userId = userId
+  }
   await endpoint(req, res)
   return res
 }
