@@ -33,18 +33,19 @@ const NetworkComponent: FunctionComponent<IProps> = ({
             <div className={style.network_card_text}>
               <div className={style.cardTitle}>{network.title}</div>
               {
-                network.maintenance
-                  ? <div className={style.cardStatus}>Under Maintenance</div>
-                  : (
-                      network.connected
-                        ? (
+                network.connected
+                  ? (
                     <>
-                      <div
+                      {
+                      network.maintenance
+                        ? <div className={style.cardStatus}>Under Maintenance</div>
+                        : <div
                         className={style.cardStatus}
                         style={{ color: '#04b504' }}
                       >
                         Connected
                       </div>
+                      }
                       <div>
                         Last block:{' '}
                         {network.lastBlockTimestamp !== undefined
@@ -52,7 +53,10 @@ const NetworkComponent: FunctionComponent<IProps> = ({
                           : '-'}
                       </div>
                     </>
-                          )
+                    )
+                  : (
+                      network.maintenance
+                        ? <div className={style.cardStatus}>Under Maintenance</div>
                         : <div className={style.cardStatus}>Disconnected</div>
                     )
               }
