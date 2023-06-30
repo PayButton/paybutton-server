@@ -15,8 +15,8 @@ jobs:
       - name: Install Dependencies
         run: yarn
       - name: Run unit tests
-        run: make test-unit
+        run: make github-test-unit
       - name: Spin up required database containers
         run: docker-compose up -d db users-service
       - name: Run integration tests
-        run: make test-integration
+        run: make github-test-integration

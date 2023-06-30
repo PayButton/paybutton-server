@@ -2,7 +2,7 @@ import { ChronikClient, ScriptType, SubscribeMsg, Tx, Utxo, WsConfig, WsEndpoint
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
-import { NETWORK_SLUGS, RESPONSE_MESSAGES, CHRONIK_CLIENT_URL, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT } from 'constants/index'
+import { NETWORK_SLUGS, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT } from 'constants/index'
 import { TransactionWithAddressAndPrices, createManyTransactions, deleteTransactions, fetchUnconfirmedTransactions, createTransaction } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
@@ -10,6 +10,7 @@ import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
 import { fetchAddressBySubstring, getLatestTxTimestampForAddress } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData, broadcastTxInsertion } from 'sse-service/client'
+import config from 'config'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
@@ -18,7 +19,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
   wsEndpoint: WsEndpoint
 
   constructor () {
-    this.chronik = new ChronikClient(CHRONIK_CLIENT_URL)
+    this.chronik = new ChronikClient(config.chronikClientURL)
     this.availableNetworks = [NETWORK_SLUGS.ecash]
     this.subscribedAddresses = {}
     this.wsEndpoint = this.chronik.ws(this.getWsConfig())

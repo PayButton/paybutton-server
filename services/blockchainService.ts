@@ -1,9 +1,10 @@
 import { GrpcBlockchainClient } from './grpcService'
 import { ChronikBlockchainClient } from './chronikService'
 import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils/index'
-import { RESPONSE_MESSAGES, KeyValueT, NETWORK_BLOCKCHAIN_CLIENTS, BLOCKCHAIN_CLIENT_OPTIONS, NETWORK_IDS, NETWORK_TICKERS } from '../constants/index'
+import { RESPONSE_MESSAGES, KeyValueT, NETWORK_IDS, NETWORK_TICKERS } from '../constants/index'
 import { TransactionWithAddressAndPrices } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
+import config, { BlockchainClientOptions } from 'config'
 
 export interface BlockchainInfo {
   height: number
@@ -52,12 +53,12 @@ export interface BlockchainClient {
 }
 
 function getBlockchainClient (networkSlug: string): BlockchainClient {
-  if (!Object.keys(NETWORK_BLOCKCHAIN_CLIENTS).includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.MISSING_BLOCKCHAIN_CLIENT_400.message) }
+  if (!Object.keys(config.networkBlockchainClients).includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.MISSING_BLOCKCHAIN_CLIENT_400.message) }
 
-  switch (NETWORK_BLOCKCHAIN_CLIENTS[networkSlug]) {
-    case 'grpc' as BLOCKCHAIN_CLIENT_OPTIONS:
+  switch (config.networkBlockchainClients[networkSlug]) {
+    case 'grpc' as BlockchainClientOptions:
       return new GrpcBlockchainClient()
-    case 'chronik' as BLOCKCHAIN_CLIENT_OPTIONS:
+    case 'chronik' as BlockchainClientOptions:
       return new ChronikBlockchainClient()
     default:
       throw new Error(RESPONSE_MESSAGES.NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400.message)

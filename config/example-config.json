@@ -1,0 +1,22 @@
+{
+  "apiDomain": "http://localhost:3000/api",
+  "websiteDomain": "http://localhost:3000",
+  "apiBasePath": undefined,
+  "websiteBasePath": undefined,
+  "sseBaseURL": "http://localhost:5000",
+  "sseAuthKey": "d1f5edcc-5e64-465d-b1f9-f8a2aaf179c9",
+  "showTestNetworks": false,
+  "grpcBCHNodeURL": "bchd.greyh.at:8335",
+  "grpcXECNodeURL": "grpc.fabien.cash:8335",
+  "chronikClientURL": "https://chronik.be.cash/xec",
+  "priceAPIURL": "https://coin.dance/api/",
+  "priceAPIToken": "XYZABC123XYZABC123XYZABC123444XYZABC1234", 
+  "redisURL": "redis://paybutton-cache:6379",
+  "networkBlockchainClients": {
+    "ecash": "chronik",
+    "bitcoincash": "grpc"
+  },
+  "networksUnderMaintenance": {
+    "bitcoincash": true
+  }
+}

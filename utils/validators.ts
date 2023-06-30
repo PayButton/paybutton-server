@@ -1,9 +1,9 @@
 import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN, NETWORK_TICKERS } from '../constants/index'
 import { Prisma } from '@prisma/client'
+import config from 'config'
 import { type CreatePaybuttonInput, type UpdatePaybuttonInput } from '../services/paybuttonService'
 import { type CreateWalletInput, type UpdateWalletInput } from '../services/walletService'
 import { getAddressPrefix } from './index'
-import { appInfo } from 'config/appInfo'
 import xecaddr from 'xecaddrjs'
 
 /* The functions exported here should validate the data structure / syntax of an
@@ -182,10 +182,10 @@ export const validateNetworkTicker = function (networkTicker: string): void {
 }
 
 export const validatePriceAPIUrlAndToken = function (): void {
-  if (appInfo.priceAPIURL === '') {
+  if (config.priceAPIURL === '') {
     throw new Error(RESPONSE_MESSAGES.MISSING_PRICE_API_URL_400.message)
   }
-  if (appInfo.priceAPIToken === '') {
+  if (config.priceAPIToken === '') {
     throw new Error(RESPONSE_MESSAGES.MISSING_PRICE_API_TOKEN_400.message)
   }
 }
