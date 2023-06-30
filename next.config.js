@@ -23,7 +23,6 @@ const {
   
     return {
       outputFileTracing: true,
-      basePath: paybuttonConfig.websiteBasePath,
       eslint: {
         ignoreDuringBuilds: true
       },
@@ -38,7 +37,7 @@ const {
           },
           {
             source: '/:path*',
-            destination: `${paybuttonConfig.apiBasePath}/:path*`,
+            destination: `/api/:path*`,
           },
         ]
       },
