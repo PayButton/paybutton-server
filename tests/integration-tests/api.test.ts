@@ -38,7 +38,11 @@ const setUpUsers = async (): Promise<void> => {
 jest.mock('../../utils/setSession', () => {
   return {
     setSession: (req: any, res: any) => {
-      req.session = { userId: 'test-u-id' }
+      if (req.session === undefined) {
+        req.session = { userId: 'test-u-id' }
+      } else if (req.session.userId === undefined) {
+        req.session = { userId: 'test-u-id' }
+      }
     }
   }
 })
@@ -1081,6 +1085,13 @@ describe('GET /api/paybutton/[id]', () => {
       expect(responseData).toHaveProperty('name')
       expect(responseData).toHaveProperty('buttonData')
     }
+  })
+  it('Error for non authorized id', async () => {
+    if (baseRequestOptions.query != null) baseRequestOptions.query.id = createdPaybuttonsIds[3]
+    const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint, userA)
+    expect(res.statusCode).toBe(400)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
   })
 
   it('Not find paybutton for nonexistent id', async () => {
