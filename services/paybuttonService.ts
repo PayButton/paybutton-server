@@ -6,6 +6,7 @@ import { getObjectValueForNetworkSlug } from 'utils/index'
 import { connectAddressToUser, disconnectAddressFromUser, fetchAddressWallet } from 'services/addressesOnUserProfileService'
 import { fetchUserDefaultWalletForNetwork } from './walletService'
 import { appendPaybuttonToAddressesCache } from 'redis/dashboardCache'
+import { syncAndSubscribeAddresses } from './transactionService'
 export interface UpdatePaybuttonInput {
   paybuttonId: string
   name?: string
@@ -144,15 +145,20 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
   // on relation tables to these addresses will fail
   const addressIdList: string[] = []
   const updatedAddressIdList: string[] = []
+  const createdAddresses: addressService.AddressWithTransactions[] = []
   void await Promise.all(
     values.prefixedAddressList.map(async (address) => {
       const upsertedAddress = await addressService.upsertAddress(address, prisma)
       addressIdList.push(upsertedAddress.id)
       if (upsertedAddress.createdAt.getTime() !== upsertedAddress.updatedAt.getTime()) {
         updatedAddressIdList.push(upsertedAddress.id)
+      } else {
+        createdAddresses.push(upsertedAddress)
       }
     })
   )
+  // Send async request to sync created addresses transactions
+  void syncAndSubscribeAddresses(createdAddresses)
   return await prisma.$transaction(async (prisma) => {
     // Creates or updates the `addressesOnUserProfile` objects
     await updateAddressUserConnectors({
@@ -297,18 +303,16 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
   })
 
   // List with paybuttons addresses ids, after updating
-  const paybuttonNewAddressesIds = (await prisma.address.findMany({
+  const paybuttonNewAddresses = await prisma.address.findMany({
     where: {
       paybuttons: {
         some: {
           paybuttonId: params.paybuttonId
         }
       }
-    },
-    select: {
-      id: true
     }
-  })).map(obj => obj.id)
+  })
+  const paybuttonNewAddressesIds = paybuttonNewAddresses.map(obj => obj.id)
   const addressIdListToAdd = paybuttonNewAddressesIds.filter(id => !paybuttonOldAddressesIds.includes(id))
   const addressIdListToRemove = paybuttonOldAddressesIds.filter(id => !paybuttonNewAddressesIds.includes(id))
   // Creates or updates the `addressesOnUserProfile` objects
@@ -343,6 +347,13 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
       name: paybutton.name,
       id: paybutton.id
     }
+  )
+
+  // Send async request to sync created addresses transactions for addresses
+  // that are new (did not exist in any other buttons)
+  void syncAndSubscribeAddresses(
+    paybuttonNewAddresses
+      .filter(a => !idListForAddressesThatAlreadyExisted.includes(a.id))
   )
 
   return paybutton
