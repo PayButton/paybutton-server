@@ -15,5 +15,8 @@
   "networkBlockchainClients": {
     "ecash": "chronik",
     "bitcoincash": "grpc"
+  },
+  "networksUnderMaintenance": {
+    "bitcoincash": true
   }
 }
