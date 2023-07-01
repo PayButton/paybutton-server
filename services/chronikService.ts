@@ -204,7 +204,11 @@ export class ChronikBlockchainClient implements BlockchainClient {
             const insertedTxs: BroadcastTxData = {}
             insertedTxs.address = addressWithTransaction.address.address
             insertedTxs.txs = [tx]
-            await broadcastTxInsertion(insertedTxs)
+            try {
+              await broadcastTxInsertion(insertedTxs)
+            } catch (err: any) {
+              console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_SSE_SERVER_500.message, err.stack)
+            }
           }
           return tx
         })

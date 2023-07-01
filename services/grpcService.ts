@@ -301,6 +301,10 @@ export class GrpcBlockchainClient implements BlockchainClient {
         return tx
       })
     )
-    await broadcastTxInsertion(insertedTxs)
+    try {
+      await broadcastTxInsertion(insertedTxs)
+    } catch (err: any) {
+      console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_SSE_SERVER_500.message, err.stack)
+    }
   }
 }

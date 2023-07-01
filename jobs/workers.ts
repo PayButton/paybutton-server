@@ -101,7 +101,7 @@ export const connectAllTransactionsToPricesWorker = async (queueName: string): P
   worker.on('failed', (job, err) => {
     if (job !== undefined) {
       console.log('automatic connecting of txs to prices FAILED')
-      console.log(`error for connecting txs to prices: ${err.message}`)
+      console.log(`error for connecting txs to prices: ${err.message}: ${err.stack ?? 'no stack'}`)
     }
   })
 }
