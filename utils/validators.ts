@@ -1,6 +1,6 @@
 import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN, NETWORK_TICKERS } from '../constants/index'
 import { Prisma } from '@prisma/client'
-import config from 'config'
+import config from '../config/index'
 import { type CreatePaybuttonInput, type UpdatePaybuttonInput } from '../services/paybuttonService'
 import { type CreateWalletInput, type UpdateWalletInput } from '../services/walletService'
 import { getAddressPrefix } from './index'
@@ -188,4 +188,23 @@ export const validatePriceAPIUrlAndToken = function (): void {
   if (config.priceAPIToken === '') {
     throw new Error(RESPONSE_MESSAGES.MISSING_PRICE_API_TOKEN_400.message)
   }
+}
+
+export interface SSEGETParameters {
+  addresses: string[]
+}
+
+export const parseSSEEventRequest = function (query: any): string[] {
+  if (!('address' in query)) {
+    throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
+  }
+  const parsedAddressList = []
+  if (typeof query.address === 'string') {
+    parsedAddressList.push(parseAddress(query.address))
+  } else if (Array.isArray(query.address)) {
+    for (const addr of query.address) {
+      parsedAddressList.push(parseAddress(addr))
+    }
+  }
+  return parsedAddressList
 }

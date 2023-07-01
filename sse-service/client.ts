@@ -1,8 +1,12 @@
 import config from '../config/index'
-import { KeyValueT } from 'constants/index'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 
-export type BroadcastTxData = KeyValueT<TransactionWithAddressAndPrices[]>
+type TxBroadcast = 'NewTx' | 'OldTx'
+export interface BroadcastTxData {
+  address: string
+  txs: TransactionWithAddressAndPrices[]
+  messageType: TxBroadcast
+}
 
 export async function broadcastTxInsertion (insertedTxs: BroadcastTxData): Promise<Response> {
   return await fetch(`${config.sseBaseURL}/broadcast-new-tx`, {

@@ -1,8 +1,7 @@
 import xecaddr from 'xecaddrjs'
 import { Address, Prisma } from '@prisma/client'
-import { RESPONSE_MESSAGES } from '../constants/index'
+import { RESPONSE_MESSAGES, NETWORK_SLUGS, USD_QUOTE_ID, KeyValueT } from '../constants/index'
 import * as bitcoinjs from 'bitcoinjs-lib'
-import { NETWORK_SLUGS, USD_QUOTE_ID, KeyValueT } from 'constants/index'
 
 export const removeAddressPrefix = function (addressString: string): string {
   if (addressString.includes(':')) {

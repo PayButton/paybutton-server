@@ -98,25 +98,24 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
   }
 
   const createListeners = async (es: EventSource, addressList: string[]): Promise<void> => {
-    es.addEventListener('new-tx',
-      (event: MessageEvent) => {
-        const insertedTxs: BroadcastTxData = JSON.parse(event.data)
-        const updatedAddresses: string[] = Object.keys(insertedTxs)
-        updateIsSynced(updatedAddresses)
-        const affectedAddresses = addressList.filter(el => updatedAddresses.includes(el))
-        const refresh = affectedAddresses.length > 0
-        if (paybutton != null && refresh) {
-          console.log('refreshing txs...')
-          for (const addr of affectedAddresses) {
+    for (const addr of addressList) {
+      es.addEventListener('message',
+        (event: MessageEvent) => {
+          const broadcastedTxData: BroadcastTxData = JSON.parse(event.data)
+          updateIsSynced([broadcastedTxData.address])
+          if (paybutton != null) {
+            console.log('refreshing txs...')
             setTransactions(prevTransactions => ({
               ...prevTransactions,
-              [addr]: [...prevTransactions[addr]
-                .filter(tx => !insertedTxs[addr].map(newTx => newTx.hash).includes(tx.hash)), // avoid keeping unconfirmed tx together with confirmed
-              ...insertedTxs[addr]]
+              [addr]: [
+                ...prevTransactions[addr]
+                  .filter(tx => !broadcastedTxData.txs.map(newTx => newTx.hash).includes(tx.hash)), // avoid keeping unconfirmed tx together with confirmed
+                ...broadcastedTxData.txs
+              ]
             }))
           }
-        }
-      })
+        })
+    }
   }
 
   const refreshPaybutton = (): void => {
@@ -134,7 +133,8 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
         void fetchTransactions(connector.address.address)
         addressesToListen.push(connector.address.address)
       }
-      const es = new EventSource(`${config.sseBaseURL}/events`)
+      const urlQuery = `address=${addressesToListen.join('&address=')}`
+      const es = new EventSource(`${config.sseBaseURL}/events?${urlQuery}`)
       void createListeners(es, addressesToListen)
       return () => es.close()
     }

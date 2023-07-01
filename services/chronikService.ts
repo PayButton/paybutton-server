@@ -102,8 +102,10 @@ export class ChronikBlockchainClient implements BlockchainClient {
       transactions = transactions.filter(this.txThesholdFilter(address))
 
       if (transactions.length === 0) {
-        const broadcastTxData: BroadcastTxData = {}
-        broadcastTxData[addressString] = []
+        const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
+        broadcastTxData.address = addressString
+        broadcastTxData.txs = []
+        broadcastTxData.messageType = 'OldTx'
         await broadcastTxInsertion(broadcastTxData)
         break
       }
@@ -125,8 +127,10 @@ export class ChronikBlockchainClient implements BlockchainClient {
       )
 
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
-      const broadcastTxData: BroadcastTxData = {}
-      broadcastTxData[addressString] = persistedTransactions
+      const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
+      broadcastTxData.messageType = 'OldTx'
+      broadcastTxData.address = addressString
+      broadcastTxData.txs = persistedTransactions
       await broadcastTxInsertion(broadcastTxData)
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
@@ -195,21 +199,23 @@ export class ChronikBlockchainClient implements BlockchainClient {
     if (msg.type === 'AddedToMempool' || msg.type === 'Confirmed') {
       const transaction = await this.chronik.tx(msg.txid)
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-      const insertedTxs: BroadcastTxData = {}
       await Promise.all(
         addressesWithTransactions.map(async addressWithTransaction => {
           const tx = await createTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
-            insertedTxs[addressWithTransaction.address.address] = [tx]
+            const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
+            broadcastTxData.address = addressWithTransaction.address.address
+            broadcastTxData.messageType = 'NewTx'
+            broadcastTxData.txs = [tx]
+            try {
+              await broadcastTxInsertion(broadcastTxData)
+            } catch (err: any) {
+              console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_SSE_SERVER_500.message, err.stack)
+            }
           }
           return tx
         })
       )
-      try {
-        await broadcastTxInsertion(insertedTxs)
-      } catch (err: any) {
-        console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_SSE_SERVER_500.message, err.stack)
-      }
     }
   }
 
