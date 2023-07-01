@@ -103,7 +103,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
       if (transactions.length === 0) {
         const broadcastTxData: BroadcastTxData = {}
-        broadcastTxData[addressString] = []
+        broadcastTxData.address = addressString
+        broadcastTxData.txs = []
         await broadcastTxInsertion(broadcastTxData)
         break
       }
@@ -126,7 +127,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
       const broadcastTxData: BroadcastTxData = {}
-      broadcastTxData[addressString] = persistedTransactions
+      broadcastTxData.address = addressString
+      broadcastTxData.txs = persistedTransactions
       await broadcastTxInsertion(broadcastTxData)
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
@@ -195,17 +197,18 @@ export class ChronikBlockchainClient implements BlockchainClient {
     if (msg.type === 'AddedToMempool' || msg.type === 'Confirmed') {
       const transaction = await this.chronik.tx(msg.txid)
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-      const insertedTxs: BroadcastTxData = {}
       await Promise.all(
         addressesWithTransactions.map(async addressWithTransaction => {
           const tx = await createTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
-            insertedTxs[addressWithTransaction.address.address] = [tx]
+            const insertedTxs: BroadcastTxData = {}
+            insertedTxs.address = addressWithTransaction.address.address
+            insertedTxs.txs = [tx]
+            await broadcastTxInsertion(insertedTxs)
           }
           return tx
         })
       )
-      await broadcastTxInsertion(insertedTxs)
     }
   }
 
