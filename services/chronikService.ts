@@ -102,7 +102,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       transactions = transactions.filter(this.txThesholdFilter(address))
 
       if (transactions.length === 0) {
-        const broadcastTxData: BroadcastTxData = {}
+        const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
         broadcastTxData.address = addressString
         broadcastTxData.txs = []
         await broadcastTxInsertion(broadcastTxData)
@@ -126,7 +126,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       )
 
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
-      const broadcastTxData: BroadcastTxData = {}
+      const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
       broadcastTxData.address = addressString
       broadcastTxData.txs = persistedTransactions
       await broadcastTxInsertion(broadcastTxData)
@@ -201,7 +201,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         addressesWithTransactions.map(async addressWithTransaction => {
           const tx = await createTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
-            const insertedTxs: BroadcastTxData = {}
+            const insertedTxs: BroadcastTxData = {} as BroadcastTxData
             insertedTxs.address = addressWithTransaction.address.address
             insertedTxs.txs = [tx]
             try {

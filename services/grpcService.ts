@@ -290,7 +290,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
       addressWithUnconfirmedTransactions = await this.getAddressesForTransaction(parsedUnconfirmedTransaction, false)
     }
 
-    const insertedTxs: BroadcastTxData = {}
+    const insertedTxs: BroadcastTxData = {} as BroadcastTxData
     await Promise.all(
       [...addressWithUnconfirmedTransactions, ...addressWithConfirmedTransactions].map(async addressWithTransaction => {
         const tx = await createTransaction(addressWithTransaction.transaction)
