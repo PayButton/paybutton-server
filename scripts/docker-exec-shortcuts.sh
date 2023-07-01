@@ -41,10 +41,10 @@ case "$command" in
     "testcoverage" | "tc")
         eval "$base_command_node" yarn test --coverage --verbose  "$@"
         ;;
-    "shellnode" | "sn")
+    "nodeshell" | "ns")
         eval "$base_command_node" bash -l
         ;;
-    "rootshellnode" | "rsn")
+    "rootnodeshell" | "rns")
         eval "$base_command_node_root" bash -l
         ;;
     "jobslogs" | "jl")
@@ -125,8 +125,8 @@ case "$command" in
         echo "  t, test                     [$node_container_name]     run tests"
         echo "  tw, testwatch               [$node_container_name]     run tests watching it"
         echo "  tc, testcoverage            [$node_container_name]     test coverage"
-        echo "  sn, shellnode               [$node_container_name]     enter the node container"
-        echo "  rsn, rootshellnode          [$node_container_name]     enter the node container as root"
+        echo "  ns, nodeshell               [$node_container_name]     enter the node container"
+        echo "  rns, rootnodeshell          [$node_container_name]     enter the node container as root"
         echo "  y, yarn                     [$node_container_name]     run \`yarn\` on the node container"
         echo "  ya, yarnadd                 [$node_container_name]     run \`yarn add ARGS\` on the node container"
         echo "  yad, yarnadddev             [$node_container_name]     run \`yarn add -D ARGS\` on the node container"
