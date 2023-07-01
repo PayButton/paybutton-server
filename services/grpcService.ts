@@ -290,19 +290,20 @@ export class GrpcBlockchainClient implements BlockchainClient {
       addressWithUnconfirmedTransactions = await this.getAddressesForTransaction(parsedUnconfirmedTransaction, false)
     }
 
-    const insertedTxs: BroadcastTxData = {} as BroadcastTxData
+    const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
     await Promise.all(
       [...addressWithUnconfirmedTransactions, ...addressWithConfirmedTransactions].map(async addressWithTransaction => {
         const tx = await createTransaction(addressWithTransaction.transaction)
         if (tx !== undefined) {
-          insertedTxs.address = addressWithTransaction.address.address
-          insertedTxs.txs = [tx]
+          broadcastTxData.address = addressWithTransaction.address.address
+          broadcastTxData.messageType = 'NewTx'
+          broadcastTxData.txs = [tx]
         }
         return tx
       })
     )
     try {
-      await broadcastTxInsertion(insertedTxs)
+      await broadcastTxInsertion(broadcastTxData)
     } catch (err: any) {
       console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_SSE_SERVER_500.message, err.stack)
     }

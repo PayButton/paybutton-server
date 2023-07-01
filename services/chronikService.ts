@@ -105,6 +105,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
         broadcastTxData.address = addressString
         broadcastTxData.txs = []
+        broadcastTxData.messageType = 'OldTx'
         await broadcastTxInsertion(broadcastTxData)
         break
       }
@@ -127,6 +128,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
       const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
+      broadcastTxData.messageType = 'OldTx'
       broadcastTxData.address = addressString
       broadcastTxData.txs = persistedTransactions
       await broadcastTxInsertion(broadcastTxData)
@@ -201,11 +203,12 @@ export class ChronikBlockchainClient implements BlockchainClient {
         addressesWithTransactions.map(async addressWithTransaction => {
           const tx = await createTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
-            const insertedTxs: BroadcastTxData = {} as BroadcastTxData
-            insertedTxs.address = addressWithTransaction.address.address
-            insertedTxs.txs = [tx]
+            const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
+            broadcastTxData.address = addressWithTransaction.address.address
+            broadcastTxData.messageType = 'NewTx'
+            broadcastTxData.txs = [tx]
             try {
-              await broadcastTxInsertion(insertedTxs)
+              await broadcastTxInsertion(broadcastTxData)
             } catch (err: any) {
               console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_SSE_SERVER_500.message, err.stack)
             }
