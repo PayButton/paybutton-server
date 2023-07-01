@@ -99,7 +99,7 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
 
   const createListeners = async (es: EventSource, addressList: string[]): Promise<void> => {
     for (const addr of addressList) {
-      es.addEventListener('new-tx',
+      es.addEventListener('message',
         (event: MessageEvent) => {
           const broadcastedTxData: BroadcastTxData = JSON.parse(event.data)
           updateIsSynced([broadcastedTxData.address])

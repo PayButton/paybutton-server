@@ -50,7 +50,7 @@ app.post('/broadcast-new-tx', express.json(), (req: Request, res: Response) => {
   clients.forEach(client => {
     const addresses = client.locals as string[]
     if (addresses.includes(insertedTxs.address)) {
-      client.write('event: new-tx\n')
+      client.write('event: message\n')
       client.write(`data: ${JSON.stringify(insertedTxs)}\n\n`)
     }
   })
