@@ -43,6 +43,7 @@ app.post('/broadcast-new-tx', express.json(), (req: Request, res: Response) => {
   }
 
   const insertedTxs: BroadcastTxData = req.body.insertedTxs
+  console.log('opa chegs', insertedTxs)
   if (insertedTxs?.txs?.length === 0) {
     return res.status(400).json({ error: 'Could not broadcast empty tx list' })
   }
