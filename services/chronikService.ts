@@ -102,11 +102,6 @@ export class ChronikBlockchainClient implements BlockchainClient {
       transactions = transactions.filter(this.txThesholdFilter(address))
 
       if (transactions.length === 0) {
-        const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
-        broadcastTxData.address = addressString
-        broadcastTxData.txs = []
-        broadcastTxData.messageType = 'OldTx'
-        await broadcastTxInsertion(broadcastTxData)
         break
       }
       const latestBlockTimestamp = Number(transactions[0].block?.timestamp)
