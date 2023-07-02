@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express'
-import { Server } from 'http'
+import { Server } from 'https'
 import config from '../config/index'
 import cors from 'cors'
 import { BroadcastTxData } from './client'
