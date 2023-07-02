@@ -1,5 +1,4 @@
 import express, { Request, Response } from 'express'
-import { Server } from 'http'
 import config from '../config/index'
 import cors from 'cors'
 import { BroadcastTxData } from './client'
@@ -9,7 +8,6 @@ const app = express()
 app.use(cors())
 app.use(express.json({ limit: '1mb' }))
 app.options('/events', cors())
-const server = new Server(app)
 
 let clients: Response[] = []
 
@@ -58,13 +56,6 @@ app.post('/broadcast-new-tx', express.json(), (req: Request, res: Response) => {
   res.json({ statusCode: 200, message: `Message broadcasted to ${clients.length}` })
 })
 
-server.listen(5000, () => {
-  const address = server.address()
-  let addressString: string
-  if (typeof address === 'string') {
-    addressString = address
-  } else {
-    addressString = address?.address ?? ''
-  }
-  console.log(`SSE service listening on ${addressString}`)
+app.listen(5000, () => {
+  console.log(`SSE service listening`)
 })
