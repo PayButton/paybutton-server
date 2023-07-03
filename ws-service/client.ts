@@ -9,11 +9,11 @@ export interface BroadcastTxData {
 }
 
 export async function broadcastTxInsertion (insertedTxs: BroadcastTxData): Promise<Response> {
-  return await fetch(`${config.sseBaseURL}/broadcast-new-tx`, {
+  return await fetch(`${config.wsBaseURL}/broadcast-new-tx`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Auth-Key': config.sseAuthKey ?? ''
+      'X-Auth-Key': config.wsAuthKey ?? ''
     },
     body: JSON.stringify({ insertedTxs })
   })

@@ -14,7 +14,7 @@ import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
 import { TransactionWithAddressAndPrices, createTransaction, createManyTransactions, base64HashToHex, deleteTransactions, fetchUnconfirmedTransactions } from './transactionService'
-import { BroadcastTxData, broadcastTxInsertion } from 'sse-service/client'
+import { BroadcastTxData, broadcastTxInsertion } from 'ws-service/client'
 import config from 'config'
 
 export interface OutputsList {

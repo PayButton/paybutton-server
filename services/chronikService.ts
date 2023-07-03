@@ -9,7 +9,7 @@ import xecaddr from 'xecaddrjs'
 import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
 import { fetchAddressBySubstring, getLatestTxTimestampForAddress } from './addressService'
 import * as ws from 'ws'
-import { BroadcastTxData, broadcastTxInsertion } from 'sse-service/client'
+import { BroadcastTxData, broadcastTxInsertion } from 'ws-service/client'
 import config from 'config'
 
 export class ChronikBlockchainClient implements BlockchainClient {

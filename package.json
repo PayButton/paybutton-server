@@ -5,7 +5,7 @@
     "dev": "dotenv -e .env.development -c development next dev",
     "build": "next build",
     "initJobs": "dotenv -e .env.development -e .env -c -- tsx jobs/initJobs.ts",
-    "initSSEServer": "dotenv -e .env.development -e .env -c -- ts-node -O '{\"module\":\"commonjs\"}' sse-service/server.ts",
+    "initSSEServer": "dotenv -e .env.development -e .env -c -- ts-node -O '{\"module\":\"commonjs\"}' ws-service/server.ts",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "prod": "yarn build && NODE_ENV=production next start",
     "test": "dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js",

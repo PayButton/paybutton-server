@@ -36,7 +36,7 @@ app.get('/events', (req: Request, res: Response) => {
 
 app.post('/broadcast-new-tx', express.json(), (req: Request, res: Response) => {
   const authKey = req.headers['x-auth-key']
-  if (authKey !== config.sseAuthKey) {
+  if (authKey !== config.wsAuthKey) {
     return res.status(403).json({ error: 'Unauthorized' })
   }
 
@@ -57,5 +57,5 @@ app.post('/broadcast-new-tx', express.json(), (req: Request, res: Response) => {
 })
 
 app.listen(5000, () => {
-  console.log(`SSE service listening`)
+  console.log('SSE service listening')
 })

@@ -10,8 +10,8 @@ interface Config {
   apiBasePath?: string
   websiteBasePath?: string
 
-  sseBaseURL: string
-  sseAuthKey: string
+  wsBaseURL: string
+  wsAuthKey: string
   showTestNetworks: false
   grpcBCHNodeURL: string
   grpcXECNodeURL: string

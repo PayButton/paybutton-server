@@ -10,7 +10,7 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
-import { BroadcastTxData } from 'sse-service/client'
+import { BroadcastTxData } from 'ws-service/client'
 import { KeyValueT } from 'constants/index'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import config from 'config'
@@ -134,7 +134,7 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
         addressesToListen.push(connector.address.address)
       }
       const urlQuery = `address=${addressesToListen.join('&address=')}`
-      const es = new EventSource(`${config.sseBaseURL}/events?${urlQuery}`)
+      const es = new EventSource(`${config.wsBaseURL}/events?${urlQuery}`)
       void createListeners(es, addressesToListen)
       return () => es.close()
     }
