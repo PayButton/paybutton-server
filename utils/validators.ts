@@ -190,11 +190,11 @@ export const validatePriceAPIUrlAndToken = function (): void {
   }
 }
 
-export interface SSEGETParameters {
+export interface WSGETParameters {
   addresses: string[]
 }
 
-export const parseSSEEventRequest = function (query: any): string[] {
+export const parseWSEventRequest = function (query: any): string[] {
   if (!('address' in query)) {
     throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
   }

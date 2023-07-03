@@ -51,7 +51,7 @@ export const RESPONSE_MESSAGES = {
   NO_CONTEXT_TO_INFER_USER_ADRESS_WALLET_400: { statusCode: 400, message: 'Trying to update the wallet for a user address without contex.' },
   NO_ADDRESS_FOUND_FOR_TRANSACTION_404: { statusCode: 404, message: 'No address found for transaction.' },
   FAILED_TO_UPSERT_TRANSACTION_500: { statusCode: 500, message: 'Failed to upsert transaction.' },
-  COULD_NOT_BROADCAST_TX_TO_SSE_SERVER_500: { statusCode: 500, message: 'Could not broadcast upcoming transaction to SSE server.' }
+  COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500: { statusCode: 500, message: 'Could not broadcast upcoming transaction to WS server.' }
 }
 
 export type KeyValueT<T> = Record<string, T>

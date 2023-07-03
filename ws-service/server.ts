@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express'
 import config from '../config/index'
 import cors from 'cors'
 import { BroadcastTxData } from './client'
-import { parseSSEEventRequest } from '../utils/validators'
+import { parseWSEventRequest } from '../utils/validators'
 
 const app = express()
 app.use(cors())
@@ -13,7 +13,7 @@ let clients: Response[] = []
 
 app.get('/events', (req: Request, res: Response) => {
   try {
-    res.locals = parseSSEEventRequest(req.query)
+    res.locals = parseWSEventRequest(req.query)
   } catch (err: any) {
     res.json(err.message)
     return
@@ -57,5 +57,5 @@ app.post('/broadcast-new-tx', express.json(), (req: Request, res: Response) => {
 })
 
 app.listen(5000, () => {
-  console.log('SSE service listening')
+  console.log('WS service listening')
 })
