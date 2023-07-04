@@ -46,7 +46,7 @@ const addressRouteConnection = (socket: Socket): void => {
 
 const broadcastTxs = (broadcastTxData: BroadcastTxData): void => {
   if (broadcastTxData?.txs?.length === 0) {
-    console.error(RESPONSE_MESSAGES.BROADCAST_EMPTY_TX_400)
+    console.warn(RESPONSE_MESSAGES.BROADCAST_EMPTY_TX_400)
     return
   }
   addressesNs.to(broadcastTxData.address).emit('incoming-txs', broadcastTxData)
