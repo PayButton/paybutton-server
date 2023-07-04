@@ -10,7 +10,7 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
-import { BroadcastTxData } from 'ws-service/events'
+import { BroadcastTxData } from 'ws-service/types'
 import { KeyValueT, ResponseMessage } from 'constants/index'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import config from 'config'
@@ -116,7 +116,7 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
       query: { addresses }
     })
 
-    socket.on('new-tx', (broadcastedData: BroadcastTxData) => {
+    socket.on('incoming-txs', (broadcastedData: BroadcastTxData) => {
       updateIsSynced([broadcastedData.address])
       setTransactions(prevTransactions => {
         const old = prevTransactions === undefined ? {} : prevTransactions
