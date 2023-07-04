@@ -23,21 +23,21 @@ export interface BroadcastTxData {
 
 // Server(WS)-side
 export function onBroadcastTxData (socket: Socket): (...args: any[]) => void {
-  return (key: string, broadcastData: BroadcastTxData): void => {
+  return (key: string, broadcastTxData: BroadcastTxData): void => {
     if (key !== config.wsAuthKey) {
       console.error(RESPONSE_MESSAGES.UNAUTHORIZED_403)
       return
     }
 
-    if (broadcastData?.txs?.length === 0) {
+    if (broadcastTxData?.txs?.length === 0) {
       console.error(RESPONSE_MESSAGES.BROADCAST_EMPTY_TX_400)
       return
     }
-    socket.to(broadcastData.address).emit('new-tx', broadcastData)
+    socket.to(broadcastTxData.address).emit('new-tx', broadcastTxData)
   }
 }
 
 // Client(NextServer)-side
-export const broadcastTxInsertion = (broadcastData: BroadcastTxData): void => {
-  serverClient.emit('broadcast-new-tx', config.wsAuthKey, broadcastData)
+export const broadcastTxInsertion = (broadcastTxData: BroadcastTxData): void => {
+  serverClient.emit('broadcast-new-tx', config.wsAuthKey, broadcastTxData)
 }
