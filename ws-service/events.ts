@@ -24,7 +24,7 @@ export interface BroadcastTxData {
 // Server(WS)-side
 export function onBroadcastTxData (socket: Socket): (...args: any[]) => void {
   return (key: string, broadcastTxData: BroadcastTxData): void => {
-    if (key !== config.wsAuthKey) {
+    if (key !== process.env.WS_AUTH_KEY) {
       console.error(RESPONSE_MESSAGES.UNAUTHORIZED_403)
       return
     }
@@ -39,5 +39,5 @@ export function onBroadcastTxData (socket: Socket): (...args: any[]) => void {
 
 // Client(NextServer)-side
 export const broadcastTxInsertion = (broadcastTxData: BroadcastTxData): void => {
-  serverClient.emit('broadcast-new-tx', config.wsAuthKey, broadcastTxData)
+  serverClient.emit('broadcast-new-tx', process.env.WS_AUTH_KEY, broadcastTxData)
 }

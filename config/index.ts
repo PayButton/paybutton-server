@@ -11,7 +11,6 @@ interface Config {
   websiteBasePath?: string
 
   wsBaseURL: string
-  wsAuthKey: string
   showTestNetworks: false
   grpcBCHNodeURL: string
   grpcXECNodeURL: string
