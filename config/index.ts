@@ -29,6 +29,12 @@ const readConfig = (): Config => {
   if (config.networksUnderMaintenance === undefined) {
     config.networksUnderMaintenance = {}
   }
+  if (process.env.NODE_ENV === 'production') {
+    config.wsBaseURL = `wss://${config.wsBaseURL}`
+  } else {
+    config.wsBaseURL = `http://${config.wsBaseURL}`
+  }
+
   return config
 }
 
