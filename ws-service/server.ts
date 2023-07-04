@@ -1,9 +1,11 @@
 import express from 'express'
 import cors from 'cors'
-import { onBroadcastTxData } from './events'
+import { BroadcastTxData } from './events'
 import { createServer } from 'http'
 import { Server, Socket } from 'socket.io'
+import { RESPONSE_MESSAGES } from '../constants/index'
 
+// Configure server
 const app = express()
 app.use(express.json({ limit: '1mb' }))
 app.use(cors())
@@ -16,6 +18,8 @@ const io = new Server(httpServer, {
   }
 })
 
+// Configure namespaces
+const addressesNs = io.of('/addresses')
 const addressRouteConnection = (socket: Socket): void => {
   let addresses: string[] = []
   if (typeof socket.handshake.query.addresses === 'string') {
@@ -27,22 +31,39 @@ const addressRouteConnection = (socket: Socket): void => {
     socket.disconnect(true)
     return
   }
-  const countA = io.of('/addresses').sockets.size
-  console.log('conn:', addresses)
-  console.log('  total:', countA)
   for (const addr of addresses) {
     void socket.join(addr)
   }
-  void socket.on('broadcast-new-tx', onBroadcastTxData(socket))
   void socket.on('disconnect', () => {
     const countA = io.of('/addresses').sockets.size
     console.log('disc:', addresses)
     console.log('  total:', countA)
   })
+  const countA = io.of('/addresses').sockets.size
+  console.log('conn:', addresses)
+  console.log('  total:', countA)
 }
 
-io.of('/addresses').on('connection', addressRouteConnection)
+const broadcastTxs = (broadcastTxData: BroadcastTxData): void => {
+  if (broadcastTxData?.txs?.length === 0) {
+    console.error(RESPONSE_MESSAGES.BROADCAST_EMPTY_TX_400)
+    return
+  }
+  addressesNs.to(broadcastTxData.address).emit('incoming-txs', broadcastTxData)
+}
+const broadcastNs = io.of('/broadcast')
+const broadcastRouteConnection = (socket: Socket): void => {
+  const key = socket.handshake.query.key
+  if (key !== process.env.WS_AUTH_KEY) {
+    console.error(RESPONSE_MESSAGES.UNAUTHORIZED_403)
+    socket.disconnect(true)
+    return
+  }
+  void socket.on('txs-broadcast', broadcastTxs)
+}
 
+addressesNs.on('connection', addressRouteConnection)
+broadcastNs.on('connection', broadcastRouteConnection)
 httpServer.listen(5000, () => {
   console.log('WS service listening')
 })
