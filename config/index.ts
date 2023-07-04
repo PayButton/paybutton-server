@@ -30,7 +30,7 @@ const readConfig = (): Config => {
   if (process.env.NODE_ENV === 'production') {
     config.wsBaseURL = `wss://${config.wsBaseURL}`
   } else {
-    config.wsBaseURL = `http://${config.wsBaseURL}`
+    config.wsBaseURL = `ws://${config.wsBaseURL}`
   }
 
   return config
