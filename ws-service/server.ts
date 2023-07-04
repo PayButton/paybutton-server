@@ -1,61 +1,48 @@
-import express, { Request, Response } from 'express'
-import config from '../config/index'
+import express from 'express'
 import cors from 'cors'
-import { BroadcastTxData } from './client'
-import { parseWSEventRequest } from '../utils/validators'
+import { onBroadcastTxData } from './events'
+import { createServer } from 'http'
+import { Server, Socket } from 'socket.io'
 
 const app = express()
-app.use(cors())
 app.use(express.json({ limit: '1mb' }))
-app.options('/events', cors())
+app.use(cors())
+app.options('/socket.io', cors())
+const httpServer = createServer(app)
+const io = new Server(httpServer, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+})
 
-let clients: Response[] = []
-
-app.get('/events', (req: Request, res: Response) => {
-  try {
-    res.locals = parseWSEventRequest(req.query)
-  } catch (err: any) {
-    res.json(err.message)
+const addressRouteConnection = (socket: Socket): void => {
+  let addresses: string[] = []
+  if (typeof socket.handshake.query.addresses === 'string') {
+    addresses = socket.handshake.query.addresses.split(',')
+  } else if (Array.isArray(socket.handshake.query.addresses)) {
+    addresses = socket.handshake.query.addresses
+  }
+  if (addresses.length === 0) {
+    socket.disconnect(true)
     return
   }
-
-  res.setHeader('Content-Type', 'text/event-stream')
-  res.setHeader('Content-Encoding', 'none')
-  res.setHeader('Cache-Control', 'no-cache')
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.flushHeaders()
-
-  clients.push(res)
-  console.log('client', clients.length, 'connected with ', res.locals)
-
-  req.on('close', () => {
-    clients = clients.filter(client => client !== res)
-    console.log('client disconnected: ', clients.length, 'clients connected.')
-  })
-})
-
-app.post('/broadcast-new-tx', express.json(), (req: Request, res: Response) => {
-  const authKey = req.headers['x-auth-key']
-  if (authKey !== config.wsAuthKey) {
-    return res.status(403).json({ error: 'Unauthorized' })
+  const countA = io.of('/addresses').sockets.size
+  console.log('conn:', addresses)
+  console.log('  total:', countA)
+  for (const addr of addresses) {
+    void socket.join(addr)
   }
-
-  const insertedTxs: BroadcastTxData = req.body.insertedTxs
-  if (insertedTxs?.txs?.length === 0) {
-    return res.status(400).json({ error: 'Could not broadcast empty tx list' })
-  }
-
-  clients.forEach(client => {
-    const addresses = client.locals as string[]
-    if (addresses.includes(insertedTxs.address)) {
-      client.write('event: message\n')
-      client.write(`data: ${JSON.stringify(insertedTxs)}\n\n`)
-    }
+  void socket.on('broadcast-new-tx', onBroadcastTxData(socket))
+  void socket.on('disconnect', () => {
+    const countA = io.of('/addresses').sockets.size
+    console.log('disc:', addresses)
+    console.log('  total:', countA)
   })
+}
 
-  res.json({ statusCode: 200, message: `Message broadcasted to ${clients.length}` })
-})
+io.of('/addresses').on('connection', addressRouteConnection)
 
-app.listen(5000, () => {
+httpServer.listen(5000, () => {
   console.log('WS service listening')
 })

@@ -1,5 +1,9 @@
 export const SUPPORTED_ADDRESS_PATTERN = /((q|p)[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{41}|(Q|P)[QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L]{41})/
 
+export interface ResponseMessage {
+  statusCode: number
+  message: string
+}
 export const RESPONSE_MESSAGES = {
   SUCCESSFULLY_SYNCED_200: { statusCode: 200, message: 'Successfully synced.' },
   NOT_FOUND_404: { statusCode: 404, message: 'Not found.' },
@@ -51,6 +55,8 @@ export const RESPONSE_MESSAGES = {
   NO_CONTEXT_TO_INFER_USER_ADRESS_WALLET_400: { statusCode: 400, message: 'Trying to update the wallet for a user address without contex.' },
   NO_ADDRESS_FOUND_FOR_TRANSACTION_404: { statusCode: 404, message: 'No address found for transaction.' },
   FAILED_TO_UPSERT_TRANSACTION_500: { statusCode: 500, message: 'Failed to upsert transaction.' },
+  BROADCAST_EMPTY_TX_400: { statusCode: 500, message: 'Could not broadcast empty transaction list.' },
+  UNAUTHORIZED_403: { statusCode: 403, message: 'Unauthorized.' },
   COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500: { statusCode: 500, message: 'Could not broadcast upcoming transaction to WS server.' }
 }
 
