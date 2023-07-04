@@ -210,7 +210,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
             broadcastTxData.messageType = 'NewTx'
             broadcastTxData.txs = [tx]
             try {
-              this.wsEndpoint.emit('txs', broadcastTxData)
+              this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
             } catch (err: any) {
               console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
             }
