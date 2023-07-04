@@ -185,7 +185,7 @@ export const validatePriceAPIUrlAndToken = function (): void {
   if (config.priceAPIURL === '') {
     throw new Error(RESPONSE_MESSAGES.MISSING_PRICE_API_URL_400.message)
   }
-  if (config.priceAPIToken === '') {
+  if (process.env.PRICE_API_TOKEN === '' || process.env.PRICE_API_TOKEN === undefined) {
     throw new Error(RESPONSE_MESSAGES.MISSING_PRICE_API_TOKEN_400.message)
   }
 }

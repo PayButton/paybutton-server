@@ -16,7 +16,6 @@ interface Config {
   grpcXECNodeURL: string
   chronikClientURL: string
   priceAPIURL: string
-  priceAPIToken: string
   redisURL: string
   networkBlockchainClients: KeyValueT<BlockchainClientOptions>
   networksUnderMaintenance: KeyValueT<boolean>
