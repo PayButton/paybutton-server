@@ -2,7 +2,7 @@ import axios from 'axios'
 import { Prisma, Price } from '@prisma/client'
 import config from 'config'
 import prisma from 'prisma/clientInstance'
-import { HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, CURRENT_PRICE_REPEAT_DELAY } from 'constants/index'
 import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
 import moment from 'moment'
 
@@ -157,6 +157,19 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
   )
 }
 
+async function upsertNextDayPrice (responseData: IResponseData, networkId: number, date: moment.Moment): Promise<void> {
+  const minuteThreshold = (
+    60 - ( // total of minutes in an hour, minus...
+      CURRENT_PRICE_REPEAT_DELAY / 1000 / 60 * // (convert delay from miliseconds to minutes)
+      2 // ... double than the amount of minutes
+    )
+  )
+  if (date.hour() === 23 && date.minute() >= minuteThreshold) {
+    const nextDayInitialTimestamp = date.clone().add(1, 'days').startOf('day').unix()
+    await upsertPricesForNetworkId(responseData, networkId, nextDayInitialTimestamp)
+  }
+}
+
 export async function syncCurrentPrices (): Promise<boolean> {
   let success = true
   const today = moment()
@@ -164,11 +177,15 @@ export async function syncCurrentPrices (): Promise<boolean> {
   const bchPrice = await getPriceForDayAndNetworkTicker(today, NETWORK_TICKERS.bitcoincash)
   if (bchPrice != null) {
     void upsertCurrentPricesForNetworkId(bchPrice, BCH_NETWORK_ID)
+    void await upsertPricesForNetworkId(bchPrice, BCH_NETWORK_ID, flattenTimestamp(today.unix()))
+    void await upsertNextDayPrice(bchPrice, BCH_NETWORK_ID, today)
   } else success = false
 
   const xecPrice = await getPriceForDayAndNetworkTicker(today, NETWORK_TICKERS.ecash)
   if (xecPrice != null) {
     void upsertCurrentPricesForNetworkId(xecPrice, XEC_NETWORK_ID)
+    void await upsertPricesForNetworkId(xecPrice, XEC_NETWORK_ID, flattenTimestamp(today.unix()))
+    void await upsertNextDayPrice(xecPrice, XEC_NETWORK_ID, today)
   } else success = false
 
   return success
