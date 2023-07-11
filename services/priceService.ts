@@ -236,14 +236,7 @@ export async function fetchPricesForNetworkAndTimestamp (networkId: number, time
     }
   })
   if (cadPrice === null || usdPrice === null) {
-    const xecPrice = await getPriceForDayAndNetworkTicker(moment(timestamp), NETWORK_TICKERS.ecash)
-    if (xecPrice !== null) {
-      await upsertPricesForNetworkId(xecPrice, networkId, timestamp)
-    }
-    const bchPrice = await getPriceForDayAndNetworkTicker(moment(timestamp), NETWORK_TICKERS.bitcoincash)
-    if (bchPrice !== null) {
-      await upsertPricesForNetworkId(bchPrice, networkId, timestamp)
-    }
+    await renewPricesForTimestamp(timestamp)
     if (attempt < PRICE_API_MAX_RETRIES) {
       return await fetchPricesForNetworkAndTimestamp(networkId, timestamp, prisma, attempt + 1)
     }
@@ -252,5 +245,16 @@ export async function fetchPricesForNetworkAndTimestamp (networkId: number, time
   return {
     cad: cadPrice,
     usd: usdPrice
+  }
+}
+
+async function renewPricesForTimestamp (timestamp: number): Promise<void> {
+  const xecPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.ecash)
+  if (xecPrice !== null) {
+    await upsertPricesForNetworkId(xecPrice, XEC_NETWORK_ID, timestamp)
+  }
+  const bchPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.bitcoincash)
+  if (bchPrice !== null) {
+    await upsertPricesForNetworkId(bchPrice, BCH_NETWORK_ID, timestamp)
   }
 }
