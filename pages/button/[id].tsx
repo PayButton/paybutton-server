@@ -10,10 +10,11 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
-import { BroadcastTxData } from 'sse-service/client'
-import { KeyValueT } from 'constants/index'
+import { BroadcastTxData } from 'ws-service/types'
+import { KeyValueT, ResponseMessage } from 'constants/index'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import config from 'config'
+import io from 'socket.io-client'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -59,18 +60,22 @@ export default function Home ({ paybuttonId }: PaybuttonProps): React.ReactEleme
 }
 
 const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
-  const [transactions, setTransactions] = useState<KeyValueT<TransactionWithAddressAndPrices[]>>({})
+  const [transactions, setTransactions] = useState<undefined | KeyValueT<TransactionWithAddressAndPrices[]>>({})
   const [paybutton, setPaybutton] = useState(undefined as PaybuttonWithAddresses | undefined)
   const [isSynced, setIsSynced] = useState<KeyValueT<boolean>>({})
   const router = useRouter()
 
-  const fetchTransactions = async (address: string): Promise<void> => {
+  const fetchTransactions = async (address: string): Promise<TransactionWithAddressAndPrices[]> => {
     const res = await fetch(`/api/address/transactions/${address}`, {
       method: 'GET'
     })
-    const ok = await res.json()
+    const resData = await res.json()
     if (res.status === 200) {
-      setTransactions(prevTransactions => ({ ...prevTransactions, [address]: ok }))
+      if (transactions === undefined) setTransactions({})
+      setTransactions(prevTransactions => ({ ...prevTransactions, [address]: resData }))
+      return resData
+    } else {
+      throw new Error(resData.message)
     }
   }
 
@@ -82,39 +87,23 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
     setIsSynced(newIsSynced)
   }
 
-  const fetchPaybutton = async (): Promise<void> => {
+  const fetchPaybutton = async (): Promise<PaybuttonWithAddresses> => {
     const res = await fetch(`/api/paybutton/${props.paybuttonId}`, {
       method: 'GET'
     })
+    let resData = await res.json() as PaybuttonWithAddresses | ResponseMessage
     if (res.status === 200) {
-      const paybuttonData = await res.json() as PaybuttonWithAddresses
-      setPaybutton(paybuttonData)
+      resData = resData as PaybuttonWithAddresses
+      setPaybutton(resData)
       const newIsSynced = { ...isSynced }
-      paybuttonData.addresses.forEach(addr => {
+      resData.addresses.forEach(addr => {
         newIsSynced[addr.address.address] = addr.address.lastSynced != null
       })
       setIsSynced(newIsSynced)
-    }
-  }
-
-  const createListeners = async (es: EventSource, addressList: string[]): Promise<void> => {
-    for (const addr of addressList) {
-      es.addEventListener('message',
-        (event: MessageEvent) => {
-          const broadcastedTxData: BroadcastTxData = JSON.parse(event.data)
-          updateIsSynced([broadcastedTxData.address])
-          if (paybutton != null) {
-            console.log('refreshing txs...')
-            setTransactions(prevTransactions => ({
-              ...prevTransactions,
-              [addr]: [
-                ...prevTransactions[addr]
-                  .filter(tx => !broadcastedTxData.txs.map(newTx => newTx.hash).includes(tx.hash)), // avoid keeping unconfirmed tx together with confirmed
-                ...broadcastedTxData.txs
-              ]
-            }))
-          }
-        })
+      return resData
+    } else {
+      resData = resData as ResponseMessage
+      throw new Error(resData.message)
     }
   }
 
@@ -122,25 +111,41 @@ const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
     void fetchPaybutton()
   }
 
+  const setUpSocket = async (addresses: string[]): Promise<void> => {
+    const socket = io(`${config.wsBaseURL}/addresses`, {
+      query: { addresses }
+    })
+
+    socket.on('incoming-txs', (broadcastedData: BroadcastTxData) => {
+      updateIsSynced([broadcastedData.address])
+      setTransactions(prevTransactions => {
+        const old = prevTransactions === undefined ? {} : prevTransactions
+        return {
+          ...old,
+          [broadcastedData.address]: [
+            ...old[broadcastedData.address]
+              .filter(tx => !broadcastedData.txs.map(newTx => newTx.hash).includes(tx.hash)), // avoid keeping unconfirmed tx together with confirmed
+            ...broadcastedData.txs
+          ]
+        }
+      })
+    })
+  }
+
+  const getDataAndSetUpSocket = async (): Promise<void> => {
+    const paybuttonData = await fetchPaybutton()
+    const addresses: string[] = paybuttonData.addresses.map(c => c.address.address)
+    await Promise.all(addresses.map(async addr => {
+      await fetchTransactions(addr)
+    }))
+    await setUpSocket(addresses)
+  }
+
   useEffect(() => {
-    void fetchPaybutton()
+    void getDataAndSetUpSocket()
   }, [])
 
-  useEffect(() => {
-    if (paybutton != null) {
-      const addressesToListen: string[] = []
-      for (const connector of paybutton.addresses) {
-        void fetchTransactions(connector.address.address)
-        addressesToListen.push(connector.address.address)
-      }
-      const urlQuery = `address=${addressesToListen.join('&address=')}`
-      const es = new EventSource(`${config.sseBaseURL}/events?${urlQuery}`)
-      void createListeners(es, addressesToListen)
-      return () => es.close()
-    }
-  }, [paybutton])
-
-  if ((paybutton != null) && Object.keys(transactions).length !== 0) {
+  if (paybutton != null && transactions !== undefined) {
     return (
       <>
         <div className='back_btn' onClick={() => router.back()}>Back</div>

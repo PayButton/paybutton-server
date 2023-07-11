@@ -58,13 +58,13 @@ case "$command" in
         eval "$base_command_node" pm2 --time restart jobs
         ;;
     "serverlogs" | "sl")
-        eval "$base_command_node" pm2 logs SSEServer
+        eval "$base_command_node" pm2 logs WSServer
         ;;
     "serverstop" | "ss")
-        eval "$base_command_node" pm2 stop SSEServer
+        eval "$base_command_node" pm2 stop WSServer
         ;;
     "serverrestart" | "sr")
-        eval "$base_command_node" pm2 --time restart SSEServer
+        eval "$base_command_node" pm2 --time restart WSServer
         ;;
     "yarn" | "y")
         eval "$base_command_node" yarn "$@"
@@ -144,9 +144,9 @@ case "$command" in
         echo "  jl, jobslogs                [$node_container_name]     watch jobs logs"
         echo "  js, jobsstop                [$node_container_name]     stop jobs"
         echo "  jr, jobsrestart             [$node_container_name]     restart jobs"
-        echo "  sl, serverlogs              [$node_container_name]     watch SSE server logs"
-        echo "  ss, serverstop              [$node_container_name]     stop SSE server"
-        echo "  sr, serverrestart           [$node_container_name]     restart SSE server"
+        echo "  sl, serverlogs              [$node_container_name]     watch WS server logs"
+        echo "  ss, serverstop              [$node_container_name]     stop WS server"
+        echo "  sr, serverrestart           [$node_container_name]     restart WS server"
         ;;
 esac
 

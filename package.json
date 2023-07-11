@@ -5,14 +5,15 @@
     "dev": "dotenv -e .env.development -c development next dev",
     "build": "next build",
     "initJobs": "dotenv -e .env.development -e .env -c -- tsx jobs/initJobs.ts",
-    "initSSEServer": "dotenv -e .env.development -e .env -c -- ts-node -O '{\"module\":\"commonjs\"}' sse-service/server.ts",
+    "initWSServer": "dotenv -e .env.development -e .env -c -- ts-node -O '{\"module\":\"commonjs\"}' ws-service/server.ts",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "prod": "yarn build && NODE_ENV=production next start",
     "test": "dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js",
     "pretest": "dotenv -e .env.test -- prisma migrate reset --force",
     "prisma": "dotenv -e .env.development -c development -- prisma",
     "docker": "./scripts/docker-exec-shortcuts.sh",
-    "ci:integration:test": "yarn pretest && dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js tests/integration-tests --forceExit"
+    "ci:integration:test": "yarn pretest && dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js tests/integration-tests --forceExit",
+    "tarDebug": "tar cf debug.tar logs/ paybutton-config.json .env*"
   },
   "dependencies": {
     "@emotion/react": "^11.8.2",
@@ -54,6 +55,7 @@
     "react-table": "^7.8.0",
     "simpledotcss": "^2.1.0",
     "socket.io": "^4.4.1",
+    "socket.io-client": "^4.7.1",
     "supertokens-auth-react": "^0.19.0",
     "supertokens-node": "^9.0.0",
     "xecaddrjs": "^0.0.1"

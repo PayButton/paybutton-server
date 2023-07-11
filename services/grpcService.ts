@@ -14,8 +14,9 @@ import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
 import { TransactionWithAddressAndPrices, createTransaction, createManyTransactions, base64HashToHex, deleteTransactions, fetchUnconfirmedTransactions } from './transactionService'
-import { BroadcastTxData, broadcastTxInsertion } from 'sse-service/client'
+import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
+import io, { Socket } from 'socket.io-client'
 
 export interface OutputsList {
   outpoint: object
@@ -38,10 +39,16 @@ export const getGrpcClients = (): KeyValueT<GrpcClient> => {
 export class GrpcBlockchainClient implements BlockchainClient {
   availableNetworks: string[]
   subscribedAddresses: KeyValueT<Address>
+  wsEndpoint: Socket
 
   constructor () {
     this.availableNetworks = [NETWORK_SLUGS.bitcoincash, NETWORK_SLUGS.ecash]
     this.subscribedAddresses = {}
+    this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
+      query: {
+        key: process.env.WS_AUTH_KEY
+      }
+    })
   }
 
   private getClientForAddress (addressString: string): GrpcClient {
@@ -303,9 +310,9 @@ export class GrpcBlockchainClient implements BlockchainClient {
       })
     )
     try {
-      await broadcastTxInsertion(broadcastTxData)
+      this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
     } catch (err: any) {
-      console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_SSE_SERVER_500.message, err.stack)
+      console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
     }
   }
 }

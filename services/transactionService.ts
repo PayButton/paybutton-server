@@ -212,7 +212,7 @@ export async function createManyTransactions (
     })
   )
   const insertedTransactions = insertedTransactionsDistinguished
-    .filter(txD => !txD.isCreated)
+    .filter(txD => txD.isCreated)
     .map(txD => txD.tx)
   void await connectTransactionsListToPrices(insertedTransactions)
   const txsWithPrices = await prisma.transaction.findMany({
