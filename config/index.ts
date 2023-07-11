@@ -11,13 +11,11 @@ interface Config {
   websiteBasePath?: string
 
   wsBaseURL: string
-  wsAuthKey: string
   showTestNetworks: false
   grpcBCHNodeURL: string
   grpcXECNodeURL: string
   chronikClientURL: string
   priceAPIURL: string
-  priceAPIToken: string
   redisURL: string
   networkBlockchainClients: KeyValueT<BlockchainClientOptions>
   networksUnderMaintenance: KeyValueT<boolean>

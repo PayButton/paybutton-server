@@ -73,13 +73,13 @@ export async function upsertCurrentPricesForNetworkId (responseData: IResponseDa
 function getPriceURLForDayAndNetworkTicker (day: moment.Moment, networkTicker: string): string {
   validatePriceAPIUrlAndToken()
   validateNetworkTicker(networkTicker)
-  return `${config.priceAPIURL}/pricebydate/${config.priceAPIToken}/${networkTicker}+${day.format(PRICE_API_DATE_FORMAT)}`
+  return `${config.priceAPIURL}/pricebydate/${process.env.PRICE_API_TOKEN!}/${networkTicker}+${day.format(PRICE_API_DATE_FORMAT)}`
 }
 
 function getAllPricesURLForNetworkTicker (networkTicker: string): string {
   validatePriceAPIUrlAndToken()
   validateNetworkTicker(networkTicker)
-  return `${config.priceAPIURL}/dailyprices/${config.priceAPIToken}/${networkTicker}`
+  return `${config.priceAPIURL}/dailyprices/${process.env.PRICE_API_TOKEN!}/${networkTicker}`
 }
 
 export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networkTicker: string, attempt: number = 1): Promise<IResponseData | null> {
