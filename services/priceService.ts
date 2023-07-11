@@ -215,7 +215,7 @@ export interface SyncTransactionPricesInput {
   transactionId: string
 }
 
-export async function fetchPricesForNetworkAndTimestamp (networkId: number, timestamp: number, prisma: Prisma.TransactionClient): Promise<AllPrices> {
+export async function fetchPricesForNetworkAndTimestamp (networkId: number, timestamp: number, prisma: Prisma.TransactionClient, attempt: number = 1): Promise<AllPrices> {
   timestamp = flattenTimestamp(timestamp)
   const cadPrice = await prisma.price.findUnique({
     where: {
@@ -236,10 +236,25 @@ export async function fetchPricesForNetworkAndTimestamp (networkId: number, time
     }
   })
   if (cadPrice === null || usdPrice === null) {
+    await renewPricesForTimestamp(timestamp)
+    if (attempt < PRICE_API_MAX_RETRIES) {
+      return await fetchPricesForNetworkAndTimestamp(networkId, timestamp, prisma, attempt + 1)
+    }
     throw new Error(RESPONSE_MESSAGES.NO_PRICES_FOUND_404.message)
   }
   return {
     cad: cadPrice,
     usd: usdPrice
+  }
+}
+
+async function renewPricesForTimestamp (timestamp: number): Promise<void> {
+  const xecPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.ecash)
+  if (xecPrice !== null) {
+    await upsertPricesForNetworkId(xecPrice, XEC_NETWORK_ID, timestamp)
+  }
+  const bchPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.bitcoincash)
+  if (bchPrice !== null) {
+    await upsertPricesForNetworkId(bchPrice, BCH_NETWORK_ID, timestamp)
   }
 }
