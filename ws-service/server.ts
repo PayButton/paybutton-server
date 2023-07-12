@@ -1,17 +1,9 @@
-import express from 'express'
-import cors from 'cors'
 import { BroadcastTxData } from './types'
-import { createServer } from 'http'
 import { Server, Socket } from 'socket.io'
 import { RESPONSE_MESSAGES } from '../constants/index'
 
 // Configure server
-const app = express()
-app.use(express.json({ limit: '1mb' }))
-app.use(cors())
-app.options('/socket.io', cors())
-const httpServer = createServer(app)
-const io = new Server(httpServer, {
+const io = new Server({
   cors: {
     origin: '*',
     methods: ['GET', 'POST']
@@ -64,6 +56,4 @@ const broadcastRouteConnection = (socket: Socket): void => {
 
 addressesNs.on('connection', addressRouteConnection)
 broadcastNs.on('connection', broadcastRouteConnection)
-httpServer.listen(5000, () => {
-  console.log('WS service listening')
-})
+io.listen(5000)
