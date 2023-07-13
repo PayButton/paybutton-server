@@ -66,7 +66,8 @@ const getPeriodData = function (n: number, periodString: string, paymentList: Pa
   }
 }
 
-const getAllMonths = function (paymentList: Payment[]): number {
+const getNumberOfMonths = function (paymentList: Payment[]): number {
+  if (paymentList.length === 0) return 0
   const oldestTimestamp = Math.min(...paymentList.map(p => p.timestamp)
   )
   const oldestDate = moment(oldestTimestamp * 1000)
@@ -92,7 +93,7 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
   const paymentList = await getPaymentList(userId)
 
   const totalRevenue = paymentList.map((p) => p.value).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
-  const nMonthsTotal = getAllMonths(paymentList)
+  const nMonthsTotal = getNumberOfMonths(paymentList)
 
   const thirtyDays: PeriodData = getPeriodData(30, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
   const sevenDays: PeriodData = getPeriodData(7, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
