@@ -50,8 +50,8 @@ export interface Payment {
   buttonDisplayDataList: ButtonDisplayData[]
 }
 
-const getPaymentsWeekKey = (addressId: string, payment: Payment): string => {
-  return `${addressId}:payments:${moment.unix(payment.timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
+const getPaymentsWeekKey = (addressId: string, timestamp: number): string => {
+  return `${addressId}:payments:${moment.unix(timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
 }
 
 export const getUserUncachedAddresses = async (userId: string): Promise<AddressWithTransactionsWithPrices[]> => {
@@ -102,7 +102,7 @@ const getPaymentFromTx = async (tx: TransactionWithPrices): Promise<Payment> => 
 const getPaymentsByWeek = (addressId: string, payments: Payment[]): KeyValueT<Payment[]> => {
   const paymentsGroupedByKey: KeyValueT<Payment[]> = {}
   for (const payment of payments) {
-    const weekKey = getPaymentsWeekKey(addressId, payment)
+    const weekKey = getPaymentsWeekKey(addressId, payment.timestamp)
     if (weekKey in paymentsGroupedByKey) {
       paymentsGroupedByKey[weekKey].push(payment)
     } else {
@@ -153,12 +153,28 @@ const cacheGroupedPayments = async (paymentsGroupedByKey: KeyValueT<Payment[]>):
     )
   )
 }
+
+const cacheGroupedPaymentsRemove = async (weekKey: string, hash: string): Promise<void> => {
+  const paymentsString = await redis.get(weekKey)
+  let cachedPayments: Payment[] = (paymentsString === null) ? [] : JSON.parse(paymentsString)
+  cachedPayments = cachedPayments.filter(pay => pay.hash !== hash)
+  await redis.set(weekKey, JSON.stringify(cachedPayments))
+}
+
+export const uncacheManyTxs = async (txs: TransactionWithAddressAndPrices[]): Promise<void> => {
+  for (const tx of txs) {
+    const weekKey = getPaymentsWeekKey(tx.address.id, tx.timestamp)
+    void await cacheGroupedPaymentsRemove(weekKey, tx.hash)
+  }
+}
+
 const cacheGroupedPaymentsAppend = async (paymentsGroupedByKey: KeyValueT<Payment[]>): Promise<void> => {
   await Promise.all(
     Object.keys(paymentsGroupedByKey).map(async key => {
       const paymentsString = await redis.get(key)
-      let cachedPayments = (paymentsString === null) ? [] : JSON.parse(paymentsString)
+      let cachedPayments: Payment[] = (paymentsString === null) ? [] : JSON.parse(paymentsString)
       cachedPayments = cachedPayments.concat(paymentsGroupedByKey[key])
+        .filter((el, idx, array) => array.indexOf(el) === idx)
       await redis.set(key, JSON.stringify(cachedPayments))
     })
   )
