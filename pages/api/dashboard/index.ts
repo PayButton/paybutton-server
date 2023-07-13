@@ -4,10 +4,6 @@ import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
 import { ChartData, PeriodData, DashboardData, Payment, getUserUncachedAddresses, cacheAddress, getCachedPaymentsForUser } from 'redis/dashboardCache'
 
-interface AllMonths {
-  months: number
-}
-
 const getChartLabels = function (n: number, periodString: string, formatString = 'M/D'): string[] {
   return [...new Array(n)].map((_, idx) => moment().startOf('day').subtract(idx, periodString as DurationInputArg2).format(formatString)).reverse()
 }
@@ -70,14 +66,13 @@ const getPeriodData = function (n: number, periodString: string, paymentList: Pa
   }
 }
 
-const getAllMonths = function (paymentList: Payment[]): AllMonths {
+const getAllMonths = function (paymentList: Payment[]): number {
   const oldestTimestamp = Math.min(...paymentList.map(p => p.timestamp)
   )
   const oldestDate = moment(oldestTimestamp * 1000)
   const today = moment()
-  const diff = today.diff(oldestDate, 'months', true)
-  const months = Math.ceil(diff) + 1
-  return { months }
+  const floatDiff = today.diff(oldestDate, 'months', true)
+  return Math.ceil(floatDiff) + 1
 }
 
 export interface ButtonDisplayData {
@@ -97,12 +92,12 @@ const getUserDashboardData = async function (userId: string): Promise<DashboardD
   const paymentList = await getPaymentList(userId)
 
   const totalRevenue = paymentList.map((p) => p.value).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
-  const allmonths: AllMonths = getAllMonths(paymentList)
+  const nMonthsTotal = getAllMonths(paymentList)
 
   const thirtyDays: PeriodData = getPeriodData(30, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
   const sevenDays: PeriodData = getPeriodData(7, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
   const year: PeriodData = getPeriodData(12, 'months', paymentList, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM')
-  const all: PeriodData = getPeriodData(allmonths.months, 'months', paymentList, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM YYYY')
+  const all: PeriodData = getPeriodData(nMonthsTotal, 'months', paymentList, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM YYYY')
 
   return {
     thirtyDays,
