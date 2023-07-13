@@ -71,16 +71,12 @@ const getPeriodData = function (n: number, periodString: string, paymentList: Pa
 }
 
 const getAllMonths = function (paymentList: Payment[]): AllMonths {
-  const oldestdate = paymentList.reduce(
-    (prev, cur) => (prev?.timestamp < cur.timestamp ? prev : cur),
-    { timestamp: Date.now() / 1000 }
+  const oldestTimestamp = Math.min(...paymentList.map(p => p.timestamp)
   )
-  const currentDate = Date.now() / 1000
-  const diff = currentDate - oldestdate.timestamp
-  const min = diff / 60
-  const hours = min / 60
-  const days = hours / 24
-  const months = Math.ceil(days / 30)
+  const oldestDate = moment(oldestTimestamp * 1000)
+  const today = moment()
+  const diff = today.diff(oldestDate, 'months', true)
+  const months = Math.ceil(diff) + 1
   return { months }
 }
 
