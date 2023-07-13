@@ -5,7 +5,7 @@ import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced, fetchAddressById } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, PRICE_CONNECT_MAX_N, KeyValueT } from 'constants/index'
-import { cacheManyTxs, uncacheManyTxs } from 'redis/dashboardCache'
+import { cacheManyTxs } from 'redis/dashboardCache'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
@@ -306,7 +306,6 @@ export async function deleteTransactions (transactions: TransactionWithAddressAn
       }
     })
   ))
-  await uncacheManyTxs(transactions)
 }
 
 export async function fetchAllTransactionsWithNoPrices (): Promise<Transaction[]> {
