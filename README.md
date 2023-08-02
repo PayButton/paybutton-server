@@ -12,7 +12,7 @@ https://paybutton.org
 - Create a `.env.local` file with two environment variables:
   + `PRICE_API_TOKEN="<COINDANCE_API_KEY>"`
   + `WS_AUTH_KEY="<RANDOMLY_GENERATED_UUID>"`
-  + You can get the coin.dance API key at [WIP]()
+  + You can get the coin.dance API key at [coin.dance](coin.dance/api) web page.
 
 - Run the following make command* to build/pull the relevant docker images and run the server locally:
 
