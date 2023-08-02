@@ -1,8 +1,8 @@
 {
   "apiDomain": "http://localhost:3000/api",
+  "apiBasePath": "/api/auth",
+  "websiteBasePath": "/auth",
   "websiteDomain": "http://localhost:3000",
-  "apiBasePath": undefined,
-  "websiteBasePath": undefined,
   "wsBaseURL": "http://localhost:5000",
   "showTestNetworks": false,
   "grpcBCHNodeURL": "bchd.greyh.at:8335",
@@ -17,4 +17,3 @@
   "networksUnderMaintenance": {
     "bitcoincash": true
   }
-}
