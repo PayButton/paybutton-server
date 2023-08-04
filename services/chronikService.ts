@@ -194,8 +194,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
   private async processWsMessage (msg: SubscribeMsg): Promise<void> {
     // delete unconfirmed transaction from our database
-    // if they exist
-    if (msg.type === 'RemovedFromMempool' || msg.type === 'Confirmed') {
+    // if they were cancelled and not confirmed
+    if (msg.type === 'RemovedFromMempool') {
       const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
       try {
         await deleteTransactions(transactionsToDelete)
