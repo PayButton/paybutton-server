@@ -12,7 +12,6 @@ https://paybutton.org
 - Create a `.env.local` file with two environment variables:
   + `PRICE_API_TOKEN="<COINDANCE_API_KEY>"`
   + `WS_AUTH_KEY="<RANDOMLY_GENERATED_UUID>"`
-  + You can get the coin.dance API key at [coin.dance](coin.dance/api) web page.
 
 - Run the following make command* to build/pull the relevant docker images and run the server locally:
 
@@ -27,7 +26,7 @@ https://paybutton.org
 
 
 ### Optional configuration
-- To run on production mode, set `ENVIRONMENT=production` on `.env.local`. This would optimize the build so that the app is faster, but local changes will not trigger a reload immediately.
+- For production, set `ENVIRONMENT=production` in `.env.local.` This optimizes the build for performance and skips the setup of various dev tools (like LiveReload).
 <!--
 - Enable _social login_ by filling up `.env` or `.env.local` file with your social provider credentials. You can get testing credentials and more detailed instructions [here](https://supertokens.com/docs/thirdpartyemailpassword/quick-setup/backend#2-initialise-supertokens).
 -->
