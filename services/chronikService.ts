@@ -12,6 +12,7 @@ import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
 import io, { Socket } from 'socket.io-client'
+import { parseError } from 'utils/validators'
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
@@ -193,9 +194,17 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
   private async processWsMessage (msg: SubscribeMsg): Promise<void> {
     // delete unconfirmed transaction from our database
-    if (msg.type === 'RemovedFromMempool' || msg.type === 'Confirmed') {
+    // if they were cancelled and not confirmed
+    if (msg.type === 'RemovedFromMempool') {
       const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
-      await deleteTransactions(transactionsToDelete)
+      try {
+        await deleteTransactions(transactionsToDelete)
+      } catch (err: any) {
+        const parsedError = parseError(err)
+        if (parsedError.message !== RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message) {
+          throw err
+        }
+      }
     }
     // create unconfirmed or confirmed transaction
     if (msg.type === 'AddedToMempool' || msg.type === 'Confirmed') {
