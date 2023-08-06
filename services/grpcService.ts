@@ -13,7 +13,7 @@ import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValue
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
-import { TransactionWithAddressAndPrices, createTransaction, createManyTransactions, base64HashToHex, deleteTransactions, fetchUnconfirmedTransactions } from './transactionService'
+import { TransactionWithAddressAndPrices, createTransaction, createManyTransactions, base64HashToHex } from './transactionService'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
 import io, { Socket } from 'socket.io-client'
@@ -284,10 +284,6 @@ export class GrpcBlockchainClient implements BlockchainClient {
     const confirmedTransaction = data.getConfirmedTransaction()?.toObject()
     if (confirmedTransaction != null) {
       addressWithConfirmedTransactions = await this.getAddressesForTransaction(confirmedTransaction, true)
-
-      // remove unconfirmed transactions that have now been confirmed
-      const transactionsToDelete = await fetchUnconfirmedTransactions(base64HashToHex(confirmedTransaction.hash as string))
-      await deleteTransactions(transactionsToDelete)
     }
 
     // get new unconfirmed transactions
