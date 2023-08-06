@@ -27,10 +27,12 @@ const readConfig = (): Config => {
   if (config.networksUnderMaintenance === undefined) {
     config.networksUnderMaintenance = {}
   }
+  const wsURLSplit = config.wsBaseURL.split('//')
+  const noProtocolWsURL = wsURLSplit[wsURLSplit.length]
   if (process.env.NODE_ENV === 'production') {
-    config.wsBaseURL = `wss://${config.wsBaseURL}`
+    config.wsBaseURL = `wss://${noProtocolWsURL}`
   } else {
-    config.wsBaseURL = `ws://${config.wsBaseURL}`
+    config.wsBaseURL = `ws://${noProtocolWsURL}`
   }
 
   return config

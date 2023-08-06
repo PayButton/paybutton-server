@@ -7,6 +7,11 @@ https://paybutton.org
 ### Installing and running PayButton locally
 - [Install and configure Docker](https://docs.docker.com/get-docker/)
 - [Install docker-compose](https://docs.docker.com/compose/install/)
+- Clone the repo and go to the repo directory
+- Copy `config/example-config.json` to `paybutton-config.json`
+- Create a `.env.local` file with two environment variables:
+  + `PRICE_API_TOKEN="<COINDANCE_API_KEY>"`
+  + `WS_AUTH_KEY="<RANDOMLY_GENERATED_UUID>"`
 
 - Run the following make command* to build/pull the relevant docker images and run the server locally:
 
@@ -19,9 +24,12 @@ https://paybutton.org
 - App will be available at http://localhost:3000.
 - Local changes on source code should trigger a reload immediately.
 
+
 ### Optional configuration
+- For production, set `ENVIRONMENT=production` in `.env.local.` This optimizes the build for performance and skips the setup of various dev tools (like LiveReload).
+<!--
 - Enable _social login_ by filling up `.env` or `.env.local` file with your social provider credentials. You can get testing credentials and more detailed instructions [here](https://supertokens.com/docs/thirdpartyemailpassword/quick-setup/backend#2-initialise-supertokens).
-- Set `GRPC_BCH_NODE_URL` and `GRPC_XEC_NODE_URL` environment variables in `.env.local` or `.env` to a **BCHD** and **XECD** node, respectively, to get access to their API.
+-->
 
 ## Want to join the team?
 
