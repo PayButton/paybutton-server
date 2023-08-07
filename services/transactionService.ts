@@ -133,7 +133,9 @@ export async function createTransaction (
         addressId: transactionData.addressId
       }
     },
-    update: {}
+    update: {
+      confirmed: transactionData.confirmed
+    }
   })
   // only return if it was created, if it was updated return undefined
   if (createdTx.createdAt.getTime() === createdTx.updatedAt.getTime()) {

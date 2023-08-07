@@ -80,6 +80,10 @@ export const parseError = function (error: Error): Error {
           error.message.includes('prisma.address.update')
         ) {
           return new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
+        } else if (
+          error.message.includes('prisma.transaction.delete')
+        ) {
+          return new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
         }
         break
     }
