@@ -3,7 +3,7 @@ import Image from 'next/image';
 import style from '/styles/landing.module.css';
 import button from 'assets/button-pointer.png';
 import Wave from 'assets/wave.svg';
-import Rectangle from 'assets/rectangle.png';
+import Blocks from 'assets/blocks.png';
 
 export default function Hero(): JSX.Element {
   return (
@@ -22,7 +22,7 @@ export default function Hero(): JSX.Element {
               <Link href="/auth" className={style.button}>
                 Sign up for free
               </Link>
-              <Link href="/">Create a button</Link>
+              <Link href="#button-generator">Create a button</Link>
             </div>
           </div>
           <div className={`${style.col} ${style.image_col}`}>
@@ -31,7 +31,9 @@ export default function Hero(): JSX.Element {
         </div>
       </div>
       <Image src={Wave} alt="wave" className={style.wave} />
-      <Image src={Rectangle} alt="paybutton" className={style.rectangle} />
+      <div className={style.blocks}>
+        <Image src={Blocks} alt="paybutton" />
+      </div>
     </div>
   );
 }
