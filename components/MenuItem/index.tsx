@@ -15,7 +15,7 @@ const MenuItem = ({ name, image }: MenuItemProps): FunctionComponent<MenuItemPro
   const href = '/' + name.toLowerCase()
   const isActive = pathname === href
 
-  const computedStyle = isActive || (pathname === '/' && name === 'Dashboard') || (pathname === '/button/[id]' && name === 'Buttons') ? `${style.li} ${style.active}` : style.li
+  const computedStyle = isActive || (pathname === '/button/[id]' && name === 'Buttons') ? `${style.li} ${style.active}` : style.li
 
   async function handleLogout (): Promise<void> {
     await Session.signOut()

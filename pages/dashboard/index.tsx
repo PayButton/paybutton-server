@@ -63,7 +63,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
     fetchData().catch(console.error)
   }, [])
 
-  if (dashboardData === undefined || activePeriod === undefined) return <></>
+  if (dashboardData === undefined || activePeriod === undefined) return <><ThirdPartyEmailPasswordAuthNoSSR /></>
 
   return (
     <>

@@ -1,0 +1,137 @@
+.landing_ctn {
+  box-sizing: border-box;
+  background-color: var(--secondary-bg-color);
+  font-family: 'Poppins';
+}
+
+.landing_ctn a {
+  color: var(--primary-text-color);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.landing_ctn img {
+  border-radius: 0;
+}
+
+.landing_ctn a:hover {
+  color: var(--accent-color);
+}
+
+.container {
+  width: 100%;
+  max-width: 1400px;
+  margin: auto;
+  z-index: 5;
+}
+
+.button {
+  border: 1px solid var(--primary-text-color);
+  padding: 12px 40px;
+  border-radius: 5px;
+}
+
+.button:hover {
+  background-color: var(--accent-color);
+  color: var(--primary-text-color) !important;
+}
+
+.sm {
+  padding: 5px 25px;
+}
+
+/*************************** NAVBAR **************************/
+
+.navbar_ctn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  max-width: 1600px;
+  margin: auto;
+}
+
+.navbar_ctn img {
+  width: 160px;
+}
+
+.navlink_ctn a {
+  margin-left: 30px;
+}
+
+/*************************** HERO **************************/
+
+.hero_ctn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 100px 0 150px;
+  position: relative;
+  overflow: hidden;
+}
+
+.col_ctn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  width: 60%;
+  justify-content: center;
+}
+
+.col h1 {
+  margin: 0;
+  font-size: 65px;
+  font-weight: 500;
+}
+
+.col h1 span {
+  color: var(--accent-color);
+  font-weight: 700;
+}
+
+.col p {
+  font-size: 18px;
+  margin: 40px 0;
+}
+
+.button_ctn {
+  display: flex;
+  align-items: center;
+}
+
+.button_ctn a:last-child {
+  margin-left: 30px;
+}
+
+.image_col {
+  justify-content: center;
+  align-items: center;
+  width: 40%;
+}
+
+.image_col img {
+  width: 320px;
+}
+
+.wave {
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+  max-width: 2000px;
+  margin: auto;
+  left: 0;
+  right: 0;
+  z-index: 1;
+}
+
+.rectangle {
+  position: absolute;
+  bottom: -150px;
+}
