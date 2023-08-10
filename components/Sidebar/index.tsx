@@ -42,10 +42,10 @@ const MENU_ITEMS = [
     name: 'Networks',
     image: Networks
   },
-  // {
-  //   name:'Account',
-  //   image: Account
-  // },
+  {
+    name: 'Account',
+    image: Dashboard // WIP account icon
+  },
   // {
   //   name:'Settings',
   //   image: Settings
