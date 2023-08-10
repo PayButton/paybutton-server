@@ -22,7 +22,6 @@ export default function Hero(): JSX.Element {
               <Link href="/auth" className={style.button}>
                 Sign up for free
               </Link>
-              <Link href="#button-generator">Create a button</Link>
             </div>
           </div>
           <div className={`${style.col} ${style.image_col}`}>

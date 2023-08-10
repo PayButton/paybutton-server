@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import style from '/styles/landing.module.css';
 import DashboardScreen from 'assets/dashboard-light.png';
+import DashboardScreenDark from 'assets/dashboard-dark.png';
 import Wave from 'assets/wave2.svg';
 
 export default function Dashboard(): JSX.Element {
@@ -17,11 +18,17 @@ export default function Dashboard(): JSX.Element {
           your websites.
         </p>
         <div className={style.dashboard_img}>
-          <Image src={DashboardScreen} alt="PayButton Dashboard" />
+          <Image
+            src={DashboardScreen}
+            alt="PayButton Dashboard"
+            className={style.dashboard_img_light}
+          />
+          <Image
+            src={DashboardScreenDark}
+            alt="PayButton Dashboard"
+            className={style.dashboard_img_dark}
+          />
         </div>
-        <Link href="/auth" className={style.button}>
-          Get an Account
-        </Link>
       </div>
       <Image src={Wave} alt="wave" className={style.wave2} />
       <div className={style.whitebackground} />
