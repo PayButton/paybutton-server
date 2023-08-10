@@ -97,6 +97,30 @@ export interface PasswordPOSTParameters {
   newPasswordConfirmed?: string
 }
 
+export interface ChangePasswordInput {
+  oldPassword: string
+  newPassword: string
+}
+
+export const parsePasswordPOSTRequest = function (params: PasswordPOSTParameters): ChangePasswordInput {
+  if (
+    params.newPassword !== params.newPasswordConfirmed ||
+    params.oldPassword === '' ||
+    params.oldPassword === undefined ||
+    params.newPassword === '' ||
+    params.newPassword === undefined ||
+    params.newPasswordConfirmed === '' ||
+    params.newPasswordConfirmed === undefined
+  ) {
+    throw new Error(RESPONSE_MESSAGES.INVALID_PASSWORD_FORM_400.message)
+  }
+
+  return {
+    oldPassword: params.oldPassword,
+    newPassword: params.newPassword
+  }
+}
+
 export interface PaybuttonPOSTParameters {
   userId?: string
   walletId?: string
