@@ -7,6 +7,7 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import Page from 'components/Page'
+import ChangePassword from 'components/Account/ChangePassword'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -52,6 +53,7 @@ export default function Account ({ user, userId }: IProps): React.ReactElement {
       <ThirdPartyEmailPasswordAuthNoSSR>
         <h2>Account</h2>
         <p>E-mail: {user.email}</p>
+        <ChangePassword/>
       </ThirdPartyEmailPasswordAuthNoSSR>
     )
   }
