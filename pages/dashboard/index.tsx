@@ -36,6 +36,8 @@ const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
   supertokensNode.init(SuperTokensConfig.backendConfig())
+  const x = 1 + 1
+  console.log(x)
   let session
   try {
     session = await Session.getSession(context.req, context.res)
