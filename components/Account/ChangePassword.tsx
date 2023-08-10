@@ -7,6 +7,7 @@ export default function ChangePassword (): ReactElement {
   const { register, handleSubmit, reset, watch } = useForm<PasswordPOSTParameters>()
   const [ error, setError ] = useState('')
   const [ success, setSuccess ] = useState('')
+  const [ disabled, setDisabled ] = useState(true)
 
   const onSubmit = async (values: PasswordPOSTParameters): Promise<void> => {
     const res = await fetch('/api/user/password', {
@@ -29,6 +30,20 @@ export default function ChangePassword (): ReactElement {
   }
 
 
+  const noEmptyValues = (value: PasswordPOSTParameters): boolean => {
+    return (
+      value.oldPassword !== '' &&
+      value.newPassword !== '' &&
+      value.newPasswordConfirmed !== ''
+    )
+  }
+
+  const newPasswordIsDifferent = (value: PasswordPOSTParameters): boolean => {
+    return (
+      value.newPassword !== value.oldPassword
+    )
+  }
+
   const doPasswordsMatch = (value: PasswordPOSTParameters): boolean => {
     return (
       value.newPassword === value.newPasswordConfirmed ||
@@ -40,9 +55,16 @@ export default function ChangePassword (): ReactElement {
   useEffect(() => {
     const subscription = watch((value, { name, type }) => {
       if (!doPasswordsMatch(value)) {
-        setError('Passwords do not match')
+        setError('Passwords do not match.')
+        setDisabled(true)
+      } else if (!newPasswordIsDifferent(value)) {
+        setError('New password should not be the same.')
+        setDisabled(true)
       } else {
         setError('')
+        if (noEmptyValues(value)) {
+          setDisabled(false)
+        }
       }
     })
     return () => subscription.unsubscribe()
@@ -61,8 +83,10 @@ export default function ChangePassword (): ReactElement {
         <label htmlFor='newPasswordConfirmed'>Confirm new password:</label>
         <input {...register('newPasswordConfirmed')} type='password' id='newPasswordConfirmed' name='newPasswordConfirmed' required />
         <div>
-          {error !== '' && <div className={style.error_message}>{error}</div> }
-          <button type='submit'>Submit</button>
+          <div className={style.error_message}>
+            {error !== '' ? <span>{error}</span> : <span></span>}
+          </div>
+          <button  disabled={disabled} onClick={() => { setDisabled(true) }} type='submit'>Submit</button>
         </div>
       </form>
     </>
