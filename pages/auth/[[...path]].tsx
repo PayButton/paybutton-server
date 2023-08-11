@@ -1,23 +1,10 @@
 import Head from 'next/head'
-import React, { useEffect } from 'react'
-import dynamic from 'next/dynamic'
-import SuperTokens from 'supertokens-auth-react'
-import { redirectToAuth } from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
+import React from 'react'
 import Image from 'next/image'
 import logoImageSource from 'assets/logo.png'
+import SignIn from 'components/Auth/SignIn'
 
-const SuperTokensComponentNoSSR = dynamic(
-  new Promise((res) => res(SuperTokens.getRoutingComponent)),
-  { ssr: false }
-)
-
-export default function Auth() {
-  useEffect(() => {
-    if (SuperTokens.canHandleRoute() === false) {
-      redirectToAuth()
-    }
-  }, [])
-
+export default function Auth (): JSX.Element {
   return (
     <div>
       <Head>
@@ -27,7 +14,7 @@ export default function Auth() {
 
       <div className='login_ctn'>
       <Image src={logoImageSource} alt='PayButton' width={200} height={37} />
-        <SuperTokensComponentNoSSR />
+        <SignIn/>
       </div>
     </div>
   )
