@@ -19,9 +19,11 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
 
   useEffect(() => {
     void (async () => {
-      if (
-        !(await SessionJS.doesSessionExist()) &&
-        window.location.pathname !== '/signin') {
+      if (await SessionJS.doesSessionExist()) {
+        if (['/signin', '/signup'].includes(window.location.pathname)) {
+          window.location.href = '/'
+        }
+      } else if (window.location.pathname !== '/signin') {
         window.location.href = '/signin'
       }
     })()
