@@ -3,13 +3,48 @@ import { useForm } from 'react-hook-form'
 import { PasswordPOSTParameters } from 'utils/validators'
 import style from './account.module.css'
 
-interface IProps {
-  onSubmit: Function
-}
-
-export default function ChangePassword ({ onSubmit }: IProps): ReactElement {
-  const { register, handleSubmit, watch } = useForm<PasswordPOSTParameters>()
+export default function ChangePassword (): ReactElement {
+  const { register, handleSubmit, reset, watch } = useForm<PasswordPOSTParameters>()
   const [ error, setError ] = useState('')
+  const [ success, setSuccess ] = useState('')
+  const [ disabled, setDisabled ] = useState(true)
+
+  const onSubmit = async (values: PasswordPOSTParameters): Promise<void> => {
+    setDisabled(true)
+    const res = await fetch('/api/user/password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(values)
+    })
+    const json = await res.json()
+    if (res.status === 200) {
+      reset()
+      setError('')
+      setSuccess('Password changed successfully')
+    } else {
+      setSuccess('')
+      reset({oldPassword: ''})
+      setError(json.message)
+    }
+    setDisabled(false)
+  }
+
+
+  const noEmptyValues = (value: PasswordPOSTParameters): boolean => {
+    return (
+      value.oldPassword !== '' &&
+      value.newPassword !== '' &&
+      value.newPasswordConfirmed !== ''
+    )
+  }
+
+  const newPasswordIsDifferent = (value: PasswordPOSTParameters): boolean => {
+    return (
+      value.newPassword !== value.oldPassword
+    )
+  }
 
   const doPasswordsMatch = (value: PasswordPOSTParameters): boolean => {
     return (
@@ -21,11 +56,17 @@ export default function ChangePassword ({ onSubmit }: IProps): ReactElement {
 
   useEffect(() => {
     const subscription = watch((value, { name, type }) => {
-      console.log(value, name, type)
       if (!doPasswordsMatch(value)) {
-        setError('Passwords do not match')
+        setError('Passwords do not match.')
+        setDisabled(true)
+      } else if (!newPasswordIsDifferent(value)) {
+        setError('New password should not be the same.')
+        setDisabled(true)
       } else {
         setError('')
+        if (noEmptyValues(value)) {
+          setDisabled(false)
+        }
       }
     })
     return () => subscription.unsubscribe()
@@ -33,6 +74,7 @@ export default function ChangePassword ({ onSubmit }: IProps): ReactElement {
 
   return (
     <>
+      {success !== '' && <div className={style.success_message}>{success}</div> }
       <form onSubmit={handleSubmit(onSubmit)} method='post'>
         <label htmlFor='oldPassword'>Old password:</label>
         <input {...register('oldPassword')} type='password' id='oldPassword' name='oldPassword' required />
@@ -43,8 +85,10 @@ export default function ChangePassword ({ onSubmit }: IProps): ReactElement {
         <label htmlFor='newPasswordConfirmed'>Confirm new password:</label>
         <input {...register('newPasswordConfirmed')} type='password' id='newPasswordConfirmed' name='newPasswordConfirmed' required />
         <div>
-          {error !== '' && <div className={style.error_message}>{error}</div> }
-          <button type='submit'>Submit</button>
+          <div className={style.error_message}>
+            {error !== '' ? <span>{error}</span> : <span></span>}
+          </div>
+          <button  disabled={disabled} type='submit'>Submit</button>
         </div>
       </form>
     </>
