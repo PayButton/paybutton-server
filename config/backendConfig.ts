@@ -53,8 +53,8 @@ export const backendConfig = (): TypeInput => {
 
                 if (response.status === 'OK') {
                   // post sign in logic goes here
-                  return response
                 }
+                return response
               },
 
               // override the thirdparty sign in / up API
