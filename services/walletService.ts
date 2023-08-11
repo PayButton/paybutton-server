@@ -380,7 +380,7 @@ export async function getUserDefaultWalletForNetworkId (userId: string, networkI
   }
 
   if (userWalletProfile === null) {
-    throw new Error(RESPONSE_MESSAGES.USER_PROFILE_NOT_FOUND_400.message)
+    throw new Error(RESPONSE_MESSAGES.NO_USER_PROFILE_FOUND_404.message)
   }
   return await fetchWalletById(userWalletProfile.walletId)
 }

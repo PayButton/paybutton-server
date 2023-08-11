@@ -91,6 +91,12 @@ export const parseError = function (error: Error): Error {
   return error
 }
 
+export interface PasswordPOSTParameters {
+  oldPassword?: string
+  newPassword?: string
+  newPasswordConfirmed?: string
+}
+
 export interface PaybuttonPOSTParameters {
   userId?: string
   walletId?: string

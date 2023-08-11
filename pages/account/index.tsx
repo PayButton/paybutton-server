@@ -1,10 +1,13 @@
 import React from 'react'
 import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
+import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
+import Page from 'components/Page'
+import ChangePassword from 'components/Account/ChangePassword'
 
 const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
   new Promise((resolve, reject) =>
@@ -28,20 +31,31 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       throw err
     }
   }
+  if (session === undefined) return
+  const userId = session?.getUserId()
 
   return {
-    props: { userId: session.getUserId() }
+    props: {
+      userId,
+      user: await ThirdPartyEmailPasswordNode.getUserById(userId)
+    }
   }
 }
 
-interface PaybuttonsProps {
+interface IProps {
   userId: string
+  user: ThirdPartyEmailPasswordNode.User | undefined
 }
 
-export default function Account ({ userId }: PaybuttonsProps): React.ReactElement {
-  return (
-    <ThirdPartyEmailPasswordAuthNoSSR>
-      <h2>Account</h2>
-    </ThirdPartyEmailPasswordAuthNoSSR>
-  )
+export default function Account ({ user, userId }: IProps): React.ReactElement {
+  if (user !== null) {
+    return (
+      <ThirdPartyEmailPasswordAuthNoSSR>
+        <h2>Account</h2>
+        <p>E-mail: {user.email}</p>
+        <ChangePassword/>
+      </ThirdPartyEmailPasswordAuthNoSSR>
+    )
+  }
+  return <Page/>
 }
