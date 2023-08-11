@@ -12,3 +12,7 @@
   border-radius: 5px;
 }
 
+.link {
+  color: cyan !important;
+  text-decoration: underline !important;
+}
