@@ -8,7 +8,8 @@ export default function GetStarted(): JSX.Element {
         <h2 className={style.heading2}>Get Started</h2>
         <p className={style.centerp}>
           Simply add the following to your website’s HTML, replacing
-          YOUR_ADDRESS_HERE with your eCash address.
+          <span className={style.your_address}>YOUR_ADDRESS_HERE</span> with
+          your eCash address.
         </p>
         <pre>
           <code>

@@ -3,7 +3,6 @@ import Navbar from '/components/LandingPage/Navbar';
 import Hero from '/components/LandingPage/Hero';
 import Dashboard from '/components/LandingPage/Dashboard';
 import GetStarted from '/components/LandingPage/GetStarted';
-import Supporters from '/components/LandingPage/Supporters';
 import Footer from '/components/LandingPage/Footer';
 
 export default function LandingPage(): JSX.Element {
@@ -13,7 +12,6 @@ export default function LandingPage(): JSX.Element {
       <Hero />
       <Dashboard />
       <GetStarted />
-      <Supporters />
       <Footer />
     </div>
   );
