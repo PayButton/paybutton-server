@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import Page from 'components/Page'
 import { PaybuttonDetail } from 'components/Paybutton'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { AddressTransactions } from 'components/Transaction'
-import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
@@ -15,13 +13,6 @@ import { KeyValueT, ResponseMessage } from 'constants/index'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import config from 'config'
 import io from 'socket.io-client'
-
-const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
-  new Promise((resolve, reject) =>
-    resolve(ThirdPartyEmailPassword.ThirdPartyEmailPasswordAuth)
-  ),
-  { ssr: false }
-)
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -51,15 +42,7 @@ interface PaybuttonProps {
   paybuttonId: string
 }
 
-export default function Home ({ paybuttonId }: PaybuttonProps): React.ReactElement {
-  return (
-    <ThirdPartyEmailPasswordAuthNoSSR>
-      <ProtectedPage paybuttonId={paybuttonId} />
-    </ThirdPartyEmailPasswordAuthNoSSR>
-  )
-}
-
-const ProtectedPage = (props: PaybuttonProps): React.ReactElement => {
+export default function Button (props: PaybuttonProps): React.ReactElement {
   const [transactions, setTransactions] = useState<undefined | KeyValueT<TransactionWithAddressAndPrices[]>>({})
   const [paybutton, setPaybutton] = useState(undefined as PaybuttonWithAddresses | undefined)
   const [isSynced, setIsSynced] = useState<KeyValueT<boolean>>({})

@@ -1,18 +1,9 @@
 import React from 'react'
-import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
-import dynamic from 'next/dynamic'
 import { GetServerSideProps } from 'next'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import Dashboard from 'pages/dashboard'
-
-const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
-  new Promise((resolve, reject) =>
-    resolve(ThirdPartyEmailPassword.ThirdPartyEmailPasswordAuth)
-  ),
-  { ssr: false }
-)
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -39,18 +30,6 @@ interface HomeProps {
   userId: string
 }
 
-function ProtectedPage (props: HomeProps): React.Component {
-  return (
-    <Dashboard />
-  )
-}
-
 export default function Home (props: HomeProps): React.Component {
-  return (
-   
-    <ThirdPartyEmailPasswordAuthNoSSR>
-      <ProtectedPage userId={props.userId} />
-    </ThirdPartyEmailPasswordAuthNoSSR>
-    
-  )
+  return <Dashboard/>
 }

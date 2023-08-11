@@ -1,21 +1,12 @@
 import React from 'react'
-import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import { PaybuttonList, PaybuttonForm } from 'components/Paybutton'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import { PaybuttonPOSTParameters } from 'utils/validators'
-import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
-
-const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
-  new Promise((resolve, reject) =>
-    resolve(ThirdPartyEmailPassword.ThirdPartyEmailPasswordAuth)
-  ),
-  { ssr: false }
-)
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -48,15 +39,7 @@ interface PaybuttonsState {
   error: String
 }
 
-export default function Home ({ userId }: PaybuttonsProps): React.ReactElement {
-  return (
-    <ThirdPartyEmailPasswordAuthNoSSR>
-      <ProtectedPage userId={userId} />
-    </ThirdPartyEmailPasswordAuthNoSSR>
-  )
-}
-
-class ProtectedPage extends React.Component<PaybuttonsProps, PaybuttonsState> {
+export default class Buttons extends React.Component<PaybuttonsProps, PaybuttonsState> {
   constructor (props: PaybuttonsProps) {
     super(props)
     this.props = props

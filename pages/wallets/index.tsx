@@ -1,6 +1,4 @@
 import React from 'react'
-import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
-import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
@@ -10,13 +8,6 @@ import WalletForm from 'components/Wallet/WalletForm'
 import { WalletWithPaymentInfo } from 'services/walletService'
 import { AddressWithPaybuttons } from 'services/addressService'
 import { UserNetworksInfo } from 'services/networkService'
-
-const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
-  new Promise((resolve, reject) =>
-    resolve(ThirdPartyEmailPassword.ThirdPartyEmailPasswordAuth)
-  ),
-  { ssr: false }
-)
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -49,15 +40,7 @@ interface WalletsState {
   networksInfo: UserNetworksInfo[]
 }
 
-export default function Wallets ({ userId }: WalletsProps): React.ReactElement {
-  return (
-    <ThirdPartyEmailPasswordAuthNoSSR>
-      <ProtectedPage userId={userId} />
-    </ThirdPartyEmailPasswordAuthNoSSR>
-  )
-}
-
-class ProtectedPage extends React.Component<WalletsProps, WalletsState> {
+export default class Wallets extends React.Component<WalletsProps, WalletsState> {
   constructor (props: WalletsProps) {
     super(props)
     this.state = {

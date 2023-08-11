@@ -1,5 +1,4 @@
 import React, { useState, useEffect, FunctionComponent } from 'react'
-import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
@@ -25,13 +24,6 @@ const NumberBlock = ({ value, text }: NumberBlockProps): FunctionComponent<Numbe
     </div>
   )
 }
-
-const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
-  new Promise((resolve, reject) =>
-    resolve(ThirdPartyEmailPassword.ThirdPartyEmailPasswordAuth)
-  ),
-  { ssr: false }
-)
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -74,7 +66,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
   if (dashboardData === undefined || activePeriod === undefined) return <></>
 
   return (
-    <ThirdPartyEmailPasswordAuthNoSSR>
+    <>
       <h2>Dashboard</h2>
       <div className={style.number_ctn}>
         <NumberBlock value={'$'.concat(formatQuoteValue(dashboardData.total.revenue, USD_QUOTE_ID)) } text='Revenue (lifetime)' />
@@ -107,7 +99,6 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
           </div>
         </div>
       </div>
-    </ThirdPartyEmailPasswordAuthNoSSR>
-
+    </>
   )
 }
