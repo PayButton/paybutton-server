@@ -29,9 +29,9 @@ export default function SignUp (): ReactElement {
           setError(formField.error)
         })
       } else {
-        // sign in successful. The session tokens are automatically handled by
+        // sign up successful. The session tokens are automatically handled by
         // the frontend SDK.
-        window.location.href = '/'
+        window.location.href = '/signin'
       }
     } catch (err: any) {
       if (err.isSuperTokensGeneralError === true) {
@@ -45,10 +45,9 @@ export default function SignUp (): ReactElement {
     }
     setDisabled(false)
   }
-  console.log(onSubmit, handleSubmit)
   return (
     <>
-      <form method='post'>
+      <form onSubmit={handleSubmit(onSubmit)} method='post'>
         <label htmlFor='email'>Email</label>
         <input {...register('email')} type='email' id='email' name='email' required />
 
