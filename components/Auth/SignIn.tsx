@@ -24,10 +24,7 @@ export default function SignIn (): ReactElement {
 
       if (response.status === 'FIELD_ERROR') {
         response.formFields.forEach(formField => {
-          if (formField.id === 'email') {
-            // Email validation failed (for example incorrect email syntax).
-            setError(formField.error)
-          }
+          setError(formField.error)
         })
       } else if (response.status === 'WRONG_CREDENTIALS_ERROR') {
         setError('Incorrect email or password.')
