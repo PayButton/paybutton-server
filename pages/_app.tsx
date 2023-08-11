@@ -3,29 +3,38 @@ import 'styles/variables.css'
 import 'styles/global.css'
 import React, { useEffect, useState } from 'react'
 import type { AppProps } from 'next/app'
+import { useRouter } from 'next/navigation'
 import SuperTokensWebJs from 'supertokens-web-js'
 import * as SuperTokensConfig from '../config/frontendConfig'
 import Session from 'supertokens-auth-react/recipe/session'
-import { redirectToAuth } from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
 import ErrorBoundary from 'components/ErrorBoundary'
 import Head from 'next/head'
 import Page from 'components/Page'
+import SessionJS from 'supertokens-web-js/recipe/session'
 
 if (typeof window !== 'undefined') {
   SuperTokensWebJs.init(SuperTokensConfig.frontendConfig())
 }
 
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
+  const router = useRouter()
+  async function redirectIfNotSignedIn (): Promise<void> {
+    if (!(await SessionJS.doesSessionExist())) {
+      router.push('/signin')
+    }
+  }
+
   const [chart, setChart] = useState(true)
 
   useEffect(() => {
     async function doRefresh (): Promise<void> {
+      await redirectIfNotSignedIn()
       if (pageProps.fromSupertokens === 'needs-refresh') {
         if (await Session.attemptRefreshingSession()) {
           location.reload()
         } else {
           // user has been logged out
-          void redirectToAuth()
+          router.push('/signin')
         }
       }
     }
