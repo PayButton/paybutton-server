@@ -3,7 +3,7 @@ import 'styles/variables.css'
 import 'styles/global.css'
 import React, { useEffect, useState } from 'react'
 import type { AppProps } from 'next/app'
-import SuperTokensReact from 'supertokens-auth-react'
+import SuperTokensWebJs from 'supertokens-web-js'
 import * as SuperTokensConfig from '../config/frontendConfig'
 import Session from 'supertokens-auth-react/recipe/session'
 import { redirectToAuth } from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
@@ -12,12 +12,11 @@ import Head from 'next/head'
 import Page from 'components/Page'
 
 if (typeof window !== 'undefined') {
-  SuperTokensReact.init(SuperTokensConfig.frontendConfig())
+  SuperTokensWebJs.init(SuperTokensConfig.frontendConfig())
 }
 
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
-
-  const [chart, setChart] = useState(true);
+  const [chart, setChart] = useState(true)
 
   useEffect(() => {
     async function doRefresh (): Promise<void> {
