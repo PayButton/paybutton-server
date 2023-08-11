@@ -10,6 +10,7 @@ export default function ChangePassword (): ReactElement {
   const [ disabled, setDisabled ] = useState(true)
 
   const onSubmit = async (values: PasswordPOSTParameters): Promise<void> => {
+    setDisabled(true)
     const res = await fetch('/api/user/password', {
       method: 'POST',
       headers: {
@@ -27,6 +28,7 @@ export default function ChangePassword (): ReactElement {
       reset({oldPassword: ''})
       setError(json.message)
     }
+    setDisabled(false)
   }
 
 
@@ -86,7 +88,7 @@ export default function ChangePassword (): ReactElement {
           <div className={style.error_message}>
             {error !== '' ? <span>{error}</span> : <span></span>}
           </div>
-          <button  disabled={disabled} onClick={() => { setDisabled(true) }} type='submit'>Submit</button>
+          <button  disabled={disabled} type='submit'>Submit</button>
         </div>
       </form>
     </>
