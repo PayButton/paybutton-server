@@ -4,7 +4,7 @@ import Image from 'next/image'
 import logoImageSource from 'assets/logo.png'
 import SignIn from 'components/Auth/SignIn'
 
-export default function Auth (): JSX.Element {
+export default function Signin (): JSX.Element {
   return (
     <div>
       <Head>
