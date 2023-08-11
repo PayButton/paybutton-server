@@ -3,7 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
 import style from './menuitem.module.css'
-import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
+import Session from 'supertokens-web-js/recipe/session'
 
 export interface MenuItemProps {
   name: string
@@ -18,8 +18,8 @@ const MenuItem = ({ name, image }: MenuItemProps): FunctionComponent<MenuItemPro
   const computedStyle = isActive || (pathname === '/' && name === 'Dashboard') || (pathname === '/button/[id]' && name === 'Buttons') ? `${style.li} ${style.active}` : style.li
 
   async function handleLogout (): Promise<void> {
-    await ThirdPartyEmailPassword.signOut()
-    void ThirdPartyEmailPassword.redirectToAuth()
+    await Session.signOut()
+    window.location.href = '/signin'
   }
 
   return (
