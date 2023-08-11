@@ -61,6 +61,8 @@ export default function SignIn (): ReactElement {
           <button disabled={disabled} type='submit'>Submit</button>
         </div>
       </form>
+      <a href="password-recover/" className={style.link}>Forgot my password</a>
+    <br/>
       <a href="signup/" className={style.link}>Sign up</a>
     </>
   )
