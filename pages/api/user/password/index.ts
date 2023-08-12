@@ -1,5 +1,5 @@
 import { setSession } from 'utils/setSession'
-import { parsePasswordPOSTRequest } from 'utils/validators'
+import { parseChangePasswordPOSTRequest } from 'utils/validators'
 import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
@@ -8,7 +8,7 @@ export default async (
   res: any
 ): Promise<void> => {
   await setSession(req, res)
-  const values = parsePasswordPOSTRequest(req.body)
+  const values = parseChangePasswordPOSTRequest(req.body)
   if (req.method === 'POST') {
     const session = req.session
     const oldPassword = values.oldPassword
