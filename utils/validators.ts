@@ -91,7 +91,7 @@ export const parseError = function (error: Error): Error {
   return error
 }
 
-export interface PasswordPOSTParameters {
+export interface ChangePasswordPOSTParameters {
   oldPassword?: string
   newPassword?: string
   newPasswordConfirmed?: string
