@@ -7,25 +7,16 @@ import { sendVerificationEmail } from 'supertokens-web-js/recipe/emailverificati
 const SEND_EMAIL_DELAY = 60
 
 async function sendEmail (): Promise<void> {
-  try {
-    await fetch('/api/user/emailSent', {
-      method: 'POST'
-    })
-    const response = await sendVerificationEmail()
-    if (response.status === 'EMAIL_ALREADY_VERIFIED_ERROR') {
-      // This can happen if the info about email verification in the session was outdated.
-      // Redirect the user to the home page
-      window.location.assign('/')
-    } else {
-      // email was sent successfully.
-    }
-  } catch (err: any) {
-    if (err.isSuperTokensGeneralError === true) {
-      // this may be a custom error message sent from the API by you.
-      window.alert(err.message)
-    } else {
-      window.alert('Oops! Something went wrong.')
-    }
+  await fetch('/api/user/emailSent', {
+    method: 'POST'
+  })
+  const response = await sendVerificationEmail()
+  if (response.status === 'EMAIL_ALREADY_VERIFIED_ERROR') {
+    // This can happen if the info about email verification in the session was outdated.
+    // Redirect the user to the home page
+    window.location.assign('/')
+  } else {
+    // email was sent successfully.
   }
 }
 
@@ -34,15 +25,15 @@ export default function Verify (): JSX.Element {
   const [resendCount, setResendCount] = useState<number>()
   const [secondsElapsed, setSecondsElapsed] = useState<number>()
   const [canResendEmail, setCanResendEmail] = useState(false)
-  const [resendingEmail, setResendingEmail] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState(false)
 
   async function resendEmail (): Promise<void> {
     if (!canResendEmail) return
-    setResendingEmail(true)
+    setSendingEmail(true)
     setCanResendEmail(false)
     void await sendEmail()
     setLastSentVerificationEmailAt(new Date())
-    setResendingEmail(false)
+    setSendingEmail(false)
   }
 
   useEffect(() => {
@@ -52,15 +43,20 @@ export default function Verify (): JSX.Element {
       })
       const userProfile = await res.json()
       if (userProfile.lastSentVerificationEmailAt === null) {
+        setSendingEmail(true)
+        setCanResendEmail(false)
         void await sendEmail()
+        setLastSentVerificationEmailAt(new Date())
+        setSendingEmail(false)
+      } else {
+        setLastSentVerificationEmailAt(new Date(userProfile.lastSentVerificationEmailAt))
       }
-      setLastSentVerificationEmailAt(new Date(userProfile.lastSentVerificationEmailAt))
     }
     void fetchUserInfo()
   }, [])
 
   useEffect(() => {
-    if (!resendingEmail && secondsElapsed !== undefined && secondsElapsed > SEND_EMAIL_DELAY) {
+    if (!sendingEmail && secondsElapsed !== undefined && secondsElapsed > SEND_EMAIL_DELAY) {
       setCanResendEmail(true)
     }
   }, [secondsElapsed])
