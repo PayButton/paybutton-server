@@ -1,12 +1,13 @@
 import { useForm } from 'react-hook-form'
-import React, { ReactElement, useState } from 'react'
+import React, { ReactElement, useEffect, useState } from 'react'
 import style from './auth.module.css'
 import { emailPasswordSignUp } from 'supertokens-web-js/recipe/thirdpartyemailpassword'
+import { SignUpPasswordPOSTParameters } from 'utils/validators'
 
 export default function SignUp (): ReactElement {
-  const { register, handleSubmit, reset } = useForm<any>()
+  const { register, handleSubmit, watch, reset } = useForm<any>()
   const [error, setError] = useState('')
-  const [disabled, setDisabled] = useState(false)
+  const [disabled, setDisabled] = useState(true)
   const onSubmit = async (values: any): Promise<void> => {
     setDisabled(true)
 
@@ -45,9 +46,39 @@ export default function SignUp (): ReactElement {
     }
     setDisabled(false)
   }
+
+  const noEmptyValues = (value: SignUpPasswordPOSTParameters): boolean => {
+    return (
+      value.password !== '' &&
+      value.passwordConfirmed !== ''
+    )
+  }
+
+  const doPasswordsMatch = (value: SignUpPasswordPOSTParameters): boolean => {
+    return (
+      value.password === value.passwordConfirmed ||
+      value.passwordConfirmed === ''
+    )
+  }
+
+  useEffect(() => {
+    const subscription = watch((value, { name, type }) => {
+      if (!doPasswordsMatch(value)) {
+        setError('Passwords do not match.')
+        setDisabled(true)
+      } else {
+        setError('')
+        if (noEmptyValues(value)) {
+          setDisabled(false)
+        }
+      }
+    })
+    return () => subscription.unsubscribe()
+  })
+
   return (
     <>
-      <form onSubmit={handleSubmit(onSubmit)} method='post'>
+      <form onSubmit={() => { void handleSubmit(onSubmit) }} method='post'>
         <label htmlFor='email'>Email</label>
         <input {...register('email')} type='email' id='email' name='email' required />
 
