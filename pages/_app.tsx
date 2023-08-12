@@ -14,20 +14,26 @@ if (typeof window !== 'undefined') {
   SuperTokensWebJs.init(SuperTokensConfig.frontendConfig())
 }
 
+const AUTHORIZED_UNLOGGED_URLS = [
+  '/signin',
+  '/signup',
+  '/password-recover'
+]
+
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
   const [chart, setChart] = useState(true)
 
   useEffect(() => {
     void (async () => {
       if (await SessionJS.doesSessionExist()) {
-        if (['/signin', '/signup'].includes(window.location.pathname)) {
+        if (AUTHORIZED_UNLOGGED_URLS.includes(window.location.pathname)) {
           window.location.href = '/'
         }
-      } else if (window.location.pathname !== '/signin') {
+      } else if (!AUTHORIZED_UNLOGGED_URLS.includes(window.location.pathname)) {
         window.location.href = '/signin'
       }
     })()
-  })
+  }, [])
 
   return (
     <>
