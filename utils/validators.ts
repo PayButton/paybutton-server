@@ -107,7 +107,7 @@ export interface ChangePasswordInput {
   newPassword: string
 }
 
-export const parsePasswordPOSTRequest = function (params: PasswordPOSTParameters): ChangePasswordInput {
+export const parseChangePasswordPOSTRequest = function (params: ChangePasswordPOSTParameters): ChangePasswordInput {
   if (
     params.newPassword !== params.newPasswordConfirmed ||
     params.oldPassword === '' ||
