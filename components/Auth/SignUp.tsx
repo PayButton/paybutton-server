@@ -78,7 +78,7 @@ export default function SignUp (): ReactElement {
 
   return (
     <>
-      <form onSubmit={() => { void handleSubmit(onSubmit) }} method='post'>
+      <form onSubmit={handleSubmit(onSubmit)} method='post'>
         <label htmlFor='email'>Email</label>
         <input {...register('email')} type='email' id='email' name='email' required />
 
