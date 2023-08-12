@@ -1,15 +1,15 @@
 import React, { ReactElement, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { PasswordPOSTParameters } from 'utils/validators'
+import { ChangePasswordPOSTParameters } from 'utils/validators'
 import style from './account.module.css'
 
 export default function ChangePassword (): ReactElement {
-  const { register, handleSubmit, reset, watch } = useForm<PasswordPOSTParameters>()
-  const [ error, setError ] = useState('')
-  const [ success, setSuccess ] = useState('')
-  const [ disabled, setDisabled ] = useState(true)
+  const { register, handleSubmit, reset, watch } = useForm<ChangePasswordPOSTParameters>()
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [disabled, setDisabled] = useState(true)
 
-  const onSubmit = async (values: PasswordPOSTParameters): Promise<void> => {
+  const onSubmit = async (values: ChangePasswordPOSTParameters): Promise<void> => {
     setDisabled(true)
     const res = await fetch('/api/user/password', {
       method: 'POST',
@@ -25,14 +25,13 @@ export default function ChangePassword (): ReactElement {
       setSuccess('Password changed successfully')
     } else {
       setSuccess('')
-      reset({oldPassword: ''})
+      reset({ oldPassword: '' })
       setError(json.message)
     }
     setDisabled(false)
   }
 
-
-  const noEmptyValues = (value: PasswordPOSTParameters): boolean => {
+  const noEmptyValues = (value: ChangePasswordPOSTParameters): boolean => {
     return (
       value.oldPassword !== '' &&
       value.newPassword !== '' &&
@@ -40,18 +39,17 @@ export default function ChangePassword (): ReactElement {
     )
   }
 
-  const newPasswordIsDifferent = (value: PasswordPOSTParameters): boolean => {
+  const newPasswordIsDifferent = (value: ChangePasswordPOSTParameters): boolean => {
     return (
       value.newPassword !== value.oldPassword
     )
   }
 
-  const doPasswordsMatch = (value: PasswordPOSTParameters): boolean => {
+  const doPasswordsMatch = (value: ChangePasswordPOSTParameters): boolean => {
     return (
       value.newPassword === value.newPasswordConfirmed ||
       value.newPasswordConfirmed === ''
     )
-
   }
 
   useEffect(() => {
@@ -75,7 +73,7 @@ export default function ChangePassword (): ReactElement {
   return (
     <>
       {success !== '' && <div className={style.success_message}>{success}</div> }
-      <form onSubmit={handleSubmit(onSubmit)} method='post'>
+      <form onSubmit={() => { void handleSubmit(onSubmit) }} method='post'>
         <label htmlFor='oldPassword'>Old password:</label>
         <input {...register('oldPassword')} type='password' id='oldPassword' name='oldPassword' required />
 
@@ -88,7 +86,7 @@ export default function ChangePassword (): ReactElement {
           <div className={style.error_message}>
             {error !== '' ? <span>{error}</span> : <span></span>}
           </div>
-          <button  disabled={disabled} type='submit'>Submit</button>
+          <button disabled={disabled} type='submit'>Submit</button>
         </div>
       </form>
     </>
