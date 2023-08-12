@@ -32,7 +32,7 @@ export default function SignUp (): ReactElement {
       } else {
         // sign up successful. The session tokens are automatically handled by
         // the frontend SDK.
-        window.location.href = '/signin'
+        window.location.href = '/verify'
       }
     } catch (err: any) {
       if (err.isSuperTokensGeneralError === true) {
