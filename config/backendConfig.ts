@@ -3,6 +3,7 @@ import SessionNode from 'supertokens-node/recipe/session'
 import { appInfo } from './appInfo'
 import { TypeInput } from 'supertokens-node/types'
 import * as walletService from 'services/walletService'
+import EmailVerification from 'supertokens-node/recipe/emailverification'
 
 export const backendConfig = (): TypeInput => {
   let connectionURI: string | undefined = process.env.SUPERTOKENS_CONNECTION_URI
@@ -80,7 +81,10 @@ export const backendConfig = (): TypeInput => {
           }
         }
       }),
-      SessionNode.init()
+      SessionNode.init(),
+      EmailVerification.init({
+        mode: 'REQUIRED'
+      })
     ],
     isInServerlessEnv: true
   }
