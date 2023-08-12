@@ -9,6 +9,7 @@ import ErrorBoundary from 'components/ErrorBoundary'
 import Head from 'next/head'
 import Page from 'components/Page'
 import SessionJS from 'supertokens-web-js/recipe/session'
+import { EmailVerificationClaim } from 'supertokens-web-js/recipe/emailverification'
 
 if (typeof window !== 'undefined') {
   SuperTokensWebJs.init(SuperTokensConfig.frontendConfig())
@@ -26,8 +27,19 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
   useEffect(() => {
     void (async () => {
       if (await SessionJS.doesSessionExist()) {
-        if (AUTHORIZED_UNLOGGED_URLS.includes(window.location.pathname)) {
-          window.location.href = '/'
+        const validationErrors = await SessionJS.validateClaims()
+        if (validationErrors.length === 0) {
+          // Verified address user
+          if (AUTHORIZED_UNLOGGED_URLS.includes(window.location.pathname)) {
+            window.location.href = '/'
+          }
+        } else {
+          for (const err of validationErrors) {
+            if (err.validatorId === EmailVerificationClaim.id) {
+              // email is not verified
+              if (window.location.pathname !== '/verify') window.location.href = '/verify'
+            }
+          }
         }
       } else if (!AUTHORIZED_UNLOGGED_URLS.includes(window.location.pathname)) {
         window.location.href = '/signin'

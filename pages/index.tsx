@@ -16,6 +16,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       return { props: { fromSupertokens: 'needs-refresh' } }
     } else if (err.type === Session.Error.UNAUTHORISED) {
       return { props: {} }
+    } else if (err.type === Session.Error.INVALID_CLAIMS) {
+      return { props: {} }
     } else {
       throw err
     }
