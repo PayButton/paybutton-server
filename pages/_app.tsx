@@ -18,7 +18,8 @@ if (typeof window !== 'undefined') {
 const AUTHORIZED_UNLOGGED_URLS = [
   '/signin',
   '/signup',
-  '/password-recover'
+  '/reset-password',
+  '/auth/reset-password'
 ]
 
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
