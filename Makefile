@@ -4,7 +4,7 @@ create_test_paybutton_json = echo { \"priceAPIURL\": \"foo\", \"networkBlockchai
 
 dev:
 	$(git_hook_setup)
-	docker-compose up --build -d
+	docker-compose --env-file .env --env-file .env.local up --build -d
 
 stop-dev:
 	docker-compose down

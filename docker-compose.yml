@@ -3,7 +3,7 @@ services:
   paybutton:
     container_name: paybutton-dev
     restart: always
-    depends_on: 
+    depends_on:
       - db
       - users-service
       - cache
@@ -18,19 +18,27 @@ services:
   db:
     container_name: paybutton-db
     image: mariadb
+    user: root
+    build:
+      context: .
+      dockerfile: './scripts/db/Dockerfile'
     restart: always
+    env_file:
+      - .env
+      - .env.local
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: paybutton
-      MYSQL_USER: paybutton
-      MYSQL_PASSWORD: paybutton
+      MYSQL_ROOT_PASSWORD: ${MAIN_DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MAIN_DB_NAME}
+      MYSQL_USER: ${MAIN_DB_USER}
+      MYSQL_PASSWORD: ${MAIN_DB_PASSWORD}
     command: --default-authentication-plugin=mysql_native_password
     ports:
       - 3306:3306
     volumes:
-      - ./scripts/db/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql
-      - ./scripts/db/init-supertokens-db.sql:/docker-entrypoint-initdb.d/init-supertokens-db.sql
-      - ./scripts/db/prisma-shadow-db-fix.sql:/docker-entrypoint-initdb.d/prisma-shadow-db-fix.sql
+      - ./scripts/db-entrypoint.sh:/docker-entrypoint-initdb.d/1-db-entrypoint.sh
+      - ./scripts/db/init-test-db.sql:/home/mysql/raw_entrypoint/2-init-test-db.sql
+      - ./scripts/db/init-supertokens-db.sql:/home/mysql/raw_entrypoint/3-init-supertokens-db.sql
+      - ./scripts/db/prisma-shadow-db-fix.sql:/home/mysql/raw_entrypoint/4-prisma-shadow-db-fix.sql
 
   users-service:
     container_name: paybutton-users-service
@@ -43,10 +51,10 @@ services:
       - 3567:3567
     environment:
       MYSQL_DATABASE_NAME: supertokens
-      MYSQL_USER: supertokens
-      MYSQL_PASSWORD: supertokens
-      MYSQL_HOST: db
-      MYSQL_PORT: 3306
+      MYSQL_USER: ${SUPERTOKENS_DB_USER}
+      MYSQL_PASSWORD: ${SUPERTOKENS_DB_PASSWORD}
+      MYSQL_HOST: ${MAIN_DB_HOST}
+      MYSQL_PORT: ${MAIN_DB_PORT}
 
   cache:
     container_name: paybutton-cache
