@@ -1,6 +1,4 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import ThirdPartyEmailPassword from 'supertokens-auth-react/recipe/thirdpartyemailpassword'
-import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
@@ -15,13 +13,6 @@ import EyeIcon from 'assets/eye-icon.png'
 import { formatQuoteValue } from 'utils/index'
 import { XEC_NETWORK_ID, USD_QUOTE_ID } from 'constants/index'
 import moment from 'moment'
-
-const ThirdPartyEmailPasswordAuthNoSSR = dynamic(
-  new Promise((resolve, reject) =>
-    resolve(ThirdPartyEmailPassword.ThirdPartyEmailPasswordAuth)
-  ),
-  { ssr: false }
-)
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -124,9 +115,9 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
   )
 
   return (
-    <ThirdPartyEmailPasswordAuthNoSSR>
+    <>
       <h2>Payments</h2>
       {data.length === 0 ? <div className='no-payments'>No Payments to show yet</div> : <TableContainer columns={columns} data={data} />}
-    </ThirdPartyEmailPasswordAuthNoSSR>
+    </>
   )
 }
