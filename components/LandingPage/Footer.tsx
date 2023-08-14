@@ -12,11 +12,25 @@ export default function Footer(): JSX.Element {
         <div className={style.footer}>
           <Image src={logoImageSource} alt="PayButton" />
           <div className={style.footerlink_ctn}>
+            <Link
+              href="https://github.com/paybutton/paybutton"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Github
+            </Link>
+            <Link
+              href="https://t.me/paybutton"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Telegram
+            </Link>
             <Link href="https://paybutton.org/#/?id=what-is-paybutton">
               Docs
             </Link>
-            <Link href="/auth">Sign In</Link>
-            <Link href="/auth" className={`${style.button} ${style.sm}`}>
+            <Link href="/signin">Sign In</Link>
+            <Link href="/signup" className={`${style.button} ${style.sm}`}>
               Sign up
             </Link>
           </div>
