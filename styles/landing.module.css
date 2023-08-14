@@ -84,6 +84,16 @@ body[data-theme='dark'] .navbar_ctn img {
   margin-right: 0px;
 }
 
+.github_corner {
+  position: fixed;
+  right: 0;
+  width: 80px;
+}
+
+.github_corner svg {
+  fill: red;
+}
+
 @media (max-width: 750px) {
   .navlink_ctn a {
     display: none;
