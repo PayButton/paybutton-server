@@ -17,7 +17,7 @@ export default function Footer(): JSX.Element {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Github
+              GitHub
             </Link>
             <Link
               href="https://t.me/paybutton"

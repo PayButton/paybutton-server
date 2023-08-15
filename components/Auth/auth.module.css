@@ -1,5 +1,5 @@
 .success_message {
-  color: green;
+  color: rgb(0, 172, 0);
   font-size: 14px;
   padding: 1px 10px;
   border-radius: 5px;
@@ -12,7 +12,33 @@
   border-radius: 5px;
 }
 
-.link {
-  color: cyan !important;
-  text-decoration: underline !important;
+.signup_ctn {
+  margin-top: 30px;
+  font-size: 16px;
+  color: var(--primary-text-color);
+}
+
+.signup_ctn a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+.signup_ctn a:hover {
+  text-decoration: underline;
+}
+
+.forgot_pw {
+  font-size: 14px;
+  color: #8a8a8a;
+  text-decoration: none;
+  margin-bottom: 15px;
+  display: inline-block;
+}
+
+.confitm_pw {
+  margin-bottom: 25px !important;
+}
+
+.forgot_pw:hover {
+  text-decoration: underline;
 }

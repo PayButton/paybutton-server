@@ -40,6 +40,11 @@
   color: var(--primary-text-color) !important;
 }
 
+body[data-theme='dark'] .button:hover {
+  color: #231f20 !important;
+  border-color: #231f20;
+}
+
 .sm {
   padding: 5px 25px;
 }
@@ -455,6 +460,7 @@ body[data-theme='dark'] .wave2 {
   border: none;
   border-radius: 0 0 5px 5px;
   margin-bottom: 60px;
+  padding: 40px 50px;
 }
 
 .get_started_ctn code {
@@ -510,6 +516,12 @@ body[data-theme='dark'] .get_started_ctn pre code {
 .your_address {
   font-style: italic;
   color: var(--accent-color);
+}
+
+@media (max-width: 750px) {
+  .get_started_ctn pre {
+    padding: 20px 20px;
+  }
 }
 
 /*************************** SUPPORTERS **************************/

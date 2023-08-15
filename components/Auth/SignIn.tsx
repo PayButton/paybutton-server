@@ -48,12 +48,14 @@ export default function SignIn (): ReactElement {
   }
   return (
     <>
+      <h2>Sign In</h2>
       <form onSubmit={handleSubmit(onSubmit)} method='post'>
         <label htmlFor='email'>Email</label>
         <input {...register('email')} type='email' id='email' name='email' required />
 
         <label htmlFor='password'>Password</label>
         <input {...register('password')} type='password' id='password' name='password' required />
+        <a href="reset-password/" className={style.forgot_pw}>Forgot my password</a>
         <div>
           <div className={style.error_message}>
             {error !== '' ? <span>{error}</span> : <span></span>}
@@ -61,9 +63,9 @@ export default function SignIn (): ReactElement {
           <button disabled={disabled} type='submit'>Submit</button>
         </div>
       </form>
-      <a href="reset-password/" className={style.link}>Forgot my password</a>
-    <br/>
-      <a href="signup/" className={style.link}>Sign up</a>
+      <div className={style.signup_ctn}>
+        Don't have an account? <a href="signup/" className={style.link}>Sign up now</a>
+      </div>
     </>
   )
 }
