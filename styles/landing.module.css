@@ -451,7 +451,46 @@ body[data-theme='dark'] .wave2 {
   text-align: left;
   margin: auto;
   font-size: 14px;
+  background-color: #231f20;
+  border: none;
+  border-radius: 0 0 5px 5px;
   margin-bottom: 60px;
+}
+
+.get_started_ctn code {
+  color: #fff;
+}
+
+.codetopbar {
+  background-color: #595657;
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px 15px;
+  max-width: 1000px;
+  margin: auto;
+  border-radius: 5px 5px 0 0;
+}
+
+.codetopbar img {
+  filter: brightness(100);
+  width: 12px;
+  margin-right: 4px;
+}
+
+.copybutton {
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.copybutton:hover {
+  color: var(--accent-color);
+}
+
+.copybutton:hover img {
+  filter: none;
 }
 
 body[data-theme='dark'] .get_started_ctn h2,
