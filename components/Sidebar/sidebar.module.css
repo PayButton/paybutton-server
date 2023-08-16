@@ -61,9 +61,6 @@ body[data-theme='dark'] .socialctn .moon {
   --toggle-height: 20px;
   --toggle-padding: 2px;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
   font-size: 1.5rem;
   line-height: 1;
   width: var(--toggle-width);

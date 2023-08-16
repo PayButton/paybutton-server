@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
 import logoImageSource from 'assets/logo.png'
 import { sendVerificationEmail } from 'supertokens-web-js/recipe/emailverification'
+import style from 'styles/signin.module.css'
 
 const SEND_EMAIL_DELAY = 60
 
@@ -84,15 +85,17 @@ export default function Verify (): JSX.Element {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className='login_ctn'>
-      <Image src={logoImageSource} alt='PayButton' width={200} height={37} />
-        <div>
-        E-mail sent, Verify your e-mail box.
-        </div>
-        <div>
-          <button disabled={!canResendEmail} onClick={() => { void resendEmail() }}>Resend e-mail</button>
-          {!canResendEmail && resendCount !== undefined && resendCount >= 0 ? <div>{resendCount}</div> : ''}
-        </div>
+      <div className={style.login_ctn}>
+        <Image src={logoImageSource} alt='PayButton' />
+        <div className={style.login_box}>
+          <div style={{ marginBottom: '20px' }}>
+          Email sent, check your inbox.
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <button disabled={!canResendEmail} onClick={() => { void resendEmail() }}>Resend email</button>
+            {!canResendEmail && resendCount !== undefined && resendCount >= 0 ? <div>Can resend in {resendCount}s</div> : ''}
+          </div>
+      </div>
       </div>
     </div>
   )

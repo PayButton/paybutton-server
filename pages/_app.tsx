@@ -32,7 +32,7 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
         if (validationErrors.length === 0) {
           // Verified address user
           if (AUTHORIZED_UNLOGGED_URLS.includes(window.location.pathname)) {
-            window.location.href = '/'
+            window.location.href = '/dashboard'
           }
         } else {
           for (const err of validationErrors) {
@@ -42,7 +42,7 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
             }
           }
         }
-      } else if (!AUTHORIZED_UNLOGGED_URLS.includes(window.location.pathname)) {
+      } else if (!AUTHORIZED_UNLOGGED_URLS.includes(window.location.pathname) && window.location.pathname !== '/') {
         window.location.href = '/signin'
       }
     })()

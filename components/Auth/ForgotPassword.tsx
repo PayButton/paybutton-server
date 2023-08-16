@@ -41,19 +41,21 @@ export default function SignUp (): ReactElement {
   }
   return (
     success
-      ? <p>If this account is registered, an e-mail was sent.</p>
+      ? <><h2>Forgot Password</h2><p>If this account is registered, an email was sent.</p><a href="/signin" className={style.smlink}>Back to Sign In</a></>
       : <>
+       <h2>Forgot Password</h2>
+       <p style={{ marginTop: '-10px' }}>Enter your email below to receive a link to reset your password</p>
       <form onSubmit={handleSubmit(onSubmit)} method='post'>
         <label htmlFor='email'>Email</label>
-        <input {...register('email')} type='email' id='email' name='email' required />
+        <input {...register('email')} type='email' id='email' name='email' required style={{ marginBottom: '15px' }} />
         <div>
           <div className={style.error_message}>
             {error !== '' ? <span>{error}</span> : <span></span>}
           </div>
-          <button disabled={disabled} type='submit'>Send e-mail</button>
+          <button disabled={disabled} type='submit'>Send email</button>
         </div>
         <div>
-          <a href="signin/" className={style.link}>Sign in</a>
+          <a href="/signin" className={style.smlink}>Back</a>
         </div>
       </form>
     </>

@@ -78,6 +78,7 @@ export default function SignUp (): ReactElement {
 
   return (
     <>
+      <h2>Sign Up</h2>
       <form onSubmit={handleSubmit(onSubmit)} method='post'>
         <label htmlFor='email'>Email</label>
         <input {...register('email')} type='email' id='email' name='email' required />
@@ -86,7 +87,7 @@ export default function SignUp (): ReactElement {
         <input {...register('password')} type='password' id='password' name='password' required />
 
         <label htmlFor='passwordConfirmed'>Confirm Password</label>
-        <input {...register('passwordConfirmed')} type='password' id='passwordConfirmed' name='passwordConfirmed' required />
+        <input {...register('passwordConfirmed')} type='password' id='passwordConfirmed' name='passwordConfirmed' required className={style.confitm_pw} />
         <div>
           <div className={style.error_message}>
             {error !== '' ? <span>{error}</span> : <span></span>}
@@ -94,7 +95,9 @@ export default function SignUp (): ReactElement {
           <button disabled={disabled} type='submit'>Submit</button>
         </div>
       </form>
-      Already have an account? <a href="signin/" className={style.link}>Sign in</a>
+      <div className={style.signup_ctn}>
+        Already have an account? <a href="signin/" className={style.link}>Sign in</a>
+      </div>
     </>
   )
 }

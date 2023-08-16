@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import { verifyEmail } from 'supertokens-web-js/recipe/emailverification'
+import style from 'styles/signin.module.css'
+import Image from 'next/image'
+import logoImageSource from 'assets/logo.png'
 
 export default function Auth (): JSX.Element {
-  const [text, setText] = useState('')
+  const [text, setText] = useState('Verifing email...')
   async function consumeVerificationCode (): Promise<void> {
     try {
       const response = await verifyEmail()
@@ -14,7 +17,7 @@ export default function Auth (): JSX.Element {
         // window.location.assign("/verify") // back to the email sending screen. WIP
       } else {
         // email was verified successfully.
-        window.location.assign('/')
+        window.location.assign('/dashboard')
       }
     } catch (err: any) {
       if (err.isSuperTokensGeneralError === true) {
@@ -37,8 +40,11 @@ export default function Auth (): JSX.Element {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className='login_ctn'>
+      <div className={style.login_ctn}>
+        <Image src={logoImageSource} alt='PayButton' />
+        <div className={style.login_box}>
         { text }
+        </div>
       </div>
     </div>
   )
