@@ -50,10 +50,10 @@ export default function Navbar(): JSX.Element {
             Telegram
           </Link>
           <Link href="https://paybutton.org/#/?id=what-is-paybutton">Docs</Link>
-          <Link href="/signin">Sign In</Link>
-          <Link href="/signup" className={`${style.button} ${style.sm}`}>
+          <a href="/signin">Sign In</a>
+          <a href="/signup" className={`${style.button} ${style.sm}`}>
             Sign up
-          </Link>
+          </a>
         </div>
       </div>
     </div>

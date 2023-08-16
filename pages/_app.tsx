@@ -16,7 +16,6 @@ if (typeof window !== 'undefined') {
 }
 
 const AUTHORIZED_UNLOGGED_URLS = [
-  '/',
   '/signin',
   '/signup',
   '/reset-password',
@@ -43,7 +42,7 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
             }
           }
         }
-      } else if (!AUTHORIZED_UNLOGGED_URLS.includes(window.location.pathname)) {
+      } else if (!AUTHORIZED_UNLOGGED_URLS.includes(window.location.pathname) && window.location.pathname !== '/') {
         window.location.href = '/signin'
       }
     })()

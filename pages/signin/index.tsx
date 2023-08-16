@@ -1,5 +1,4 @@
 import Head from 'next/head'
-import React from 'react'
 import Image from 'next/image'
 import logoImageSource from 'assets/logo.png'
 import SignIn from 'components/Auth/SignIn'
