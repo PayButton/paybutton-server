@@ -186,8 +186,10 @@ export class ChronikBlockchainClient implements BlockchainClient {
   private getWsConfig (): WsConfig {
     return {
       onMessage: (msg: SubscribeMsg) => { void this.processWsMessage(msg) },
-      onError: (e: ws.ErrorEvent) => { console.log(`WebSocket error, message type: ${e.type} | message: ${e.message} | error: ${e.error as string}`) },
-      onEnd: (e: ws.Event) => { console.log(`WebSocket ended, message type: ${e.type}`) },
+      onError: (e: ws.ErrorEvent) => { console.log(`Chronik webSocket error, type: ${e.type} | message: ${e.message} | error: ${e.error as string}`) },
+      onReconnect: (_: ws.Event) => { console.log('Chronik webSocket unexpected closed.') },
+      onConnect: (_: ws.Event) => { console.log('Chronik webSocket connection (re)established') },
+      onEnd: (e: ws.Event) => { console.log(`Chronik WebSocket ended, type: ${e.type}`) },
       autoReconnect: true
     }
   }
@@ -196,6 +198,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
     if (msg.type === 'RemovedFromMempool') {
+      console.log(`[${msg.type}] ${msg.txid}`)
       const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
       try {
         await deleteTransactions(transactionsToDelete)
@@ -205,9 +208,9 @@ export class ChronikBlockchainClient implements BlockchainClient {
           throw err
         }
       }
-    }
-    // create unconfirmed or confirmed transaction
-    if (msg.type === 'AddedToMempool' || msg.type === 'Confirmed') {
+    } else if (msg.type === 'AddedToMempool' || msg.type === 'Confirmed') {
+      // create unconfirmed or confirmed transaction
+      console.log(`[${msg.type}] ${msg.txid}`)
       const transaction = await this.chronik.tx(msg.txid)
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
       await Promise.all(
@@ -227,6 +230,10 @@ export class ChronikBlockchainClient implements BlockchainClient {
           return tx
         })
       )
+    } else if (msg.type === 'Error') {
+      console.log(`[${msg.type}] CODE:${msg.errorCode} ${JSON.stringify(msg.msg)} | isUserError: ${msg.isUserError ? 'yes' : 'no'}`)
+    } else {
+      console.log(`[${msg.type.toString()}] ${JSON.stringify(msg)}`)
     }
   }
 
@@ -247,11 +254,12 @@ export class ChronikBlockchainClient implements BlockchainClient {
   public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
     if (addresses.length === 0) return
 
-    const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address))
-    if (addressesAlreadySubscribed.length === addresses.length) return
+    let addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address)) // WIP const
     addressesAlreadySubscribed.forEach(address => {
       console.log(`This address was already subscribed: ${address.address}`)
     })
+    addressesAlreadySubscribed = [] // WIP del
+    if (addressesAlreadySubscribed.length === addresses.length) return
     addresses = addresses.filter(address => !addressesAlreadySubscribed.includes(address))
 
     const addressesByNetwork: KeyValueT<Address[]> = groupAddressesByNetwork(this.availableNetworks, addresses)
@@ -259,6 +267,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     for (const [, networkAddresses] of Object.entries(addressesByNetwork)) {
       networkAddresses.forEach(address => {
         const { type, hash160 } = toHash160(address.address)
+        console.log('subbing', address.address)
         this.chronikWSEndpoint.subscribe(type, hash160)
         this.subscribedAddresses[address.address] = address
       })
