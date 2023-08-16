@@ -41,7 +41,7 @@ export default function SignUp (): ReactElement {
   }
   return (
     success
-      ? <><h2>Forgot Password</h2><p>If this account is registered, an e-mail was sent.</p><a href="/signin" className={style.smlink}>Back to Sign In</a></>
+      ? <><h2>Forgot Password</h2><p>If this account is registered, an email was sent.</p><a href="/signin" className={style.smlink}>Back to Sign In</a></>
       : <>
        <h2>Forgot Password</h2>
        <p style={{ marginTop: '-10px' }}>Enter your email below to receive a link to reset your password</p>
@@ -52,7 +52,7 @@ export default function SignUp (): ReactElement {
           <div className={style.error_message}>
             {error !== '' ? <span>{error}</span> : <span></span>}
           </div>
-          <button disabled={disabled} type='submit'>Send e-mail</button>
+          <button disabled={disabled} type='submit'>Send email</button>
         </div>
         <div>
           <a href="/signin" className={style.smlink}>Back</a>

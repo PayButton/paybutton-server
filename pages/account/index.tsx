@@ -43,7 +43,7 @@ export default function Account ({ user, userId }: IProps): React.ReactElement {
     return (
       <>
         <h2>Account</h2>
-        <p>E-mail: {user.email}</p>
+        <p>Email: {user.email}</p>
         <ChangePassword/>
       </>
     )

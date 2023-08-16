@@ -89,10 +89,10 @@ export default function Verify (): JSX.Element {
         <Image src={logoImageSource} alt='PayButton' />
         <div className={style.login_box}>
           <div style={{ marginBottom: '20px' }}>
-          E-mail sent, Verify your e-mail box.
+          Email sent, check your inbox.
           </div>
           <div style={{ textAlign: 'center' }}>
-            <button disabled={!canResendEmail} onClick={() => { void resendEmail() }}>Resend e-mail</button>
+            <button disabled={!canResendEmail} onClick={() => { void resendEmail() }}>Resend email</button>
             {!canResendEmail && resendCount !== undefined && resendCount >= 0 ? <div>Can resend in {resendCount}s</div> : ''}
           </div>
       </div>
