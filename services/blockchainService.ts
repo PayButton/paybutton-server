@@ -52,6 +52,16 @@ export interface BlockchainClient {
   subscribeAddressesAddTransactions: (addresses: Address[]) => Promise<void>
 }
 
+interface CustomNodeJsGlobal extends NodeJS.Global {
+  chronik: ChronikBlockchainClient
+}
+declare const global: CustomNodeJsGlobal
+
+if (global.chronik === undefined) {
+  console.log('creating chronik instance...')
+  global.chronik = new ChronikBlockchainClient()
+}
+
 function getBlockchainClient (networkSlug: string): BlockchainClient {
   console.log('should only be called twice at beggining')
   if (!Object.keys(config.networkBlockchainClients).includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.MISSING_BLOCKCHAIN_CLIENT_400.message) }
@@ -60,7 +70,7 @@ function getBlockchainClient (networkSlug: string): BlockchainClient {
     case 'grpc' as BlockchainClientOptions:
       return new GrpcBlockchainClient()
     case 'chronik' as BlockchainClientOptions:
-      return new ChronikBlockchainClient()
+      return global.chronik
     default:
       throw new Error(RESPONSE_MESSAGES.NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400.message)
   }
