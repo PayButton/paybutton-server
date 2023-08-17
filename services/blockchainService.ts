@@ -52,10 +52,10 @@ export interface BlockchainClient {
   subscribeAddressesAddTransactions: (addresses: Address[]) => Promise<void>
 }
 
-interface CustomNodeJsGlobal extends NodeJS.Global {
+export interface NodeJsGlobalChronk extends NodeJS.Global {
   chronik: ChronikBlockchainClient
 }
-declare const global: CustomNodeJsGlobal
+declare const global: NodeJsGlobalChronk
 
 if (global.chronik === undefined) {
   console.log('creating chronik instance...')
