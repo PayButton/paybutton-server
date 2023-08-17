@@ -1,0 +1,48 @@
+.account_ctn {
+  display: flex;
+  flex-direction: column;
+  margin-top: 30px;
+}
+
+.account_card {
+  width: 100%;
+  background-color: var(--secondary-bg-color);
+  max-width: 430px;
+  padding: 15px 20px;
+  margin: 4px 0;
+  border-radius: 10px;
+  display: inline-block;
+  font-weight: 600;
+}
+
+.updatebtn {
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  padding: 5px 30px;
+  align-self: baseline;
+  border-radius: 10px;
+  background: var(--secondary-bg-color);
+  margin-top: 10px;
+  order: 5;
+  color: var(--primary-text-color);
+}
+
+.updatebtn:hover {
+  background-color: var(--accent-color);
+}
+
+.label {
+  margin-top: 20px;
+}
+
+body[data-theme='dark'] .updatebtn:hover {
+  color: #231f20;
+}
+
+@media (max-width: 960px) {
+    .account_card {
+     max-width: unset;
+    }
+  }
