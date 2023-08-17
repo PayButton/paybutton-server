@@ -274,6 +274,23 @@ export class ChronikBlockchainClient implements BlockchainClient {
   }
 }
 
+export function fromHash160 (type: string, hash160: string): string {
+  const buffer = Buffer.from(hash160, 'hex')
+
+  // Because ecashaddrjs only accepts Uint8Array as input type, convert
+  const hash160ArrayBuffer = new ArrayBuffer(buffer.length)
+  const hash160Uint8Array = new Uint8Array(hash160ArrayBuffer)
+  for (let i = 0; i < hash160Uint8Array.length; i += 1) {
+    hash160Uint8Array[i] = buffer[i]
+  }
+
+  return encode(
+    'ecash',
+    type.toUpperCase(),
+    hash160Uint8Array
+  )
+}
+
 export function toHash160 (address: string): {type: ScriptType, hash160: string} {
   try {
     const { type, hash } = decode(address)
@@ -316,20 +333,5 @@ export function outputScriptToAddress (outputScript: string | undefined): string
 
   if (hash160.length !== 40) return undefined
 
-  const buffer = Buffer.from(hash160, 'hex')
-
-  // Because ecashaddrjs only accepts Uint8Array as input type, convert
-  const hash160ArrayBuffer = new ArrayBuffer(buffer.length)
-  const hash160Uint8Array = new Uint8Array(hash160ArrayBuffer)
-  for (let i = 0; i < hash160Uint8Array.length; i += 1) {
-    hash160Uint8Array[i] = buffer[i]
-  }
-
-  const ecashAddress = encode(
-    'ecash',
-    addressType,
-    hash160Uint8Array
-  )
-
-  return ecashAddress
+  return fromHash160(addressType, hash160)
 }
