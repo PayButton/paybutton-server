@@ -254,11 +254,10 @@ export class ChronikBlockchainClient implements BlockchainClient {
   public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
     if (addresses.length === 0) return
 
-    let addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address)) // WIP const
+    const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address))
     addressesAlreadySubscribed.forEach(address => {
       console.log(`This address was already subscribed: ${address.address}`)
     })
-    addressesAlreadySubscribed = [] // WIP del
     if (addressesAlreadySubscribed.length === addresses.length) return
     addresses = addresses.filter(address => !addressesAlreadySubscribed.includes(address))
 
