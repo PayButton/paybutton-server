@@ -52,10 +52,10 @@ export interface BlockchainClient {
   subscribeAddressesAddTransactions: (addresses: Address[]) => Promise<void>
 }
 
-export interface NodeJsGlobalChronk extends NodeJS.Global {
+export interface NodeJsGlobalChronik extends NodeJS.Global {
   chronik: ChronikBlockchainClient
 }
-declare const global: NodeJsGlobalChronk
+declare const global: NodeJsGlobalChronik
 
 function getBlockchainClient (networkSlug: string): BlockchainClient {
   console.log('should only be called twice at beggining')

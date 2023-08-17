@@ -1,7 +1,7 @@
 import { ChronikClient, ScriptType, SubscribeMsg, Tx, Utxo, WsConfig, WsEndpoint } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
+import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, NodeJsGlobalChronik, TransactionDetails } from './blockchainService'
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT } from 'constants/index'
 import { TransactionWithAddressAndPrices, createManyTransactions, deleteTransactions, fetchUnconfirmedTransactions, createTransaction } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
@@ -334,4 +334,18 @@ export function outputScriptToAddress (outputScript: string | undefined): string
   if (hash160.length !== 40) return undefined
 
   return fromHash160(addressType, hash160)
+}
+
+interface SubbedAddressesLog {
+  registeredSubscriptions: string[]
+  currentSubscriptions: string[]
+}
+
+export function getSubbedAddresses (): SubbedAddressesLog {
+  const chronik = (global as unknown as NodeJsGlobalChronik).chronik
+  const ret = {} as any
+  ret.registeredSubscriptions = Object.keys(chronik.subscribedAddresses)
+  const asAny = chronik as any // To access private properties
+  ret.currentSubscriptions = asAny.chronikWSEndpoint._subs.map((sub: any) => fromHash160(sub.scriptType, sub.scriptPayload))
+  return ret
 }
