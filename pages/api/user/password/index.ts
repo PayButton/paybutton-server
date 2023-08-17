@@ -20,7 +20,7 @@ export default async (
     }
 
     // call signin to check that input password is correct
-    const isPasswordValid = await ThirdPartyEmailPasswordNode.emailPasswordSignIn(userInfo.email, oldPassword)
+    const isPasswordValid = await ThirdPartyEmailPasswordNode.emailPasswordSignIn('public', userInfo.email, oldPassword)
     if (isPasswordValid.status === 'WRONG_CREDENTIALS_ERROR') {
       res.status(400).json(RESPONSE_MESSAGES.WRONG_PASSWORD_400)
       return
@@ -33,6 +33,8 @@ export default async (
 
     if (response.status === 'OK') {
       res.status(200).json('')
+    } else if (response.status === 'PASSWORD_POLICY_VIOLATED_ERROR') {
+      res.status(400).json(RESPONSE_MESSAGES.WEAK_NEW_PASSWORD_400)
     } else {
       res.status(500).json(response.status)
     }

@@ -73,7 +73,7 @@ export default function ChangePassword (): ReactElement {
   return (
     <>
       {success !== '' && <div className={style.success_message}>{success}</div> }
-      <form onSubmit={() => { void handleSubmit(onSubmit) }} method='post'>
+      <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
         <label htmlFor='oldPassword'>Old password:</label>
         <input {...register('oldPassword')} type='password' id='oldPassword' name='oldPassword' required />
 

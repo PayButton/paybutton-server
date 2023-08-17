@@ -60,6 +60,7 @@ export const RESPONSE_MESSAGES = {
   UNAUTHORIZED_403: { statusCode: 403, message: 'Unauthorized.' },
   COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500: { statusCode: 500, message: 'Could not broadcast upcoming transaction to WS server.' },
   INVALID_PASSWORD_FORM_400: { statusCode: 400, message: 'Password form is invalid.' },
+  WEAK_NEW_PASSWORD_400: { statusCode: 400, message: 'The new password must contain at least 8 characters, including a letter and a number.' },
   WRONG_PASSWORD_400: { statusCode: 400, message: 'Wrong password.' }
 }
 
