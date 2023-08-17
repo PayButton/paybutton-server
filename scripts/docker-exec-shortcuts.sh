@@ -9,6 +9,26 @@ base_command_db="docker exec -it $db_container_name"
 base_command_cache="docker exec -it $cache_container_name"
 command="$1"
 
+. ./.env
+. ./.env.local
+
+# Check for missing variables
+missing_vars=()
+[ -z "$MAIN_DB_NAME" ] && missing_vars+=("MAIN_DB_NAME")
+[ -z "$MAIN_DB_USER" ] && missing_vars+=("MAIN_DB_USER")
+[ -z "$MAIN_DB_HOST" ] && missing_vars+=("MAIN_DB_HOST")
+[ -z "$MAIN_DB_PORT" ] && missing_vars+=("MAIN_DB_PORT")
+[ -z "$MAIN_DB_PASSWORD" ] && missing_vars+=("MAIN_DB_PASSWORD")
+[ -z "$SUPERTOKENS_DB_USER" ] && missing_vars+=("SUPERTOKENS_DB_USER")
+[ -z "$SUPERTOKENS_DB_PASSWORD" ] && missing_vars+=("SUPERTOKENS_DB_PASSWORD")
+
+# Exit early if any variables are missing
+if [ ${#missing_vars[@]} -ne 0 ]; then
+    missing_vars_string=$(IFS=,; echo "${missing_vars[*]}")
+    echo "Error: The following variables are missing: $missing_vars_string"
+    exit 1
+fi
+
 shift
 case "$command" in
     "nl" | "nextlogs")
@@ -18,19 +38,19 @@ case "$command" in
         eval "$base_command_node" pm2 --time restart next
         ;;
     "database" | "db")
-        eval "$base_command_db" mariadb -u paybutton -ppaybutton -D paybutton "$@"
+        eval "$base_command_db" mariadb -u "$MAIN_DB_USER" -p"$MAIN_DB_PASSWORD" -D "$MAIN_DB_NAME" "$@"
         ;;
     "databaseroot" | "dbr")
-        eval "$base_command_db" mariadb -u root -proot "$@"
+        eval "$base_command_db" mariadb -u root -p"$MAIN_DB_ROOT_PASSWORD" "$@"
         ;;
     "databaseshell" | "dbs")
         eval "$base_command_db" bash -l "$@"
         ;;
     "databasetest" | "dbt")
-        eval "$base_command_db" mariadb -u paybutton-test -ppaybutton-test -D paybutton-test "$@"
+        eval "$base_command_db" mariadb -u "$MAIN_DB_USER"-test -p"$MAIN_DB_PASSWORD" -D "$MAIN_DB_NAME"-test "$@"
         ;;
     "databaseuser" | "dbu")
-        eval "$base_command_db" mariadb -u supertokens -psupertokens -D supertokens "$@"
+        eval "$base_command_db" mariadb -u "$SUPERTOKENS_DB_USER" -p"$SUPERTOKENS_DB_PASSWORD" -D supertokens "$@"
         ;;
     "test" | "t")
         eval "$base_command_node" yarn test "$@"
