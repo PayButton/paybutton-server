@@ -41,9 +41,9 @@ export default function SignUp (): ReactElement {
   }
   return (
     success
-      ? <><h2>Forgot Password</h2><p>If this account is registered, an email was sent.</p><a href="/signin" className={style.smlink}>Back to Sign In</a></>
+      ? <><h2>Reset Password</h2><p>If this account is registered, an email was sent.</p><a href="/signin" className={style.smlink}>Back to Sign In</a></>
       : <>
-       <h2>Forgot Password</h2>
+       <h2>Reset Password</h2>
        <p style={{ marginTop: '-10px' }}>Enter your email below to receive a link to reset your password</p>
       <form onSubmit={handleSubmit(onSubmit)} method='post'>
         <label htmlFor='email'>Email</label>
