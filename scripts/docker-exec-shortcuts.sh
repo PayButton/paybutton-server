@@ -8,8 +8,9 @@ base_command_node_root="docker exec  -it -u 0 $node_container_name"
 base_command_db="docker exec -it $db_container_name"
 base_command_cache="docker exec -it $cache_container_name"
 command="$1"
-. .env
-. .env.local
+
+. ./.env
+. ./.env.local
 
 # Check for missing variables
 missing_vars=()
