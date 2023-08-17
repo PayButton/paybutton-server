@@ -58,7 +58,6 @@ export interface NodeJsGlobalChronik extends NodeJS.Global {
 declare const global: NodeJsGlobalChronik
 
 function getBlockchainClient (networkSlug: string): BlockchainClient {
-  console.log('should only be called twice at beggining')
   if (!Object.keys(config.networkBlockchainClients).includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.MISSING_BLOCKCHAIN_CLIENT_400.message) }
 
   switch (config.networkBlockchainClients[networkSlug]) {
