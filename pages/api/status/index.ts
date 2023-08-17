@@ -8,7 +8,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       const chronik = (global as unknown as NodeJsGlobalChronk).chronik
       const jsonRes = {} as any
       jsonRes.subscribedAddresses = chronik.subscribedAddresses
-      const asAny = chronik as any
+      const asAny = chronik as any // To access private properties
       jsonRes.subs = asAny.chronikWSEndpoint._subs.map((sub: any) => fromHash160(sub.scriptType, sub.scriptPayload))
       res.status(200).json(jsonRes)
     } catch (err: any) {

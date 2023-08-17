@@ -57,11 +57,6 @@ export interface NodeJsGlobalChronk extends NodeJS.Global {
 }
 declare const global: NodeJsGlobalChronk
 
-if (global.chronik === undefined) {
-  console.log('creating chronik instance...')
-  global.chronik = new ChronikBlockchainClient()
-}
-
 function getBlockchainClient (networkSlug: string): BlockchainClient {
   console.log('should only be called twice at beggining')
   if (!Object.keys(config.networkBlockchainClients).includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.MISSING_BLOCKCHAIN_CLIENT_400.message) }
@@ -70,6 +65,10 @@ function getBlockchainClient (networkSlug: string): BlockchainClient {
     case 'grpc' as BlockchainClientOptions:
       return new GrpcBlockchainClient()
     case 'chronik' as BlockchainClientOptions:
+      if (global.chronik === undefined) {
+        console.log('creating chronik instance...')
+        global.chronik = new ChronikBlockchainClient()
+      }
       return global.chronik
     default:
       throw new Error(RESPONSE_MESSAGES.NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400.message)
