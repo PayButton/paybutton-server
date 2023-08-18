@@ -19,7 +19,7 @@ export default function Hero(): JSX.Element {
               website
             </p>
             <div className={style.button_ctn}>
-              <Link href="/signup" className={style.button}>
+              <Link href="/signup" className='button_main'>
                 Sign up for free
               </Link>
             </div>

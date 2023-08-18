@@ -51,7 +51,7 @@ export default function Navbar(): JSX.Element {
           </Link>
           <Link href="https://paybutton.org/#/?id=what-is-paybutton">Docs</Link>
           <a href="/signin">Sign In</a>
-          <a href="/signup" className={`${style.button} ${style.sm}`}>
+          <a href="/signup" className="button_outline button_small">
             Sign up
           </a>
         </div>

@@ -30,7 +30,7 @@ export default function Footer(): JSX.Element {
               Docs
             </Link>
             <Link href="/signin">Sign In</Link>
-            <Link href="/signup" className={`${style.button} ${style.sm}`}>
+            <Link href="/signup" className='button_outline button_small'>
               Sign up
             </Link>
           </div>

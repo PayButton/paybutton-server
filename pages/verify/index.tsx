@@ -92,7 +92,7 @@ export default function Verify (): JSX.Element {
           Email sent, check your inbox.
           </div>
           <div style={{ textAlign: 'center' }}>
-            <button disabled={!canResendEmail} onClick={() => { void resendEmail() }}>Resend email</button>
+            <button disabled={!canResendEmail} onClick={() => { void resendEmail() }} className='button_main button_small'>Resend email</button>
             {!canResendEmail && resendCount !== undefined && resendCount >= 0 ? <div>Can resend in {resendCount}s</div> : ''}
           </div>
       </div>

@@ -43,18 +43,6 @@ body[data-theme='dark'] .changepw_ctn input {
   border-radius: 10px;
 }
 
-.changepw_ctn form button:hover {
-  background-color: #4879d4;
-}
-
-.changepw_ctn form button:disabled {
-  background: #d9d9d9;
-}
-
-body[data-theme='dark'] .changepw_ctn form button:disabled {
-  background: #9d9d9d;
-}
-
 @media (max-width: 960px) {
   .changepw_ctn {
    max-width: unset;

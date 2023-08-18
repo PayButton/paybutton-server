@@ -17,17 +17,16 @@
 
 .updatebtn {
   font-size: 14px;
-  font-weight: 500;
   cursor: pointer;
   display: flex;
-  padding: 5px 30px;
   align-self: baseline;
-  border-radius: 10px;
-  background: var(--secondary-bg-color);
   margin-top: 10px;
   order: 5;
-  color: var(--primary-text-color);
   position: relative;
+  cursor: pointer;
+  padding: 5px 40px;
+  box-shadow: none;
+  font-size: 14px;
 }
 
 .updatebtn:hover {

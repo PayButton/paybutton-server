@@ -92,7 +92,7 @@ export default function SignUp (): ReactElement {
           <div className={style.error_message}>
             {error !== '' ? <span>{error}</span> : <span></span>}
           </div>
-          <button disabled={disabled} type='submit'>Submit</button>
+          <button disabled={disabled} type='submit' className='button_main'>Submit</button>
         </div>
       </form>
       <div className={style.signup_ctn}>

@@ -66,7 +66,7 @@ const NetworkComponent: FunctionComponent<IProps> = ({
       })}
       {userNetworks.length < 2 && userNetworks.length !== 0 &&
         <div
-          className={style.showNetworksCtn}
+          className={`${style.showNetworksCtn} button_outline`}
           onClick={() => setShow(!show)}
         >
           {!show ? 'Show Other Networks' : 'Hide Other Networks'}

@@ -149,8 +149,8 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                       <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style_pb.delete_btn}>Delete Wallet<div> <Image src={TrashIcon} alt='delete' /></div></button>
                         )}
                     <div>
-                      <button type='submit'>Submit</button>
-                      <button onClick={() => { setModal(false); reset() }} className={style_pb.cancel_btn}>Cancel</button>
+                      <button type='submit' className='button_main'>Submit</button>
+                      <button onClick={() => { setModal(false); reset() }} className='button_outline'>Cancel</button>
                     </div>
                   </div>
                 </form>

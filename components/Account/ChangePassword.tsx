@@ -94,7 +94,7 @@ export default function ChangePassword ({ toggleChangePassword }: IProps): React
           <div className={style.error_message}>
             {error !== '' ? <span>{error}</span> : <span></span>}
           </div>
-          <button disabled={disabled} type='submit'>Submit</button>
+          <button disabled={disabled} className='button_main' type='submit'>Submit</button>
         </div>
       </form>
     </div>

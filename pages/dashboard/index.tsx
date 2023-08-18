@@ -82,7 +82,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
       <div className={style.chart_outer_ctn}>
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
-            <h4>Revenue</h4>
+            <h5>Revenue</h5>
             <h5>{activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${formatQuoteValue(activePeriod.totalRevenue, USD_QUOTE_ID)}</h5>
           </div>
           <div className={style.chart_ctn}>
@@ -91,7 +91,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         </div>
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
-            <h4>Payments</h4>
+            <h5>Payments</h5>
             <h5>{activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: {formatQuoteValue(activePeriod.totalPayments)}</h5>
           </div>
           <div className={style.chart_ctn}>

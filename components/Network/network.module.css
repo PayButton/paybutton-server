@@ -34,14 +34,14 @@
 }
 
 .showNetworksCtn {
-  background-color: var(--secondary-bg-color);
   order: 3;
   height: 100%;
-  padding: 10px 20px;
   align-self: flex-start;
   margin-bottom: 15px;
-  border-radius: 10px;
   cursor: pointer;
+  padding: 5px 40px;
+  box-shadow: none;
+  font-size: 14px;
 }
 
 @media (max-width: 1200px) {

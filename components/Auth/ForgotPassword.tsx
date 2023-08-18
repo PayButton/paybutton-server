@@ -52,7 +52,7 @@ export default function SignUp (): ReactElement {
           <div className={style.error_message}>
             {error !== '' ? <span>{error}</span> : <span></span>}
           </div>
-          <button disabled={disabled} type='submit'>Send email</button>
+          <button disabled={disabled} type='submit' className='button_main'>Send email</button>
         </div>
         <div>
           <a href="/signin" className={style.smlink}>Back</a>

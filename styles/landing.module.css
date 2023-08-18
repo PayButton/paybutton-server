@@ -121,6 +121,7 @@ body[data-theme='dark'] .navbar_ctn img {
     margin: 0;
     margin-bottom: 15px;
     border: none;
+    box-shadow: none;
   }
 
   .navlink_ctn a:last-child:hover {
@@ -596,7 +597,7 @@ body[data-theme='dark'] .supporters_ctn h3 {
 }
 
 .footerlink_ctn a:last-child {
-  border-color: #fff;
+  background: transparent;
 }
 
 .copyright {

@@ -52,7 +52,7 @@ export default function Account({ user, userId }: IProps): React.ReactElement {
         <div className={style.account_card}>{user.email}</div>
         <div
           onClick={() => setChangePassword(!changePassword)}
-          className={style.updatebtn}
+          className={`${style.updatebtn} button_outline`}
         >
           {!changePassword ? 'Update Password' : 'Cancel'}
         </div>

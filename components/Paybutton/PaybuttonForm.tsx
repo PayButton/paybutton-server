@@ -67,8 +67,8 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
                 <div className={style.btn_row}>
                   {error !== '' && <div className={style.error_message}>{error}</div>}
-                  <button type='submit'>Submit</button>
-                  <button onClick={() => { setModal(false); reset() }} className={style.cancel_btn}>Cancel</button>
+                  <button type='submit' className='button_main'>Submit</button>
+                  <button onClick={() => { setModal(false); reset() }} className='button_outline'>Cancel</button>
                 </div>
               </form>
             </div>
