@@ -30,7 +30,7 @@
 .button {
   border: 1px solid var(--primary-text-color);
   padding: 12px 40px;
-  border-radius: 5px;
+  border-radius: 10px;
   z-index: 5;
   position: relative;
 }

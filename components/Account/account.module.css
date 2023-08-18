@@ -1,14 +1,62 @@
 .success_message {
   color: green;
-  font-size: 14px;
-  padding: 1px 10px;
-  border-radius: 5px;
+  font-size: 16px;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: var(--secondary-bg-color);
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
 }
 
 .error_message {
   color: red;
   font-size: 14px;
-  padding: 1px 10px;
-  border-radius: 5px;
 }
 
+.changepw_ctn {
+  width: 100%;
+  background-color: var(--secondary-bg-color);
+  max-width: 430px;
+  padding: 20px 25px;
+  margin: 4px 0;
+  border-radius: 10px;
+  position: relative;
+}
+
+.changepw_ctn form input {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+body[data-theme='dark'] .changepw_ctn input {
+  border-color: #a5a5a5;
+  background-color: var(--primary-bg-color);
+}
+
+.changepw_ctn form button {
+  width: 100%;
+  border-radius: 10px;
+}
+
+.changepw_ctn form button:hover {
+  background-color: #4879d4;
+}
+
+.changepw_ctn form button:disabled {
+  background: #d9d9d9;
+}
+
+body[data-theme='dark'] .changepw_ctn form button:disabled {
+  background: #9d9d9d;
+}
+
+@media (max-width: 960px) {
+  .changepw_ctn {
+   max-width: unset;
+  }
+}

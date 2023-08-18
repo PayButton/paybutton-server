@@ -12,7 +12,7 @@ import Payments from 'assets/payments-icon.png'
 import ButtonsIcon from 'assets/button-icon.png'
 import Wallets from 'assets/wallet-icon.png'
 import Networks from 'assets/network-icon.png'
-// import Account from 'assets/user-icon.png'
+import Account from 'assets/user-icon.png'
 import Docs from 'assets/docs.png'
 // import Settings from 'assets/settings-icon.png'
 // import Help from 'assets/help-icon.png'
@@ -44,7 +44,7 @@ const MENU_ITEMS = [
   },
   {
     name: 'Account',
-    image: Dashboard // WIP account icon
+    image: Account
   },
   // {
   //   name:'Settings',
