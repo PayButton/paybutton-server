@@ -8,7 +8,7 @@ import { addressUserConnectors } from './seeds/addressUserConnectors'
 import { wallets } from './seeds/wallets'
 import { getPrices } from './seeds/prices'
 import { quotes } from './seeds/quotes'
-import { createDevUserRawQueryList, userProfiles } from './seeds/devUser'
+import { createDevUsersRawQueryList, createAdminUserRawQueryList, devUserProfiles, adminUserProfiles } from './seeds/users'
 import { getTxsFromFile } from './seeds/transactions'
 const prisma = new PrismaClient()
 
@@ -39,13 +39,17 @@ async function main (): Promise<void> {
     await prisma.address.createMany({ data: addresses })
     await prisma.addressesOnButtons.createMany({ data: paybuttonAddressConnectors })
   }
-  // create default dev user
-  for (const q of createDevUserRawQueryList) {
+  // create users
+  for (const q of createDevUsersRawQueryList) {
+    await prisma.$executeRawUnsafe(q)
+  }
+  for (const q of createAdminUserRawQueryList) {
     await prisma.$executeRawUnsafe(q)
   }
   // create user profiles
   if (await prisma.userProfile.count() === 0) {
-    await prisma.userProfile.createMany({ data: userProfiles })
+    await prisma.userProfile.createMany({ data: devUserProfiles })
+    await prisma.userProfile.createMany({ data: adminUserProfiles })
   }
   // create wallet user profiles connectors
   if (await prisma.walletsOnUserProfile.count() === 0) {
