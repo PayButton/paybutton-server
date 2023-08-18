@@ -53,16 +53,7 @@
 
  .login_box form button {
    width: 100%;
-   border-radius: 10px;
-   background-color: var(--accent-color);
-   font-size: 16px;
-   box-shadow: 2px 5px 15px -5px rgba(0,0,0, 0.6);
-   color: var(--primary-text-color);
  }
-
- .login_box form button:hover {
-    background-color: #4879d4;
-  }
 
   .login_box form button[disabled] {
     color: var(--primary-text-color);

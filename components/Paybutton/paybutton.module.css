@@ -191,19 +191,14 @@ body[data-theme='dark'] .form_ctn select:not([multiple]) {
   align-items: center;
 }
 
-.form_ctn button,
-.form_ctn .cancel_btn {
-  border-radius: 10px;
-  padding: 10px 30px;
-  border: 1px solid var(--primary-text-color);
+.form_ctn button {
   margin-right: 10px;
+  padding: 10px 40px;
 }
 
-.form_ctn .cancel_btn {
-  background-color: var(--secondary-bg-color);
-  border: 1px solid var(--primary-text-color);
+.form_ctn button:last-child {
   margin-right: 0px;
-  color: var(--primary-text-color);
+  box-shadow: none;
 }
 
 .form_ctn .delete_btn {

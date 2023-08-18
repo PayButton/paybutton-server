@@ -81,8 +81,8 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
                   {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
                   <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
                   <div>
-      <button type='submit'>Submit</button>
-                    <button onClick={() => { setModal(false); reset() }} className={style.cancel_btn}>Cancel</button>
+      <button type='submit' className='button_main'>Submit</button>
+                    <button onClick={() => { setModal(false); reset() }} className='button_outline'>Cancel</button>
                   </div>
                 </div>
               </form>

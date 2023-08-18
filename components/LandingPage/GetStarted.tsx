@@ -46,7 +46,7 @@ export default function GetStarted(): JSX.Element {
         </pre>
         <Link
           href="https://paybutton.org/#/?id=what-is-paybutton"
-          className={style.button}
+          className="button_outline"
         >
           More Information
         </Link>

@@ -128,8 +128,8 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId, 
                   </div>
                   <div className={style_pb.btn_row}>
                     {error !== '' && <div className={style_pb.error_message}>{error}</div>}
-                    <button type='submit'>Submit</button>
-                    <button onClick={() => { setModal(false); reset() }} className={style_pb.cancel_btn}>Cancel</button>
+                    <button type='submit' className='button_main'>Submit</button>
+                    <button onClick={() => { setModal(false); reset() }} className='button_outline'>Cancel</button>
                   </div>
                 </form>
               </div>

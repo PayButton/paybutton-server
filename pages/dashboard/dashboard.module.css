@@ -39,7 +39,7 @@
 }
 
 .btn_ctn {
-  margin: 15px 0;
+  margin: 35px 0 15px;
 }
 
 .chart_outer_ctn {
@@ -69,10 +69,8 @@
   height: 380px;
 }
 
-.chart_inner_ctn h4 {
+.chart_inner_ctn h5 {
   margin: 0;
-  font-size: 25px;
-  line-height: 1em;
 }
 
 .chart_title_ctn {
@@ -109,7 +107,7 @@
   filter: none !important;
 }
 
-.chart_inner_ctn h5 {
+.chart_inner_ctn h5:last-child {
   margin: 0;
   font-size: 18px;
   line-height: 1em;
