@@ -41,6 +41,9 @@ interface IProps {
 
 export default function Account({ user, userId }: IProps): React.ReactElement {
   const [changePassword, setChangePassword] = useState(false);
+  const toggleChangePassword = () => {
+    setChangePassword(!changePassword);
+  };
   if (user !== null) {
     return (
       <div className={style.account_ctn}>
@@ -56,7 +59,7 @@ export default function Account({ user, userId }: IProps): React.ReactElement {
         {changePassword && (
           <>
             <div className={style.label}>Update Password</div>
-            <ChangePassword />
+            <ChangePassword toggleChangePassword={toggleChangePassword} />
           </>
         )}
       </div>

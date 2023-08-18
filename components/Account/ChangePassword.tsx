@@ -3,7 +3,11 @@ import { useForm } from 'react-hook-form'
 import { ChangePasswordPOSTParameters } from 'utils/validators'
 import style from './account.module.css'
 
-export default function ChangePassword (): ReactElement {
+interface IProps {
+  toggleChangePassword: () => void;
+}
+
+export default function ChangePassword ({ toggleChangePassword }: IProps): ReactElement {
   const { register, handleSubmit, reset, watch } = useForm<ChangePasswordPOSTParameters>()
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -23,6 +27,10 @@ export default function ChangePassword (): ReactElement {
       reset()
       setError('')
       setSuccess('Password changed successfully')
+      setTimeout(() => {
+        toggleChangePassword()
+        setSuccess('')
+      }, 1500)
     } else {
       setSuccess('')
       reset({ oldPassword: '' })
@@ -71,16 +79,16 @@ export default function ChangePassword (): ReactElement {
   })
 
   return (
-    <>
+    <div className={style.changepw_ctn}>
       {success !== '' && <div className={style.success_message}>{success}</div> }
       <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
-        <label htmlFor='oldPassword'>Old password:</label>
+        <label htmlFor='oldPassword'>Old password</label>
         <input {...register('oldPassword')} type='password' id='oldPassword' name='oldPassword' required />
 
-        <label htmlFor='newPassword'>New password:</label>
+        <label htmlFor='newPassword'>New password</label>
         <input {...register('newPassword')} type='password' id='newPassword' name='newPassword' required />
 
-        <label htmlFor='newPasswordConfirmed'>Confirm new password:</label>
+        <label htmlFor='newPasswordConfirmed'>Confirm new password</label>
         <input {...register('newPasswordConfirmed')} type='password' id='newPasswordConfirmed' name='newPasswordConfirmed' required />
         <div>
           <div className={style.error_message}>
@@ -89,6 +97,6 @@ export default function ChangePassword (): ReactElement {
           <button disabled={disabled} type='submit'>Submit</button>
         </div>
       </form>
-    </>
+    </div>
   )
 }
