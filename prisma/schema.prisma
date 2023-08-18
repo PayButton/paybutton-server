@@ -156,6 +156,7 @@ model UserProfile {
   id        String                    @id @db.VarChar(255)
   createdAt DateTime                  @default(now())
   updatedAt DateTime                  @updatedAt
+  isAdmin   Boolean?
   lastSentVerificationEmailAt DateTime?
   wallets   WalletsOnUserProfile[]
   addresses AddressesOnUserProfiles[]
