@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # docker container exec shortcuts
 
 node_container_name="paybutton-dev"
