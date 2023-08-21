@@ -1,0 +1,68 @@
+.bg_ctn {
+  margin: 100px 0 200px;
+}
+
+.bg_top_ctn {
+  background-color: var(--primary-bg-color);
+  width: 100%;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-radius: 10px 10px 0 0;
+}
+
+.form_ctn {
+  width: 50%;
+}
+
+.form_ctn form {
+  display: flex;
+  gap: 5px;
+  width: 100%;
+}
+
+.form_ctn form input,
+.form_ctn form select {
+  width: 100%;
+}
+
+.form_ctn form input,
+.form_ctn form select {
+  border-color: rgb(217, 217, 217);
+  background-color: var(--secondary-bg-color);
+  border-radius: 5px;
+}
+
+.form_ctn form label {
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.preview_ctn {
+  width: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  align-self: stretch;
+}
+
+.form_half {
+  width: 50%;
+}
+
+.input_ctn {
+  display: flex;
+  width: 100%;
+  gap: 5px;
+}
+
+.amount_ctn {
+  flex-grow: 2;
+}
+
+.color_ctn {
+  display: flex;
+}
