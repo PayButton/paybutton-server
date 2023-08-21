@@ -2,7 +2,7 @@ import style from '/styles/landing.module.css';
 import Navbar from '/components/LandingPage/Navbar';
 import Hero from '/components/LandingPage/Hero';
 import Dashboard from '/components/LandingPage/Dashboard';
-import GetStarted from '/components/LandingPage/GetStarted';
+import ButtonGenerator from '/components/ButtonGenerator';
 import Footer from '/components/LandingPage/Footer';
 
 export default function LandingPage(): JSX.Element {
@@ -11,7 +11,7 @@ export default function LandingPage(): JSX.Element {
       <Navbar />
       <Hero />
       <Dashboard />
-      <GetStarted />
+      <ButtonGenerator />
       <Footer />
     </div>
   );
