@@ -40,6 +40,10 @@
   text-transform: uppercase;
 }
 
+.form_ctn form select {
+  height: 42px;
+}
+
 .preview_ctn {
   width: 50%;
   display: flex;
@@ -65,4 +69,41 @@
 
 .color_ctn {
   display: flex;
+}
+
+.bg_top_ctn button:enabled:hover {
+  filter: none;
+}
+
+.swatch {
+  width: 34px;
+  height: 34px;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  border: 1px solid rgb(217, 217, 217);
+  border-radius: 5px 0 0 5px;
+  cursor: pointer;
+}
+
+.colorinput {
+  padding-left: 48px;
+}
+
+.swatch_input_ctn {
+  position: relative;
+}
+
+.picker_outerctn {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  z-index: 99;
+}
+
+.picker_ctn {
+  z-index: 999;
+  position: absolute;
 }
