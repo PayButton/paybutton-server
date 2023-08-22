@@ -22,6 +22,9 @@ export class ChronikBlockchainClient implements BlockchainClient {
   wsEndpoint: Socket
 
   constructor () {
+    if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
+      throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
+    }
     this.chronik = new ChronikClient(config.chronikClientURL)
     this.availableNetworks = [NETWORK_SLUGS.ecash]
     this.subscribedAddresses = {}
