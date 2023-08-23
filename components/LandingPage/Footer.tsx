@@ -12,6 +12,7 @@ export default function Footer(): JSX.Element {
         <div className={style.footer}>
           <Image src={logoImageSource} alt="PayButton" />
           <div className={style.footerlink_ctn}>
+            <Link href="#button-generator">Button Generator</Link>
             <Link
               href="https://github.com/paybutton/paybutton"
               target="_blank"
@@ -30,7 +31,7 @@ export default function Footer(): JSX.Element {
               Docs
             </Link>
             <Link href="/signin">Sign In</Link>
-            <Link href="/signup" className='button_outline button_small'>
+            <Link href="/signup" className="button_outline button_small">
               Sign up
             </Link>
           </div>

@@ -93,7 +93,7 @@ body[data-theme='dark'] .navbar_ctn img {
   display: none;
 }
 
-@media (max-width: 750px) {
+@media (max-width: 915px) {
   .navlink_ctn {
     position: absolute;
     width: 200px;
@@ -122,7 +122,7 @@ body[data-theme='dark'] .navbar_ctn img {
     margin-bottom: 15px;
     border: none;
     box-shadow: none;
-    background: transparent;
+    background-color: transparent;
   }
 
   .navlink_ctn a:last-child:hover {

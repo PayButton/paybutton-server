@@ -3,6 +3,7 @@ import s from './button-generator.module.css';
 import style from '/styles/landing.module.css';
 import { PayButton, Widget as PayButtonWidget } from '@paybutton/react';
 import { ChromePicker } from 'react-color';
+import CodeBlock from './CodeBlock';
 
 export default function ButtonGenerator(): JSX.Element {
   const currencies = ['XEC', 'BCH', 'SAT', 'USD', 'CAD', 'EUR', 'GBP', 'AUD'];
@@ -14,7 +15,7 @@ export default function ButtonGenerator(): JSX.Element {
   const [button, setButton] = useState({
     to: 'bitcoincash:qrmm7edwuj4jf7tnvygjyztyy0a0qxvl7q9ayphulp',
     amount: 0,
-    currency: 'USD',
+    currency: 'BCH',
     text: 'Donate',
     hoverText: 'Click to send',
     successText: 'Thanks for your support!',
@@ -89,7 +90,7 @@ export default function ButtonGenerator(): JSX.Element {
   };
 
   return (
-    <div className={s.bg_ctn}>
+    <div className={s.bg_ctn} id="button-generator">
       <div className={style.container}>
         <h2 className={style.heading2}>Button Generator</h2>
         <p className={style.centerp}>
@@ -100,7 +101,16 @@ export default function ButtonGenerator(): JSX.Element {
           <div className={s.form_ctn}>
             <form action="#" method="post">
               <div className={s.form_half}>
-                <label>To</label>
+                <label className={s.address_label}>
+                  <div>To</div>
+                  <a
+                    href="https://cashtab.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Get an address
+                  </a>
+                </label>
                 <input
                   type="text"
                   name="to"
@@ -131,6 +141,16 @@ export default function ButtonGenerator(): JSX.Element {
                   value={button.successText}
                   onChange={handleInputChange}
                 />
+                <div className={s.advanced_ctn}>
+                  For more information and advanced features read our{' '}
+                  <a
+                    href="https://paybutton.org/#/?id=what-is-paybutton"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Documentation
+                  </a>
+                </div>
               </div>
 
               <div className={s.form_half}>
@@ -262,6 +282,7 @@ export default function ButtonGenerator(): JSX.Element {
             </form>
           </div>
           <div className={s.preview_ctn}>
+            <div className={s.preview_label}>Preview</div>
             <PayButton
               to={button.to}
               amount={button.amount}
@@ -273,6 +294,7 @@ export default function ButtonGenerator(): JSX.Element {
             />
           </div>
         </div>
+        <CodeBlock button={button} />
       </div>
     </div>
   );
