@@ -15,7 +15,7 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
 
   async function onSubmit (params: PaybuttonTriggerPOSTParameters): Promise<void> {
     try {
-      const response = await axios.post(`/api/paybutton/trigger/${paybuttonId}`, params)
+      const response = await axios.post(`/api/paybutton/triggers/${paybuttonId}`, params)
       if (response.status === 200) {
         setSuccess(true)
         reset()
