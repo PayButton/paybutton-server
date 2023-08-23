@@ -5,6 +5,7 @@ import { type CreatePaybuttonInput, type UpdatePaybuttonInput } from '../service
 import { type CreateWalletInput, type UpdateWalletInput } from '../services/walletService'
 import { getAddressPrefix } from './index'
 import xecaddr from 'xecaddrjs'
+import { CreatePaybuttonTriggerInput } from 'services/triggerService'
 
 /* The functions exported here should validate the data structure / syntax of an
  * input by throwing an error in case something is different from the expected.
@@ -200,6 +201,42 @@ export const parseWalletPATCHRequest = function (params: WalletPATCHParameters):
   }
 }
 
+export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTriggerPOSTParameters): CreatePaybuttonTriggerInput {
+  // userId
+  if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+
+  // postURL
+  let postURL: string | undefined
+  if (params.postURL === undefined) { postURL = undefined } else {
+    try {
+      const parsed = new URL(params.postURL)
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error()
+      postURL = params.postURL
+    } catch (_) {
+      throw new Error(RESPONSE_MESSAGES.INVALID_URL_400.message)
+    }
+  }
+
+  // postData
+  let postData: string | undefined
+  if (params.postData === undefined || params.postData === '') { postData = undefined } else {
+    try {
+      const parsed = JSON.parse(params.postData)
+      if (parsed === null || typeof parsed !== 'object') { throw new Error() }
+      postData = params.postData
+    } catch (_) {
+      throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_400.message)
+    }
+  }
+
+  return {
+    sendEmail: params.sendEmail === true,
+    postURL,
+    postData,
+    userId: params.userId
+  }
+}
+
 export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters, paybuttonId: string): UpdatePaybuttonInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   const ret: UpdatePaybuttonInput = {
@@ -234,6 +271,7 @@ export interface WSGETParameters {
 }
 
 export interface PaybuttonTriggerPOSTParameters {
+  userId?: string
   sendEmail?: boolean
   postURL?: string
   postData?: string
