@@ -41,6 +41,12 @@ const paybuttonWithAddresses = Prisma.validator<Prisma.PaybuttonArgs>()(
 
 export type PaybuttonWithAddresses = Prisma.PaybuttonGetPayload<typeof paybuttonWithAddresses>
 
+const paybuttonWithTriggers = Prisma.validator<Prisma.PaybuttonArgs>()(
+  { include: { triggers: true } }
+)
+
+export type PaybuttonWithTriggers = Prisma.PaybuttonGetPayload<typeof paybuttonWithTriggers>
+
 async function getAddressObjectsToCreateOrConnect (prefixedAddressList: string[]): Promise<Prisma.AddressesOnButtonsUpdateManyWithoutPaybuttonNestedInput> {
   return {
     create: (await Promise.all(
@@ -241,10 +247,26 @@ export async function fetchPaybuttonArrayByIds (paybuttonIdList: string[]): Prom
   return paybuttonArray
 }
 
+export async function fetchPaybuttonWithTriggers (paybuttonId: string): Promise<PaybuttonWithTriggers> {
+  return await prisma.paybutton.findUniqueOrThrow({
+    where: { id: paybuttonId },
+    include: {
+      triggers: true
+    }
+  })
+}
+
 export async function fetchPaybuttonById (paybuttonId: string): Promise<PaybuttonWithAddresses> {
   return await prisma.paybutton.findUniqueOrThrow({
     where: { id: paybuttonId },
     include: includeAddresses
+  })
+}
+
+export async function fetchPaybuttonArrayWithTriggersByUserId (userId: string): Promise<PaybuttonWithTriggers[]> {
+  return await prisma.paybutton.findMany({
+    where: { providerUserId: userId },
+    include: { triggers: true }
   })
 }
 

@@ -64,7 +64,9 @@ export const RESPONSE_MESSAGES = {
   INVALID_PASSWORD_FORM_400: { statusCode: 400, message: 'Password form is invalid.' },
   WEAK_NEW_PASSWORD_400: { statusCode: 400, message: 'The new password must contain at least 8 characters, including a letter and a number.' },
   WRONG_PASSWORD_400: { statusCode: 400, message: 'Wrong password.' },
-  INVALID_URL_400: { statusCode: 400, message: 'Invalid URL.' }
+  INVALID_URL_400: { statusCode: 400, message: 'Invalid URL.' },
+  LIMIT_TRIGGERS_PER_BUTTON_400: { statusCode: 400, message: 'This paybutton already has a trigger.' },
+  LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400: { statusCode: 400, message: 'This paybutton addresses already have a trigger from another paybutton.' }
 }
 
 export type KeyValueT<T> = Record<string, T>
