@@ -65,6 +65,7 @@ export const RESPONSE_MESSAGES = {
   WEAK_NEW_PASSWORD_400: { statusCode: 400, message: 'The new password must contain at least 8 characters, including a letter and a number.' },
   WRONG_PASSWORD_400: { statusCode: 400, message: 'Wrong password.' },
   INVALID_URL_400: { statusCode: 400, message: 'Invalid URL.' },
+  POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400: { statusCode: 400, message: 'URL and post data must neither or both be set.' },
   LIMIT_TRIGGERS_PER_BUTTON_400: { statusCode: 400, message: 'This paybutton already has a trigger.' },
   LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400: { statusCode: 400, message: 'This paybutton addresses already have a trigger from another paybutton.' }
 }
