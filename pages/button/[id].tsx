@@ -134,9 +134,9 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
       <>
         <div className='back_btn' onClick={() => router.back()}>Back</div>
         <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton}/>
-        <PaybuttonTrigger paybuttonId={paybutton.id}/>
         <h4>Transactions</h4>
         <AddressTransactions addressTransactions={transactions} addressSynced={isSynced}/>
+        <PaybuttonTrigger paybuttonId={paybutton.id}/>
       </>
     )
   }

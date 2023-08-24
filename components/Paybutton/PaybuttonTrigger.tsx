@@ -28,7 +28,7 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
   return (
     <div>
       <div>
-        <h4>Set triggers</h4>
+        <h4>When a Payment is Received...</h4>
         {success
           ? <p>Trigger set successfully</p>
           : <div className={style.form_ctn}>
@@ -52,16 +52,16 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
               ...
               }"></textarea>
               <p >
-                Possible placeholders:
-                <ul>
-                  <li>buttonName</li>
-                  <li>paymentAddress</li>
-                  <li>currency</li>
-                  <li>amount</li>
-                  <li>Datetime</li>
-                  <li>Payload / BIP 70 data (e.g., tx id or other context; think Coin Dance supporters section)</li>
-                </ul>
+                Options:
               </p>
+              <ul>
+                <li>buttonName</li>
+                <li>paymentAddress</li>
+                <li>currency</li>
+                <li>amount</li>
+                <li>Datetime</li>
+                <li>Payload / BIP 70 data (e.g., tx id or other context; think Coin Dance supporters section)</li>
+              </ul>
             </div>
             {/* Tooltip */}
             <div >
