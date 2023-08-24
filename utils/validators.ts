@@ -232,3 +232,9 @@ export const validatePriceAPIUrlAndToken = function (): void {
 export interface WSGETParameters {
   addresses: string[]
 }
+
+export interface PaybuttonTriggerPOSTParameters {
+  sendEmail?: boolean
+  postURL?: string
+  postData?: string
+}
