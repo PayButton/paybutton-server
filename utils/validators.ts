@@ -201,6 +201,13 @@ export const parseWalletPATCHRequest = function (params: WalletPATCHParameters):
   }
 }
 
+export interface PaybuttonTriggerPOSTParameters {
+  userId?: string
+  sendEmail?: boolean
+  postURL?: string
+  postData?: string
+}
+
 export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTriggerPOSTParameters): CreatePaybuttonTriggerInput {
   // userId
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
@@ -229,7 +236,7 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
     }
   }
 
-  if (postData === undefined && postURL === undefined) {
+  if ((postData === undefined && postURL !== undefined) || (postData !== undefined && postURL === undefined)) {
     throw new Error(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
   }
 
@@ -272,11 +279,4 @@ export const validatePriceAPIUrlAndToken = function (): void {
 
 export interface WSGETParameters {
   addresses: string[]
-}
-
-export interface PaybuttonTriggerPOSTParameters {
-  userId?: string
-  sendEmail?: boolean
-  postURL?: string
-  postData?: string
 }

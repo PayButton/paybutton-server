@@ -202,3 +202,53 @@ describe('parsePaybuttonPATCHRequest', () => {
     ])
   })
 })
+
+export interface PaybuttonTriggerPOSTParameters {
+  userId?: string
+  sendEmail?: boolean
+  postURL?: string
+  postData?: string
+}
+
+describe('parsePaybuttonTriggerPOSTRequest', () => {
+  const data: PaybuttonTriggerPOSTParameters = {
+    userId: '12345',
+    sendEmail: true
+  }
+
+  it('Invalid postData JSON throws error', () => {
+    expect(() => {
+      v.parsePaybuttonTriggerPOSTRequest({ ...data, postData: 'invalid_json' })
+    }).toThrow(RESPONSE_MESSAGES.INVALID_DATA_JSON_400.message)
+  })
+
+  it('Invalid if URL with protocol other than http', () => {
+    expect(() => {
+      v.parsePaybuttonTriggerPOSTRequest({ ...data, postURL: 'ftp://example.com' })
+    }).toThrow(RESPONSE_MESSAGES.INVALID_URL_400.message)
+  })
+
+  it('Invalid URL throws error', () => {
+    expect(() => {
+      v.parsePaybuttonTriggerPOSTRequest({ ...data, postURL: 'invalid_url' })
+    }).toThrow(RESPONSE_MESSAGES.INVALID_URL_400.message)
+  })
+
+  it('Invalid if postData but no postURL', () => {
+    expect(() => {
+      v.parsePaybuttonTriggerPOSTRequest({ ...data, postData: '{"key": "value"}' })
+    }).toThrow(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
+  })
+
+  it('Invalid if postURL but no postData', () => {
+    expect(() => {
+      v.parsePaybuttonTriggerPOSTRequest({ ...data, postURL: 'http://example.com' })
+    }).toThrow(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
+  })
+
+  it('Allow no postURL and no postData', () => {
+    expect(() => {
+      v.parsePaybuttonTriggerPOSTRequest({ ...data })
+    }).not.toThrow()
+  })
+})
