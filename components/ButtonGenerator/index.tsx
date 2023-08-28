@@ -1,21 +1,29 @@
 import { useState } from 'react';
 import s from './button-generator.module.css';
 import style from '/styles/landing.module.css';
-import { PayButton, Widget as PayButtonWidget } from '@paybutton/react';
+import { PayButton } from '@paybutton/react';
 import { ChromePicker } from 'react-color';
 import CodeBlock from './CodeBlock';
+import { decode } from 'ecashaddrjs';
+
+export const isValidAddress = (address: string): string => {
+  try {
+    return decode(address).prefix;
+  } catch (err) {
+    return '';
+  }
+};
 
 export default function ButtonGenerator(): JSX.Element {
-  const currencies = ['XEC', 'BCH', 'SAT', 'USD', 'CAD', 'EUR', 'GBP', 'AUD'];
   const animations = ['slide', 'invert', 'none'];
   const [primary, setPrimary] = useState(false);
   const [secondary, setSecondary] = useState(false);
   const [tertiary, setTertiary] = useState(false);
 
   const [button, setButton] = useState({
-    to: 'bitcoincash:qrmm7edwuj4jf7tnvygjyztyy0a0qxvl7q9ayphulp',
+    to: '',
     amount: 0,
-    currency: 'BCH',
+    currency: 'XEC',
     text: 'Donate',
     hoverText: 'Click to send',
     successText: 'Thanks for your support!',
@@ -27,6 +35,8 @@ export default function ButtonGenerator(): JSX.Element {
         tertiary: '#231f20',
       },
     },
+    validAddress: '',
+    currencies: ['XEC', 'USD', 'CAD', 'EUR', 'GBP', 'AUD'],
   });
 
   const handleInputChange = (e) => {
@@ -41,6 +51,36 @@ export default function ButtonGenerator(): JSX.Element {
             [name]: value,
           },
         },
+      }));
+    } else if (['to'].includes(name)) {
+      setButton((prevButton) => ({
+        ...prevButton,
+        [name]: value,
+        validAddress: isValidAddress(value),
+        currency: ['USD', 'CAD', 'EUR', 'GBP', 'AUD'].includes(
+          prevButton.currency
+        )
+          ? prevButton.currency
+          : isValidAddress(value) === 'bitcoincash'
+          ? 'BCH'
+          : 'XEC',
+        currencies: [
+          isValidAddress(value) === 'bitcoincash' ? 'BCH' : 'XEC',
+          ...prevButton.currencies.slice(1), // Keep the rest of the array unchanged
+        ],
+      }));
+    } else if (name === 'amount') {
+      // Remove non-numeric characters except for a single decimal point
+      let numericValue = e.target.value.replace(/[^\d.]/g, '');
+      // Ensure there's only one decimal point
+      const parts = numericValue.split('.');
+      if (parts.length > 2) {
+        // More than one decimal point, keep only the first part before the second decimal point
+        numericValue = `${parts[0]}.${parts[1]}`;
+      }
+      setButton((prevButton) => ({
+        ...prevButton,
+        [name]: numericValue,
       }));
     } else {
       setButton((prevButton) => ({
@@ -114,6 +154,7 @@ export default function ButtonGenerator(): JSX.Element {
                 <input
                   type="text"
                   name="to"
+                  placeholder="Your address"
                   value={button.to}
                   onChange={handleInputChange}
                 />
@@ -162,6 +203,7 @@ export default function ButtonGenerator(): JSX.Element {
                       name="amount"
                       value={button.amount}
                       onChange={handleInputChange}
+                      maxLength={13}
                     />
                   </div>
                   <div>
@@ -171,7 +213,7 @@ export default function ButtonGenerator(): JSX.Element {
                       value={button.currency}
                       onChange={handleInputChange}
                     >
-                      {currencies.map((currency, index) => (
+                      {button.currencies.map((currency, index) => (
                         <option value={currency} key={index}>
                           {currency}
                         </option>
@@ -207,91 +249,91 @@ export default function ButtonGenerator(): JSX.Element {
                       </div>
                     </>
                   )}
-                  <div
-                    className={s.swatch}
-                    style={{ background: `${button.theme.palette.primary}` }}
-                    onClick={() => setPrimary(!primary)}
-                  />
-                  <input
-                    type="text"
-                    className={s.colorinput}
-                    name="primary"
-                    value={button.theme.palette.primary}
-                    onChange={handleInputChange}
-                  />
+                  <div className={s.colorinput}>
+                    <div
+                      className={s.swatch}
+                      style={{ background: `${button.theme.palette.primary}` }}
+                      onClick={() => setPrimary(!primary)}
+                    />
+                  </div>
                 </div>
-                <label>Secondary Color</label>
-                <div className={s.swatch_input_ctn}>
-                  {secondary && (
-                    <>
-                      <div
-                        className={s.picker_outerctn}
-                        onClick={() => setSecondary(false)}
-                      />
-                      <div className={s.picker_ctn}>
-                        <ChromePicker
-                          color={button.theme.palette.secondary}
-                          onChange={handleColorChange2}
+                <div className={s.secondary_color_ctn}>
+                  <div>
+                    <label>Secondary</label>
+                    <div className={s.swatch_input_ctn}>
+                      {secondary && (
+                        <>
+                          <div
+                            className={s.picker_outerctn}
+                            onClick={() => setSecondary(false)}
+                          />
+                          <div className={s.picker_ctn}>
+                            <ChromePicker
+                              color={button.theme.palette.secondary}
+                              onChange={handleColorChange2}
+                            />
+                          </div>
+                        </>
+                      )}
+                      <div className={s.colorinput}>
+                        <div
+                          className={s.swatch}
+                          style={{
+                            background: `${button.theme.palette.secondary}`,
+                          }}
+                          onClick={() => setSecondary(!secondary)}
                         />
                       </div>
-                    </>
-                  )}
-                  <div
-                    className={s.swatch}
-                    style={{ background: `${button.theme.palette.secondary}` }}
-                    onClick={() => setSecondary(!secondary)}
-                  />
-                  <input
-                    type="text"
-                    name="secondary"
-                    className={s.colorinput}
-                    value={button.theme.palette.secondary}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <label>Tertiary Color</label>
-                <div className={s.swatch_input_ctn}>
-                  {tertiary && (
-                    <>
-                      <div
-                        className={s.picker_outerctn}
-                        onClick={() => setTertiary(false)}
-                      />
-                      <div className={s.picker_ctn}>
-                        <ChromePicker
-                          color={button.theme.palette.tertiary}
-                          onChange={handleColorChange3}
+                    </div>
+                  </div>
+                  <div>
+                    <label>Tertiary</label>
+                    <div className={s.swatch_input_ctn}>
+                      {tertiary && (
+                        <>
+                          <div
+                            className={s.picker_outerctn}
+                            onClick={() => setTertiary(false)}
+                          />
+                          <div className={s.picker_ctn}>
+                            <ChromePicker
+                              color={button.theme.palette.tertiary}
+                              onChange={handleColorChange3}
+                            />
+                          </div>
+                        </>
+                      )}
+                      <div className={s.colorinput}>
+                        <div
+                          className={s.swatch}
+                          style={{
+                            background: `${button.theme.palette.tertiary}`,
+                          }}
+                          onClick={() => setTertiary(!tertiary)}
                         />
                       </div>
-                    </>
-                  )}
-                  <div
-                    className={s.swatch}
-                    style={{ background: `${button.theme.palette.tertiary}` }}
-                    onClick={() => setTertiary(!tertiary)}
-                  />
-                  <input
-                    type="text"
-                    name="tertiary"
-                    className={s.colorinput}
-                    value={button.theme.palette.tertiary}
-                    onChange={handleInputChange}
-                  />
+                    </div>
+                  </div>
                 </div>
               </div>
             </form>
           </div>
           <div className={s.preview_ctn}>
             <div className={s.preview_label}>Preview</div>
-            <PayButton
-              to={button.to}
-              amount={button.amount}
-              currency={button.currency}
-              text={button.text}
-              hoverText={button.hoverText}
-              theme={button.theme}
-              animation={button.animation}
-            />
+            {button.validAddress === 'ecash' ||
+            button.validAddress === 'bitcoincash' ? (
+              <PayButton
+                to={button.to}
+                amount={button.amount}
+                currency={button.currency}
+                text={button.text}
+                hoverText={button.hoverText}
+                theme={button.theme}
+                animation={button.animation}
+              />
+            ) : (
+              'Enter an address'
+            )}
           </div>
         </div>
         <CodeBlock button={button} />
