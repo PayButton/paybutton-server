@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import style from './sidebar.module.css';
+import Sun from '/assets/sun.png';
+import Moon from '/assets/moon.png';
 
 const ThemeToggle = ({ chart, setChart, landingpage }) => {
   const [activeTheme, setActiveTheme] = useState(document.body.dataset.theme);
@@ -18,26 +21,33 @@ const ThemeToggle = ({ chart, setChart, landingpage }) => {
   }, [childchart]);
 
   return (
-    <button
-      aria-label={`Change to ${inactiveTheme} mode`}
-      type="button"
+    <div
+      className={style.toggle_ctn}
       onClick={() => {
         setActiveTheme(inactiveTheme);
         setChildChart(!childchart);
       }}
-      className={style.darkmode_btn}
     >
-      <span
+      <Image
+        src={Sun}
+        alt="light-mode"
         className={
-          activeTheme === 'dark'
-            ? `${style.switchdot} ${style.switch}`
-            : `${style.switchdot}`
+          activeTheme === 'dark' ? `${style.sun} ${style.hide}` : `${style.sun}`
         }
-      ></span>
+      />
+      <Image
+        src={Moon}
+        alt="dark-mode"
+        className={
+          activeTheme === 'light'
+            ? `${style.moon} ${style.hide}`
+            : `${style.moon}`
+        }
+      />
       <div className={style.tooltiptext}>
         {activeTheme === 'dark' ? 'Light mode' : 'Dark mode'}
       </div>
-    </button>
+    </div>
   );
 };
 
