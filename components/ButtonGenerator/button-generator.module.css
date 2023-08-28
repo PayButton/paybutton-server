@@ -13,7 +13,7 @@
 }
 
 .form_ctn {
-  width: 50%;
+  width: 70%;
 }
 
 .form_ctn form {
@@ -45,7 +45,7 @@
 }
 
 .preview_ctn {
-  width: 50%;
+  width: 30%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -55,7 +55,11 @@
 }
 
 .form_half {
-  width: 50%;
+  width: 70%;
+}
+
+.form_half:last-child {
+  width: 30%;
 }
 
 .input_ctn {
@@ -77,18 +81,21 @@
 }
 
 .swatch {
-  width: 34px;
-  height: 34px;
-  position: absolute;
-  top: 4px;
-  left: 4px;
+  width: 100%;
+  height: 100%;
   border: 1px solid rgb(217, 217, 217);
-  border-radius: 5px 0 0 5px;
+  border-radius: 3px;
   cursor: pointer;
 }
 
 .colorinput {
-  padding-left: 48px;
+  border: 1px solid rgb(217, 217, 217);
+  background-color: var(--secondary-bg-color);
+  border-radius: 5px;
+  width: 100%;
+  display: inline-block;
+  height: 42px;
+  padding: 4px;
 }
 
 .swatch_input_ctn {
@@ -208,16 +215,31 @@
   color: var(--accent-color);
 }
 
+.secondary_color_ctn {
+  display: flex;
+  width: 100%;
+  gap: 5px;
+}
+
+.secondary_color_ctn > div {
+  width: 50%;
+}
+
 body[data-theme='dark'] .bg_ctn h2,
 body[data-theme='dark'] .bg_ctn p {
   color: #fff;
 }
 
 body[data-theme='dark'] .form_ctn form input,
-body[data-theme='dark'] .form_ctn form select {
+body[data-theme='dark'] .form_ctn form select,
+body[data-theme='dark'] .form_ctn .colorinput {
   border-color: rgb(85, 85, 85);
   background-color: var(--secondary-bg-color);
   color: #fff;
+}
+
+body[data-theme='dark'] .form_ctn .colorinput .swatch {
+  border-color: rgb(85, 85, 85);
 }
 
 body[data-theme='dark'] .form_ctn select:not([multiple]) {
@@ -249,7 +271,7 @@ body[data-theme='dark'] .preview_ctn {
   }
 
   .form_half {
-    width: 100%;
+    width: 100% !important;
   }
 
   .bg_ctn h2,

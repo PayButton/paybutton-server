@@ -103,8 +103,9 @@ function App() {
     <>
       <div className={style.codetopbar}>
         <div className={style.tabsctn}>
-          {codetypes.map((item) => (
+          {codetypes.map((item, index) => (
             <div
+              key={index}
               onClick={() => setCodeType(item)}
               style={
                 codeType === item
