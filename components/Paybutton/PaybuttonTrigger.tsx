@@ -57,10 +57,10 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
 
             <div>
               <label htmlFor="postData">Post Data</label>
-              <textarea {...register('postData')} id="postData" name="postData" placeholder="{
-                name: <buttonName>,
+              <textarea {...register('postData')} id="postData" name="postData" placeholder={`{
+    "name": <buttonName>,
               ...
-              }"></textarea>
+              }`}></textarea>
               <p >
                 Options:
               </p>
