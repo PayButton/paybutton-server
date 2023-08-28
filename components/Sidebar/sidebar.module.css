@@ -56,45 +56,24 @@ body[data-theme='dark'] .socialctn .moon {
     brightness(100%) contrast(102%);
 }
 
-.darkmode_btn {
-  --toggle-width: 35px;
-  --toggle-height: 20px;
-  --toggle-padding: 2px;
+.toggle_ctn {
+  width: 15px;
+  height: 15px;
   position: relative;
-  font-size: 1.5rem;
-  line-height: 1;
-  width: var(--toggle-width);
-  height: var(--toggle-height);
-  padding: var(--toggle-padding);
-  border: 0;
-  border-radius: calc(var(--toggle-width) / 2);
   cursor: pointer;
-  background: var(--primary-text-color);
-  transition: background 0.25s ease-in-out;
-  margin-right: 15px;
 }
 
-.darkmode_btn .switchdot {
+.toggle_ctn .moon,
+.toggle_ctn .sun {
   position: absolute;
-  top: var(--toggle-padding);
-  left: var(--toggle-padding);
-  width: calc(var(--toggle-height) - (var(--toggle-padding) * 2));
-  height: calc(var(--toggle-height) - (var(--toggle-padding) * 2));
-  border-radius: 50%;
-  background: var(--secondary-bg-color);
-  transition: all ease-in-out 200ms;
+  top: 0;
+  width: 100%;
+  transition: all ease-in-out 400ms;
 }
 
-.darkmode_btn:hover .switchdot {
-  background: var(--accent-color);
-}
-
-.darkmode_btn .switch {
-  transform: translate3d(
-    calc(var(--toggle-width) - var(--toggle-height)),
-    0,
-    0
-  );
+.hide {
+  top: -12px !important;
+  opacity: 0;
 }
 
 .socialctn a,
@@ -102,10 +81,11 @@ body[data-theme='dark'] .socialctn .moon {
   position: relative;
 }
 
-.socialctn button {
+.socialctn .toggle_ctn {
   margin: 0;
   margin-right: 15px;
-  line-height: unset;
+  width: 18px;
+  height: 18px;
 }
 
 .tooltiptext {
@@ -141,7 +121,8 @@ body[data-theme='dark'] .socialctn .moon {
 }
 
 .socialctn a:hover .tooltiptext,
-.socialctn button:hover .tooltiptext {
+.socialctn button:hover .tooltiptext,
+.socialctn .toggle_ctn:hover .tooltiptext {
   visibility: visible;
   transform: translate(-50%, -100%);
   opacity: 1;
