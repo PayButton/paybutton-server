@@ -146,7 +146,7 @@ export async function executeAddressTriggers (addressString: string): Promise<vo
   console.log('executing', addressTriggers.length, 'triggers for address', addressString)
   for (const trigger of addressTriggers) {
     const response = await axios.post('https://httpbin.org/post', trigger)
-    const data = JSON.stringify(await response.data)
+    const data = JSON.stringify(await response.data, undefined, 2)
     console.log(`status: ${response.status}\nresponse: ${data}`)
   }
   console.log('trigger execution finished')
