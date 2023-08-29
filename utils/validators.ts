@@ -224,23 +224,23 @@ export function parseTriggerPostData (postData: string, postDataParameters?: Pos
   if (postDataParameters === undefined) {
     postDataParameters = {
       amount: new Prisma.Decimal(0),
-      currency: '""',
-      txId: '""',
-      buttonName: '""',
-      paymentAddress: '""',
+      currency: '',
+      txId: '',
+      buttonName: '',
+      paymentAddress: '',
       timestamp: 0
     }
   }
   try {
     resultingData = postData
       .replace('<amount>', postDataParameters.amount.toString())
-      .replace('<currency>', postDataParameters.currency)
-      .replace('<txId>', postDataParameters.txId)
-      .replace('<buttonName>', postDataParameters.buttonName)
-      .replace('<paymentAddress>', postDataParameters.paymentAddress)
+      .replace('<currency>', `"${postDataParameters.currency}"`)
+      .replace('<txId>', `"${postDataParameters.txId}"`)
+      .replace('<buttonName>', `"${postDataParameters.buttonName}"`)
+      .replace('<paymentAddress>', `"${postDataParameters.paymentAddress}"`)
       .replace('<timestamp>', postDataParameters.timestamp.toString())
     const parsedResultingData = JSON.parse(resultingData)
-    return JSON.stringify(parsedResultingData)
+    return JSON.stringify(parsedResultingData, undefined, 2)
   } catch (err: any) {
     throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_400.message)
   }
