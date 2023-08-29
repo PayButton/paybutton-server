@@ -12,7 +12,6 @@ interface IProps {
 export default ({ paybuttonId }: IProps): JSX.Element => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [triggers, setTriggers] = useState<PaybuttonTrigger[]>()
   const [currentTriggerId, setCurrentTriggerId] = useState<string>()
   const { register, handleSubmit, reset, setValue } = useForm<PaybuttonTriggerPOSTParameters>()
 
@@ -20,7 +19,6 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
     const getTrigger = async (): Promise<void> => {
       const response = await axios.get(`/api/paybutton/triggers/${paybuttonId}`)
       const ok = await response.data as PaybuttonTrigger[]
-      setTriggers(ok)
       if (ok.length > 0) {
         const trigger = ok[0]
         setValue('postData', trigger.postData)
@@ -47,7 +45,6 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
 
   return (
     <div>
-      WIP current triggers: {JSON.stringify(triggers)}
       <div>
         <h4>When a Payment is Received...</h4>
         {success
