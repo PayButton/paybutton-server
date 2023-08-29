@@ -42,7 +42,7 @@ export default async (req: any, res: any): Promise<void> => {
       if (values.currentTriggerId !== undefined) {
         const updateTriggerInput = {
           ...createTriggerInput,
-          currentTriggerId: values.currentTriggerId
+          triggerId: values.currentTriggerId
         }
         trigger = await updateTrigger(paybuttonId, updateTriggerInput)
       } else {

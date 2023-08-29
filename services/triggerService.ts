@@ -3,12 +3,17 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 import prisma from 'prisma/clientInstance'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
 
+export interface DeletePaybuttonTriggerInput {
+  userId: string
+  triggerId: string
+}
+
 export interface UpdatePaybuttonTriggerInput {
   userId: string
   sendEmail: boolean
   postURL?: string
   postData?: string
-  currentTriggerId: string
+  triggerId: string
 }
 
 export interface CreatePaybuttonTriggerInput {
@@ -47,22 +52,52 @@ export async function createTrigger (paybuttonId: string, values: CreatePaybutto
   })
 }
 
+export async function deleteTrigger (paybuttonId: string, values: DeletePaybuttonTriggerInput): Promise<PaybuttonTrigger> {
+  const paybutton = await fetchPaybuttonWithTriggers(paybuttonId)
+  if (paybutton.providerUserId !== values.userId) {
+    throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
+  }
+  if (!paybutton.triggers.map(t => t.id).includes(values.triggerId)) {
+    throw new Error(RESPONSE_MESSAGES.INVALID_RESOURCE_UPDATE_400.message)
+  }
+  return await prisma.paybuttonTrigger.delete({
+    where: {
+      id: values.triggerId
+    }
+  })
+}
+
+function isEmptyUpdateParams (values: UpdatePaybuttonTriggerInput): boolean {
+  return (
+    (values.postURL === '' || values.postURL === undefined) &&
+    (values.postData === '' || values.postData === undefined) &&
+    (!values.sendEmail)
+  )
+}
+
 export async function updateTrigger (paybuttonId: string, values: UpdatePaybuttonTriggerInput): Promise<PaybuttonTrigger> {
   const paybutton = await fetchPaybuttonWithTriggers(paybuttonId)
   if (paybutton.providerUserId !== values.userId) {
     throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
   }
-  if (!paybutton.triggers.map(t => t.id).includes(values.currentTriggerId)) {
+  if (!paybutton.triggers.map(t => t.id).includes(values.triggerId)) {
     throw new Error(RESPONSE_MESSAGES.INVALID_RESOURCE_UPDATE_400.message)
+  }
+  if (isEmptyUpdateParams(values)) {
+    return await prisma.paybuttonTrigger.delete({
+      where: {
+        id: values.triggerId
+      }
+    })
   }
   return await prisma.paybuttonTrigger.update({
     data: {
       sendEmail: values.sendEmail,
-      postURL: values.postURL,
-      postData: values.postData
+      postURL: values.postURL ?? '',
+      postData: values.postData ?? ''
     },
     where: {
-      id: values.currentTriggerId
+      id: values.triggerId
     }
   })
 }

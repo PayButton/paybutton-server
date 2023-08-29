@@ -92,7 +92,7 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
                 <div className={style.btn_row2}>
                   {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
                   <div>
-                    <button type='submit' className='button_main'>{currentTriggerId === undefined ? 'Submit' : 'Resubmit'}</button>
+                    <button type='submit' className='button_main'>{currentTriggerId === undefined ? 'Create' : 'Update'}</button>
                   </div>
                 </div>
             </div>
