@@ -1,8 +1,16 @@
-import { PaybuttonTrigger } from '@prisma/client'
+import { PaybuttonTrigger, Prisma } from '@prisma/client'
 import axios from 'axios'
-import { RESPONSE_MESSAGES } from 'constants/index'
+import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID } from 'constants/index'
 import prisma from 'prisma/clientInstance'
+import { parseTriggerPostData } from 'utils/validators'
+import { BroadcastTxData } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
+
+const triggerWithPaybutton = Prisma.validator<Prisma.PaybuttonTriggerArgs>()({
+  include: { paybutton: true }
+})
+
+export type TriggerWithPaybutton = Prisma.PaybuttonTriggerGetPayload<typeof triggerWithPaybutton>
 
 export interface DeletePaybuttonTriggerInput {
   userId: string
@@ -125,7 +133,7 @@ export async function fetchTriggersForPaybuttonAddresses (paybuttonId: string): 
   })
 }
 
-export async function fetchTriggersForAddress (addressString: string): Promise<PaybuttonTrigger[]> {
+export async function fetchTriggersForAddress (addressString: string): Promise<TriggerWithPaybutton[]> {
   return await prisma.paybuttonTrigger.findMany({
     where: {
       paybutton: {
@@ -137,15 +145,34 @@ export async function fetchTriggersForAddress (addressString: string): Promise<P
           }
         }
       }
+    },
+    include: {
+      paybutton: true
     }
   })
 }
 
-export async function executeAddressTriggers (addressString: string): Promise<void> {
-  const addressTriggers = await fetchTriggersForAddress(addressString)
-  console.log('executing', addressTriggers.length, 'triggers for address', addressString)
+export async function executeAddressTriggers (broadcastTxData: BroadcastTxData): Promise<void> {
+  const paymentAddress = broadcastTxData.address
+  const tx = broadcastTxData.txs[0]
+  const amount = tx.amount
+  const currency = NETWORK_TICKERS_FROM_ID[tx.address.networkId]
+  const txId = tx.hash
+  const timestamp = tx.timestamp
+
+  const addressTriggers = await fetchTriggersForAddress(paymentAddress)
+  console.log('executing', addressTriggers.length, 'triggers for address', paymentAddress)
   for (const trigger of addressTriggers) {
-    const response = await axios.post('https://httpbin.org/post', trigger)
+    const postDataParameters = {
+      amount,
+      currency,
+      txId,
+      buttonName: trigger.paybutton.name,
+      paymentAddress,
+      timestamp
+    }
+    const parsedPostDataParameters = parseTriggerPostData(trigger.postData, postDataParameters)
+    const response = await axios.post('https://httpbin.org/post', parsedPostDataParameters)
     const data = JSON.stringify(await response.data, undefined, 2)
     console.log(`status: ${response.status}\nresponse: ${data}`)
   }

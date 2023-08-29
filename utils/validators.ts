@@ -209,6 +209,43 @@ export interface PaybuttonTriggerPOSTParameters {
   currentTriggerId?: string
 }
 
+interface PostDataParameters {
+  amount: Prisma.Decimal
+  currency: string
+  timestamp: number
+  txId: string
+  buttonName: string
+  paymentAddress: string
+}
+
+export function parseTriggerPostData (postData: string, postDataParameters?: PostDataParameters): string {
+  let resultingData: string
+  // Allows to test the validity of postData without data to replace
+  if (postDataParameters === undefined) {
+    postDataParameters = {
+      amount: new Prisma.Decimal(0),
+      currency: '""',
+      txId: '""',
+      buttonName: '""',
+      paymentAddress: '""',
+      timestamp: 0
+    }
+  }
+  try {
+    resultingData = postData
+      .replace('<amount>', postDataParameters.amount.toString())
+      .replace('<currency>', postDataParameters.currency)
+      .replace('<txId>', postDataParameters.txId)
+      .replace('<buttonName>', postDataParameters.buttonName)
+      .replace('<paymentAddress>', postDataParameters.paymentAddress)
+      .replace('<timestamp>', postDataParameters.timestamp.toString())
+    const parsedResultingData = JSON.parse(resultingData)
+    return JSON.stringify(parsedResultingData)
+  } catch (err: any) {
+    throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_400.message)
+  }
+}
+
 export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTriggerPOSTParameters): CreatePaybuttonTriggerInput {
   // userId
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
@@ -229,8 +266,8 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
   let postData: string | undefined
   if (params.postData === undefined || params.postData === '') { postData = undefined } else {
     try {
-      const parsed = JSON.parse(params.postData)
-      if (parsed === null || typeof parsed !== 'object') { throw new Error() }
+      const parsed = parseTriggerPostData(params.postData)
+      if (parsed === 'null' || typeof parsed !== 'string') { throw new Error() }
       postData = params.postData
     } catch (_) {
       throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_400.message)

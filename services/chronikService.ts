@@ -231,7 +231,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
               console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
             }
             try {
-              await executeAddressTriggers(broadcastTxData.address)
+              await executeAddressTriggers(broadcastTxData)
             } catch (err: any) {
               console.error(RESPONSE_MESSAGES.COULD_NOT_EXECUTE_TRIGGER_500.message, err.stack)
             }
