@@ -134,6 +134,11 @@ export const NETWORK_TICKERS: KeyValueT<string> = {
   bitcoincash: 'BCH'
 }
 
+export const NETWORK_TICKERS_FROM_ID: KeyValueT<string> = {
+  1: 'XEC',
+  2: 'BCH'
+}
+
 export const NETWORK_IDS: KeyValueT<number> = { XEC: 1, BCH: 2 }
 export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
 
