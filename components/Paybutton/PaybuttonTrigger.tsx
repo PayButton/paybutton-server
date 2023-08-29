@@ -4,6 +4,7 @@ import style_w from '../Wallet/wallet.module.css'
 import { PaybuttonTriggerPOSTParameters } from 'utils/validators'
 import { useForm } from 'react-hook-form'
 import axios from 'axios'
+import { PaybuttonTrigger } from '@prisma/client'
 
 interface IProps {
   paybuttonId: string
@@ -11,19 +12,29 @@ interface IProps {
 export default ({ paybuttonId }: IProps): JSX.Element => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [triggers, setTriggers] = useState()
-  const { register, handleSubmit, reset } = useForm<PaybuttonTriggerPOSTParameters>()
+  const [triggers, setTriggers] = useState<PaybuttonTrigger[]>()
+  const [currentTriggerId, setCurrentTriggerId] = useState<string>()
+  const { register, handleSubmit, reset, setValue } = useForm<PaybuttonTriggerPOSTParameters>()
 
   useEffect(() => {
     const getTrigger = async (): Promise<void> => {
       const response = await axios.get(`/api/paybutton/triggers/${paybuttonId}`)
-      setTriggers(await response.data)
+      const ok = await response.data as PaybuttonTrigger[]
+      setTriggers(ok)
+      if (ok.length > 0) {
+        const trigger = ok[0]
+        setValue('postData', trigger.postData)
+        setValue('postURL', trigger.postURL)
+        setValue('sendEmail', trigger.sendEmail)
+        setCurrentTriggerId(trigger.id)
+      }
     }
     void getTrigger()
   }, [])
 
   async function onSubmit (params: PaybuttonTriggerPOSTParameters): Promise<void> {
     try {
+      params.currentTriggerId = currentTriggerId
       const response = await axios.post(`/api/paybutton/triggers/${paybuttonId}`, params)
       if (response.status === 200) {
         setSuccess(true)
@@ -81,7 +92,7 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
                 <div className={style.btn_row2}>
                   {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
                   <div>
-                    <button type='submit' className='button_main'>Submit</button>
+                    <button type='submit' className='button_main'>{currentTriggerId === undefined ? 'Submit' : 'Resubmit'}</button>
                   </div>
                 </div>
             </div>

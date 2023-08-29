@@ -37,6 +37,7 @@ export const RESPONSE_MESSAGES = {
   NO_USER_PROFILE_FOUND_ON_PAYBUTTON_404: { statusCode: 404, message: 'No user profile found for paybutton.' },
   MULTIPLE_ADDRESSES_FOUND_400: { statusCode: 400, message: 'Multiple addresses found.' },
   RESOURCE_DOES_NOT_BELONG_TO_USER_400: { statusCode: 400, message: 'Resource does not belong to user.' },
+  INVALID_RESOURCE_UPDATE_400: { statusCode: 400, message: 'Invalid attempt of updating resource.' },
   MISSING_PRICE_API_URL_400: { statusCode: 400, message: 'Missing PRICE_API_URL environment variable.' },
   MISSING_PRICE_API_TOKEN_400: { statusCode: 400, message: 'Missing PRICE_API_TOKEN environment variable.' },
   MISSING_WS_AUTH_KEY_400: { statusCode: 400, message: 'Missing WS_AUTH_KEY environment variable' },
