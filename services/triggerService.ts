@@ -1,4 +1,5 @@
 import { PaybuttonTrigger } from '@prisma/client'
+import axios from 'axios'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import prisma from 'prisma/clientInstance'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
@@ -122,4 +123,31 @@ export async function fetchTriggersForPaybuttonAddresses (paybuttonId: string): 
       }
     }
   })
+}
+
+export async function fetchTriggersForAddress (addressString: string): Promise<PaybuttonTrigger[]> {
+  return await prisma.paybuttonTrigger.findMany({
+    where: {
+      paybutton: {
+        addresses: {
+          some: {
+            address: {
+              address: addressString
+            }
+          }
+        }
+      }
+    }
+  })
+}
+
+export async function executeAddressTriggers (addressString: string): Promise<void> {
+  const addressTriggers = await fetchTriggersForAddress(addressString)
+  console.log('executing', addressTriggers.length, 'triggers for address', addressString)
+  for (const trigger of addressTriggers) {
+    const response = await axios.post('https://httpbin.org/post', trigger)
+    const data = JSON.stringify(await response.data)
+    console.log(`status: ${response.status}\nresponse: ${data}`)
+  }
+  console.log('trigger execution finished')
 }
