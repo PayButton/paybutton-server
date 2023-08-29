@@ -232,11 +232,12 @@ export function parseTriggerPostData (postData: string, postDataParameters?: Pos
     }
   }
   try {
+    const buttonName = JSON.stringify(postDataParameters.buttonName)
     resultingData = postData
       .replace('<amount>', postDataParameters.amount.toString())
       .replace('<currency>', `"${postDataParameters.currency}"`)
       .replace('<txId>', `"${postDataParameters.txId}"`)
-      .replace('<buttonName>', `"${postDataParameters.buttonName}"`)
+      .replace('<buttonName>', buttonName)
       .replace('<paymentAddress>', `"${postDataParameters.paymentAddress}"`)
       .replace('<timestamp>', postDataParameters.timestamp.toString())
     const parsedResultingData = JSON.parse(resultingData)
