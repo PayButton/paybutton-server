@@ -22,6 +22,7 @@ export const RESPONSE_MESSAGES = {
   INVALID_NETWORK_SLUG_400: { statusCode: 400, message: 'Invalid network slug.' },
   INVALID_NETWORK_ID_400: { statusCode: 400, message: 'Invalid network id.' },
   INVALID_BUTTON_DATA_400: { statusCode: 400, message: "'buttonData' is not valid JSON." },
+  INVALID_DATA_JSON_400: { statusCode: 400, message: 'Data is not valid JSON.' },
   PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400: { statusCode: 400, message: 'One or more buttons already belong to another wallet.' },
   WALLET_CREATION_FAILED_400: { statusCode: 400, message: 'Wallet creation failed.' },
   ADDRESS_ALREADY_BELONGS_TO_WALLET_400: { statusCode: 400, message: 'One or more button addresses already belong to another wallet.' },
@@ -62,7 +63,11 @@ export const RESPONSE_MESSAGES = {
   COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500: { statusCode: 500, message: 'Could not broadcast upcoming transaction to WS server.' },
   INVALID_PASSWORD_FORM_400: { statusCode: 400, message: 'Password form is invalid.' },
   WEAK_NEW_PASSWORD_400: { statusCode: 400, message: 'The new password must contain at least 8 characters, including a letter and a number.' },
-  WRONG_PASSWORD_400: { statusCode: 400, message: 'Wrong password.' }
+  WRONG_PASSWORD_400: { statusCode: 400, message: 'Wrong password.' },
+  INVALID_URL_400: { statusCode: 400, message: 'Invalid URL.' },
+  POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400: { statusCode: 400, message: 'URL and post data must neither or both be set.' },
+  LIMIT_TRIGGERS_PER_BUTTON_400: { statusCode: 400, message: 'This paybutton already has a trigger.' },
+  LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400: { statusCode: 400, message: 'This paybutton addresses already have a trigger from another paybutton.' }
 }
 
 export type KeyValueT<T> = Record<string, T>
