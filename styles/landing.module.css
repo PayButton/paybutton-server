@@ -122,10 +122,11 @@ body[data-theme='dark'] .navbar_ctn img {
     margin-bottom: 15px;
     border: none;
     box-shadow: none;
+    background: transparent;
   }
 
   .navlink_ctn a:last-child:hover {
-    background: none;
+    background: transparent !important;
     color: var(--accent-color) !important;
   }
 
