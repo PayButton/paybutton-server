@@ -33,6 +33,7 @@ model Paybutton {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   addresses      AddressesOnButtons[]
+  triggers       PaybuttonTrigger[]
 
   @@unique([name, providerUserId], map: "Paybutton_name_providerUserId_unique_constraint")
 }
@@ -160,4 +161,16 @@ model UserProfile {
   lastSentVerificationEmailAt DateTime?
   wallets   WalletsOnUserProfile[]
   addresses AddressesOnUserProfiles[]
+}
+
+model PaybuttonTrigger {
+  id             String                    @id @default(dbgenerated("(uuid())"))
+  paybuttonId    String
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  sendEmail      Boolean
+  postData       String               @db.LongText
+  postURL        String
+
+  paybutton      Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade)
 }

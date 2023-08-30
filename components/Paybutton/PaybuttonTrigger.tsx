@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import style from './paybutton.module.css'
 import style_w from '../Wallet/wallet.module.css'
 import { PaybuttonTriggerPOSTParameters } from 'utils/validators'
@@ -11,11 +11,20 @@ interface IProps {
 export default ({ paybuttonId }: IProps): JSX.Element => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [triggers, setTriggers] = useState()
   const { register, handleSubmit, reset } = useForm<PaybuttonTriggerPOSTParameters>()
+
+  useEffect(() => {
+    const getTrigger = async (): Promise<void> => {
+      const response = await axios.get(`/api/paybutton/triggers/${paybuttonId}`)
+      setTriggers(await response.data)
+    }
+    void getTrigger()
+  }, [])
 
   async function onSubmit (params: PaybuttonTriggerPOSTParameters): Promise<void> {
     try {
-      const response = await axios.post(`/api/paybutton/trigger/${paybuttonId}`, params)
+      const response = await axios.post(`/api/paybutton/triggers/${paybuttonId}`, params)
       if (response.status === 200) {
         setSuccess(true)
         reset()
@@ -27,6 +36,7 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
 
   return (
     <div>
+      WIP current triggers: {JSON.stringify(triggers)}
       <div>
         <h4>When a Payment is Received...</h4>
         {success
@@ -46,11 +56,11 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
             </div>
 
             <div>
-              <label htmlFor="postData">Text Area:</label>
-              <textarea {...register('postData')} id="postData" name="postData" placeholder="{
-                name: <buttonName>,
+              <label htmlFor="postData">Post Data</label>
+              <textarea {...register('postData')} id="postData" name="postData" placeholder={`{
+    "name": <buttonName>,
               ...
-              }"></textarea>
+              }`}></textarea>
               <p >
                 Options:
               </p>
