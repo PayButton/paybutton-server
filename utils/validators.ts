@@ -206,6 +206,7 @@ export interface PaybuttonTriggerPOSTParameters {
   sendEmail?: boolean
   postURL?: string
   postData?: string
+  currentTriggerId?: string
 }
 
 export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTriggerPOSTParameters): CreatePaybuttonTriggerInput {
@@ -214,7 +215,7 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
 
   // postURL
   let postURL: string | undefined
-  if (params.postURL === undefined) { postURL = undefined } else {
+  if (params.postURL === undefined || params.postURL === '') { postURL = undefined } else {
     try {
       const parsed = new URL(params.postURL)
       if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error()
