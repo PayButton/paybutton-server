@@ -37,6 +37,7 @@ export const RESPONSE_MESSAGES = {
   NO_USER_PROFILE_FOUND_ON_PAYBUTTON_404: { statusCode: 404, message: 'No user profile found for paybutton.' },
   MULTIPLE_ADDRESSES_FOUND_400: { statusCode: 400, message: 'Multiple addresses found.' },
   RESOURCE_DOES_NOT_BELONG_TO_USER_400: { statusCode: 400, message: 'Resource does not belong to user.' },
+  INVALID_RESOURCE_UPDATE_400: { statusCode: 400, message: 'Invalid attempt of updating resource.' },
   MISSING_PRICE_API_URL_400: { statusCode: 400, message: 'Missing PRICE_API_URL environment variable.' },
   MISSING_PRICE_API_TOKEN_400: { statusCode: 400, message: 'Missing PRICE_API_TOKEN environment variable.' },
   MISSING_WS_AUTH_KEY_400: { statusCode: 400, message: 'Missing WS_AUTH_KEY environment variable' },
@@ -67,7 +68,8 @@ export const RESPONSE_MESSAGES = {
   INVALID_URL_400: { statusCode: 400, message: 'Invalid URL.' },
   POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400: { statusCode: 400, message: 'URL and post data must neither or both be set.' },
   LIMIT_TRIGGERS_PER_BUTTON_400: { statusCode: 400, message: 'This paybutton already has a trigger.' },
-  LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400: { statusCode: 400, message: 'This paybutton addresses already have a trigger from another paybutton.' }
+  LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400: { statusCode: 400, message: 'This paybutton addresses already have a trigger from another paybutton.' },
+  COULD_NOT_EXECUTE_TRIGGER_500: { statusCode: 500, message: 'Failed to execute trigger for paybutton address.' }
 }
 
 export type KeyValueT<T> = Record<string, T>
