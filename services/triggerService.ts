@@ -2,7 +2,7 @@ import { PaybuttonTrigger, Prisma } from '@prisma/client'
 import axios from 'axios'
 import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID } from 'constants/index'
 import prisma from 'prisma/clientInstance'
-import { parseTriggerPostData } from 'utils/validators'
+import { parseTriggerPostData, PostDataParameters } from 'utils/validators'
 import { BroadcastTxData } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
 
@@ -152,6 +152,8 @@ export async function fetchTriggersForAddress (addressString: string): Promise<T
   })
 }
 
+type TriggerLogActionType = 'SendEmail' | 'PostData'
+
 export async function executeAddressTriggers (broadcastTxData: BroadcastTxData): Promise<void> {
   const paymentAddress = broadcastTxData.address
   const tx = broadcastTxData.txs[0]
@@ -161,9 +163,8 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData):
   const timestamp = tx.timestamp
 
   const addressTriggers = await fetchTriggersForAddress(paymentAddress)
-  console.log('executing', addressTriggers.length, 'triggers for address', paymentAddress)
-  for (const trigger of addressTriggers) {
-    const postDataParameters = {
+  await Promise.all(addressTriggers.map(async (trigger) => {
+    const postDataParameters: PostDataParameters = {
       amount,
       currency,
       txId,
@@ -171,10 +172,36 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData):
       paymentAddress,
       timestamp
     }
+    await postDataForTrigger(trigger, postDataParameters)
+  }))
+}
+
+async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParameters: PostDataParameters): Promise<void> {
+  const actionType: TriggerLogActionType = 'PostData'
+  let logData: any
+  let isError = false
+  try {
     const parsedPostDataParameters = parseTriggerPostData(trigger.postData, postDataParameters)
     const response = await axios.post('https://httpbin.org/post', parsedPostDataParameters)
-    const data = JSON.stringify(await response.data, undefined, 2)
-    console.log(`status: ${response.status}\nresponse: ${data}`)
+    const responseData = JSON.stringify(await response.data, undefined, 2)
+    logData = {
+      responseData
+    }
+  } catch (err: any) {
+    isError = true
+    logData = JSON.stringify({
+      errorName: err.name,
+      errorMessage: err.message,
+      errorStack: err.stack
+    })
+  } finally {
+    await prisma.triggerLog.create({
+      data: {
+        triggerId: trigger.id,
+        isError,
+        actionType,
+        data: logData
+      }
+    })
   }
-  console.log('trigger execution finished')
 }
