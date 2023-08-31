@@ -199,6 +199,7 @@
   background-color: #231f20;
   min-height: 200px;
   padding: 50px;
+  font-size: 14px;
 }
 
 .code_ctn code {
