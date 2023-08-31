@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE `TriggerLog` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `triggerId` VARCHAR(191) NOT NULL,
+    `triggerId` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     `isError` BOOLEAN NOT NULL,

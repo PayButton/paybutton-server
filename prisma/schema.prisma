@@ -178,8 +178,8 @@ model PaybuttonTrigger {
 
 model TriggerLog {
   id        Int       @id @default(autoincrement())
-  triggerId String
-  trigger   PaybuttonTrigger @relation(fields: [triggerId], references: [id], onDelete: SetNull)
+  triggerId String?
+  trigger   PaybuttonTrigger? @relation(fields: [triggerId], references: [id], onDelete: SetNull)
   createdAt      DateTime                  @default(now())
   updatedAt      DateTime                  @updatedAt
   isError   Boolean
