@@ -18,6 +18,7 @@
 
 html {
   height: 100%;
+  scroll-behavior: smooth !important;
 }
 
 * {
@@ -77,8 +78,8 @@ button {
   color: var(--primary-text-color);
 }
 
-body[data-theme='dark'] button {
-  color: var(--primary-bg-color);
+button:enabled:hover {
+  filter: none;
 }
 
 .back_btn {
