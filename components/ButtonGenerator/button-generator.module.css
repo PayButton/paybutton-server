@@ -241,11 +241,9 @@ body[data-theme='dark'] .bg_ctn p {
 
 body[data-theme='dark'] .form_ctn form input,
 body[data-theme='dark'] .form_ctn form select,
-body[data-theme='dark'] .form_ctn .colorinput,
-body[data-theme='dark'] .form_ctn form input:autofill,
-body[data-theme='dark'] .form_ctn form input:-webkit-autofill {
+body[data-theme='dark'] .form_ctn .colorinput {
   border-color: rgb(85, 85, 85);
-  background-color: var(--secondary-bg-color) !important;
+  background-color: var(--secondary-bg-color);
   color: #fff;
 }
 
