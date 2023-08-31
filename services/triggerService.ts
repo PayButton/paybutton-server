@@ -182,7 +182,7 @@ async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParame
   let isError = false
   try {
     const parsedPostDataParameters = parseTriggerPostData(trigger.postData, postDataParameters)
-    const response = await axios.post('https://httpbin.org/post', parsedPostDataParameters)
+    const response = await axios.post(trigger.postURL, parsedPostDataParameters)
     const responseData = JSON.stringify(await response.data, undefined, 2)
     logData = {
       responseData
