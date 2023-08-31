@@ -30,7 +30,7 @@ export default function ButtonGenerator(): JSX.Element {
     animation: 'slide',
     theme: {
       palette: {
-        primary: '#669cfe',
+        primary: '#0074C2',
         secondary: '#FFFFFF',
         tertiary: '#231f20',
       },
@@ -73,12 +73,12 @@ export default function ButtonGenerator(): JSX.Element {
           palette: {
             ...prevButton.theme.palette, // Keep the existing palette values
             primary:
-              prevButton.theme.palette.primary !== '#669cfe' &&
+              prevButton.theme.palette.primary !== '#0074C2' &&
               prevButton.theme.palette.primary !== '#4bc846'
                 ? prevButton.theme.palette.primary
                 : isValidAddress(value) === 'bitcoincash'
                 ? '#4bc846'
-                : '#669cfe',
+                : '#0074C2',
           },
         },
       }));
