@@ -10,7 +10,7 @@ export const isValidAddress = (address: string): string => {
   try {
     return decode(address).prefix;
   } catch (err) {
-    return '';
+    return 'not valid';
   }
 };
 
@@ -52,7 +52,7 @@ export default function ButtonGenerator(): JSX.Element {
           },
         },
       }));
-    } else if (['to'].includes(name)) {
+    } else if (name === 'to') {
       setButton((prevButton) => ({
         ...prevButton,
         [name]: value,
@@ -68,6 +68,19 @@ export default function ButtonGenerator(): JSX.Element {
           isValidAddress(value) === 'bitcoincash' ? 'BCH' : 'XEC',
           ...prevButton.currencies.slice(1), // Keep the rest of the array unchanged
         ],
+        theme: {
+          ...prevButton.theme, // Keep the existing theme values
+          palette: {
+            ...prevButton.theme.palette, // Keep the existing palette values
+            primary:
+              prevButton.theme.palette.primary !== '#669cfe' &&
+              prevButton.theme.palette.primary !== '#4bc846'
+                ? prevButton.theme.palette.primary
+                : isValidAddress(value) === 'bitcoincash'
+                ? '#4bc846'
+                : '#669cfe',
+          },
+        },
       }));
     } else if (name === 'amount') {
       // Remove non-numeric characters except for a single decimal point
@@ -331,6 +344,9 @@ export default function ButtonGenerator(): JSX.Element {
                 theme={button.theme}
                 animation={button.animation}
               />
+            ) : button.validAddress === 'not valid' &&
+              button.to.length !== 0 ? (
+              <span style={{ color: 'red' }}>Enter a valid address</span>
             ) : (
               'Enter an address'
             )}
