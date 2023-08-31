@@ -218,6 +218,8 @@ interface PostDataParameters {
   paymentAddress: string
 }
 
+const triggerPostVariables = ['<amount>', '<currency>', '<txId>', '<buttonName>', '<paymentAddress>', '<timestamp>']
+
 export function parseTriggerPostData (postData: string, postDataParameters?: PostDataParameters): string {
   let resultingData: string
   // Allows to test the validity of postData without data to replace
@@ -243,6 +245,10 @@ export function parseTriggerPostData (postData: string, postDataParameters?: Pos
     const parsedResultingData = JSON.parse(resultingData)
     return JSON.stringify(parsedResultingData, undefined, 2)
   } catch (err: any) {
+    const includedVariables = triggerPostVariables.filter(v => postData.includes(v))
+    if (includedVariables.length > 0) {
+      throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_WITH_VARIABLES_400(includedVariables).message)
+    }
     throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_400.message)
   }
 }
@@ -266,13 +272,11 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
   // postData
   let postData: string | undefined
   if (params.postData === undefined || params.postData === '') { postData = undefined } else {
-    try {
-      const parsed = parseTriggerPostData(params.postData)
-      if (parsed === 'null' || typeof parsed !== 'string') { throw new Error() }
-      postData = params.postData
-    } catch (_) {
+    const parsed = parseTriggerPostData(params.postData)
+    if (parsed === 'null' || typeof parsed !== 'string') {
       throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_400.message)
     }
+    postData = params.postData
   }
 
   if ((postData === undefined && postURL !== undefined) || (postData !== undefined && postURL === undefined)) {
