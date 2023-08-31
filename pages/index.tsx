@@ -1,9 +1,16 @@
-import style from '/styles/landing.module.css';
+import style from '../styles/landing.module.css';
 import Navbar from '/components/LandingPage/Navbar';
 import Hero from '/components/LandingPage/Hero';
 import Dashboard from '/components/LandingPage/Dashboard';
-import ButtonGenerator from '/components/ButtonGenerator';
 import Footer from '/components/LandingPage/Footer';
+import dynamic from 'next/dynamic';
+
+const DynamicButtonGenerator = dynamic(
+  () => import('/components/ButtonGenerator'),
+  {
+    ssr: false,
+  }
+);
 
 export default function LandingPage(): JSX.Element {
   return (
@@ -11,7 +18,7 @@ export default function LandingPage(): JSX.Element {
       <Navbar />
       <Hero />
       <Dashboard />
-      <ButtonGenerator />
+      <DynamicButtonGenerator />
       <Footer />
     </div>
   );
