@@ -19,6 +19,7 @@ interface Config {
   redisURL: string
   networkBlockchainClients: KeyValueT<BlockchainClientOptions>
   networksUnderMaintenance: KeyValueT<boolean>
+  triggerPOSTTimeout: number
 }
 
 const readConfig = (): Config => {
