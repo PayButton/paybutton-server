@@ -171,6 +171,18 @@ model PaybuttonTrigger {
   sendEmail      Boolean
   postData       String               @db.LongText
   postURL        String
+  logs           TriggerLog[]
 
   paybutton      Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade)
+}
+
+model TriggerLog {
+  id        Int       @id @default(autoincrement())
+  triggerId String
+  trigger   PaybuttonTrigger @relation(fields: [triggerId], references: [id], onDelete: Restrict)
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  isError   Boolean
+  actionType   String
+  data       String               @db.LongText
 }
