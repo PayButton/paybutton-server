@@ -116,6 +116,10 @@
   position: absolute;
 }
 
+body[data-theme='dark'] .picker_ctn input {
+  background-color: #fff !important;
+}
+
 .address_label {
   display: flex;
   align-items: center;
@@ -150,6 +154,10 @@
   justify-content: space-between;
   padding: 0;
   margin-top: 10px;
+}
+
+body[data-theme='dark'] .codetopbar {
+  background-color: #363032;
 }
 
 .codetopbar img {
@@ -233,9 +241,11 @@ body[data-theme='dark'] .bg_ctn p {
 
 body[data-theme='dark'] .form_ctn form input,
 body[data-theme='dark'] .form_ctn form select,
-body[data-theme='dark'] .form_ctn .colorinput {
+body[data-theme='dark'] .form_ctn .colorinput,
+body[data-theme='dark'] .form_ctn form input:autofill,
+body[data-theme='dark'] .form_ctn form input:-webkit-autofill {
   border-color: rgb(85, 85, 85);
-  background-color: var(--secondary-bg-color);
+  background-color: var(--secondary-bg-color) !important;
   color: #fff;
 }
 
