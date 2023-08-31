@@ -5,6 +5,7 @@ import prisma from 'prisma/clientInstance'
 import { parseTriggerPostData, PostDataParameters } from 'utils/validators'
 import { BroadcastTxData } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
+import config from 'config'
 
 const triggerWithPaybutton = Prisma.validator<Prisma.PaybuttonTriggerArgs>()({
   include: { paybutton: true }
@@ -196,7 +197,13 @@ async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParame
   let isError = false
   try {
     const parsedPostDataParameters = parseTriggerPostData(trigger.postData, postDataParameters)
-    const response = await axios.post(trigger.postURL, parsedPostDataParameters)
+    const response = await axios.post(
+      trigger.postURL,
+      parsedPostDataParameters,
+      {
+        timeout: config.triggerPOSTTimeout
+      }
+    )
     const responseData = await response.data
     logData = {
       postedData: parsedPostDataParameters,
