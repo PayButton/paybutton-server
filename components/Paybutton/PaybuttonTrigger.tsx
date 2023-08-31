@@ -70,15 +70,15 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
               ...
               }`}></textarea>
               <p >
-                Options:
+                Avaiable variables:
               </p>
               <ul>
-                <li>buttonName</li>
-                <li>paymentAddress</li>
-                <li>currency</li>
-                <li>amount</li>
-                <li>Datetime</li>
-                <li>Payload / BIP 70 data (e.g., tx id or other context; think Coin Dance supporters section)</li>
+                <li>&lt;buttonName&gt;</li>
+                <li>&lt;paymentAddress&gt;</li>
+                <li>&lt;currency&gt;</li>
+                <li>&lt;amount&gt;</li>
+                <li>&lt;timestamp&gt;</li>
+                <li>&lt;txId&gt;</li>
               </ul>
             </div>
             {/* Tooltip */}

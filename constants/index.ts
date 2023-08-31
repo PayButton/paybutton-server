@@ -69,7 +69,8 @@ export const RESPONSE_MESSAGES = {
   POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400: { statusCode: 400, message: 'URL and post data must neither or both be set.' },
   LIMIT_TRIGGERS_PER_BUTTON_400: { statusCode: 400, message: 'This paybutton already has a trigger.' },
   LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400: { statusCode: 400, message: 'This paybutton addresses already have a trigger from another paybutton.' },
-  COULD_NOT_EXECUTE_TRIGGER_500: { statusCode: 500, message: 'Failed to execute trigger for paybutton address.' }
+  COULD_NOT_EXECUTE_TRIGGER_500: { statusCode: 500, message: 'Failed to execute trigger for paybutton address.' },
+  INVALID_DATA_JSON_WITH_VARIABLES_400: (variables: string[]) => { return { statusCode: 400, message: `Data is not valid. Make sure that ${variables.join(', ')} are not inside quotes.` } }
 }
 
 export type KeyValueT<T> = Record<string, T>
@@ -132,6 +133,11 @@ export const CURRENT_PRICE_REPEAT_DELAY = 60000
 export const NETWORK_TICKERS: KeyValueT<string> = {
   ecash: 'XEC',
   bitcoincash: 'BCH'
+}
+
+export const NETWORK_TICKERS_FROM_ID: KeyValueT<string> = {
+  1: 'XEC',
+  2: 'BCH'
 }
 
 export const NETWORK_IDS: KeyValueT<number> = { XEC: 1, BCH: 2 }
