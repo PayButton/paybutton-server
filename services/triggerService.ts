@@ -154,13 +154,17 @@ export async function fetchTriggersForAddress (addressString: string): Promise<T
 
 type TriggerLogActionType = 'SendEmail' | 'PostData'
 
-interface TriggerLogErrorData {
+interface PostDataTriggerLogError {
   errorName: string
   errorMessage: string
   errorStack: string
+  triggerPostData: string
+  triggerPostURL: string
 }
 
-interface TriggerLogData {
+interface PostDataTriggerLog {
+  postedData: string
+  postedURL: string
   responseData: string
 }
 
@@ -188,13 +192,15 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData):
 
 async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParameters: PostDataParameters): Promise<void> {
   const actionType: TriggerLogActionType = 'PostData'
-  let logData: TriggerLogData | TriggerLogErrorData
+  let logData: PostDataTriggerLog | PostDataTriggerLogError
   let isError = false
   try {
     const parsedPostDataParameters = parseTriggerPostData(trigger.postData, postDataParameters)
     const response = await axios.post(trigger.postURL, parsedPostDataParameters)
     const responseData = await response.data
     logData = {
+      postedData: parsedPostDataParameters,
+      postedURL: trigger.postURL,
       responseData
     }
   } catch (err: any) {
@@ -202,7 +208,9 @@ async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParame
     logData = {
       errorName: err.name,
       errorMessage: err.message,
-      errorStack: err.stack
+      errorStack: err.stack,
+      triggerPostData: trigger.postData,
+      triggerPostURL: trigger.postURL
     }
   } finally {
     await prisma.triggerLog.create({
