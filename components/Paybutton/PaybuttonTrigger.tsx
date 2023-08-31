@@ -73,12 +73,12 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
                 Avaiable variables:
               </p>
               <ul>
-                <li>buttonName</li>
-                <li>paymentAddress</li>
-                <li>currency</li>
-                <li>amount</li>
-                <li>timestamp</li>
-                <li>txId</li>
+                <li>&lt;buttonName&gt;</li>
+                <li>&lt;paymentAddress&gt;</li>
+                <li>&lt;currency&gt;</li>
+                <li>&lt;amount&gt;</li>
+                <li>&lt;timestamp&gt;</li>
+                <li>&lt;txId&gt;</li>
               </ul>
             </div>
             {/* Tooltip */}
