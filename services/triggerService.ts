@@ -2,9 +2,10 @@ import { PaybuttonTrigger, Prisma } from '@prisma/client'
 import axios from 'axios'
 import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID } from 'constants/index'
 import prisma from 'prisma/clientInstance'
-import { parseTriggerPostData } from 'utils/validators'
+import { parseTriggerPostData, PostDataParameters } from 'utils/validators'
 import { BroadcastTxData } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
+import config from 'config'
 
 const triggerWithPaybutton = Prisma.validator<Prisma.PaybuttonTriggerArgs>()({
   include: { paybutton: true }
@@ -152,6 +153,22 @@ export async function fetchTriggersForAddress (addressString: string): Promise<T
   })
 }
 
+type TriggerLogActionType = 'SendEmail' | 'PostData'
+
+interface PostDataTriggerLogError {
+  errorName: string
+  errorMessage: string
+  errorStack: string
+  triggerPostData: string
+  triggerPostURL: string
+}
+
+interface PostDataTriggerLog {
+  postedData: string
+  postedURL: string
+  responseData: string
+}
+
 export async function executeAddressTriggers (broadcastTxData: BroadcastTxData): Promise<void> {
   const paymentAddress = broadcastTxData.address
   const tx = broadcastTxData.txs[0]
@@ -161,9 +178,8 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData):
   const timestamp = tx.timestamp
 
   const addressTriggers = await fetchTriggersForAddress(paymentAddress)
-  console.log('executing', addressTriggers.length, 'triggers for address', paymentAddress)
-  for (const trigger of addressTriggers) {
-    const postDataParameters = {
+  await Promise.all(addressTriggers.map(async (trigger) => {
+    const postDataParameters: PostDataParameters = {
       amount,
       currency,
       txId,
@@ -171,10 +187,46 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData):
       paymentAddress,
       timestamp
     }
+    await postDataForTrigger(trigger, postDataParameters)
+  }))
+}
+
+async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParameters: PostDataParameters): Promise<void> {
+  const actionType: TriggerLogActionType = 'PostData'
+  let logData: PostDataTriggerLog | PostDataTriggerLogError
+  let isError = false
+  try {
     const parsedPostDataParameters = parseTriggerPostData(trigger.postData, postDataParameters)
-    const response = await axios.post('https://httpbin.org/post', parsedPostDataParameters)
-    const data = JSON.stringify(await response.data, undefined, 2)
-    console.log(`status: ${response.status}\nresponse: ${data}`)
+    const response = await axios.post(
+      trigger.postURL,
+      parsedPostDataParameters,
+      {
+        timeout: config.triggerPOSTTimeout
+      }
+    )
+    const responseData = await response.data
+    logData = {
+      postedData: parsedPostDataParameters,
+      postedURL: trigger.postURL,
+      responseData
+    }
+  } catch (err: any) {
+    isError = true
+    logData = {
+      errorName: err.name,
+      errorMessage: err.message,
+      errorStack: err.stack,
+      triggerPostData: trigger.postData,
+      triggerPostURL: trigger.postURL
+    }
+  } finally {
+    await prisma.triggerLog.create({
+      data: {
+        triggerId: trigger.id,
+        isError,
+        actionType,
+        data: JSON.stringify(logData)
+      }
+    })
   }
-  console.log('trigger execution finished')
 }

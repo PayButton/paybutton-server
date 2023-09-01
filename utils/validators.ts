@@ -209,7 +209,7 @@ export interface PaybuttonTriggerPOSTParameters {
   currentTriggerId?: string
 }
 
-interface PostDataParameters {
+export interface PostDataParameters {
   amount: Prisma.Decimal
   currency: string
   timestamp: number
