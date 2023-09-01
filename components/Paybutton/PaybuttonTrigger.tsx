@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import style from './paybutton.module.css'
-import style_w from '../Wallet/wallet.module.css'
+// import style_w from '../Wallet/wallet.module.css'
 import { PaybuttonTriggerPOSTParameters } from 'utils/validators'
 import { useForm } from 'react-hook-form'
 import axios from 'axios'
@@ -52,10 +52,12 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
           : <div className={style.form_ctn}>
           <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
             {/* Checkbox */}
+            {/* TODO: send email logic
             <div className={style_w.input_field} key="sendEmail">
               <input {...register('sendEmail')} type="checkbox" id="sendEmail" name="sendEmail" />
               <label htmlFor="sendEmail">Receive email</label>
             </div>
+              *}
 
             {/* Input Fields */}
             <div>
