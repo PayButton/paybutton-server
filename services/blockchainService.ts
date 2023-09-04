@@ -69,7 +69,7 @@ function getBlockchainClient (networkSlug: string): BlockchainClient {
         console.log('creating chronik instance...')
         global.chronik = new ChronikBlockchainClient()
         // Subscribe addresses on DB upon client initialization
-        if (process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) {
+        if (process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD && process.env.NODE_ENV !== 'test') {
           console.log('subscribing existent addresses...')
           void global.chronik.subscribeInitialAddresses()
         }
