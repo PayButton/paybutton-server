@@ -2,7 +2,7 @@ import { XEC_NETWORK_ID, BCH_NETWORK_ID, CURRENT_PRICE_REPEAT_DELAY, SYNC_TXS_JO
 import { Queue, FlowProducer, FlowJob } from 'bullmq'
 import { redisBullMQ } from 'redis/clientInstance'
 import {
-  syncAndSubscribeAllAddressTransactionsForNetworkWorker,
+  syncAllAddressTransactionsForNetworkWorker,
   syncPricesWorker,
   connectAllTransactionsToPricesWorker
 } from './workers'
@@ -94,7 +94,7 @@ const main = async (): Promise<void> => {
   )
 
   await syncPricesWorker(pricesQueue.name)
-  await syncAndSubscribeAllAddressTransactionsForNetworkWorker(initTransactionsQueue.name)
+  await syncAllAddressTransactionsForNetworkWorker(initTransactionsQueue.name)
   await connectAllTransactionsToPricesWorker(connectPricesQueue.name)
 }
 
