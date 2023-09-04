@@ -12,7 +12,6 @@ const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> 
   console.log(`job ${job.id as string}: syncing all addresses for network ${job.data.networkId as string}...`)
   let failedAddressesWithErrors: KeyValueT<string> = {}
   try {
-    console.log('temp: vai puxar')
     let addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
     console.log(`found ${addresses.length} addresses...`)
     addresses = addresses.filter(addr => addr.lastSynced == null)
