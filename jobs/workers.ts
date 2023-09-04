@@ -8,13 +8,14 @@ import * as addressService from 'services/addressService'
 import { parseError } from 'utils/validators'
 import { getSubbedAddresses } from 'services/chronikService'
 
-const syncAndSubscribeAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> => {
-  console.log(`job ${job.id as string}: syncing and subscribing all addresses for network ${job.data.networkId as string}...`)
+const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> => {
+  console.log(`job ${job.id as string}: syncing all addresses for network ${job.data.networkId as string}...`)
   let failedAddressesWithErrors: KeyValueT<string> = {}
   try {
     let addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
+    console.log(`found ${addresses.length} addresses...`)
     addresses = addresses.filter(addr => addr.lastSynced == null)
-    failedAddressesWithErrors = (await transactionService.syncAndSubscribeAddresses(addresses)).failedAddressesWithErrors
+    failedAddressesWithErrors = (await transactionService.syncAddresses(addresses)).failedAddressesWithErrors
   } catch (err: any) {
     const parsedError = parseError(err)
     if (parsedError.message === RESPONSE_MESSAGES.TRANSACTION_ALREADY_EXISTS_FOR_ADDRESS_400.message) {
@@ -29,23 +30,23 @@ const syncAndSubscribeAllAddressTransactionsForNetworkJob = async (job: Job): Pr
   }
 }
 
-export const syncAndSubscribeAllAddressTransactionsForNetworkWorker = async (queueName: string): Promise<void> => {
+export const syncAllAddressTransactionsForNetworkWorker = async (queueName: string): Promise<void> => {
   const worker = new Worker(
     queueName,
-    syncAndSubscribeAllAddressTransactionsForNetworkJob,
+    syncAllAddressTransactionsForNetworkJob,
     {
       connection: redisBullMQ,
       lockDuration: DEFAULT_WORKER_LOCK_DURATION
     }
   )
   worker.on('completed', job => {
-    console.log(`initial syncing and subscribing finished for network ${job.data.networkId as string}`)
+    console.log(`initial syncing finished for network ${job.data.networkId as string}`)
   })
 
   worker.on('failed', (job, err) => {
     if (job !== undefined) {
-      console.log(`initial syncing and subscribing FAILED for network ${job.data.networkId as string}`)
-      console.log(`error for initial syncing and subscribing of network ${job.data.networkId as string}: ${err.message}`)
+      console.log(`initial syncing FAILED for network ${job.data.networkId as string}`)
+      console.log(`error for initial syncing of network ${job.data.networkId as string}: ${err.message}`)
     }
   })
 }
