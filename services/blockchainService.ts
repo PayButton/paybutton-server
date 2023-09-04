@@ -5,6 +5,7 @@ import { RESPONSE_MESSAGES, KeyValueT, NETWORK_IDS, NETWORK_TICKERS } from '../c
 import { TransactionWithAddressAndPrices } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import config, { BlockchainClientOptions } from 'config'
+import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
 
 export interface BlockchainInfo {
   height: number
@@ -67,8 +68,11 @@ function getBlockchainClient (networkSlug: string): BlockchainClient {
       if (global.chronik === undefined) {
         console.log('creating chronik instance...')
         global.chronik = new ChronikBlockchainClient()
-        console.log('subscribing existent addresses...')
-        void global.chronik.subscribeInitialAddresses()
+        // Subscribe addresses on DB upon client initialization
+        if (process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) {
+          console.log('subscribing existent addresses...')
+          void global.chronik.subscribeInitialAddresses()
+        }
       }
       return global.chronik
     default:
