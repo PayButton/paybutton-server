@@ -191,7 +191,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       onMessage: (msg: SubscribeMsg) => { void this.processWsMessage(msg) },
       onError: (e: ws.ErrorEvent) => { console.log(`Chronik webSocket error, type: ${e.type} | message: ${e.message} | error: ${e.error as string}`) },
       onReconnect: (_: ws.Event) => { console.log('Chronik webSocket unexpectedly closed.') },
-      onConnect: (_: ws.Event) => { console.log('Chronik webSocket connection (re)established.') },
+      onConnect: (_: ws.Event) => { console.log(`Chronik webSocket connection (re)established. ${getSubbedAddresses().currentSubscriptions.join(',')}`) },
       onEnd: (e: ws.Event) => { console.log(`Chronik WebSocket ended, type: ${e.type}.`) },
       autoReconnect: true
     }
