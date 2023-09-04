@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import style from './button-generator.module.css';
 import CopyIcon from '/assets/copy.png';
+import Prism from 'prismjs';
+import 'prismjs/themes/prism-okaidia.css';
 
 export default function CodeBlock({ button }): JSX.Element {
   const [isCopied, setIsCopied] = useState(false);
@@ -66,9 +68,7 @@ export default function CodeBlock({ button }): JSX.Element {
 
   PayButton.render(document.getElementById('my_button'), config);
 </script>`,
-      react: `npm i --save @paybutton/react
-
-import { PayButton } from '@paybutton/react'
+      react: `import { PayButton } from '@paybutton/react'
 
 function App() {
   const to = '${button.to}'
@@ -99,6 +99,10 @@ function App() {
     });
   }, [button]);
 
+  useEffect(() => {
+    Prism.highlightAll();
+  }, [code, codeType]);
+
   return (
     <>
       <div className={style.codetopbar}>
@@ -123,13 +127,16 @@ function App() {
         </div>
       </div>
       <pre className={style.code_ctn}>
-        <code>
-          {codeType === 'HTML'
-            ? code.html
-            : codeType === 'JavaScript'
-            ? code.javascript
-            : code.react}
-        </code>
+        {codeType === 'HTML' ? (
+          <code className="language-html">{code.html}</code>
+        ) : codeType === 'JavaScript' ? (
+          <code className="language-js">{code.javascript}</code>
+        ) : (
+          <code className="language-js">{code.react}</code>
+        )}
+
+        {/* <code className="language-javascript">{code.javascript}</code>
+        <code className="language-javascript">{code.javascript}</code> */}
       </pre>
     </>
   );
