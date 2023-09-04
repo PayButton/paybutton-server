@@ -77,6 +77,7 @@ case "$command" in
         yarn docker cbr && echo Cleaned jobs cache.
         ;;
     "jobsrestart" | "jr")
+        yarn docker js
         eval "$base_command_node" pm2 --time restart jobs
         ;;
     "serverlogs" | "sl")
