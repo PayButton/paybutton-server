@@ -48,9 +48,6 @@ case "$command" in
     "databasedump" | "dbd")
         eval "$base_command_db" mariadb-dump -h "$MAIN_DB_HOST" -u root -p"$MAIN_DB_ROOT_PASSWORD" "$@"
         ;;
-    "databasedump" | "dbd")
-        eval "$base_command_db" mariadb-dump -u root -p"$MAIN_DB_ROOT_PASSWORD" "$@"
-        ;;
     "databaseshell" | "dbs")
         eval "$base_command_db" bash -l "$@"
         ;;
