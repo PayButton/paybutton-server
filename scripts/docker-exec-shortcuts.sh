@@ -40,19 +40,22 @@ case "$command" in
         eval "$base_command_node" pm2 --time restart next
         ;;
     "database" | "db")
-        eval "$base_command_db" mariadb -u "$MAIN_DB_USER" -p"$MAIN_DB_PASSWORD" -D "$MAIN_DB_NAME" "$@"
+        eval "$base_command_db" mariadb -h "$MAIN_DB_HOST" -u "$MAIN_DB_USER" -p"$MAIN_DB_PASSWORD" -D "$MAIN_DB_NAME" "$@"
         ;;
     "databaseroot" | "dbr")
-        eval "$base_command_db" mariadb -u root -p"$MAIN_DB_ROOT_PASSWORD" "$@"
+        eval "$base_command_db" mariadb -h "$MAIN_DB_HOST" -u root -p"$MAIN_DB_ROOT_PASSWORD" "$@"
+        ;;
+    "databasedump" | "dbd")
+        eval "$base_command_db" mariadb-dump -h "$MAIN_DB_HOST" -u root -p"$MAIN_DB_ROOT_PASSWORD" "$@"
         ;;
     "databaseshell" | "dbs")
         eval "$base_command_db" bash -l "$@"
         ;;
     "databasetest" | "dbt")
-        eval "$base_command_db" mariadb -u "$MAIN_DB_USER"-test -p"$MAIN_DB_PASSWORD" -D "$MAIN_DB_NAME"-test "$@"
+        eval "$base_command_db" mariadb -h "$MAIN_DB_HOST" -u "$MAIN_DB_USER"-test -p"$MAIN_DB_PASSWORD" -D "$MAIN_DB_NAME"-test "$@"
         ;;
     "databaseuser" | "dbu")
-        eval "$base_command_db" mariadb -u "$SUPERTOKENS_DB_USER" -p"$SUPERTOKENS_DB_PASSWORD" -D supertokens "$@"
+        eval "$base_command_db" mariadb -h "$MAIN_DB_HOST" -u "$SUPERTOKENS_DB_USER" -p"$SUPERTOKENS_DB_PASSWORD" -D supertokens "$@"
         ;;
     "test" | "t")
         eval "$base_command_node" yarn test "$@"
@@ -77,6 +80,7 @@ case "$command" in
         yarn docker cbr && echo Cleaned jobs cache.
         ;;
     "jobsrestart" | "jr")
+        yarn docker js
         eval "$base_command_node" pm2 --time restart jobs
         ;;
     "serverlogs" | "sl")
@@ -141,6 +145,7 @@ case "$command" in
         echo "  nl, nextlogs                [$node_container_name]     see the logs for the nextJS server"
         echo "  db, database                [$db_container_name]      enter the mariadb command-line using the main db"
         echo "  dbr, databaseroot           [$db_container_name]      enter the mariadb command-line as root"
+        echo "  dbd, databasedump           [$db_container_name]      dump all db tables as root"
         echo "  dbs, databaseshell          [$db_container_name]      enter the shell of the mariadb container"
         echo "  dbt, databasetest           [$db_container_name]      enter the mariadb command-line using the test db"
         echo "  dbu, databaseuser           [$db_container_name]      enter the mariadb command-line using the users db"

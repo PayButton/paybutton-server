@@ -261,6 +261,34 @@ interface SyncAndSubscriptionReturn {
   syncedTxs: KeyValueT<TransactionWithAddressAndPrices[]>
 }
 
+export async function syncAddresses (addresses: Address[], maxTransactionsToReturn?: number): Promise<SyncAndSubscriptionReturn> {
+  const failedAddressesWithErrors: KeyValueT<string> = {}
+  const syncedTxs: KeyValueT<TransactionWithAddressAndPrices[]> = {}
+  let txsToSave: Prisma.TransactionCreateManyInput[] = []
+  if (maxTransactionsToReturn === undefined) maxTransactionsToReturn = Infinity
+
+  const productionAddressesIds = productionAddresses.map(addr => addr.id)
+  await Promise.all(
+    addresses.map(async (addr) => {
+      try {
+        syncedTxs[addr.address] = await syncAllTransactionsForAddress(addr, maxTransactionsToReturn!)
+        if (productionAddressesIds.includes(addr.id)) {
+          txsToSave = txsToSave.concat(syncedTxs[addr.address])
+        }
+      } catch (err: any) {
+        failedAddressesWithErrors[addr.address] = err.stack
+      }
+    })
+  )
+  if (txsToSave.length !== 0) {
+    await appendTxsToFile(txsToSave)
+  }
+  return {
+    failedAddressesWithErrors,
+    syncedTxs
+  }
+}
+
 export const syncAndSubscribeAddresses = async (addresses: Address[], maxTransactionsToReturn?: number): Promise<SyncAndSubscriptionReturn> => {
   const failedAddressesWithErrors: KeyValueT<string> = {}
   const syncedTxs: KeyValueT<TransactionWithAddressAndPrices[]> = {}

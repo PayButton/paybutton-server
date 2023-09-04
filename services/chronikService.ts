@@ -7,7 +7,7 @@ import { TransactionWithAddressAndPrices, createManyTransactions, deleteTransact
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
-import { fetchAddressBySubstring, getLatestTxTimestampForAddress } from './addressService'
+import { fetchAddressBySubstring, fetchAllAddressesForNetworkId, getLatestTxTimestampForAddress } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
@@ -273,6 +273,16 @@ export class ChronikBlockchainClient implements BlockchainClient {
         this.chronikWSEndpoint.subscribe(type, hash160)
         this.subscribedAddresses[address.address] = address
       })
+    }
+  }
+
+  public async subscribeInitialAddresses (): Promise<void> {
+    const addresses = await fetchAllAddressesForNetworkId(XEC_NETWORK_ID)
+    try {
+      console.log(`will subscribe ${addresses.length} addresses...`)
+      await this.subscribeAddressesAddTransactions(addresses)
+    } catch (err: any) {
+      console.error(`ERROR: (skipping anyway) initial chronik subscription failed: ${err.message as string} ${err.stack as string}`)
     }
   }
 }
