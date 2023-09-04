@@ -12,6 +12,7 @@ const syncAndSubscribeAllAddressTransactionsForNetworkJob = async (job: Job): Pr
   console.log(`job ${job.id as string}: syncing and subscribing all addresses for network ${job.data.networkId as string}...`)
   let failedAddressesWithErrors: KeyValueT<string> = {}
   try {
+    console.log('temp: vai puxar')
     let addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
     console.log(`found ${addresses.length} addresses...`)
     addresses = addresses.filter(addr => addr.lastSynced == null)
