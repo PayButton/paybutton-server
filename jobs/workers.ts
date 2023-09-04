@@ -13,9 +13,9 @@ const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> 
   let failedAddressesWithErrors: KeyValueT<string> = {}
   try {
     console.log('temp: vai puxar')
-    const addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
+    let addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
     console.log(`found ${addresses.length} addresses...`)
-    // addresses = addresses.filter(addr => addr.lastSynced == null)
+    addresses = addresses.filter(addr => addr.lastSynced == null)
     failedAddressesWithErrors = (await transactionService.syncAddresses(addresses)).failedAddressesWithErrors
   } catch (err: any) {
     const parsedError = parseError(err)
