@@ -40,19 +40,22 @@ case "$command" in
         eval "$base_command_node" pm2 --time restart next
         ;;
     "database" | "db")
-        eval "$base_command_db" mariadb -u "$MAIN_DB_USER" -p"$MAIN_DB_PASSWORD" -D "$MAIN_DB_NAME" "$@"
+        eval "$base_command_db" mariadb -h "$MAIN_DB_HOST" -u "$MAIN_DB_USER" -p"$MAIN_DB_PASSWORD" -D "$MAIN_DB_NAME" "$@"
         ;;
     "databaseroot" | "dbr")
-        eval "$base_command_db" mariadb -u root -p"$MAIN_DB_ROOT_PASSWORD" "$@"
+        eval "$base_command_db" mariadb -h "$MAIN_DB_HOST" -u root -p"$MAIN_DB_ROOT_PASSWORD" "$@"
+        ;;
+    "databasedump" | "dbd")
+        eval "$base_command_db" mariadb-dump -h "$MAIN_DB_HOST" -u root -p"$MAIN_DB_ROOT_PASSWORD" "$@"
         ;;
     "databaseshell" | "dbs")
         eval "$base_command_db" bash -l "$@"
         ;;
     "databasetest" | "dbt")
-        eval "$base_command_db" mariadb -u "$MAIN_DB_USER"-test -p"$MAIN_DB_PASSWORD" -D "$MAIN_DB_NAME"-test "$@"
+        eval "$base_command_db" mariadb -h "$MAIN_DB_HOST" -u "$MAIN_DB_USER"-test -p"$MAIN_DB_PASSWORD" -D "$MAIN_DB_NAME"-test "$@"
         ;;
     "databaseuser" | "dbu")
-        eval "$base_command_db" mariadb -u "$SUPERTOKENS_DB_USER" -p"$SUPERTOKENS_DB_PASSWORD" -D supertokens "$@"
+        eval "$base_command_db" mariadb -h "$MAIN_DB_HOST" -u "$SUPERTOKENS_DB_USER" -p"$SUPERTOKENS_DB_PASSWORD" -D supertokens "$@"
         ;;
     "test" | "t")
         eval "$base_command_node" yarn test "$@"
