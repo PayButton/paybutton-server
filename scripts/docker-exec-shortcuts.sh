@@ -48,6 +48,9 @@ case "$command" in
     "databasedump" | "dbd")
         eval "$base_command_db" mariadb-dump -h "$MAIN_DB_HOST" -u root -p"$MAIN_DB_ROOT_PASSWORD" "$@"
         ;;
+    "databasedump" | "dbd")
+        eval "$base_command_db" mariadb-dump -u root -p"$MAIN_DB_ROOT_PASSWORD" "$@"
+        ;;
     "databaseshell" | "dbs")
         eval "$base_command_db" bash -l "$@"
         ;;
@@ -145,6 +148,7 @@ case "$command" in
         echo "  nl, nextlogs                [$node_container_name]     see the logs for the nextJS server"
         echo "  db, database                [$db_container_name]      enter the mariadb command-line using the main db"
         echo "  dbr, databaseroot           [$db_container_name]      enter the mariadb command-line as root"
+        echo "  dbd, databasedump           [$db_container_name]      dump all db tables as root"
         echo "  dbs, databaseshell          [$db_container_name]      enter the shell of the mariadb container"
         echo "  dbt, databasetest           [$db_container_name]      enter the mariadb command-line using the test db"
         echo "  dbu, databaseuser           [$db_container_name]      enter the mariadb command-line using the users db"
