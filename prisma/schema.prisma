@@ -170,7 +170,7 @@ model PaybuttonTrigger {
   updatedAt      DateTime                  @updatedAt
   sendEmail      Boolean
   postData       String               @db.LongText
-  postURL        String
+  postURL        String               @db.VarChar(255)
   logs           TriggerLog[]
 
   paybutton      Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade)
