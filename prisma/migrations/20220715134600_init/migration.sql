@@ -17,7 +17,7 @@ CREATE TABLE `Paybutton` (
     `id` VARCHAR(191) NOT NULL DEFAULT (uuid()),
     `name` VARCHAR(255) NOT NULL,
     `buttonData` LONGTEXT NOT NULL,
-    `providerUserId` VARCHAR(255) NOT NULL,
+    `providerUserId` VARCHAR(255) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -69,7 +69,7 @@ CREATE TABLE `Wallet` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     `name` VARCHAR(255) NOT NULL,
-    `providerUserId` VARCHAR(255) NOT NULL,
+    `providerUserId` VARCHAR(255) NULL,
 
     UNIQUE INDEX `Wallet_name_providerUserId_unique_constraint`(`name`, `providerUserId`),
     PRIMARY KEY (`id`)
