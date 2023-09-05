@@ -4,6 +4,7 @@ import style from './button-generator.module.css';
 import CopyIcon from '/assets/copy.png';
 import Prism from 'prismjs';
 import 'prismjs/themes/prism-okaidia.css';
+import 'prismjs/components/prism-jsx.min';
 
 export default function CodeBlock({ button }): JSX.Element {
   const [isCopied, setIsCopied] = useState(false);
@@ -35,19 +36,56 @@ export default function CodeBlock({ button }): JSX.Element {
     }
   };
 
+  const checkValue = (value, attribute, type) => {
+    if (type === 'html') {
+      if (value !== undefined && value !== '') {
+        if (attribute === 'amount') {
+          return `\n  ${attribute}=${value}`;
+        } else return `\n  ${attribute}="${value}"`;
+      } else return '';
+    } else if (type === 'js') {
+      if (value !== undefined && value !== '') {
+        if (attribute === 'amount') {
+          return `\n    ${attribute}: ${value},`;
+        } else return `\n    ${attribute}: "${value}",`;
+      } else return '';
+    } else {
+      if (value !== undefined && value !== '') {
+        if (attribute === 'amount') {
+          return `\n  const ${attribute} = ${value}`;
+        } else return `\n  const ${attribute} = '${value}'`;
+      } else return '';
+    }
+  };
+
+  const checkAnimation = (value, type) => {
+    if (value === 'slide') {
+      return '';
+    } else if (type === 'html') {
+      return `\n  animation="${value}"`;
+    } else if (type === 'js') {
+      return `\n    animation: "${value}",`;
+    } else {
+      return `\n  const animation = '${value}'`;
+    }
+  };
+
   useEffect(() => {
     setCode({
       html: `<script src="https://unpkg.com/@paybutton/paybutton/dist/paybutton.js"></script>
 
 <div
   class="paybutton"
-  to="${button.to}"
-  text="${button.text}"
-  hover-text="${button.hoverText}"
-  success-text="${button.successText}"
-  amount=${button.amount}
-  currency="${button.currency}"
-  animation="${button.animation}"
+  to="${button.to}"${checkValue(button.text, 'text', 'html')}${checkValue(
+        button.hoverText,
+        'hover-text',
+        'html'
+      )}${checkValue(button.successText, 'success-text', 'html')}${checkValue(
+        button.amount,
+        'amount',
+        'html'
+      )}
+  currency="${button.currency}"${checkAnimation(button.animation, 'html')}
   theme='${JSON.stringify(button.theme)}'
 />`,
       javascript: `<script src="https://unpkg.com/@paybutton/paybutton/dist/paybutton.js"></script>
@@ -56,13 +94,16 @@ export default function CodeBlock({ button }): JSX.Element {
       
 <script>      
   var config = {
-    to: '${button.to}',
-    text: '${button.text}',
-    hoverText: '${button.hoverText}',
-    successText: '${button.successText}',
-    amount: ${button.amount},
-    currency: '${button.currency}',
-    animation: '${button.animation}',
+    to: '${button.to}',${checkValue(button.text, 'text', 'js')}${checkValue(
+        button.hoverText,
+        'hoverText',
+        'js'
+      )}${checkValue(button.successText, 'successText', 'js')}${checkValue(
+        button.amount,
+        'amount',
+        'js'
+      )}
+    currency: '${button.currency}',${checkAnimation(button.animation, 'js')}
     theme: ${JSON.stringify(button.theme)},
   };
 
@@ -71,13 +112,19 @@ export default function CodeBlock({ button }): JSX.Element {
       react: `import { PayButton } from '@paybutton/react'
 
 function App() {
-  const to = '${button.to}'
-  const text = '${button.text}'
-  const hoverText = '${button.hoverText}'
-  const successText = '${button.successText}'
-  const amount = ${button.amount}
-  const currency = '${button.currency}'
-  const animation = '${button.animation}'
+  const to = '${button.to}'${checkValue(
+        button.text,
+        'text',
+        'react'
+      )}${checkValue(button.hoverText, 'hoverText', 'react')}${checkValue(
+        button.successText,
+        'successText',
+        'react'
+      )}${checkValue(button.amount, 'amount', 'react')}
+  const currency = '${button.currency}'${checkAnimation(
+        button.animation,
+        'react'
+      )}
   const theme = {
     palette: {
       primary: '${button.theme.palette.primary}',
@@ -132,11 +179,8 @@ function App() {
         ) : codeType === 'JavaScript' ? (
           <code className="language-js">{code.javascript}</code>
         ) : (
-          <code className="language-js">{code.react}</code>
+          <code className="language-jsx">{code.react}</code>
         )}
-
-        {/* <code className="language-javascript">{code.javascript}</code>
-        <code className="language-javascript">{code.javascript}</code> */}
       </pre>
     </>
   );

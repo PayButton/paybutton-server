@@ -40,6 +40,12 @@
   text-transform: uppercase;
 }
 
+.form_ctn form label span {
+  color: red;
+  font-size: 10px;
+  margin-left: 2px;
+}
+
 .form_ctn form select {
   height: 42px;
 }

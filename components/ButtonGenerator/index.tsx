@@ -22,11 +22,8 @@ export default function ButtonGenerator(): JSX.Element {
 
   const [button, setButton] = useState({
     to: '',
-    amount: 0,
-    currency: 'XEC',
-    text: 'Donate',
     hoverText: 'Click to send',
-    successText: 'Thanks for your support!',
+    currency: 'XEC',
     animation: 'slide',
     theme: {
       palette: {
@@ -155,7 +152,9 @@ export default function ButtonGenerator(): JSX.Element {
             <form action="#" method="post">
               <div className={s.form_half}>
                 <label className={s.address_label}>
-                  <div>To</div>
+                  <div>
+                    To<span>*</span>
+                  </div>
                   <a
                     href="https://cashtab.com/"
                     target="_blank"
@@ -177,6 +176,7 @@ export default function ButtonGenerator(): JSX.Element {
                   type="text"
                   name="text"
                   value={button.text}
+                  placeholder="Donate"
                   onChange={handleInputChange}
                 />
 
@@ -185,6 +185,7 @@ export default function ButtonGenerator(): JSX.Element {
                   type="text"
                   name="hoverText"
                   value={button.hoverText}
+                  placeholder="Click to send"
                   onChange={handleInputChange}
                 />
 
@@ -193,6 +194,7 @@ export default function ButtonGenerator(): JSX.Element {
                   type="text"
                   name="successText"
                   value={button.successText}
+                  placeholder="Thanks for your support!"
                   onChange={handleInputChange}
                 />
                 <div className={s.advanced_ctn}>
@@ -215,6 +217,7 @@ export default function ButtonGenerator(): JSX.Element {
                       type="text"
                       name="amount"
                       value={button.amount}
+                      placeholder="0"
                       onChange={handleInputChange}
                       maxLength={13}
                     />
@@ -224,6 +227,7 @@ export default function ButtonGenerator(): JSX.Element {
                     <select
                       name="currency"
                       value={button.currency}
+                      placeholder=""
                       onChange={handleInputChange}
                     >
                       {button.currencies.map((currency, index) => (
@@ -339,8 +343,13 @@ export default function ButtonGenerator(): JSX.Element {
                 to={button.to}
                 amount={button.amount}
                 currency={button.currency}
-                text={button.text}
-                hoverText={button.hoverText}
+                text={button.text === '' ? undefined : button.text}
+                hoverText={
+                  button.hoverText === '' ? undefined : button.hoverText
+                }
+                successText={
+                  button.successText === '' ? undefined : button.successText
+                }
                 theme={button.theme}
                 animation={button.animation}
               />
