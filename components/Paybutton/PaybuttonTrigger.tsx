@@ -87,7 +87,7 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
             {/* Tooltip */}
             <div >
               <div className={style.tip}>
-                Only triggers if payment &gt; X
+                {/* Only triggers if payment &gt; X */}
               </div>
                 <div className={style.btn_row2}>
                   {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
