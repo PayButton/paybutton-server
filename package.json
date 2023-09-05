@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "dotenv -e .env -c -- next dev",
     "build": "next build",
-    "initJobs": "dotenv -e .env -c -- JOBS_ENV=1 tsx jobs/initJobs.ts",
+    "initJobs": "JOBS_ENV=1 dotenv -e .env -c -- tsx jobs/initJobs.ts",
     "initWSServer": "dotenv -e .env -c -- ts-node -O '{\"module\":\"commonjs\"}' ws-service/server.ts",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "prod": "yarn build && NODE_ENV=production next start",
