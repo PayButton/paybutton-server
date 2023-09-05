@@ -22,6 +22,7 @@ export const RESPONSE_MESSAGES = {
   INVALID_NETWORK_SLUG_400: { statusCode: 400, message: 'Invalid network slug.' },
   INVALID_NETWORK_ID_400: { statusCode: 400, message: 'Invalid network id.' },
   INVALID_BUTTON_DATA_400: { statusCode: 400, message: "'buttonData' is not valid JSON." },
+  INVALID_DATA_JSON_400: { statusCode: 400, message: 'Data is not valid JSON.' },
   PAYBUTTON_ALREADY_BELONGS_TO_WALLET_400: { statusCode: 400, message: 'One or more buttons already belong to another wallet.' },
   WALLET_CREATION_FAILED_400: { statusCode: 400, message: 'Wallet creation failed.' },
   ADDRESS_ALREADY_BELONGS_TO_WALLET_400: { statusCode: 400, message: 'One or more button addresses already belong to another wallet.' },
@@ -36,6 +37,7 @@ export const RESPONSE_MESSAGES = {
   NO_USER_PROFILE_FOUND_ON_PAYBUTTON_404: { statusCode: 404, message: 'No user profile found for paybutton.' },
   MULTIPLE_ADDRESSES_FOUND_400: { statusCode: 400, message: 'Multiple addresses found.' },
   RESOURCE_DOES_NOT_BELONG_TO_USER_400: { statusCode: 400, message: 'Resource does not belong to user.' },
+  INVALID_RESOURCE_UPDATE_400: { statusCode: 400, message: 'Invalid attempt of updating resource.' },
   MISSING_PRICE_API_URL_400: { statusCode: 400, message: 'Missing PRICE_API_URL environment variable.' },
   MISSING_PRICE_API_TOKEN_400: { statusCode: 400, message: 'Missing PRICE_API_TOKEN environment variable.' },
   MISSING_WS_AUTH_KEY_400: { statusCode: 400, message: 'Missing WS_AUTH_KEY environment variable' },
@@ -62,7 +64,13 @@ export const RESPONSE_MESSAGES = {
   COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500: { statusCode: 500, message: 'Could not broadcast upcoming transaction to WS server.' },
   INVALID_PASSWORD_FORM_400: { statusCode: 400, message: 'Password form is invalid.' },
   WEAK_NEW_PASSWORD_400: { statusCode: 400, message: 'The new password must contain at least 8 characters, including a letter and a number.' },
-  WRONG_PASSWORD_400: { statusCode: 400, message: 'Wrong password.' }
+  WRONG_PASSWORD_400: { statusCode: 400, message: 'Wrong password.' },
+  INVALID_URL_400: { statusCode: 400, message: 'Invalid URL.' },
+  POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400: { statusCode: 400, message: 'URL and post data must neither or both be set.' },
+  LIMIT_TRIGGERS_PER_BUTTON_400: { statusCode: 400, message: 'This paybutton already has a trigger.' },
+  LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400: { statusCode: 400, message: 'This paybutton addresses already have a trigger from another paybutton.' },
+  COULD_NOT_EXECUTE_TRIGGER_500: { statusCode: 500, message: 'Failed to execute trigger for paybutton address.' },
+  INVALID_DATA_JSON_WITH_VARIABLES_400: (variables: string[]) => { return { statusCode: 400, message: `Data is not valid. Make sure that ${variables.join(', ')} are not inside quotes.` } }
 }
 
 export type KeyValueT<T> = Record<string, T>
@@ -125,6 +133,11 @@ export const CURRENT_PRICE_REPEAT_DELAY = 60000
 export const NETWORK_TICKERS: KeyValueT<string> = {
   ecash: 'XEC',
   bitcoincash: 'BCH'
+}
+
+export const NETWORK_TICKERS_FROM_ID: KeyValueT<string> = {
+  1: 'XEC',
+  2: 'BCH'
 }
 
 export const NETWORK_IDS: KeyValueT<number> = { XEC: 1, BCH: 2 }

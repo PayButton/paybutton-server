@@ -5,6 +5,7 @@ import { type CreatePaybuttonInput, type UpdatePaybuttonInput } from '../service
 import { type CreateWalletInput, type UpdateWalletInput } from '../services/walletService'
 import { getAddressPrefix } from './index'
 import xecaddr from 'xecaddrjs'
+import { CreatePaybuttonTriggerInput, PostDataParametersHashed } from 'services/triggerService'
 
 /* The functions exported here should validate the data structure / syntax of an
  * input by throwing an error in case something is different from the expected.
@@ -197,6 +198,89 @@ export const parseWalletPATCHRequest = function (params: WalletPATCHParameters):
     addressIdList: params.addressIdList,
     isXECDefault: params.isXECDefault,
     isBCHDefault: params.isBCHDefault
+  }
+}
+
+export interface PaybuttonTriggerPOSTParameters {
+  userId?: string
+  sendEmail?: boolean
+  postURL?: string
+  postData?: string
+  currentTriggerId?: string
+}
+
+const triggerPostVariables = ['<amount>', '<currency>', '<txId>', '<buttonName>', '<address>', '<timestamp>', '<hmac>']
+
+export function parseTriggerPostData (postData: string, postDataParametersHashed?: PostDataParametersHashed): any {
+  let resultingData: string
+  // Allows to test the validity of postData without data to replace
+  if (postDataParametersHashed === undefined) {
+    postDataParametersHashed = {
+      amount: new Prisma.Decimal(0),
+      currency: '',
+      txId: '',
+      buttonName: '',
+      address: '',
+      timestamp: 0,
+      hmac: ''
+    }
+  }
+  try {
+    const buttonName = JSON.stringify(postDataParametersHashed.buttonName)
+    resultingData = postData
+      .replace('<amount>', postDataParametersHashed.amount.toString())
+      .replace('<currency>', `"${postDataParametersHashed.currency}"`)
+      .replace('<txId>', `"${postDataParametersHashed.txId}"`)
+      .replace('<buttonName>', buttonName)
+      .replace('<address>', `"${postDataParametersHashed.address}"`)
+      .replace('<timestamp>', postDataParametersHashed.timestamp.toString())
+      .replace('<hmac>', `"${postDataParametersHashed.hmac}"`)
+    const parsedResultingData = JSON.parse(resultingData)
+    return parsedResultingData
+  } catch (err: any) {
+    const includedVariables = triggerPostVariables.filter(v => postData.includes(v))
+    if (includedVariables.length > 0) {
+      throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_WITH_VARIABLES_400(includedVariables).message)
+    }
+    throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_400.message)
+  }
+}
+
+export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTriggerPOSTParameters): CreatePaybuttonTriggerInput {
+  // userId
+  if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+
+  // postURL
+  let postURL: string | undefined
+  if (params.postURL === undefined || params.postURL === '') { postURL = undefined } else {
+    try {
+      const parsed = new URL(params.postURL)
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error()
+      postURL = params.postURL
+    } catch (_) {
+      throw new Error(RESPONSE_MESSAGES.INVALID_URL_400.message)
+    }
+  }
+
+  // postData
+  let postData: string | undefined
+  if (params.postData === undefined || params.postData === '') { postData = undefined } else {
+    const parsed = parseTriggerPostData(params.postData)
+    if (parsed === null || typeof parsed !== 'object') {
+      throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_400.message)
+    }
+    postData = params.postData
+  }
+
+  if ((postData === undefined && postURL !== undefined) || (postData !== undefined && postURL === undefined)) {
+    throw new Error(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
+  }
+
+  return {
+    sendEmail: params.sendEmail === true,
+    postURL,
+    postData,
+    userId: params.userId
   }
 }
 

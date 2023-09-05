@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import React from 'react'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import style from './paybutton.module.css'
 import EditButtonForm from './EditButtonForm'
@@ -12,7 +12,7 @@ interface IProps {
   paybutton: PaybuttonWithAddresses
   refreshPaybutton: Function
 }
-export default ({ paybutton, refreshPaybutton }: IProps): FunctionComponent => {
+export default ({ paybutton, refreshPaybutton }: IProps): JSX.Element => {
   return (
     <div className={style.paybutton_list_ctn}>
       <div className={`${style.paybutton_card} ${style.paybutton_card_no_hover}`}>

@@ -13,6 +13,7 @@ import { KeyValueT, ResponseMessage } from 'constants/index'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import config from 'config'
 import io from 'socket.io-client'
+import PaybuttonTrigger from 'components/Paybutton/PaybuttonTrigger'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -135,6 +136,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
         <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton}/>
         <h4>Transactions</h4>
         <AddressTransactions addressTransactions={transactions} addressSynced={isSynced}/>
+        <PaybuttonTrigger paybuttonId={paybutton.id}/>
       </>
     )
   }

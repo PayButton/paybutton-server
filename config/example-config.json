@@ -16,5 +16,6 @@
   },
   "networksUnderMaintenance": {
     "bitcoincash": true
-  }
+  },
+  "triggerPOSTTimeout": 3000
 }

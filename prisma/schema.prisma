@@ -29,10 +29,11 @@ model Paybutton {
   id             String               @id @default(dbgenerated("(uuid())"))
   name           String               @db.VarChar(255)
   buttonData     String               @db.LongText
-  providerUserId String?              @db.VarChar(255)
+  providerUserId String               @db.VarChar(255)
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   addresses      AddressesOnButtons[]
+  triggers       PaybuttonTrigger[]
 
   @@unique([name, providerUserId], map: "Paybutton_name_providerUserId_unique_constraint")
 }
@@ -81,7 +82,7 @@ model Wallet {
   createdAt      DateTime                  @default(now())
   updatedAt      DateTime                  @updatedAt
   name           String                    @db.VarChar(255)
-  providerUserId String?                   @db.VarChar(255)
+  providerUserId String                    @db.VarChar(255)
   userAddresses  AddressesOnUserProfiles[]
   userProfile    WalletsOnUserProfile?
 
@@ -160,4 +161,28 @@ model UserProfile {
   lastSentVerificationEmailAt DateTime?
   wallets   WalletsOnUserProfile[]
   addresses AddressesOnUserProfiles[]
+}
+
+model PaybuttonTrigger {
+  id             String                    @id @default(dbgenerated("(uuid())"))
+  paybuttonId    String
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  sendEmail      Boolean
+  postData       String               @db.LongText
+  postURL        String
+  logs           TriggerLog[]
+
+  paybutton      Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade)
+}
+
+model TriggerLog {
+  id        Int       @id @default(autoincrement())
+  triggerId String?
+  trigger   PaybuttonTrigger? @relation(fields: [triggerId], references: [id], onDelete: SetNull)
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  isError   Boolean
+  actionType   String
+  data       String               @db.LongText
 }
