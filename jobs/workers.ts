@@ -6,7 +6,6 @@ import * as transactionService from 'services/transactionService'
 import * as priceService from 'services/priceService'
 import * as addressService from 'services/addressService'
 import { parseError } from 'utils/validators'
-import { getSubbedAddresses } from 'services/chronikService'
 
 const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> => {
   console.log(`job ${job.id as string}: syncing all addresses for network ${job.data.networkId as string}...`)
@@ -61,7 +60,6 @@ export const syncPricesWorker = async (queueName: string): Promise<void> => {
       if (syncType === 'past') {
         await priceService.syncPastDaysNewerPrices()
       } else if (syncType === 'current') {
-        console.log('subcribed: ', JSON.stringify(getSubbedAddresses(), undefined, 2))
         await priceService.syncCurrentPrices()
       } else {
         console.log(`Unknown type of price sync: ${job.data.syncType as string}`)
