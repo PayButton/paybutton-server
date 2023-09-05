@@ -76,11 +76,12 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
               </p>
               <ul>
                 <li>&lt;buttonName&gt;</li>
-                <li>&lt;paymentAddress&gt;</li>
+                <li>&lt;address&gt;</li>
                 <li>&lt;currency&gt;</li>
                 <li>&lt;amount&gt;</li>
                 <li>&lt;timestamp&gt;</li>
                 <li>&lt;txId&gt;</li>
+                <li>&lt;hmac&gt;</li>
               </ul>
             </div>
             {/* Tooltip */}
