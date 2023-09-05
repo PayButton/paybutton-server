@@ -5,7 +5,7 @@ import { type CreatePaybuttonInput, type UpdatePaybuttonInput } from '../service
 import { type CreateWalletInput, type UpdateWalletInput } from '../services/walletService'
 import { getAddressPrefix } from './index'
 import xecaddr from 'xecaddrjs'
-import { CreatePaybuttonTriggerInput } from 'services/triggerService'
+import { CreatePaybuttonTriggerInput, PostDataParametersHashed } from 'services/triggerService'
 
 /* The functions exported here should validate the data structure / syntax of an
  * input by throwing an error in case something is different from the expected.
@@ -209,41 +209,34 @@ export interface PaybuttonTriggerPOSTParameters {
   currentTriggerId?: string
 }
 
-export interface PostDataParameters {
-  amount: Prisma.Decimal
-  currency: string
-  timestamp: number
-  txId: string
-  buttonName: string
-  paymentAddress: string
-}
+const triggerPostVariables = ['<amount>', '<currency>', '<txId>', '<buttonName>', '<address>', '<timestamp>', '<hmac>']
 
-const triggerPostVariables = ['<amount>', '<currency>', '<txId>', '<buttonName>', '<paymentAddress>', '<timestamp>']
-
-export function parseTriggerPostData (postData: string, postDataParameters?: PostDataParameters): string {
+export function parseTriggerPostData (postData: string, postDataParametersHashed?: PostDataParametersHashed): any {
   let resultingData: string
   // Allows to test the validity of postData without data to replace
-  if (postDataParameters === undefined) {
-    postDataParameters = {
+  if (postDataParametersHashed === undefined) {
+    postDataParametersHashed = {
       amount: new Prisma.Decimal(0),
       currency: '',
       txId: '',
       buttonName: '',
-      paymentAddress: '',
-      timestamp: 0
+      address: '',
+      timestamp: 0,
+      hmac: ''
     }
   }
   try {
-    const buttonName = JSON.stringify(postDataParameters.buttonName)
+    const buttonName = JSON.stringify(postDataParametersHashed.buttonName)
     resultingData = postData
-      .replace('<amount>', postDataParameters.amount.toString())
-      .replace('<currency>', `"${postDataParameters.currency}"`)
-      .replace('<txId>', `"${postDataParameters.txId}"`)
+      .replace('<amount>', postDataParametersHashed.amount.toString())
+      .replace('<currency>', `"${postDataParametersHashed.currency}"`)
+      .replace('<txId>', `"${postDataParametersHashed.txId}"`)
       .replace('<buttonName>', buttonName)
-      .replace('<paymentAddress>', `"${postDataParameters.paymentAddress}"`)
-      .replace('<timestamp>', postDataParameters.timestamp.toString())
+      .replace('<address>', `"${postDataParametersHashed.address}"`)
+      .replace('<timestamp>', postDataParametersHashed.timestamp.toString())
+      .replace('<hmac>', `"${postDataParametersHashed.hmac}"`)
     const parsedResultingData = JSON.parse(resultingData)
-    return JSON.stringify(parsedResultingData, undefined, 2)
+    return parsedResultingData
   } catch (err: any) {
     const includedVariables = triggerPostVariables.filter(v => postData.includes(v))
     if (includedVariables.length > 0) {
@@ -273,7 +266,7 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
   let postData: string | undefined
   if (params.postData === undefined || params.postData === '') { postData = undefined } else {
     const parsed = parseTriggerPostData(params.postData)
-    if (parsed === 'null' || typeof parsed !== 'string') {
+    if (parsed === null || typeof parsed !== 'object') {
       throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_400.message)
     }
     postData = params.postData

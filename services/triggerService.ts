@@ -2,10 +2,12 @@ import { PaybuttonTrigger, Prisma } from '@prisma/client'
 import axios from 'axios'
 import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID } from 'constants/index'
 import prisma from 'prisma/clientInstance'
-import { parseTriggerPostData, PostDataParameters } from 'utils/validators'
+import { parseTriggerPostData } from 'utils/validators'
 import { BroadcastTxData } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
 import config from 'config'
+import crypto from 'crypto'
+import { getUserSecretKey } from './userService'
 
 const triggerWithPaybutton = Prisma.validator<Prisma.PaybuttonTriggerArgs>()({
   include: { paybutton: true }
@@ -170,33 +172,66 @@ interface PostDataTriggerLog {
 }
 
 export async function executeAddressTriggers (broadcastTxData: BroadcastTxData): Promise<void> {
-  const paymentAddress = broadcastTxData.address
+  const address = broadcastTxData.address
   const tx = broadcastTxData.txs[0]
   const amount = tx.amount
   const currency = NETWORK_TICKERS_FROM_ID[tx.address.networkId]
   const txId = tx.hash
   const timestamp = tx.timestamp
 
-  const addressTriggers = await fetchTriggersForAddress(paymentAddress)
+  const addressTriggers = await fetchTriggersForAddress(address)
   await Promise.all(addressTriggers.map(async (trigger) => {
     const postDataParameters: PostDataParameters = {
       amount,
       currency,
       txId,
       buttonName: trigger.paybutton.name,
-      paymentAddress,
+      address,
       timestamp
     }
-    await postDataForTrigger(trigger, postDataParameters)
+    const hmac = await hashPostData(trigger.paybutton.providerUserId, postDataParameters)
+    await postDataForTrigger(trigger, {
+      ...postDataParameters,
+      hmac
+    }
+    )
   }))
 }
 
-async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParameters: PostDataParameters): Promise<void> {
+export interface PostDataParameters {
+  amount: Prisma.Decimal
+  currency: string
+  timestamp: number
+  txId: string
+  buttonName: string
+  address: string
+}
+
+export interface PostDataParametersHashed {
+  amount: Prisma.Decimal
+  currency: string
+  timestamp: number
+  txId: string
+  buttonName: string
+  address: string
+  hmac: string
+}
+
+async function hashPostData (userId: string, { amount, currency, address, timestamp, txId }: PostDataParameters): Promise<string> {
+  const dataHash = crypto.createHash('sha256')
+  dataHash.update(`${amount.toString()}+${currency}+${address}+${timestamp.toString()}+${txId}`)
+  const dataHashDigest = dataHash.digest('hex')
+  const hmac = crypto.createHmac('sha256', await getUserSecretKey(userId))
+  hmac.update(dataHashDigest)
+  return hmac.digest('hex')
+}
+
+async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParametersHashed: PostDataParametersHashed): Promise<void> {
   const actionType: TriggerLogActionType = 'PostData'
   let logData: PostDataTriggerLog | PostDataTriggerLogError
   let isError = false
   try {
-    const parsedPostDataParameters = parseTriggerPostData(trigger.postData, postDataParameters)
+    const parsedPostDataParameters = parseTriggerPostData(trigger.postData, postDataParametersHashed)
     const response = await axios.post(
       trigger.postURL,
       parsedPostDataParameters,

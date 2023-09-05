@@ -1,6 +1,7 @@
 import { UserProfile } from '@prisma/client'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import prisma from 'prisma/clientInstance'
+import crypto from 'crypto'
 
 export async function fetchUserProfileFromId (id: string): Promise<UserProfile> {
   const userProfile = await prisma.userProfile.findUnique({ where: { id } })
@@ -15,4 +16,9 @@ export async function updateLastSentVerificationEmailAt (id: string): Promise<vo
       lastSentVerificationEmailAt: new Date()
     }
   })
+}
+
+export async function getUserSecretKey (id: string): Promise<string> {
+  const secretKey = process.env.MASTER_SECRET_KEY as string
+  return crypto.createHash('sha256').update(secretKey + id).digest('hex')
 }
