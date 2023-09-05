@@ -228,7 +228,7 @@ async function hashPostData (userId: string, { amount, currency, address, timest
 
 async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParametersHashed: PostDataParametersHashed): Promise<void> {
   const actionType: TriggerLogActionType = 'PostData'
-  let logData: PostDataTriggerLog | PostDataTriggerLogError
+  let logData!: PostDataTriggerLog | PostDataTriggerLogError
   let isError = false
   try {
     const parsedPostDataParameters = parseTriggerPostData(trigger.postData, postDataParametersHashed)
