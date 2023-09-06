@@ -20,12 +20,25 @@
   display: flex;
   align-self: baseline;
   margin-top: 10px;
-  order: 5;
   position: relative;
   cursor: pointer;
   padding: 5px 40px;
   box-shadow: none;
   font-size: 14px;
+}
+
+.secret_info_btn {
+  cursor: pointer;
+  color: blue;
+  margin-left: 10px;
+}
+
+.secret_info_ctn {
+  border: 1px solid var(--primary-text-color);
+  border-radius: 10px;
+  max-width: 630px;
+  margin-top: 10px;
+  padding: 5px;
 }
 
 .updatebtn:hover {
