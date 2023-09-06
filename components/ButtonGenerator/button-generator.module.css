@@ -40,6 +40,12 @@
   text-transform: uppercase;
 }
 
+.form_ctn form label span {
+  color: red;
+  font-size: 10px;
+  margin-left: 2px;
+}
+
 .form_ctn form select {
   height: 42px;
 }
@@ -201,17 +207,13 @@ body[data-theme='dark'] .codetopbar {
 }
 
 .code_ctn {
-  margin: 0;
-  border: none;
-  border-radius: 0 0 10px 10px;
-  background-color: #231f20;
-  min-height: 200px;
-  padding: 50px;
-  font-size: 14px;
-}
-
-.code_ctn code {
-  color: #fff;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 0 10px 10px !important;
+  background-color: #231f20 !important;
+  min-height: 200px !important;
+  padding: 50px !important;
+  font-size: 14px !important;
 }
 
 .advanced_ctn {
@@ -296,10 +298,10 @@ body[data-theme='dark'] .preview_ctn {
   }
 
   .code_ctn {
-    padding: 10px;
+    padding: 10px !important;
   }
 
   .code_ctn code {
-    font-size: 14px;
+    font-size: 14px !important;
   }
 }
