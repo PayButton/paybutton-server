@@ -27,7 +27,7 @@ export default function Footer(): JSX.Element {
             >
               Telegram
             </Link>
-            <Link href="https://paybutton.org/#/?id=what-is-paybutton">
+            <Link href="https://docs.paybutton.org">
               Docs
             </Link>
             <Link href="/signin">Sign In</Link>
