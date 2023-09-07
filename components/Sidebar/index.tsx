@@ -138,7 +138,7 @@ const Sidebar: React.FC = ({ chart, setChart, loggedin }) => {
           <Image src={Twitter} alt='twitter' width={20} height={20} />
           <span className={style.tooltiptext}>Twitter</span>
         </a>
-        <a href='https://docs.paybutton.org' target="_blank" rel="noreferrer noopener">
+        <a href='https://docs.paybutton.org/#/?id=what-is-paybutton' target="_blank" rel="noreferrer noopener">
           <Image src={Docs} alt='twitter' width={20} height={20} />
           <span className={style.tooltiptext}>Docs</span>
         </a>
