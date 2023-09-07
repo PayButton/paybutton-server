@@ -200,7 +200,7 @@ export default function ButtonGenerator(): JSX.Element {
                 <div className={s.advanced_ctn}>
                   For more information and advanced features read our{' '}
                   <a
-                    href="https://docs.paybutton.org"
+                    href="https://docs.paybutton.org/#/?id=what-is-paybutton"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
