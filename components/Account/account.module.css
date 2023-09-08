@@ -21,7 +21,7 @@
 .changepw_ctn {
   width: 100%;
   background-color: var(--secondary-bg-color);
-  max-width: 430px;
+  max-width: 500px;
   padding: 20px 25px;
   margin: 4px 0;
   border-radius: 10px;

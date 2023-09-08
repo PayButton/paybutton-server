@@ -1,17 +1,76 @@
 .account_ctn {
   display: flex;
   flex-direction: column;
+  --max-width: 500px;
 }
 
 .account_card {
   width: 100%;
   background-color: var(--secondary-bg-color);
-  max-width: 430px;
+  max-width: var(--max-width);
   padding: 15px 20px;
   margin: 4px 0;
   border-radius: 10px;
   display: inline-block;
   font-weight: 600;
+  word-wrap: break-word;
+}
+
+.secret_card_ctn {
+  width: 100%;
+  max-width: var(--max-width);
+  display: flex;
+  align-items: center;
+  margin: 4px 0;
+  gap: 2px;
+}
+
+.secret_card {
+  width: 100%;
+  background-color: var(--secondary-bg-color);
+  max-width: calc(var(--max-width) - 40px);
+  padding: 15px 20px;
+  border-radius: 10px 0 0 10px;
+  display: inline-block;
+  font-weight: 600;
+  word-wrap: break-word;
+  position: relative;
+}
+
+.copy_btn {
+  flex-grow: 1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  background-color: var(--secondary-bg-color);
+  border-radius: 0 10px 10px 0;
+  justify-content: center;
+  transition: all ease-in-out 200ms;
+}
+
+.copied_confirmation {
+  width: 100%;
+  background-color: var(--secondary-bg-color);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 10px 0 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copy_btn:hover {
+  background-color: var(--accent-color);
+}
+
+.copy_btn img {
+  width: 15px;
+  border-radius: 0;
+  transition: all ease-in-out 200ms;
 }
 
 .updatebtn {
@@ -29,16 +88,22 @@
 
 .secret_info_btn {
   cursor: pointer;
-  color: blue;
-  margin-left: 10px;
+  color: var(--accent-color);
+  font-size: 12px;
+  position: absolute;
+  right: 0;
+  user-select: none;
+  top: 3px;
 }
 
 .secret_info_ctn {
-  border: 1px solid var(--primary-text-color);
+  width: 100%;
+  background-color: var(--secondary-bg-color);
+  max-width: var(--max-width);
+  padding: 20px;
   border-radius: 10px;
-  max-width: 630px;
   margin-top: 10px;
-  padding: 5px;
+  font-size: 16px;
 }
 
 .updatebtn:hover {
@@ -47,14 +112,37 @@
 
 .label {
   margin-top: 20px;
+  width: 100%;
+  max-width: var(--max-width);
+  position: relative;
 }
 
 body[data-theme='dark'] .updatebtn:hover {
   color: #231f20;
 }
 
+body[data-theme='dark'] .copy_btn img {
+  filter: grayscale(1) invert(1);
+}
+
+body[data-theme='dark'] .copy_btn:hover img {
+  filter: none;
+}
+
 @media (max-width: 960px) {
-    .account_card {
+    .account_card,
+    .secret_card_ctn,
+    .secret_info_ctn,
+    .label {
      max-width: unset;
+    }
+
+    .copy_btn {
+      width: 50px;
+    }
+
+    .secret_card {
+      max-width: unset;
+      width: calc(100% - 50px);
     }
   }

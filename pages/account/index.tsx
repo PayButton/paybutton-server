@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import Image from 'next/image';
 import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
@@ -8,6 +9,7 @@ import Page from 'components/Page'
 import ChangePassword from 'components/Account/ChangePassword'
 import style from './account.module.css'
 import { getUserSecretKey } from 'services/userService'
+import CopyIcon from '/assets/copy-black.png';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -45,6 +47,7 @@ interface IProps {
 export default function Account ({ user, userId, userSecret }: IProps): React.ReactElement {
   const [changePassword, setChangePassword] = useState(false)
   const [secretKeyInfo, setSecretKeyInfo] = useState(false)
+  const [isCopied, setIsCopied] = useState(false);
   const toggleChangePassword = (): void => {
     setChangePassword(!changePassword)
   }
@@ -52,32 +55,46 @@ export default function Account ({ user, userId, userSecret }: IProps): React.Re
     setSecretKeyInfo(!secretKeyInfo)
   }
 
+  const handleCopyClick = async (): Promise<void> => {
+    const textToCopy = userSecret
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setIsCopied(true);
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 1000);
+    } catch (error) {
+      console.error('Copy failed:', error);
+    }
+  };
+
   if (user !== null) {
     return (
       <div className={style.account_ctn}>
         <h2>Account</h2>
         <div className={style.label}>Email</div>
         <div className={style.account_card}>{user.email}</div>
-        <div
-          onClick={() => setChangePassword(!changePassword)}
-          className={`${style.updatebtn} button_outline`}
-        >
-          {!changePassword ? 'Update Password' : 'Cancel'}
-        </div>
         {changePassword && (
           <>
             <div className={style.label}>Update Password</div>
             <ChangePassword toggleChangePassword={toggleChangePassword} />
           </>
         )}
-        <div>
-          <div className={style.label}>
-            <div>Secret key <span className={style.secret_info_btn} onClick={() => toggleSecretKeyInfo()}>What is this?</span>
-            </div>
-
+         <div
+          onClick={() => setChangePassword(!changePassword)}
+          className={`${style.updatebtn} button_outline`}
+        >
+          {!changePassword ? 'Update Password' : 'Cancel'}
+        </div>
+         <div className={style.label} style={{ marginTop: '50px' }}>Secret key <span className={style.secret_info_btn} onClick={() => toggleSecretKeyInfo()}>What is this?</span></div>
+        <div className={style.secret_card_ctn}>
+          <div className={style.secret_card}>
+            {userSecret}
+            {isCopied && <div className={style.copied_confirmation}>Copied!</div>}
           </div>
-          <b> { userSecret }</b>
-          {secretKeyInfo && (
+          <div className={style.copy_btn} onClick={handleCopyClick}><Image src={CopyIcon} alt="copy" /></div>
+        </div>
+        {secretKeyInfo && (
             <div className={style.secret_info_ctn}>
               This can be used to verify the authenticity of a message received from a paybutton trigger.
               <br/>
@@ -94,8 +111,13 @@ export default function Account ({ user, userId, userSecret }: IProps): React.Re
               Finally, compare the resulting HMAC digest with the one you received. If they match, the message is authentic and has not been tampered with.
 
           </div>
-          )}
-        </div>
+        )}
+         {secretKeyInfo &&
+          <div
+          onClick={() => toggleSecretKeyInfo()}
+          className={`${style.updatebtn} button_outline`}
+          >Close</div>
+        }
       </div>
     )
   }
