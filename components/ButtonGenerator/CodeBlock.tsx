@@ -5,6 +5,14 @@ import CopyIcon from '/assets/copy.png';
 import Prism from 'prismjs';
 import 'prismjs/themes/prism-okaidia.css';
 import 'prismjs/components/prism-jsx.min';
+import {
+  PRIMARY_XEC_COLOR,
+  SECONDARY_XEC_COLOR,
+  TERTIARY_XEC_COLOR,
+  PRIMARY_BCH_COLOR,
+  SECONDARY_BCH_COLOR,
+  TERTIARY_BCH_COLOR,
+} from '/constants';
 
 export default function CodeBlock({ button }): JSX.Element {
   const [isCopied, setIsCopied] = useState(false);
@@ -70,6 +78,43 @@ export default function CodeBlock({ button }): JSX.Element {
     }
   };
 
+  const filterDefaultCurrency = (value, type) => {
+    if (['XEC', 'BCH'].includes(value)) {
+      return '';
+    } else if (type === 'html') {
+      return `\n  currency="${value}"`;
+    } else if (type === 'js') {
+      return `\n    currency: "${value}",`;
+    } else {
+      return `\n  const currency = '${value}'`;
+    }
+  };
+
+  const checkTheme = (value, type) => {
+    if (
+      (value.palette.primary === PRIMARY_XEC_COLOR &&
+        value.palette.secondary === SECONDARY_XEC_COLOR &&
+        value.palette.tertiary === TERTIARY_XEC_COLOR) ||
+      (value.palette.primary === PRIMARY_BCH_COLOR &&
+        value.palette.secondary === SECONDARY_BCH_COLOR &&
+        value.palette.tertiary === TERTIARY_BCH_COLOR)
+    ) {
+      return '';
+    } else if (type === 'html') {
+      return `\n  theme='${JSON.stringify(value)}'`;
+    } else if (type === 'js') {
+      return `\n    theme: ${JSON.stringify(value)}`;
+    } else {
+      return `\n  const theme = {
+        palette: {
+          primary: '${value.palette.primary}',
+          secondary: '${value.palette.secondary}',
+          tertiary: '${value.palette.tertiary}'
+        }
+      }`;
+    }
+  };
+
   useEffect(() => {
     setCode({
       html: `<script src="https://unpkg.com/@paybutton/paybutton/dist/paybutton.js"></script>
@@ -84,9 +129,10 @@ export default function CodeBlock({ button }): JSX.Element {
         button.amount,
         'amount',
         'html'
-      )}
-  currency="${button.currency}"${checkAnimation(button.animation, 'html')}
-  theme='${JSON.stringify(button.theme)}'
+      )}${filterDefaultCurrency(button.currency, 'html')}${checkAnimation(
+        button.animation,
+        'html'
+      )}${checkTheme(button.theme, 'html')}
 />`,
       javascript: `<script src="https://unpkg.com/@paybutton/paybutton/dist/paybutton.js"></script>
 
@@ -102,9 +148,10 @@ export default function CodeBlock({ button }): JSX.Element {
         button.amount,
         'amount',
         'js'
-      )}
-    currency: '${button.currency}',${checkAnimation(button.animation, 'js')}
-    theme: ${JSON.stringify(button.theme)},
+      )}${filterDefaultCurrency(button.currency, 'js')}${checkAnimation(
+        button.animation,
+        'js'
+      )}${checkTheme(button.theme, 'js')}
   };
 
   PayButton.render(document.getElementById('my_button'), config);
@@ -120,18 +167,13 @@ function App() {
         button.successText,
         'successText',
         'react'
-      )}${checkValue(button.amount, 'amount', 'react')}
-  const currency = '${button.currency}'${checkAnimation(
-        button.animation,
+      )}${checkValue(button.amount, 'amount', 'react')}${filterDefaultCurrency(
+        button.currency,
+        'react'
+      )}${checkAnimation(button.animation, 'react')}${checkTheme(
+        button.theme,
         'react'
       )}
-  const theme = {
-    palette: {
-      primary: '${button.theme.palette.primary}',
-      secondary: '${button.theme.palette.secondary}',
-      tertiary: '${button.theme.palette.tertiary}'
-    }
-  }
 
   return <PayButton
     to={to}

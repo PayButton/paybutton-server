@@ -20,10 +20,12 @@ export default function ButtonGenerator(): JSX.Element {
   const [secondary, setSecondary] = useState(false);
   const [tertiary, setTertiary] = useState(false);
 
-  const [button, setButton] = useState({
+  const initalState = {
     to: '',
-    hoverText: 'Click to send',
     currency: 'XEC',
+    text: '',
+    hoverText: '',
+    successText: '',
     animation: 'slide',
     theme: {
       palette: {
@@ -34,7 +36,9 @@ export default function ButtonGenerator(): JSX.Element {
     },
     validAddress: '',
     currencies: ['XEC', 'USD', 'CAD', 'EUR', 'GBP', 'AUD'],
-  });
+  };
+
+  const [button, setButton] = useState(initalState);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -185,7 +189,9 @@ export default function ButtonGenerator(): JSX.Element {
                   type="text"
                   name="hoverText"
                   value={button.hoverText}
-                  placeholder="Click to send"
+                  placeholder={`Send ${
+                    isValidAddress(button.to) === 'bitcoincash' ? 'BCH' : 'XEC'
+                  }`}
                   onChange={handleInputChange}
                 />
 
@@ -331,6 +337,12 @@ export default function ButtonGenerator(): JSX.Element {
                       </div>
                     </div>
                   </div>
+                </div>
+                <div
+                  className={s.reset_btn}
+                  onClick={() => setButton(initalState)}
+                >
+                  Reset
                 </div>
               </div>
             </form>

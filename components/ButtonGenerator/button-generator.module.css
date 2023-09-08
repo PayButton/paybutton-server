@@ -122,6 +122,20 @@
   position: absolute;
 }
 
+.reset_btn {
+  text-align: right;
+  margin-top: 10px;
+  font-size: 14px;
+  opacity: 0.6;
+  cursor: pointer;
+  display: inline-block;
+  float: right;
+}
+
+.reset_btn:hover {
+  text-decoration: underline;
+}
+
 body[data-theme='dark'] .picker_ctn input {
   background-color: #fff !important;
 }
