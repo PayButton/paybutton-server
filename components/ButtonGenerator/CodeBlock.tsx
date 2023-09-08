@@ -70,6 +70,51 @@ export default function CodeBlock({ button }): JSX.Element {
     }
   };
 
+  const checkCurrency = (value, type) => {
+    if (value === 'XEC' || value === 'BCH') {
+      return '';
+    } else if (type === 'html') {
+      return `\n  currency="${value}"`;
+    } else if (type === 'js') {
+      return `\n    currency: "${value}",`;
+    } else {
+      return `\n  const currency = '${value}'`;
+    }
+  };
+
+  const primaryXEC = '#0074C2';
+  const secondaryXEC = '#FFFFFF';
+  const tertiaryXEC = '#231f20';
+
+  const primaryBCH = '#4bc846';
+  const secondaryBCH = '#FFFFFF';
+  const tertiaryBCH = '#231f20';
+
+  const checkTheme = (value, type) => {
+    if (
+      (value.palette.primary === primaryXEC &&
+        value.palette.secondary === secondaryXEC &&
+        value.palette.tertiary === tertiaryXEC) ||
+      (value.palette.primary === primaryBCH &&
+        value.palette.secondary === secondaryBCH &&
+        value.palette.tertiary === tertiaryBCH)
+    ) {
+      return '';
+    } else if (type === 'html') {
+      return `\n  theme='${JSON.stringify(value)}'`;
+    } else if (type === 'js') {
+      return `\n    theme: ${JSON.stringify(value)}`;
+    } else {
+      return `\n  const theme = {
+        palette: {
+          primary: '${value.palette.primary}',
+          secondary: '${value.palette.secondary}',
+          tertiary: '${value.palette.tertiary}'
+        }
+      }`;
+    }
+  };
+
   useEffect(() => {
     setCode({
       html: `<script src="https://unpkg.com/@paybutton/paybutton/dist/paybutton.js"></script>
@@ -84,9 +129,10 @@ export default function CodeBlock({ button }): JSX.Element {
         button.amount,
         'amount',
         'html'
-      )}
-  currency="${button.currency}"${checkAnimation(button.animation, 'html')}
-  theme='${JSON.stringify(button.theme)}'
+      )}${checkCurrency(button.currency, 'html')}${checkAnimation(
+        button.animation,
+        'html'
+      )}${checkTheme(button.theme, 'html')}
 />`,
       javascript: `<script src="https://unpkg.com/@paybutton/paybutton/dist/paybutton.js"></script>
 
@@ -104,7 +150,7 @@ export default function CodeBlock({ button }): JSX.Element {
         'js'
       )}
     currency: '${button.currency}',${checkAnimation(button.animation, 'js')}
-    theme: ${JSON.stringify(button.theme)},
+    ${checkTheme(button.theme, 'js')}
   };
 
   PayButton.render(document.getElementById('my_button'), config);
@@ -124,14 +170,7 @@ function App() {
   const currency = '${button.currency}'${checkAnimation(
         button.animation,
         'react'
-      )}
-  const theme = {
-    palette: {
-      primary: '${button.theme.palette.primary}',
-      secondary: '${button.theme.palette.secondary}',
-      tertiary: '${button.theme.palette.tertiary}'
-    }
-  }
+      )}${checkTheme(button.theme, 'react')}
 
   return <PayButton
     to={to}
