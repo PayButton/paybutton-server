@@ -5,6 +5,14 @@ import CopyIcon from '/assets/copy.png';
 import Prism from 'prismjs';
 import 'prismjs/themes/prism-okaidia.css';
 import 'prismjs/components/prism-jsx.min';
+import {
+  PRIMARY_XEC_COLOR,
+  SECONDARY_XEC_COLOR,
+  TERTIARY_XEC_COLOR,
+  PRIMARY_BCH_COLOR,
+  SECONDARY_BCH_COLOR,
+  TERTIARY_BCH_COLOR,
+} from '/constants';
 
 export default function CodeBlock({ button }): JSX.Element {
   const [isCopied, setIsCopied] = useState(false);
@@ -70,8 +78,8 @@ export default function CodeBlock({ button }): JSX.Element {
     }
   };
 
-  const checkCurrency = (value, type) => {
-    if (value === 'XEC' || value === 'BCH') {
+  const filterDefaultCurrency = (value, type) => {
+    if (['XEC', 'BCH'].includes(value)) {
       return '';
     } else if (type === 'html') {
       return `\n  currency="${value}"`;
@@ -82,22 +90,14 @@ export default function CodeBlock({ button }): JSX.Element {
     }
   };
 
-  const primaryXEC = '#0074C2';
-  const secondaryXEC = '#FFFFFF';
-  const tertiaryXEC = '#231f20';
-
-  const primaryBCH = '#4bc846';
-  const secondaryBCH = '#FFFFFF';
-  const tertiaryBCH = '#231f20';
-
   const checkTheme = (value, type) => {
     if (
-      (value.palette.primary === primaryXEC &&
-        value.palette.secondary === secondaryXEC &&
-        value.palette.tertiary === tertiaryXEC) ||
-      (value.palette.primary === primaryBCH &&
-        value.palette.secondary === secondaryBCH &&
-        value.palette.tertiary === tertiaryBCH)
+      (value.palette.primary === PRIMARY_XEC_COLOR &&
+        value.palette.secondary === SECONDARY_XEC_COLOR &&
+        value.palette.tertiary === TERTIARY_XEC_COLOR) ||
+      (value.palette.primary === PRIMARY_BCH_COLOR &&
+        value.palette.secondary === SECONDARY_BCH_COLOR &&
+        value.palette.tertiary === TERTIARY_BCH_COLOR)
     ) {
       return '';
     } else if (type === 'html') {
@@ -129,7 +129,7 @@ export default function CodeBlock({ button }): JSX.Element {
         button.amount,
         'amount',
         'html'
-      )}${checkCurrency(button.currency, 'html')}${checkAnimation(
+      )}${filterDefaultCurrency(button.currency, 'html')}${checkAnimation(
         button.animation,
         'html'
       )}${checkTheme(button.theme, 'html')}
@@ -148,9 +148,10 @@ export default function CodeBlock({ button }): JSX.Element {
         button.amount,
         'amount',
         'js'
-      )}
-    currency: '${button.currency}',${checkAnimation(button.animation, 'js')}
-    ${checkTheme(button.theme, 'js')}
+      )}${filterDefaultCurrency(button.currency, 'js')}${checkAnimation(
+        button.animation,
+        'js'
+      )}${checkTheme(button.theme, 'js')}
   };
 
   PayButton.render(document.getElementById('my_button'), config);
@@ -166,11 +167,13 @@ function App() {
         button.successText,
         'successText',
         'react'
-      )}${checkValue(button.amount, 'amount', 'react')}
-  const currency = '${button.currency}'${checkAnimation(
-        button.animation,
+      )}${checkValue(button.amount, 'amount', 'react')}${filterDefaultCurrency(
+        button.currency,
         'react'
-      )}${checkTheme(button.theme, 'react')}
+      )}${checkAnimation(button.animation, 'react')}${checkTheme(
+        button.theme,
+        'react'
+      )}
 
   return <PayButton
     to={to}
