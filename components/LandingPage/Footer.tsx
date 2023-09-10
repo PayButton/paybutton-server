@@ -13,7 +13,7 @@ export default function Footer(): JSX.Element {
           <Image src={logoImageSource} alt="PayButton" />
           <div className={style.footerlink_ctn}>
             <Link
-              href="https://github.com/paybutton/paybutton"
+              href="https://github.com/paybutton"
               target="_blank"
               rel="noopener noreferrer"
             >

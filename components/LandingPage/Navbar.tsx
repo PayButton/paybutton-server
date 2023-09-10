@@ -36,7 +36,7 @@ export default function Navbar(): JSX.Element {
         >
           <ThemeToggle landingpage />
           <Link
-            href="https://github.com/paybutton/paybutton"
+            href="https://github.com/paybutton"
             target="_blank"
             rel="noopener noreferrer"
           >
