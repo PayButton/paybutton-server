@@ -6,3 +6,5 @@ export interface BroadcastTxData {
   txs: TransactionWithAddressAndPrices[]
   messageType: TxBroadcast
 }
+
+export type TxEmitEvent = 'txs-broadcast' | 'incoming-txs'

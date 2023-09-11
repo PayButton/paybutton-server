@@ -14,7 +14,7 @@ import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring } from './addressService'
 import { TransactionWithAddressAndPrices, createTransaction, createManyTransactions, base64HashToHex } from './transactionService'
-import { BroadcastTxData } from 'ws-service/types'
+import { BroadcastTxData, TxEmitEvent } from 'ws-service/types'
 import config from 'config'
 import io, { Socket } from 'socket.io-client'
 
@@ -306,7 +306,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
       })
     )
     try {
-      this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
+      this.wsEndpoint.emit('txs-broadcast' as TxEmitEvent, broadcastTxData)
     } catch (err: any) {
       console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
     }

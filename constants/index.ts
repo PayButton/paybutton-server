@@ -162,3 +162,5 @@ export const TERTIARY_XEC_COLOR = '#231f20'
 export const PRIMARY_BCH_COLOR = '#4bc846'
 export const SECONDARY_BCH_COLOR = '#FFFFFF'
 export const TERTIARY_BCH_COLOR = '#231f20'
+
+export const WS_BROADCAST_ENDPOINT_TIMEOUT = 5000

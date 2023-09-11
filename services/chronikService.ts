@@ -2,14 +2,14 @@ import { ChronikClient, ScriptType, SubscribeMsg, Tx, Utxo, WsConfig, WsEndpoint
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, NodeJsGlobalChronik, TransactionDetails } from './blockchainService'
-import { NETWORK_SLUGS, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT } from 'constants/index'
+import { NETWORK_SLUGS, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, WS_BROADCAST_ENDPOINT_TIMEOUT } from 'constants/index'
 import { TransactionWithAddressAndPrices, createManyTransactions, deleteTransactions, fetchUnconfirmedTransactions, createTransaction } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
 import { fetchAddressBySubstring, fetchAllAddressesForNetworkId, getLatestTxTimestampForAddress } from './addressService'
 import * as ws from 'ws'
-import { BroadcastTxData } from 'ws-service/types'
+import { BroadcastTxData, TxEmitEvent } from 'ws-service/types'
 import config from 'config'
 import io, { Socket } from 'socket.io-client'
 import { parseError } from 'utils/validators'
@@ -33,7 +33,11 @@ export class ChronikBlockchainClient implements BlockchainClient {
     this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
       query: {
         key: process.env.WS_AUTH_KEY
-      }
+      },
+      timeout: WS_BROADCAST_ENDPOINT_TIMEOUT
+    })
+    this.wsEndpoint.on('connect_error', (err) => {
+      console.log(`WS connection error due to ${err.name} ${err.message}\nSTACK:${err.stack ?? ''}`)
     })
   }
 
@@ -138,7 +142,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       broadcastTxData.messageType = 'OldTx'
       broadcastTxData.address = addressString
       broadcastTxData.txs = persistedTransactions
-      this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
+      this.wsEndpoint.emit('txs-broadcast' as TxEmitEvent, broadcastTxData)
       insertedTransactions = [...insertedTransactions, ...persistedTransactions]
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
@@ -226,7 +230,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
             broadcastTxData.messageType = 'NewTx'
             broadcastTxData.txs = [tx]
             try {
-              this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
+              this.wsEndpoint.emit('txs-broadcast' as TxEmitEvent, broadcastTxData)
             } catch (err: any) {
               console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
             }

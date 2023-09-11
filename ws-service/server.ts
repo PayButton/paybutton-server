@@ -1,6 +1,6 @@
 import express from 'express'
 import cors from 'cors'
-import { BroadcastTxData } from './types'
+import { BroadcastTxData, TxEmitEvent } from './types'
 import { createServer } from 'http'
 import { Server, Socket } from 'socket.io'
 import { RESPONSE_MESSAGES } from '../constants/index'
@@ -49,7 +49,7 @@ const broadcastTxs = (broadcastTxData: BroadcastTxData): void => {
     console.warn(RESPONSE_MESSAGES.BROADCAST_EMPTY_TX_400)
     return
   }
-  addressesNs.to(broadcastTxData.address).emit('incoming-txs', broadcastTxData)
+  addressesNs.to(broadcastTxData.address).emit('incoming-txs' as TxEmitEvent, broadcastTxData)
 }
 const broadcastNs = io.of('/broadcast')
 const broadcastRouteConnection = (socket: Socket): void => {
@@ -59,7 +59,7 @@ const broadcastRouteConnection = (socket: Socket): void => {
     socket.disconnect(true)
     return
   }
-  void socket.on('txs-broadcast', broadcastTxs)
+  void socket.on('txs-broadcast' as TxEmitEvent, broadcastTxs)
 }
 
 addressesNs.on('connection', addressRouteConnection)
