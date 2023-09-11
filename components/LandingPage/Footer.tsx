@@ -14,7 +14,7 @@ export default function Footer(): JSX.Element {
           <div className={style.footerlink_ctn}>
             <Link href="#button-generator">Button Generator</Link>
             <Link
-              href="https://github.com/paybutton/paybutton"
+              href="https://github.com/paybutton"
               target="_blank"
               rel="noopener noreferrer"
             >
