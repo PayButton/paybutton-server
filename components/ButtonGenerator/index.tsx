@@ -5,6 +5,14 @@ import { PayButton } from '@paybutton/react';
 import { ChromePicker } from 'react-color';
 import CodeBlock from './CodeBlock';
 import { decode } from 'ecashaddrjs';
+import {
+  PRIMARY_XEC_COLOR,
+  SECONDARY_XEC_COLOR,
+  TERTIARY_XEC_COLOR,
+  PRIMARY_BCH_COLOR,
+  SECONDARY_BCH_COLOR,
+  TERTIARY_BCH_COLOR,
+} from '/constants';
 
 export const isValidAddress = (address: string): string => {
   try {
@@ -17,6 +25,7 @@ export const isValidAddress = (address: string): string => {
 export default function ButtonGenerator(): JSX.Element {
   const animations = ['slide', 'invert', 'none'];
   const [primary, setPrimary] = useState(false);
+  const [advanced, setAdvanced] = useState(false);
   const [secondary, setSecondary] = useState(false);
   const [tertiary, setTertiary] = useState(false);
 
@@ -29,9 +38,9 @@ export default function ButtonGenerator(): JSX.Element {
     animation: 'slide',
     theme: {
       palette: {
-        primary: '#0074C2',
-        secondary: '#FFFFFF',
-        tertiary: '#231f20',
+        primary: PRIMARY_XEC_COLOR,
+        secondary: SECONDARY_XEC_COLOR,
+        tertiary: TERTIARY_XEC_COLOR,
       },
     },
     validAddress: '',
@@ -74,12 +83,12 @@ export default function ButtonGenerator(): JSX.Element {
           palette: {
             ...prevButton.theme.palette, // Keep the existing palette values
             primary:
-              prevButton.theme.palette.primary !== '#0074C2' &&
-              prevButton.theme.palette.primary !== '#4bc846'
+              prevButton.theme.palette.primary !== PRIMARY_XEC_COLOR &&
+              prevButton.theme.palette.primary !== PRIMARY_BCH_COLOR
                 ? prevButton.theme.palette.primary
                 : isValidAddress(value) === 'bitcoincash'
-                ? '#4bc846'
-                : '#0074C2',
+                ? PRIMARY_BCH_COLOR
+                : PRIMARY_XEC_COLOR,
           },
         },
       }));
