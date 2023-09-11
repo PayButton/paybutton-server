@@ -3,8 +3,15 @@ import { getNetworkFromSlug } from 'services/networkService'
 import { getCurrentPricesForNetworkId, QuoteValues } from 'services/priceService'
 import { parseError } from 'utils/validators'
 import { RESPONSE_MESSAGES, SUPPORTED_QUOTES } from 'constants/index'
+import Cors from 'cors'
+import { runMiddleware } from 'utils/index'
+
+const cors = Cors({
+  methods: ['GET', 'HEAD']
+})
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
+  await runMiddleware(req, res, cors)
   if (req.method === 'GET') {
     const networkSlug = req.query.networkSlug as string
     const quoteSlug = req.query.quoteSlug as string

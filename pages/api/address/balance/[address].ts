@@ -3,7 +3,7 @@ import { getBalance } from 'services/blockchainService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { parseAddress } from 'utils/validators'
 import Cors from 'cors'
-import { satoshisToUnit } from 'utils'
+import { runMiddleware, satoshisToUnit } from 'utils/index'
 import xecaddr from 'xecaddrjs'
 import { Prisma } from '@prisma/client'
 
@@ -11,22 +11,6 @@ const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
 const cors = Cors({
   methods: ['GET', 'HEAD']
 })
-
-async function runMiddleware (
-  req: NextApiRequest,
-  res: NextApiResponse,
-  fn: Function
-): Promise<void> {
-  return await new Promise((resolve, reject) => {
-    fn(req, res, (result: any) => {
-      if (result instanceof Error) {
-        return reject(result)
-      }
-
-      return resolve(result)
-    })
-  })
-}
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   await runMiddleware(req, res, cors)
