@@ -4,27 +4,12 @@ import { NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY, RESPONSE_MESSAGES } from 'con
 import { syncAndSubscribeAddresses } from 'services/transactionService'
 import { upsertAddress } from 'services/addressService'
 import Cors from 'cors'
+import { runMiddleware } from 'utils/index'
 
 const { ADDRESS_NOT_PROVIDED_400, INVALID_ADDRESS_400 } = RESPONSE_MESSAGES
 const cors = Cors({
   methods: ['GET', 'HEAD']
 })
-
-async function runMiddleware (
-  req: NextApiRequest,
-  res: NextApiResponse,
-  fn: Function
-): Promise<any> {
-  return await new Promise((resolve, reject) => {
-    fn(req, res, (result: any) => {
-      if (result instanceof Error) {
-        return reject(result)
-      }
-
-      return resolve(result)
-    })
-  })
-}
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   await runMiddleware(req, res, cors)

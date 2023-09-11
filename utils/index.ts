@@ -2,6 +2,7 @@ import xecaddr from 'xecaddrjs'
 import { Address, Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES, NETWORK_SLUGS, USD_QUOTE_ID, KeyValueT } from '../constants/index'
 import * as bitcoinjs from 'bitcoinjs-lib'
+import { NextApiRequest, NextApiResponse } from 'next'
 
 export const removeAddressPrefix = function (addressString: string): string {
   if (addressString.includes(':')) {
@@ -147,4 +148,20 @@ export const groupAddressesByNetwork = (availableNetworks: string[], addresses: 
     addressesByNetwork[prefix].push(address)
   })
   return addressesByNetwork
+}
+
+export async function runMiddleware (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  fn: Function
+): Promise<any> {
+  return await new Promise((resolve, reject) => {
+    fn(req, res, (result: any) => {
+      if (result instanceof Error) {
+        return reject(result)
+      }
+
+      return resolve(result)
+    })
+  })
 }
