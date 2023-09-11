@@ -104,40 +104,14 @@ export default function ButtonGenerator(): JSX.Element {
     }
   };
 
-  const handleColorChange = (color) => {
+  const handleColorChange = (newColor, colorName: string): void => {
     setButton((prevButton) => ({
       ...prevButton,
       theme: {
         ...prevButton.theme,
         palette: {
           ...prevButton.theme.palette,
-          primary: color.hex,
-        },
-      },
-    }));
-  };
-
-  const handleColorChange2 = (color) => {
-    setButton((prevButton) => ({
-      ...prevButton,
-      theme: {
-        ...prevButton.theme,
-        palette: {
-          ...prevButton.theme.palette,
-          secondary: color.hex,
-        },
-      },
-    }));
-  };
-
-  const handleColorChange3 = (color) => {
-    setButton((prevButton) => ({
-      ...prevButton,
-      theme: {
-        ...prevButton.theme,
-        palette: {
-          ...prevButton.theme.palette,
-          tertiary: color.hex,
+          [colorName]: newColor.hex
         },
       },
     }));
@@ -267,7 +241,7 @@ export default function ButtonGenerator(): JSX.Element {
                       <div className={s.picker_ctn}>
                         <ChromePicker
                           color={button.theme.palette.primary}
-                          onChange={handleColorChange}
+                          onChange={(color) => handleColorChange(color, 'primary')}
                         />
                       </div>
                     </>
@@ -293,7 +267,7 @@ export default function ButtonGenerator(): JSX.Element {
                           <div className={s.picker_ctn}>
                             <ChromePicker
                               color={button.theme.palette.secondary}
-                              onChange={handleColorChange2}
+                              onChange={(color) => handleColorChange(color, 'secondary')}
                             />
                           </div>
                         </>
@@ -321,7 +295,7 @@ export default function ButtonGenerator(): JSX.Element {
                           <div className={s.picker_ctn}>
                             <ChromePicker
                               color={button.theme.palette.tertiary}
-                              onChange={handleColorChange3}
+                              onChange={(color) => handleColorChange(color, 'tertiary')}
                             />
                           </div>
                         </>
