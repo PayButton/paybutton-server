@@ -30,6 +30,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
     this.availableNetworks = [NETWORK_SLUGS.ecash]
     this.subscribedAddresses = {}
     this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
+    console.log('vai mandar com a key', process.env.WS_AUTH_KEY)
+    console.log('vai mandar com a URl', `${config.wsBaseURL}/broadcast`)
     this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
       query: {
         key: process.env.WS_AUTH_KEY
