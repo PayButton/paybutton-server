@@ -31,9 +31,9 @@ const readConfig = (): Config => {
   const wsURLSplit = config.wsBaseURL.split('//')
   const noProtocolWsURL = wsURLSplit[wsURLSplit.length - 1]
   if (process.env.NODE_ENV === 'production') {
-    config.wsBaseURL = `wss://${noProtocolWsURL}`
+    config.wsBaseURL = `https://${noProtocolWsURL}`
   } else {
-    config.wsBaseURL = `ws://${noProtocolWsURL}`
+    config.wsBaseURL = `https://${noProtocolWsURL}`
   }
 
   return config
