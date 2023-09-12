@@ -72,7 +72,7 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
               ...
               }`}></textarea>
               <p >
-                Avaiable variables:
+                Available variables:
               </p>
               <ul>
                 <li>&lt;buttonName&gt;</li>
