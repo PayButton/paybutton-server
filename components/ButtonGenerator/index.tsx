@@ -35,7 +35,7 @@ export default function ButtonGenerator(): JSX.Element {
       },
     },
     validAddress: '',
-    currencies: ['XEC', 'USD', 'CAD', 'EUR', 'GBP', 'AUD'],
+    currencies: ['XEC', 'USD', 'CAD'],
   };
 
   const [button, setButton] = useState(initalState);
