@@ -414,11 +414,6 @@
   resolved "https://registry.npmjs.org/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@bitauth/libauth@1.19.1":
-  version "1.19.1"
-  resolved "https://registry.yarnpkg.com/@bitauth/libauth/-/libauth-1.19.1.tgz#713751bbc09815b667f8fe00a1cc5b0f3bf45dd1"
-  integrity sha512-R524tD5VwOt3QRHr7N518nqTVR/HKgfWL4LypekcGuNQN8R4PWScvuRcRzrY39A28kLztMv+TJdiKuMNbkU1ug==
-
 "@emotion/babel-plugin@^11.10.6":
   version "11.10.6"
   resolved "https://registry.npmjs.org/@emotion/babel-plugin/-/babel-plugin-11.10.6.tgz"
@@ -1277,12 +1272,11 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@paybutton/react@^1.2.2":
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/@paybutton/react/-/react-1.2.2.tgz#ea6111acd5e47ec7303aebdd94ec976faf6201f9"
-  integrity sha512-z5iZtQLz7cjoKcmmIiYF0n+NxvczLCQMLlXLPAjoLZaDvXMwWVcbRjAZS13oiBWwGOwo3mJ8FPG++hS6oxg5Fg==
+"@paybutton/react@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@paybutton/react/-/react-2.0.0.tgz#38ab65cc55393a2cbee977e07cd982c9e9c6f1af"
+  integrity sha512-aoCHZag5QF7yhtBp3PBLkBQ6bw7Kc9kcZGeohs0M0s9HEE+kOPAS4BN9X7M3dn13C/w1yFHz3WaS+iwYmqumHA==
   dependencies:
-    "@bitauth/libauth" "1.19.1"
     "@material-ui/core" "4.12.4"
     "@material-ui/lab" "4.0.0-alpha.61"
     "@material-ui/styles" "4.11.5"
@@ -1293,6 +1287,8 @@
     notistack "1.0.10"
     qrcode.react "1.0.1"
     react-jss "10.9.0"
+    socket.io-client "^4.7.1"
+    xecaddrjs "^0.0.1"
 
 "@prisma/client@^4.11.0":
   version "4.13.0"
