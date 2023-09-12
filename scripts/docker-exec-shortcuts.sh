@@ -138,7 +138,7 @@ case "$command" in
         eval "$base_command_cache" ash -l
         ;;
     *)
-        echo Avaiable commands:
+        echo Available commands:
         echo "  shortcut, command name      [container_name]    command description"
         echo " --- "
         echo "  nr, nextrestart             [$node_container_name]     restart the nextJS server"
