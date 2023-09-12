@@ -172,9 +172,7 @@ export default function ButtonGenerator(): JSX.Element {
                   type="text"
                   name="hoverText"
                   value={button.hoverText}
-                  placeholder={`Send ${
-                    isValidAddress(button.to) === 'bitcoincash' ? 'BCH' : 'XEC'
-                  }`}
+                  placeholder="Send Payment"
                   onChange={handleInputChange}
                 />
 
@@ -186,6 +184,18 @@ export default function ButtonGenerator(): JSX.Element {
                   placeholder="Thanks for your support!"
                   onChange={handleInputChange}
                 />
+                {advanced &&
+                <>
+                  <label>Goal Amount</label>
+                  <input
+                    type="text"
+                    name="goalAmount"
+                    value={button.goalAmount}
+                    placeholder="0"
+                    onChange={handleInputChange}
+                  />
+                </>
+                }
                 <div className={s.advanced_ctn}>
                   For more information and advanced features read our{' '}
                   <a
@@ -320,6 +330,13 @@ export default function ButtonGenerator(): JSX.Element {
                       </div>
                     </div>
                   </div>
+                </div>
+                <div
+                  className={s.reset_btn}
+                  onClick={() => setAdvanced(!advanced)}
+                  style={{ float: 'left' }}
+                >
+                  Advanced
                 </div>
                 <div
                   className={s.reset_btn}
