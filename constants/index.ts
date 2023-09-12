@@ -13,6 +13,7 @@ export const RESPONSE_MESSAGES = {
   MULTIPLE_USER_IDS_PROVIDED_400: { statusCode: 400, message: "Multiple 'userId' provided." },
   NAME_NOT_PROVIDED_400: { statusCode: 400, message: "'name' not provided." },
   PAYBUTTON_NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Button name already exists.' },
+  IFP_ADDRESS_NOT_SUPPORTED_400: { statusCode: 400, message: 'Please choose a different address.' },
   WALLET_NAME_ALREADY_EXISTS_400: { statusCode: 400, message: 'Wallet name already exists.' },
   TRANSACTION_ALREADY_EXISTS_FOR_ADDRESS_400: { statusCode: 400, message: 'Transaction already exists for address.' },
   ADDRESSES_NOT_PROVIDED_400: { statusCode: 400, message: "'addresses' not provided." },
@@ -162,3 +163,8 @@ export const TERTIARY_XEC_COLOR = '#231f20'
 export const PRIMARY_BCH_COLOR = '#4bc846'
 export const SECONDARY_BCH_COLOR = '#FFFFFF'
 export const TERTIARY_BCH_COLOR = '#231f20'
+
+export const IFP_ADDRESSES = [
+  'ecash:pqnqv9lt7e5vjyp0w88zf2af0l92l8rxdg2jj94l5j',
+  'ecash:prfhcnyqnl5cgrnmlfmms675w93ld7mvvqd0y8lz07'
+]

@@ -1,7 +1,7 @@
 import * as addressService from 'services/addressService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
-import { RESPONSE_MESSAGES, NETWORK_IDS_FROM_SLUGS } from 'constants/index'
+import { RESPONSE_MESSAGES, NETWORK_IDS_FROM_SLUGS, IFP_ADDRESSES } from 'constants/index'
 import { getObjectValueForNetworkSlug } from 'utils/index'
 import { connectAddressToUser, disconnectAddressFromUser, fetchAddressWallet } from 'services/addressesOnUserProfileService'
 import { fetchUserDefaultWalletForNetwork } from './walletService'
@@ -152,6 +152,12 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
   const addressIdList: string[] = []
   const updatedAddressIdList: string[] = []
   const createdAddresses: addressService.AddressWithTransactions[] = []
+
+  // Prevent IFP addresses from being created
+  values.prefixedAddressList.forEach(address => {
+    if (IFP_ADDRESSES.includes(address)) { throw new Error(RESPONSE_MESSAGES.IFP_ADDRESS_NOT_SUPPORTED_400.message) }
+  })
+
   void await Promise.all(
     values.prefixedAddressList.map(async (address) => {
       const upsertedAddress = await addressService.upsertAddress(address, prisma)
@@ -288,6 +294,11 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
   if (params.prefixedAddressList !== undefined && params.prefixedAddressList.length !== 0) {
     const addressesToCreateOrConnect = await getAddressObjectsToCreateOrConnect(params.prefixedAddressList)
     updateData.addresses = addressesToCreateOrConnect
+
+    // Prevent IFP addresses from being created
+    params.prefixedAddressList.forEach(address => {
+      if (IFP_ADDRESSES.includes(address)) { throw new Error(RESPONSE_MESSAGES.IFP_ADDRESS_NOT_SUPPORTED_400.message) }
+    })
   }
 
   // List with paybuttons addresses ids, before updating
