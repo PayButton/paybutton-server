@@ -18,7 +18,7 @@
   "dependencies": {
     "@emotion/react": "^11.8.2",
     "@emotion/styled": "^11.8.1",
-    "@paybutton/react": "^2.0.0",
+    "@paybutton/react": "latest",
     "@prisma/client": "^4.11.0",
     "@types/cors": "^2.8.10",
     "@types/express": "^4.17.11",
