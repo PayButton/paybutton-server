@@ -219,21 +219,23 @@ export class ChronikBlockchainClient implements BlockchainClient {
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
       await Promise.all(
         addressesWithTransactions.map(async addressWithTransaction => {
-          const tx = await createTransaction(addressWithTransaction.transaction)
+          const { created, tx } = await createTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
             const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
             broadcastTxData.address = addressWithTransaction.address.address
             broadcastTxData.messageType = 'NewTx'
             broadcastTxData.txs = [tx]
-            try {
+            try { // emit broadcast for both unconfirmed and confirmed txs
               this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
             } catch (err: any) {
               console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
             }
-            try {
-              await executeAddressTriggers(broadcastTxData)
-            } catch (err: any) {
-              console.error(RESPONSE_MESSAGES.COULD_NOT_EXECUTE_TRIGGER_500.message, err.stack)
+            if (created) { // only execute trigger for unconfirmed tx arriving
+              try {
+                await executeAddressTriggers(broadcastTxData)
+              } catch (err: any) {
+                console.error(RESPONSE_MESSAGES.COULD_NOT_EXECUTE_TRIGGER_500.message, err.stack)
+              }
             }
           }
           return tx
