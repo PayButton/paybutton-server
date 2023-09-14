@@ -134,7 +134,8 @@ export async function createTransaction (
       }
     },
     update: {
-      confirmed: transactionData.confirmed
+      confirmed: transactionData.confirmed,
+      timestamp: transactionData.timestamp
     }
   })
   // only return if it was created, if it was updated return undefined
