@@ -255,8 +255,9 @@ export class ChronikBlockchainClient implements BlockchainClient {
         }
       }
     ))
+    const zero = new Prisma.Decimal(0)
     return addressesWithTransactions.filter(
-      addressWithTransaction => addressWithTransaction.transaction.amount > new Prisma.Decimal(0)
+      addressWithTransaction => !(zero.equals(addressWithTransaction.transaction.amount as Prisma.Decimal))
     )
   }
 
