@@ -117,11 +117,16 @@ export function base64HashToHex (base64Hash: string): string {
   )
 }
 
+interface CreateTransactionResult {
+  tx: TransactionWithAddressAndPrices | undefined
+  created: boolean
+}
+
 export async function createTransaction (
   transactionData: Prisma.TransactionUncheckedCreateInput
-): Promise<TransactionWithAddressAndPrices | undefined> {
+): Promise<CreateTransactionResult> {
   if (transactionData.amount === new Prisma.Decimal(0)) { // out transactions
-    return
+    return { tx: undefined, created: false }
   }
   // we don't use `create` to ignore conflicts between the sync and the subscription
   const createdTx = await prisma.transaction.upsert({
@@ -138,12 +143,13 @@ export async function createTransaction (
       timestamp: transactionData.timestamp
     }
   })
-  // only return if it was created, if it was updated return undefined
-  if (createdTx.createdAt.getTime() === createdTx.updatedAt.getTime()) {
-    void await connectTransactionToPrices(createdTx, prisma)
-    const txWithPrices = await fetchTransactionById(createdTx.id)
-    void await cacheManyTxs([txWithPrices])
-    return txWithPrices
+  const created = createdTx.createdAt.getTime() === createdTx.updatedAt.getTime()
+  void await connectTransactionToPrices(createdTx, prisma)
+  const txWithPrices = await fetchTransactionById(createdTx.id)
+  void await cacheManyTxs([txWithPrices])
+  return {
+    tx: txWithPrices,
+    created
   }
 }
 
