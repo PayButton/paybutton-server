@@ -148,7 +148,7 @@ export const parsePaybuttonPOSTRequest = function (params: PaybuttonPOSTParamete
 
   const parsedAddresses = parseAddressTextBlock(params.addresses)
   const parsedButtonData = parseButtonData(params.buttonData)
-  const parsedURL = parseURL(params.url ?? '', false)
+  const parsedURL = (params.url === '' || params.url === undefined) ? '' : parseURL(params.url)
 
   return {
     userId: params.userId,

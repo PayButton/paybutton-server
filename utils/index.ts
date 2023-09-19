@@ -166,14 +166,11 @@ export async function runMiddleware (
   })
 }
 
-export function parseURL (url: string, shouldThrow = true): string {
+export function parseURL (url: string): string {
   try {
     const parsed = new URL(url)
     return parsed.toString()
   } catch (_) {
-    if (!shouldThrow) {
-      return ''
-    }
     throw new Error(RESPONSE_MESSAGES.INVALID_URL_400.message)
   }
 }
