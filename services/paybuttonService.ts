@@ -295,12 +295,8 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
   if (params.name !== undefined && params.name !== '') {
     updateData.name = params.name
   }
-  if (params.url !== undefined && params.url !== '') {
-    updateData.url = params.url
-  }
-  if (params.description !== undefined && params.description !== '') {
-    updateData.description = params.description
-  }
+  updateData.url = params.url
+  updateData.description = params.description
 
   // Set data to create `AddressesOnButtons` objects
   if (params.prefixedAddressList !== undefined && params.prefixedAddressList.length !== 0) {

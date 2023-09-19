@@ -41,12 +41,6 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
     if (params.name === '' || params.name === undefined) {
       params.name = paybutton.name
     }
-    if (params.url === '' || params.url === undefined) {
-      params.url = paybutton.url
-    }
-    if (params.description === '' || params.description === undefined) {
-      params.description = paybutton.description
-    }
     try {
       void await axios.patch(`/api/paybutton/${paybutton.id}`, params)
       refreshPaybutton()
