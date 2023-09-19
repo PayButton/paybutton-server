@@ -297,7 +297,9 @@ export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParame
   const ret: UpdatePaybuttonInput = {
     name: params.name,
     userId: params.userId,
-    paybuttonId
+    paybuttonId,
+    description: params.description ?? '',
+    url: params.url ?? ''
   }
 
   if (params.addresses !== '' && params.addresses !== undefined) {
