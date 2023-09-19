@@ -54,7 +54,9 @@ export const createPaybuttonForUser = async (userId: string, addressList?: strin
   }
   const name = Math.random().toString(36).slice(2)
   const buttonData = JSON.stringify({ someCustom: 'userData' })
-  return await createPaybutton({ userId, walletId, name, prefixedAddressList, buttonData })
+  const url = ''
+  const description = ''
+  return await createPaybutton({ userId, walletId, name, prefixedAddressList, url, description, buttonData })
 }
 
 export const countPaybuttons = async (): Promise<number> => {

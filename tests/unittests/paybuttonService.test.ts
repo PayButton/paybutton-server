@@ -47,6 +47,8 @@ describe('Create services', () => {
       name: 'mocked-name',
       prefixedAddressList: ['mockednetwork:mockaddress'],
       buttonData: '',
+      url: '',
+      description: '',
       walletId: 'mocked-wallet-uuid'
     }
     const result = await paybuttonService.createPaybutton(createPaybuttonInput)

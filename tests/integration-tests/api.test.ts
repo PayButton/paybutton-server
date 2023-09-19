@@ -66,6 +66,8 @@ describe('POST /api/paybutton/', () => {
       addresses: `${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
       name: 'test-paybutton',
       buttonData: '{"somefield":"somevalue"}',
+      url: '',
+      description: '',
       walletId: '80fcbeb5-f6bd-4b3b-aca8-d604a670e978'
     }
   }
@@ -197,6 +199,20 @@ describe('POST /api/paybutton/', () => {
     expect(res.statusCode).toBe(400)
     expect(responseData.message).toBe(RESPONSE_MESSAGES.WALLET_ID_NOT_PROVIDED_400.message)
   })
+  it('Fail with invalid URL', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'another-test-paybutton',
+      walletId: '1',
+      addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
+      url: 'invalid-url'
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
+    const responseData = res._getJSONData()
+    console.log('UAIAIAI', responseData)
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_URL_400.message)
+  })
 })
 
 describe('PATCH /api/paybutton/', () => {
@@ -302,6 +318,20 @@ describe('PATCH /api/paybutton/', () => {
     expect(res.statusCode).toBe(404)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
+  })
+  it('Fail with invalid URL', async () => {
+    baseRequestOptions.body = {
+      userId: 'test-u-id',
+      name: 'another-test-paybutton',
+      walletId: '1',
+      addresses: `ecash:${exampleAddresses.ecash}\nbitcoincash:${exampleAddresses.bitcoincash}`,
+      url: 'invalid-url'
+    }
+    const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
+    const responseData = res._getJSONData()
+    console.log('UAIAIAIP', responseData)
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_URL_400.message)
   })
 })
 
