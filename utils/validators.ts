@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client'
 import config from '../config/index'
 import { type CreatePaybuttonInput, type UpdatePaybuttonInput } from '../services/paybuttonService'
 import { type CreateWalletInput, type UpdateWalletInput } from '../services/walletService'
-import { getAddressPrefix } from './index'
+import { getAddressPrefix, parseURL } from './index'
 import xecaddr from 'xecaddrjs'
 import { CreatePaybuttonTriggerInput, PostDataParametersHashed } from 'services/triggerService'
 
@@ -133,6 +133,8 @@ export interface PaybuttonPOSTParameters {
   name?: string
   buttonData?: string
   addresses?: string
+  url?: string
+  description?: string
 }
 
 export const parsePaybuttonPOSTRequest = function (params: PaybuttonPOSTParameters): CreatePaybuttonInput {
@@ -146,12 +148,16 @@ export const parsePaybuttonPOSTRequest = function (params: PaybuttonPOSTParamete
 
   const parsedAddresses = parseAddressTextBlock(params.addresses)
   const parsedButtonData = parseButtonData(params.buttonData)
+  const parsedURL = parseURL(params.url ?? '', false)
+
   return {
     userId: params.userId,
     name: params.name,
     buttonData: parsedButtonData,
     prefixedAddressList: parsedAddresses,
-    walletId
+    walletId,
+    url: parsedURL,
+    description: params.description ?? ''
   }
 }
 
@@ -167,6 +173,8 @@ export interface PaybuttonPATCHParameters {
   name?: string
   addresses?: string
   userId?: string
+  url?: string
+  description?: string
 }
 
 export interface WalletPATCHParameters {

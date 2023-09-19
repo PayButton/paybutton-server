@@ -10,6 +10,8 @@ import { syncAndSubscribeAddresses } from './transactionService'
 export interface UpdatePaybuttonInput {
   paybuttonId: string
   name?: string
+  url?: string
+  description?: string
   userId: string
   prefixedAddressList?: string[]
 }
@@ -17,6 +19,8 @@ export interface UpdatePaybuttonInput {
 export interface CreatePaybuttonInput {
   userId: string
   walletId?: string
+  url: string
+  description: string
   name: string
   buttonData: string
   prefixedAddressList: string[]
@@ -187,6 +191,8 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
       data: {
         providerUserId: values.userId,
         name: values.name,
+        description: values.description,
+        url: values.url,
         buttonData: values.buttonData,
         addresses: {
           create: values.prefixedAddressList.map((address) => {
@@ -285,9 +291,15 @@ export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Payb
 
 export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<PaybuttonWithAddresses> {
   const updateData: Prisma.PaybuttonUpdateInput = {}
-  // Keep name if none was sent
+  // Keep name, url and description if none was sent
   if (params.name !== undefined && params.name !== '') {
     updateData.name = params.name
+  }
+  if (params.url !== undefined && params.url !== '') {
+    updateData.url = params.url
+  }
+  if (params.description !== undefined && params.description !== '') {
+    updateData.description = params.description
   }
 
   // Set data to create `AddressesOnButtons` objects
