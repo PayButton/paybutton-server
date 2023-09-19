@@ -23,6 +23,8 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
   const [error, setError] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [name, setName] = useState(paybutton.name)
+  const [url, setURL] = useState(paybutton.url)
+  const [description, setDescription] = useState(paybutton.description)
   const [addresses, setAddresses] = useState(paybutton.addresses.map((conn) => conn.address.address).join('\n'))
 
   useEffect(() => {
@@ -37,6 +39,12 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
   async function onSubmit (params: PaybuttonPATCHParameters): Promise<void> {
     if (params.name === '' || params.name === undefined) {
       params.name = paybutton.name
+    }
+    if (params.url === '' || params.url === undefined) {
+      params.url = paybutton.url
+    }
+    if (params.description === '' || params.description === undefined) {
+      params.description = paybutton.description
     }
     try {
       void await axios.patch(`/api/paybutton/${paybutton.id}`, params)
@@ -72,6 +80,10 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
               <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
                 <label htmlFor='name'>Button Name</label>
                 <input {...register('name')} type='text' id='name' name='name' placeholder={paybutton.name} value={name} onChange={(e) => setName(e.target.value)} />
+                <label htmlFor='url'>URL</label>
+                <input {...register('url')} type='text' id='url' name='url' placeholder={paybutton.url} value={url} onChange={(e) => setURL(e.target.value)}/>
+                <label htmlFor='description'>Description</label>
+                <input {...register('description')} type='text' id='description' name='description' placeholder={paybutton.description} value={description} onChange={(e) => setDescription(e.target.value)}/>
                 <label className={style.labelMargin} htmlFor='addresses'>
                   Addresses
                 </label>

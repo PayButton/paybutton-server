@@ -29,6 +29,12 @@ export default ({ paybutton, refreshPaybutton }: IProps): JSX.Element => {
           </div>
         </div>
           <div>
+            {paybutton.url === '' ? <div> URL: {paybutton.url} </div> : ''}
+          </div>
+          <div>
+            {paybutton.description === '' ? <div> Description: {paybutton.description} </div> : ''}
+          </div>
+          <div>
             {paybutton.addresses.map(item => (
               <div className={style.address} key={item.address.address}>
                 {item.address.address}

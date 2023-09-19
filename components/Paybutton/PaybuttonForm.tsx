@@ -22,10 +22,10 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
     reset()
   }, [paybuttons])
 
-  let walletOptions = wallets.map((wallet) => {
+  const walletOptions = wallets.map((wallet) => {
     return {
-      "value": wallet.id,
-      "label": wallet.name
+      value: wallet.id,
+      label: wallet.name
     }
   })
   return (
@@ -42,26 +42,28 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
           <div className={style.form_ctn_inner}>
             <h4>Create Button</h4>
             <div className={style.form_ctn}>
-              <form onSubmit={handleSubmit(onSubmit)} method='post'>
-                <label htmlFor='name'>Name</label>
+              <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
+                <label htmlFor='name'>Name*</label>
                 <input {...register('name')} type='text' id='name' name='name' required />
-
+                <label htmlFor='url'>URL</label>
+                <input {...register('url')} type='text' id='url' name='url'/>
+                <label htmlFor='description'>Description</label>
+                <input {...register('description')} type='text' id='description' name='description'/>
                 <label htmlFor='wallet'>Wallet</label>
                 <select {...register('walletId')} required>
-                  {walletOptions.map((w) => 
+                  {walletOptions.map((w) =>
                     <option value={w.value}>
                       {w.label}
                     </option>
                   )}
                 </select>
 
-
                 {/* <label htmlFor='buttonData'>Button Data</label> <br />
                 <textarea {...register('buttonData')} id='buttonData' name='buttonData' />
                 <br /> */}
 
                 <label className={style.labelMargin} htmlFor='addresses'>
-                  Addresses
+                  Addresses*
                 </label>
                   <textarea {...register('addresses')} id='addresses' name='addresses' required />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
