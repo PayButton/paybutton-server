@@ -42,6 +42,8 @@ export const paybuttons = [
   {
     id: '5d75de09-dcea-42f6-b6ee-bc9d78ddb5af',
     providerUserId: 'dev-uid',
+    url: 'http://chedieck.com/paybutton',
+    description: 'Paybutton for dev @chedieck',
     name: 'Estevão',
     buttonData: '{}'
   }
