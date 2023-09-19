@@ -171,6 +171,11 @@ export function parseURL (url: string): string {
     const parsed = new URL(url)
     return parsed.toString()
   } catch (_) {
-    throw new Error(RESPONSE_MESSAGES.INVALID_URL_400.message)
+    try {
+      const parsed = new URL('https://' + url)
+      return parsed.toString()
+    } catch (_) {
+      throw new Error(RESPONSE_MESSAGES.INVALID_URL_400.message)
+    }
   }
 }
