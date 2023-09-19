@@ -29,10 +29,10 @@ export default ({ paybutton, refreshPaybutton }: IProps): JSX.Element => {
           </div>
         </div>
           <div>
-            {paybutton.url === '' ? <div> URL: {paybutton.url} </div> : ''}
+            {paybutton.url === '' ? '' : <div> URL: {paybutton.url} </div> }
           </div>
           <div>
-            {paybutton.description === '' ? <div> Description: {paybutton.description} </div> : ''}
+            {paybutton.description === '' ? '' : <div> Description: {paybutton.description} </div> }
           </div>
           <div>
             {paybutton.addresses.map(item => (

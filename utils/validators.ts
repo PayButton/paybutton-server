@@ -294,12 +294,13 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
 
 export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters, paybuttonId: string): UpdatePaybuttonInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+  const parsedURL = (params.url === '' || params.url === undefined) ? undefined : parseURL(params.url)
   const ret: UpdatePaybuttonInput = {
     name: params.name,
     userId: params.userId,
     paybuttonId,
     description: params.description ?? '',
-    url: params.url ?? ''
+    url: parsedURL
   }
 
   if (params.addresses !== '' && params.addresses !== undefined) {

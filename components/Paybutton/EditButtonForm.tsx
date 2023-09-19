@@ -29,6 +29,7 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
 
   useEffect(() => {
     setModal(false)
+    setURL(paybutton.url)
     reset()
   }, [paybutton])
 
