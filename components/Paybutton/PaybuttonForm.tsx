@@ -48,7 +48,7 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
                 <label htmlFor='url'>URL</label>
                 <input {...register('url')} type='text' id='url' name='url'/>
                 <label htmlFor='description'>Description</label>
-                <input {...register('description')} type='text' id='description' name='description'/>
+                <textarea {...register('description')} id='description' name='description'/>
                 <label htmlFor='wallet'>Wallet</label>
                 <select {...register('walletId')} required>
                   {walletOptions.map((w) =>

@@ -78,7 +78,7 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
                 <label htmlFor='url'>URL</label>
                 <input {...register('url')} type='text' id='url' name='url' placeholder={paybutton.url} value={url} onChange={(e) => setURL(e.target.value)}/>
                 <label htmlFor='description'>Description</label>
-                <input {...register('description')} type='text' id='description' name='description' placeholder={paybutton.description} value={description} onChange={(e) => setDescription(e.target.value)}/>
+                <textarea {...register('description')} id='description' name='description' placeholder={paybutton.description} value={description} onChange={(e) => setDescription(e.target.value)}/>
                 <label className={style.labelMargin} htmlFor='addresses'>
                   Addresses
                 </label>
