@@ -18,6 +18,11 @@ export const addresses = [
     id: '4f68e74f-de19-467a-b195-139d98217ada',
     address: 'ecash:qzep8jedy9mgx2h6tspte80lqssaudu0pve4fr9dk5',
     networkId: 1
+  },
+  {
+    id: 'ef55d382-ff55-4a96-92dd-bb04513dac98',
+    address: 'ecash:qr64gaal5zx97judme7nmqxpru6gnx8p3uwgvx585h',
+    networkId: 1
   }
 ]
 

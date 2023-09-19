@@ -38,5 +38,11 @@ export const paybuttons = [
     url: '',
     description: '',
     buttonData: '{}'
+  },
+  {
+    id: '5d75de09-dcea-42f6-b6ee-bc9d78ddb5af',
+    providerUserId: 'dev-uid',
+    name: 'Estevão',
+    buttonData: '{}'
   }
 ]
