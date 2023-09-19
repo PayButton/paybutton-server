@@ -209,7 +209,6 @@ describe('POST /api/paybutton/', () => {
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     const responseData = res._getJSONData()
-    console.log('UAIAIAI', responseData)
     expect(res.statusCode).toBe(400)
     expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_URL_400.message)
   })
@@ -329,7 +328,6 @@ describe('PATCH /api/paybutton/', () => {
     }
     const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
     const responseData = res._getJSONData()
-    console.log('UAIAIAIP', responseData)
     expect(res.statusCode).toBe(400)
     expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_URL_400.message)
   })
