@@ -44,11 +44,11 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
             <div className={style.form_ctn}>
               <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
                 <label htmlFor='name'>Name*</label>
-                <input {...register('name')} type='text' id='name' name='name' required />
-                <label htmlFor='wallet'>Wallet</label>
+                <input {...register('name')} type='text' id='name' name='name' placeholder="The unique name of your button" required />
+                <label htmlFor='wallet'>Wallet*</label>
                 <select {...register('walletId')} required>
                   {walletOptions.map((w) =>
-                    <option value={w.value}>
+                    <option key={w.value} value={w.value}>
                       {w.label}
                     </option>
                   )}
@@ -61,12 +61,12 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
                 <label className={style.labelMargin} htmlFor='addresses'>
                   Addresses*
                 </label>
-                  <textarea {...register('addresses')} id='addresses' name='addresses' required />
+                  <textarea {...register('addresses')} id='addresses' name='addresses' placeholder="The address(es) you will be receiving payments to" required />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
                 <label htmlFor='url'>Website</label>
-                <input {...register('url')} type='text' id='url' name='url'/>
+                <input {...register('url')} type='text' id='url' name='url' placeholder="Where will your button be used? (optional)"/>
                 <label htmlFor='description'>Description</label>
-                <textarea {...register('description')} id='description' name='description'/>
+                <textarea {...register('description')} id='description' name='description' placeholder="More information about your button (optional)"/>
                 <div className={style.btn_row}>
                   {error !== '' && <div className={style.error_message}>{error}</div>}
                   <button type='submit' className='button_main'>Submit</button>
