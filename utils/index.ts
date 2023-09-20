@@ -167,16 +167,31 @@ export async function runMiddleware (
   })
 }
 
-export function parseURL (url: string): string {
-  let parsed: URL
+export function parseWebsiteURL (url: string): string {
   const domainPattern = /\.[a-zA-Z]{2,}$/
-  try {
-    parsed = new URL(url)
-    if (domainPattern.test(parsed.hostname)) return parsed.toString()
-  } catch (_) { }
-  try {
-    parsed = new URL('https://' + url)
-    if (domainPattern.test(parsed.hostname)) return parsed.toString()
-  } catch (_) { }
-  throw new Error(RESPONSE_MESSAGES.INVALID_URL_400.message)
+  const tryParse = (prefix: string): string => {
+    let parsed: URL
+    try {
+      parsed = new URL(prefix + url)
+      if (
+        domainPattern.test(parsed.hostname) &&
+        ['http:', 'https:'].includes(parsed.protocol)
+      ) {
+        return parsed.toString()
+      }
+    } catch (_) {}
+    return ''
+  }
+
+  const unprefixedURL = tryParse('')
+  if (unprefixedURL !== '') {
+    return unprefixedURL
+  }
+
+  const prefixedURL = tryParse('https://')
+  if (prefixedURL !== '') {
+    return prefixedURL
+  }
+
+  throw new Error(RESPONSE_MESSAGES.INVALID_WEBSITE_URL_400.message)
 }
