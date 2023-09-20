@@ -17,7 +17,7 @@ interface IProps {
 }
 
 export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps): ReactElement {
-  const { register, handleSubmit, reset } = useForm<PaybuttonPOSTParameters>()
+  const { register, handleSubmit, reset, setValue } = useForm<PaybuttonPOSTParameters>()
   const [modal, setModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState(false)
   const [error, setError] = useState('')
@@ -74,21 +74,21 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
             <div className={style.form_ctn}>
               <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
                 <label htmlFor='name'>Name*</label>
-                <input {...register('name')} type='text' id='name' name='name' placeholder={paybutton.name} value={name} onChange={(e) => setName(e.target.value)} />
+                <input {...register('name')} type='text' id='name' name='name' placeholder={paybutton.name} value={name} onChange={(e) => { setValue('name', e.target.value); setName(e.target.value) }} />
                 <label className={style.labelMargin} htmlFor='addresses'>
                   Addresses*
                 </label>
-                  <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')} value={addresses} onChange={(e) => setAddresses(e.target.value)} />
+                  <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')} value={addresses} onChange={(e) => { setValue('addresses', e.target.value); setAddresses(e.target.value) }} />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
                 <label htmlFor='url'>Website</label>
-                <input {...register('url')} type='text' id='url' name='url' placeholder={paybutton.url} value={url} onChange={(e) => setURL(e.target.value)}/>
+                <input {...register('url')} type='text' id='url' name='url' placeholder={paybutton.url} value={url} onChange={(e) => { setValue('url', e.target.value); setURL(e.target.value) }}/>
                 <label htmlFor='description'>Description</label>
-                <textarea {...register('description')} id='description' name='description' placeholder={paybutton.description} value={description} onChange={(e) => setDescription(e.target.value)}/>
+                <textarea {...register('description')} id='description' name='description' placeholder={paybutton.description} value={description} onChange={(e) => { setValue('description', e.target.value); setDescription(e.target.value) }}/>
                 <div className={style.btn_row2}>
                   {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
-                  <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
+                  <button type='button' onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
                   <div>
-      <button type='submit' className='button_main'>Submit</button>
+                    <button type="submit" className='button_main'>Submit</button>
                     <button onClick={() => { setModal(false); reset() }} className='button_outline'>Cancel</button>
                   </div>
                 </div>
