@@ -345,6 +345,22 @@ body[data-theme='dark'] .form_ctn_outer {
   align-items: center;
 }
 
+.form_label_margin {
+  margin-top: 10px;
+}
+
+.optional_label {
+  margin-top: 10px;
+}
+
+.optional_label a {
+  color: var(--accent-color);
+}
+
+.optional_label a:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 960px) {
   .arrow {
     display: none;
