@@ -23,10 +23,13 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
   const [error, setError] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [name, setName] = useState(paybutton.name)
+  const [url, setURL] = useState(paybutton.url)
+  const [description, setDescription] = useState(paybutton.description)
   const [addresses, setAddresses] = useState(paybutton.addresses.map((conn) => conn.address.address).join('\n'))
 
   useEffect(() => {
     setModal(false)
+    setURL(paybutton.url)
     reset()
   }, [paybutton])
 
@@ -70,13 +73,17 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
             <h4>Edit {paybutton.name}</h4>
             <div className={style.form_ctn}>
               <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
-                <label htmlFor='name'>Button Name</label>
+                <label htmlFor='name'>Name*</label>
                 <input {...register('name')} type='text' id='name' name='name' placeholder={paybutton.name} value={name} onChange={(e) => setName(e.target.value)} />
                 <label className={style.labelMargin} htmlFor='addresses'>
-                  Addresses
+                  Addresses*
                 </label>
                   <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')} value={addresses} onChange={(e) => setAddresses(e.target.value)} />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
+                <label className={style.form_label_margin} htmlFor='url'>Website</label>
+                <input {...register('url')} type='text' id='url' name='url' placeholder={paybutton.url ? paybutton.url : 'Where will your button be used? (optional)'} value={url} onChange={(e) => setURL(e.target.value)}/>
+                <label htmlFor='description'>Description</label>
+                <textarea {...register('description')} id='description' name='description' placeholder={paybutton.description ? paybutton.description : 'More information about your button (optional)'} value={description} onChange={(e) => setDescription(e.target.value)}/>
                 <div className={style.btn_row2}>
                   {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
                   <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>

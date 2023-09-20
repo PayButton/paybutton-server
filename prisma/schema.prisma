@@ -29,6 +29,8 @@ model Paybutton {
   id             String               @id @default(dbgenerated("(uuid())"))
   name           String               @db.VarChar(255)
   buttonData     String               @db.LongText
+  description    String               @db.LongText @default("")
+  url            String               @db.VarChar(255) @default("")
   providerUserId String               @db.VarChar(255)
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt

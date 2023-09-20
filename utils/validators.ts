@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client'
 import config from '../config/index'
 import { type CreatePaybuttonInput, type UpdatePaybuttonInput } from '../services/paybuttonService'
 import { type CreateWalletInput, type UpdateWalletInput } from '../services/walletService'
-import { getAddressPrefix } from './index'
+import { getAddressPrefix, parseWebsiteURL } from './index'
 import xecaddr from 'xecaddrjs'
 import { CreatePaybuttonTriggerInput, PostDataParametersHashed } from 'services/triggerService'
 
@@ -133,6 +133,8 @@ export interface PaybuttonPOSTParameters {
   name?: string
   buttonData?: string
   addresses?: string
+  url?: string
+  description?: string
 }
 
 export const parsePaybuttonPOSTRequest = function (params: PaybuttonPOSTParameters): CreatePaybuttonInput {
@@ -146,12 +148,16 @@ export const parsePaybuttonPOSTRequest = function (params: PaybuttonPOSTParamete
 
   const parsedAddresses = parseAddressTextBlock(params.addresses)
   const parsedButtonData = parseButtonData(params.buttonData)
+  const parsedURL = (params.url === '' || params.url === undefined) ? '' : parseWebsiteURL(params.url)
+
   return {
     userId: params.userId,
     name: params.name,
     buttonData: parsedButtonData,
     prefixedAddressList: parsedAddresses,
-    walletId
+    walletId,
+    url: parsedURL,
+    description: params.description ?? ''
   }
 }
 
@@ -167,6 +173,8 @@ export interface PaybuttonPATCHParameters {
   name?: string
   addresses?: string
   userId?: string
+  url?: string
+  description?: string
 }
 
 export interface WalletPATCHParameters {
@@ -286,10 +294,13 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
 
 export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters, paybuttonId: string): UpdatePaybuttonInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+  const parsedURL = (params.url === '' || params.url === undefined) ? '' : parseWebsiteURL(params.url)
   const ret: UpdatePaybuttonInput = {
     name: params.name,
     userId: params.userId,
-    paybuttonId
+    paybuttonId,
+    description: params.description ?? '',
+    url: parsedURL
   }
 
   if (params.addresses !== '' && params.addresses !== undefined) {

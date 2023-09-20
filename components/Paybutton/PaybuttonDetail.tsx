@@ -35,6 +35,17 @@ export default ({ paybutton, refreshPaybutton }: IProps): JSX.Element => {
               </div>
             ))}
           </div>
+          {paybutton.url &&
+          <div className={style.optional_label}>
+            Website: <a href={paybutton.url} target="_blank"
+            rel="noopener noreferrer">{paybutton.url}</a>
+          </div>
+          }
+          {paybutton.description &&
+          <div className={style.optional_label}>
+            Description: {paybutton.description}
+          </div>
+          }
       </div>
     </div>
   )

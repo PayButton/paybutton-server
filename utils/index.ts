@@ -3,6 +3,7 @@ import { Address, Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES, NETWORK_SLUGS, USD_QUOTE_ID, KeyValueT } from '../constants/index'
 import * as bitcoinjs from 'bitcoinjs-lib'
 import { NextApiRequest, NextApiResponse } from 'next'
+import { URL } from 'url'
 
 export const removeAddressPrefix = function (addressString: string): string {
   if (addressString.includes(':')) {
@@ -164,4 +165,33 @@ export async function runMiddleware (
       return resolve(result)
     })
   })
+}
+
+export function parseWebsiteURL (url: string): string {
+  const domainPattern = /\.[a-zA-Z]{2,}$/
+  const tryParse = (prefix: string): string => {
+    let parsed: URL
+    try {
+      parsed = new URL(prefix + url)
+      if (
+        domainPattern.test(parsed.hostname) &&
+        ['http:', 'https:'].includes(parsed.protocol)
+      ) {
+        return parsed.toString()
+      }
+    } catch (_) {}
+    return ''
+  }
+
+  const unprefixedURL = tryParse('')
+  if (unprefixedURL !== '') {
+    return unprefixedURL
+  }
+
+  const prefixedURL = tryParse('https://')
+  if (prefixedURL !== '') {
+    return prefixedURL
+  }
+
+  throw new Error(RESPONSE_MESSAGES.INVALID_WEBSITE_URL_400.message)
 }
