@@ -73,10 +73,10 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
             <h4>Edit {paybutton.name}</h4>
             <div className={style.form_ctn}>
               <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
-                <label htmlFor='name'>Button Name</label>
+                <label htmlFor='name'>Name*</label>
                 <input {...register('name')} type='text' id='name' name='name' placeholder={paybutton.name} value={name} onChange={(e) => setName(e.target.value)} />
                 <label className={style.labelMargin} htmlFor='addresses'>
-                  Addresses
+                  Addresses*
                 </label>
                   <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')} value={addresses} onChange={(e) => setAddresses(e.target.value)} />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
