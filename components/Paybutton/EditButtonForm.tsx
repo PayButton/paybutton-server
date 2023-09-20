@@ -75,15 +75,15 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
               <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
                 <label htmlFor='name'>Button Name</label>
                 <input {...register('name')} type='text' id='name' name='name' placeholder={paybutton.name} value={name} onChange={(e) => setName(e.target.value)} />
-                <label htmlFor='url'>URL</label>
-                <input {...register('url')} type='text' id='url' name='url' placeholder={paybutton.url} value={url} onChange={(e) => setURL(e.target.value)}/>
-                <label htmlFor='description'>Description</label>
-                <textarea {...register('description')} id='description' name='description' placeholder={paybutton.description} value={description} onChange={(e) => setDescription(e.target.value)}/>
                 <label className={style.labelMargin} htmlFor='addresses'>
                   Addresses
                 </label>
                   <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')} value={addresses} onChange={(e) => setAddresses(e.target.value)} />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
+                <label htmlFor='url'>URL</label>
+                <input {...register('url')} type='text' id='url' name='url' placeholder={paybutton.url} value={url} onChange={(e) => setURL(e.target.value)}/>
+                <label htmlFor='description'>Description</label>
+                <textarea {...register('description')} id='description' name='description' placeholder={paybutton.description} value={description} onChange={(e) => setDescription(e.target.value)}/>
                 <div className={style.btn_row2}>
                   {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
                   <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>

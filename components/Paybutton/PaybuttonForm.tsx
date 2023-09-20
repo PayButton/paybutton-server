@@ -45,10 +45,6 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
               <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
                 <label htmlFor='name'>Name*</label>
                 <input {...register('name')} type='text' id='name' name='name' required />
-                <label htmlFor='url'>URL</label>
-                <input {...register('url')} type='text' id='url' name='url'/>
-                <label htmlFor='description'>Description</label>
-                <textarea {...register('description')} id='description' name='description'/>
                 <label htmlFor='wallet'>Wallet</label>
                 <select {...register('walletId')} required>
                   {walletOptions.map((w) =>
@@ -67,6 +63,10 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
                 </label>
                   <textarea {...register('addresses')} id='addresses' name='addresses' required />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
+                <label htmlFor='url'>URL</label>
+                <input {...register('url')} type='text' id='url' name='url'/>
+                <label htmlFor='description'>Description</label>
+                <textarea {...register('description')} id='description' name='description'/>
                 <div className={style.btn_row}>
                   {error !== '' && <div className={style.error_message}>{error}</div>}
                   <button type='submit' className='button_main'>Submit</button>
