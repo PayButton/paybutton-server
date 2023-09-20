@@ -3,7 +3,7 @@ import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, NodeJsGlobalChronik, TransactionDetails } from './blockchainService'
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT } from 'constants/index'
-import { TransactionWithAddressAndPrices, createManyTransactions, deleteTransactions, fetchUnconfirmedTransactions, createTransaction } from './transactionService'
+import { TransactionWithAddressAndPrices, createManyTransactions, deleteTransactions, fetchUnconfirmedTransactions, createTransaction, syncAddresses } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
@@ -285,10 +285,18 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
+  public async syncMissedTransactions (): Promise<void> {
+    const addresses = await fetchAllAddressesForNetworkId(XEC_NETWORK_ID)
+    try {
+      await syncAddresses(addresses)
+    } catch (err: any) {
+      console.error(`ERROR: (skipping anyway) initial missing transactions sync failed: ${err.message as string} ${err.stack as string}`)
+    }
+  }
+
   public async subscribeInitialAddresses (): Promise<void> {
     const addresses = await fetchAllAddressesForNetworkId(XEC_NETWORK_ID)
     try {
-      console.log(`will subscribe ${addresses.length} addresses...`)
       await this.subscribeAddressesAddTransactions(addresses)
     } catch (err: any) {
       console.error(`ERROR: (skipping anyway) initial chronik subscription failed: ${err.message as string} ${err.stack as string}`)
