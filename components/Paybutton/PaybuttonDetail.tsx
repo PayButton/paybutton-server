@@ -37,7 +37,7 @@ export default ({ paybutton, refreshPaybutton }: IProps): JSX.Element => {
           </div>
         <br/>
           <div>
-            URL: {paybutton.url}
+            Website: {paybutton.url}
           </div>
           <div>
             Description: {paybutton.description}

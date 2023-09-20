@@ -63,7 +63,7 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
                 </label>
                   <textarea {...register('addresses')} id='addresses' name='addresses' required />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
-                <label htmlFor='url'>URL</label>
+                <label htmlFor='url'>Website</label>
                 <input {...register('url')} type='text' id='url' name='url'/>
                 <label htmlFor='description'>Description</label>
                 <textarea {...register('description')} id='description' name='description'/>
