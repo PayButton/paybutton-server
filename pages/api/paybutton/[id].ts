@@ -60,8 +60,8 @@ export default async (
     } catch (err: any) {
       const parsedError = parseError(err)
       switch (parsedError.message) {
-        case RESPONSE_MESSAGES.INVALID_URL_400.message:
-          res.status(400).json(RESPONSE_MESSAGES.INVALID_URL_400)
+        case RESPONSE_MESSAGES.INVALID_WEBSITE_URL_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.INVALID_WEBSITE_URL_400)
           break
         case RESPONSE_MESSAGES.INVALID_ADDRESS_400.message:
           res.status(400).json(RESPONSE_MESSAGES.INVALID_ADDRESS_400)

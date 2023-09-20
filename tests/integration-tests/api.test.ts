@@ -210,7 +210,7 @@ describe('POST /api/paybutton/', () => {
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(400)
-    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_URL_400.message)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_WEBSITE_URL_400.message)
   })
 })
 
@@ -329,7 +329,7 @@ describe('PATCH /api/paybutton/', () => {
     const res = await testEndpoint(baseRequestOptions, paybuttonIdEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(400)
-    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_URL_400.message)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_WEBSITE_URL_400.message)
   })
 })
 

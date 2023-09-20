@@ -15,8 +15,8 @@ export default async (req: any, res: any): Promise<void> => {
     } catch (err: any) {
       const parsedErr = parseError(err)
       switch (parsedErr.message) {
-        case RESPONSE_MESSAGES.INVALID_URL_400.message:
-          res.status(400).json(RESPONSE_MESSAGES.INVALID_URL_400)
+        case RESPONSE_MESSAGES.INVALID_WEBSITE_URL_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.INVALID_WEBSITE_URL_400)
           break
         case RESPONSE_MESSAGES.INVALID_ADDRESS_400.message:
           res.status(400).json(RESPONSE_MESSAGES.INVALID_ADDRESS_400)
