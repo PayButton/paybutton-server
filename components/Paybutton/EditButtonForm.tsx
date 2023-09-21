@@ -80,7 +80,7 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
                 </label>
                   <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')} value={addresses} onChange={(e) => { setValue('addresses', e.target.value); setAddresses(e.target.value) }} />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
-                <label htmlFor='url'>Website</label>
+                <label className={style.form_label_margin} htmlFor='url'>Website</label>
                 <input {...register('url')} type='text' id='url' name='url' placeholder='Where will your button be used? (optional)' value={url} onChange={(e) => { setValue('url', e.target.value); setURL(e.target.value) }}/>
                 <label htmlFor='description'>Description</label>
                 <textarea {...register('description')} id='description' name='description' placeholder='More information about your button (optional)' value={description} onChange={(e) => { setValue('description', e.target.value); setDescription(e.target.value) }}/>
