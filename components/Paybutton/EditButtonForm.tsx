@@ -81,9 +81,9 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
                   <textarea {...register('addresses')} id='addresses' name='addresses' placeholder={paybutton.addresses.map((conn) => conn.address.address).join('\n')} value={addresses} onChange={(e) => setAddresses(e.target.value)} />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
                 <label className={style.form_label_margin} htmlFor='url'>Website</label>
-                <input {...register('url')} type='text' id='url' name='url' placeholder={paybutton.url ? paybutton.url : 'Where will your button be used? (optional)'} value={url} onChange={(e) => setURL(e.target.value)}/>
+                <input {...register('url')} type='text' id='url' name='url' placeholder='Where will your button be used? (optional)' value={url} onChange={(e) => setURL(e.target.value)}/>
                 <label htmlFor='description'>Description</label>
-                <textarea {...register('description')} id='description' name='description' placeholder={paybutton.description ? paybutton.description : 'More information about your button (optional)'} value={description} onChange={(e) => setDescription(e.target.value)}/>
+                <textarea {...register('description')} id='description' name='description' placeholder='More information about your button (optional)' value={description} onChange={(e) => setDescription(e.target.value)}/>
                 <div className={style.btn_row2}>
                   {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
                   <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
