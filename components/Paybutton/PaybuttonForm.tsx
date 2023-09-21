@@ -63,7 +63,7 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
                 </label>
                   <textarea {...register('addresses')} id='addresses' name='addresses' placeholder="The address(es) you will be receiving payments to" required />
                 <div className={style.tip}>Place each address on a separate line. No commas or spaces needed</div>
-                <label htmlFor='url'>Website</label>
+                <label htmlFor='url' className={style.form_label_margin}>Website</label>
                 <input {...register('url')} type='text' id='url' name='url' placeholder="Where will your button be used? (optional)"/>
                 <label htmlFor='description'>Description</label>
                 <textarea {...register('description')} id='description' name='description' placeholder="More information about your button (optional)"/>

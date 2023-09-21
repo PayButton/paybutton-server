@@ -68,7 +68,7 @@ function getBlockchainClient (networkSlug: string): BlockchainClient {
       if (global.chronik === undefined) {
         console.log('creating chronik instance...')
         global.chronik = new ChronikBlockchainClient()
-        // Subscribe addresses on DB upon client initialization
+        // Subscribe addresses & Sync lost transactions on DB upon client initialization
         if (
           process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD &&
           process.env.NODE_ENV !== 'test' &&
@@ -76,6 +76,8 @@ function getBlockchainClient (networkSlug: string): BlockchainClient {
         ) {
           console.log('subscribing existent addresses...')
           void global.chronik.subscribeInitialAddresses()
+          console.log('syncing missed transactions...')
+          void global.chronik.syncMissedTransactions()
         }
       }
       return global.chronik
