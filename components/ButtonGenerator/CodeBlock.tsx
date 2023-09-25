@@ -47,19 +47,19 @@ export default function CodeBlock({ button }): JSX.Element {
   const checkValue = (value, attribute, type) => {
     if (type === 'html') {
       if (value !== undefined && value !== '') {
-        if (attribute === 'amount') {
+        if (attribute === 'amount' || attribute === 'goal-amount') {
           return `\n  ${attribute}=${value}`;
         } else return `\n  ${attribute}="${value}"`;
       } else return '';
     } else if (type === 'js') {
       if (value !== undefined && value !== '') {
-        if (attribute === 'amount') {
+        if (attribute === 'amount' || attribute === 'goalAmount') {
           return `\n    ${attribute}: ${value},`;
         } else return `\n    ${attribute}: "${value}",`;
       } else return '';
     } else {
       if (value !== undefined && value !== '') {
-        if (attribute === 'amount') {
+        if (attribute === 'amount' || attribute === 'goalAmount') {
           return `\n  const ${attribute} = ${value}`;
         } else return `\n  const ${attribute} = '${value}'`;
       } else return '';
@@ -133,6 +133,7 @@ export default function CodeBlock({ button }): JSX.Element {
         button.animation,
         'html'
       )}${checkTheme(button.theme, 'html')}
+      ${checkValue(button.goalAmount, 'goal-amount', 'html')}
 />`,
       javascript: `<script src="https://unpkg.com/@paybutton/paybutton/dist/paybutton.js"></script>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import s from './button-generator.module.css';
 import style from '/styles/landing.module.css';
 import { PayButton } from '@paybutton/react';
@@ -13,6 +13,7 @@ import {
   SECONDARY_BCH_COLOR,
   TERTIARY_BCH_COLOR,
 } from '/constants';
+import AdvancedOptions from './AdvancedOptions.tsx';
 
 export const isValidAddress = (address: string): string => {
   try {
@@ -45,6 +46,7 @@ export default function ButtonGenerator(): JSX.Element {
     },
     validAddress: '',
     currencies: ['XEC', 'USD', 'CAD'],
+    goalAmount: '',
   };
 
   const [button, setButton] = useState(initalState);
@@ -92,7 +94,7 @@ export default function ButtonGenerator(): JSX.Element {
           },
         },
       }));
-    } else if (name === 'amount') {
+    } else if (name === 'amount' || name === 'goalAmount') {
       // Remove non-numeric characters except for a single decimal point
       let numericValue = e.target.value.replace(/[^\d.]/g, '');
       // Ensure there's only one decimal point
@@ -120,11 +122,15 @@ export default function ButtonGenerator(): JSX.Element {
         ...prevButton.theme,
         palette: {
           ...prevButton.theme.palette,
-          [colorName]: newColor.hex
+          [colorName]: newColor.hex,
         },
       },
     }));
   };
+
+  useEffect(() => {
+    console.log('changed hover');
+  }, [button.hoverText]);
 
   return (
     <div className={s.bg_ctn} id="button-generator">
@@ -184,18 +190,50 @@ export default function ButtonGenerator(): JSX.Element {
                   placeholder="Thanks for your support!"
                   onChange={handleInputChange}
                 />
-                {advanced &&
-                <>
-                  <label>Goal Amount</label>
-                  <input
-                    type="text"
-                    name="goalAmount"
-                    value={button.goalAmount}
-                    placeholder="0"
-                    onChange={handleInputChange}
-                  />
-                </>
-                }
+                {!advanced && (
+                  <>
+                    <label>Goal Amount</label>
+                    <input
+                      type="text"
+                      name="goalAmount"
+                      value={button.goalAmount}
+                      placeholder="0"
+                      onChange={handleInputChange}
+                    />
+                    <label>On Success</label>
+                    <input
+                      type="text"
+                      name="onSuccess"
+                      value={button.onSuccess}
+                      placeholder="callback function"
+                      onChange={handleInputChange}
+                    />
+                    <label>On Transaction</label>
+                    <input
+                      type="text"
+                      name="onTransaction"
+                      value={button.onTransaction}
+                      placeholder="callback function"
+                      onChange={handleInputChange}
+                    />
+                    <label>WS Base Url</label>
+                    <input
+                      type="text"
+                      name="wsBaseUrl"
+                      value={button.wsBaseUrl}
+                      placeholder="https://socket.paybutton.org"
+                      onChange={handleInputChange}
+                    />
+                    <label>API Base Url</label>
+                    <input
+                      type="text"
+                      name="apiBaseUrl"
+                      value={button.apiBaseUrl}
+                      placeholder="https://paybutton.org"
+                      onChange={handleInputChange}
+                    />
+                  </>
+                )}
                 <div className={s.advanced_ctn}>
                   For more information and advanced features read our{' '}
                   <a
@@ -260,7 +298,9 @@ export default function ButtonGenerator(): JSX.Element {
                       <div className={s.picker_ctn}>
                         <ChromePicker
                           color={button.theme.palette.primary}
-                          onChange={(color) => handleColorChange(color, 'primary')}
+                          onChange={(color) =>
+                            handleColorChange(color, 'primary')
+                          }
                         />
                       </div>
                     </>
@@ -286,7 +326,9 @@ export default function ButtonGenerator(): JSX.Element {
                           <div className={s.picker_ctn}>
                             <ChromePicker
                               color={button.theme.palette.secondary}
-                              onChange={(color) => handleColorChange(color, 'secondary')}
+                              onChange={(color) =>
+                                handleColorChange(color, 'secondary')
+                              }
                             />
                           </div>
                         </>
@@ -314,7 +356,9 @@ export default function ButtonGenerator(): JSX.Element {
                           <div className={s.picker_ctn}>
                             <ChromePicker
                               color={button.theme.palette.tertiary}
-                              onChange={(color) => handleColorChange(color, 'tertiary')}
+                              onChange={(color) =>
+                                handleColorChange(color, 'tertiary')
+                              }
                             />
                           </div>
                         </>
