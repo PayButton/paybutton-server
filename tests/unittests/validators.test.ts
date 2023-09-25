@@ -246,9 +246,9 @@ describe('parsePaybuttonTriggerPOSTRequest', () => {
     }).toThrow(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
   })
 
-  it('Allow no postURL and no postData', () => {
+  it('Invalid if no postURL and no postData', () => {
     expect(() => {
       v.parsePaybuttonTriggerPOSTRequest({ ...data })
-    }).not.toThrow()
+    }).toThrow(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
   })
 })
