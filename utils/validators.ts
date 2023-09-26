@@ -280,7 +280,7 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
     postData = params.postData
   }
 
-  if ((postData === undefined && postURL !== undefined) || (postData !== undefined && postURL === undefined)) {
+  if ((postData === undefined || postURL === undefined)) {
     throw new Error(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
   }
 

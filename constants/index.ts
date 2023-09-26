@@ -68,7 +68,7 @@ export const RESPONSE_MESSAGES = {
   WRONG_PASSWORD_400: { statusCode: 400, message: 'Wrong password.' },
   INVALID_URL_400: { statusCode: 400, message: 'Invalid URL.' },
   INVALID_WEBSITE_URL_400: { statusCode: 400, message: 'Invalid website URL.' },
-  POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400: { statusCode: 400, message: 'URL and post data must neither or both be set.' },
+  POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400: { statusCode: 400, message: 'URL and post data must both be set.' },
   LIMIT_TRIGGERS_PER_BUTTON_400: { statusCode: 400, message: 'This paybutton already has a trigger.' },
   LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400: { statusCode: 400, message: 'This paybutton addresses already have a trigger from another paybutton.' },
   COULD_NOT_EXECUTE_TRIGGER_500: { statusCode: 500, message: 'Failed to execute trigger for paybutton address.' },

@@ -54,12 +54,17 @@ export async function createTrigger (paybuttonId: string, values: CreatePaybutto
   if ((await fetchTriggersForPaybuttonAddresses(paybutton.id)).length > 0) {
     throw new Error(RESPONSE_MESSAGES.LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400.message)
   }
+  const postURL = values.postURL ?? ''
+  const postData = values.postData ?? ''
+  if (postURL === '' || postData === '') {
+    throw new Error(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
+  }
   return await prisma.paybuttonTrigger.create({
     data: {
       paybuttonId,
       sendEmail: values.sendEmail,
-      postURL: values.postURL ?? '',
-      postData: values.postData ?? ''
+      postURL,
+      postData
     }
   })
 }
