@@ -34,6 +34,104 @@
   border-radius: 5px;
 }
 
+.form_ctn form .checkbox {
+  width: 22px;
+  height: 22px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.form_ctn form .checkbox:checked::after {
+  width: 0.18em;
+  height: 0.32em;
+  top: -4px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  border-right: solid var(--bg) 0.08em;
+  border-bottom: solid var(--bg) 0.08em;
+  font-size: 2em;
+}
+
+.form_row {
+  display: flex;
+  width: 100%;
+  gap: 5px;
+}
+
+.form_row_input_ctn {
+  width: 100%;
+}
+
+.form_row_checkbox_ctn {
+  width: 100%;
+  text-align: center;
+}
+
+/*****************************************************************************************************/
+
+.switch {
+  --toggleHeight: 32px;
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: var(--toggleHeight);
+  margin-top: 4px;
+  margin-bottom: 14px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--secondary-bg-color);
+  transition: 0.4s;
+  border-radius: 100px;
+  border: 1px solid rgb(217, 217, 217);
+}
+
+.slider:before {
+  position: absolute;
+  content: '';
+  height: calc(var(--toggleHeight) - 8px);
+  width: calc(var(--toggleHeight) - 8px);
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--primary-text-color);
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--accent-color);
+}
+
+input:checked + .slider:before {
+  background-color: var(--secondary-bg-color);
+}
+
+input:focus + .slider {
+  box-shadow: none;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/*****************************************************************************************************/
+
 .form_ctn form label {
   font-weight: 700;
   font-size: 12px;
@@ -233,10 +331,21 @@ body[data-theme='dark'] .codetopbar {
 .advanced_ctn {
   font-size: 14px;
   padding: 10px;
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  gap: 20px;
 }
 
-.advanced_ctn a {
+.advanced_ctn a,
+.advanced_ctn div {
   font-size: 14px;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+.advanced_ctn a:hover,
+.advanced_ctn div:hover {
   color: var(--accent-color);
 }
 

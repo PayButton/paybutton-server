@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import s from './button-generator.module.css';
 import style from '/styles/landing.module.css';
 import { PayButton } from '@paybutton/react';
@@ -47,6 +47,13 @@ export default function ButtonGenerator(): JSX.Element {
     validAddress: '',
     currencies: ['XEC', 'USD', 'CAD'],
     goalAmount: '',
+    onSuccess: '',
+    onTransaction: '',
+    randomSatoshis: true,
+    hideToasts: false,
+    disableEnforceFocus: false,
+    disabled: false,
+    editable: false,
   };
 
   const [button, setButton] = useState(initalState);
@@ -115,6 +122,14 @@ export default function ButtonGenerator(): JSX.Element {
     }
   };
 
+  const handleCheckBoxChange = (e) => {
+    const { name, checked } = e.target;
+    setButton((prevButton) => ({
+      ...prevButton,
+      [name]: checked,
+    }));
+  };
+
   const handleColorChange = (newColor, colorName: string): void => {
     setButton((prevButton) => ({
       ...prevButton,
@@ -127,10 +142,6 @@ export default function ButtonGenerator(): JSX.Element {
       },
     }));
   };
-
-  useEffect(() => {
-    console.log('changed hover');
-  }, [button.hoverText]);
 
   return (
     <div className={s.bg_ctn} id="button-generator">
@@ -192,50 +203,60 @@ export default function ButtonGenerator(): JSX.Element {
                 />
                 {!advanced && (
                   <>
-                    <label>Goal Amount</label>
-                    <input
-                      type="text"
-                      name="goalAmount"
-                      value={button.goalAmount}
-                      placeholder="0"
-                      onChange={handleInputChange}
-                    />
-                    <label>On Success</label>
-                    <input
-                      type="text"
-                      name="onSuccess"
-                      value={button.onSuccess}
-                      placeholder="callback function"
-                      onChange={handleInputChange}
-                    />
-                    <label>On Transaction</label>
-                    <input
-                      type="text"
-                      name="onTransaction"
-                      value={button.onTransaction}
-                      placeholder="callback function"
-                      onChange={handleInputChange}
-                    />
-                    <label>WS Base Url</label>
-                    <input
-                      type="text"
-                      name="wsBaseUrl"
-                      value={button.wsBaseUrl}
-                      placeholder="https://socket.paybutton.org"
-                      onChange={handleInputChange}
-                    />
-                    <label>API Base Url</label>
-                    <input
-                      type="text"
-                      name="apiBaseUrl"
-                      value={button.apiBaseUrl}
-                      placeholder="https://paybutton.org"
-                      onChange={handleInputChange}
-                    />
+                    <div className={s.form_row}>
+                      <div className={s.form_row_input_ctn}>
+                        <label>On Success</label>
+                        <input
+                          type="text"
+                          name="onSuccess"
+                          value={button.onSuccess}
+                          placeholder="callback function"
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className={s.form_row_input_ctn}>
+                        <label>On Transaction</label>
+                        <input
+                          type="text"
+                          name="onTransaction"
+                          value={button.onTransaction}
+                          placeholder="callback function"
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                    <div className={s.form_row}>
+                      <div className={s.form_row_input_ctn}>
+                        <label>WS Base Url</label>
+                        <input
+                          type="text"
+                          name="wsBaseUrl"
+                          value={button.wsBaseUrl}
+                          placeholder="https://socket.paybutton.org"
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className={s.form_row_input_ctn}>
+                        <label>API Base Url</label>
+                        <input
+                          type="text"
+                          name="apiBaseUrl"
+                          value={button.apiBaseUrl}
+                          placeholder="https://paybutton.org"
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
                   </>
                 )}
                 <div className={s.advanced_ctn}>
-                  For more information and advanced features read our{' '}
+                  <div
+                    onClick={() => setAdvanced(!advanced)}
+                    style={{ float: 'left' }}
+                  >
+                    {!advanced && 'Hide '}Advanced
+                  </div>
+                  <div onClick={() => setButton(initalState)}>Reset</div>
                   <a
                     href="https://docs.paybutton.org/#/?id=what-is-paybutton"
                     target="_blank"
@@ -375,19 +396,86 @@ export default function ButtonGenerator(): JSX.Element {
                     </div>
                   </div>
                 </div>
-                <div
-                  className={s.reset_btn}
-                  onClick={() => setAdvanced(!advanced)}
-                  style={{ float: 'left' }}
-                >
-                  Advanced
-                </div>
-                <div
-                  className={s.reset_btn}
-                  onClick={() => setButton(initalState)}
-                >
-                  Reset
-                </div>
+                {!advanced && (
+                  <>
+                    <div className={s.form_row}>
+                      <div className={s.form_row_input_ctn}>
+                        <label>Goal Amount</label>
+                        <input
+                          type="text"
+                          name="goalAmount"
+                          value={button.goalAmount}
+                          placeholder="0"
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className={s.form_row_checkbox_ctn}>
+                        <label>Random Satoshis</label>
+                        <label className={s.switch}>
+                          <input
+                            type="checkbox"
+                            checked={button.randomSatoshis}
+                            onChange={handleCheckBoxChange}
+                            name="randomSatoshis"
+                          />
+                          <span className={s.slider}></span>
+                        </label>
+                      </div>
+                    </div>
+                    <div className={s.form_row}>
+                      <div className={s.form_row_checkbox_ctn}>
+                        <label>Hide Toasts</label>
+                        <label className={s.switch}>
+                          <input
+                            type="checkbox"
+                            checked={button.hideToasts}
+                            onChange={handleCheckBoxChange}
+                            name="hideToasts"
+                          />
+                          <span className={s.slider}></span>
+                        </label>
+                      </div>
+                      <div className={s.form_row_checkbox_ctn}>
+                        <label>Disable Focus</label>
+                        <label className={s.switch}>
+                          <input
+                            type="checkbox"
+                            checked={button.disableEnforceFocus}
+                            onChange={handleCheckBoxChange}
+                            name="disableEnforceFocus"
+                          />
+                          <span className={s.slider}></span>
+                        </label>
+                      </div>
+                    </div>
+                    <div className={s.form_row}>
+                      <div className={s.form_row_checkbox_ctn}>
+                        <label>Disabled</label>
+                        <label className={s.switch}>
+                          <input
+                            type="checkbox"
+                            checked={button.disabled}
+                            onChange={handleCheckBoxChange}
+                            name="disabled"
+                          />
+                          <span className={s.slider}></span>
+                        </label>
+                      </div>
+                      <div className={s.form_row_checkbox_ctn}>
+                        <label>Editable</label>
+                        <label className={s.switch}>
+                          <input
+                            type="checkbox"
+                            checked={button.editable}
+                            onChange={handleCheckBoxChange}
+                            name="editable"
+                          />
+                          <span className={s.slider}></span>
+                        </label>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </form>
           </div>
@@ -408,6 +496,20 @@ export default function ButtonGenerator(): JSX.Element {
                 }
                 theme={button.theme}
                 animation={button.animation}
+                goalAmount={
+                  button.goalAmount === '' ? undefined : button.goalAmount
+                }
+                onSuccess={
+                  button.onSuccess === '' ? undefined : button.onSuccess
+                }
+                onTransaction={
+                  button.onTransaction === '' ? undefined : button.onTransaction
+                }
+                randomSatoshis={button.randomSatoshis}
+                hideToasts={button.hideToasts}
+                disableEnforceFocus={button.disableEnforceFocus}
+                disabled={button.disabled}
+                editable={button.editable}
               />
             ) : button.validAddress === 'not valid' &&
               button.to.length !== 0 ? (
