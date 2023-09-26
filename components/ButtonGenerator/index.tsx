@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import s from './button-generator.module.css';
 import style from '/styles/landing.module.css';
-import { PayButton } from '@paybutton/react';
+import { PayButton, Widget as PayButtonWidget } from '@paybutton/react';
 import { ChromePicker } from 'react-color';
 import CodeBlock from './CodeBlock';
 import { decode } from 'ecashaddrjs';
@@ -13,7 +13,6 @@ import {
   SECONDARY_BCH_COLOR,
   TERTIARY_BCH_COLOR,
 } from '/constants';
-import AdvancedOptions from './AdvancedOptions.tsx';
 
 export const isValidAddress = (address: string): string => {
   try {
@@ -201,7 +200,7 @@ export default function ButtonGenerator(): JSX.Element {
                   placeholder="Thanks for your support!"
                   onChange={handleInputChange}
                 />
-                {!advanced && (
+                {advanced && (
                   <>
                     <div className={s.form_row}>
                       <div className={s.form_row_input_ctn}>
@@ -250,11 +249,8 @@ export default function ButtonGenerator(): JSX.Element {
                   </>
                 )}
                 <div className={s.advanced_ctn}>
-                  <div
-                    onClick={() => setAdvanced(!advanced)}
-                    style={{ float: 'left' }}
-                  >
-                    {!advanced && 'Hide '}Advanced
+                  <div onClick={() => setAdvanced(!advanced)}>
+                    {advanced && 'Hide '}Advanced
                   </div>
                   <div onClick={() => setButton(initalState)}>Reset</div>
                   <a
@@ -396,7 +392,7 @@ export default function ButtonGenerator(): JSX.Element {
                     </div>
                   </div>
                 </div>
-                {!advanced && (
+                {advanced && (
                   <>
                     <div className={s.form_row}>
                       <div className={s.form_row_input_ctn}>

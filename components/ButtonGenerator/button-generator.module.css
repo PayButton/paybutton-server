@@ -372,6 +372,10 @@ body[data-theme='dark'] .form_ctn .colorinput {
   color: #fff;
 }
 
+body[data-theme='dark'] .form_ctn form .slider {
+  border-color: rgb(85, 85, 85);
+}
+
 body[data-theme='dark'] .form_ctn .colorinput .swatch {
   border-color: rgb(85, 85, 85);
 }
@@ -389,6 +393,8 @@ body[data-theme='dark'] .preview_ctn {
 @media (max-width: 915px) {
   .bg_top_ctn {
     flex-direction: column;
+    position: relative;
+    padding-bottom: 60px;
   }
 
   .form_ctn,
@@ -426,5 +432,15 @@ body[data-theme='dark'] .preview_ctn {
 
   .code_ctn code {
     font-size: 14px !important;
+  }
+
+  .advanced_ctn {
+    padding: 0;
+    position: absolute;
+    bottom: 15px;
+    text-align: center;
+    justify-content: center;
+    width: 100%;
+    left: 0;
   }
 }

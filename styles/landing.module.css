@@ -7,8 +7,6 @@
 .landing_ctn a {
   color: var(--primary-text-color);
   text-decoration: none;
-  font-weight: 500;
-  font-size: 16px;
 }
 
 .landing_ctn img {
