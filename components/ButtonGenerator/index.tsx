@@ -53,6 +53,7 @@ export default function ButtonGenerator(): JSX.Element {
     disableEnforceFocus: false,
     disabled: false,
     editable: false,
+    widget: false,
   };
 
   const [button, setButton] = useState(initalState);
@@ -304,34 +305,38 @@ export default function ButtonGenerator(): JSX.Element {
                     </option>
                   ))}
                 </select>
-                <label>Primary Color</label>
-                <div className={s.swatch_input_ctn}>
-                  {primary && (
-                    <>
-                      <div
-                        className={s.picker_outerctn}
-                        onClick={() => setPrimary(false)}
-                      />
-                      <div className={s.picker_ctn}>
-                        <ChromePicker
-                          color={button.theme.palette.primary}
-                          onChange={(color) =>
-                            handleColorChange(color, 'primary')
-                          }
+                <div className={s.form_row}>
+                  <div className={s.form_row_input_ctn}>
+                    <label>Primary</label>
+                    <div className={s.swatch_input_ctn}>
+                      {primary && (
+                        <>
+                          <div
+                            className={s.picker_outerctn}
+                            onClick={() => setPrimary(false)}
+                          />
+                          <div className={s.picker_ctn}>
+                            <ChromePicker
+                              color={button.theme.palette.primary}
+                              onChange={(color) =>
+                                handleColorChange(color, 'primary')
+                              }
+                            />
+                          </div>
+                        </>
+                      )}
+                      <div className={s.colorinput}>
+                        <div
+                          className={s.swatch}
+                          style={{
+                            background: `${button.theme.palette.primary}`,
+                          }}
+                          onClick={() => setPrimary(!primary)}
                         />
                       </div>
-                    </>
-                  )}
-                  <div className={s.colorinput}>
-                    <div
-                      className={s.swatch}
-                      style={{ background: `${button.theme.palette.primary}` }}
-                      onClick={() => setPrimary(!primary)}
-                    />
+                    </div>
                   </div>
-                </div>
-                <div className={s.secondary_color_ctn}>
-                  <div>
+                  <div className={s.form_row_input_ctn}>
                     <label>Secondary</label>
                     <div className={s.swatch_input_ctn}>
                       {secondary && (
@@ -361,6 +366,8 @@ export default function ButtonGenerator(): JSX.Element {
                       </div>
                     </div>
                   </div>
+                </div>
+                <div className={s.secondary_color_ctn}>
                   <div>
                     <label>Tertiary</label>
                     <div className={s.swatch_input_ctn}>
@@ -390,6 +397,18 @@ export default function ButtonGenerator(): JSX.Element {
                         />
                       </div>
                     </div>
+                  </div>
+                  <div className={s.form_row_checkbox_ctn}>
+                    <label>Widget</label>
+                    <label className={s.switch}>
+                      <input
+                        type="checkbox"
+                        checked={button.widget}
+                        onChange={handleCheckBoxChange}
+                        name="widget"
+                      />
+                      <span className={s.slider}></span>
+                    </label>
                   </div>
                 </div>
                 {advanced && (
@@ -479,34 +498,69 @@ export default function ButtonGenerator(): JSX.Element {
             <div className={s.preview_label}>Preview</div>
             {button.validAddress === 'ecash' ||
             button.validAddress === 'bitcoincash' ? (
-              <PayButton
-                to={button.to}
-                amount={button.amount}
-                currency={button.currency}
-                text={button.text === '' ? undefined : button.text}
-                hoverText={
-                  button.hoverText === '' ? undefined : button.hoverText
-                }
-                successText={
-                  button.successText === '' ? undefined : button.successText
-                }
-                theme={button.theme}
-                animation={button.animation}
-                goalAmount={
-                  button.goalAmount === '' ? undefined : button.goalAmount
-                }
-                onSuccess={
-                  button.onSuccess === '' ? undefined : button.onSuccess
-                }
-                onTransaction={
-                  button.onTransaction === '' ? undefined : button.onTransaction
-                }
-                randomSatoshis={button.randomSatoshis}
-                hideToasts={button.hideToasts}
-                disableEnforceFocus={button.disableEnforceFocus}
-                disabled={button.disabled}
-                editable={button.editable}
-              />
+              button.widget ? (
+                <PayButtonWidget
+                  to={button.to}
+                  amount={button.amount}
+                  currency={button.currency}
+                  text={button.text === '' ? undefined : button.text}
+                  hoverText={
+                    button.hoverText === '' ? undefined : button.hoverText
+                  }
+                  successText={
+                    button.successText === '' ? undefined : button.successText
+                  }
+                  theme={button.theme}
+                  animation={button.animation}
+                  goalAmount={
+                    button.goalAmount === '' ? undefined : button.goalAmount
+                  }
+                  onSuccess={
+                    button.onSuccess === '' ? undefined : button.onSuccess
+                  }
+                  onTransaction={
+                    button.onTransaction === ''
+                      ? undefined
+                      : button.onTransaction
+                  }
+                  randomSatoshis={button.randomSatoshis}
+                  hideToasts={button.hideToasts}
+                  disableEnforceFocus={button.disableEnforceFocus}
+                  disabled={button.disabled}
+                  editable={button.editable}
+                />
+              ) : (
+                <PayButton
+                  to={button.to}
+                  amount={button.amount}
+                  currency={button.currency}
+                  text={button.text === '' ? undefined : button.text}
+                  hoverText={
+                    button.hoverText === '' ? undefined : button.hoverText
+                  }
+                  successText={
+                    button.successText === '' ? undefined : button.successText
+                  }
+                  theme={button.theme}
+                  animation={button.animation}
+                  goalAmount={
+                    button.goalAmount === '' ? undefined : button.goalAmount
+                  }
+                  onSuccess={
+                    button.onSuccess === '' ? undefined : button.onSuccess
+                  }
+                  onTransaction={
+                    button.onTransaction === ''
+                      ? undefined
+                      : button.onTransaction
+                  }
+                  randomSatoshis={button.randomSatoshis}
+                  hideToasts={button.hideToasts}
+                  disableEnforceFocus={button.disableEnforceFocus}
+                  disabled={button.disabled}
+                  editable={button.editable}
+                />
+              )
             ) : button.validAddress === 'not valid' &&
               button.to.length !== 0 ? (
               <span style={{ color: 'red' }}>Enter a valid address</span>

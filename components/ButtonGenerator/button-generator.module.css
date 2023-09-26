@@ -14,6 +14,7 @@
 
 .form_ctn {
   width: 70%;
+  align-self: flex-start;
 }
 
 .form_ctn form {

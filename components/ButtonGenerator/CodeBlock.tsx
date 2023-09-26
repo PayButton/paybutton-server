@@ -185,7 +185,7 @@ export default function CodeBlock({ button }): JSX.Element {
       html: `<script src="https://unpkg.com/@paybutton/paybutton/dist/paybutton.js"></script>
 
 <div
-  class="paybutton"
+  class="paybutton${button.widget === true ? '-widget' : ''}"
   to="${button.to}"${checkValue(button.text, 'text', 'html')}${checkValue(
         button.hoverText,
         'hover-text',
@@ -283,9 +283,13 @@ export default function CodeBlock({ button }): JSX.Element {
       )}
   };
 
-  PayButton.render(document.getElementById('my_button'), config);
+  PayButton.render${
+    button.widget === true ? 'Widget' : ''
+  }(document.getElementById('my_button'), config);
 </script>`,
-      react: `import { PayButton } from '@paybutton/react'
+      react: `import { ${button.widget === true ? 'Widget as ' : ''}PayButton${
+        button.widget === true ? 'Widget' : ''
+      } } from '@paybutton/react'
 
 function App() {
   const to = '${button.to}'${checkValue(
@@ -337,7 +341,7 @@ function App() {
         'react'
       )}${checkBoolean('editable', button.editable, false, 'react')}
 
-  return <PayButton
+  return <PayButton${button.widget === true ? 'Widget' : ''}
     to={to}${checkReactValue(button.text, 'text')}${checkReactValue(
         button.hoverText,
         'hoverText'
