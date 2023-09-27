@@ -22,6 +22,7 @@ export interface PeriodData {
   payments: ChartData
   totalRevenue: Prisma.Decimal
   totalPayments: number
+  buttons: ButtonData[]
 }
 
 export interface DashboardData {
@@ -48,6 +49,14 @@ export interface Payment {
   networkId: number
   hash: string
   buttonDisplayDataList: ButtonDisplayData[]
+}
+
+export interface ButtonData {
+  displayData: ButtonDisplayData
+  total: {
+    revenue: Prisma.Decimal
+    payments: number
+  }
 }
 
 const getPaymentsWeekKey = (addressId: string, timestamp: number): string => {
