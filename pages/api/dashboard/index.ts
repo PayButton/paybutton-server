@@ -2,7 +2,8 @@ import * as paybuttonService from 'services/paybuttonService'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
-import { ChartData, PeriodData, DashboardData, Payment, getUserUncachedAddresses, cacheAddress, getCachedPaymentsForUser, ButtonData } from 'redis/dashboardCache'
+import { ChartData, PeriodData, DashboardData, Payment, getUserUncachedAddresses, cacheAddress, getCachedPaymentsForUser, ButtonData, PaymentDataByButton } from 'redis/dashboardCache'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 const getChartLabels = function (n: number, periodString: string, formatString = 'M/D'): string[] {
   return [...new Array(n)].map((_, idx) => moment().startOf('day').subtract(idx, periodString as DurationInputArg2).format(formatString)).reverse()
@@ -78,28 +79,35 @@ const getNumberOfMonths = function (paymentList: Payment[]): number {
   return Math.ceil(floatDiff) + 1
 }
 
-export const getButtonPaymentData = (n: number, periodString: string, paymentList: Payment[]): ButtonData[] => {
-  const buttonPaymentData: ButtonData[] = []
+export const getButtonPaymentData = (n: number, periodString: string, paymentList: Payment[]): PaymentDataByButton => {
+  const buttonPaymentData: PaymentDataByButton = {}
   const lowerThreshold = moment().startOf('day').subtract(n, periodString as DurationInputArg2)
   const upperThreshold = moment().endOf('day')
   const periodPaymentList = filterLastPayments(lowerThreshold, upperThreshold, paymentList)
 
   for (const p of periodPaymentList) {
     p.buttonDisplayDataList.forEach(b => {
-      const prev = buttonPaymentData.find(r => r.displayData.id === b.id)
-      if (prev === undefined) {
+      const prev = Object.keys(buttonPaymentData).find(r => buttonPaymentData[r].displayData.id === b.id)
+      const prevObj = prev !== undefined ? buttonPaymentData[prev] : undefined
+      if (prevObj === undefined) {
         const newEntry: ButtonData = {
-          displayData: b,
+          displayData: {
+            ...b,
+            isXec: p.networkId === XEC_NETWORK_ID,
+            isBch: p.networkId === BCH_NETWORK_ID
+          },
           total: {
             payments: 1,
             revenue: new Prisma.Decimal(p.value)
           }
         }
-        buttonPaymentData.push(newEntry)
+        buttonPaymentData[b.id] = newEntry
         return
       }
-      prev.total.payments += 1
-      prev.total.revenue = prev.total.revenue.plus(p.value)
+      prevObj.total.payments += 1
+      prevObj.total.revenue = prevObj.total.revenue.plus(p.value)
+      prevObj.displayData.isXec = prevObj.displayData.isXec === true || (p.networkId === XEC_NETWORK_ID)
+      prevObj.displayData.isBch = prevObj.displayData.isBch === true || (p.networkId === BCH_NETWORK_ID)
     })
   }
   return buttonPaymentData
