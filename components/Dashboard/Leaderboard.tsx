@@ -64,7 +64,7 @@ export default ({ buttons }: IProps): JSX.Element => {
       <div>
         { buttons.length === 0
           ? <div className={style.transaction_ctn}>No buttons yet</div>
-          : <TableContainer columns={columns} data={buttonList} />
+          : <TableContainer columns={columns} data={buttonList} opts={{ sortColumn: 'revenue' }}/>
         }
       </div>
   )
