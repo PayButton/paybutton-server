@@ -44,11 +44,18 @@
 
 .chart_outer_ctn {
   width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
   display: flex;
 }
 
 .chart_inner_ctn {
   width: 50%;
+  position: relative;
+}
+
+.full_width {
+  width: 100%;
   position: relative;
 }
 
@@ -77,6 +84,7 @@
   display: flex;
   align-items: center;
   margin-bottom: 10px;
+  margin-top: 10px;
 }
 
 .toggle_btn,
@@ -113,6 +121,7 @@
   line-height: 1em;
   flex-grow: 2;
   text-align: right;
+  margin-right: 10px;
   margin-right: 10px;
 }
 
