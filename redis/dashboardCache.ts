@@ -43,6 +43,7 @@ export interface ButtonDisplayData {
   id: string
   isXec?: boolean
   isBch?: boolean
+  lastPayment?: number
 }
 
 export interface Payment {

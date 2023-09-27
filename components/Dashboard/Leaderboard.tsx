@@ -5,6 +5,7 @@ import { PaymentDataByButton } from 'redis/dashboardCache'
 import style from '../Transaction/transaction.module.css'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
+import moment from 'moment'
 
 interface IProps {
   buttons: PaymentDataByButton
@@ -25,21 +26,32 @@ export default ({ buttons }: IProps): JSX.Element => {
       },
       {
         Header: 'Name',
-        accessor: 'displayData.name',
+        id: 'name',
+        accessor: 'displayData',
         Cell: (cellProps) => {
-          return <div >{cellProps.cell.value}</div>
+          return <div >
+            <a href={`/button/${cellProps.cell.value.id as string}`}>{cellProps.cell.value.name}</a>
+            </div>
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'right' }}>Total Payments</div>),
-        accessor: 'total.payments',
+        Header: 'Last Payment Received',
+        accessor: 'displayData.lastPayment',
+        Cell: (cellProps) => {
+          return <div >{moment(cellProps.cell.value * 1000).fromNow()}</div>
+        }
+      },
+      {
+        Header: () => (<div style={{ textAlign: 'right' }}>Total Revenue</div>),
+        accessor: 'total.revenue',
+        id: 'revenue',
         Cell: (cellProps) => {
           return <div style={{ textAlign: 'right', fontWeight: '600' }}>{cellProps.cell.value}</div>
         }
       },
       {
-        Header: 'Total Revenue',
-        accessor: 'total.revenue',
+        Header: () => (<div style={{ textAlign: 'right' }}>Total Payments</div>),
+        accessor: 'total.payments',
         Cell: (cellProps) => {
           return <div style={{ textAlign: 'right', fontWeight: '600' }}>{cellProps.cell.value}</div>
         }

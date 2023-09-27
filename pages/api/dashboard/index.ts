@@ -94,7 +94,8 @@ export const getButtonPaymentData = (n: number, periodString: string, paymentLis
           displayData: {
             ...b,
             isXec: p.networkId === XEC_NETWORK_ID,
-            isBch: p.networkId === BCH_NETWORK_ID
+            isBch: p.networkId === BCH_NETWORK_ID,
+            lastPayment: p.timestamp
           },
           total: {
             payments: 1,
@@ -108,6 +109,8 @@ export const getButtonPaymentData = (n: number, periodString: string, paymentLis
       prevObj.total.revenue = prevObj.total.revenue.plus(p.value)
       prevObj.displayData.isXec = prevObj.displayData.isXec === true || (p.networkId === XEC_NETWORK_ID)
       prevObj.displayData.isBch = prevObj.displayData.isBch === true || (p.networkId === BCH_NETWORK_ID)
+      const lastPayment = prevObj.displayData.lastPayment as number
+      prevObj.displayData.lastPayment = lastPayment < p.timestamp ? p.timestamp : lastPayment
     })
   }
   return buttonPaymentData
