@@ -69,42 +69,44 @@ const TableContainer = ({ columns, data }): JSX.Element => {
       </table>
     </div>
 
-<div className='table-navigation-ctn'>
-    <button
-      onClick={() => gotoPage(0)}
-      disabled={!(canPreviousPage as boolean)}
-    >
-      {'<<'}
-    </button>
-    <button
-      onClick={previousPage}
-      disabled={!(canPreviousPage as boolean)}
-    >
-      {'<'}
-    </button>
-    <div className='pageof-table'>Page {(pageIndex as number) + 1} of {pageOptions.length}</div>
-    <button color="primary" onClick={nextPage} disabled={!(canNextPage as boolean)}>
-      {'>'}
-    </button>
-    <button
-      color="primary"
-      onClick={() => gotoPage(pageCount - 1)}
-      disabled={!(canNextPage as boolean)}
-    >
-      {'>>'}
-    </button>
+    {pageOptions.length > 1 &&
+    <div className='table-navigation-ctn'>
+      <button
+        onClick={() => gotoPage(0)}
+        disabled={!(canPreviousPage as boolean)}
+      >
+        {'<<'}
+      </button>
+      <button
+        onClick={previousPage}
+        disabled={!(canPreviousPage as boolean)}
+      >
+        {'<'}
+      </button>
+      <div className='pageof-table'>Page {(pageIndex as number) + 1} of {pageOptions.length}</div>
+      <button color="primary" onClick={nextPage} disabled={!(canNextPage as boolean)}>
+        {'>'}
+      </button>
+      <button
+        color="primary"
+        onClick={() => gotoPage(pageCount - 1)}
+        disabled={!(canNextPage as boolean)}
+      >
+        {'>>'}
+      </button>
 
-   <div className='table-select-ctn'>
-      <select value={pageSize} onChange={onChangeInSelect}>
-        {[10, 25, 50, 100].map(pageSize => (
-          <option key={pageSize} value={pageSize}>
-            Show {pageSize}
-          </option>
-        ))}
-      </select>
+      <div className='table-select-ctn'>
+        <select value={pageSize} onChange={onChangeInSelect}>
+          {[10, 25, 50, 100].map(pageSize => (
+            <option key={pageSize} value={pageSize}>
+              Show {pageSize}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
-  </div>
-  </>
+      }
+    </>
   )
 }
 
