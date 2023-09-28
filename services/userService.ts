@@ -22,3 +22,13 @@ export async function getUserSecretKey (id: string): Promise<string> {
   const secretKey = process.env.MASTER_SECRET_KEY as string
   return crypto.createHash('sha256').update(secretKey + id).digest('hex')
 }
+
+export async function isUserAdmin (id: string): Promise<boolean> {
+  const user = await prisma.userProfile.findFirst({
+    where: {
+      id
+    }
+  })
+
+  return user?.isAdmin === true
+}
