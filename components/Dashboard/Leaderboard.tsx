@@ -6,6 +6,8 @@ import style from '../Transaction/transaction.module.css'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import moment from 'moment'
+import { USD_QUOTE_ID } from 'constants/index'
+import { formatQuoteValue } from 'utils'
 
 interface IProps {
   buttons: PaymentDataByButton
@@ -46,7 +48,9 @@ export default ({ buttons }: IProps): JSX.Element => {
         accessor: 'total.revenue',
         id: 'revenue',
         Cell: (cellProps) => {
-          return <div style={{ textAlign: 'right', fontWeight: '600' }}>{cellProps.cell.value}</div>
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}>
+            {'$'.concat(formatQuoteValue(cellProps.cell.value, USD_QUOTE_ID))}
+          </div>
         }
       },
       {
