@@ -10,6 +10,7 @@ import { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
 import { BroadcastTxData } from 'ws-service/types'
 import { KeyValueT, ResponseMessage } from 'constants/index'
+import { arraysAreEqual } from 'utils/index'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import config from 'config'
 import io from 'socket.io-client'
@@ -92,7 +93,14 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   }
 
   const refreshPaybutton = (): void => {
-    void fetchPaybutton()
+    if (
+      transactions !== undefined &&
+      paybutton !== undefined &&
+      !arraysAreEqual(paybutton?.addresses.map(a => a.address.address), Object.keys(transactions))
+    ) {
+      setTransactions({})
+    }
+    void getDataAndSetUpSocket()
   }
 
   const setUpSocket = async (addresses: string[]): Promise<void> => {
