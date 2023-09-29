@@ -2,7 +2,8 @@ import * as paybuttonService from 'services/paybuttonService'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
-import { ChartData, PeriodData, DashboardData, Payment, getUserUncachedAddresses, cacheAddress, getCachedPaymentsForUser } from 'redis/dashboardCache'
+import { ChartData, PeriodData, DashboardData, Payment, getUserUncachedAddresses, cacheAddress, getCachedPaymentsForUser, ButtonData, PaymentDataByButton } from 'redis/dashboardCache'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 const getChartLabels = function (n: number, periodString: string, formatString = 'M/D'): string[] {
   return [...new Array(n)].map((_, idx) => moment().startOf('day').subtract(idx, periodString as DurationInputArg2).format(formatString)).reverse()
@@ -57,12 +58,14 @@ const getPeriodData = function (n: number, periodString: string, paymentList: Pa
   const revenuePaymentData = getChartRevenuePaymentData(n, periodString, paymentList)
   const revenue = getChartData(n, periodString, revenuePaymentData.revenue, borderColor.revenue, formatString)
   const payments = getChartData(n, periodString, revenuePaymentData.payments, borderColor.payments, formatString)
+  const buttons = getButtonPaymentData(n, periodString, paymentList)
 
   return {
     revenue,
     payments,
     totalRevenue: (revenue.datasets[0].data as any).reduce((a: Prisma.Decimal, b: Prisma.Decimal) => a.plus(b), new Prisma.Decimal(0)),
-    totalPayments: (payments.datasets[0].data as any).reduce((a: number, b: number) => a + b, 0)
+    totalPayments: (payments.datasets[0].data as any).reduce((a: number, b: number) => a + b, 0),
+    buttons
   }
 }
 
@@ -76,9 +79,41 @@ const getNumberOfMonths = function (paymentList: Payment[]): number {
   return Math.ceil(floatDiff) + 1
 }
 
-export interface ButtonDisplayData {
-  name: string
-  id: string
+export const getButtonPaymentData = (n: number, periodString: string, paymentList: Payment[]): PaymentDataByButton => {
+  const buttonPaymentData: PaymentDataByButton = {}
+  const lowerThreshold = moment().startOf('day').subtract(n, periodString as DurationInputArg2)
+  const upperThreshold = moment().endOf('day')
+  const periodPaymentList = filterLastPayments(lowerThreshold, upperThreshold, paymentList)
+
+  for (const p of periodPaymentList) {
+    p.buttonDisplayDataList.forEach(b => {
+      const prev = Object.keys(buttonPaymentData).find(r => buttonPaymentData[r].displayData.id === b.id)
+      const prevObj = prev !== undefined ? buttonPaymentData[prev] : undefined
+      if (prevObj === undefined) {
+        const newEntry: ButtonData = {
+          displayData: {
+            ...b,
+            isXec: p.networkId === XEC_NETWORK_ID,
+            isBch: p.networkId === BCH_NETWORK_ID,
+            lastPayment: p.timestamp
+          },
+          total: {
+            payments: 1,
+            revenue: new Prisma.Decimal(p.value)
+          }
+        }
+        buttonPaymentData[b.id] = newEntry
+        return
+      }
+      prevObj.total.payments += 1
+      prevObj.total.revenue = prevObj.total.revenue.plus(p.value)
+      prevObj.displayData.isXec = prevObj.displayData.isXec === true || (p.networkId === XEC_NETWORK_ID)
+      prevObj.displayData.isBch = prevObj.displayData.isBch === true || (p.networkId === BCH_NETWORK_ID)
+      const lastPayment = prevObj.displayData.lastPayment as number
+      prevObj.displayData.lastPayment = lastPayment < p.timestamp ? p.timestamp : lastPayment
+    })
+  }
+  return buttonPaymentData
 }
 
 const getPaymentList = async (userId: string): Promise<Payment[]> => {

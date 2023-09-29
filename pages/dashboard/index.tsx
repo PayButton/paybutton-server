@@ -7,6 +7,8 @@ import { GetServerSideProps } from 'next'
 import style from './dashboard.module.css'
 import { formatQuoteValue } from 'utils/index'
 import { USD_QUOTE_ID } from 'constants/index'
+import Leaderboard from 'components/Dashboard/Leaderboard'
+import { DashboardData, PeriodData } from 'redis/dashboardCache'
 const Chart = dynamic(async () => await import('components/Chart'), {
   ssr: false
 })
@@ -51,8 +53,8 @@ interface PaybuttonsProps {
 }
 
 export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElement {
-  const [dashboardData, setDashboardData] = useState()
-  const [activePeriod, setActivePeriod] = useState()
+  const [dashboardData, setDashboardData] = useState<DashboardData>()
+  const [activePeriod, setActivePeriod] = useState<PeriodData>()
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
       const res = await fetch('api/dashboard')
@@ -97,6 +99,13 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
           <div className={style.chart_ctn}>
             <Chart data={activePeriod.payments} />
           </div>
+        </div>
+        <div className={`${style.full_width} ${style.chart_inner_ctn}`}>
+          <div className={style.chart_title_ctn}>
+            <h5>Button Leaderboard</h5>
+            <h5>{activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${formatQuoteValue(activePeriod.totalRevenue, USD_QUOTE_ID)}</h5>
+          </div>
+            <Leaderboard buttons={activePeriod.buttons}/>
         </div>
       </div>
     </>
