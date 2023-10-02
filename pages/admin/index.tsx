@@ -46,7 +46,7 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
   if (user !== null && isAdmin) {
     return (
       <div className={style.account_ctn}>
-        You are an admin
+        <a href='/api/auth/dashboard'>Supertokens Admin Dashboard</a>
       </div>
     )
   }
