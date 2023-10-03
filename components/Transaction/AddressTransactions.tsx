@@ -87,7 +87,8 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
             </div>
             : <TableContainer columns={columns} data={addressTransactions[transactionAddress]} />
         }
-      </div>
+          <br/>
+        </div>
 
       ))}
     </>
