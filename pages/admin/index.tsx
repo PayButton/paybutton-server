@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
@@ -7,6 +7,7 @@ import { GetServerSideProps } from 'next'
 import Page from 'components/Page'
 import style from './admin.module.css'
 import { isUserAdmin } from 'services/userService'
+import { useRouter } from 'next/router'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -43,12 +44,21 @@ interface IProps {
 }
 
 export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
+  const router = useRouter()
+
+  useEffect(() => {
+    if (user === null || !isAdmin) {
+      void router.push('/dashboard')
+    }
+  }, [user, isAdmin])
+
   if (user !== null && isAdmin) {
     return (
       <div className={style.account_ctn}>
         <a href='/api/auth/dashboard'>Supertokens Admin Dashboard</a>
       </div>
     )
+  } else {
+    return <Page/>
   }
-  return <Page />
 }
