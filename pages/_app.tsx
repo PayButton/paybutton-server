@@ -55,7 +55,7 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <ErrorBoundary>
-        <Page chart={chart} setChart={setChart} loggedin={pageProps.userId}>
+        <Page chart={chart} setChart={setChart} loggedUserId={pageProps.userId}>
           <Component {...pageProps} />
         </Page>
       </ErrorBoundary>

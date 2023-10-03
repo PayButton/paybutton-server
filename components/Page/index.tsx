@@ -1,26 +1,30 @@
-import React, { FunctionComponent } from 'react';
-import Layout from 'components/Layout';
+import React, { FunctionComponent } from 'react'
+import Layout from 'components/Layout'
 
 interface PageProps {
-  children: React.ReactNode;
-  chart: boolean;
+  children: React.ReactNode
+  chart: boolean
+  setChart: Function
+  loggedUserId: string
 }
 
 const Page = ({
   children,
   chart,
   setChart,
-  loggedin,
+  loggedUserId
 }: PageProps): FunctionComponent<PageProps> => (
   <>
-    {loggedin ? (
-      <Layout chart={chart} setChart={setChart} loggedin={loggedin}>
+    {loggedUserId !== undefined
+      ? (
+      <Layout chart={chart} setChart={setChart} loggedUserId={loggedUserId}>
         {children}
       </Layout>
-    ) : (
-      children
-    )}
+        )
+      : (
+          children
+        )}
   </>
-);
+)
 
-export default Page;
+export default Page

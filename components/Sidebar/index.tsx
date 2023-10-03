@@ -60,7 +60,7 @@ const MENU_ITEMS = [
   }
 ]
 
-const Sidebar: React.FC = ({ chart, setChart, loggedin }) => {
+const Sidebar: React.FC = ({ chart, setChart, loggedUserId }) => {
   const [menu, setMenu] = useState(false)
   const useMediaQuery = (width: number): boolean => {
     const [targetReached, setTargetReached] = useState(false)
@@ -94,7 +94,7 @@ const Sidebar: React.FC = ({ chart, setChart, loggedin }) => {
 
   return (
   <>
-  {loggedin === undefined
+  {loggedUserId === undefined
     ? null
     : <>
   {isBreakpoint &&
