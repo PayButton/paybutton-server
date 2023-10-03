@@ -1,6 +1,7 @@
 import { useTable, useSortBy, usePagination } from 'react-table'
 
-const TableContainer = ({ columns, data }): JSX.Element => {
+const TableContainer = ({ columns, data, opts }): JSX.Element => {
+  const sortColumn = opts?.sortColumn
   const localStoragePageSize = localStorage.getItem('pageSize') !== null ? +localStorage.getItem('pageSize') : 10
   const {
     getTableProps,
@@ -21,7 +22,7 @@ const TableContainer = ({ columns, data }): JSX.Element => {
     {
       columns,
       data,
-      initialState: { pageIndex: 0, pageSize: localStoragePageSize, sortBy: [{ id: 'timestamp', desc: true }] }
+      initialState: { pageIndex: 0, pageSize: localStoragePageSize, sortBy: [{ id: sortColumn !== undefined ? sortColumn : 'timestamp', desc: true }] }
     },
     useSortBy,
     usePagination
@@ -69,42 +70,44 @@ const TableContainer = ({ columns, data }): JSX.Element => {
       </table>
     </div>
 
-<div className='table-navigation-ctn'>
-    <button
-      onClick={() => gotoPage(0)}
-      disabled={!(canPreviousPage as boolean)}
-    >
-      {'<<'}
-    </button>
-    <button
-      onClick={previousPage}
-      disabled={!(canPreviousPage as boolean)}
-    >
-      {'<'}
-    </button>
-    <div className='pageof-table'>Page {(pageIndex as number) + 1} of {pageOptions.length}</div>
-    <button color="primary" onClick={nextPage} disabled={!(canNextPage as boolean)}>
-      {'>'}
-    </button>
-    <button
-      color="primary"
-      onClick={() => gotoPage(pageCount - 1)}
-      disabled={!(canNextPage as boolean)}
-    >
-      {'>>'}
-    </button>
+    {pageOptions.length > 1 &&
+    <div className='table-navigation-ctn'>
+      <button
+        onClick={() => gotoPage(0)}
+        disabled={!(canPreviousPage as boolean)}
+      >
+        {'<<'}
+      </button>
+      <button
+        onClick={previousPage}
+        disabled={!(canPreviousPage as boolean)}
+      >
+        {'<'}
+      </button>
+      <div className='pageof-table'>Page {(pageIndex as number) + 1} of {pageOptions.length}</div>
+      <button color="primary" onClick={nextPage} disabled={!(canNextPage as boolean)}>
+        {'>'}
+      </button>
+      <button
+        color="primary"
+        onClick={() => gotoPage(pageCount - 1)}
+        disabled={!(canNextPage as boolean)}
+      >
+        {'>>'}
+      </button>
 
-   <div className='table-select-ctn'>
-      <select value={pageSize} onChange={onChangeInSelect}>
-        {[10, 25, 50, 100].map(pageSize => (
-          <option key={pageSize} value={pageSize}>
-            Show {pageSize}
-          </option>
-        ))}
-      </select>
+      <div className='table-select-ctn'>
+        <select value={pageSize} onChange={onChangeInSelect}>
+          {[10, 25, 50, 100].map(pageSize => (
+            <option key={pageSize} value={pageSize}>
+              Show {pageSize}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
-  </div>
-  </>
+      }
+    </>
   )
 }
 

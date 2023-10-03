@@ -195,3 +195,17 @@ export function parseWebsiteURL (url: string): string {
 
   throw new Error(RESPONSE_MESSAGES.INVALID_WEBSITE_URL_400.message)
 }
+
+export function arraysAreEqual (a: any[], b: any[]): boolean {
+  if (a.length !== b.length) {
+    return false
+  }
+
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) {
+      return false
+    }
+  }
+
+  return true
+}
