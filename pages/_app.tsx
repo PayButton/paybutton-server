@@ -24,6 +24,14 @@ const AUTHORIZED_UNLOGGED_URLS = [
 
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
   const [chart, setChart] = useState(true)
+  const [user, setUser] = useState()
+
+  useEffect(() => {
+    void (async () => {
+      const user = await (await fetch('/user')).json()
+      setUser(user)
+    })()
+  }, [])
 
   useEffect(() => {
     void (async () => {
@@ -55,7 +63,7 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <ErrorBoundary>
-        <Page chart={chart} setChart={setChart} loggedUserId={pageProps.userId}>
+        <Page chart={chart} setChart={setChart} loggedUser={user}>
           <Component {...pageProps} />
         </Page>
       </ErrorBoundary>

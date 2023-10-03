@@ -1,23 +1,26 @@
 import React, { FunctionComponent } from 'react'
 import Layout from 'components/Layout'
+import { UserProfile } from '@prisma/client'
 
 interface PageProps {
   children: React.ReactNode
   chart: boolean
   setChart: Function
-  loggedUserId: string
+  loggedUser: UserProfile
+  isAdmin: boolean
 }
 
 const Page = ({
   children,
   chart,
   setChart,
-  loggedUserId
+  loggedUser,
+  isAdmin
 }: PageProps): FunctionComponent<PageProps> => (
   <>
-    {loggedUserId !== undefined
+    {loggedUser !== undefined
       ? (
-      <Layout chart={chart} setChart={setChart} loggedUserId={loggedUserId}>
+      <Layout chart={chart} setChart={setChart} loggedUser={loggedUser}>
         {children}
       </Layout>
         )
