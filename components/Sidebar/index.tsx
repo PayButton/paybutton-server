@@ -46,6 +46,11 @@ const MENU_ITEMS = [
     name: 'Account',
     image: Account
   },
+  {
+    name: 'Admin',
+    image: Account, // TODO make new
+    isRestricted: true
+  },
   // {
   //   name:'Settings',
   //   image: Settings
