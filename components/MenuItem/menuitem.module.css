@@ -7,6 +7,10 @@
   color: var(--primary-text-color) !important;
 }
 
+.restricted {
+  color: #ffff00 !important; /* TODO don't use hardcoded color*/
+}
+
 .link {
   display: flex;
   align-items: center;
