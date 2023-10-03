@@ -17,6 +17,7 @@ import Docs from 'assets/docs.png'
 // import Settings from 'assets/settings-icon.png'
 // import Help from 'assets/help-icon.png'
 import Logout from 'assets/logout-icon.png'
+import { UserProfile } from '@prisma/client'
 const ThemeToggle = dynamic(async () => await import('./themetoggle'), {
   ssr: false
 })
@@ -65,7 +66,13 @@ const MENU_ITEMS = [
   }
 ]
 
-const Sidebar: React.FC = ({ chart, setChart, loggedUser }) => {
+interface IProps {
+  chart: boolean
+  setChart: Function
+  loggedUser: UserProfile
+}
+
+const Sidebar: React.FC = ({ chart, setChart, loggedUser }: IProps) => {
   const [menu, setMenu] = useState(false)
   const useMediaQuery = (width: number): boolean => {
     const [targetReached, setTargetReached] = useState(false)
@@ -127,9 +134,11 @@ const Sidebar: React.FC = ({ chart, setChart, loggedUser }) => {
 
         <nav>
           <ul className={style.ul} onClick={isBreakpoint ? () => { setMenu(!menu); setCheckBox() } : null}>
-            {MENU_ITEMS.map(itemName =>
-              <MenuItem key={itemName.name} name={itemName.name} image={itemName.image} />
-            )}
+            {MENU_ITEMS
+              .filter(item => item.isRestricted !== true || loggedUser.isAdmin === true)
+              .map(item =>
+                <MenuItem key={item.name} name={item.name} image={item.image} isRestricted={item.isRestricted}/>
+              )}
           </ul>
         </nav>
       </div>

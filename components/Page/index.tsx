@@ -14,8 +14,7 @@ const Page = ({
   children,
   chart,
   setChart,
-  loggedUser,
-  isAdmin
+  loggedUser
 }: PageProps): FunctionComponent<PageProps> => (
   <>
     {loggedUser !== undefined
