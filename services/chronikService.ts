@@ -366,7 +366,7 @@ export function outputScriptToAddress (outputScript: string | undefined): string
   return fromHash160(addressType, hash160)
 }
 
-interface SubbedAddressesLog {
+export interface SubbedAddressesLog {
   registeredSubscriptions: string[]
   currentSubscriptions: string[]
 }

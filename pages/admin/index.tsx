@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
@@ -8,6 +8,7 @@ import Page from 'components/Page'
 import style from './admin.module.css'
 import { isUserAdmin } from 'services/userService'
 import { useRouter } from 'next/router'
+import { SubbedAddressesLog } from 'services/chronikService'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -45,6 +46,7 @@ interface IProps {
 
 export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
   const router = useRouter()
+  const [subbedAddresses, setSubbedAddresses] = useState<SubbedAddressesLog>()
 
   useEffect(() => {
     if (user === null || !isAdmin) {
@@ -52,12 +54,32 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
     }
   }, [user, isAdmin])
 
+  useEffect(() => {
+    void (async () => {
+      const ok = await (await fetch('chronikStatus')).json()
+      setSubbedAddresses(ok)
+    })()
+  }, [])
+
   if (user !== null && isAdmin) {
-    return (
-      <div className={style.account_ctn}>
-        <a href='/api/auth/dashboard'>Supertokens Admin Dashboard</a>
+    return <>
+      <h2> Admin Dashboard</h2>
+      <br/>
+      <div className={style.admin_ctn}>
+        <button className={style.button}>
+          <a href='/api/auth/dashboard'>Supertokens Admin Dashboard</a>
+        </button>
+        <h3>Chronik Status</h3>
+        <h4>Registered Subscriptions</h4>
+        <ol>
+        { subbedAddresses?.registeredSubscriptions?.map(s => <li>{s}</li>) }
+        </ol>
+        <h4>In-memory Subscriptions</h4>
+        <ol>
+        { subbedAddresses?.registeredSubscriptions?.map(s => <li>{s}</li>) }
+        </ol>
       </div>
-    )
+    </>
   } else {
     return <Page/>
   }
