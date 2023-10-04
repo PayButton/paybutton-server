@@ -78,7 +78,7 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
   return (
     <>
       {Object.keys(addressTransactions).map(transactionAddress => (
-        <div key={transactionAddress}>
+        <div key={transactionAddress} className='address-transactions-ctn'>
           <div className={style.tablelabel}>{transactionAddress}</div>
           { addressTransactions[transactionAddress].length === 0
             ? <div className={style.transaction_ctn}> {
@@ -87,7 +87,7 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
             </div>
             : <TableContainer columns={columns} data={addressTransactions[transactionAddress]} />
         }
-      </div>
+        </div>
 
       ))}
     </>
