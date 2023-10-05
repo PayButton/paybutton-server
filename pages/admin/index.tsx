@@ -67,7 +67,7 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
       <br/>
       <div className={style.admin_ctn}>
         <button className={style.button}>
-          <a href='/api/auth/dashboard'>Supertokens Admin Dashboard</a>
+          <a target="_blank" href='/api/auth/dashboard'>Supertokens Admin Dashboard</a>
         </button>
         <h3>Chronik Status</h3>
         <h4>Registered Subscriptions</h4>
