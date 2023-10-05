@@ -28,8 +28,11 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
 
   useEffect(() => {
     void (async () => {
-      const user = await (await fetch('/user')).json()
-      setUser(user)
+      const res = await fetch('/user')
+      if (res.status === 200) {
+        const user = await res.json()
+        setUser(user)
+      }
     })()
   }, [])
 
