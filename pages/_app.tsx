@@ -16,6 +16,7 @@ if (typeof window !== 'undefined') {
 }
 
 const AUTHORIZED_UNLOGGED_URLS = [
+  '/',
   '/signin',
   '/signup',
   '/reset-password',
