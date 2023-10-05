@@ -70,14 +70,17 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
           <a target="_blank" href='/api/auth/dashboard'>Supertokens Admin Dashboard</a>
         </button>
         <h3>Chronik Status</h3>
-        <h4>Registered Subscriptions</h4>
+        <h4>Subscribed addresses</h4>
         <ol>
         { subbedAddresses?.registeredSubscriptions?.map(s => <li>{s}</li>) }
         </ol>
-        <h4>In-memory Subscriptions</h4>
-        <ol>
-        { subbedAddresses?.registeredSubscriptions?.map(s => <li>{s}</li>) }
-        </ol>
+        { subbedAddresses?.different === true && <>
+          <p className={style.warning_message}> Warning! The subscribed addresses registered since the beginning of the last deploy (list above) is different than the addresses being read by the chronik object instance (list below).</p>
+          <ol>
+            { subbedAddresses?.currentSubscriptions?.map(s => <li>{s}</li>) }
+          </ol>
+        </>
+        }
       </div>
     </>
   } else {
