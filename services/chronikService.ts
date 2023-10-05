@@ -366,9 +366,10 @@ export function outputScriptToAddress (outputScript: string | undefined): string
   return fromHash160(addressType, hash160)
 }
 
-interface SubbedAddressesLog {
+export interface SubbedAddressesLog {
   registeredSubscriptions: string[]
   currentSubscriptions: string[]
+  different: boolean
 }
 
 export function getSubbedAddresses (): SubbedAddressesLog {
@@ -377,5 +378,16 @@ export function getSubbedAddresses (): SubbedAddressesLog {
   ret.registeredSubscriptions = Object.keys(chronik.subscribedAddresses)
   const asAny = chronik as any // To access private properties
   ret.currentSubscriptions = asAny.chronikWSEndpoint._subs.map((sub: any) => fromHash160(sub.scriptType, sub.scriptPayload))
+  ret.different = currentSubscriptionsDifferentThanRegistered(ret.registeredSubscriptions, ret.currentSubscriptions)
   return ret
+}
+
+function currentSubscriptionsDifferentThanRegistered (registeredSubscriptions: string[], currentSubscriptions: string[]): boolean {
+  if (registeredSubscriptions.length !== currentSubscriptions.length) return true
+
+  for (let i = 0; i < registeredSubscriptions.length; i++) {
+    if (registeredSubscriptions[i] !== currentSubscriptions[i]) return true
+  }
+
+  return false
 }

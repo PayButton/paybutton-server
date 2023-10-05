@@ -7,6 +7,9 @@
   color: var(--primary-text-color) !important;
 }
 
+.restricted {
+}
+
 .link {
   display: flex;
   align-items: center;

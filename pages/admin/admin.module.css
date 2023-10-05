@@ -1,0 +1,14 @@
+.admin_ctn {
+  display: flex;
+  flex-direction: column;
+  --max-width: 500px;
+}
+
+.button {
+  width: 20em;
+}
+
+.warning_message {
+  font-size: 16px;
+  color: red;
+}
