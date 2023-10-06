@@ -3,6 +3,17 @@ git_diff_to_master = git diff --name-only --diff-filter=ACMRTUXB origin/master >
 create_test_paybutton_json = echo { \"priceAPIURL\": \"foo\", \"networkBlockchainClients\": { \"ecash\": \"chronik\", \"bitcoincash\": \"grpc\" }, \"chronikClientURL\": \"https://chronik.be.cash/xec\", \"wsBaseURL\": \"localhost:5000\" } > paybutton-config.json
 touch_local_env = touch .env.local
 
+prod:
+	$(git_hook_setup)
+	$(touch_local_env)
+	docker-compose -f docker-compose-prod.yml --env-file .env --env-file .env.local up --build -d
+
+stop-prod:
+	docker-compose -f docker-compose-prod.yml down
+
+reset-prod:
+	make stop-prod && make prod
+
 dev:
 	$(git_hook_setup)
 	$(touch_local_env)
