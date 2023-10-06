@@ -1,0 +1,44 @@
+version: "3.9"
+services:
+  paybutton:
+    container_name: paybutton-dev
+    restart: always
+    depends_on:
+      - db
+      - users-service
+      - cache
+    build: .
+    ports:
+      - "3000:3000"
+      - "5000:5000"
+    volumes:
+      - .:/home/node/src
+      - ./logs:/home/node/.pm2/logs
+    command: bash ./scripts/paybutton-server-start.sh
+
+  users-service:
+    container_name: paybutton-users-service
+    depends_on:
+      - db
+      - cache
+    image: registry.supertokens.io/supertokens/supertokens-mysql
+    restart: always
+    ports:
+      - 3567:3567
+    environment:
+      MYSQL_DATABASE_NAME: supertokens
+      MYSQL_USER: ${SUPERTOKENS_DB_USER}
+      MYSQL_PASSWORD: ${SUPERTOKENS_DB_PASSWORD}
+      MYSQL_HOST: ${MAIN_DB_HOST}
+      MYSQL_PORT: ${MAIN_DB_PORT}
+
+  cache:
+    container_name: paybutton-cache
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - ./redis:/data/redis:z
+      - ./scripts:/data/scripts
+    command: sh -c "sed -i 's/\\r//g' ./scripts/redis-start.sh && sh ./scripts/redis-start.sh"
