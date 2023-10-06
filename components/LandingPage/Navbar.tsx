@@ -1,18 +1,22 @@
-import { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import style from '/styles/landing.module.css';
-import logoImageSource from 'assets/logo.png';
-import dynamic from 'next/dynamic';
+import { useState } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import style from '../../../../../../styles/landing.module.css'
+import logoImageSource from 'assets/logo.png'
+import dynamic from 'next/dynamic'
 const ThemeToggle = dynamic(
-  async () => await import('/components/Sidebar/themetoggle'),
+  async () => await import('../../../../../../components/Sidebar/themetoggle'),
   {
-    ssr: false,
+    ssr: false
   }
-);
+)
 
-export default function Navbar(): JSX.Element {
-  const [mobileMenu, setMobileMenu] = useState(false);
+interface IProps {
+  userId?: string
+}
+
+export default function Navbar ({ userId }: IProps): JSX.Element {
+  const [mobileMenu, setMobileMenu] = useState(false)
   return (
     <div className={style.navbar_ctn}>
       <div className={style.navbar_inner}>
@@ -51,12 +55,22 @@ export default function Navbar(): JSX.Element {
             Telegram
           </Link>
           <Link href="https://docs.paybutton.org/#/?id=what-is-paybutton">Docs</Link>
-          <a href="/signin">Sign In</a>
-          <a href="/signup" className="button_outline button_small">
-            Sign up
-          </a>
+          {userId === undefined
+            ? <>
+            <a href="/signin">Sign In</a>
+            <a href="/signup" className="button_outline button_small">
+              Sign up
+            </a>
+          </>
+            : <>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/logout" className="button_outline button_small">
+              Sign out
+            </a>
+          </>
+          }
         </div>
       </div>
     </div>
-  );
+  )
 }
