@@ -1,10 +1,7 @@
 import TableContainer from 'components/TableContainer'
-import Image from 'next/image'
 import { useMemo } from 'react'
 import { PaymentDataByButton } from 'redis/dashboardCache'
 import style from '../Transaction/transaction.module.css'
-import XECIcon from 'assets/xec-logo.png'
-import BCHIcon from 'assets/bch-logo.png'
 import moment from 'moment'
 import { USD_QUOTE_ID } from 'constants/index'
 import { formatQuoteValue } from 'utils'
@@ -17,16 +14,6 @@ interface IProps {
 export default ({ buttons, totalString }: IProps): JSX.Element => {
   const columns = useMemo(
     () => [
-      {
-        Header: 'Active Networks',
-        accessor: 'displayData',
-        Cell: (cellProps) => {
-          return <div style={{ textAlign: 'left', fontWeight: '600' }} className='table-icon'>
-            {cellProps.cell.value.isXec === true && <div><Image src={XECIcon} alt='XEC' /></div>}
-            {cellProps.cell.value.isBch === true && <div><Image src={BCHIcon} alt='BCH' /></div>}
-            </div>
-        }
-      },
       {
         Header: 'Name',
         id: 'name',
