@@ -11,9 +11,10 @@ import { formatQuoteValue } from 'utils'
 
 interface IProps {
   buttons: PaymentDataByButton
+  totalString: string
 }
 
-export default ({ buttons }: IProps): JSX.Element => {
+export default ({ buttons, totalString }: IProps): JSX.Element => {
   const columns = useMemo(
     () => [
       {
@@ -44,7 +45,7 @@ export default ({ buttons }: IProps): JSX.Element => {
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'right' }}>Total Revenue</div>),
+        Header: () => (<div style={{ textAlign: 'right' }}>{totalString} Revenue</div>),
         accessor: 'total.revenue',
         id: 'revenue',
         Cell: (cellProps) => {
@@ -54,14 +55,14 @@ export default ({ buttons }: IProps): JSX.Element => {
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'right' }}>Total Payments</div>),
+        Header: () => (<div style={{ textAlign: 'right' }}>{totalString} Payments</div>),
         accessor: 'total.payments',
         Cell: (cellProps) => {
           return <div style={{ textAlign: 'right', fontWeight: '600' }}>{cellProps.cell.value}</div>
         }
       }
     ],
-    []
+    [totalString]
   )
   const buttonList = Object.keys(buttons).map(k => buttons[k])
   return (
