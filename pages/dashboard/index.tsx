@@ -103,7 +103,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <div className={`${style.full_width} ${style.chart_inner_ctn}`}>
           <div className={style.chart_title_ctn}>
             <h5>Button Leaderboard</h5>
-            <h5>{activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${formatQuoteValue(activePeriod.totalRevenue, USD_QUOTE_ID)}</h5>
+            <div></div>
           </div>
             <Leaderboard buttons={activePeriod.buttons}/>
         </div>
