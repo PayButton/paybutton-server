@@ -55,6 +55,7 @@ interface PaybuttonsProps {
 export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElement {
   const [dashboardData, setDashboardData] = useState<DashboardData>()
   const [activePeriod, setActivePeriod] = useState<PeriodData>()
+  const [totalString, setTotalString] = useState<string>()
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
       const res = await fetch('api/dashboard')
@@ -64,6 +65,17 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
     }
     fetchData().catch(console.error)
   }, [])
+
+  useEffect(() => {
+    if (dashboardData !== undefined) {
+      setTotalString(
+        (activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day') +
+        ' Total'
+      )
+    } else {
+      setTotalString('Total')
+    }
+  }, [activePeriod])
 
   if (dashboardData === undefined || activePeriod === undefined) return <></>
 
@@ -85,7 +97,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h5>Revenue</h5>
-            <h5>{activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${formatQuoteValue(activePeriod.totalRevenue, USD_QUOTE_ID)}</h5>
+            <h5>{totalString}: ${formatQuoteValue(activePeriod.totalRevenue, USD_QUOTE_ID)}</h5>
           </div>
           <div className={style.chart_ctn}>
             <Chart data={activePeriod.revenue} usd={true} />
@@ -94,7 +106,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h5>Payments</h5>
-            <h5>{activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: {formatQuoteValue(activePeriod.totalPayments)}</h5>
+            <h5>{totalString}: {formatQuoteValue(activePeriod.totalPayments)}</h5>
           </div>
           <div className={style.chart_ctn}>
             <Chart data={activePeriod.payments} />
@@ -103,9 +115,9 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <div className={`${style.full_width} ${style.chart_inner_ctn}`}>
           <div className={style.chart_title_ctn}>
             <h5>Button Leaderboard</h5>
-            <h5>{activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day'} Total: ${formatQuoteValue(activePeriod.totalRevenue, USD_QUOTE_ID)}</h5>
+            <div></div>
           </div>
-            <Leaderboard buttons={activePeriod.buttons}/>
+            <Leaderboard totalString={totalString} buttons={activePeriod.buttons}/>
         </div>
       </div>
     </>
