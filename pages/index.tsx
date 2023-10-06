@@ -1,8 +1,8 @@
 import style from '../styles/landing.module.css'
-import Navbar from '../../../../../components/LandingPage/Navbar'
-import Hero from '../../../../../components/LandingPage/Hero'
-import Dashboard from '../../../../../components/LandingPage/Dashboard'
-import Footer from '../../../../../components/LandingPage/Footer'
+import Navbar from 'components/LandingPage/Navbar'
+import Hero from 'components/LandingPage/Hero'
+import Dashboard from 'components/LandingPage/Dashboard'
+import Footer from 'components/LandingPage/Footer'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../config/backendConfig'
@@ -10,7 +10,7 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 
 const DynamicButtonGenerator = dynamic(
-  async () => await import('../../../../../components/ButtonGenerator'),
+  async () => await import('components/ButtonGenerator'),
   {
     ssr: false
   }

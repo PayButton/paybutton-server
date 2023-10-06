@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import style from '../../../../../../styles/landing.module.css'
+import style from 'styles/landing.module.css'
 import logoImageSource from 'assets/logo.png'
 import dynamic from 'next/dynamic'
 const ThemeToggle = dynamic(
-  async () => await import('../../../../../../components/Sidebar/themetoggle'),
+  async () => await import('components/Sidebar/themetoggle'),
   {
     ssr: false
   }
