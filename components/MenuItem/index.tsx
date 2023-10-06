@@ -11,9 +11,19 @@ export interface MenuItemProps {
   isRestricted?: boolean
 }
 
+const HREF_NAME_MAP = {
+  'Landing Page': ''
+}
+
 const MenuItem = ({ name, image, isRestricted }: MenuItemProps): FunctionComponent<MenuItemProps> => {
   const { pathname } = useRouter()
-  const href = '/' + name.toLowerCase()
+  let href = '/'
+  if (Object.keys(HREF_NAME_MAP).includes(name)) {
+    const x = HREF_NAME_MAP[name as keyof typeof HREF_NAME_MAP]
+    href = href + x
+  } else {
+    href = href + name.toLowerCase()
+  }
   const isActive = pathname === href
 
   let computedStyle = isActive || (pathname === '/button/[id]' && name === 'Buttons') ? `${style.li} ${style.active}` : style.li

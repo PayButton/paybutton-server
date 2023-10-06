@@ -28,6 +28,10 @@ const MENU_ITEMS = [
     image: Dashboard
   },
   {
+    name: 'Landing Page',
+    image: Dashboard
+  },
+  {
     name: 'Payments',
     image: Payments
   },
