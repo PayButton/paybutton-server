@@ -169,3 +169,7 @@ export const IFP_ADDRESSES = [
   'ecash:pqnqv9lt7e5vjyp0w88zf2af0l92l8rxdg2jj94l5j',
   'ecash:prfhcnyqnl5cgrnmlfmms675w93ld7mvvqd0y8lz07'
 ]
+
+export const NO_LAYOUT_ROUTES = [
+  '/'
+]
