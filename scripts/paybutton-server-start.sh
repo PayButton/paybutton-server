@@ -1,7 +1,7 @@
 #!/bin/sh
 . .env
 . .env.local
-yarn || exit 1
+yarn upgrade || exit 1
 rm logs/*
 if [ "$ENVIRONMENT" = "production" ]; then
     yarn prisma migrate deploy || exit 1
