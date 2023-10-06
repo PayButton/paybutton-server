@@ -1,18 +1,49 @@
-import { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import style from '/styles/landing.module.css';
-import logoImageSource from 'assets/logo.png';
-import dynamic from 'next/dynamic';
-const ThemeToggle = dynamic(
-  async () => await import('/components/Sidebar/themetoggle'),
-  {
-    ssr: false,
-  }
-);
+import { MouseEventHandler, useState } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import style from 'styles/landing.module.css'
+import logoImageSource from 'assets/logo.png'
+import dynamic from 'next/dynamic'
+import Session from 'supertokens-web-js/recipe/session'
 
-export default function Navbar(): JSX.Element {
-  const [mobileMenu, setMobileMenu] = useState(false);
+const ThemeToggle = dynamic(
+  async () => await import('components/Sidebar/themetoggle'),
+  {
+    ssr: false
+  }
+)
+
+interface IProps {
+  userId?: string
+}
+
+interface LogoutProps {
+  onClick: MouseEventHandler<HTMLAnchorElement>
+}
+
+async function handleLogout (): Promise<void> {
+  await Session.signOut()
+  window.location.href = '/signin'
+}
+
+const Logout: React.FC<LogoutProps> = () => {
+  return (
+    <a
+      href="#"
+      onClick={(e) => {
+        e.preventDefault() // Prevent the default navigation behavior
+        void handleLogout() // Call the onClick handler passed in props
+      }}
+      className="button_outline button_small"
+    >
+      Sign Out
+    </a>
+  )
+}
+
+export default function Navbar ({ userId }: IProps): JSX.Element {
+  const [mobileMenu, setMobileMenu] = useState(false)
+
   return (
     <div className={style.navbar_ctn}>
       <div className={style.navbar_inner}>
@@ -51,12 +82,20 @@ export default function Navbar(): JSX.Element {
             Telegram
           </Link>
           <Link href="https://docs.paybutton.org/#/?id=what-is-paybutton">Docs</Link>
-          <a href="/signin">Sign In</a>
-          <a href="/signup" className="button_outline button_small">
-            Sign up
-          </a>
+          {userId === undefined
+            ? <>
+            <a href="/signin">Sign In</a>
+            <a href="/signup" className="button_outline button_small">
+              Sign up
+            </a>
+          </>
+            : <>
+            <a href="/dashboard">Dashboard</a>
+            <Logout/>
+          </>
+          }
         </div>
       </div>
     </div>
-  );
+  )
 }

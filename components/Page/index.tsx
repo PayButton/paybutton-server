@@ -1,6 +1,8 @@
-import React, { FunctionComponent } from 'react'
+import React from 'react'
 import Layout from 'components/Layout'
 import { UserProfile } from '@prisma/client'
+import { NO_LAYOUT_ROUTES } from 'constants/index'
+import { useRouter } from 'next/router'
 
 interface PageProps {
   children: React.ReactNode
@@ -15,18 +17,20 @@ const Page = ({
   chart,
   setChart,
   loggedUser
-}: PageProps): FunctionComponent<PageProps> => (
-  <>
-    {loggedUser !== undefined
-      ? (
-      <Layout chart={chart} setChart={setChart} loggedUser={loggedUser}>
-        {children}
-      </Layout>
-        )
+}: PageProps): JSX.Element => {
+  const router = useRouter()
+  const currentRoute = router.pathname
+
+  return <>
+    {(loggedUser === undefined || NO_LAYOUT_ROUTES.includes(currentRoute))
+      ? children
       : (
-          children
-        )}
+          <Layout chart={chart} setChart={setChart} loggedUser={loggedUser}>
+            {children}
+          </Layout>
+        )
+    }
   </>
-)
+}
 
 export default Page

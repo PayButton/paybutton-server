@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import React from 'react'
 import Sidebar from '../Sidebar'
 import style from './layout.module.css'
 
@@ -6,7 +6,7 @@ interface LayoutProps {
   children: React.ReactNode
 }
 
-const Layout = (props: LayoutProps): FunctionComponent<LayoutProps> =>
+const Layout = (props: LayoutProps): JSX.Element =>
   <div className={style.layout}>
     <Sidebar chart={props.chart} setChart={props.setChart} loggedUser={props.loggedUser} />
     <main>
