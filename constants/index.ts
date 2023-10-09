@@ -173,3 +173,7 @@ export const IFP_ADDRESSES = [
 export const NO_LAYOUT_ROUTES = [
   '/'
 ]
+
+export const COOKIE_NAMES = {
+  DASHBOARD_FILTER: 'dashboardFilter'
+}
