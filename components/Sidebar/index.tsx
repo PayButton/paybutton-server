@@ -111,7 +111,7 @@ const Sidebar: React.FC = ({ chart, setChart, loggedUser }: IProps) => {
     : <>
   {isBreakpoint &&
     <div className={style.topmenu}>
-      <Link href='/dashboard' passHref>
+      <Link href='/' passHref>
         <Image className={style.image} src={logoImageSource} alt='PayButton' width={120} height={22} />
       </Link>
       <div className={style.menu_ctn_outer}>
