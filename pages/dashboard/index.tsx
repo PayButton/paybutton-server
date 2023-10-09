@@ -1,4 +1,4 @@
-import React, { useState, useEffect, FunctionComponent } from 'react'
+import React, { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
@@ -6,9 +6,10 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import style from './dashboard.module.css'
 import { formatQuoteValue } from 'utils/index'
-import { USD_QUOTE_ID } from 'constants/index'
+import { COOKIE_NAMES, USD_QUOTE_ID } from 'constants/index'
 import Leaderboard from 'components/Dashboard/Leaderboard'
 import { DashboardData, PeriodData } from 'redis/dashboardCache'
+import { loadStateFromCookie, saveStateToCookie } from 'utils/cookies'
 const Chart = dynamic(async () => await import('components/Chart'), {
   ssr: false
 })
@@ -18,7 +19,9 @@ interface NumberBlockProps {
   text: string
 }
 
-const NumberBlock = ({ value, text }: NumberBlockProps): FunctionComponent<NumberBlockProps> => {
+type PeriodString = '1M' | '1W' | '1Y' | 'All'
+
+const NumberBlock = ({ value, text }: NumberBlockProps): JSX.Element => {
   return (
     <div className={style.number_block}>
       <h4>{value}</h4>
@@ -55,27 +58,55 @@ interface PaybuttonsProps {
 export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElement {
   const [dashboardData, setDashboardData] = useState<DashboardData>()
   const [activePeriod, setActivePeriod] = useState<PeriodData>()
+  const [activePeriodString, setActivePeriodString] = useState<PeriodString>('1M')
   const [totalString, setTotalString] = useState<string>()
+
+  const setPeriodFromString = (data?: DashboardData, periodString?: PeriodString): void => {
+    if (data === undefined) return
+    if (periodString === undefined) {
+      periodString = '1M'
+    }
+    switch (periodString) {
+      case '1W':
+        setActivePeriod(data.sevenDays)
+        break
+      case '1M':
+        setActivePeriod(data.thirtyDays)
+        break
+      case '1Y':
+        setActivePeriod(data.year)
+        break
+      case 'All':
+        setActivePeriod(data.all)
+        break
+    }
+    saveStateToCookie(COOKIE_NAMES.DASHBOARD_FILTER, periodString)
+  }
+
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
       const res = await fetch('api/dashboard')
       const json = await res.json()
       setDashboardData(json)
-      setActivePeriod(json.thirtyDays)
     }
     fetchData().catch(console.error)
+    const savedActivePeriodString = loadStateFromCookie(COOKIE_NAMES.DASHBOARD_FILTER, undefined) as (PeriodString | undefined)
+    if (savedActivePeriodString !== undefined) {
+      setActivePeriodString(savedActivePeriodString)
+    }
   }, [])
 
   useEffect(() => {
+    setPeriodFromString(dashboardData, activePeriodString)
     if (dashboardData !== undefined) {
       setTotalString(
-        (activePeriod === dashboardData.all ? 'Lifetime' : activePeriod === dashboardData.year ? 'Year' : activePeriod === dashboardData.thirtyDays ? '30 Day' : '7 Day') +
+        (activePeriodString === 'All' ? 'Lifetime' : activePeriodString === '1Y' ? 'Year' : activePeriodString === '1M' ? '30 Day' : '7 Day') +
         ' Total'
       )
     } else {
       setTotalString('Total')
     }
-  }, [activePeriod])
+  }, [activePeriodString, dashboardData])
 
   if (dashboardData === undefined || activePeriod === undefined) return <></>
 
@@ -88,10 +119,10 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <NumberBlock value={dashboardData.total.buttons} text='Buttons' />
       </div>
       <div className={style.btn_ctn}>
-        <button className={activePeriod === dashboardData.sevenDays ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.sevenDays) }}>1W</button>
-        <button className={activePeriod === dashboardData.thirtyDays ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.thirtyDays) }}>1M</button>
-        <button className={activePeriod === dashboardData.year ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.year) }}>1Y</button>
-        {dashboardData.all.revenue.labels.length > 12 && <button className={activePeriod === dashboardData.all ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriod(dashboardData.all) }}>All</button>}
+        <button className={activePeriodString === '1W' ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriodString('1W') }}>1W</button>
+        <button className={activePeriodString === '1M' ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriodString('1M') }}>1M</button>
+        <button className={activePeriodString === '1Y' ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriodString('1Y') }}>1Y</button>
+        {dashboardData.all.revenue.labels.length > 12 && <button className={activePeriodString === 'All' ? `${style.active_btn} ${style.toggle_btn}` : style.toggle_btn} onClick={() => { setActivePeriodString('All') }}>All</button>}
       </div>
       <div className={style.chart_outer_ctn}>
         <div className={style.chart_inner_ctn}>
