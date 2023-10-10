@@ -79,7 +79,14 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
     <>
       {Object.keys(addressTransactions).map(transactionAddress => (
         <div key={transactionAddress} className='address-transactions-ctn'>
-          <div className={style.tablelabel}>{transactionAddress}</div>
+          <div className={style.tablelabel}>
+            <div>{transactionAddress}</div>
+            <a href={transactionAddress.slice(0, 5) === 'ecash' ? `https://explorer.e.cash/address/${transactionAddress}` : `https://blockchair.com/bitcoin-cash/address/${transactionAddress}`} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
+              <div className="table-eye">
+                <Image src={EyeIcon} alt='View on explorer' />
+              </div>
+            </a>
+          </div>
           { addressTransactions[transactionAddress].length === 0
             ? <div className={style.transaction_ctn}> {
               addressSynced[transactionAddress] ? 'No transactions yet' : 'Syncing address...'
