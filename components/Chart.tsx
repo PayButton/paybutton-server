@@ -83,11 +83,10 @@ const Chart: NextPage<Props> = ({ data, usd }) => {
         ticks: {
           color: cssvar('--primary-text-color'),
           callback: function (value: string) {
-            return usd ? '$' + value : value
+            return usd ? '$' + formatQuoteValue(value, USD_QUOTE_ID) : value
           }
         },
         position: 'right'
-        // beginAtZero: true,
       }
     }
   }
