@@ -41,7 +41,14 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
         Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
         accessor: 'amount',
         Cell: (cellProps) => {
-          return <div style={{ textAlign: 'right', fontWeight: '600' }}>{formatQuoteValue(cellProps.cell.value)} {cellProps.row.values.address.networkId === 1 ? 'XEC' : 'BCH' }</div>
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}>{parseFloat(cellProps.cell.value).toLocaleString(
+            undefined,
+            {
+              minimumFractionDigits: cellProps.row.values.address.networkId === 1 ? 2 : 8,
+              maximumFractionDigits: cellProps.row.values.address.networkId === 1 ? 2 : 8
+            }
+          )
+            } {cellProps.row.values.address.networkId === 1 ? 'XEC' : 'BCH' }</div>
         }
       },
       {
