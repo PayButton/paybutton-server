@@ -1,8 +1,8 @@
 import { useTable, useSortBy, usePagination } from 'react-table'
 
-const TableContainer = ({ columns, data, opts }): JSX.Element => {
+const TableContainer = ({ columns, data, opts, ssr }): JSX.Element => {
   const sortColumn = opts?.sortColumn
-  const localStoragePageSize = localStorage.getItem('pageSize') !== null ? +localStorage.getItem('pageSize') : 10
+  const localStoragePageSize = ssr ? 10 : localStorage.getItem('pageSize') !== null ? +localStorage.getItem('pageSize') : 10
   const {
     getTableProps,
     getTableBodyProps,

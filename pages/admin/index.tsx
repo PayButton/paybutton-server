@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
@@ -9,6 +9,9 @@ import style from './admin.module.css'
 import { isUserAdmin } from 'services/userService'
 import { useRouter } from 'next/router'
 import { SubbedAddressesLog } from 'services/chronikService'
+import TableContainer from '../../components/TableContainer';
+import EyeIcon from 'assets/eye-icon.png'
+import Image from 'next/image'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -46,7 +49,9 @@ interface IProps {
 
 export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
   const router = useRouter()
-  const [subbedAddresses, setSubbedAddresses] = useState<SubbedAddressesLog>()
+  const [subbedAddresses, setSubbedAddresses] = useState([])
+  const [currentAddresses, setCurrentAddresses] = useState([])
+  const [different, setDifferent] = useState(false)
 
   useEffect(() => {
     if (user === null || !isAdmin) {
@@ -57,30 +62,56 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
   useEffect(() => {
     void (async () => {
       const ok = await (await fetch('chronikStatus')).json()
-      setSubbedAddresses(ok)
+      const subbedAddressesTableData = ok.registeredSubscriptions.map((value) => ({ address: value }))
+      const currentAddressesTableData = ok.currentSubscriptions.map((value) => ({ address: value }))
+      setSubbedAddresses(subbedAddressesTableData)
+      setCurrentAddresses(currentAddressesTableData)
+      setDifferent(ok?.different)
     })()
   }, [])
 
+  const columns = useMemo(
+    () => [
+      {
+        Header: 'Subscribed addresses',
+        accessor: 'address',
+        Cell: (cellProps) => {
+          return <div className="table-date">{cellProps.cell.value}</div>;
+        }
+      },
+      {
+        Header: 'View',
+        accessor: 'view',
+        Cell: (cellProps) => {
+          return <a href={`https://explorer.e.cash/address/${cellProps.cell.row.values.address}`} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
+          <div className="table-eye">
+            <Image src={EyeIcon} alt='View on explorer' />
+          </div>
+        </a>;
+        }
+      }
+    ],
+    []
+  );
+
   if (user !== null && isAdmin) {
     return <>
-      <h2> Admin Dashboard</h2>
-      <br/>
+      <h2>Admin Dashboard</h2>
       <div className={style.admin_ctn}>
-        <button className={style.button}>
-          <a target="_blank" href='/api/auth/dashboard'>Supertokens Admin Dashboard</a>
-        </button>
-        <h3>Chronik Status</h3>
-        <h4>Subscribed addresses</h4>
-        <ol>
-        { subbedAddresses?.registeredSubscriptions?.map(s => <li>{s}</li>) }
-        </ol>
-        { subbedAddresses?.different === true && <>
-          <p className={style.warning_message}> Warning! The subscribed addresses registered since the beginning of the last deploy (list above) is different than the addresses being read by the chronik object instance (list below).</p>
-          <ol>
-            { subbedAddresses?.currentSubscriptions?.map(s => <li>{s}</li>) }
-          </ol>
+      <TableContainer columns={columns} data={subbedAddresses} ssr/>
+        { different && <>
+          <p className={style.warning_message}> Warning!<br />The subscribed addresses registered since the beginning of the last deploy (list above) is different than the addresses being read by the chronik object instance (list below).</p>
+           <TableContainer columns={columns} data={currentAddresses} />
         </>
         }
+        <a
+          target="_blank"
+          rel="noopener noreferrer"
+          href="/api/auth/dashboard"
+          className={`${style.admin_button} button_main button_small`}
+        >
+          Go to Supertokens Admin Dashboard
+        </a>
       </div>
     </>
   } else {

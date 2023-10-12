@@ -1,7 +1,12 @@
 .admin_ctn {
   display: flex;
   flex-direction: column;
-  --max-width: 500px;
+}
+
+.admin_button {
+    margin-top: 20px;
+    width: fit-content;
+    align-self: flex-end;
 }
 
 .button {
@@ -11,4 +16,8 @@
 .warning_message {
   font-size: 16px;
   color: red;
+  background-color: rgb(245, 197, 197);
+  padding: 20px;
+  border-radius: 5px;
+  max-width: 600px;
 }
