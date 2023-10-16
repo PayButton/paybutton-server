@@ -8,7 +8,7 @@ import EyeIcon from 'assets/eye-icon.png'
 import CheckIcon from 'assets/check-icon.png'
 import XIcon from 'assets/x-icon.png'
 import { formatQuoteValue } from 'utils/index'
-import TableContainer from '../../components/TableContainer'
+import TableContainer, { compareNumericString } from '../../components/TableContainer'
 import moment from 'moment'
 
 interface IProps {
@@ -40,6 +40,7 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
       {
         Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
         accessor: 'amount',
+        sortType: compareNumericString,
         Cell: (cellProps) => {
           return <div style={{ textAlign: 'right', fontWeight: '600' }}>{parseFloat(cellProps.cell.value).toLocaleString(
             undefined,
