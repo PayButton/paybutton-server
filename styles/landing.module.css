@@ -69,7 +69,7 @@ body[data-theme='dark'] .button:hover {
 }
 
 .navbar_ctn img {
-  width: 160px;
+  width: 140px;
 }
 
 body[data-theme='dark'] .navbar_ctn img {
@@ -583,7 +583,7 @@ body[data-theme='dark'] .supporters_ctn h3 {
 }
 
 .footer_ctn img {
-  width: 160px;
+  width: 140px;
   filter: brightness(0) invert(1);
 }
 

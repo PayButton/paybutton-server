@@ -1,10 +1,10 @@
-import { MouseEventHandler, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import style from 'styles/landing.module.css'
 import logoImageSource from 'assets/logo.png'
 import dynamic from 'next/dynamic'
-import Session from 'supertokens-web-js/recipe/session'
+import LogoutButton from './LogoutButton'
 
 const ThemeToggle = dynamic(
   async () => await import('components/Sidebar/themetoggle'),
@@ -15,30 +15,6 @@ const ThemeToggle = dynamic(
 
 interface IProps {
   userId?: string
-}
-
-interface LogoutProps {
-  onClick: MouseEventHandler<HTMLAnchorElement>
-}
-
-async function handleLogout (): Promise<void> {
-  await Session.signOut()
-  window.location.href = '/signin'
-}
-
-const Logout: React.FC<LogoutProps> = () => {
-  return (
-    <a
-      href="#"
-      onClick={(e) => {
-        e.preventDefault() // Prevent the default navigation behavior
-        void handleLogout() // Call the onClick handler passed in props
-      }}
-      className="button_outline button_small"
-    >
-      Sign Out
-    </a>
-  )
 }
 
 export default function Navbar ({ userId }: IProps): JSX.Element {
@@ -91,7 +67,7 @@ export default function Navbar ({ userId }: IProps): JSX.Element {
           </>
             : <>
             <a href="/dashboard">Dashboard</a>
-            <Logout/>
+            <LogoutButton />
           </>
           }
         </div>
