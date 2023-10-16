@@ -1,4 +1,4 @@
-import TableContainer from 'components/TableContainer'
+import TableContainer, { compareNumericString } from 'components/TableContainer'
 import { useMemo } from 'react'
 import { PaymentDataByButton } from 'redis/dashboardCache'
 import style from '../Transaction/transaction.module.css'
@@ -35,6 +35,7 @@ export default ({ buttons, totalString }: IProps): JSX.Element => {
         Header: () => (<div style={{ textAlign: 'right' }}>{totalString} Revenue</div>),
         accessor: 'total.revenue',
         id: 'revenue',
+        sortType: compareNumericString,
         Cell: (cellProps) => {
           return <div style={{ textAlign: 'right', fontWeight: '600' }}>
             {'$'.concat(formatQuoteValue(cellProps.cell.value, USD_QUOTE_ID))}
