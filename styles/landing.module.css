@@ -64,7 +64,7 @@ body[data-theme='dark'] .button:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px;
+  padding: 25px;
   margin: auto;
 }
 
@@ -106,7 +106,7 @@ body[data-theme='dark'] .navbar_ctn img {
     text-align: left;
     align-items: flex-start;
     transition: all ease-in-out 300ms;
-    margin-top: 60px;
+    margin-top: 70px;
   }
 
   .navlink_ctn a {
