@@ -392,6 +392,15 @@ body[data-theme='dark'] .button_outline:hover {
   border-color: #000;
 }
 
+.footer_signup_btn {
+  border-color: #fff;
+  color: #fff !important;
+}
+
+.footer_signup_btn:hover {
+  border-color: #231f20;
+}
+
 .button_small {
   padding: 4px 20px;
   /* box-shadow: 0px 2px 4px 0px rgba(0,0,0,0.4); */
