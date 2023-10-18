@@ -52,7 +52,7 @@ export default function LandingPage ({ userId }: IProps): JSX.Element {
       <Hero />
       <Dashboard />
       <DynamicButtonGenerator />
-      <Footer />
+      <Footer userId={userId}/>
     </div>
   )
 }

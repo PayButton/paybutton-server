@@ -7,8 +7,7 @@ import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import CheckIcon from 'assets/check-icon.png'
 import XIcon from 'assets/x-icon.png'
-import { formatQuoteValue } from 'utils/index'
-import TableContainer from '../../components/TableContainer'
+import TableContainer, { compareNumericString } from '../../components/TableContainer'
 import moment from 'moment'
 
 interface IProps {
@@ -40,8 +39,16 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
       {
         Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
         accessor: 'amount',
+        sortType: compareNumericString,
         Cell: (cellProps) => {
-          return <div style={{ textAlign: 'right', fontWeight: '600' }}>{formatQuoteValue(cellProps.cell.value)} {cellProps.row.values.address.networkId === 1 ? 'XEC' : 'BCH' }</div>
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}>{parseFloat(cellProps.cell.value).toLocaleString(
+            undefined,
+            {
+              minimumFractionDigits: cellProps.row.values.address.networkId === 1 ? 2 : 8,
+              maximumFractionDigits: cellProps.row.values.address.networkId === 1 ? 2 : 8
+            }
+          )
+            } {cellProps.row.values.address.networkId === 1 ? 'XEC' : 'BCH' }</div>
         }
       },
       {
@@ -79,7 +86,14 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
     <>
       {Object.keys(addressTransactions).map(transactionAddress => (
         <div key={transactionAddress} className='address-transactions-ctn'>
-          <div className={style.tablelabel}>{transactionAddress}</div>
+          <div className={style.tablelabel}>
+            <div>{transactionAddress}</div>
+            <a href={transactionAddress.slice(0, 5) === 'ecash' ? `https://explorer.e.cash/address/${transactionAddress}` : `https://blockchair.com/bitcoin-cash/address/${transactionAddress}`} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
+              <div className="table-eye">
+                <Image src={EyeIcon} alt='View on explorer' />
+              </div>
+            </a>
+          </div>
           { addressTransactions[transactionAddress].length === 0
             ? <div className={style.transaction_ctn}> {
               addressSynced[transactionAddress] ? 'No transactions yet' : 'Syncing address...'

@@ -2,8 +2,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import style from '/styles/landing.module.css';
 import logoImageSource from 'assets/logo.png';
+import LogoutButton from './LogoutButton'
 
-export default function Footer(): JSX.Element {
+export default function Footer ({ userId }): JSX.Element {
   const currentYear = new Date().getFullYear();
   const copyrightSymbol = '\u00A9';
   return (
@@ -30,10 +31,18 @@ export default function Footer(): JSX.Element {
             <Link href="https://docs.paybutton.org/#/?id=what-is-paybutton">
               Docs
             </Link>
-            <Link href="/signin">Sign In</Link>
-            <Link href="/signup" className="button_outline button_small">
-              Sign up
-            </Link>
+            {userId === undefined
+              ? <>
+              <Link href="/signin">Sign In</Link>
+              <Link href="/signup" className="button_outline button_small footer_signup_btn">
+                Sign up
+              </Link>
+            </>
+              : <>
+            <Link href="/dashboard">Dashboard</Link>
+            <LogoutButton footer/>
+          </>
+          }
           </div>
         </div>
         <div className={style.copyright}>

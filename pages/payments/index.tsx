@@ -3,7 +3,7 @@ import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
-import TableContainer from '../../components/TableContainer'
+import TableContainer, { compareNumericString } from '../../components/TableContainer'
 import { ButtonDisplayData } from 'redis/dashboardCache'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -64,6 +64,7 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
       {
         Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
         accessor: 'value',
+        sortType: compareNumericString,
         Cell: (cellProps) => {
           return <div style={{ textAlign: 'right', fontWeight: '600' }}>${formatQuoteValue(cellProps.cell.value, USD_QUOTE_ID)}</div>
         }

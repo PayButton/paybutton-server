@@ -67,6 +67,13 @@
   background-color: var(--secondary-bg-color);
   border-radius: 10px 10px 0 0;
   padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  word-break: break-all;
+}
+
+.tablelabel a {
+ margin-left: 20px;
 }
 
 /*********************** COPY BUTTON  **************************/
