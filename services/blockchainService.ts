@@ -50,7 +50,7 @@ export interface BlockchainClient {
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
   getTransactionDetails: (hash: string, networkSlug: string) => Promise<TransactionDetails>
-  subscribeAddressesAddTransactions: (addresses: Address[]) => Promise<void>
+  subscribeAddresses: (addresses: Address[]) => Promise<void>
 }
 
 export interface NodeJsGlobalChronik extends NodeJS.Global {
@@ -110,12 +110,12 @@ export async function getTransactionDetails (hash: string, networkSlug: string):
   return await getObjectValueForNetworkSlug(networkSlug, BLOCKCHAIN_CLIENTS).getTransactionDetails(hash, networkSlug)
 }
 
-export async function subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
+export async function subscribeAddresses (addresses: Address[]): Promise<void> {
   await Promise.all(
     Object.keys(BLOCKCHAIN_CLIENTS).map(async networkSlug => {
       const addressesOfNetwork = addresses.filter(address => address.networkId === NETWORK_IDS[NETWORK_TICKERS[networkSlug]])
       const client = BLOCKCHAIN_CLIENTS[networkSlug]
-      await client.subscribeAddressesAddTransactions(addressesOfNetwork)
+      await client.subscribeAddresses(addressesOfNetwork)
     })
   )
 }

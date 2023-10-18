@@ -263,7 +263,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     )
   }
 
-  public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
+  public async subscribeAddresses (addresses: Address[]): Promise<void> {
     if (addresses.length === 0) return
 
     const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address))
@@ -297,7 +297,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
   public async subscribeInitialAddresses (): Promise<void> {
     const addresses = await fetchAllAddressesForNetworkId(XEC_NETWORK_ID)
     try {
-      await this.subscribeAddressesAddTransactions(addresses)
+      await this.subscribeAddresses(addresses)
     } catch (err: any) {
       console.error(`ERROR: (skipping anyway) initial chronik subscription failed: ${err.message as string} ${err.stack as string}`)
     }

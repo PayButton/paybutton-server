@@ -1,6 +1,6 @@
 import prisma from 'prisma/clientInstance'
 import { Address, Prisma, Transaction } from '@prisma/client'
-import { syncTransactionsForAddress, GetAddressTransactionsParameters, subscribeAddressesAddTransactions } from 'services/blockchainService'
+import { syncTransactionsForAddress, GetAddressTransactionsParameters, subscribeAddresses } from 'services/blockchainService'
 import { parseAddress } from 'utils/validators'
 import { fetchAddressBySubstring, updateLastSynced, fetchAddressById } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
@@ -323,7 +323,7 @@ export const syncAndSubscribeAddresses = async (addresses: Address[], maxTransac
   await Promise.all(
     addresses.map(async (addr) => {
       try {
-        await subscribeAddressesAddTransactions([addr])
+        await subscribeAddresses([addr])
         syncedTxs[addr.address] = await syncAllTransactionsForAddress(addr, maxTransactionsToReturn!)
         if (productionAddressesIds.includes(addr.id)) {
           txsToSave = txsToSave.concat(syncedTxs[addr.address])
