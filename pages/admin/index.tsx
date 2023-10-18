@@ -6,9 +6,10 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import Page from 'components/Page'
 import style from './admin.module.css'
-import { isUserAdmin } from 'services/userService'
+import { isUserAdmin, UserWithSupertokens } from 'services/userService'
 import { useRouter } from 'next/router'
 import { SubbedAddressesLog } from 'services/chronikService'
+import RegisteredUsers from 'components/Admin/RegisteredUsers'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -47,6 +48,7 @@ interface IProps {
 export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
   const router = useRouter()
   const [subbedAddresses, setSubbedAddresses] = useState<SubbedAddressesLog>()
+  const [users, setUsers] = useState<UserWithSupertokens[]>([])
 
   useEffect(() => {
     if (user === null || !isAdmin) {
@@ -58,6 +60,8 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
     void (async () => {
       const ok = await (await fetch('chronikStatus')).json()
       setSubbedAddresses(ok)
+      const ok2 = await (await fetch('users')).json()
+      setUsers(ok2)
     })()
   }, [])
 
@@ -72,15 +76,17 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
         <h3>Chronik Status</h3>
         <h4>Subscribed addresses</h4>
         <ol>
-        { subbedAddresses?.registeredSubscriptions?.map(s => <li>{s}</li>) }
+        { subbedAddresses?.registeredSubscriptions?.map(s => <li key={s}>{s}</li>) }
         </ol>
         { subbedAddresses?.different === true && <>
           <p className={style.warning_message}> Warning! The subscribed addresses registered since the beginning of the last deploy (list above) is different than the addresses being read by the chronik object instance (list below).</p>
           <ol>
-            { subbedAddresses?.currentSubscriptions?.map(s => <li>{s}</li>) }
+            { subbedAddresses?.currentSubscriptions?.map(s => <li key={s}>{s}</li>) }
           </ol>
         </>
         }
+        <h4>Registered Users</h4>
+        <RegisteredUsers users={users}/>
       </div>
     </>
   } else {
