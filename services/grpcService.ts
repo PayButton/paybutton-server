@@ -217,7 +217,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
     return details
   };
 
-  public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
+  public async subscribeAddresses (addresses: Address[]): Promise<void> {
     if (addresses.length === 0) return
 
     const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address))
