@@ -7,7 +7,6 @@ import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import CheckIcon from 'assets/check-icon.png'
 import XIcon from 'assets/x-icon.png'
-import { formatQuoteValue } from 'utils/index'
 import TableContainer, { compareNumericString } from '../../components/TableContainer'
 import moment from 'moment'
 

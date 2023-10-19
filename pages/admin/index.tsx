@@ -6,9 +6,9 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import Page from 'components/Page'
 import style from './admin.module.css'
-import { isUserAdmin } from 'services/userService'
+import { isUserAdmin, UserWithSupertokens } from 'services/userService'
 import { useRouter } from 'next/router'
-import { SubbedAddressesLog } from 'services/chronikService'
+import RegisteredUsers from 'components/Admin/RegisteredUsers'
 import TableContainer from '../../components/TableContainer';
 import EyeIcon from 'assets/eye-icon.png'
 import Image from 'next/image'
@@ -52,6 +52,7 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
   const [subbedAddresses, setSubbedAddresses] = useState([])
   const [currentAddresses, setCurrentAddresses] = useState([])
   const [different, setDifferent] = useState(false)
+  const [users, setUsers] = useState<UserWithSupertokens[]>([])
 
   useEffect(() => {
     if (user === null || !isAdmin) {
@@ -67,6 +68,8 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
       setSubbedAddresses(subbedAddressesTableData)
       setCurrentAddresses(currentAddressesTableData)
       setDifferent(ok?.different)
+      const ok2 = await (await fetch('users')).json()
+      setUsers(ok2)
     })()
   }, [])
 
@@ -75,15 +78,15 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
       {
         Header: 'Subscribed addresses',
         accessor: 'address',
-        Cell: (cellProps) => {
+        Cell: (cellProps: any) => {
           return <div className="table-date">{cellProps.cell.value}</div>;
         }
       },
       {
         Header: 'View',
         accessor: 'view',
-        Cell: (cellProps) => {
-          return <a href={`https://explorer.e.cash/address/${cellProps.cell.row.values.address}`} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
+        Cell: (cellProps: any) => {
+          return <a href={`https://explorer.e.cash/address/${cellProps.cell.row.values.address as string}`} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
           <div className="table-eye">
             <Image src={EyeIcon} alt='View on explorer' />
           </div>
@@ -112,6 +115,8 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
         >
           Go to Supertokens Admin Dashboard
         </a>
+        <h4>Registered Users</h4>
+        <RegisteredUsers users={users}/>
       </div>
     </>
   } else {
