@@ -72,7 +72,9 @@ export const RESPONSE_MESSAGES = {
   LIMIT_TRIGGERS_PER_BUTTON_400: { statusCode: 400, message: 'This paybutton already has a trigger.' },
   LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400: { statusCode: 400, message: 'This paybutton addresses already have a trigger from another paybutton.' },
   COULD_NOT_EXECUTE_TRIGGER_500: { statusCode: 500, message: 'Failed to execute trigger for paybutton address.' },
-  INVALID_DATA_JSON_WITH_VARIABLES_400: (variables: string[]) => { return { statusCode: 400, message: `Data is not valid. Make sure that ${variables.join(', ')} are not inside quotes.` } }
+  INVALID_DATA_JSON_WITH_VARIABLES_400: (variables: string[]) => { return { statusCode: 400, message: `Data is not valid. Make sure that ${variables.join(', ')} are not inside quotes.` } },
+  PAGE_SIZE_LIMIT_EXCEEDED_400: { statusCode: 400, message: 'Page size limit should be at most 200.' },
+  PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400: { statusCode: 400, message: 'pageSize and page parameters should be valid integers.' }
 }
 
 export type KeyValueT<T> = Record<string, T>
@@ -154,7 +156,7 @@ export const NETWORK_BLOCKCHAIN_CLIENTS: KeyValueT<BLOCKCHAIN_CLIENT_OPTIONS> = 
 export const CHRONIK_CLIENT_URL = 'https://chronik.be.cash/xec'
 
 export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 45000
-export const NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY = 200
+export const DEFAULT_TX_PAGE_SIZE = 100
 
 export const PAYMENT_WEEK_KEY_FORMAT = 'YYYY:WW'
 

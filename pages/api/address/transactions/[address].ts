@@ -1,7 +1,7 @@
 import { NextApiResponse, NextApiRequest } from 'next'
 import { parseAddress } from 'utils/validators'
-import { NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY, RESPONSE_MESSAGES } from 'constants/index'
-import { fetchAddressTransactions, syncAndSubscribeAddresses } from 'services/transactionService'
+import { DEFAULT_TX_PAGE_SIZE, RESPONSE_MESSAGES } from 'constants/index'
+import { fetchPaginatedAddressTransactions, syncAndSubscribeAddresses } from 'services/transactionService'
 import { upsertAddress, addressExistsBySubstring } from 'services/addressService'
 import Cors from 'cors'
 import { runMiddleware } from 'utils/index'
@@ -19,6 +19,15 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
         throw new Error(ADDRESS_NOT_PROVIDED_400.message)
       }
 
+      const page = (req.query.page === '' || req.query.page === undefined) ? 0 : Number(req.query.page)
+      const pageSize = (req.query.pageSize === '' || req.query.pageSize === undefined) ? DEFAULT_TX_PAGE_SIZE : Number(req.query.pageSize)
+      if (isNaN(page) || isNaN(pageSize)) {
+        throw new Error(RESPONSE_MESSAGES.PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400.message)
+      }
+      if (pageSize > 200) {
+        throw new Error(RESPONSE_MESSAGES.PAGE_SIZE_LIMIT_EXCEEDED_400.message)
+      }
+
       const address = parseAddress(req.query.address as string)
 
       // this flag ?serverOnly=1 tells us to only retrieve what we have in the database
@@ -28,9 +37,9 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
         if (serverOnly) throw new Error(NO_ADDRESS_FOUND_404.message)
 
         const addressObject = await upsertAddress(address)
-        await syncAndSubscribeAddresses([addressObject], NUMBER_OF_TRANSACTIONS_TO_SYNC_INITIALLY)
+        await syncAndSubscribeAddresses([addressObject])
       }
-      const transactions = await fetchAddressTransactions(address)
+      const transactions = await fetchPaginatedAddressTransactions(address, page, pageSize)
 
       res.status(200).send(transactions)
     } catch (err: any) {
