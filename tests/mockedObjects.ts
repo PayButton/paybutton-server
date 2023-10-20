@@ -22,6 +22,7 @@ export const mockedPaybutton: PaybuttonWithAddresses = {
   addresses: [
     {
       address: {
+        syncing: false,
         id: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
         address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
@@ -32,6 +33,7 @@ export const mockedPaybutton: PaybuttonWithAddresses = {
     },
     {
       address: {
+        syncing: false,
         id: 'a37b9a8c-d262-468b-b1dd-571434a16308',
         address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
@@ -224,6 +226,7 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
       createdAt: new Date('2022-05-27T15:18:42.000Z'),
       updatedAt: new Date('2022-05-27T15:18:42.000Z'),
       address: {
+        syncing: false,
         id: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
         address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
@@ -273,6 +276,7 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
       createdAt: new Date('2022-05-27T15:18:42.000Z'),
       updatedAt: new Date('2022-05-27T15:18:42.000Z'),
       address: {
+        syncing: false,
         id: 'a37b9a8c-d262-468b-b1dd-571434a16308',
         address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
