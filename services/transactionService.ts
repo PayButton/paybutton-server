@@ -1,8 +1,7 @@
 import prisma from 'prisma/clientInstance'
 import { Address, Prisma, Transaction } from '@prisma/client'
-import { syncTransactionsForAddress, GetAddressTransactionsParameters, subscribeAddresses } from 'services/blockchainService'
-import { parseAddress } from 'utils/validators'
-import { fetchAddressBySubstring, updateLastSynced, fetchAddressById } from 'services/addressService'
+import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
+import { fetchAddressBySubstring, fetchAddressById } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, PRICE_CONNECT_MAX_N, KeyValueT } from 'constants/index'
 import { cacheManyTxs } from 'redis/dashboardCache'
@@ -253,80 +252,60 @@ export async function createManyTransactions (
   return txsWithPrices
 }
 
-export async function syncAllTransactionsForAddress (address: Address, maxTransactionsToReturn: number): Promise<TransactionWithAddressAndPrices[]> {
-  const addressString = parseAddress(address.address)
-  const parameters = {
-    addressString,
-    start: 0,
-    maxTransactionsToReturn
-  }
-
-  const insertedTransactions: TransactionWithAddressAndPrices[] = await syncTransactionsForAddress(parameters)
-
-  if (
-    maxTransactionsToReturn === Infinity ||
-    insertedTransactions.filter(t => t.confirmed).length < maxTransactionsToReturn
-  ) {
-    await updateLastSynced(addressString)
-  } else {
-    const newParameters: GetAddressTransactionsParameters = {
-      addressString,
-      start: insertedTransactions.filter(t => t.confirmed).length,
-      maxTransactionsToReturn: Infinity
-    }
-    void syncTransactionsForAddress(newParameters)
-  }
-
-  return insertedTransactions
-}
-
 interface SyncAndSubscriptionReturn {
   failedAddressesWithErrors: KeyValueT<string>
-  syncedTxs: KeyValueT<TransactionWithAddressAndPrices[]>
 }
 
-export async function syncAddresses (addresses: Address[], maxTransactionsToReturn?: number): Promise<SyncAndSubscriptionReturn> {
+export async function syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
   const failedAddressesWithErrors: KeyValueT<string> = {}
-  const syncedTxs: KeyValueT<TransactionWithAddressAndPrices[]> = {}
   let txsToSave: Prisma.TransactionCreateManyInput[] = []
-  if (maxTransactionsToReturn === undefined) maxTransactionsToReturn = Infinity
 
   const productionAddressesIds = productionAddresses.map(addr => addr.id)
   await Promise.all(
     addresses.map(async (addr) => {
       try {
-        syncedTxs[addr.address] = await syncAllTransactionsForAddress(addr, maxTransactionsToReturn!)
-        if (productionAddressesIds.includes(addr.id)) {
-          txsToSave = txsToSave.concat(syncedTxs[addr.address])
+        const generator = syncTransactionsForAddress(addr.address)
+        while (true) {
+          const result = await generator.next()
+          if (result.done === true) break
+          if (productionAddressesIds.includes(addr.id)) {
+            const txs = result.value
+            txsToSave = txsToSave.concat(txs)
+            if (txsToSave.length !== 0) {
+              await appendTxsToFile(txsToSave)
+            }
+          }
         }
       } catch (err: any) {
         failedAddressesWithErrors[addr.address] = err.stack
       }
     })
   )
-  if (txsToSave.length !== 0) {
-    await appendTxsToFile(txsToSave)
-  }
   return {
-    failedAddressesWithErrors,
-    syncedTxs
+    failedAddressesWithErrors
   }
 }
 
-export const syncAndSubscribeAddresses = async (addresses: Address[], maxTransactionsToReturn?: number): Promise<SyncAndSubscriptionReturn> => {
+export const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<SyncAndSubscriptionReturn> => {
   const failedAddressesWithErrors: KeyValueT<string> = {}
-  const syncedTxs: KeyValueT<TransactionWithAddressAndPrices[]> = {}
   let txsToSave: Prisma.TransactionCreateManyInput[] = []
-  if (maxTransactionsToReturn === undefined) maxTransactionsToReturn = Infinity
 
   const productionAddressesIds = productionAddresses.map(addr => addr.id)
   await Promise.all(
     addresses.map(async (addr) => {
       try {
         await subscribeAddresses([addr])
-        syncedTxs[addr.address] = await syncAllTransactionsForAddress(addr, maxTransactionsToReturn!)
-        if (productionAddressesIds.includes(addr.id)) {
-          txsToSave = txsToSave.concat(syncedTxs[addr.address])
+        const generator = syncTransactionsForAddress(addr.address)
+        while (true) {
+          const result = await generator.next()
+          if (result.done === true) break
+          if (productionAddressesIds.includes(addr.id)) {
+            const txs = result.value
+            txsToSave = txsToSave.concat(txs)
+            if (txsToSave.length !== 0) {
+              await appendTxsToFile(txsToSave)
+            }
+          }
         }
       } catch (err: any) {
         failedAddressesWithErrors[addr.address] = err.stack
@@ -337,8 +316,7 @@ export const syncAndSubscribeAddresses = async (addresses: Address[], maxTransac
     await appendTxsToFile(txsToSave)
   }
   return {
-    failedAddressesWithErrors,
-    syncedTxs
+    failedAddressesWithErrors
   }
 }
 
