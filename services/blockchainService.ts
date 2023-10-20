@@ -19,7 +19,6 @@ export interface BlockInfo extends BlockchainInfo {
 export interface GetAddressTransactionsParameters {
   addressString: string
   start: number
-  maxTransactionsToReturn: number
 }
 
 interface InputOutput {
@@ -46,7 +45,7 @@ export interface AddressWithTransaction {
 
 export interface BlockchainClient {
   getBalance: (address: string) => Promise<number>
-  syncTransactionsForAddress: (parameters: GetAddressTransactionsParameters) => Promise<TransactionWithAddressAndPrices[]>
+  syncTransactionsForAddress: (addressString: string) => AsyncGenerator<TransactionWithAddressAndPrices[]>
   getBlockchainInfo: (networkSlug: string) => Promise<BlockchainInfo>
   getBlockInfo: (networkSlug: string, height: number) => Promise<BlockInfo>
   getTransactionDetails: (hash: string, networkSlug: string) => Promise<TransactionDetails>
@@ -95,8 +94,11 @@ export async function getBalance (address: string): Promise<number> {
   return await getObjectValueForAddress(address, BLOCKCHAIN_CLIENTS).getBalance(address)
 }
 
-export async function syncTransactionsForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
-  return await getObjectValueForAddress(parameters.addressString, BLOCKCHAIN_CLIENTS).syncTransactionsForAddress(parameters)
+export async function * syncTransactionsForAddress (addressString: string): AsyncGenerator<TransactionWithAddressAndPrices[]> {
+  const innerGenerator = getObjectValueForAddress(addressString, BLOCKCHAIN_CLIENTS).syncTransactionsForAddress(addressString)
+  for await (const value of innerGenerator) {
+    yield value
+  }
 }
 
 export async function getLastBlockTimestamp (networkSlug: string): Promise<number> {
