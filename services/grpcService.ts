@@ -7,12 +7,12 @@ import {
   Transaction
 } from 'grpc-bchrpc-node'
 
-import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, TransactionDetails } from './blockchainService'
+import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, TransactionDetails } from './blockchainService'
 import { getObjectValueForNetworkSlug, getObjectValueForAddress, satoshisToUnit, pubkeyToAddress, removeAddressPrefix, groupAddressesByNetwork } from '../utils/index'
 import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_SLUGS, RESPONSE_MESSAGES, XEC_NETWORK_ID, XEC_TIMESTAMP_THRESHOLD } from '../constants/index'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
-import { fetchAddressBySubstring } from './addressService'
+import { fetchAddressBySubstring, setSyncing, updateLastSynced } from './addressService'
 import { TransactionWithAddressAndPrices, createTransaction, createManyTransactions, base64HashToHex } from './transactionService'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
@@ -128,14 +128,12 @@ export class GrpcBlockchainClient implements BlockchainClient {
     }
   }
 
-  public async syncTransactionsForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
-    const address = await fetchAddressBySubstring(parameters.addressString)
+  public async * syncTransactionsForAddress (addressString: string): AsyncGenerator<TransactionWithAddressAndPrices[]> {
+    const address = await fetchAddressBySubstring(addressString)
     const pageSize = FETCH_N
-    let totalFetchedConfirmedTransactions = 0
-    let page = Math.floor(parameters.start / pageSize)
-    let insertedTransactions: TransactionWithAddressAndPrices[] = []
+    let page = 0
 
-    while (totalFetchedConfirmedTransactions < parameters.maxTransactionsToReturn) {
+    while (true) {
       const client = this.getClientForAddress(address.address)
       const transactions = (await client.getAddressTransactions({
         address: address.address,
@@ -150,12 +148,7 @@ export class GrpcBlockchainClient implements BlockchainClient {
       const confirmedTransactions = transactions.confirmedTransactionsList.filter(this.txThesholdFilter(address))
       const unconfirmedTransactions = transactions.unconfirmedTransactionsList.map(mempoolTx => this.parseMempoolTx(mempoolTx))
 
-      totalFetchedConfirmedTransactions += confirmedTransactions.length
       page += 1
-
-      if (totalFetchedConfirmedTransactions > parameters.maxTransactionsToReturn) {
-        confirmedTransactions.splice(confirmedTransactions.length - (totalFetchedConfirmedTransactions - parameters.maxTransactionsToReturn))
-      }
 
       const transactionsToPersist = [
         ...await Promise.all(
@@ -166,12 +159,12 @@ export class GrpcBlockchainClient implements BlockchainClient {
         )
       ]
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
-      insertedTransactions = [...insertedTransactions, ...persistedTransactions]
+      yield persistedTransactions
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
     }
-
-    return insertedTransactions
+    await setSyncing(addressString, false)
+    await updateLastSynced(addressString)
   };
 
   private async getUtxos (address: string): Promise<GetAddressUnspentOutputsResponse.AsObject> {
