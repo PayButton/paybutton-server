@@ -48,6 +48,7 @@ export const mockedPaybutton: PaybuttonWithAddresses = {
 export const mockedBCHAddress = {
   id: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
   address: 'bitcoincash:qzqh7rwaq9zm4zcv40lh9c9u50gy07gcesdmja8426',
+  syncing: false,
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   networkId: 2,
@@ -59,6 +60,7 @@ export const mockedBCHAddress = {
 export const mockedXECAddress = {
   id: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
   address: 'ecash:qrmm7edwuj4jf7tnvygjyztyy0a0qxvl7quss2vxek',
+  syncing: false,
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   lastSynced: null,
@@ -76,6 +78,7 @@ export const mockedAddressesOnUserProfile = {
   address: {
     id: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
     address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
+    syncing: false,
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     networkId: 1,
@@ -121,6 +124,7 @@ export const mockedAddressList = [
   {
     id: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
     address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
+    syncing: false,
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     lastSynced: null,
@@ -130,6 +134,7 @@ export const mockedAddressList = [
   {
     id: 'a37b9a8c-d262-468b-b1dd-571434a16308',
     address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
+    syncing: false,
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     lastSynced: null,
@@ -139,6 +144,7 @@ export const mockedAddressList = [
   {
     id: '1ca6b7f5-6930-42a7-8ea4-8de57de03251',
     address: 'mockedaddress0nkus8hzv367za28j900c7tv5v8pc',
+    syncing: false,
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     lastSynced: null,
@@ -148,6 +154,7 @@ export const mockedAddressList = [
   {
     id: '4f68e74f-de19-467a-b195-139d98217ada',
     address: 'mockedaddress0nkush83z76az28900c7tj5vpc8f',
+    syncing: false,
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     lastSynced: null,
