@@ -369,13 +369,29 @@ export const mockedNetwork = {
 }
 
 // Transaction
-export const mockedPriceOnTransaction = {
+export const mockedCADPriceOnTransaction = {
   priceId: 1,
   transactionId: 'mocked-uuid',
   createdAt: new Date('2022-11-02T15:18:42.000Z'),
   updatedAt: new Date('2022-11-02T15:18:42.000Z'),
   price: {
     id: 1,
+    value: new Prisma.Decimal('0.00001760'),
+    createdAt: new Date('2022-11-02T15:18:42.000Z'),
+    updatedAt: new Date('2022-11-02T15:18:42.000Z'),
+    timestamp: 1606632380,
+    networkId: 1,
+    quoteId: 2
+  }
+}
+
+export const mockedUSDPriceOnTransaction = {
+  priceId: 2,
+  transactionId: 'mocked-uuid',
+  createdAt: new Date('2022-11-02T15:18:42.000Z'),
+  updatedAt: new Date('2022-11-02T15:18:42.000Z'),
+  price: {
+    id: 2,
     value: new Prisma.Decimal('0.00001759'),
     createdAt: new Date('2022-11-02T15:18:42.000Z'),
     updatedAt: new Date('2022-11-02T15:18:42.000Z'),
@@ -403,7 +419,8 @@ export const mockedTransaction = {
   createdAt: new Date('2022-11-02T15:18:42.000Z'),
   updatedAt: new Date('2022-11-02T15:18:42.000Z'),
   prices: [
-    mockedPriceOnTransaction
+    mockedUSDPriceOnTransaction,
+    mockedCADPriceOnTransaction
   ]
 }
 
