@@ -93,7 +93,7 @@ export const NETWORK_IDS_FROM_SLUGS: KeyValueT<number> = {
   bitcoincash: 2
 }
 
-export const PRICE_CONNECT_MAX_N = 500
+export const PRICE_CONNECT_MAX_N = 10
 
 // When fetching some address transactions, number of transactions to fetch at a time.
 // On chronik, the max allowed is 200
