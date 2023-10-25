@@ -8,6 +8,7 @@ import { cacheManyTxs } from 'redis/dashboardCache'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
+import pLimit from 'p-limit'
 
 export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
@@ -201,16 +202,13 @@ export async function connectTransactionToPrices (tx: Transaction, prisma: Prism
 }
 
 export async function connectTransactionsListToPrices (txList: Transaction[]): Promise<void> {
-  let completedPromises = 0
-  while (completedPromises < txList.length) {
-    const promises = txList
-      .slice(completedPromises, completedPromises + PRICE_CONNECT_MAX_N)
-      .map(async (tx) =>
-        await connectTransactionToPrices(tx, prisma)
-      )
-    const completed = await Promise.all(promises)
-    completedPromises += completed.length
-  }
+  const limit = pLimit(PRICE_CONNECT_MAX_N)
+
+  await Promise.all(txList.map(async tx =>
+    await limit(async (tx: Transaction) => {
+      return await connectTransactionToPrices(tx, prisma)
+    }, tx)
+  ))
 }
 
 export async function createManyTransactions (
