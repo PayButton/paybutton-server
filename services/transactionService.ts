@@ -62,6 +62,23 @@ export async function fetchAddressListTransactions (addressIdList: string[]): Pr
     include: includeAddressAndPrices
   })
 }
+
+export async function fetchPaginatedAddressTransactions (addressString: string, page: number, pageSize: number): Promise<TransactionWithAddressAndPrices[]> {
+  const address = await fetchAddressBySubstring(addressString)
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      addressId: address.id
+    },
+    include: includeAddressAndPrices,
+    orderBy: {
+      timestamp: 'desc'
+    },
+    skip: page * pageSize,
+    take: pageSize
+  })
+  return _.orderBy(transactions, ['timestamp'], ['desc'])
+}
+
 export async function fetchAddressTransactions (addressString: string): Promise<TransactionWithAddressAndPrices[]> {
   const address = await fetchAddressBySubstring(addressString)
   const transactions = await prisma.transaction.findMany({
