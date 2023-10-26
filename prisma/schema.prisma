@@ -19,6 +19,7 @@ model Address {
   network      Network                   @relation(fields: [networkId], references: [id], onUpdate: Restrict)
   userProfiles AddressesOnUserProfiles[]
   lastSynced   DateTime?
+  syncing      Boolean                @default(false)
   paybuttons   AddressesOnButtons[]
   transactions Transaction[]
 
