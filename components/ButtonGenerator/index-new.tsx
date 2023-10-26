@@ -5,7 +5,7 @@ import { PayButton } from '@paybutton/react'
 import { ChromePicker } from 'react-color'
 import CodeBlock from './CodeBlock'
 import { decode } from 'ecashaddrjs'
-import { generatorFieldsCol1, generatorFieldsCol2 } from './data.js'
+import { generatorFormFields } from './data.js'
 import {
   PRIMARY_XEC_COLOR,
   SECONDARY_XEC_COLOR,
@@ -66,6 +66,7 @@ export default function ButtonGenerator (): JSX.Element {
   }
 
   const [button, setButton] = useState<ButtonState>(initialButtonState)
+  const [colorPicker, setColorPicker] = useState('')
 
   const isValidAddress = (address: string): string => {
     try {
@@ -75,68 +76,107 @@ export default function ButtonGenerator (): JSX.Element {
     }
   }
 
-  const handleInputChange = (e: any): any => {
+  const handleChange = (e: any): any => {
     const { name, value } = e.target
-    if (['primary', 'secondary', 'tertiary'].includes(name)) {
-      setButton((prevButton) => ({
-        ...prevButton,
-        theme: {
-          ...prevButton.theme,
-          palette: {
-            ...prevButton.theme.palette,
-            [name]: value
-          }
+    setButton((prevButton) => ({
+      ...prevButton,
+      [name]: value
+    }))
+  }
+
+  const handleCheckBoxChange = (e: any): any => {
+    const { name, checked } = e.target
+    setButton((prevButton) => ({
+      ...prevButton,
+      [name]: checked
+    }))
+  }
+
+  const handleColorChange = (e: any): any => {
+    const { name, value } = e.target
+    setButton((prevButton) => ({
+      ...prevButton,
+      theme: {
+        ...prevButton.theme,
+        palette: {
+          ...prevButton.theme.palette,
+          [name]: value
         }
-      }))
-    } else if (name === 'to') {
-      setButton((prevButton) => ({
-        ...prevButton,
-        [name]: value,
-        validAddress: isValidAddress(value),
-        currency: ['USD', 'CAD', 'EUR', 'GBP', 'AUD'].includes(
-          prevButton.currency
-        )
-          ? prevButton.currency
-          : isValidAddress(value) === 'bitcoincash'
-            ? 'BCH'
-            : 'XEC',
-        currencies: [
-          isValidAddress(value) === 'bitcoincash' ? 'BCH' : 'XEC',
-          ...prevButton.currencies.slice(1) // Keep the rest of the array unchanged
-        ],
-        theme: {
-          ...prevButton.theme, // Keep the existing theme values
-          palette: {
-            ...prevButton.theme.palette, // Keep the existing palette values
-            primary:
-              prevButton.theme.palette.primary !== PRIMARY_XEC_COLOR &&
-              prevButton.theme.palette.primary !== PRIMARY_BCH_COLOR
-                ? prevButton.theme.palette.primary
-                : isValidAddress(value) === 'bitcoincash'
-                  ? PRIMARY_BCH_COLOR
-                  : PRIMARY_XEC_COLOR
-          }
-        }
-      }))
-    } else if (name === 'amount' || name === 'goalAmount') {
-      // Remove non-numeric characters except for a single decimal point
-      let numericValue = e.target.value.replace(/[^\d.]/g, '')
-      // Ensure there's only one decimal point
-      const parts = numericValue.split('.')
-      if (parts.length > 2) {
-        // More than one decimal point, keep only the first part before the second decimal point
-        numericValue = `${parts[0]}.${parts[1]}`
       }
-      setButton((prevButton) => ({
-        ...prevButton,
-        [name]: numericValue
-      }))
-    } else {
-      setButton((prevButton) => ({
-        ...prevButton,
-        [name]: value
-      }))
+    }))
+  }
+
+  const handleSwatchColorChange = (newColor, colorName: string): void => {
+    setButton((prevButton) => ({
+      ...prevButton,
+      theme: {
+        ...prevButton.theme,
+        palette: {
+          ...prevButton.theme.palette,
+          [colorName]: newColor.hex
+        }
+      }
+    }))
+  }
+
+  const handleAmountChange = (e: any): any => {
+    const { name, value } = e.target
+    // Remove non-numeric characters except for a single decimal point
+    let numericValue = e.target.value.replace(/[^\d.]/g, '')
+    // Ensure there's only one decimal point
+    const parts = numericValue.split('.')
+    if (parts.length > 2) {
+      // More than one decimal point, keep only the first part before the second decimal point
+      numericValue = `${parts[0]}.${parts[1]}`
     }
+    setButton((prevButton) => ({
+      ...prevButton,
+      [name]: numericValue
+    }))
+  }
+
+  const handleAddressChange = (e: any): any => {
+    const { name, value } = e.target
+    setButton((prevButton) => ({
+      ...prevButton,
+      [name]: value,
+      validAddress: isValidAddress(value),
+      currency: (!['XEC', 'BCH'].includes(
+        prevButton.currency
+      ))
+        ? prevButton.currency
+        : isValidAddress(value) === 'bitcoincash'
+          ? 'BCH'
+          : 'XEC',
+      currencies: [
+        isValidAddress(value) === 'bitcoincash' ? 'BCH' : 'XEC',
+        ...prevButton.currencies.slice(1) // Keep the rest of the array unchanged
+      ],
+      theme: {
+        ...prevButton.theme, // Keep the existing theme values
+        palette: {
+          ...prevButton.theme.palette, // Keep the existing palette values
+          primary:
+            prevButton.theme.palette.primary !== PRIMARY_XEC_COLOR &&
+            prevButton.theme.palette.primary !== PRIMARY_BCH_COLOR
+              ? prevButton.theme.palette.primary
+              : isValidAddress(value) === 'bitcoincash'
+                ? PRIMARY_BCH_COLOR
+                : PRIMARY_XEC_COLOR
+        }
+      }
+    }))
+  }
+
+  interface FunctionMap {
+    [key: string]: (e: any) => any
+  }
+
+  const functionMap: FunctionMap = {
+    handleChange,
+    handleColorChange,
+    handleAmountChange,
+    handleAddressChange
   }
 
   return (
@@ -150,33 +190,95 @@ export default function ButtonGenerator (): JSX.Element {
         <div className={s.bg_top_ctn}>
           <div className={s.form_ctn}>
             <form action="#" method="post">
-              <div className={s.form_half}>
-                {generatorFieldsCol1.map((field, index) => (
-                    <div className={s[field.className]} key={index}>
-                      <label>{field.name}</label>
-                      <input
-                        name={field.key}
-                        value={button[field.key]}
-                        placeholder={field.placeholder}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                ))}
-              </div>
-
-              <div className={s.form_half}>
-                {generatorFieldsCol2.map((field, index) => (
-                      <div className={s[field.className]} key={index}>
-                        <label>{field.name}</label>
+               {generatorFormFields.map((field, index) => {
+                 let fieldComponent
+                 switch (field.type) {
+                   case 'select':
+                     fieldComponent = (
+                        <select
+                          name={field.key}
+                          value={button[field.key]}
+                          onChange={functionMap[field.onChange]}
+                        >
+                          {field.key === 'currency'
+                            ? button.currencies.map((option, i) => (
+                            <option value={option} key={i}>
+                              {option}
+                            </option>
+                            ))
+                            : field.options.map((option, i) => (
+                            <option value={option} key={i}>
+                              {option}
+                            </option>
+                            ))}
+                        </select>
+                     )
+                     break
+                   case 'input':
+                     fieldComponent = (
                         <input
                           name={field.key}
                           value={button[field.key]}
                           placeholder={field.placeholder}
-                          onChange={handleInputChange}
+                          onChange={functionMap[field.onChange]}
+                          maxLength={field.key === 'amount' ? 13 : 200}
                         />
+                     )
+                     break
+                   case 'color':
+                     fieldComponent = (
+                       <div className={s.swatch_input_ctn}>
+                       {colorPicker === field.key && (
+                         <>
+                           <div
+                             className={s.picker_outerctn}
+                             onClick={() => setColorPicker('')}
+                           />
+                           <div className={s.picker_ctn}>
+                             <ChromePicker
+                               color={button.theme.palette[field.key]}
+                               onChange={(color) =>
+                                 handleSwatchColorChange(color, field.key)
+                               }
+                             />
+                           </div>
+                         </>
+                       )}
+                       <div className={s.colorinput}>
+                         <div
+                           className={s.swatch}
+                           style={{
+                             background: `${button.theme.palette[field.key]}`
+                           }}
+                           onClick={() => setColorPicker(field.key)}
+                         />
+                       </div>
+                     </div>
+                     )
+                     break
+                   case 'boolean':
+                     fieldComponent = (
+                          <label className={s.switch}>
+                          <input
+                            type="checkbox"
+                            checked={button[field.key]}
+                            onChange={handleCheckBoxChange}
+                            name={field.key}
+                          />
+                          <span className={s.slider}></span>
+                        </label>
+                     )
+                     break
+                   default:
+                     fieldComponent = null // Handle unsupported field types as needed
+                 }
+                 return (
+                    <div className={s[field.className]} key={index}>
+                      <label>{field.name}</label>
+                      {fieldComponent}
                     </div>
-                ))}
-              </div>
+                 )
+               })}
             </form>
           </div>
           <div className={s.preview_ctn}>

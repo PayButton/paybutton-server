@@ -30,6 +30,7 @@
 .form_ctn form {
   display: flex;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .form_ctn form label {
@@ -48,34 +49,31 @@
   height: 42px;
 }
 
-.form_half {
-  width: 70%;
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.form_half:last-child {
-  width: 30%;
-}
-
-.col100,
-.col50,
-.col33,
+.col70,
+.col15,
+.col15_center,
+.col10,
 .colCurrency {
   padding: 3px;
 }
 
-.col100 {
-  width: 100%;
+.col70 {
+  width: 70%;
 }
 
-.col50 {
-  width: 50%;
+.col15 {
+  width: 15%;
   flex-grow: 1;
 }
 
-.col33 {
-  width: 33.3%;
+.col15_center {
+  width: 15%;
+  flex-grow: 1;
+  text-align: center;
+}
+
+.col10 {
+  width: 10%;
 }
 
 .colCurrency {

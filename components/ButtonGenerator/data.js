@@ -1,84 +1,100 @@
-export const generatorFieldsCol1 = [
+export const generatorFormFields = [
   {
     name: 'To',
     placeholder: 'Your Address',
     key: 'to',
-    className: 'col100'
+    className: 'col70',
+    type: 'input',
+    onChange: 'handleAddressChange'
+  },
+  {
+    name: 'Amount',
+    placeholder: '0',
+    key: 'amount',
+    className: 'col15',
+    type: 'input',
+    onChange: 'handleAmountChange'
+  },
+  {
+    name: 'Currency',
+    key: 'currency',
+    className: 'colCurrency',
+    options: ['XEC', 'USD', 'CAD'],
+    type: 'select',
+    onChange: 'handleChange'
   },
   {
     name: 'Text',
     placeholder: 'Donate',
     key: 'text',
-    className: 'col100'
-  },
-  {
-    name: 'Hover Text',
-    placeholder: 'Send XEC',
-    key: 'hoverText',
-    className: 'col100'
-  },
-  {
-    name: 'Success Text',
-    placeholder: 'Thanks for your support!',
-    key: 'successText',
-    className: 'col100'
-  }
-]
-
-export const generatorFieldsCol2 = [
-  {
-    name: 'Amount',
-    placeholder: '0',
-    key: 'amount',
-    className: 'col50'
-  },
-  {
-    name: 'Currency',
-    placeholder: 'XEC',
-    key: 'currency',
-    className: 'colCurrency',
-    options: ['XEC', 'USD', 'CAD']
+    className: 'col70',
+    type: 'input',
+    onChange: 'handleChange'
   },
   {
     name: 'Animation',
-    placeholder: 'animation',
     key: 'animation',
-    className: 'col50'
+    className: 'col15',
+    options: ['slide', 'invert', 'none'],
+    type: 'select',
+    onChange: 'handleChange'
   },
   {
     name: 'Goal Amount',
     placeholder: 'Goal Amount',
     key: 'goalAmount',
-    className: 'col50'
+    className: 'col15',
+    type: 'input',
+    onChange: 'handleAmountChange'
   },
   {
-    name: 'Color 1',
-    placeholder: 'Color 1',
-    key: 'color1',
-    className: 'col33'
+    name: 'Hover Text',
+    placeholder: 'Send XEC',
+    key: 'hoverText',
+    className: 'col70',
+    type: 'input',
+    onChange: 'handleChange'
   },
   {
-    name: 'Color 2',
-    placeholder: 'Color 2',
-    key: 'color2',
-    className: 'col33'
+    name: 'Primary',
+    key: 'primary',
+    className: 'col10',
+    type: 'color'
   },
   {
-    name: 'Color 3',
-    placeholder: 'Color 3',
-    key: 'color3',
-    className: 'col33'
+    name: 'Secondary',
+    key: 'secondary',
+    className: 'col10',
+    type: 'color'
+  },
+  {
+    name: 'Tertiary',
+    key: 'tertiary',
+    className: 'col10',
+    type: 'color'
+  },
+  {
+    name: 'Success Text',
+    placeholder: 'Thanks for your support!',
+    key: 'successText',
+    className: 'col70',
+    type: 'input',
+    onChange: 'handleChange'
   },
   {
     name: 'Widget',
     placeholder: 'widget',
     key: 'widget',
-    className: 'col50'
+    className: 'col15_center',
+    type: 'boolean',
+    default: false
   },
   {
     name: 'Random Satoshis',
     placeholder: 'randomSatoshis',
     key: 'randomSatoshis',
-    className: 'col50'
+    className: 'col15_center',
+    type: 'boolean',
+    default: true
   }
 ]
