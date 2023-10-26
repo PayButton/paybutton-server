@@ -10,7 +10,7 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 
 const DynamicButtonGenerator = dynamic(
-  async () => await import('components/ButtonGenerator'),
+  async () => await import('components/ButtonGenerator/index-new'),
   {
     ssr: false
   }

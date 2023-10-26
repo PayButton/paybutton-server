@@ -14,24 +14,22 @@
 
 .form_ctn {
   width: 70%;
+  align-self: flex-start;
+}
+
+.preview_ctn {
+  width: 30%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  align-self: stretch;
+  position: relative;
 }
 
 .form_ctn form {
   display: flex;
-  gap: 5px;
   width: 100%;
-}
-
-.form_ctn form input,
-.form_ctn form select {
-  width: 100%;
-}
-
-.form_ctn form input,
-.form_ctn form select {
-  border-color: rgb(217, 217, 217);
-  background-color: var(--secondary-bg-color);
-  border-radius: 5px;
 }
 
 .form_ctn form label {
@@ -50,23 +48,149 @@
   height: 42px;
 }
 
-.preview_ctn {
-  width: 30%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #fff;
-  align-self: stretch;
-  position: relative;
-}
-
 .form_half {
   width: 70%;
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .form_half:last-child {
   width: 30%;
 }
+
+.col100,
+.col50,
+.col33,
+.colCurrency {
+  padding: 3px;
+}
+
+.col100 {
+  width: 100%;
+}
+
+.col50 {
+  width: 50%;
+  flex-grow: 1;
+}
+
+.col33 {
+  width: 33.3%;
+}
+
+.colCurrency {
+  width: 80px;
+}
+
+.form_ctn form input,
+.form_ctn form select {
+  width: 100%;
+}
+
+.form_ctn form input,
+.form_ctn form select {
+  border-color: rgb(217, 217, 217);
+  background-color: var(--secondary-bg-color);
+  border-radius: 5px;
+}
+
+.form_ctn form .checkbox {
+  width: 22px;
+  height: 22px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.form_ctn form .checkbox:checked::after {
+  width: 0.18em;
+  height: 0.32em;
+  top: -4px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  border-right: solid var(--bg) 0.08em;
+  border-bottom: solid var(--bg) 0.08em;
+  font-size: 2em;
+}
+
+.form_row {
+  display: flex;
+  width: 100%;
+  gap: 5px;
+}
+
+.form_row_input_ctn {
+  width: 100%;
+}
+
+.form_row_checkbox_ctn {
+  width: 100%;
+  text-align: center;
+}
+
+/*****************************************************************************************************/
+
+.switch {
+  --toggleHeight: 32px;
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: var(--toggleHeight);
+  margin-top: 4px;
+  margin-bottom: 14px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--secondary-bg-color);
+  transition: 0.4s;
+  border-radius: 100px;
+  border: 1px solid rgb(217, 217, 217);
+}
+
+.slider:before {
+  position: absolute;
+  content: '';
+  height: calc(var(--toggleHeight) - 8px);
+  width: calc(var(--toggleHeight) - 8px);
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--primary-text-color);
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--accent-color);
+}
+
+input:checked + .slider:before {
+  background-color: var(--secondary-bg-color);
+}
+
+input:focus + .slider {
+  box-shadow: none;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/*****************************************************************************************************/
 
 .input_ctn {
   display: flex;
@@ -99,7 +223,7 @@
   background-color: var(--secondary-bg-color);
   border-radius: 5px;
   width: 100%;
-  display: inline-block;
+  margin-bottom: 8px;
   height: 42px;
   padding: 4px;
 }
@@ -233,10 +357,21 @@ body[data-theme='dark'] .codetopbar {
 .advanced_ctn {
   font-size: 14px;
   padding: 10px;
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  gap: 20px;
 }
 
-.advanced_ctn a {
+.advanced_ctn a,
+.advanced_ctn div {
   font-size: 14px;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+.advanced_ctn a:hover,
+.advanced_ctn div:hover {
   color: var(--accent-color);
 }
 
@@ -263,6 +398,10 @@ body[data-theme='dark'] .form_ctn .colorinput {
   color: #fff;
 }
 
+body[data-theme='dark'] .form_ctn form .slider {
+  border-color: rgb(85, 85, 85);
+}
+
 body[data-theme='dark'] .form_ctn .colorinput .swatch {
   border-color: rgb(85, 85, 85);
 }
@@ -280,6 +419,8 @@ body[data-theme='dark'] .preview_ctn {
 @media (max-width: 915px) {
   .bg_top_ctn {
     flex-direction: column;
+    position: relative;
+    padding-bottom: 60px;
   }
 
   .form_ctn,
@@ -317,5 +458,15 @@ body[data-theme='dark'] .preview_ctn {
 
   .code_ctn code {
     font-size: 14px !important;
+  }
+
+  .advanced_ctn {
+    padding: 0;
+    position: absolute;
+    bottom: 15px;
+    text-align: center;
+    justify-content: center;
+    width: 100%;
+    left: 0;
   }
 }
