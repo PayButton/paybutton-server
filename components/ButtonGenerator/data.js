@@ -3,7 +3,7 @@ export const generatorFormFields = [
     name: 'To',
     placeholder: 'Your Address',
     key: 'to',
-    className: 'col70',
+    className: 'col_lg',
     type: 'input',
     onChange: 'handleAddressChange'
   },
@@ -11,14 +11,14 @@ export const generatorFormFields = [
     name: 'Amount',
     placeholder: '0',
     key: 'amount',
-    className: 'col15',
+    className: 'col_sm',
     type: 'input',
     onChange: 'handleAmountChange'
   },
   {
     name: 'Currency',
     key: 'currency',
-    className: 'colCurrency',
+    className: 'col_currency',
     options: ['XEC', 'USD', 'CAD'],
     type: 'select',
     onChange: 'handleChange'
@@ -27,14 +27,14 @@ export const generatorFormFields = [
     name: 'Text',
     placeholder: 'Donate',
     key: 'text',
-    className: 'col70',
+    className: 'col_lg',
     type: 'input',
     onChange: 'handleChange'
   },
   {
     name: 'Animation',
     key: 'animation',
-    className: 'col15',
+    className: 'col_sm',
     options: ['slide', 'invert', 'none'],
     type: 'select',
     onChange: 'handleChange'
@@ -43,7 +43,7 @@ export const generatorFormFields = [
     name: 'Goal Amount',
     placeholder: 'Goal Amount',
     key: 'goalAmount',
-    className: 'col15',
+    className: 'col_sm',
     type: 'input',
     onChange: 'handleAmountChange'
   },
@@ -51,33 +51,33 @@ export const generatorFormFields = [
     name: 'Hover Text',
     placeholder: 'Send XEC',
     key: 'hoverText',
-    className: 'col70',
+    className: 'col_lg',
     type: 'input',
     onChange: 'handleChange'
   },
   {
     name: 'Primary',
     key: 'primary',
-    className: 'col10',
+    className: 'col_xs',
     type: 'color'
   },
   {
     name: 'Secondary',
     key: 'secondary',
-    className: 'col10',
+    className: 'col_xs',
     type: 'color'
   },
   {
     name: 'Tertiary',
     key: 'tertiary',
-    className: 'col10',
+    className: 'col_xs',
     type: 'color'
   },
   {
     name: 'Success Text',
     placeholder: 'Thanks for your support!',
     key: 'successText',
-    className: 'col70',
+    className: 'col_lg',
     type: 'input',
     onChange: 'handleChange'
   },
@@ -85,7 +85,7 @@ export const generatorFormFields = [
     name: 'Widget',
     placeholder: 'widget',
     key: 'widget',
-    className: 'col15_center',
+    className: 'col_sm_center',
     type: 'boolean',
     default: false
   },
@@ -93,7 +93,7 @@ export const generatorFormFields = [
     name: 'Random Satoshis',
     placeholder: 'randomSatoshis',
     key: 'randomSatoshis',
-    className: 'col15_center',
+    className: 'col_sm_center',
     type: 'boolean',
     default: true
   }

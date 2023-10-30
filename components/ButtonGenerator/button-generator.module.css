@@ -56,34 +56,34 @@
   height: 42px;
 }
 
-.col70,
-.col15,
-.col15_center,
-.col10,
-.colCurrency {
+.col_lg,
+.col_sm,
+.col_sm_center,
+.col_xs,
+.col_currency {
   padding: 3px;
 }
 
-.col70 {
+.col_lg {
   width: 70%;
 }
 
-.col15 {
+.col_sm {
   width: 15%;
   flex-grow: 1;
 }
 
-.col15_center {
+.col_sm_center {
   width: 15%;
   flex-grow: 1;
   text-align: center;
 }
 
-.col10 {
+.col_xs {
   width: 10%;
 }
 
-.colCurrency {
+.col_currency {
   width: 80px;
 }
 
