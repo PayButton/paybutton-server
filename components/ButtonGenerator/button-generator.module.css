@@ -7,9 +7,16 @@
   width: 100%;
   padding: 20px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 20px;
   border-radius: 10px 10px 0 0;
+}
+
+.form_preview_ctn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 .form_ctn {
@@ -354,10 +361,9 @@ body[data-theme='dark'] .codetopbar {
 
 .advanced_ctn {
   font-size: 14px;
-  padding: 10px;
+  padding: 0 10px 10px;
   display: flex;
   align-items: center;
-  margin-top: 10px;
   gap: 20px;
 }
 

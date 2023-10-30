@@ -1,27 +1,27 @@
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import style from './button-generator.module.css';
-import CopyIcon from '/assets/copy.png';
-import Prism from 'prismjs';
-import 'prismjs/themes/prism-okaidia.css';
-import 'prismjs/components/prism-jsx.min';
+import { useEffect, useState } from 'react'
+import Image from 'next/image'
+import style from './button-generator.module.css'
+import CopyIcon from '/assets/copy.png'
+import Prism from 'prismjs'
+import 'prismjs/themes/prism-okaidia.css'
+import 'prismjs/components/prism-jsx.min'
 import {
   PRIMARY_XEC_COLOR,
   SECONDARY_XEC_COLOR,
   TERTIARY_XEC_COLOR,
   PRIMARY_BCH_COLOR,
   SECONDARY_BCH_COLOR,
-  TERTIARY_BCH_COLOR,
-} from '/constants';
+  TERTIARY_BCH_COLOR
+} from '/constants'
 
 export default function CodeBlock({ button }): JSX.Element {
-  const [isCopied, setIsCopied] = useState(false);
-  const [codeType, setCodeType] = useState('HTML');
+  const [isCopied, setIsCopied] = useState(false)
+  const [codeType, setCodeType] = useState('HTML')
   const [code, setCode] = useState({
     html: '',
     javascript: '',
-    react: '',
-  });
+    react: ''
+  })
 
   const codetypes = ['HTML', 'JavaScript', 'React'];
 
@@ -30,19 +30,19 @@ export default function CodeBlock({ button }): JSX.Element {
       codeType === 'HTML'
         ? code.html
         : codeType === 'JavaScript'
-        ? code.javascript
-        : code.react;
+          ? code.javascript
+          : code.react
 
     try {
-      await navigator.clipboard.writeText(codeToCopy);
-      setIsCopied(true);
+      await navigator.clipboard.writeText(codeToCopy)
+      setIsCopied(true)
       setTimeout(() => {
-        setIsCopied(false);
-      }, 1000); // Reset the "Copied" state after 2 seconds
+        setIsCopied(false)
+      }, 1000)
     } catch (error) {
-      console.error('Copy failed:', error);
+      console.error('Copy failed:', error)
     }
-  };
+  }
 
   const checkValue = (value, attribute, type) => {
     if (type === 'html') {

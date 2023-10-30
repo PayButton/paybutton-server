@@ -188,6 +188,7 @@ export default function ButtonGenerator (): JSX.Element {
           website today!
         </p>
         <div className={s.bg_top_ctn}>
+        <div className={s.form_preview_ctn}>
           <div className={s.form_ctn}>
             <form action="#" method="post">
                {generatorFormFields.map((field, index) => {
@@ -309,6 +310,17 @@ export default function ButtonGenerator (): JSX.Element {
                 : (
                     'Enter an address'
                   )}
+          </div>
+          </div>
+          <div className={s.advanced_ctn}>
+            <div onClick={() => setButton(initialButtonState)}>Reset</div>
+            <a
+              href="https://docs.paybutton.org/#/?id=what-is-paybutton"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Documentation
+            </a>
           </div>
         </div>
         <CodeBlock button={button} />
