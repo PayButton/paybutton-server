@@ -47,7 +47,6 @@
     "mysql2": "^2.3.3",
     "next": "^13.2.3",
     "node-mocks-http": "^1.11.0",
-    "p-limit": "^4.0.0",
     "prisma": "^5.5.0",
     "prismjs": "^1.29.0",
     "randexp": "^0.5.3",
