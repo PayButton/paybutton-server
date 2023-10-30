@@ -1,8 +1,9 @@
 import prisma from 'prisma/clientInstance'
 import * as transactionService from 'services/transactionService'
 import { prismaMock } from 'prisma/mockedClient'
-import { mockedTransaction, mockedBCHAddress, mockedUSDPriceOnTransaction } from '../mockedObjects'
+import { mockedBCHAddress, mockedUSDPriceOnTransaction, mockedCADPriceOnTransaction, mockedTransaction } from '../mockedObjects'
 import * as dashboardCache from 'redis/dashboardCache'
+import { Prisma } from '@prisma/client'
 
 describe('Create services', () => {
   it('Return created transaction', async () => {
@@ -53,8 +54,31 @@ describe('Create services', () => {
 describe('Amount transactioned', () => {
   it('Negative transaction', async () => {
     const amount = await transactionService.getTransactionValue(
-      mockedTransaction
+      {
+        ...mockedTransaction,
+        prices: [
+          {
+            ...mockedUSDPriceOnTransaction,
+            price: {
+              ...mockedUSDPriceOnTransaction.price,
+              value: new Prisma.Decimal('-2')
+            }
+          },
+          {
+            ...mockedCADPriceOnTransaction,
+            price: {
+              ...mockedCADPriceOnTransaction.price,
+              value: new Prisma.Decimal('-3')
+            }
+          }
+        ]
+      }
     )
+    expect(amount.usd.toString()).toBe('-8.62495448')
+    expect(amount.cad.toString()).toBe('-12.93743172')
+  })
+  it('Positive transaction', async () => {
+    const amount = await transactionService.getTransactionValue(mockedTransaction)
     expect(amount.usd.toString()).toBe('0.0000758564746516')
     expect(amount.cad.toString()).toBe('0.000075899599424')
   })
