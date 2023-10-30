@@ -10,6 +10,8 @@ import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
 import pLimit from 'p-limit'
 
+const limit = pLimit(1)
+
 export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
@@ -202,8 +204,6 @@ export async function connectTransactionToPrices (tx: Transaction, prisma: Prism
 }
 
 export async function connectTransactionsListToPrices (txList: Transaction[]): Promise<void> {
-  const limit = pLimit(1)
-
   await Promise.all(txList.map(async tx =>
     await limit(async (tx: Transaction) => {
       return await connectTransactionToPrices(tx, prisma)
@@ -216,7 +216,6 @@ export async function createManyTransactions (
 ): Promise<TransactionWithAddressAndPrices[]> {
   // we don't use `createMany` to ignore conflicts between the sync and the subscription
   // and we don't return transactions that were updated, only ones that were created
-  const limit = pLimit(1)
   const insertedTransactionsDistinguished = await Promise.all(
     transactionsData.map(async tx =>
       await limit(async (tx: Prisma.TransactionUncheckedCreateInput) => {
