@@ -8,9 +8,6 @@ import { cacheManyTxs } from 'redis/dashboardCache'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
-import pLimit from 'p-limit'
-
-const limit = pLimit(1)
 
 export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
@@ -204,11 +201,11 @@ export async function connectTransactionToPrices (tx: Transaction, prisma: Prism
 }
 
 export async function connectTransactionsListToPrices (txList: Transaction[]): Promise<void> {
-  await Promise.all(txList.map(async tx =>
-    await limit(async (tx: Transaction) => {
-      return await connectTransactionToPrices(tx, prisma)
-    }, tx)
-  ))
+  await prisma.$transaction(async (prisma) => {
+    for (const tx of txList) {
+      await connectTransactionToPrices(tx, prisma)
+    }
+  })
 }
 
 export async function createManyTransactions (
@@ -216,26 +213,25 @@ export async function createManyTransactions (
 ): Promise<TransactionWithAddressAndPrices[]> {
   // we don't use `createMany` to ignore conflicts between the sync and the subscription
   // and we don't return transactions that were updated, only ones that were created
-  const insertedTransactionsDistinguished = await Promise.all(
-    transactionsData.map(async tx =>
-      await limit(async (tx: Prisma.TransactionUncheckedCreateInput) => {
-        const upsertedTx = await prisma.transaction.upsert({
-          create: tx,
-          where: {
-            Transaction_hash_addressId_unique_constraint: {
-              hash: tx.hash,
-              addressId: tx.addressId
-            }
-          },
-          update: {}
-        })
-        return {
-          tx: upsertedTx,
-          isCreated: upsertedTx.createdAt.getTime() === upsertedTx.updatedAt.getTime()
-        }
-      }, tx)
-    )
-  )
+  const insertedTransactionsDistinguished: any = []
+  await prisma.$transaction(async (prisma) => {
+    for (const tx of transactionsData) {
+      const upsertedTx = await prisma.transaction.upsert({
+        create: tx,
+        where: {
+          Transaction_hash_addressId_unique_constraint: {
+            hash: tx.hash,
+            addressId: tx.addressId
+          }
+        },
+        update: {}
+      })
+      insertedTransactionsDistinguished.push({
+        tx: upsertedTx,
+        isCreated: upsertedTx.createdAt.getTime() === upsertedTx.updatedAt.getTime()
+      })
+    }
+  })
   const insertedTransactions = insertedTransactionsDistinguished
     .filter(txD => txD.isCreated)
     .map(txD => txD.tx)
