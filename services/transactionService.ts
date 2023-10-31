@@ -208,12 +208,17 @@ export async function connectTransactionsListToPrices (txList: Transaction[]): P
   })
 }
 
+interface TxDistinguished {
+  tx: Transaction
+  isCreated: boolean
+}
+
 export async function createManyTransactions (
   transactionsData: Prisma.TransactionUncheckedCreateInput[]
 ): Promise<TransactionWithAddressAndPrices[]> {
   // we don't use `createMany` to ignore conflicts between the sync and the subscription
   // and we don't return transactions that were updated, only ones that were created
-  const insertedTransactionsDistinguished: any = []
+  const insertedTransactionsDistinguished: TxDistinguished[] = []
   await prisma.$transaction(async (prisma) => {
     for (const tx of transactionsData) {
       const upsertedTx = await prisma.transaction.upsert({
