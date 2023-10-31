@@ -2,23 +2,33 @@ import subprocess
 import json
 import matplotlib.pyplot as plt
 import csv
+from dotenv import load_dotenv
+import os
+import time
+
+SPEED_TICKS = 5
 
 def main():
     pass
 
-def write_to_csv(dev_cpu, db_cpu, dev_mem, db_mem):
+def write_to_csv(dev_cpu, db_cpu, dev_mem, db_mem, speed):
     with open('docker_stats.csv', mode='a') as csv_file:
         writer = csv.writer(csv_file)
-        writer.writerow([dev_cpu, db_cpu, dev_mem, db_mem])
+        writer.writerow([dev_cpu, db_cpu, dev_mem, db_mem, speed])
 
-def live_plot(dev_cpu_list, db_cpu_list, dev_mem_list, db_mem_list):
-    plt.subplot(1, 2, 1)
+def live_plot(dev_cpu_list, db_cpu_list, dev_mem_list, db_mem_list, speed_list):
+    plt.subplot(212)
+    plt.plot(speed_list, label='dev-cpu')
+    plt.title('Tx insertions/ tick')
+    plt.legend()
+
+    plt.subplot(222)
     plt.plot(dev_cpu_list, label='dev-cpu')
     plt.plot(db_cpu_list, label='db-cpu')
     plt.title('CPU Usage')
     plt.legend()
 
-    plt.subplot(1, 2, 2)
+    plt.subplot(221)
     plt.plot(dev_mem_list, label='dev-mem')
     plt.plot(db_mem_list, label='db-mem')
     plt.title('Memory Usage')
@@ -34,12 +44,35 @@ def clean_docker_output(s):
     s = json.loads(s[s.index('{'):])
     return s
 
+def get_speed_command():
+    load_dotenv(dotenv_path=".env", override=True)
+    load_dotenv(dotenv_path=".env.local", override=True)
+    MAIN_DB_USER = os.getenv("MAIN_DB_USER")
+    MAIN_DB_PASSWORD = os.getenv("MAIN_DB_PASSWORD")
+    MAIN_DB_NAME = os.getenv("MAIN_DB_NAME")
+    QUERY = 'SELECT COUNT(*) FROM Transaction;'
+
+    return [
+        'docker', 'exec', '-i', 'paybutton-db', 'mariadb',
+        '-u', MAIN_DB_USER,
+        f'-p{MAIN_DB_PASSWORD}',
+        '-D', MAIN_DB_NAME,
+        '-e', QUERY,
+        '-s', '--skip-column-names'
+    ]
+
+def get_speed(insertion_list):
+    return sum(
+        (float(a[0]) - float(b[0]))/(a[1] - b[1]) for a, b in
+        zip(insertion_list[1:], insertion_list[:-1])
+    ) / (SPEED_TICKS - 1)
 
 def read_docker_stats():
     dev_cpu_list = []
     db_cpu_list = []
     dev_mem_list = []
     db_mem_list = []
+    insertion_speed_list = []
 
     # Initialize CSV file
     with open('docker_stats.csv', mode='w') as csv_file:
@@ -49,14 +82,28 @@ def read_docker_stats():
     # Launch the command as a subprocess that streams the data
     dev_process = subprocess.Popen(['docker', 'stats', 'paybutton-dev', '--format', 'json'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     db_process = subprocess.Popen(['docker', 'stats', 'paybutton-db', '--format', 'json'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    speed_command = get_speed_command()
 
+    last_speed_ticks = []
     while True:
         dev_output = dev_process.stdout.readline()
         db_output = db_process.stdout.readline()
+        insertion_speed = subprocess.Popen(speed_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        insertion_time = time.time()
+        speed_output = insertion_speed.stdout.readline()
+        print('oia o out', speed_output)
         if dev_output == '' and dev_process.poll() is not None:
             break
         if db_output == '' and db_process.poll() is not None:
             break
+
+        if len(last_speed_ticks) < 5:
+            last_speed_ticks.append((speed_output, insertion_time))
+            speed = 0
+        else:
+            last_speed_ticks.pop(0)
+            last_speed_ticks.append((speed_output, insertion_time))
+            speed = get_speed(last_speed_ticks)
 
         dev_stats = clean_docker_output(dev_output)
         db_stats = clean_docker_output(db_output)
@@ -70,9 +117,10 @@ def read_docker_stats():
         db_cpu_list.append(float(db_cpu.strip('%')))
         dev_mem_list.append(float(dev_mem.strip('%')))
         db_mem_list.append(float(db_mem.strip('%')))
+        insertion_speed_list.append(speed)
 
-        write_to_csv(dev_cpu, db_cpu, dev_mem, db_mem)
-        live_plot(dev_cpu_list, db_cpu_list, dev_mem_list, db_mem_list)
+        write_to_csv(dev_cpu, db_cpu, dev_mem, db_mem, speed)
+        live_plot(dev_cpu_list, db_cpu_list, dev_mem_list, db_mem_list, insertion_speed_list)
 
 
 read_docker_stats()
