@@ -3,7 +3,7 @@ import { useTable, useSortBy, usePagination } from 'react-table'
 // Custom sorting function for number columns to work with any value type and negative numbers
 // Needs to be imported where the table column is defined and used with, sortType: compareNumericString
 // will place any non-numeric values at the end
-export const compareNumericString = (rowA, rowB, id, desc): number => {
+export const compareNumericString = (rowA, rowB, id, desc: boolean): number => {
   let a = Number.parseFloat(rowA.values[id])
   let b = Number.parseFloat(rowB.values[id])
   if (Number.isNaN(a)) {
@@ -17,7 +17,11 @@ export const compareNumericString = (rowA, rowB, id, desc): number => {
   return 0
 }
 
-const TableContainer = ({ columns, data, opts, ssr }): JSX.Element => {
+interface IProps {
+  ssr: boolean
+}
+
+const TableContainer = ({ columns, data, opts, ssr }: IProps): JSX.Element => {
   const sortColumn = opts?.sortColumn
   const localStoragePageSize = ssr ? 10 : localStorage.getItem('pageSize') !== null ? +localStorage.getItem('pageSize') : 10
   const {
