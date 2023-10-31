@@ -16,10 +16,10 @@ def write_to_csv(dev_cpu, db_cpu, dev_mem, db_mem, speed):
         writer = csv.writer(csv_file)
         writer.writerow([dev_cpu, db_cpu, dev_mem, db_mem, speed])
 
-def live_plot(dev_cpu_list, db_cpu_list, dev_mem_list, db_mem_list, speed_list):
+def live_plot(dev_cpu_list, db_cpu_list, dev_mem_list, db_mem_list, speed_list, save=False):
     plt.subplot(212)
-    plt.plot(speed_list, label='dev-cpu')
-    plt.title('Tx insertions/ tick')
+    plt.plot(speed_list, label='speed')
+    plt.title('Tx insertions/s')
     plt.legend()
 
     plt.subplot(222)
@@ -34,9 +34,11 @@ def live_plot(dev_cpu_list, db_cpu_list, dev_mem_list, db_mem_list, speed_list):
     plt.title('Memory Usage')
     plt.legend()
 
+    if save:
+        plt.savefig('performance_plot.jpg')
+
     plt.pause(0.1)
     plt.clf()
-
 
 # clean ANSI escape sequences, breaks, and get dict
 def clean_docker_output(s):
@@ -119,8 +121,8 @@ def read_docker_stats():
         db_mem_list.append(float(db_mem.strip('%')))
         insertion_speed_list.append(speed)
 
-        write_to_csv(dev_cpu, db_cpu, dev_mem, db_mem, speed)
-        live_plot(dev_cpu_list, db_cpu_list, dev_mem_list, db_mem_list, insertion_speed_list)
+        #write_to_csv(dev_cpu, db_cpu, dev_mem, db_mem, speed)
+        live_plot(dev_cpu_list, db_cpu_list, dev_mem_list, db_mem_list, insertion_speed_list, save=True)
 
 
 read_docker_stats()
