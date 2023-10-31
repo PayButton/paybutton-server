@@ -1,13 +1,13 @@
 import { ChronikClient, ScriptType, SubscribeMsg, Tx, Utxo, WsConfig, WsEndpoint } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, GetAddressTransactionsParameters, NodeJsGlobalChronik, TransactionDetails } from './blockchainService'
+import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, NodeJsGlobalChronik, TransactionDetails } from './blockchainService'
 import { NETWORK_SLUGS, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT } from 'constants/index'
 import { TransactionWithAddressAndPrices, createManyTransactions, deleteTransactions, fetchUnconfirmedTransactions, createTransaction, syncAddresses } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
-import { fetchAddressBySubstring, fetchAllAddressesForNetworkId, getLatestTxTimestampForAddress } from './addressService'
+import { fetchAddressBySubstring, fetchAllAddressesForNetworkId, getLatestTxTimestampForAddress, setSyncing, updateLastSynced } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
@@ -96,18 +96,20 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
-  public async syncTransactionsForAddress (parameters: GetAddressTransactionsParameters): Promise<TransactionWithAddressAndPrices[]> {
-    const address = await fetchAddressBySubstring(parameters.addressString)
-    const addressString = address.address
+  public async getPaginatedTxs (addressString: string, page: number, pageSize: number): Promise<Tx[]> {
+    const { type, hash160 } = toHash160(addressString)
+    return (await this.chronik.script(type, hash160).history(page, pageSize)).txs
+  }
+
+  public async * syncTransactionsForAddress (addressString: string): AsyncGenerator<TransactionWithAddressAndPrices[]> {
+    const address = await fetchAddressBySubstring(addressString)
     const pageSize = FETCH_N
-    let totalFetchedConfirmedTransactions = 0
-    let page = Math.floor(parameters.start / pageSize)
-    let insertedTransactions: TransactionWithAddressAndPrices[] = []
+    let page = 0
     const latestTimestamp = await getLatestTxTimestampForAddress(address.id) ?? 0
 
-    while (totalFetchedConfirmedTransactions < parameters.maxTransactionsToReturn) {
-      const { type, hash160 } = toHash160(addressString)
-      let transactions = (await this.chronik.script(type, hash160).history(page, pageSize)).txs
+    await setSyncing(addressString, true)
+    while (true) {
+      let transactions = await this.getPaginatedTxs(addressString, page, pageSize)
 
       // filter out transactions that happened before a certain date set in constants/index,
       //   this date is understood as the beginning and we don't look past it
@@ -122,12 +124,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       const confirmedTransactions = transactions.filter(t => t.block !== undefined)
       const unconfirmedTransactions = transactions.filter(t => t.block === undefined)
 
-      totalFetchedConfirmedTransactions += confirmedTransactions.length
       page += 1
-
-      if (totalFetchedConfirmedTransactions > parameters.maxTransactionsToReturn) {
-        confirmedTransactions.splice(confirmedTransactions.length - (totalFetchedConfirmedTransactions - parameters.maxTransactionsToReturn))
-      }
 
       const transactionsToPersist = await Promise.all(
         [...confirmedTransactions, ...unconfirmedTransactions].map(async tx => await this.getTransactionFromChronikTransaction(tx, address))
@@ -139,12 +136,12 @@ export class ChronikBlockchainClient implements BlockchainClient {
       broadcastTxData.address = addressString
       broadcastTxData.txs = persistedTransactions
       this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
-      insertedTransactions = [...insertedTransactions, ...persistedTransactions]
+      yield persistedTransactions
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
     }
-
-    return insertedTransactions
+    await setSyncing(addressString, false)
+    await updateLastSynced(addressString)
   }
 
   private async getUtxos (address: string): Promise<Utxo[]> {
@@ -263,7 +260,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     )
   }
 
-  public async subscribeAddressesAddTransactions (addresses: Address[]): Promise<void> {
+  public async subscribeAddresses (addresses: Address[]): Promise<void> {
     if (addresses.length === 0) return
 
     const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address))
@@ -297,7 +294,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
   public async subscribeInitialAddresses (): Promise<void> {
     const addresses = await fetchAllAddressesForNetworkId(XEC_NETWORK_ID)
     try {
-      await this.subscribeAddressesAddTransactions(addresses)
+      await this.subscribeAddresses(addresses)
     } catch (err: any) {
       console.error(`ERROR: (skipping anyway) initial chronik subscription failed: ${err.message as string} ${err.stack as string}`)
     }
