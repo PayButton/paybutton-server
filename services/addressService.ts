@@ -278,3 +278,17 @@ export async function fetchAddressById (addressId: string, includePaybuttons = f
   }
   return result
 }
+
+export async function setSyncing (addressString: string, syncing: boolean): Promise<void> {
+  const result = await prisma.address.update({
+    where: {
+      address: addressString
+    },
+    data: {
+      syncing
+    }
+  })
+  if (result === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
+  }
+}
