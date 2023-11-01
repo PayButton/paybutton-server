@@ -23,7 +23,8 @@ interface IProps {
 
 const TableContainer = ({ columns, data, opts, ssr }: IProps): JSX.Element => {
   const sortColumn = opts?.sortColumn
-  const localStoragePageSize = ssr ? 10 : localStorage.getItem('pageSize') !== null ? +localStorage.getItem('pageSize') : 10
+  const localPageSize = localStorage.getItem('pageSize')
+  const localStoragePageSize = ssr ? 10 : localPageSize !== null ? +localPageSize : 10
   const {
     getTableProps,
     getTableBodyProps,
@@ -54,8 +55,9 @@ const TableContainer = ({ columns, data, opts, ssr }: IProps): JSX.Element => {
   }
 
   const onChangeInSelect = (event: any): void => {
-    setPageSize(Number(event.target.value))
-    localStorage.setItem('pageSize', event.target.value.toString())
+    const pageSize = Number(event.target.value)
+    setPageSize(pageSize)
+    localStorage.setItem('pageSize', pageSize.toString())
   }
 
   return (
