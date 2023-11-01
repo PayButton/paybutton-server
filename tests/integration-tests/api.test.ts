@@ -1192,14 +1192,14 @@ describe('GET /api/address/transactions/[address]', () => {
     query: {}
   }
 
-  it('Should return HTTP 400 (Bad Request) if no address specified', async () => {
+  it('HTTP 400 (Bad Request) if no address specified', async () => {
     const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
     expect(res.statusCode).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.statusCode)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
   })
 
-  it('Should return HTTP 400 in case address is invalid', async () => {
+  it('HTTP 400 in case address is invalid', async () => {
     const baseRequestOptions: RequestOptions = {
       method: 'GET' as RequestMethod,
       headers: {
@@ -1213,7 +1213,7 @@ describe('GET /api/address/transactions/[address]', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  it('Should return HTTP 404 in case address is valid but not yet on the system with flag serverOnly', async () => {
+  it('HTTP 404 in case address is valid but not yet on the system with flag serverOnly', async () => {
     const baseRequestOptions: RequestOptions = {
       method: 'GET' as RequestMethod,
       headers: {
@@ -1226,6 +1226,20 @@ describe('GET /api/address/transactions/[address]', () => {
     }
     const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
     expect(res.statusCode).toBe(404)
+  })
+
+  it('HTTP 200', async () => {
+    const baseRequestOptions: RequestOptions = {
+      method: 'GET' as RequestMethod,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      query: {
+        address: `ecash:${exampleAddresses.ecash}`
+      }
+    }
+    const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
+    expect(res.statusCode).toBe(200)
   })
 })
 
