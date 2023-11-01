@@ -5,16 +5,9 @@ import CopyIcon from '/assets/copy.png'
 import Prism from 'prismjs'
 import 'prismjs/themes/prism-okaidia.css'
 import 'prismjs/components/prism-jsx.min'
-import {
-  PRIMARY_XEC_COLOR,
-  SECONDARY_XEC_COLOR,
-  TERTIARY_XEC_COLOR,
-  PRIMARY_BCH_COLOR,
-  SECONDARY_BCH_COLOR,
-  TERTIARY_BCH_COLOR
-} from '/constants'
+import { initialButtonState } from './index-new'
 
-export default function CodeBlock({ button }): JSX.Element {
+export default function CodeBlock ({ button }): JSX.Element {
   const [isCopied, setIsCopied] = useState(false)
   const [codeType, setCodeType] = useState('HTML')
   const [code, setCode] = useState({
@@ -44,76 +37,65 @@ export default function CodeBlock({ button }): JSX.Element {
     }
   }
 
-  const checkValue = (value, attribute, type) => {
-    if (type === 'html') {
-      if (value !== undefined && value !== '') {
-        if (attribute === 'amount') {
-          return `\n  ${attribute}=${value}`;
-        } else return `\n  ${attribute}="${value}"`;
-      } else return '';
-    } else if (type === 'js') {
-      if (value !== undefined && value !== '') {
-        if (attribute === 'amount') {
-          return `\n    ${attribute}: ${value},`;
-        } else return `\n    ${attribute}: "${value}",`;
-      } else return '';
-    } else {
-      if (value !== undefined && value !== '') {
-        if (attribute === 'amount') {
-          return `\n  const ${attribute} = ${value}`;
-        } else return `\n  const ${attribute} = '${value}'`;
-      } else return '';
-    }
-  };
+  function camelToKebabCase (key: string): string {
+    return key.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+  }
 
-  const checkAnimation = (value, type) => {
-    if (value === 'slide') {
-      return '';
-    } else if (type === 'html') {
-      return `\n  animation="${value}"`;
-    } else if (type === 'js') {
-      return `\n    animation: "${value}",`;
+  function makeCodeString (key: string, value: any, codeType: string): string {
+    if (codeType === 'html') {
+      if (key === 'amount' || key === 'goalAmount' || typeof value === 'boolean') {
+        return camelToKebabCase(key) + `=${value}`
+      } else if (typeof value === 'string') {
+        return camelToKebabCase(key) + `="${value}"`
+      } else if (typeof value === 'object') {
+        return camelToKebabCase(key) + `='${JSON.stringify(value)}'`
+      } else {
+        return camelToKebabCase(key) + `="${value}"`
+      }
+    } else if (codeType === 'js') {
+      if (key === 'amount' || key === 'goalAmount' || typeof value === 'boolean') {
+        return `  ${key}: ${value}`
+      } else if (typeof value === 'string') {
+        return `  ${key}: '${value}'`
+      } else if (typeof value === 'object') {
+        return `  ${key}: ${JSON.stringify(value)}`
+      } else {
+        return `  ${key}: '${value}'`
+      }
     } else {
-      return `\n  const animation = '${value}'`;
+      if (key === 'amount' || key === 'goalAmount' || typeof value === 'boolean') {
+        return `const ${key} = ${value}`
+      } else if (typeof value === 'string') {
+        return `const ${key} = '${value}'`
+      } else if (typeof value === 'object') {
+        return `const ${key} = ${JSON.stringify(value)}`
+      } else {
+        return `const ${key} = '${value}'`
+      }
     }
-  };
+  }
 
-  const filterDefaultCurrency = (value, type) => {
-    if (['XEC', 'BCH'].includes(value)) {
-      return '';
-    } else if (type === 'html') {
-      return `\n  currency="${value}"`;
-    } else if (type === 'js') {
-      return `\n    currency: "${value}",`;
-    } else {
-      return `\n  const currency = '${value}'`;
-    }
-  };
+  const propertiesToSkip = ['to', 'currencies', 'validAddress', 'bchtheme']
 
-  const checkTheme = (value, type) => {
-    if (
-      (value.palette.primary === PRIMARY_XEC_COLOR &&
-        value.palette.secondary === SECONDARY_XEC_COLOR &&
-        value.palette.tertiary === TERTIARY_XEC_COLOR) ||
-      (value.palette.primary === PRIMARY_BCH_COLOR &&
-        value.palette.secondary === SECONDARY_BCH_COLOR &&
-        value.palette.tertiary === TERTIARY_BCH_COLOR)
-    ) {
-      return '';
-    } else if (type === 'html') {
-      return `\n  theme='${JSON.stringify(value)}'`;
-    } else if (type === 'js') {
-      return `\n    theme: ${JSON.stringify(value)}`;
-    } else {
-      return `\n  const theme = {
-        palette: {
-          primary: '${value.palette.primary}',
-          secondary: '${value.palette.secondary}',
-          tertiary: '${value.palette.tertiary}'
-        }
-      }`;
+  const generateReactProps = (button: any): string => {
+    let result = ''
+    for (const [key, value] of Object.entries(button)) {
+      if (propertiesToSkip.includes(key) || JSON.stringify(initialButtonState[key]) === JSON.stringify(value) || JSON.stringify(initialButtonState.bchtheme) === JSON.stringify(value)) {
+        continue
+      } else result += `    ${key}={${key}}\n`
     }
-  };
+    return result
+  }
+
+  const generateCode = (button: any, codeType: string): string => {
+    let result = ''
+    for (const [key, value] of Object.entries(button)) {
+      if (propertiesToSkip.includes(key) || JSON.stringify(initialButtonState[key]) === JSON.stringify(value) || JSON.stringify(initialButtonState.bchtheme) === JSON.stringify(value)) {
+        continue
+      } else result += `  ${makeCodeString(key, value, codeType)}\n`
+    }
+    return result
+  }
 
   useEffect(() => {
     setCode({
@@ -121,37 +103,16 @@ export default function CodeBlock({ button }): JSX.Element {
 
 <div
   class="paybutton"
-  to="${button.to}"${checkValue(button.text, 'text', 'html')}${checkValue(
-        button.hoverText,
-        'hover-text',
-        'html'
-      )}${checkValue(button.successText, 'success-text', 'html')}${checkValue(
-        button.amount,
-        'amount',
-        'html'
-      )}${filterDefaultCurrency(button.currency, 'html')}${checkAnimation(
-        button.animation,
-        'html'
-      )}${checkTheme(button.theme, 'html')}
-/>`,
+  to="${button.to}"
+${generateCode(button, 'html')}/>`,
       javascript: `<script src="https://unpkg.com/@paybutton/paybutton/dist/paybutton.js"></script>
 
 <div id="my_button"></div>
       
 <script>      
   var config = {
-    to: '${button.to}',${checkValue(button.text, 'text', 'js')}${checkValue(
-        button.hoverText,
-        'hoverText',
-        'js'
-      )}${checkValue(button.successText, 'successText', 'js')}${checkValue(
-        button.amount,
-        'amount',
-        'js'
-      )}${filterDefaultCurrency(button.currency, 'js')}${checkAnimation(
-        button.animation,
-        'js'
-      )}${checkTheme(button.theme, 'js')}
+    to: '${button.to}',
+${generateCode(button, 'js')}
   };
 
   PayButton.render(document.getElementById('my_button'), config);
@@ -159,34 +120,15 @@ export default function CodeBlock({ button }): JSX.Element {
       react: `import { PayButton } from '@paybutton/react'
 
 function App() {
-  const to = '${button.to}'${checkValue(
-        button.text,
-        'text',
-        'react'
-      )}${checkValue(button.hoverText, 'hoverText', 'react')}${checkValue(
-        button.successText,
-        'successText',
-        'react'
-      )}${checkValue(button.amount, 'amount', 'react')}${filterDefaultCurrency(
-        button.currency,
-        'react'
-      )}${checkAnimation(button.animation, 'react')}${checkTheme(
-        button.theme,
-        'react'
-      )}
+  const to = '${button.to}'
+${generateCode(button, 'react')}
 
   return <PayButton
     to={to}
-    text={text}
-    hoverText={hoverText}
-    amount={amount}
-    currency={currency}
-    animation={animation}
-    theme={theme}
-  />
-}`,
-    });
-  }, [button]);
+${generateReactProps(button)}  />
+}`
+    })
+  }, [button])
 
   useEffect(() => {
     Prism.highlightAll();
@@ -216,13 +158,17 @@ function App() {
         </div>
       </div>
       <pre className={style.code_ctn}>
-        {codeType === 'HTML' ? (
+        {codeType === 'HTML'
+          ? (
           <code className="language-html">{code.html}</code>
-        ) : codeType === 'JavaScript' ? (
+            )
+          : codeType === 'JavaScript'
+            ? (
           <code className="language-js">{code.javascript}</code>
-        ) : (
+              )
+            : (
           <code className="language-jsx">{code.react}</code>
-        )}
+              )}
       </pre>
     </>
   );

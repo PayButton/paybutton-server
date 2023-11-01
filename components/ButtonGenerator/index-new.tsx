@@ -15,56 +15,65 @@ import {
   TERTIARY_BCH_COLOR
 } from '/constants'
 
+interface ButtonState {
+  to: string
+  amount: string
+  currency: string
+  text: string
+  hoverText: string
+  successText: string
+  animation: string
+  theme: object
+  validAddress: string
+  currencies: any[]
+  goalAmount: string
+  onSuccess: string
+  onTransaction: string
+  randomSatoshis: boolean
+  hideToasts: boolean
+  disableEnforceFocus: boolean
+  disabled: boolean
+  editable: boolean
+  widget: boolean
+  [key: string]: any
+}
+
+export const initialButtonState: ButtonState = {
+  to: '',
+  amount: '',
+  currency: 'XEC',
+  text: '',
+  hoverText: '',
+  successText: '',
+  animation: 'slide',
+  theme: {
+    palette: {
+      primary: PRIMARY_XEC_COLOR,
+      secondary: SECONDARY_XEC_COLOR,
+      tertiary: TERTIARY_XEC_COLOR
+    }
+  },
+  bchtheme: {
+    palette: {
+      primary: PRIMARY_BCH_COLOR,
+      secondary: SECONDARY_BCH_COLOR,
+      tertiary: TERTIARY_BCH_COLOR
+    }
+  },
+  validAddress: '',
+  currencies: ['XEC', 'USD', 'CAD'],
+  goalAmount: '',
+  onSuccess: '',
+  onTransaction: '',
+  randomSatoshis: true,
+  hideToasts: false,
+  disableEnforceFocus: false,
+  disabled: false,
+  editable: false,
+  widget: false
+}
+
 export default function ButtonGenerator (): JSX.Element {
-  interface ButtonState {
-    to: string
-    currency: string
-    text: string
-    hoverText: string
-    successText: string
-    animation: string
-    theme: object
-    validAddress: string
-    currencies: any[]
-    goalAmount: string
-    onSuccess: string
-    onTransaction: string
-    randomSatoshis: boolean
-    hideToasts: boolean
-    disableEnforceFocus: boolean
-    disabled: boolean
-    editable: boolean
-    widget: boolean
-    [key: string]: any
-  }
-
-  const initialButtonState = {
-    to: '',
-    currency: 'XEC',
-    text: '',
-    hoverText: '',
-    successText: '',
-    animation: 'slide',
-    theme: {
-      palette: {
-        primary: PRIMARY_XEC_COLOR,
-        secondary: SECONDARY_XEC_COLOR,
-        tertiary: TERTIARY_XEC_COLOR
-      }
-    },
-    validAddress: '',
-    currencies: ['XEC', 'USD', 'CAD'],
-    goalAmount: '',
-    onSuccess: '',
-    onTransaction: '',
-    randomSatoshis: true,
-    hideToasts: false,
-    disableEnforceFocus: false,
-    disabled: false,
-    editable: false,
-    widget: false
-  }
-
   const [button, setButton] = useState<ButtonState>(initialButtonState)
   const [colorPicker, setColorPicker] = useState('')
 
