@@ -75,7 +75,7 @@ export default function CodeBlock ({ button }): JSX.Element {
     }
   }
 
-  const propertiesToSkip = ['to', 'currencies', 'validAddress', 'bchtheme']
+  const propertiesToSkip = ['to', 'currencies', 'validAddress', 'bchtheme', 'widget']
 
   const generateReactProps = (button: any): string => {
     let result = ''
@@ -102,7 +102,7 @@ export default function CodeBlock ({ button }): JSX.Element {
       html: `<script src="https://unpkg.com/@paybutton/paybutton/dist/paybutton.js"></script>
 
 <div
-  class="paybutton"
+  class="paybutton${button.widget === true ? '-widget' : ''}"
   to="${button.to}"
 ${generateCode(button, 'html')}/>`,
       javascript: `<script src="https://unpkg.com/@paybutton/paybutton/dist/paybutton.js"></script>
@@ -112,18 +112,17 @@ ${generateCode(button, 'html')}/>`,
 <script>      
   var config = {
     to: '${button.to}',
-${generateCode(button, 'js')}
-  };
+${generateCode(button, 'js')}};
 
-  PayButton.render(document.getElementById('my_button'), config);
+  PayButton.render${button.widget === true ? 'Widget' : ''}(document.getElementById('my_button'), config);
 </script>`,
-      react: `import { PayButton } from '@paybutton/react'
+      react: `import { ${button.widget === true ? 'PayButtonWidget' : 'PayButton'} } from '@paybutton/react'
 
 function App() {
   const to = '${button.to}'
 ${generateCode(button, 'react')}
 
-  return <PayButton
+  return <PayButton${button.widget === true ? 'Widget' : ''}
     to={to}
 ${generateReactProps(button)}  />
 }`

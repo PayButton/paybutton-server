@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import s from './button-generator.module.css'
 import style from '/styles/landing.module.css'
-import { PayButton } from '@paybutton/react'
+import { PayButton, Widget as PayButtonWidget } from '@paybutton/react'
 import { ChromePicker } from 'react-color'
 import CodeBlock from './CodeBlock'
 import { decode } from 'ecashaddrjs'
@@ -129,7 +129,7 @@ export default function ButtonGenerator (): JSX.Element {
   }
 
   const handleAmountChange = (e: any): any => {
-    const { name, value } = e.target
+    const { name } = e.target
     // Remove non-numeric characters except for a single decimal point
     let numericValue = e.target.value.replace(/[^\d.]/g, '')
     // Ensure there's only one decimal point
@@ -296,20 +296,71 @@ export default function ButtonGenerator (): JSX.Element {
             {button.validAddress === 'ecash' ||
             button.validAddress === 'bitcoincash'
               ? (
-              <PayButton
-                to={button.to}
-                amount={button.amount}
-                currency={button.currency}
-                text={button.text === '' ? undefined : button.text}
-                hoverText={
-                  button.hoverText === '' ? undefined : button.hoverText
-                }
-                successText={
-                  button.successText === '' ? undefined : button.successText
-                }
-                theme={button.theme}
-                animation={button.animation}
-              />
+                  button.widget
+                    ? (
+                <PayButtonWidget
+                  to={button.to}
+                  amount={parseFloat(button.amount)}
+                  currency={button.currency}
+                  text={button.text === '' ? undefined : button.text}
+                  hoverText={
+                    button.hoverText === '' ? undefined : button.hoverText
+                  }
+                  successText={
+                    button.successText === '' ? undefined : button.successText
+                  }
+                  theme={button.theme}
+                  animation={button.animation}
+                  goalAmount={
+                    button.goalAmount === '' ? undefined : button.goalAmount
+                  }
+                  onSuccess={
+                    button.onSuccess === '' ? undefined : button.onSuccess
+                  }
+                  onTransaction={
+                    button.onTransaction === ''
+                      ? undefined
+                      : button.onTransaction
+                  }
+                  randomSatoshis={button.randomSatoshis}
+                  hideToasts={button.hideToasts}
+                  disableEnforceFocus={button.disableEnforceFocus}
+                  disabled={button.disabled}
+                  editable={button.editable}
+                />
+                      )
+                    : (
+                <PayButton
+                  to={button.to}
+                  amount={button.amount}
+                  currency={button.currency}
+                  text={button.text === '' ? undefined : button.text}
+                  hoverText={
+                    button.hoverText === '' ? undefined : button.hoverText
+                  }
+                  successText={
+                    button.successText === '' ? undefined : button.successText
+                  }
+                  theme={button.theme}
+                  animation={button.animation}
+                  goalAmount={
+                    button.goalAmount === '' ? undefined : button.goalAmount
+                  }
+                  onSuccess={
+                    button.onSuccess === '' ? undefined : button.onSuccess
+                  }
+                  onTransaction={
+                    button.onTransaction === ''
+                      ? undefined
+                      : button.onTransaction
+                  }
+                  randomSatoshis={button.randomSatoshis}
+                  hideToasts={button.hideToasts}
+                  disableEnforceFocus={button.disableEnforceFocus}
+                  disabled={button.disabled}
+                  editable={button.editable}
+                />
+                      )
                 )
               : button.validAddress === 'not valid' &&
               button.to.length !== 0
