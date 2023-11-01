@@ -78,7 +78,7 @@ export const fetchUserDefaultWalletForNetwork = async (userId: string, networkId
   }
   return (await prisma.walletsOnUserProfile.findUniqueOrThrow({
     where: {
-      ...defaultCondition
+      ...defaultCondition as Prisma.WalletsOnUserProfileWhereUniqueInput
     },
     include: {
       wallet: true

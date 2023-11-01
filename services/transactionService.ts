@@ -3,7 +3,7 @@ import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
 import { fetchAddressBySubstring, fetchAddressById } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, PRICE_CONNECT_MAX_N, KeyValueT } from 'constants/index'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT } from 'constants/index'
 import { cacheManyTxs } from 'redis/dashboardCache'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
@@ -201,16 +201,16 @@ export async function connectTransactionToPrices (tx: Transaction, prisma: Prism
 }
 
 export async function connectTransactionsListToPrices (txList: Transaction[]): Promise<void> {
-  let completedPromises = 0
-  while (completedPromises < txList.length) {
-    const promises = txList
-      .slice(completedPromises, completedPromises + PRICE_CONNECT_MAX_N)
-      .map(async (tx) =>
-        await connectTransactionToPrices(tx, prisma)
-      )
-    const completed = await Promise.all(promises)
-    completedPromises += completed.length
-  }
+  await prisma.$transaction(async (prisma) => {
+    for (const tx of txList) {
+      await connectTransactionToPrices(tx, prisma)
+    }
+  })
+}
+
+interface TxDistinguished {
+  tx: Transaction
+  isCreated: boolean
 }
 
 export async function createManyTransactions (
@@ -218,8 +218,9 @@ export async function createManyTransactions (
 ): Promise<TransactionWithAddressAndPrices[]> {
   // we don't use `createMany` to ignore conflicts between the sync and the subscription
   // and we don't return transactions that were updated, only ones that were created
-  const insertedTransactionsDistinguished = await Promise.all(
-    transactionsData.map(async tx => {
+  const insertedTransactionsDistinguished: TxDistinguished[] = []
+  await prisma.$transaction(async (prisma) => {
+    for (const tx of transactionsData) {
       const upsertedTx = await prisma.transaction.upsert({
         create: tx,
         where: {
@@ -230,12 +231,12 @@ export async function createManyTransactions (
         },
         update: {}
       })
-      return {
+      insertedTransactionsDistinguished.push({
         tx: upsertedTx,
         isCreated: upsertedTx.createdAt.getTime() === upsertedTx.updatedAt.getTime()
-      }
-    })
-  )
+      })
+    }
+  })
   const insertedTransactions = insertedTransactionsDistinguished
     .filter(txD => txD.isCreated)
     .map(txD => txD.tx)
