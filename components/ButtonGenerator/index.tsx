@@ -136,7 +136,7 @@ export default function ButtonGenerator (): JSX.Element {
     const parts = numericValue.split('.')
     if (parts.length > 2) {
       // More than one decimal point, keep only the first part before the second decimal point
-      numericValue = `${parts[0]}.${parts[1]}`
+      numericValue = `${parts[0] as string}.${parts[1] as string}`
     }
     setButton((prevButton) => ({
       ...prevButton,
@@ -258,7 +258,7 @@ export default function ButtonGenerator (): JSX.Element {
                          <div
                            className={s.swatch}
                            style={{
-                             background: `${button.theme.palette[field.key]}`
+                             background: `${button.theme.palette[field.key] as string}`
                            }}
                            onClick={() => setColorPicker(field.key)}
                          />

@@ -5,7 +5,7 @@ import CopyIcon from '/assets/copy.png'
 import Prism from 'prismjs'
 import 'prismjs/themes/prism-okaidia.css'
 import 'prismjs/components/prism-jsx.min'
-import { initialButtonState } from './index-new'
+import { initialButtonState } from './index'
 
 export default function CodeBlock ({ button }): JSX.Element {
   const [isCopied, setIsCopied] = useState(false)
@@ -16,7 +16,7 @@ export default function CodeBlock ({ button }): JSX.Element {
     react: ''
   })
 
-  const codetypes = ['HTML', 'JavaScript', 'React'];
+  const codetypes = ['HTML', 'JavaScript', 'React']
 
   const handleCopyClick = async (): Promise<void> => {
     const codeToCopy =
@@ -44,33 +44,33 @@ export default function CodeBlock ({ button }): JSX.Element {
   function makeCodeString (key: string, value: any, codeType: string): string {
     if (codeType === 'html') {
       if (key === 'amount' || key === 'goalAmount' || typeof value === 'boolean') {
-        return camelToKebabCase(key) + `=${value}`
+        return camelToKebabCase(key) + `=${value as string}`
       } else if (typeof value === 'string') {
         return camelToKebabCase(key) + `="${value}"`
       } else if (typeof value === 'object') {
         return camelToKebabCase(key) + `='${JSON.stringify(value)}'`
       } else {
-        return camelToKebabCase(key) + `="${value}"`
+        return camelToKebabCase(key) + `="${value as string}"`
       }
     } else if (codeType === 'js') {
       if (key === 'amount' || key === 'goalAmount' || typeof value === 'boolean') {
-        return `  ${key}: ${value}`
+        return `  ${key}: ${value as string}`
       } else if (typeof value === 'string') {
         return `  ${key}: '${value}'`
       } else if (typeof value === 'object') {
         return `  ${key}: ${JSON.stringify(value)}`
       } else {
-        return `  ${key}: '${value}'`
+        return `  ${key}: '${value as string}'`
       }
     } else {
       if (key === 'amount' || key === 'goalAmount' || typeof value === 'boolean') {
-        return `const ${key} = ${value}`
+        return `const ${key} = ${value as string}`
       } else if (typeof value === 'string') {
         return `const ${key} = '${value}'`
       } else if (typeof value === 'object') {
         return `const ${key} = ${JSON.stringify(value)}`
       } else {
-        return `const ${key} = '${value}'`
+        return `const ${key} = '${value as string}'`
       }
     }
   }
@@ -103,7 +103,7 @@ export default function CodeBlock ({ button }): JSX.Element {
 
 <div
   class="paybutton${button.widget === true ? '-widget' : ''}"
-  to="${button.to}"
+  to="${button.to as string}"
 ${generateCode(button, 'html')}/>`,
       javascript: `<script src="https://unpkg.com/@paybutton/paybutton/dist/paybutton.js"></script>
 
@@ -111,7 +111,7 @@ ${generateCode(button, 'html')}/>`,
       
 <script>      
   var config = {
-    to: '${button.to}',
+    to: '${button.to as string}',
 ${generateCode(button, 'js')}};
 
   PayButton.render${button.widget === true ? 'Widget' : ''}(document.getElementById('my_button'), config);
@@ -119,7 +119,7 @@ ${generateCode(button, 'js')}};
       react: `import { ${button.widget === true ? 'PayButtonWidget' : 'PayButton'} } from '@paybutton/react'
 
 function App() {
-  const to = '${button.to}'
+  const to = '${button.to as string}'
 ${generateCode(button, 'react')}
 
   return <PayButton${button.widget === true ? 'Widget' : ''}
@@ -130,8 +130,8 @@ ${generateReactProps(button)}  />
   }, [button])
 
   useEffect(() => {
-    Prism.highlightAll();
-  }, [code, codeType]);
+    Prism.highlightAll()
+  }, [code, codeType])
 
   return (
     <>
