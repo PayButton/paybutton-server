@@ -62,6 +62,15 @@ export async function fetchAddressListTransactions (addressIdList: string[]): Pr
   })
 }
 
+export async function fetchTxCount (addressString: string): Promise<number> {
+  const address = await fetchAddressBySubstring(addressString)
+  return await prisma.transaction.count({
+    where: {
+      addressId: address.id
+    }
+  })
+}
+
 export async function fetchPaginatedAddressTransactions (addressString: string, page: number, pageSize: number): Promise<TransactionWithAddressAndPrices[]> {
   const address = await fetchAddressBySubstring(addressString)
   const transactions = await prisma.transaction.findMany({
