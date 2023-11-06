@@ -1,5 +1,4 @@
-import React, { FunctionComponent, useMemo } from 'react'
-import { Transaction } from '@prisma/client'
+import React, { useMemo } from 'react'
 import style from './transaction.module.css'
 import Image from 'next/image'
 import XECIcon from 'assets/xec-logo.png'
@@ -7,20 +6,29 @@ import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import CheckIcon from 'assets/check-icon.png'
 import XIcon from 'assets/x-icon.png'
-import TableContainer from '../../components/TableContainer'
+import TableContainerGetter from '../../components/TableContainerGetter'
 import { compareNumericString } from 'utils/index'
 import moment from 'moment'
 
 interface IProps {
-  addressTransactions: {
-    [address: string]: Transaction
-  }
-  addressSynced: {
+  addressSyncing: {
     [address: string]: boolean
+  }
+  tableRefreshCounter: number
+}
+
+function getGetterForAddress (addressString: string): Function {
+  return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
+    const ok = await fetch(`/api/address/transactions/${addressString}?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`) // WIP
+    const ok2 = await fetch(`/api/address/transactions/count/${addressString}`)
+    return {
+      data: await ok.json(),
+      totalCount: await ok2.json()
+    }
   }
 }
 
-export default ({ addressTransactions, addressSynced }: IProps): FunctionComponent => {
+export default ({ addressSyncing, tableRefreshCounter }: IProps): JSX.Element => {
   const columns = useMemo(
     () => [
       {
@@ -85,7 +93,7 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
   )
   return (
     <>
-      {Object.keys(addressTransactions).map(transactionAddress => (
+      {Object.keys(addressSyncing).map(transactionAddress => (
         <div key={transactionAddress} className='address-transactions-ctn'>
           <div className={style.tablelabel}>
             <div>{transactionAddress}</div>
@@ -95,15 +103,8 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
               </div>
             </a>
           </div>
-          { addressTransactions[transactionAddress].length === 0
-            ? <div className={style.transaction_ctn}> {
-              addressSynced[transactionAddress] ? 'No transactions yet' : 'Syncing address...'
-              }
-            </div>
-            : <TableContainer columns={columns} data={addressTransactions[transactionAddress]} />
-        }
+          <TableContainerGetter columns={columns} dataGetter={getGetterForAddress(transactionAddress)} tableRefreshCounter={tableRefreshCounter}/>
         </div>
-
       ))}
     </>
   )

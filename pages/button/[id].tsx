@@ -10,8 +10,6 @@ import { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
 import { BroadcastTxData } from 'ws-service/types'
 import { KeyValueT, ResponseMessage } from 'constants/index'
-import { arraysAreEqual } from 'utils/index'
-import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import config from 'config'
 import io from 'socket.io-client'
 import PaybuttonTrigger from 'components/Paybutton/PaybuttonTrigger'
@@ -45,31 +43,17 @@ interface PaybuttonProps {
 }
 
 export default function Button (props: PaybuttonProps): React.ReactElement {
-  const [transactions, setTransactions] = useState<undefined | KeyValueT<TransactionWithAddressAndPrices[]>>({})
   const [paybutton, setPaybutton] = useState(undefined as PaybuttonWithAddresses | undefined)
-  const [isSynced, setIsSynced] = useState<KeyValueT<boolean>>({})
+  const [isSyncing, setIsSyncing] = useState<KeyValueT<boolean>>({})
+  const [tableRefreshCount, setTableRefreshCount] = useState<number>(0)
   const router = useRouter()
 
-  const fetchTransactions = async (address: string): Promise<TransactionWithAddressAndPrices[]> => {
-    const res = await fetch(`/api/address/transactions/${address}`, {
-      method: 'GET'
-    })
-    const resData = await res.json()
-    if (res.status === 200) {
-      if (transactions === undefined) setTransactions({})
-      setTransactions(prevTransactions => ({ ...prevTransactions, [address]: resData }))
-      return resData
-    } else {
-      throw new Error(resData.message)
-    }
-  }
-
-  const updateIsSynced = (addressStringList: string[]): void => {
-    const newIsSynced = { ...isSynced }
+  const updateIsSyncing = (addressStringList: string[]): void => {
+    const newIsSyncing = { ...isSyncing }
     addressStringList.forEach((addressString) => {
-      newIsSynced[addressString] = true
+      newIsSyncing[addressString] = true
     })
-    setIsSynced(newIsSynced)
+    setIsSyncing(newIsSyncing)
   }
 
   const fetchPaybutton = async (): Promise<PaybuttonWithAddresses> => {
@@ -80,11 +64,11 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
     if (res.status === 200) {
       resData = resData as PaybuttonWithAddresses
       setPaybutton(resData)
-      const newIsSynced = { ...isSynced }
+      const newIsSyncing = { ...isSyncing }
       resData.addresses.forEach(addr => {
-        newIsSynced[addr.address.address] = addr.address.lastSynced != null
+        newIsSyncing[addr.address.address] = addr.address.syncing != null
       })
-      setIsSynced(newIsSynced)
+      setIsSyncing(newIsSyncing)
       return resData
     } else {
       resData = resData as ResponseMessage
@@ -93,13 +77,6 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   }
 
   const refreshPaybutton = (): void => {
-    if (
-      transactions !== undefined &&
-      paybutton !== undefined &&
-      !arraysAreEqual(paybutton?.addresses.map(a => a.address.address), Object.keys(transactions))
-    ) {
-      setTransactions({})
-    }
     void getDataAndSetUpSocket()
   }
 
@@ -109,27 +86,14 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
     })
 
     socket.on('incoming-txs', (broadcastedData: BroadcastTxData) => {
-      updateIsSynced([broadcastedData.address])
-      setTransactions(prevTransactions => {
-        const old = prevTransactions === undefined ? {} : prevTransactions
-        return {
-          ...old,
-          [broadcastedData.address]: [
-            ...old[broadcastedData.address]
-              .filter(tx => !broadcastedData.txs.map(newTx => newTx.hash).includes(tx.hash)), // avoid keeping unconfirmed tx together with confirmed
-            ...broadcastedData.txs
-          ]
-        }
-      })
+      setTableRefreshCount(tableRefreshCount + 1)
+      updateIsSyncing([broadcastedData.address])
     })
   }
 
   const getDataAndSetUpSocket = async (): Promise<void> => {
     const paybuttonData = await fetchPaybutton()
     const addresses: string[] = paybuttonData.addresses.map(c => c.address.address)
-    await Promise.all(addresses.map(async addr => {
-      await fetchTransactions(addr)
-    }))
     await setUpSocket(addresses)
   }
 
@@ -137,13 +101,13 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
     void getDataAndSetUpSocket()
   }, [])
 
-  if (paybutton != null && transactions !== undefined) {
+  if (paybutton != null) {
     return (
       <>
         <div className='back_btn' onClick={() => router.back()}>Back</div>
         <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton}/>
         <h4>Transactions</h4>
-        <AddressTransactions addressTransactions={transactions} addressSynced={isSynced}/>
+        <AddressTransactions addressSyncing={isSyncing} tableRefreshCounter={tableRefreshCount}/>
         <PaybuttonTrigger paybuttonId={paybutton.id}/>
       </>
     )
