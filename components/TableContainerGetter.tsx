@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTable, usePagination } from 'react-table'
 import { DEFAULT_EMPTY_TABLE_MESSAGE } from 'constants/index'
+import style from './table-container.module.css'
 
 interface DataGetterReturn {
   data: any
@@ -108,26 +109,26 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
           ))}
           <tr className='header-spacer'></tr>
         </thead>
-
-        { loading
-          ? <p> Loading...</p>
-          : <tbody {...getTableBodyProps()}>
-          {
-            page.length > 0
+        <tbody {...getTableBodyProps()} className={loading ? style.loading : null}>
+          <>
+            { page.length > 0
               ? page.map((row: any) => {
                 prepareRow(row)
                 return (
-              <tr {...row.getRowProps()}>
-                {row.cells.map((cell: any) => {
-                  return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
-                })}
-              </tr>
+                <tr {...row.getRowProps()}>
+                  {row.cells.map((cell: any) => {
+                    return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                  })}
+                </tr>
                 )
               })
-              : <p>{emptyMessageDisplay}</p>
-            }
+              : <tr>
+              <td colSpan={columns.length} className={style.no_data}>
+                {emptyMessageDisplay}
+              </td>
+            </tr> }
+          </>
         </tbody>
-        }
       </table>
     </div>
 
