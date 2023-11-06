@@ -361,7 +361,7 @@ body[data-theme='dark'] .codetopbar {
 
 .advanced_ctn {
   font-size: 14px;
-  padding: 0 10px 10px;
+  padding: 10px 0 0 10px;
   display: flex;
   align-items: center;
   gap: 20px;
