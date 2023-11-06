@@ -71,20 +71,21 @@ export async function fetchTxCount (addressString: string): Promise<number> {
   })
 }
 
-export async function fetchPaginatedAddressTransactions (addressString: string, page: number, pageSize: number): Promise<TransactionWithAddressAndPrices[]> {
+export async function fetchPaginatedAddressTransactions (addressString: string, page: number, pageSize: number, orderBy?: string, orderDesc = true): Promise<TransactionWithAddressAndPrices[]> {
   const address = await fetchAddressBySubstring(addressString)
-  const transactions = await prisma.transaction.findMany({
+  const orderByColumn = orderBy ?? 'timestamp'
+  const orderDescString = orderDesc ? 'desc' : 'asc'
+  return await prisma.transaction.findMany({
     where: {
       addressId: address.id
     },
     include: includeAddressAndPrices,
     orderBy: {
-      timestamp: 'desc'
+      [orderByColumn]: orderDescString
     },
     skip: page * pageSize,
     take: pageSize
   })
-  return _.orderBy(transactions, ['timestamp'], ['desc'])
 }
 
 export async function fetchAddressTransactions (addressString: string): Promise<TransactionWithAddressAndPrices[]> {
