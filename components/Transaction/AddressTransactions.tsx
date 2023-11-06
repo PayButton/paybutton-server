@@ -14,7 +14,7 @@ interface IProps {
   addressSyncing: {
     [address: string]: boolean
   }
-  tableRefreshCounter: number
+  tableRefreshCount: number
 }
 
 function getGetterForAddress (addressString: string): Function {
@@ -28,7 +28,7 @@ function getGetterForAddress (addressString: string): Function {
   }
 }
 
-export default ({ addressSyncing, tableRefreshCounter }: IProps): JSX.Element => {
+export default ({ addressSyncing, tableRefreshCount }: IProps): JSX.Element => {
   const columns = useMemo(
     () => [
       {
@@ -103,7 +103,7 @@ export default ({ addressSyncing, tableRefreshCounter }: IProps): JSX.Element =>
               </div>
             </a>
           </div>
-          <TableContainerGetter columns={columns} dataGetter={getGetterForAddress(transactionAddress)} tableRefreshCounter={tableRefreshCounter}/>
+          <TableContainerGetter columns={columns} dataGetter={getGetterForAddress(transactionAddress)} tableRefreshCount={tableRefreshCount}/>
         </div>
       ))}
     </>

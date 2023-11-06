@@ -11,10 +11,10 @@ interface IProps {
   columns: any[]
   dataGetter: (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => Promise<DataGetterReturn>
   opts: any
-  tableRefreshCounter: number
+  tableRefreshCount: number
 }
 
-const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCounter }: IProps): JSX.Element => {
+const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount }: IProps): JSX.Element => {
   const localPageSize = localStorage.getItem('pageSize')
   const localStoragePageSize = ssr ? 10 : localPageSize !== null ? +localPageSize : 10
   const [data, setData] = useState<any[]>([])
@@ -65,7 +65,7 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCounter }:
       setPageCount(Math.ceil(d.totalCount / pageSize))
       setData(d.data)
     })()
-  }, [pageSize, pageIndex, sortColumn, sortDesc, tableRefreshCounter])
+  }, [pageSize, pageIndex, sortColumn, sortDesc, tableRefreshCount])
 
   const generateSortingIndicator = (column: any): JSX.Element | null => {
     if (sortColumn === column.id) {
