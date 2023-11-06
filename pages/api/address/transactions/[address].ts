@@ -2,7 +2,7 @@ import { NextApiResponse, NextApiRequest } from 'next'
 import { parseAddress } from 'utils/validators'
 import { DEFAULT_TX_PAGE_SIZE, RESPONSE_MESSAGES, TX_PAGE_SIZE_LIMIT } from 'constants/index'
 import { fetchPaginatedAddressTransactions, syncAndSubscribeAddresses } from 'services/transactionService'
-import { upsertAddress, addressExistsBySubstring } from 'services/addressService'
+import { upsertAddress } from 'services/addressService'
 import Cors from 'cors'
 import { runMiddleware } from 'utils/index'
 
@@ -35,15 +35,21 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       // this flag ?serverOnly=1 tells us to only retrieve what we have in the database
       const serverOnly = req.query.serverOnly === '1'
 
-      if (!await addressExistsBySubstring(address)) {
-        if (serverOnly) throw new Error(NO_ADDRESS_FOUND_404.message)
-
-        const addressObject = await upsertAddress(address)
-        await syncAndSubscribeAddresses([addressObject])
-        res.status(STARTED_SYNC_200.statusCode).json(STARTED_SYNC_200)
-      } else {
+      try {
         const transactions = await fetchPaginatedAddressTransactions(address, page, pageSize, orderBy, orderDesc)
         res.status(200).send(transactions)
+      } catch (err: any) {
+        switch (err.message) {
+          case NO_ADDRESS_FOUND_404.message: {
+            if (serverOnly) throw new Error(NO_ADDRESS_FOUND_404.message)
+            const addressObject = await upsertAddress(address)
+            await syncAndSubscribeAddresses([addressObject])
+            res.status(STARTED_SYNC_200.statusCode).json(STARTED_SYNC_200)
+            break
+          }
+          default:
+            throw err
+        }
       }
     } catch (err: any) {
       switch (err.message) {
