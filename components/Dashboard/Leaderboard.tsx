@@ -1,4 +1,4 @@
-import TableContainer from 'components/TableContainer'
+import TableContainer from 'components/TableContainer/TableContainer'
 import { useMemo } from 'react'
 import { PaymentDataByButton } from 'redis/dashboardCache'
 import style from '../Transaction/transaction.module.css'

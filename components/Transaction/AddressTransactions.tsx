@@ -6,7 +6,7 @@ import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import CheckIcon from 'assets/check-icon.png'
 import XIcon from 'assets/x-icon.png'
-import TableContainerGetter from '../../components/TableContainerGetter'
+import TableContainerGetter from '../../components/TableContainer/TableContainerGetter'
 import { compareNumericString } from 'utils/index'
 import moment from 'moment'
 
