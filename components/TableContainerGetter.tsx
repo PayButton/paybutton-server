@@ -29,6 +29,7 @@ const TableContainer = ({ columns, dataGetter, opts, ssr }: IProps): JSX.Element
       setSortDesc(true)
       setSortColumn(id)
     }
+    gotoPage(0)
   }
 
   const {
