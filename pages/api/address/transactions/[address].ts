@@ -21,6 +21,8 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
 
       const page = (req.query.page === '' || req.query.page === undefined) ? 0 : Number(req.query.page)
       const pageSize = (req.query.pageSize === '' || req.query.pageSize === undefined) ? DEFAULT_TX_PAGE_SIZE : Number(req.query.pageSize)
+      const orderBy = (req.query.orderBy === '' || req.query.orderBy === undefined) ? undefined : req.query.orderBy as string
+      const orderDesc: boolean = !!((req.query.orderDesc === '' || req.query.orderDesc === undefined || req.query.orderDesc === 'true'))
       if (isNaN(page) || isNaN(pageSize)) {
         throw new Error(RESPONSE_MESSAGES.PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400.message)
       }
@@ -40,7 +42,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
         await syncAndSubscribeAddresses([addressObject])
         res.status(STARTED_SYNC_200.statusCode).json(STARTED_SYNC_200)
       } else {
-        const transactions = await fetchPaginatedAddressTransactions(address, page, pageSize)
+        const transactions = await fetchPaginatedAddressTransactions(address, page, pageSize, orderBy, orderDesc)
         res.status(200).send(transactions)
       }
     } catch (err: any) {
