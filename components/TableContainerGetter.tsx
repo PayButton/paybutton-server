@@ -27,6 +27,7 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
   const emptyMessageDisplay = emptyMessage ?? DEFAULT_EMPTY_TABLE_MESSAGE
 
   const triggerSort = (column: any): void => {
+    if (column.disableSortBy === true) return
     const id = column.id
     if (sortColumn === id) {
       setSortDesc(!sortDesc)
@@ -98,7 +99,7 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
           {headerGroups.map((headerGroup: any) => (
             <tr {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map((column: any) => (
-                <th {...column.getHeaderProps()} style={{ cursor: 'pointer' }} onClick={() => { triggerSort(column) }}>
+                <th {...column.getHeaderProps()} style={column.disableSortBy === true ? null : { cursor: 'pointer' }} onClick={() => { triggerSort(column) }}>
                   {column.render('Header')}
                   {generateSortingIndicator(column)}
                 </th>
