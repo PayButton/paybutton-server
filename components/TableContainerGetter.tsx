@@ -61,7 +61,6 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCounter }:
 
   useEffect(() => {
     void (async () => {
-      console.log('oia', [pageSize, pageIndex, sortDesc, sortColumn])
       const d = await dataGetter(pageIndex, pageSize, sortColumn, sortDesc)
       setPageCount(Math.ceil(d.totalCount / pageSize))
       setData(d.data)
