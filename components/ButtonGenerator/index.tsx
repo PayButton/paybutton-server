@@ -284,8 +284,17 @@ export default function ButtonGenerator (): JSX.Element {
                  }
                  return (
                     <div className={s[field.className]} key={index}>
+                      {field.key !== 'randomSatoshis'
+                        ? <>
                       <label>{field.name}</label>
                       {fieldComponent}
+                      </>
+                        : parseFloat(button.amount) > 0
+                          ? <>
+                      <label>{field.name}</label>
+                      {fieldComponent}
+                      </>
+                          : null}
                     </div>
                  )
                })}

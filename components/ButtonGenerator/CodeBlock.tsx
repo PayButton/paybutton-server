@@ -44,7 +44,9 @@ export default function CodeBlock ({ button }): JSX.Element {
   function makeCodeString (key: string, value: any, codeType: string): string {
     if (codeType === 'html') {
       if (key === 'amount' || key === 'goalAmount' || typeof value === 'boolean') {
-        return camelToKebabCase(key) + `=${value as string}`
+        if (key === 'randomSatoshis' && button.amount <= 0) {
+          return ''
+        } else return camelToKebabCase(key) + `=${value as string}`
       } else if (typeof value === 'string') {
         return camelToKebabCase(key) + `="${value}"`
       } else if (typeof value === 'object') {
@@ -54,7 +56,9 @@ export default function CodeBlock ({ button }): JSX.Element {
       }
     } else if (codeType === 'js') {
       if (key === 'amount' || key === 'goalAmount' || typeof value === 'boolean') {
-        return `  ${key}: ${value as string}`
+        if (key === 'randomSatoshis' && button.amount <= 0) {
+          return ''
+        } else return `  ${key}: ${value as string}`
       } else if (typeof value === 'string') {
         return `  ${key}: '${value}'`
       } else if (typeof value === 'object') {
@@ -64,7 +68,9 @@ export default function CodeBlock ({ button }): JSX.Element {
       }
     } else {
       if (key === 'amount' || key === 'goalAmount' || typeof value === 'boolean') {
-        return `const ${key} = ${value as string}`
+        if (key === 'randomSatoshis' && button.amount <= 0) {
+          return ''
+        } else return `const ${key} = ${value as string}`
       } else if (typeof value === 'string') {
         return `const ${key} = '${value}'`
       } else if (typeof value === 'object') {
@@ -80,7 +86,7 @@ export default function CodeBlock ({ button }): JSX.Element {
   const generateReactProps = (button: any): string => {
     let result = ''
     for (const [key, value] of Object.entries(button)) {
-      if (propertiesToSkip.includes(key) || JSON.stringify(initialButtonState[key]) === JSON.stringify(value) || JSON.stringify(initialButtonState.bchtheme) === JSON.stringify(value)) {
+      if (propertiesToSkip.includes(key) || JSON.stringify(initialButtonState[key]) === JSON.stringify(value) || JSON.stringify(initialButtonState.bchtheme) === JSON.stringify(value) || (key === 'randomSatoshis' && button.amount <= 0)) {
         continue
       } else result += `    ${key}={${key}}\n`
     }
