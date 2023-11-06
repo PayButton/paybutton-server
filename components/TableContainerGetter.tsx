@@ -21,6 +21,7 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount }: I
   const [sortColumn, setSortColumn] = useState(opts?.sortColumn ?? 'timestamp')
   const [sortDesc, setSortDesc] = useState(true)
   const [pageCount, setPageCount] = useState(0)
+  const [loading, setLoading] = useState(true)
 
   const triggerSort = (column: any): void => {
     const id = column.id
@@ -61,9 +62,11 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount }: I
 
   useEffect(() => {
     void (async () => {
+      setLoading(true)
       const d = await dataGetter(pageIndex, pageSize, sortColumn, sortDesc)
       setPageCount(Math.ceil(d.totalCount / pageSize))
       setData(d.data)
+      setLoading(false)
     })()
   }, [pageSize, pageIndex, sortColumn, sortDesc, tableRefreshCount])
 
@@ -102,7 +105,9 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount }: I
           <tr className='header-spacer'></tr>
         </thead>
 
-        <tbody {...getTableBodyProps()}>
+        { loading
+          ? <p> Loading...</p>
+          : <tbody {...getTableBodyProps()}>
           {page.map((row: any) => {
             prepareRow(row)
             return (
@@ -114,6 +119,7 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount }: I
             )
           })}
         </tbody>
+        }
       </table>
     </div>
 
