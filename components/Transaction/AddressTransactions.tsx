@@ -103,7 +103,7 @@ export default ({ addressSyncing, tableRefreshCount }: IProps): JSX.Element => {
               </div>
             </a>
           </div>
-          <TableContainerGetter columns={columns} dataGetter={getGetterForAddress(transactionAddress)} tableRefreshCount={tableRefreshCount}/>
+          <TableContainerGetter columns={columns} dataGetter={getGetterForAddress(transactionAddress)} tableRefreshCount={tableRefreshCount} emptyMessage={'No transactions.'}/>
         </div>
       ))}
     </>

@@ -179,3 +179,5 @@ export const NO_LAYOUT_ROUTES = [
 export const COOKIE_NAMES = {
   DASHBOARD_FILTER: 'dashboardFilter'
 }
+
+export const DEFAULT_EMPTY_TABLE_MESSAGE = 'No rows to show.'

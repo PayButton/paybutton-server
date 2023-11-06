@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTable, usePagination } from 'react-table'
+import { DEFAULT_EMPTY_TABLE_MESSAGE } from 'constants/index'
 
 interface DataGetterReturn {
   data: any
@@ -12,9 +13,10 @@ interface IProps {
   dataGetter: (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => Promise<DataGetterReturn>
   opts: any
   tableRefreshCount: number
+  emptyMessage?: string
 }
 
-const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount }: IProps): JSX.Element => {
+const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emptyMessage }: IProps): JSX.Element => {
   const localPageSize = localStorage.getItem('pageSize')
   const localStoragePageSize = ssr ? 10 : localPageSize !== null ? +localPageSize : 10
   const [data, setData] = useState<any[]>([])
@@ -22,6 +24,7 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount }: I
   const [sortDesc, setSortDesc] = useState(true)
   const [pageCount, setPageCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const emptyMessageDisplay = emptyMessage ?? DEFAULT_EMPTY_TABLE_MESSAGE
 
   const triggerSort = (column: any): void => {
     const id = column.id
@@ -108,16 +111,20 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount }: I
         { loading
           ? <p> Loading...</p>
           : <tbody {...getTableBodyProps()}>
-          {page.map((row: any) => {
-            prepareRow(row)
-            return (
+          {
+            page.length > 0
+              ? page.map((row: any) => {
+                prepareRow(row)
+                return (
               <tr {...row.getRowProps()}>
                 {row.cells.map((cell: any) => {
                   return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
                 })}
               </tr>
-            )
-          })}
+                )
+              })
+              : <p>{emptyMessageDisplay}</p>
+            }
         </tbody>
         }
       </table>
