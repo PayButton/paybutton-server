@@ -1,147 +1,192 @@
-import { useState } from 'react';
-import s from './button-generator.module.css';
-import style from '/styles/landing.module.css';
-import { PayButton } from '@paybutton/react';
-import { ChromePicker } from 'react-color';
-import CodeBlock from './CodeBlock';
-import { decode } from 'ecashaddrjs';
+import { useState } from 'react'
+import s from './button-generator.module.css'
+import style from '/styles/landing.module.css'
+import { PayButton, Widget as PayButtonWidget } from '@paybutton/react'
+import { ChromePicker } from 'react-color'
+import CodeBlock from './CodeBlock'
+import { decode } from 'ecashaddrjs'
+import { generatorFormFields } from './data.js'
+import {
+  PRIMARY_XEC_COLOR,
+  SECONDARY_XEC_COLOR,
+  TERTIARY_XEC_COLOR,
+  PRIMARY_BCH_COLOR,
+  SECONDARY_BCH_COLOR,
+  TERTIARY_BCH_COLOR
+} from '/constants'
 
-export const isValidAddress = (address: string): string => {
-  try {
-    return decode(address).prefix;
-  } catch (err) {
-    return 'not valid';
+interface ButtonState {
+  to: string
+  amount: string
+  currency: string
+  text: string
+  hoverText: string
+  successText: string
+  animation: string
+  theme: object
+  validAddress: string
+  currencies: any[]
+  goalAmount: string
+  onSuccess: string
+  onTransaction: string
+  randomSatoshis: boolean
+  hideToasts: boolean
+  disableEnforceFocus: boolean
+  disabled: boolean
+  editable: boolean
+  widget: boolean
+  [key: string]: any
+}
+
+export const initialButtonState: ButtonState = {
+  to: '',
+  amount: '',
+  currency: 'XEC',
+  text: '',
+  hoverText: '',
+  successText: '',
+  animation: 'slide',
+  theme: {
+    palette: {
+      primary: PRIMARY_XEC_COLOR,
+      secondary: SECONDARY_XEC_COLOR,
+      tertiary: TERTIARY_XEC_COLOR
+    }
+  },
+  bchtheme: {
+    palette: {
+      primary: PRIMARY_BCH_COLOR,
+      secondary: SECONDARY_BCH_COLOR,
+      tertiary: TERTIARY_BCH_COLOR
+    }
+  },
+  validAddress: '',
+  currencies: ['XEC', 'USD', 'CAD'],
+  goalAmount: '',
+  onSuccess: '',
+  onTransaction: '',
+  randomSatoshis: true,
+  hideToasts: false,
+  disableEnforceFocus: false,
+  disabled: false,
+  editable: false,
+  widget: false
+}
+
+export default function ButtonGenerator (): JSX.Element {
+  const [button, setButton] = useState<ButtonState>(initialButtonState)
+  const [colorPicker, setColorPicker] = useState('')
+
+  const isValidAddress = (address: string): string => {
+    try {
+      return decode(address).prefix
+    } catch (err) {
+      return 'not valid'
+    }
   }
-};
 
-export default function ButtonGenerator(): JSX.Element {
-  const animations = ['slide', 'invert', 'none'];
-  const [primary, setPrimary] = useState(false);
-  const [secondary, setSecondary] = useState(false);
-  const [tertiary, setTertiary] = useState(false);
+  const handleChange = (e: any): any => {
+    const { name, value } = e.target
+    setButton((prevButton) => ({
+      ...prevButton,
+      [name]: value
+    }))
+  }
 
-  const initalState = {
-    to: '',
-    currency: 'XEC',
-    text: '',
-    hoverText: '',
-    successText: '',
-    animation: 'slide',
-    theme: {
-      palette: {
-        primary: '#0074C2',
-        secondary: '#FFFFFF',
-        tertiary: '#231f20',
-      },
-    },
-    validAddress: '',
-    currencies: ['XEC', 'USD', 'CAD'],
-  };
+  const handleCheckBoxChange = (e: any): any => {
+    const { name, checked } = e.target
+    setButton((prevButton) => ({
+      ...prevButton,
+      [name]: checked
+    }))
+  }
 
-  const [button, setButton] = useState(initalState);
+  const handleColorChange = (e: any): any => {
+    const { name, value } = e.target
+    setButton((prevButton) => ({
+      ...prevButton,
+      theme: {
+        ...prevButton.theme,
+        palette: {
+          ...prevButton.theme.palette,
+          [name]: value
+        }
+      }
+    }))
+  }
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    if (['primary', 'secondary', 'tertiary'].includes(name)) {
-      setButton((prevButton) => ({
-        ...prevButton,
-        theme: {
-          ...prevButton.theme,
-          palette: {
-            ...prevButton.theme.palette,
-            [name]: value,
-          },
-        },
-      }));
-    } else if (name === 'to') {
-      setButton((prevButton) => ({
-        ...prevButton,
-        [name]: value,
-        validAddress: isValidAddress(value),
-        currency: ['USD', 'CAD', 'EUR', 'GBP', 'AUD'].includes(
-          prevButton.currency
-        )
-          ? prevButton.currency
-          : isValidAddress(value) === 'bitcoincash'
+  const handleSwatchColorChange = (newColor, colorName: string): void => {
+    setButton((prevButton) => ({
+      ...prevButton,
+      theme: {
+        ...prevButton.theme,
+        palette: {
+          ...prevButton.theme.palette,
+          [colorName]: newColor.hex
+        }
+      }
+    }))
+  }
+
+  const handleAmountChange = (e: any): any => {
+    const { name } = e.target
+    // Remove non-numeric characters except for a single decimal point
+    let numericValue = e.target.value.replace(/[^\d.]/g, '')
+    // Ensure there's only one decimal point
+    const parts = numericValue.split('.')
+    if (parts.length > 2) {
+      // More than one decimal point, keep only the first part before the second decimal point
+      numericValue = `${parts[0] as string}.${parts[1] as string}`
+    }
+    setButton((prevButton) => ({
+      ...prevButton,
+      [name]: numericValue
+    }))
+  }
+
+  const handleAddressChange = (e: any): any => {
+    const { name, value } = e.target
+    setButton((prevButton) => ({
+      ...prevButton,
+      [name]: value,
+      validAddress: isValidAddress(value),
+      currency: (!['XEC', 'BCH'].includes(
+        prevButton.currency
+      ))
+        ? prevButton.currency
+        : isValidAddress(value) === 'bitcoincash'
           ? 'BCH'
           : 'XEC',
-        currencies: [
-          isValidAddress(value) === 'bitcoincash' ? 'BCH' : 'XEC',
-          ...prevButton.currencies.slice(1), // Keep the rest of the array unchanged
-        ],
-        theme: {
-          ...prevButton.theme, // Keep the existing theme values
-          palette: {
-            ...prevButton.theme.palette, // Keep the existing palette values
-            primary:
-              prevButton.theme.palette.primary !== '#0074C2' &&
-              prevButton.theme.palette.primary !== '#4bc846'
-                ? prevButton.theme.palette.primary
-                : isValidAddress(value) === 'bitcoincash'
-                ? '#4bc846'
-                : '#0074C2',
-          },
-        },
-      }));
-    } else if (name === 'amount') {
-      // Remove non-numeric characters except for a single decimal point
-      let numericValue = e.target.value.replace(/[^\d.]/g, '');
-      // Ensure there's only one decimal point
-      const parts = numericValue.split('.');
-      if (parts.length > 2) {
-        // More than one decimal point, keep only the first part before the second decimal point
-        numericValue = `${parts[0]}.${parts[1]}`;
+      currencies: [
+        isValidAddress(value) === 'bitcoincash' ? 'BCH' : 'XEC',
+        ...prevButton.currencies.slice(1) // Keep the rest of the array unchanged
+      ],
+      theme: {
+        ...prevButton.theme, // Keep the existing theme values
+        palette: {
+          ...prevButton.theme.palette, // Keep the existing palette values
+          primary:
+            prevButton.theme.palette.primary !== PRIMARY_XEC_COLOR &&
+            prevButton.theme.palette.primary !== PRIMARY_BCH_COLOR
+              ? prevButton.theme.palette.primary
+              : isValidAddress(value) === 'bitcoincash'
+                ? PRIMARY_BCH_COLOR
+                : PRIMARY_XEC_COLOR
+        }
       }
-      setButton((prevButton) => ({
-        ...prevButton,
-        [name]: numericValue,
-      }));
-    } else {
-      setButton((prevButton) => ({
-        ...prevButton,
-        [name]: value,
-      }));
-    }
-  };
+    }))
+  }
 
-  const handleColorChange = (color) => {
-    setButton((prevButton) => ({
-      ...prevButton,
-      theme: {
-        ...prevButton.theme,
-        palette: {
-          ...prevButton.theme.palette,
-          primary: color.hex,
-        },
-      },
-    }));
-  };
+  interface FunctionMap {
+    [key: string]: (e: any) => any
+  }
 
-  const handleColorChange2 = (color) => {
-    setButton((prevButton) => ({
-      ...prevButton,
-      theme: {
-        ...prevButton.theme,
-        palette: {
-          ...prevButton.theme.palette,
-          secondary: color.hex,
-        },
-      },
-    }));
-  };
-
-  const handleColorChange3 = (color) => {
-    setButton((prevButton) => ({
-      ...prevButton,
-      theme: {
-        ...prevButton.theme,
-        palette: {
-          ...prevButton.theme.palette,
-          tertiary: color.hex,
-        },
-      },
-    }));
-  };
+  const functionMap: FunctionMap = {
+    handleChange,
+    handleColorChange,
+    handleAmountChange,
+    handleAddressChange
+  }
 
   return (
     <div className={s.bg_ctn} id="button-generator">
@@ -152,229 +197,203 @@ export default function ButtonGenerator(): JSX.Element {
           website today!
         </p>
         <div className={s.bg_top_ctn}>
+        <div className={s.form_preview_ctn}>
           <div className={s.form_ctn}>
             <form action="#" method="post">
-              <div className={s.form_half}>
-                <label className={s.address_label}>
-                  <div>
-                    To<span>*</span>
-                  </div>
-                  <a
-                    href="https://cashtab.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Get an address
-                  </a>
-                </label>
-                <input
-                  type="text"
-                  name="to"
-                  placeholder="Your address"
-                  value={button.to}
-                  onChange={handleInputChange}
-                />
-
-                <label>Text</label>
-                <input
-                  type="text"
-                  name="text"
-                  value={button.text}
-                  placeholder="Donate"
-                  onChange={handleInputChange}
-                />
-
-                <label>Hover Text</label>
-                <input
-                  type="text"
-                  name="hoverText"
-                  value={button.hoverText}
-                  placeholder={`Send ${
-                    isValidAddress(button.to) === 'bitcoincash' ? 'BCH' : 'XEC'
-                  }`}
-                  onChange={handleInputChange}
-                />
-
-                <label>Success Text</label>
-                <input
-                  type="text"
-                  name="successText"
-                  value={button.successText}
-                  placeholder="Thanks for your support!"
-                  onChange={handleInputChange}
-                />
-                <div className={s.advanced_ctn}>
-                  For more information and advanced features read our{' '}
-                  <a
-                    href="https://docs.paybutton.org/#/?id=what-is-paybutton"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Documentation
-                  </a>
-                </div>
-              </div>
-
-              <div className={s.form_half}>
-                <div className={s.input_ctn}>
-                  <div className={s.amount_ctn}>
-                    <label>Amount</label>
-                    <input
-                      type="text"
-                      name="amount"
-                      value={button.amount}
-                      placeholder="0"
-                      onChange={handleInputChange}
-                      maxLength={13}
-                    />
-                  </div>
-                  <div>
-                    <label>Currency</label>
-                    <select
-                      name="currency"
-                      value={button.currency}
-                      placeholder=""
-                      onChange={handleInputChange}
-                    >
-                      {button.currencies.map((currency, index) => (
-                        <option value={currency} key={index}>
-                          {currency}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <label>Animation</label>
-                <select
-                  name="animation"
-                  value={button.animation}
-                  onChange={handleInputChange}
-                >
-                  {animations.map((currency, index) => (
-                    <option value={currency} key={index}>
-                      {currency}
-                    </option>
-                  ))}
-                </select>
-                <label>Primary Color</label>
-                <div className={s.swatch_input_ctn}>
-                  {primary && (
-                    <>
-                      <div
-                        className={s.picker_outerctn}
-                        onClick={() => setPrimary(false)}
-                      />
-                      <div className={s.picker_ctn}>
-                        <ChromePicker
-                          color={button.theme.palette.primary}
-                          onChange={handleColorChange}
+               {generatorFormFields.map((field, index) => {
+                 let fieldComponent
+                 switch (field.type) {
+                   case 'select':
+                     fieldComponent = (
+                        <select
+                          name={field.key}
+                          value={button[field.key]}
+                          onChange={functionMap[field.onChange]}
+                        >
+                          {field.key === 'currency'
+                            ? button.currencies.map((option, i) => (
+                            <option value={option} key={i}>
+                              {option}
+                            </option>
+                            ))
+                            : field.options.map((option, i) => (
+                            <option value={option} key={i}>
+                              {option}
+                            </option>
+                            ))}
+                        </select>
+                     )
+                     break
+                   case 'input':
+                     fieldComponent = (
+                        <input
+                          name={field.key}
+                          value={button[field.key]}
+                          placeholder={field.placeholder}
+                          onChange={functionMap[field.onChange]}
+                          maxLength={field.key === 'amount' ? 13 : 200}
                         />
-                      </div>
-                    </>
-                  )}
-                  <div className={s.colorinput}>
-                    <div
-                      className={s.swatch}
-                      style={{ background: `${button.theme.palette.primary}` }}
-                      onClick={() => setPrimary(!primary)}
-                    />
-                  </div>
-                </div>
-                <div className={s.secondary_color_ctn}>
-                  <div>
-                    <label>Secondary</label>
-                    <div className={s.swatch_input_ctn}>
-                      {secondary && (
-                        <>
-                          <div
-                            className={s.picker_outerctn}
-                            onClick={() => setSecondary(false)}
+                     )
+                     break
+                   case 'color':
+                     fieldComponent = (
+                       <div className={s.swatch_input_ctn}>
+                       {colorPicker === field.key && (
+                         <>
+                           <div
+                             className={s.picker_outerctn}
+                             onClick={() => setColorPicker('')}
+                           />
+                           <div className={s.picker_ctn}>
+                             <ChromePicker
+                               color={button.theme.palette[field.key]}
+                               onChange={(color) =>
+                                 handleSwatchColorChange(color, field.key)
+                               }
+                             />
+                           </div>
+                         </>
+                       )}
+                       <div className={s.colorinput}>
+                         <div
+                           className={s.swatch}
+                           style={{
+                             background: `${button.theme.palette[field.key] as string}`
+                           }}
+                           onClick={() => setColorPicker(field.key)}
+                         />
+                       </div>
+                     </div>
+                     )
+                     break
+                   case 'boolean':
+                     fieldComponent = (
+                          <label className={s.switch}>
+                          <input
+                            type="checkbox"
+                            checked={button[field.key]}
+                            onChange={handleCheckBoxChange}
+                            name={field.key}
                           />
-                          <div className={s.picker_ctn}>
-                            <ChromePicker
-                              color={button.theme.palette.secondary}
-                              onChange={handleColorChange2}
-                            />
-                          </div>
-                        </>
-                      )}
-                      <div className={s.colorinput}>
-                        <div
-                          className={s.swatch}
-                          style={{
-                            background: `${button.theme.palette.secondary}`,
-                          }}
-                          onClick={() => setSecondary(!secondary)}
-                        />
-                      </div>
+                          <span className={s.slider}></span>
+                        </label>
+                     )
+                     break
+                   default:
+                     fieldComponent = null // Handle unsupported field types as needed
+                 }
+                 return (
+                    <div className={s[field.className]} key={index}>
+                      {field.key !== 'randomSatoshis'
+                        ? <>
+                      <label>{field.name}</label>
+                      {fieldComponent}
+                      </>
+                        : parseFloat(button.amount) > 0
+                          ? <>
+                      <label>{field.name}</label>
+                      {fieldComponent}
+                      </>
+                          : null}
                     </div>
-                  </div>
-                  <div>
-                    <label>Tertiary</label>
-                    <div className={s.swatch_input_ctn}>
-                      {tertiary && (
-                        <>
-                          <div
-                            className={s.picker_outerctn}
-                            onClick={() => setTertiary(false)}
-                          />
-                          <div className={s.picker_ctn}>
-                            <ChromePicker
-                              color={button.theme.palette.tertiary}
-                              onChange={handleColorChange3}
-                            />
-                          </div>
-                        </>
-                      )}
-                      <div className={s.colorinput}>
-                        <div
-                          className={s.swatch}
-                          style={{
-                            background: `${button.theme.palette.tertiary}`,
-                          }}
-                          onClick={() => setTertiary(!tertiary)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  className={s.reset_btn}
-                  onClick={() => setButton(initalState)}
-                >
-                  Reset
-                </div>
-              </div>
+                 )
+               })}
             </form>
+            <div className={s.advanced_ctn}>
+              <div onClick={() => setButton(initialButtonState)}>Reset</div>
+              <a
+                href="https://docs.paybutton.org/#/?id=what-is-paybutton"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Documentation
+              </a>
+            </div>
           </div>
           <div className={s.preview_ctn}>
             <div className={s.preview_label}>Preview</div>
             {button.validAddress === 'ecash' ||
-            button.validAddress === 'bitcoincash' ? (
-              <PayButton
-                to={button.to}
-                amount={button.amount}
-                currency={button.currency}
-                text={button.text === '' ? undefined : button.text}
-                hoverText={
-                  button.hoverText === '' ? undefined : button.hoverText
-                }
-                successText={
-                  button.successText === '' ? undefined : button.successText
-                }
-                theme={button.theme}
-                animation={button.animation}
-              />
-            ) : button.validAddress === 'not valid' &&
-              button.to.length !== 0 ? (
+            button.validAddress === 'bitcoincash'
+              ? (
+                  button.widget
+                    ? (
+                <PayButtonWidget
+                  to={button.to}
+                  amount={parseFloat(button.amount)}
+                  currency={button.currency}
+                  text={button.text === '' ? undefined : button.text}
+                  hoverText={
+                    button.hoverText === '' ? undefined : button.hoverText
+                  }
+                  successText={
+                    button.successText === '' ? undefined : button.successText
+                  }
+                  theme={button.theme}
+                  animation={button.animation}
+                  goalAmount={
+                    button.goalAmount === '' ? undefined : button.goalAmount
+                  }
+                  onSuccess={
+                    button.onSuccess === '' ? undefined : button.onSuccess
+                  }
+                  onTransaction={
+                    button.onTransaction === ''
+                      ? undefined
+                      : button.onTransaction
+                  }
+                  randomSatoshis={button.randomSatoshis}
+                  hideToasts={button.hideToasts}
+                  disableEnforceFocus={button.disableEnforceFocus}
+                  disabled={button.disabled}
+                  editable={button.editable}
+                />
+                      )
+                    : (
+                <PayButton
+                  to={button.to}
+                  amount={button.amount}
+                  currency={button.currency}
+                  text={button.text === '' ? undefined : button.text}
+                  hoverText={
+                    button.hoverText === '' ? undefined : button.hoverText
+                  }
+                  successText={
+                    button.successText === '' ? undefined : button.successText
+                  }
+                  theme={button.theme}
+                  animation={button.animation}
+                  goalAmount={
+                    button.goalAmount === '' ? undefined : button.goalAmount
+                  }
+                  onSuccess={
+                    button.onSuccess === '' ? undefined : button.onSuccess
+                  }
+                  onTransaction={
+                    button.onTransaction === ''
+                      ? undefined
+                      : button.onTransaction
+                  }
+                  randomSatoshis={button.randomSatoshis}
+                  hideToasts={button.hideToasts}
+                  disableEnforceFocus={button.disableEnforceFocus}
+                  disabled={button.disabled}
+                  editable={button.editable}
+                />
+                      )
+                )
+              : button.validAddress === 'not valid' &&
+              button.to.length !== 0
+                ? (
               <span style={{ color: 'red' }}>Enter a valid address</span>
-            ) : (
-              'Enter an address'
-            )}
+                  )
+                : (
+                    'Enter an address'
+                  )}
+          </div>
           </div>
         </div>
         <CodeBlock button={button} />
       </div>
     </div>
-  );
+  )
 }

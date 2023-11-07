@@ -8,7 +8,6 @@
   color: var(--primary-text-color);
   text-decoration: none;
   font-weight: 500;
-  font-size: 16px;
 }
 
 .landing_ctn img {
@@ -392,6 +391,10 @@ body[data-theme='dark'] .navbar_ctn img {
   margin-top: 20px;
   margin-bottom: 50px;
   color: #231f20;
+}
+
+body[data-theme='dark'] .centerp {
+  color: #fff;
 }
 
 .dashboard_img {
