@@ -32,6 +32,7 @@
   background-color: #fff;
   align-self: stretch;
   position: relative;
+  padding: 30px 0
 }
 
 .form_ctn form {
@@ -289,7 +290,7 @@ body[data-theme='dark'] .picker_ctn input {
 
 .preview_label {
   position: absolute;
-  top: 20px;
+  top: 10px;
   font-weight: 700;
   font-size: 12px;
   text-transform: uppercase;
@@ -390,8 +391,7 @@ body[data-theme='dark'] .codetopbar {
   width: 50%;
 }
 
-body[data-theme='dark'] .bg_ctn h2,
-body[data-theme='dark'] .bg_ctn p {
+body[data-theme='dark'] .bg_ctn h2 {
   color: #fff;
 }
 
