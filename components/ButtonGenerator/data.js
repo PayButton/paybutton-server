@@ -5,7 +5,8 @@ export const generatorFormFields = [
     key: 'to',
     className: 'col_lg',
     type: 'input',
-    onChange: 'handleAddressChange'
+    onChange: 'handleAddressChange',
+    helpText: '*Required | Specifies where the money will be sent to. Can be any valid eCash or Bitcoin Cash address'
   },
   {
     name: 'Amount',
@@ -13,7 +14,8 @@ export const generatorFormFields = [
     key: 'amount',
     className: 'col_sm',
     type: 'input',
-    onChange: 'handleAmountChange'
+    onChange: 'handleAmountChange',
+    helpText: 'Specifies how much money to request. Use this in conjunction with the optional \'currency\' paramter to specify a specific amount in a different currency'
   },
   {
     name: 'Currency',
@@ -29,7 +31,8 @@ export const generatorFormFields = [
     key: 'text',
     className: 'col_lg',
     type: 'input',
-    onChange: 'handleChange'
+    onChange: 'handleChange',
+    helpText: 'Specifies the default text displayed on the button'
   },
   {
     name: 'Animation',
@@ -37,7 +40,8 @@ export const generatorFormFields = [
     className: 'col_sm',
     options: ['slide', 'invert', 'none'],
     type: 'select',
-    onChange: 'handleChange'
+    onChange: 'handleChange',
+    helpText: 'Specifies how the buttons change when hovering over them'
   },
   {
     name: 'Goal Amount',
@@ -45,7 +49,8 @@ export const generatorFormFields = [
     key: 'goalAmount',
     className: 'col_sm',
     type: 'input',
-    onChange: 'handleAmountChange'
+    onChange: 'handleAmountChange',
+    helpText: 'Specifies how much in contributions is required for funding to be considered complete, indicated by a progress bar'
   },
   {
     name: 'Hover Text',
@@ -53,13 +58,15 @@ export const generatorFormFields = [
     key: 'hoverText',
     className: 'col_lg',
     type: 'input',
-    onChange: 'handleChange'
+    onChange: 'handleChange',
+    helpText: 'Specifies the text displayed on the button on hover'
   },
   {
     name: 'Primary',
     key: 'primary',
     className: 'col_xs',
-    type: 'color'
+    type: 'color',
+    helpText: 'The primary, secondary, and tertiary are color options that allow for custom themeing'
   },
   {
     name: 'Secondary',
@@ -79,7 +86,8 @@ export const generatorFormFields = [
     key: 'successText',
     className: 'col_lg',
     type: 'input',
-    onChange: 'handleChange'
+    onChange: 'handleChange',
+    helpText: 'Specifies the text displayed upon successful payment'
   },
   {
     name: 'Widget',
@@ -87,7 +95,8 @@ export const generatorFormFields = [
     key: 'widget',
     className: 'col_sm_center',
     type: 'boolean',
-    default: false
+    default: false,
+    helpText: 'Creates an always-visible PayButton Widget that doesn\'t require clicking a button to open'
   },
   {
     name: 'Random Satoshis',

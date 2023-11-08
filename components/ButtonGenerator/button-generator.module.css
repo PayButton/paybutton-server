@@ -63,6 +63,7 @@
 .col_xs,
 .col_currency {
   padding: 3px;
+  position: relative;
 }
 
 .col_lg {
@@ -134,6 +135,100 @@
 .form_row_checkbox_ctn {
   width: 100%;
   text-align: center;
+}
+
+/********************************** HELP TIP ***************************************/
+
+.label_ctn {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.col_sm_center .label_ctn {
+  justify-content: center;
+}
+
+.help_tip{
+  text-align: center;
+  background-color: #c7c6c6;
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  font-size: 8px;
+  cursor: pointer;
+  margin-left: 3px;
+  line-height: 12px;
+}
+
+.help_tip:before{
+  content:'?';
+  color: #231f20;
+}
+
+.help_tip:hover p {
+  display:block;
+  transform-origin: 100% 0%;
+  -webkit-animation: fadeIn 0.3s ease-in-out;
+  animation: fadeIn 0.3s ease-in-out;
+
+}
+
+.help_tip p { 
+  position: relative;
+  display: none;
+  text-align: left;
+  background-color: var(--accent-color);
+  padding: 10px;
+  width: 300px;
+  margin-left: -10px;
+  border-radius: 3px;
+  box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+  color: #231f20;
+  font-size: 13px;
+  line-height: 1.4;
+  text-transform: none;
+  font-weight: normal;
+  z-index: 999999;
+}
+
+.help_tip p:before{ /* The pointer of the tooltip */
+  position: absolute;
+  content: '';
+  width:0;
+  height: 0;
+  border:6px solid transparent;
+  border-bottom-color:var(--accent-color);
+  left:10px;
+  top:-12px;
+}
+
+.help_tip p:after{ /* Prevents the tooltip from being hidden */
+  width:100%;
+  height:40px;
+  content:'';
+  position: absolute;
+  top:-40px;
+  left:0;
+}
+
+/* CSS animation */
+
+@-webkit-keyframes fadeIn {
+  0% { 
+      opacity:0; 
+      transform: scale(0.6);
+  }
+
+  100% {
+      opacity:100%;
+      transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  0% { opacity:0; }
+  100% { opacity:100%; }
 }
 
 /*****************************************************************************************************/
