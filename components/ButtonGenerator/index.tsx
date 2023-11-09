@@ -300,7 +300,16 @@ export default function ButtonGenerator (): JSX.Element {
                       </>
                         : parseFloat(button.amount) > 0
                           ? <>
-                      <label>{field.name}</label>
+                      <label>
+                        <div className={s.label_ctn}>
+                          {field.name}
+                          {field.helpText !== undefined &&
+                            <div className={s.help_tip}>
+                              <p>{field.helpText}</p>
+                            </div>
+                          }
+                        </div>
+                      </label>
                       {fieldComponent}
                       </>
                           : null}
