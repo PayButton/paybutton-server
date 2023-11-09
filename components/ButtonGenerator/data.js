@@ -5,7 +5,8 @@ export const generatorFormFields = [
     key: 'to',
     className: 'col_lg',
     type: 'input',
-    onChange: 'handleAddressChange'
+    onChange: 'handleAddressChange',
+    helpText: 'Where the money will be sent to'
   },
   {
     name: 'Amount',
@@ -13,7 +14,8 @@ export const generatorFormFields = [
     key: 'amount',
     className: 'col_sm',
     type: 'input',
-    onChange: 'handleAmountChange'
+    onChange: 'handleAmountChange',
+    helpText: 'How much money to request'
   },
   {
     name: 'Currency',
@@ -29,7 +31,8 @@ export const generatorFormFields = [
     key: 'text',
     className: 'col_lg',
     type: 'input',
-    onChange: 'handleChange'
+    onChange: 'handleChange',
+    helpText: 'The text displayed on the button'
   },
   {
     name: 'Animation',
@@ -37,7 +40,8 @@ export const generatorFormFields = [
     className: 'col_sm',
     options: ['slide', 'invert', 'none'],
     type: 'select',
-    onChange: 'handleChange'
+    onChange: 'handleChange',
+    helpText: 'The button hover animation'
   },
   {
     name: 'Goal Amount',
@@ -45,7 +49,8 @@ export const generatorFormFields = [
     key: 'goalAmount',
     className: 'col_sm',
     type: 'input',
-    onChange: 'handleAmountChange'
+    onChange: 'handleAmountChange',
+    helpText: 'Specifies a funding goal amount, indicated with a progress bar'
   },
   {
     name: 'Hover Text',
@@ -53,13 +58,15 @@ export const generatorFormFields = [
     key: 'hoverText',
     className: 'col_lg',
     type: 'input',
-    onChange: 'handleChange'
+    onChange: 'handleChange',
+    helpText: 'The text displayed on the button on hover'
   },
   {
     name: 'Primary',
     key: 'primary',
     className: 'col_xs',
-    type: 'color'
+    type: 'color',
+    helpText: 'The primary, secondary, and tertiary are color options that allow for custom themeing'
   },
   {
     name: 'Secondary',
@@ -79,7 +86,8 @@ export const generatorFormFields = [
     key: 'successText',
     className: 'col_lg',
     type: 'input',
-    onChange: 'handleChange'
+    onChange: 'handleChange',
+    helpText: 'The text displayed upon successful payment'
   },
   {
     name: 'Widget',
@@ -87,14 +95,16 @@ export const generatorFormFields = [
     key: 'widget',
     className: 'col_sm_center',
     type: 'boolean',
-    default: false
+    default: false,
+    helpText: 'Creates an always-visible PayButton Widget'
   },
   {
-    name: 'Random Satoshis',
+    name: 'Random Sats',
     placeholder: 'randomSatoshis',
     key: 'randomSatoshis',
     className: 'col_sm_center',
     type: 'boolean',
-    default: true
+    default: true,
+    helpText: 'Randomizes the last few digits (satoshis) of the payment amount so it’s unlikely a payment made by one person will trigger the onSuccess callback of another'
   }
 ]

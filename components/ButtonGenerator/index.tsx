@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import s from './button-generator.module.css'
-import style from '/styles/landing.module.css'
+import style from '../../styles/landing.module.css'
 import { PayButton, Widget as PayButtonWidget } from '@paybutton/react'
 import { ChromePicker } from 'react-color'
 import CodeBlock from './CodeBlock'
@@ -13,7 +13,7 @@ import {
   PRIMARY_BCH_COLOR,
   SECONDARY_BCH_COLOR,
   TERTIARY_BCH_COLOR
-} from '/constants'
+} from '../../constants'
 
 interface ButtonState {
   to: string
@@ -286,12 +286,30 @@ export default function ButtonGenerator (): JSX.Element {
                     <div className={s[field.className]} key={index}>
                       {field.key !== 'randomSatoshis'
                         ? <>
-                      <label>{field.name}</label>
+                      <label>
+                        <div className={s.label_ctn}>
+                          {field.name}
+                          {field.helpText !== undefined &&
+                            <div className={s.help_tip}>
+                              <p>{field.helpText}</p>
+                            </div>
+                          }
+                        </div>
+                      </label>
                       {fieldComponent}
                       </>
                         : parseFloat(button.amount) > 0
                           ? <>
-                      <label>{field.name}</label>
+                      <label>
+                        <div className={s.label_ctn}>
+                          {field.name}
+                          {field.helpText !== undefined &&
+                            <div className={s.help_tip}>
+                              <p>{field.helpText}</p>
+                            </div>
+                          }
+                        </div>
+                      </label>
                       {fieldComponent}
                       </>
                           : null}
