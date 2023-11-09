@@ -76,7 +76,6 @@ const TableContainer = ({ columns, data, opts, ssr }: IProps): JSX.Element => {
       </table>
     </div>
 
-    {pageOptions.length > 1 &&
     <div className='table-navigation-ctn'>
       <button
         onClick={() => gotoPage(0)}
@@ -112,7 +111,6 @@ const TableContainer = ({ columns, data, opts, ssr }: IProps): JSX.Element => {
         </select>
       </div>
     </div>
-      }
     </>
   )
 }

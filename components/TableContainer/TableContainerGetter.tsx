@@ -132,7 +132,6 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
       </table>
     </div>
 
-    {pageOptions.length > 1 &&
     <div className='table-navigation-ctn'>
       <button
         onClick={() => gotoPage(0)}
@@ -168,7 +167,6 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
         </select>
       </div>
     </div>
-      }
     </>
   )
 }
