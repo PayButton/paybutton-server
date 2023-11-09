@@ -53,11 +53,11 @@ export default ({ addressSyncing, tableRefreshCount }: IProps): JSX.Element => {
           return <div style={{ textAlign: 'right', fontWeight: '600' }}>{parseFloat(cellProps.cell.value).toLocaleString(
             undefined,
             {
-              minimumFractionDigits: cellProps.row.values.networkId === 1 ? 2 : 8,
-              maximumFractionDigits: cellProps.row.values.networkId === 1 ? 2 : 8
+              minimumFractionDigits: cellProps.row.values['address.networkId'] === 1 ? 2 : 8,
+              maximumFractionDigits: cellProps.row.values['address.networkId'] === 1 ? 2 : 8
             }
           )
-            } {cellProps.row.values.networkId === 1 ? 'XEC' : 'BCH' }</div>
+            } {cellProps.row.values['address.networkId'] === 1 ? 'XEC' : 'BCH' }</div>
         }
       },
       {
@@ -78,7 +78,7 @@ export default ({ addressSyncing, tableRefreshCount }: IProps): JSX.Element => {
         accessor: 'hash',
         disableSortBy: true,
         Cell: (cellProps) => {
-          const url = cellProps.cell.row.values.networkId === 1 ? 'https://explorer.e.cash/tx/' : 'https://blockchair.com/bitcoin-cash/transaction/'
+          const url = cellProps.cell.row.values['address.networkId'] === 1 ? 'https://explorer.e.cash/tx/' : 'https://blockchair.com/bitcoin-cash/transaction/'
           return (
             <a href={url.concat(cellProps.cell.value)} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
               <div className="table-eye">
