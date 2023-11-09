@@ -6,10 +6,10 @@ touch_local_env = touch .env.local
 prod:
 	$(git_hook_setup)
 	$(touch_local_env)
-	docker-compose -f docker-compose-prod.yml --env-file .env --env-file .env.local up --build -d
+	docker compose -f docker-compose-prod.yml --env-file .env --env-file .env.local up --build -d
 
 stop-prod:
-	docker-compose -f docker-compose-prod.yml down
+	docker compose -f docker-compose-prod.yml down
 
 reset-prod:
 	make stop-prod && make prod
@@ -17,10 +17,10 @@ reset-prod:
 dev:
 	$(git_hook_setup)
 	$(touch_local_env)
-	docker-compose --env-file .env --env-file .env.local up --build -d
+	docker compose --env-file .env --env-file .env.local up --build -d
 
 stop-dev:
-	docker-compose down
+	docker compose down
 
 reset-dev:
 	make stop-dev && make dev
