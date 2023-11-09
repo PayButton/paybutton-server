@@ -1,5 +1,4 @@
-import React, { FunctionComponent, useMemo } from 'react'
-import { Transaction } from '@prisma/client'
+import React, { useMemo } from 'react'
 import style from './transaction.module.css'
 import Image from 'next/image'
 import XECIcon from 'assets/xec-logo.png'
@@ -7,19 +6,29 @@ import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import CheckIcon from 'assets/check-icon.png'
 import XIcon from 'assets/x-icon.png'
-import TableContainer, { compareNumericString } from '../../components/TableContainer'
+import TableContainerGetter from '../../components/TableContainer/TableContainerGetter'
+import { compareNumericString } from 'utils/index'
 import moment from 'moment'
 
 interface IProps {
-  addressTransactions: {
-    [address: string]: Transaction
-  }
-  addressSynced: {
+  addressSyncing: {
     [address: string]: boolean
+  }
+  tableRefreshCount: number
+}
+
+function getGetterForAddress (addressString: string): Function {
+  return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
+    const ok = await fetch(`/api/address/transactions/${addressString}?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`)
+    const ok2 = await fetch(`/api/address/transactions/count/${addressString}`)
+    return {
+      data: await ok.json(),
+      totalCount: await ok2.json()
+    }
   }
 }
 
-export default ({ addressTransactions, addressSynced }: IProps): FunctionComponent => {
+export default ({ addressSyncing, tableRefreshCount }: IProps): JSX.Element => {
   const columns = useMemo(
     () => [
       {
@@ -44,21 +53,21 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
           return <div style={{ textAlign: 'right', fontWeight: '600' }}>{parseFloat(cellProps.cell.value).toLocaleString(
             undefined,
             {
-              minimumFractionDigits: cellProps.row.values.address.networkId === 1 ? 2 : 8,
-              maximumFractionDigits: cellProps.row.values.address.networkId === 1 ? 2 : 8
+              minimumFractionDigits: cellProps.row.values['address.networkId'] === 1 ? 2 : 8,
+              maximumFractionDigits: cellProps.row.values['address.networkId'] === 1 ? 2 : 8
             }
           )
-            } {cellProps.row.values.address.networkId === 1 ? 'XEC' : 'BCH' }</div>
+            } {cellProps.row.values['address.networkId'] === 1 ? 'XEC' : 'BCH' }</div>
         }
       },
       {
         Header: () => (<div style={{ textAlign: 'center' }}>Network</div>),
-        accessor: 'address',
+        accessor: 'address.networkId',
         Cell: (cellProps) => {
           return (
             <div className='table-icon-ctn'>
               <div className='table-icon'>
-              {cellProps.cell.value.networkId === 1 ? <Image src={XECIcon} alt='XEC' /> : <Image src={BCHIcon} alt='BCH' />}
+              {cellProps.cell.value === 1 ? <Image src={XECIcon} alt='XEC' /> : <Image src={BCHIcon} alt='BCH' />}
               </div>
             </div>
           )
@@ -69,7 +78,7 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
         accessor: 'hash',
         disableSortBy: true,
         Cell: (cellProps) => {
-          const url = cellProps.cell.row.values.address.networkId === 1 ? 'https://explorer.e.cash/tx/' : 'https://blockchair.com/bitcoin-cash/transaction/'
+          const url = cellProps.cell.row.values['address.networkId'] === 1 ? 'https://explorer.e.cash/tx/' : 'https://blockchair.com/bitcoin-cash/transaction/'
           return (
             <a href={url.concat(cellProps.cell.value)} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
               <div className="table-eye">
@@ -84,7 +93,7 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
   )
   return (
     <>
-      {Object.keys(addressTransactions).map(transactionAddress => (
+      {Object.keys(addressSyncing).map(transactionAddress => (
         <div key={transactionAddress} className='address-transactions-ctn'>
           <div className={style.tablelabel}>
             <div>{transactionAddress}</div>
@@ -94,15 +103,8 @@ export default ({ addressTransactions, addressSynced }: IProps): FunctionCompone
               </div>
             </a>
           </div>
-          { addressTransactions[transactionAddress].length === 0
-            ? <div className={style.transaction_ctn}> {
-              addressSynced[transactionAddress] ? 'No transactions yet' : 'Syncing address...'
-              }
-            </div>
-            : <TableContainer columns={columns} data={addressTransactions[transactionAddress]} />
-        }
+          <TableContainerGetter columns={columns} dataGetter={getGetterForAddress(transactionAddress)} tableRefreshCount={tableRefreshCount} emptyMessage={'No transactions.'}/>
         </div>
-
       ))}
     </>
   )

@@ -1,9 +1,10 @@
-import TableContainer, { compareNumericString } from 'components/TableContainer'
+import TableContainer from 'components/TableContainer/TableContainer'
 import { useMemo } from 'react'
 import { PaymentDataByButton } from 'redis/dashboardCache'
 import style from '../Transaction/transaction.module.css'
 import moment from 'moment'
 import { USD_QUOTE_ID } from 'constants/index'
+import { compareNumericString } from 'utils/index'
 import { formatQuoteValue } from 'utils'
 
 interface IProps {

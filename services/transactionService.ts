@@ -62,20 +62,50 @@ export async function fetchAddressListTransactions (addressIdList: string[]): Pr
   })
 }
 
-export async function fetchPaginatedAddressTransactions (addressString: string, page: number, pageSize: number): Promise<TransactionWithAddressAndPrices[]> {
+export async function fetchTxCount (addressString: string): Promise<number> {
   const address = await fetchAddressBySubstring(addressString)
-  const transactions = await prisma.transaction.findMany({
+  return await prisma.transaction.count({
+    where: {
+      addressId: address.id
+    }
+  })
+}
+
+export async function fetchPaginatedAddressTransactions (addressString: string, page: number, pageSize: number, orderBy?: string, orderDesc = true): Promise<TransactionWithAddressAndPrices[]> {
+  const address = await fetchAddressBySubstring(addressString)
+  const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
+
+  // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
+  let orderByQuery
+  if (orderBy !== undefined && orderBy !== '') {
+    if (orderBy.includes('.')) {
+      const [relation, property] = orderBy.split('.')
+      orderByQuery = {
+        [relation]: {
+          [property]: orderDescString
+        }
+      }
+    } else {
+      orderByQuery = {
+        [orderBy]: orderDescString
+      }
+    }
+  } else {
+    // Default orderBy
+    orderByQuery = {
+      timestamp: orderDescString
+    }
+  }
+
+  return await prisma.transaction.findMany({
     where: {
       addressId: address.id
     },
     include: includeAddressAndPrices,
-    orderBy: {
-      timestamp: 'desc'
-    },
+    orderBy: orderByQuery,
     skip: page * pageSize,
     take: pageSize
   })
-  return _.orderBy(transactions, ['timestamp'], ['desc'])
 }
 
 export async function fetchAddressTransactions (addressString: string): Promise<TransactionWithAddressAndPrices[]> {

@@ -9,7 +9,7 @@ import style from './admin.module.css'
 import { isUserAdmin, UserWithSupertokens } from 'services/userService'
 import { useRouter } from 'next/router'
 import RegisteredUsers from 'components/Admin/RegisteredUsers'
-import TableContainer from '../../components/TableContainer';
+import TableContainer from '../../components/TableContainer/TableContainer'
 import EyeIcon from 'assets/eye-icon.png'
 import Image from 'next/image'
 
@@ -79,7 +79,7 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
         Header: 'Subscribed addresses',
         accessor: 'address',
         Cell: (cellProps: any) => {
-          return <div className="table-date">{cellProps.cell.value}</div>;
+          return <div className="table-date">{cellProps.cell.value}</div>
         }
       },
       {
@@ -90,12 +90,12 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
           <div className="table-eye">
             <Image src={EyeIcon} alt='View on explorer' />
           </div>
-        </a>;
+        </a>
         }
       }
     ],
     []
-  );
+  )
 
   if (user !== null && isAdmin) {
     return <>

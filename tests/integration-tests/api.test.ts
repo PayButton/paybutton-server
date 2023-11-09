@@ -28,6 +28,7 @@ import {
 } from 'tests/utils'
 
 import { RESPONSE_MESSAGES, NETWORK_SLUGS } from 'constants/index'
+import { Prisma, Transaction } from '@prisma/client'
 const setUpUsers = async (): Promise<void> => {
   await createUserProfile('test-u-id')
   await createUserProfile('test-u-id2')
@@ -1239,6 +1240,50 @@ describe('GET /api/address/transactions/[address]', () => {
       }
     }
     const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
+    const responseData = res._getJSONData()
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.STARTED_SYNC_200.message)
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('HTTP 200 orderBy timestamp', async () => {
+    const baseRequestOptions: RequestOptions = {
+      method: 'GET' as RequestMethod,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      query: {
+        address: `ecash:${exampleAddresses.ecash}`,
+        orderBy: 'timestamp',
+        orderDesc: false
+      }
+    }
+    const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
+    const responseData = res._getData()
+    const timestamps = responseData.map((d: any) => d.timestamp)
+    expect(res.statusCode).toBe(200)
+    for (let i = 0; i < timestamps.length - 1; i++) {
+      expect(timestamps[i]).toBeLessThanOrEqual(timestamps[i + 1])
+    }
+  })
+
+  it('HTTP 200 orderBy amount', async () => {
+    const baseRequestOptions: RequestOptions = {
+      method: 'GET' as RequestMethod,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      query: {
+        address: `ecash:${exampleAddresses.ecash}`,
+        orderBy: 'amount',
+        orderDesc: 'true'
+      }
+    }
+    const res = await testEndpoint(baseRequestOptions, transactionsEndpoint)
+    const responseData = res._getData()
+    const amounts: Prisma.Decimal[] = responseData.map((d: Transaction) => d.amount)
+    for (let i = 0; i < amounts.length - 1; i++) {
+      expect(amounts[i + 1].lt(amounts[i])).toBeTruthy()
+    }
     expect(res.statusCode).toBe(200)
   })
 })

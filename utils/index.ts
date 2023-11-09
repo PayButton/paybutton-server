@@ -209,3 +209,20 @@ export function arraysAreEqual (a: any[], b: any[]): boolean {
 
   return true
 }
+
+// Custom sorting function for number columns to work with any value type and negative numbers
+// Needs to be imported where the table column is defined and used with, sortType: compareNumericString
+// will place any non-numeric values at the end
+export const compareNumericString = (rowA: any, rowB: any, id: string, desc: boolean): number => {
+  let a = Number.parseFloat(rowA.values[id])
+  let b = Number.parseFloat(rowB.values[id])
+  if (Number.isNaN(a)) {
+    a = desc ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY
+  }
+  if (Number.isNaN(b)) {
+    b = desc ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY
+  }
+  if (a > b) return 1
+  if (a < b) return -1
+  return 0
+}

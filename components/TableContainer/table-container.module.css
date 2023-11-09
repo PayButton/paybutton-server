@@ -1,0 +1,8 @@
+.loading {
+  color: grey;
+}
+
+.no_data {
+  text-align: left !important;
+  padding: 10px;
+}
