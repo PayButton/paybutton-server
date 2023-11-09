@@ -91,7 +91,6 @@ export const generatorFormFields = [
   },
   {
     name: 'Widget',
-    placeholder: 'widget',
     key: 'widget',
     className: 'col_sm_center',
     type: 'boolean',
@@ -100,11 +99,66 @@ export const generatorFormFields = [
   },
   {
     name: 'Random Sats',
-    placeholder: 'randomSatoshis',
     key: 'randomSatoshis',
     className: 'col_sm_center',
     type: 'boolean',
     default: true,
     helpText: 'Randomizes the last few digits (satoshis) of the payment amount so it’s unlikely a payment made by one person will trigger the onSuccess callback of another'
-  }
+  },
+  {
+    name: 'On-success',
+    placeholder: 'Callback function',
+    key: 'onSuccess',
+    className: 'col_lg',
+    type: 'input',
+    onChange: 'handleChange',
+    helpText: 'Callback function that runs upon successful payment',
+    advanced: true
+  },
+  {
+    name: 'Hide Toasts',
+    key: 'hideToasts',
+    className: 'col_sm_center',
+    type: 'boolean',
+    default: false,
+    helpText: 'Disable transaction sounds and popups',
+    advanced: true
+  },
+  {
+    name: 'Disable EF',
+    key: 'disableEnforceFocus',
+    className: 'col_sm_center',
+    type: 'boolean',
+    default: true,
+    helpText: 'When false, disableEnforceFocus, can help with accessibility technology such as screen readers but may throw errors on sites running Material UI',
+    advanced: true
+  },
+  {
+    name: 'On-transaction',
+    placeholder: 'Callback function',
+    key: 'onTransaction',
+    className: 'col_lg',
+    type: 'input',
+    onChange: 'handleChange',
+    helpText: 'Callback function that runs upon any payment',
+    advanced: true
+  },
+  {
+    name: 'Disabled',
+    key: 'disabled',
+    className: 'col_sm_center',
+    type: 'boolean',
+    default: false,
+    helpText: 'Disable the button or widget',
+    advanced: true
+  },
+  {
+    name: 'Editable',
+    key: 'editable',
+    className: 'col_sm_center',
+    type: 'boolean',
+    default: true,
+    helpText: 'Creates input to change the payment amount',
+    advanced: true
+  },
 ]

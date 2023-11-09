@@ -604,3 +604,7 @@ body[data-theme='dark'] .preview_ctn {
     font-size: 14px !important;
   }
 }
+
+.advanced {
+  display: none;
+}
