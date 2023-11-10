@@ -6,6 +6,9 @@ class RedisMocked {
     return ''
   }
 
+  async del (key: string, data: any): Promise<void> {
+  }
+
   async set (key: string, data: any): Promise<void> {
   }
 
