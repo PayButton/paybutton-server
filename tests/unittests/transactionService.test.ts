@@ -2,7 +2,7 @@ import prisma from 'prisma/clientInstance'
 import * as transactionService from 'services/transactionService'
 import { prismaMock } from 'prisma/mockedClient'
 import { mockedBCHAddress, mockedUSDPriceOnTransaction, mockedCADPriceOnTransaction, mockedTransaction } from '../mockedObjects'
-import * as dashboardCache from 'redis/dashboardCache'
+import * as paymentCache from 'redis/paymentCache'
 import { Prisma } from '@prisma/client'
 
 describe('Create services', () => {
@@ -25,7 +25,7 @@ describe('Create services', () => {
     prismaMock.pricesOnTransactions.upsert.mockResolvedValue(mockedUSDPriceOnTransaction)
     prisma.pricesOnTransactions.upsert = prismaMock.pricesOnTransactions.upsert
 
-    const mockCacheTxs = jest.spyOn(dashboardCache, 'cacheManyTxs')
+    const mockCacheTxs = jest.spyOn(paymentCache, 'cacheManyTxs')
     mockCacheTxs.mockImplementation(async () => {
       // Do nothing
     })

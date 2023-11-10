@@ -2,7 +2,7 @@ import * as paybuttonService from 'services/paybuttonService'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
-import { ChartData, PeriodData, DashboardData, Payment, getUserUncachedAddresses, cacheAddress, getCachedPaymentsForUser, ButtonData, PaymentDataByButton } from 'redis/dashboardCache'
+import { ChartData, PeriodData, DashboardData, Payment, getUserUncachedAddresses, cacheAddress, getCachedPaymentsForUser, ButtonData, PaymentDataByButton } from 'redis/paymentCache'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 const getChartLabels = function (n: number, periodString: string, formatString = 'M/D'): string[] {

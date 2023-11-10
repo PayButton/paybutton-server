@@ -4,7 +4,7 @@ import { BroadcastTxData } from './types'
 import { createServer } from 'http'
 import { Server, Socket } from 'socket.io'
 import { RESPONSE_MESSAGES } from '../constants/index'
-import { clearRecentAddressCache } from 'redis/dashboardCache'
+import { clearRecentAddressCache } from 'redis/paymentCache'
 
 // Configure server
 const app = express()

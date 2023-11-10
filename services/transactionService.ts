@@ -4,7 +4,7 @@ import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockch
 import { fetchAddressBySubstring, fetchAddressById } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT } from 'constants/index'
-import { cacheManyTxs } from 'redis/dashboardCache'
+import { cacheManyTxs } from 'redis/paymentCache'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
