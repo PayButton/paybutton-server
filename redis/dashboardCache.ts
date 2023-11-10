@@ -229,3 +229,12 @@ export const appendPaybuttonToAddressesCache = async (addressIdList: string[], b
     }
   }
 }
+
+export const clearRecentAddressCache = async (addressString: string, timestamps: number[]): Promise<void> => {
+  const weekKeys = timestamps.map(t => getPaymentsWeekKey(addressString, t))
+  await Promise.all(
+    weekKeys.map(async (k) =>
+      await redis.set(k, [])
+    )
+  )
+}

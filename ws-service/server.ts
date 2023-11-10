@@ -4,6 +4,7 @@ import { BroadcastTxData } from './types'
 import { createServer } from 'http'
 import { Server, Socket } from 'socket.io'
 import { RESPONSE_MESSAGES } from '../constants/index'
+import { clearRecentAddressCache } from 'redis/dashboardCache'
 
 // Configure server
 const app = express()
@@ -44,16 +45,14 @@ const addressRouteConnection = (socket: Socket): void => {
   console.log('  total:', countA)
 }
 
-const clearCache = (_: any): void => {}
-
-const broadcastTxs = (broadcastTxData: BroadcastTxData): void => {
+const broadcastTxs = async (broadcastTxData: BroadcastTxData): Promise<void> => {
   console.log('broadcasting', broadcastTxData.txs.length, broadcastTxData.messageType, 'txs')
   if (broadcastTxData?.txs?.length === 0) {
     console.warn(RESPONSE_MESSAGES.BROADCAST_EMPTY_TX_400)
     return
   }
   addressesNs.to(broadcastTxData.address).emit('incoming-txs', broadcastTxData)
-  clearCache(broadcastTxData.address)
+  await clearRecentAddressCache(broadcastTxData.address, broadcastTxData.txs.map(tx => tx.timestamp))
 }
 const broadcastNs = io.of('/broadcast')
 const broadcastRouteConnection = (socket: Socket): void => {
