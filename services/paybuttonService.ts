@@ -154,7 +154,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
   // This has to be done before, or the connection
   // on relation tables to these addresses will fail
   const addressIdList: string[] = []
-  const updatedAddressIdList: string[] = []
+  const updatedAddressStringList: string[] = []
   const createdAddresses: addressService.AddressWithTransactions[] = []
 
   // Prevent IFP addresses from being created
@@ -167,7 +167,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
       const upsertedAddress = await addressService.upsertAddress(address, prisma)
       addressIdList.push(upsertedAddress.id)
       if (upsertedAddress.createdAt.getTime() !== upsertedAddress.updatedAt.getTime()) {
-        updatedAddressIdList.push(upsertedAddress.id)
+        updatedAddressStringList.push(upsertedAddress.address)
       } else {
         createdAddresses.push(upsertedAddress)
       }
@@ -210,7 +210,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
     })
     // Update cache for existent addreses
     await appendPaybuttonToAddressesCache(
-      updatedAddressIdList,
+      updatedAddressStringList,
       {
         name: pb.name,
         id: pb.id
@@ -366,7 +366,7 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
 
   // Get new addresses (for this button) that already exist in some
   // other button. This will be important to update the cache.
-  const idListForAddressesThatAlreadyExisted = (await prisma.address.findMany({
+  const addressesThatAlreadyExistedStringList = (await prisma.address.findMany({
     where: {
       paybuttons: {
         some: {
@@ -380,10 +380,10 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
       }
     },
     select: {
-      id: true
+      address: true
     }
-  })).map(obj => obj.id)
-  await appendPaybuttonToAddressesCache(idListForAddressesThatAlreadyExisted,
+  })).map(obj => obj.address)
+  await appendPaybuttonToAddressesCache(addressesThatAlreadyExistedStringList,
     {
       name: paybutton.name,
       id: paybutton.id
@@ -394,7 +394,7 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
   // that are new (did not exist in any other buttons)
   void syncAndSubscribeAddresses(
     paybuttonNewAddresses
-      .filter(a => !idListForAddressesThatAlreadyExisted.includes(a.id))
+      .filter(a => !addressesThatAlreadyExistedStringList.includes(a.address))
   )
 
   return paybutton
