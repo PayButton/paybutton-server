@@ -2,7 +2,7 @@ import * as paybuttonService from 'services/paybuttonService'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { setSession } from 'utils/setSession'
-import { ChartData, PeriodData, DashboardData, Payment, getUserUncachedAddresses, cacheAddress, getCachedPaymentsForUser, ButtonData, PaymentDataByButton } from 'redis/paymentCache'
+import { ChartData, PeriodData, DashboardData, Payment, getUserUncachedAddresses, cacheAddress, getCachedPaymentsForUser, ButtonData, PaymentDataByButton, cacheDashboardData, getCachedDashboardData } from 'redis/paymentCache'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 
 const getChartLabels = function (n: number, periodString: string, formatString = 'M/D'): string[] {
@@ -123,30 +123,36 @@ const getPaymentList = async (userId: string): Promise<Payment[]> => {
   return await getCachedPaymentsForUser(userId)
 }
 
-const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
-  const buttons = await paybuttonService.fetchPaybuttonArrayByUserId(userId)
-  const paymentList = await getPaymentList(userId)
+const getUserDashboardData = async function (userId: string, cached = false): Promise<DashboardData> {
+  let dashboardData = await getCachedDashboardData(userId)
+  if (dashboardData === null) {
+    const buttons = await paybuttonService.fetchPaybuttonArrayByUserId(userId)
+    const paymentList = await getPaymentList(userId)
 
-  const totalRevenue = paymentList.map((p) => p.value).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
-  const nMonthsTotal = getNumberOfMonths(paymentList)
+    const totalRevenue = paymentList.map((p) => p.value).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
+    const nMonthsTotal = getNumberOfMonths(paymentList)
 
-  const thirtyDays: PeriodData = getPeriodData(30, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
-  const sevenDays: PeriodData = getPeriodData(7, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
-  const year: PeriodData = getPeriodData(12, 'months', paymentList, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM')
-  const all: PeriodData = getPeriodData(nMonthsTotal, 'months', paymentList, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM YYYY')
+    const thirtyDays: PeriodData = getPeriodData(30, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
+    const sevenDays: PeriodData = getPeriodData(7, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
+    const year: PeriodData = getPeriodData(12, 'months', paymentList, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM')
+    const all: PeriodData = getPeriodData(nMonthsTotal, 'months', paymentList, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM YYYY')
 
-  return {
-    thirtyDays,
-    sevenDays,
-    year,
-    all,
-    paymentList,
-    total: {
-      revenue: totalRevenue,
-      payments: paymentList.length,
-      buttons: buttons.length
+    dashboardData = {
+      thirtyDays,
+      sevenDays,
+      year,
+      all,
+      paymentList,
+      total: {
+        revenue: totalRevenue,
+        payments: paymentList.length,
+        buttons: buttons.length
+      }
     }
+    await cacheDashboardData(userId, dashboardData)
+    return dashboardData
   }
+  return dashboardData
 }
 
 export default async (req: any, res: any): Promise<void> => {

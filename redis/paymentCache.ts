@@ -30,7 +30,7 @@ export interface DashboardData {
   year: PeriodData
   sevenDays: PeriodData
   all: PeriodData
-  paymentList: Payment[]
+  paymentList?: Payment[]
   total: {
     revenue: Prisma.Decimal
     payments: number
@@ -68,6 +68,10 @@ export interface PaymentDataByButton {
 
 const getPaymentsWeekKey = (addressString: string, timestamp: number): string => {
   return `${addressString}:payments:${moment.unix(timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
+}
+
+const getDashboardSummaryKey = (userId: string): string => {
+  return `${userId}:dashboard`
 }
 
 export const getUserUncachedAddresses = async (userId: string): Promise<AddressWithTransactionsWithPrices[]> => {
@@ -234,7 +238,23 @@ export const clearRecentAddressCache = async (addressString: string, timestamps:
   const weekKeys = timestamps.map(t => getPaymentsWeekKey(addressString, t))
   await Promise.all(
     weekKeys.map(async (k) =>
-      await redis.set(k, JSON.stringify([]))
+      await redis.del(k, () => {})
     )
   )
+}
+
+export const cacheDashboardData = async (userId: string, dashboardData: DashboardData): Promise<void> => {
+  const key = getDashboardSummaryKey(userId)
+  const {
+    paymentList,
+    ...cachable
+  } = dashboardData
+  await redis.set(key, JSON.stringify(cachable))
+}
+
+export const getCachedDashboardData = async (userId: string): Promise<DashboardData | null> => {
+  const key = getDashboardSummaryKey(userId)
+  const dashboardString = await redis.get(key)
+  const dashboardData: DashboardData | null = (dashboardString === null) ? null : JSON.parse(dashboardString)
+  return dashboardData
 }
