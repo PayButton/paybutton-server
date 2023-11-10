@@ -45,8 +45,7 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
       const response = await fetch('api/payments')
-      const body = await response.json()
-      const payments = body.paymentList
+      const payments = await response.json()
       setData(payments)
     }
     fetchData().catch(console.error)

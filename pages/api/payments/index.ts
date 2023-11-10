@@ -123,7 +123,7 @@ const getPaymentList = async (userId: string): Promise<Payment[]> => {
   return await getCachedPaymentsForUser(userId)
 }
 
-const getUserDashboardData = async function (userId: string, cached = false): Promise<DashboardData> {
+const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
   let dashboardData = await getCachedDashboardData(userId)
   if (dashboardData === null) {
     const buttons = await paybuttonService.fetchPaybuttonArrayByUserId(userId)
@@ -149,7 +149,7 @@ const getUserDashboardData = async function (userId: string, cached = false): Pr
         buttons: buttons.length
       }
     }
-    await cacheDashboardData(userId, dashboardData)
+    await cacheDashboardData(userId, dashboardData) // WIP SET THIS NULL ON UPDATE BUTTONS & WS
     return dashboardData
   }
   return dashboardData
@@ -159,7 +159,14 @@ export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'GET') {
     await setSession(req, res)
     const userId = req.session.userId
-
-    res.status(200).json(await getUserDashboardData(userId))
+    const summarize = req.query.summarize as boolean
+    console.log('chegs', summarize)
+    let resJSON: any
+    if (summarize) {
+      resJSON = await getUserDashboardData(userId)
+    } else {
+      resJSON = await getPaymentList(userId)
+    }
+    res.status(200).json(resJSON)
   }
 }

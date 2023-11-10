@@ -85,7 +85,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
-      const res = await fetch('api/dashboard')
+      const res = await fetch('api/payments?summarize=1')
       const json = await res.json()
       setDashboardData(json)
     }
