@@ -234,7 +234,7 @@ export const clearRecentAddressCache = async (addressString: string, timestamps:
   const weekKeys = timestamps.map(t => getPaymentsWeekKey(addressString, t))
   await Promise.all(
     weekKeys.map(async (k) =>
-      await redis.set(k, [])
+      await redis.set(k, JSON.stringify([]))
     )
   )
 }
