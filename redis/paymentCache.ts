@@ -258,3 +258,7 @@ export const getCachedDashboardData = async (userId: string): Promise<DashboardD
   const dashboardData: DashboardData | null = (dashboardString === null) ? null : JSON.parse(dashboardString)
   return dashboardData
 }
+export const clearDashboardCache = async (userId: string): Promise<void> => {
+  const key = getDashboardSummaryKey(userId)
+  await redis.del(key, () => {})
+}
