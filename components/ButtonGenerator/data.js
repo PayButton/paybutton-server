@@ -158,7 +158,7 @@ export const generatorFormFields = [
     className: 'col_sm_center',
     type: 'boolean',
     default: true,
-    helpText: 'Creates input to change the payment amount',
+    helpText: 'Allow changing the payment amount',
     advanced: true
   },
 ]
