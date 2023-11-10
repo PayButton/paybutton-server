@@ -67,7 +67,7 @@ export const initialButtonState: ButtonState = {
   onTransaction: '',
   randomSatoshis: true,
   hideToasts: false,
-  disableEnforceFocus: false,
+  disableEnforceFocus: true,
   disabled: false,
   editable: false,
   widget: false
@@ -76,6 +76,7 @@ export const initialButtonState: ButtonState = {
 export default function ButtonGenerator (): JSX.Element {
   const [button, setButton] = useState<ButtonState>(initialButtonState)
   const [colorPicker, setColorPicker] = useState('')
+  const [advanced, setAdvanced] = useState(false)
 
   const isValidAddress = (address: string): string => {
     try {
@@ -283,7 +284,7 @@ export default function ButtonGenerator (): JSX.Element {
                      fieldComponent = null // Handle unsupported field types as needed
                  }
                  return (
-                    <div className={s[field.className]} key={index}>
+                    <div className={`${s[field.className]} ${field.advanced === true && !advanced ? s.advanced : ''}`} key={index}>
                       {field.key !== 'randomSatoshis'
                         ? <>
                       <label>
@@ -318,7 +319,7 @@ export default function ButtonGenerator (): JSX.Element {
                })}
             </form>
             <div className={s.advanced_ctn}>
-              <div onClick={() => setButton(initialButtonState)}>Reset</div>
+              <div onClick={() => setAdvanced(!advanced)}>{advanced && 'Hide '}Advanced</div>
               <a
                 href="https://docs.paybutton.org/#/?id=what-is-paybutton"
                 target="_blank"
@@ -326,6 +327,7 @@ export default function ButtonGenerator (): JSX.Element {
               >
                 Documentation
               </a>
+              <div onClick={() => setButton(initialButtonState)}>Reset</div>
             </div>
           </div>
           <div className={s.preview_ctn}>
