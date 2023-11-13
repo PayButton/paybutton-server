@@ -5,7 +5,7 @@ import { RESPONSE_MESSAGES, NETWORK_IDS_FROM_SLUGS, IFP_ADDRESSES } from 'consta
 import { getObjectValueForNetworkSlug } from 'utils/index'
 import { connectAddressToUser, disconnectAddressFromUser, fetchAddressWallet } from 'services/addressesOnUserProfileService'
 import { fetchUserDefaultWalletForNetwork } from './walletService'
-import { appendPaybuttonToAddressesCache } from 'redis/paymentCache'
+import { appendPaybuttonToAddressesCache, clearDashboardCache } from 'redis/paymentCache'
 import { syncAndSubscribeAddresses } from './transactionService'
 export interface UpdatePaybuttonInput {
   paybuttonId: string
@@ -216,6 +216,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
         id: pb.id
       }
     )
+    await clearDashboardCache(values.userId)
     return pb
   })
 }
@@ -389,6 +390,7 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
       id: paybutton.id
     }
   )
+  await clearDashboardCache(params.userId)
 
   // Send async request to sync created addresses transactions for addresses
   // that are new (did not exist in any other buttons)
