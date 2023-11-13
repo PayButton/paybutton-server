@@ -5,7 +5,7 @@ import { RESPONSE_MESSAGES, NETWORK_IDS_FROM_SLUGS, IFP_ADDRESSES } from 'consta
 import { getObjectValueForNetworkSlug } from 'utils/index'
 import { connectAddressToUser, disconnectAddressFromUser, fetchAddressWallet } from 'services/addressesOnUserProfileService'
 import { fetchUserDefaultWalletForNetwork } from './walletService'
-import { appendPaybuttonToAddressesCache, clearDashboardCache } from 'redis/paymentCache'
+import { appendPaybuttonToAddressesCache, clearDashboardCache, removePaybuttonToAddressesCache } from 'redis/paymentCache'
 import { syncAndSubscribeAddresses } from './transactionService'
 export interface UpdatePaybuttonInput {
   paybuttonId: string
@@ -227,7 +227,7 @@ export async function deletePaybutton (values: DeletePaybuttonInput): Promise<Pa
     throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
   }
   const addressIdListToRemove = paybutton?.addresses.map(conn => conn.address.id) ?? []
-  return await prisma.$transaction(async (prisma) => {
+  const deleted = await prisma.$transaction(async (prisma) => {
     // Creates or updates the `addressesOnUserProfile` objects
     await updateAddressUserConnectors({
       userId: values.userId,
@@ -243,6 +243,9 @@ export async function deletePaybutton (values: DeletePaybuttonInput): Promise<Pa
       include: includeAddresses
     })
   })
+  await removePaybuttonToAddressesCache(addressIdListToRemove, deleted.id)
+  await clearDashboardCache(values.userId)
+  return deleted
 }
 
 export async function fetchPaybuttonArrayByIds (paybuttonIdList: string[]): Promise<PaybuttonWithAddresses[]> {
