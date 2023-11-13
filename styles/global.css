@@ -279,6 +279,12 @@ body[data-theme='dark'] .table-eye {
   filter: none;
 }
 
+.table-navigation-ctn button:disabled {
+  opacity: 0.4;
+  background-color: var(--secondary-bg-color) !important;
+  color: #909090 !important;
+}
+
 .pageof-table {
   margin: 0 10px;
   font-size: 14px;
