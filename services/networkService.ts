@@ -5,6 +5,17 @@ import { getLastBlockTimestamp } from 'services/blockchainService'
 import { fetchAllUserAddresses } from 'services/addressService'
 import config from 'config'
 
+export function getNetworkIdFromSlug (slug: string): number {
+  switch (slug) {
+    case 'ecash':
+      return NETWORK_IDS.XEC
+    case 'bitcoincash':
+      return NETWORK_IDS.BCH
+    default:
+      throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
+  }
+}
+
 export async function getNetworkFromSlug (slug: string): Promise<Network> {
   const network = await prisma.network.findUnique({ where: { slug } })
   if (network === null) throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
