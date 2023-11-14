@@ -160,7 +160,6 @@ export default async (req: any, res: any): Promise<void> => {
     await setSession(req, res)
     const userId = req.session.userId
     const summarize = req.query.summarize as boolean
-    console.log('chegs', summarize)
     let resJSON: any
     if (summarize) {
       resJSON = await getUserDashboardData(userId)
