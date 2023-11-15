@@ -280,7 +280,7 @@ body[data-theme='dark'] .table-eye {
 }
 
 .table-navigation-ctn button:disabled {
-  opacity: 0.4;
+  opacity: 0.1;
   background-color: var(--secondary-bg-color) !important;
 }
 
