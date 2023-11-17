@@ -3,6 +3,7 @@ import { Prisma, type WalletsOnUserProfile, type Wallet } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { connectAddressToUser } from 'services/addressesOnUserProfileService'
 import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
+import { getCachedBalanceForAddress } from 'redis/balanceCache'
 
 export interface CreateWalletInput {
   userId: string
@@ -336,21 +337,31 @@ export interface WalletWithPaymentInfo {
   paymentInfo: WalletPaymentInfo
 }
 
-export async function getWalletBalance (wallet: WalletWithAddressesWithPaybuttons): Promise<WalletPaymentInfo> {
+export async function getWalletBalance (wallet: WalletWithAddressesWithPaybuttons, cached: boolean): Promise<WalletPaymentInfo> {
   const ret: WalletPaymentInfo = {
     XECBalance: new Prisma.Decimal(0),
     BCHBalance: new Prisma.Decimal(0),
     paymentCount: 0
   }
   for (const addr of wallet.userAddresses) {
-    const addrBalance = await addressService.getAddressPaymentInfo(addr.address.address)
+    let addressPaymentInfo: addressService.AddressPaymentInfo
+    if (cached) {
+      const cachedAddressPaymentInfo = await getCachedBalanceForAddress(addr.address.address)
+      if (cachedAddressPaymentInfo === null) {
+        addressPaymentInfo = await addressService.getAddressPaymentInfo(addr.address.address)
+      } else {
+        addressPaymentInfo = cachedAddressPaymentInfo
+      }
+    } else {
+      addressPaymentInfo = await addressService.getAddressPaymentInfo(addr.address.address)
+    }
     if (addr.address.networkId === XEC_NETWORK_ID) {
-      ret.XECBalance = ret.XECBalance.plus(addrBalance.balance)
+      ret.XECBalance = ret.XECBalance.plus(addressPaymentInfo.balance)
     }
     if (addr.address.networkId === BCH_NETWORK_ID) {
-      ret.BCHBalance = ret.BCHBalance.plus(addrBalance.balance)
+      ret.BCHBalance = ret.BCHBalance.plus(addressPaymentInfo.balance)
     }
-    ret.paymentCount += addrBalance.paymentCount
+    ret.paymentCount += addressPaymentInfo.paymentCount
   }
   return ret
 }
