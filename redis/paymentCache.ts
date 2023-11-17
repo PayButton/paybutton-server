@@ -196,9 +196,9 @@ const cacheGroupedPaymentsAppend = async (paymentsGroupedByKey: KeyValueT<Paymen
     Object.keys(paymentsGroupedByKey).map(async key => {
       const paymentsString = await redis.get(key)
       let cachedPayments: Payment[] = (paymentsString === null) ? [] : JSON.parse(paymentsString)
-      const newHashes = paymentsGroupedByKey[key].map(p => p.hash)
+      const hashes = paymentsGroupedByKey[key].map(p => p.hash)
       cachedPayments = cachedPayments
-        .filter(p => !newHashes.includes(p.hash))
+        .filter(p => !hashes.includes(p.hash))
         .concat(
           paymentsGroupedByKey[key]
         )
