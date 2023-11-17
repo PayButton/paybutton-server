@@ -6,7 +6,7 @@ import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
 import moment from 'moment'
-import { cacheBalanceFromPayments } from './balanceCache'
+import { CacheSet } from 'redis'
 
 export interface ChartData {
   labels: string[]
@@ -72,11 +72,6 @@ const getPaymentsWeekKey = (addressString: string, timestamp: number): string =>
   return `${addressString}:payments:${moment.unix(timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
 }
 
-// USERID:dashboard
-const getDashboardSummaryKey = (userId: string): string => {
-  return `${userId}:dashboard`
-}
-
 export const getUserUncachedAddresses = async (userId: string): Promise<AddressWithTransactionsWithPrices[]> => {
   const addresses = await fetchAllUserAddresses(userId, true) as AddressWithTransactionsWithPrices[]
   const ret: AddressWithTransactionsWithPrices[] = []
@@ -87,6 +82,13 @@ export const getUserUncachedAddresses = async (userId: string): Promise<AddressW
     }
   }
   return ret
+}
+
+export const getPaymentList = async (userId: string): Promise<Payment[]> => {
+  for (const address of await getUserUncachedAddresses(userId)) {
+    void await CacheSet.cacheAddressPipeLine(address)
+  }
+  return await getCachedPaymentsForUser(userId)
 }
 
 const getCachedWeekKeysForAddress = async (addressString: string): Promise<string[]> => {
@@ -102,7 +104,7 @@ const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
   return ret
 }
 
-const getPaymentFromTx = async (tx: TransactionWithPrices): Promise<Payment> => {
+const generatePaymentFromTx = async (tx: TransactionWithPrices): Promise<Payment> => {
   const value = (await getTransactionValue(tx)).usd
   const txAddress = await fetchAddressById(tx.addressId, true) as AddressWithPaybuttons
   if (txAddress === undefined) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_FOR_TRANSACTION_404.message)
@@ -135,11 +137,11 @@ const getPaymentsByWeek = (addressString: string, payments: Payment[]): KeyValue
   return paymentsGroupedByKey
 }
 
-const getGroupedPaymentsFromAddress = async (address: AddressWithTransactionsWithPrices): Promise<KeyValueT<Payment[]>> => {
+export const generateGroupedPaymentsForAddress = async (address: AddressWithTransactionsWithPrices): Promise<KeyValueT<Payment[]>> => {
   let paymentList: Payment[] = []
   const zero = new Prisma.Decimal(0)
   for (const tx of address.transactions.filter(tx => tx.amount > zero)) {
-    const payment = await getPaymentFromTx(tx)
+    const payment = await generatePaymentFromTx(tx)
     paymentList.push(payment)
   }
   paymentList = paymentList.filter((p) => p.value > new Prisma.Decimal(0))
@@ -169,7 +171,7 @@ export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[
   return allPayments
 }
 
-const cacheGroupedPayments = async (paymentsGroupedByKey: KeyValueT<Payment[]>): Promise<void> => {
+export const cacheGroupedPayments = async (paymentsGroupedByKey: KeyValueT<Payment[]>): Promise<void> => {
   await Promise.all(
     Object.keys(paymentsGroupedByKey).map(async key =>
       await redis.set(key, JSON.stringify(paymentsGroupedByKey[key]))
@@ -207,16 +209,10 @@ const cacheGroupedPaymentsAppend = async (paymentsGroupedByKey: KeyValueT<Paymen
   )
 }
 
-export const cacheAddress = async (address: AddressWithTransactionsWithPrices): Promise<void> => {
-  const paymentsGroupedByKey = await getGroupedPaymentsFromAddress(address)
-  await cacheGroupedPayments(paymentsGroupedByKey)
-  await cacheBalanceFromPayments(address.address, Object.values(paymentsGroupedByKey).reduce((prev, curr) => prev.concat(curr), []))
-}
-
 export const cacheManyTxs = async (txs: TransactionWithAddressAndPrices[]): Promise<void> => {
   const zero = new Prisma.Decimal(0)
   for (const tx of txs.filter(tx => tx.amount > zero)) {
-    const payment = await getPaymentFromTx(tx)
+    const payment = await generatePaymentFromTx(tx)
     if (payment.value !== new Prisma.Decimal(0)) {
       const paymentsGroupedByKey = getPaymentsByWeek(tx.address.address, [payment])
       void await cacheGroupedPaymentsAppend(paymentsGroupedByKey)
@@ -259,24 +255,4 @@ export const clearRecentAddressCache = async (addressString: string, timestamps:
       await redis.del(k, () => {})
     )
   )
-}
-
-export const cacheDashboardData = async (userId: string, dashboardData: DashboardData): Promise<void> => {
-  const key = getDashboardSummaryKey(userId)
-  const {
-    paymentList,
-    ...cachable
-  } = dashboardData
-  await redis.set(key, JSON.stringify(cachable))
-}
-
-export const getCachedDashboardData = async (userId: string): Promise<DashboardData | null> => {
-  const key = getDashboardSummaryKey(userId)
-  const dashboardString = await redis.get(key)
-  const dashboardData: DashboardData | null = (dashboardString === null) ? null : JSON.parse(dashboardString)
-  return dashboardData
-}
-export const clearDashboardCache = async (userId: string): Promise<void> => {
-  const key = getDashboardSummaryKey(userId)
-  await redis.del(key, () => {})
 }
