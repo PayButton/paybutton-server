@@ -63,7 +63,7 @@ export default class Buttons extends React.Component<PaybuttonsProps, Paybuttons
   }
 
   async fetchWallets (): Promise<void> {
-    const res = await fetch(`/api/wallets?userId=${this.props.userId}`, {
+    const res = await fetch(`/api/wallets?userId=${this.props.userId}&cache=1`, {
       method: 'GET'
     })
     if (res.status === 200) {
