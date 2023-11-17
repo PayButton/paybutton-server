@@ -3,11 +3,10 @@ import { Prisma } from '@prisma/client'
 import { getTransactionValue, TransactionWithAddressAndPrices, TransactionWithPrices } from 'services/transactionService'
 import { AddressWithTransactionsWithPrices, fetchAllUserAddresses, fetchAddressById, AddressWithPaybuttons } from 'services/addressService'
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
-import { WalletPaymentInfo } from 'services/walletService'
 
-import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
+import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
 import moment from 'moment'
-import { getNetworkIdFromSlug } from 'services/networkService'
+import { cacheBalanceFromPayments } from './balanceCache'
 
 export interface ChartData {
   labels: string[]
@@ -71,11 +70,6 @@ export interface PaymentDataByButton {
 // ADDRESS:payments:YYYY:MM
 const getPaymentsWeekKey = (addressString: string, timestamp: number): string => {
   return `${addressString}:payments:${moment.unix(timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
-}
-
-// ADDRESS:balance
-const getBalanceKey = (addressString: string): string => {
-  return `${addressString}:balance`
 }
 
 // USERID:dashboard
@@ -173,28 +167,6 @@ export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[
     allPayments = allPayments.concat(weekPayments)
   }
   return allPayments
-}
-
-const cacheBalanceFromPayments = async (address: string, payments: Payment[]): Promise<void> => {
-  const info: WalletPaymentInfo = {
-    XECBalance: new Prisma.Decimal(0),
-    BCHBalance: new Prisma.Decimal(0),
-    paymentCount: 0
-  }
-  const networkId = getNetworkIdFromSlug(address.split(':')[0])
-
-  const value = payments.reduce((prev, curr) => prev.plus(curr.value), new Prisma.Decimal(0))
-  switch (networkId) {
-    case XEC_NETWORK_ID:
-      info.XECBalance = info.XECBalance.plus(value)
-      break
-    case BCH_NETWORK_ID:
-      info.BCHBalance = info.BCHBalance.plus(value)
-      break
-  }
-  info.paymentCount = payments.length
-  const balanceKey = getBalanceKey(address)
-  await redis.set(balanceKey, JSON.stringify(info))
 }
 
 const cacheGroupedPayments = async (paymentsGroupedByKey: KeyValueT<Payment[]>): Promise<void> => {
