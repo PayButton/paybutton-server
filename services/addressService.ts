@@ -3,6 +3,7 @@ import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { fetchAddressTransactions } from 'services/transactionService'
 import { getNetworkFromSlug } from 'services/networkService'
+import { cacheAddressPaymentInfo } from 'redis/balanceCache'
 
 const addressWithTransactionAndNetwork = Prisma.validator<Prisma.AddressArgs>()({
   include: { transactions: true, network: true }
@@ -220,7 +221,7 @@ export async function upsertAddress (
   })
 }
 
-interface AddressPaymentInfo {
+export interface AddressPaymentInfo {
   balance: Prisma.Decimal
   paymentCount: number
 }
@@ -232,10 +233,12 @@ export async function getAddressPaymentInfo (addressString: string): Promise<Add
   }, new Prisma.Decimal(0))
   const zero = new Prisma.Decimal(0)
   const paymentCount = transactionsAmounts.filter(t => t > zero).length
-  return {
+  const info = {
     balance,
     paymentCount
   }
+  await cacheAddressPaymentInfo(addressString, info)
+  return info
 }
 
 export async function getLatestTxTimestampForAddress (addressId: string): Promise<number | undefined> {
