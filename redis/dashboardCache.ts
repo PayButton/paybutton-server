@@ -1,5 +1,6 @@
 import { redis } from './clientInstance'
-import { ChartData, PeriodData, DashboardData, Payment, ButtonData, PaymentDataByButton, getPaymentList } from 'redis/paymentCache'
+import { getPaymentList } from 'redis/paymentCache'
+import { ChartData, PeriodData, DashboardData, Payment, ButtonData, PaymentDataByButton, ChartColor } from './types'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
@@ -52,11 +53,6 @@ const getChartData = function (n: number, periodString: string, dataArray: numbe
       }
     ]
   }
-}
-
-interface ChartColor {
-  revenue: string
-  payments: string
 }
 
 const getPeriodData = function (n: number, periodString: string, paymentList: Payment[], borderColor: ChartColor, formatString = 'M/D'): PeriodData {
