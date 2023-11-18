@@ -4,8 +4,6 @@ import { BroadcastTxData } from './types'
 import { createServer } from 'http'
 import { Server, Socket } from 'socket.io'
 import { RESPONSE_MESSAGES } from '../constants/index'
-import { clearDashboardCache, clearRecentAddressCache } from 'redis/paymentCache'
-import { fetchUsersForAddress } from 'services/userService'
 
 // Configure server
 const app = express()
@@ -53,14 +51,8 @@ const broadcastTxs = async (broadcastTxData: BroadcastTxData): Promise<void> => 
     return
   }
   addressesNs.to(broadcastTxData.address).emit('incoming-txs', broadcastTxData)
-  await clearRecentAddressCache(broadcastTxData.address, broadcastTxData.txs.map(tx => tx.timestamp))
-  const userIds = await fetchUsersForAddress(broadcastTxData.address)
-  await Promise.all(
-    userIds.map(async u => {
-      await clearDashboardCache(u.id)
-    })
-  )
 }
+
 const broadcastNs = io.of('/broadcast')
 const broadcastRouteConnection = (socket: Socket): void => {
   const key = socket.handshake.query.key

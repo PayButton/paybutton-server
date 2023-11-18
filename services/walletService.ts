@@ -1,9 +1,8 @@
-import * as addressService from 'services/addressService'
 import { Prisma, type WalletsOnUserProfile, type Wallet } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { connectAddressToUser } from 'services/addressesOnUserProfileService'
 import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
-import { getCachedBalanceForAddress } from 'redis/balanceCache'
+import { CacheGet } from 'redis'
 
 export interface CreateWalletInput {
   userId: string
@@ -337,24 +336,14 @@ export interface WalletWithPaymentInfo {
   paymentInfo: WalletPaymentInfo
 }
 
-export async function getWalletBalance (wallet: WalletWithAddressesWithPaybuttons, cached: boolean): Promise<WalletPaymentInfo> {
+export async function getWalletBalance (wallet: WalletWithAddressesWithPaybuttons): Promise<WalletPaymentInfo> {
   const ret: WalletPaymentInfo = {
     XECBalance: new Prisma.Decimal(0),
     BCHBalance: new Prisma.Decimal(0),
     paymentCount: 0
   }
   for (const addr of wallet.userAddresses) {
-    let addressPaymentInfo: addressService.AddressPaymentInfo
-    if (cached) {
-      const cachedAddressPaymentInfo = await getCachedBalanceForAddress(addr.address.address)
-      if (cachedAddressPaymentInfo === null) {
-        addressPaymentInfo = await addressService.getAddressPaymentInfo(addr.address.address)
-      } else {
-        addressPaymentInfo = cachedAddressPaymentInfo
-      }
-    } else {
-      addressPaymentInfo = await addressService.getAddressPaymentInfo(addr.address.address)
-    }
+    const addressPaymentInfo = await CacheGet.addressBalance(addr.address.address)
     if (addr.address.networkId === XEC_NETWORK_ID) {
       ret.XECBalance = ret.XECBalance.plus(addressPaymentInfo.balance)
     }

@@ -47,7 +47,7 @@ describe('Fetch services', () => {
   })
 
   it('Wallet balance', async () => {
-    jest.spyOn(addressService, 'getAddressPaymentInfo').mockImplementation(async (_: string) => {
+    jest.spyOn(addressService, 'generateAddressPaymentInfo').mockImplementation(async (_: string) => {
       return {
         balance: new Prisma.Decimal('17.5'),
         paymentCount: 3

@@ -3,7 +3,6 @@ import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { fetchAddressTransactions } from 'services/transactionService'
 import { getNetworkFromSlug } from 'services/networkService'
-import { cacheAddressPaymentInfo } from 'redis/balanceCache'
 
 const addressWithTransactionAndNetwork = Prisma.validator<Prisma.AddressArgs>()({
   include: { transactions: true, network: true }
@@ -226,7 +225,7 @@ export interface AddressPaymentInfo {
   paymentCount: number
 }
 
-export async function getAddressPaymentInfo (addressString: string): Promise<AddressPaymentInfo> {
+export async function generateAddressPaymentInfo (addressString: string): Promise<AddressPaymentInfo> {
   const transactionsAmounts = (await fetchAddressTransactions(addressString)).map((t) => t.amount)
   const balance = transactionsAmounts.reduce((a, b) => {
     return a.plus(b)
@@ -237,7 +236,6 @@ export async function getAddressPaymentInfo (addressString: string): Promise<Add
     balance,
     paymentCount
   }
-  await cacheAddressPaymentInfo(addressString, info)
   return info
 }
 

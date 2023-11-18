@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client'
-import { AddressPaymentInfo, generateAddressPaymentInfo } from 'services/addressService'
+import { AddressPaymentInfo, getAddressPaymentInfo } from 'services/addressService'
 import { redis } from './clientInstance'
 import { Payment } from './types'
 
@@ -32,7 +32,7 @@ export const getCachedBalanceForAddress = async (addressString: string): Promise
 export const getBalanceForAddress = async (addressString: string): Promise<AddressPaymentInfo> => {
   let paymentInfo = await getCachedBalanceForAddress(addressString)
   if (paymentInfo === null) {
-    paymentInfo = await generateAddressPaymentInfo(addressString)
+    paymentInfo = await getAddressPaymentInfo(addressString)
     await cacheAddressPaymentInfo(addressString, paymentInfo)
   }
   return paymentInfo

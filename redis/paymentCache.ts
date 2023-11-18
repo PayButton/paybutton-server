@@ -27,7 +27,7 @@ export const getUserUncachedAddresses = async (userId: string): Promise<AddressW
 
 export const getPaymentList = async (userId: string): Promise<Payment[]> => {
   for (const address of await getUserUncachedAddresses(userId)) {
-    void await CacheSet.cacheAddressPipeLine(address)
+    void await CacheSet.addressCreation(address)
   }
   return await getCachedPaymentsForUser(userId)
 }
@@ -45,7 +45,7 @@ const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
   return ret
 }
 
-const generatePaymentFromTx = async (tx: TransactionWithPrices): Promise<Payment> => {
+export const generatePaymentFromTx = async (tx: TransactionWithPrices): Promise<Payment> => {
   const value = (await getTransactionValue(tx)).usd
   const txAddress = await fetchAddressById(tx.addressId, true) as AddressWithPaybuttons
   if (txAddress === undefined) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_FOR_TRANSACTION_404.message)

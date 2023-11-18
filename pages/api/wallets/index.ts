@@ -9,11 +9,10 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
     try {
       if (userId === '' || userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
       if (Array.isArray(userId)) throw new Error(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message)
-      const cache = req.query.cache as unknown as boolean
       const walletList = await walletService.fetchWalletArrayByUserId(userId)
       const ret = []
       for (const wallet of walletList) {
-        const paymentInfo = await walletService.getWalletBalance(wallet, cache)
+        const paymentInfo = await walletService.getWalletBalance(wallet)
         ret.push(
           {
             wallet,

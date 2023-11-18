@@ -8,7 +8,7 @@ import style from './dashboard.module.css'
 import { formatQuoteValue } from 'utils/index'
 import { COOKIE_NAMES, USD_QUOTE_ID } from 'constants/index'
 import Leaderboard from 'components/Dashboard/Leaderboard'
-import { DashboardData, PeriodData } from 'redis/paymentCache'
+import { DashboardData, PeriodData } from 'redis/types'
 import { loadStateFromCookie, saveStateToCookie } from 'utils/cookies'
 const Chart = dynamic(async () => await import('components/Chart'), {
   ssr: false

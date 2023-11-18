@@ -5,8 +5,8 @@ import { RESPONSE_MESSAGES, NETWORK_IDS_FROM_SLUGS, IFP_ADDRESSES } from 'consta
 import { getObjectValueForNetworkSlug } from 'utils/index'
 import { connectAddressToUser, disconnectAddressFromUser, fetchAddressWallet } from 'services/addressesOnUserProfileService'
 import { fetchUserDefaultWalletForNetwork } from './walletService'
-import { appendPaybuttonToAddressesCache, clearDashboardCache, removePaybuttonToAddressesCache } from 'redis/paymentCache'
 import { syncAndSubscribeAddresses } from './transactionService'
+import { CacheSet } from 'redis'
 export interface UpdatePaybuttonInput {
   paybuttonId: string
   name?: string
@@ -209,14 +209,11 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
       include: includeAddresses
     })
     // Update cache for existent addreses
-    await appendPaybuttonToAddressesCache(
-      updatedAddressStringList,
-      {
-        name: pb.name,
-        id: pb.id
-      }
-    )
-    await clearDashboardCache(values.userId)
+    await CacheSet.paybuttonCreation({
+      addressStringList: updatedAddressStringList,
+      paybutton: pb,
+      userId: values.userId
+    })
     return pb
   })
 }
@@ -243,8 +240,11 @@ export async function deletePaybutton (values: DeletePaybuttonInput): Promise<Pa
       include: includeAddresses
     })
   })
-  await removePaybuttonToAddressesCache(addressIdListToRemove, deleted.id)
-  await clearDashboardCache(values.userId)
+  await CacheSet.paybuttonDeletion({
+    addressStringList: addressIdListToRemove,
+    paybutton: deleted,
+    userId: values.userId
+  })
   return deleted
 }
 
@@ -387,13 +387,11 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
       address: true
     }
   })).map(obj => obj.address)
-  await appendPaybuttonToAddressesCache(addressesThatAlreadyExistedStringList,
-    {
-      name: paybutton.name,
-      id: paybutton.id
-    }
-  )
-  await clearDashboardCache(params.userId)
+  await CacheSet.paybuttonUpdate({
+    addressStringList: addressesThatAlreadyExistedStringList,
+    paybutton,
+    userId: params.userId
+  })
 
   // Send async request to sync created addresses transactions for addresses
   // that are new (did not exist in any other buttons)
