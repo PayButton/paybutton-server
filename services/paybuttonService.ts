@@ -6,7 +6,7 @@ import { getObjectValueForNetworkSlug } from 'utils/index'
 import { connectAddressToUser, disconnectAddressFromUser, fetchAddressWallet } from 'services/addressesOnUserProfileService'
 import { fetchUserDefaultWalletForNetwork } from './walletService'
 import { syncAndSubscribeAddresses } from './transactionService'
-import { CacheSet } from 'redis'
+import { CacheSet } from 'redis/index'
 export interface UpdatePaybuttonInput {
   paybuttonId: string
   name?: string

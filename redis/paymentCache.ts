@@ -6,7 +6,7 @@ import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
 import moment from 'moment'
-import { CacheSet } from 'redis'
+import { CacheSet } from 'redis/index'
 import { ButtonDisplayData, Payment } from './types'
 // ADDRESS:payments:YYYY:MM
 const getPaymentsWeekKey = (addressString: string, timestamp: number): string => {

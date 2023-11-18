@@ -7,7 +7,7 @@ import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT }
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
-import { CacheSet } from 'redis'
+import { CacheSet } from 'redis/index'
 
 export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
