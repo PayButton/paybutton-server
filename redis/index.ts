@@ -2,7 +2,7 @@ import { AddressPaymentInfo, AddressWithTransactionsWithPrices } from 'services/
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import { fetchUsersForAddress } from 'services/userService'
-import { cacheBalanceFromPayments, getBalanceForAddress } from './balanceCache'
+import { cacheBalanceFromPayments, clearBalanceCache, getBalanceForAddress, updateBalanceCacheFromTx } from './balanceCache'
 import { clearDashboardCache, getUserDashboardData } from './dashboardCache'
 import { appendPaybuttonToAddressesCache, cacheGroupedPayments, cacheManyTxs, generateGroupedPaymentsForAddress, getPaymentList, removePaybuttonToAddressesCache } from './paymentCache'
 import { DashboardData, Payment } from './types'
@@ -25,6 +25,7 @@ export const CacheSet = {
   txCreation: async (tx: TransactionWithAddressAndPrices): Promise<void> => {
     void await cacheManyTxs([tx])
     const userIds = await fetchUsersForAddress(tx.address.address)
+    await updateBalanceCacheFromTx(tx)
     await Promise.all(
       userIds.map(async u => {
         await clearDashboardCache(u.id)
@@ -41,6 +42,7 @@ export const CacheSet = {
           await clearDashboardCache(u.id)
         })
       )
+      await clearBalanceCache(addr)
     }
   },
   paybuttonCreation: async ({ paybutton, addressStringList, userId }: PaybuttonCreationParams): Promise<void> => {
