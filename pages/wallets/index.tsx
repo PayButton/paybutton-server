@@ -56,7 +56,7 @@ export default class Wallets extends React.Component<WalletsProps, WalletsState>
   }
 
   async fetchWallets (): Promise<void> {
-    const walletsResponse = await fetch(`/api/wallets?userId=${this.props.userId}&cache=1`, {
+    const walletsResponse = await fetch(`/api/wallets?userId=${this.props.userId}`, {
       method: 'GET'
     })
     const addressesResponse = await fetch(`/api/addresses?userId=${this.props.userId}&includePaybuttons=1`, {
