@@ -1,7 +1,7 @@
 import prisma from 'prisma/clientInstance'
 import * as transactionService from 'services/transactionService'
 import { prismaMock } from 'prisma/mockedClient'
-import { mockedBCHAddress, mockedUSDPriceOnTransaction, mockedCADPriceOnTransaction, mockedTransaction } from '../mockedObjects'
+import { mockedBCHAddress, mockedUSDPriceOnTransaction, mockedCADPriceOnTransaction, mockedTransaction, mockedUserProfile } from '../mockedObjects'
 import * as paymentCache from 'redis/paymentCache'
 import { Prisma } from '@prisma/client'
 
@@ -18,6 +18,9 @@ describe('Create services', () => {
 
     prismaMock.address.findUnique.mockResolvedValue(mockedBCHAddress)
     prisma.address.findUnique = prismaMock.address.findUnique
+
+    prismaMock.userProfile.findMany.mockResolvedValue([mockedUserProfile])
+    prisma.userProfile.findMany = prismaMock.userProfile.findMany
 
     prismaMock.price.findUnique.mockResolvedValue(mockedUSDPriceOnTransaction.price)
     prisma.price.findUnique = prismaMock.price.findUnique

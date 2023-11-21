@@ -5,7 +5,7 @@ import {
   UnspentOutput
 } from 'grpc-bchrpc-node'
 
-import { Prisma, Price } from '@prisma/client'
+import { Prisma, Price, UserProfile } from '@prisma/client'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import { USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, NETWORK_SLUGS } from 'constants/index'
@@ -661,3 +661,11 @@ export const mockPrices: Price[] = [
     quoteId: 2
   }
 ]
+
+export const mockedUserProfile: UserProfile = {
+  id: 'mocked-user-profileb0fc-13a007cc584b',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  isAdmin: false,
+  lastSentVerificationEmailAt: null
+}
