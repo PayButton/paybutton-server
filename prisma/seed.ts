@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { networks } from './seeds/networks'
 import { paybuttons } from './seeds/paybuttons'
-import { addresses, productionAddresses } from './seeds/addresses'
+import { addresses } from './seeds/addresses'
 import { paybuttonAddressConnectors } from './seeds/paybuttonAddressConnectors'
 import { walletUserConnectors } from './seeds/walletUserConnectors'
 import { addressUserConnectors } from './seeds/addressUserConnectors'
@@ -9,10 +9,9 @@ import { wallets } from './seeds/wallets'
 import { getPrices } from './seeds/prices'
 import { quotes } from './seeds/quotes'
 import { createDevUsersRawQueryList, createAdminUserRawQueryList, devUserProfiles, adminUserProfiles } from './seeds/users'
-import { getTxsFromFile } from './seeds/transactions'
 const prisma = new PrismaClient()
 
-async function ignoreConflicts (callback: Function): Promise<void> {
+export async function ignoreConflicts (callback: Function): Promise<void> {
   try {
     await callback()
   } catch (err: any) {
@@ -69,6 +68,7 @@ async function main (): Promise<void> {
   }
 
   // PRODUCTION
+  /*
   await ignoreConflicts(
     async () => await prisma.address.createMany({ data: productionAddresses })
   )
@@ -87,6 +87,7 @@ async function main (): Promise<void> {
   } else {
     console.log('No production txs found to seed.')
   }
+ */
 }
 
 main()
