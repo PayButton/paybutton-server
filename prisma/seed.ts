@@ -66,28 +66,6 @@ async function main (): Promise<void> {
   if (await prisma.price.count() === 0) {
     await prisma.price.createMany({ data: await getPrices() })
   }
-
-  // PRODUCTION
-  /*
-  await ignoreConflicts(
-    async () => await prisma.address.createMany({ data: productionAddresses })
-  )
-  const productionTxs = await getTxsFromFile()
-  if (productionTxs !== undefined) {
-    await ignoreConflicts(async () => {
-      await prisma.transaction.createMany({ data: productionTxs, skipDuplicates: true })
-      await prisma.transaction.findMany({
-        where: {
-          hash: {
-            in: productionTxs.map(tx => tx.hash)
-          }
-        }
-      })
-    })
-  } else {
-    console.log('No production txs found to seed.')
-  }
- */
 }
 
 main()
