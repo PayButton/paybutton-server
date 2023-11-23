@@ -167,10 +167,7 @@ export const PRIMARY_BCH_COLOR = '#4bc846'
 export const SECONDARY_BCH_COLOR = '#FFFFFF'
 export const TERTIARY_BCH_COLOR = '#231f20'
 
-export const IFP_ADDRESSES: string[] = [
-  // 'ecash:pqnqv9lt7e5vjyp0w88zf2af0l92l8rxdg2jj94l5j',
-  // 'ecash:prfhcnyqnl5cgrnmlfmms675w93ld7mvvqd0y8lz07'
-]
+export const IFP_ADDRESSES: string[] = []
 
 export const NO_LAYOUT_ROUTES = [
   '/'
