@@ -208,7 +208,6 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
       },
       include: includeAddresses
     })
-    // Update cache for existent addreses
     await CacheSet.paybuttonCreation({
       addressStringList: updatedAddressStringList,
       paybutton: pb,
