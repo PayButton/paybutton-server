@@ -167,7 +167,7 @@ export const PRIMARY_BCH_COLOR = '#4bc846'
 export const SECONDARY_BCH_COLOR = '#FFFFFF'
 export const TERTIARY_BCH_COLOR = '#231f20'
 
-export const IFP_ADDRESSES: string[] = []
+export const BLOCKED_ADDRESSES: string[] = []
 
 export const NO_LAYOUT_ROUTES = [
   '/'
