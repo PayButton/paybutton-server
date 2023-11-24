@@ -10,6 +10,7 @@ import walletIdEndpoint from 'pages/api/wallet/[id]'
 import transactionsEndpoint from 'pages/api/address/transactions/[address]'
 import balanceEndpoint from 'pages/api/address/balance/[address]'
 import dashboardEndpoint from 'pages/api/dashboard/index'
+import paymentsEndpoint from 'pages/api/payments/index'
 import currentPriceEndpoint from 'pages/api/price/[networkSlug]'
 import currentPriceForQuoteEndpoint from 'pages/api/price/[networkSlug]/[quoteSlug]'
 import { WalletWithAddressesWithPaybuttons, fetchWalletById, createDefaultWalletForUser } from 'services/walletService'
@@ -1302,6 +1303,23 @@ describe('GET /api/address/balance/[address]', () => {
     expect(res.statusCode).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.statusCode)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
+  })
+})
+
+describe('GET /api/payments', () => {
+  const baseRequestOptions: RequestOptions = {
+    method: 'GET' as RequestMethod,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    query: {}
+  }
+
+  it('Should return HTTP 200', async () => {
+    const res = await testEndpoint(baseRequestOptions, paymentsEndpoint)
+    expect(res.statusCode).toBe(200)
+    const responseData = res._getJSONData()
+    expect(responseData).toEqual([])
   })
 })
 

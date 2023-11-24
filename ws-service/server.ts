@@ -44,13 +44,15 @@ const addressRouteConnection = (socket: Socket): void => {
   console.log('  total:', countA)
 }
 
-const broadcastTxs = (broadcastTxData: BroadcastTxData): void => {
+const broadcastTxs = async (broadcastTxData: BroadcastTxData): Promise<void> => {
+  console.log('broadcasting', broadcastTxData.txs.length, broadcastTxData.messageType, 'txs to', broadcastTxData.address)
   if (broadcastTxData?.txs?.length === 0) {
     console.warn(RESPONSE_MESSAGES.BROADCAST_EMPTY_TX_400)
     return
   }
   addressesNs.to(broadcastTxData.address).emit('incoming-txs', broadcastTxData)
 }
+
 const broadcastNs = io.of('/broadcast')
 const broadcastRouteConnection = (socket: Socket): void => {
   const key = socket.handshake.query.key

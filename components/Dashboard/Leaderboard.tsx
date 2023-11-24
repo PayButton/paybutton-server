@@ -1,6 +1,6 @@
 import TableContainer from 'components/TableContainer/TableContainer'
 import { useMemo } from 'react'
-import { PaymentDataByButton } from 'redis/dashboardCache'
+import { PaymentDataByButton } from 'redis/types'
 import style from '../Transaction/transaction.module.css'
 import moment from 'moment'
 import { USD_QUOTE_ID } from 'constants/index'

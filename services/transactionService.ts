@@ -4,10 +4,10 @@ import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockch
 import { fetchAddressBySubstring, fetchAddressById } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT } from 'constants/index'
-import { cacheManyTxs } from 'redis/dashboardCache'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
+import { CacheSet } from 'redis/index'
 
 export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
@@ -192,7 +192,7 @@ export async function createTransaction (
   const created = createdTx.createdAt.getTime() === createdTx.updatedAt.getTime()
   void await connectTransactionToPrices(createdTx, prisma)
   const txWithPrices = await fetchTransactionById(createdTx.id)
-  void await cacheManyTxs([txWithPrices])
+  void await CacheSet.txCreation(txWithPrices)
   return {
     tx: txWithPrices,
     created
@@ -279,7 +279,7 @@ export async function createManyTransactions (
     },
     include: includeAddressAndPrices
   })
-  void await cacheManyTxs(txsWithPrices)
+  void await CacheSet.txsCreation(txsWithPrices)
   return txsWithPrices
 }
 

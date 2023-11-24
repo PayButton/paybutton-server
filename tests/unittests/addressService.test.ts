@@ -31,7 +31,7 @@ describe('Find by substring', () => {
         ...mockedBCHAddress
       }
     })
-    const result = await addressService.getAddressPaymentInfo('mock')
+    const result = await addressService.generateAddressPaymentInfo('mock')
     expect(result).toHaveProperty('balance', new Prisma.Decimal('6.01247724'))
     expect(result).toHaveProperty('paymentCount', 3)
   })

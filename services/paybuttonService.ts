@@ -1,12 +1,12 @@
 import * as addressService from 'services/addressService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
-import { RESPONSE_MESSAGES, NETWORK_IDS_FROM_SLUGS, IFP_ADDRESSES } from 'constants/index'
+import { RESPONSE_MESSAGES, NETWORK_IDS_FROM_SLUGS, BLOCKED_ADDRESSES } from 'constants/index'
 import { getObjectValueForNetworkSlug } from 'utils/index'
 import { connectAddressToUser, disconnectAddressFromUser, fetchAddressWallet } from 'services/addressesOnUserProfileService'
 import { fetchUserDefaultWalletForNetwork } from './walletService'
-import { appendPaybuttonToAddressesCache } from 'redis/dashboardCache'
 import { syncAndSubscribeAddresses } from './transactionService'
+import { CacheSet } from 'redis/index'
 export interface UpdatePaybuttonInput {
   paybuttonId: string
   name?: string
@@ -154,12 +154,12 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
   // This has to be done before, or the connection
   // on relation tables to these addresses will fail
   const addressIdList: string[] = []
-  const updatedAddressIdList: string[] = []
+  const updatedAddressStringList: string[] = []
   const createdAddresses: addressService.AddressWithTransactions[] = []
 
   // Prevent IFP addresses from being created
   values.prefixedAddressList.forEach(address => {
-    if (IFP_ADDRESSES.includes(address)) { throw new Error(RESPONSE_MESSAGES.IFP_ADDRESS_NOT_SUPPORTED_400.message) }
+    if (BLOCKED_ADDRESSES.includes(address)) { throw new Error(RESPONSE_MESSAGES.IFP_ADDRESS_NOT_SUPPORTED_400.message) }
   })
 
   void await Promise.all(
@@ -167,7 +167,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
       const upsertedAddress = await addressService.upsertAddress(address, prisma)
       addressIdList.push(upsertedAddress.id)
       if (upsertedAddress.createdAt.getTime() !== upsertedAddress.updatedAt.getTime()) {
-        updatedAddressIdList.push(upsertedAddress.id)
+        updatedAddressStringList.push(upsertedAddress.address)
       } else {
         createdAddresses.push(upsertedAddress)
       }
@@ -208,14 +208,11 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
       },
       include: includeAddresses
     })
-    // Update cache for existent addreses
-    await appendPaybuttonToAddressesCache(
-      updatedAddressIdList,
-      {
-        name: pb.name,
-        id: pb.id
-      }
-    )
+    await CacheSet.paybuttonCreation({
+      addressStringList: updatedAddressStringList,
+      paybutton: pb,
+      userId: values.userId
+    })
     return pb
   })
 }
@@ -226,7 +223,7 @@ export async function deletePaybutton (values: DeletePaybuttonInput): Promise<Pa
     throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
   }
   const addressIdListToRemove = paybutton?.addresses.map(conn => conn.address.id) ?? []
-  return await prisma.$transaction(async (prisma) => {
+  const deleted = await prisma.$transaction(async (prisma) => {
     // Creates or updates the `addressesOnUserProfile` objects
     await updateAddressUserConnectors({
       userId: values.userId,
@@ -242,6 +239,12 @@ export async function deletePaybutton (values: DeletePaybuttonInput): Promise<Pa
       include: includeAddresses
     })
   })
+  await CacheSet.paybuttonDeletion({
+    addressStringList: addressIdListToRemove,
+    paybutton: deleted,
+    userId: values.userId
+  })
+  return deleted
 }
 
 export async function fetchPaybuttonArrayByIds (paybuttonIdList: string[]): Promise<PaybuttonWithAddresses[]> {
@@ -305,7 +308,7 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
 
     // Prevent IFP addresses from being created
     params.prefixedAddressList.forEach(address => {
-      if (IFP_ADDRESSES.includes(address)) { throw new Error(RESPONSE_MESSAGES.IFP_ADDRESS_NOT_SUPPORTED_400.message) }
+      if (BLOCKED_ADDRESSES.includes(address)) { throw new Error(RESPONSE_MESSAGES.IFP_ADDRESS_NOT_SUPPORTED_400.message) }
     })
   }
 
@@ -366,7 +369,7 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
 
   // Get new addresses (for this button) that already exist in some
   // other button. This will be important to update the cache.
-  const idListForAddressesThatAlreadyExisted = (await prisma.address.findMany({
+  const addressesThatAlreadyExistedStringList = (await prisma.address.findMany({
     where: {
       paybuttons: {
         some: {
@@ -380,21 +383,20 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
       }
     },
     select: {
-      id: true
+      address: true
     }
-  })).map(obj => obj.id)
-  await appendPaybuttonToAddressesCache(idListForAddressesThatAlreadyExisted,
-    {
-      name: paybutton.name,
-      id: paybutton.id
-    }
-  )
+  })).map(obj => obj.address)
+  await CacheSet.paybuttonUpdate({
+    addressStringList: addressesThatAlreadyExistedStringList,
+    paybutton,
+    userId: params.userId
+  })
 
   // Send async request to sync created addresses transactions for addresses
   // that are new (did not exist in any other buttons)
   void syncAndSubscribeAddresses(
     paybuttonNewAddresses
-      .filter(a => !idListForAddressesThatAlreadyExisted.includes(a.id))
+      .filter(a => !addressesThatAlreadyExistedStringList.includes(a.address))
   )
 
   return paybutton

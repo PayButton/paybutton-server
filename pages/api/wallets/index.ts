@@ -12,10 +12,11 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       const walletList = await walletService.fetchWalletArrayByUserId(userId)
       const ret = []
       for (const wallet of walletList) {
+        const paymentInfo = await walletService.getWalletBalance(wallet)
         ret.push(
           {
             wallet,
-            paymentInfo: await walletService.getWalletBalance(wallet)
+            paymentInfo
           }
         )
       }

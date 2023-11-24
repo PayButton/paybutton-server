@@ -4,7 +4,7 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import TableContainer from '../../components/TableContainer/TableContainer'
-import { ButtonDisplayData } from 'redis/dashboardCache'
+import { ButtonDisplayData } from 'redis/types'
 import Image from 'next/image'
 import Link from 'next/link'
 import XECIcon from 'assets/xec-logo.png'
@@ -44,9 +44,8 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
-      const response = await fetch('api/dashboard')
-      const body = await response.json()
-      const payments = body.paymentList
+      const response = await fetch('api/payments')
+      const payments = await response.json()
       setData(payments)
     }
     fetchData().catch(console.error)

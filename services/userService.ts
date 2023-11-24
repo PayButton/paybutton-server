@@ -70,6 +70,20 @@ export async function fetchAllUsers (): Promise<UserProfile[]> {
   return await prisma.userProfile.findMany()
 }
 
+export async function fetchUsersForAddress (addressString: string): Promise<UserProfile[]> {
+  return await prisma.userProfile.findMany({
+    where: {
+      addresses: {
+        some: {
+          address: {
+            address: addressString
+          }
+        }
+      }
+    }
+  })
+}
+
 export async function isUserAdmin (id: string): Promise<boolean> {
   const user = await prisma.userProfile.findFirst({
     where: {

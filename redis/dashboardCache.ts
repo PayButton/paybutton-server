@@ -1,231 +1,171 @@
-import { redis } from 'redis/clientInstance'
+import { redis } from './clientInstance'
+import { getPaymentList } from 'redis/paymentCache'
+import { ChartData, PeriodData, DashboardData, Payment, ButtonData, PaymentDataByButton, ChartColor } from './types'
 import { Prisma } from '@prisma/client'
-import { getTransactionValue, TransactionWithAddressAndPrices, TransactionWithPrices } from 'services/transactionService'
-import { AddressWithTransactionsWithPrices, fetchAllUserAddresses, fetchAddressById, AddressWithPaybuttons } from 'services/addressService'
+import moment, { DurationInputArg2 } from 'moment'
+import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
-import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
-import moment from 'moment'
-
-export interface ChartData {
-  labels: string[]
-  datasets: [
-    {
-      data: number[] | Prisma.Decimal[]
-      borderColor: string
-    }
-  ]
+// USERID:dashboard
+const getDashboardSummaryKey = (userId: string): string => {
+  return `${userId}:dashboard`
 }
 
-export interface PeriodData {
-  revenue: ChartData
-  payments: ChartData
-  totalRevenue: Prisma.Decimal
-  totalPayments: number
-  buttons: PaymentDataByButton
+const getChartLabels = function (n: number, periodString: string, formatString = 'M/D'): string[] {
+  return [...new Array(n)].map((_, idx) => moment().startOf('day').subtract(idx, periodString as DurationInputArg2).format(formatString)).reverse()
 }
 
-export interface DashboardData {
-  thirtyDays: PeriodData
-  year: PeriodData
-  sevenDays: PeriodData
-  all: PeriodData
-  paymentList: Payment[]
-  total: {
-    revenue: Prisma.Decimal
-    payments: number
-    buttons: number
-  }
-}
-
-export interface ButtonDisplayData {
-  name: string
-  id: string
-  isXec?: boolean
-  isBch?: boolean
-  lastPayment?: number
-}
-
-export interface Payment {
-  timestamp: number
-  value: Prisma.Decimal
-  networkId: number
-  hash: string
-  buttonDisplayDataList: ButtonDisplayData[]
-}
-
-export interface ButtonData {
-  displayData: ButtonDisplayData
-  total: {
-    revenue: Prisma.Decimal
-    payments: number
-  }
-}
-
-export interface PaymentDataByButton {
-  [id: string]: ButtonData
-}
-
-const getPaymentsWeekKey = (addressId: string, timestamp: number): string => {
-  return `${addressId}:payments:${moment.unix(timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
-}
-
-export const getUserUncachedAddresses = async (userId: string): Promise<AddressWithTransactionsWithPrices[]> => {
-  const addresses = await fetchAllUserAddresses(userId, true) as AddressWithTransactionsWithPrices[]
-  const ret: AddressWithTransactionsWithPrices[] = []
-  for (const addr of addresses) {
-    const keys = await getCachedWeekKeysForAddress(addr.id)
-    if (keys.length === 0) {
-      ret.push(addr)
-    }
-  }
-  return ret
-}
-
-const getCachedWeekKeysForAddress = async (addressId: string): Promise<string[]> => {
-  return await redis.keys(`${addressId}:payments:*`)
-}
-
-const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
-  const addresses = await fetchAllUserAddresses(userId)
-  let ret: string[] = []
-  for (const addr of addresses) {
-    ret = ret.concat(await getCachedWeekKeysForAddress(addr.id))
-  }
-  return ret
-}
-
-const getPaymentFromTx = async (tx: TransactionWithPrices): Promise<Payment> => {
-  const value = (await getTransactionValue(tx)).usd
-  const txAddress = await fetchAddressById(tx.addressId, true) as AddressWithPaybuttons
-  if (txAddress === undefined) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_FOR_TRANSACTION_404.message)
+const getChartRevenuePaymentData = function (n: number, periodString: string, paymentList: Payment[]): any {
+  const revenueArray: Prisma.Decimal[] = []
+  const paymentsArray: number[] = []
+  const _ = [...new Array(n)]
+  _.forEach((_, idx) => {
+    const lowerThreshold = moment().startOf(periodString === 'months' ? 'month' : 'day').subtract(idx, periodString as DurationInputArg2)
+    const upperThreshold = moment().endOf(periodString === 'months' ? 'month' : 'day').subtract(idx, periodString as DurationInputArg2)
+    const periodTransactionAmountArray = filterLastPayments(lowerThreshold, upperThreshold, paymentList).map((p) => p.value)
+    const revenue = periodTransactionAmountArray.reduce((a, b) => {
+      return a.plus(b)
+    }, new Prisma.Decimal(0))
+    const paymentCount = periodTransactionAmountArray.length
+    revenueArray.push(revenue)
+    paymentsArray.push(paymentCount)
+  })
   return {
-    timestamp: tx.timestamp,
-    value,
-    networkId: txAddress.networkId,
-    hash: tx.hash,
-    buttonDisplayDataList: txAddress.paybuttons.map(
-      (conn) => {
-        return {
-          name: conn.paybutton.name,
-          id: conn.paybutton.id
-        }
+    revenue: revenueArray.reverse(),
+    payments: paymentsArray.reverse()
+  }
+}
+
+const filterLastPayments = function (lowerThreshold: moment.Moment, upperThreshold: moment.Moment, paymentList: Payment[]): Payment[] {
+  return paymentList.filter((p) => {
+    const tMoment = moment(p.timestamp * 1000)
+    return lowerThreshold < tMoment && tMoment < upperThreshold
+  })
+}
+
+const getChartData = function (n: number, periodString: string, dataArray: number[] | Prisma.Decimal[], borderColor: string, formatString = 'M/D'): ChartData {
+  return {
+    labels: getChartLabels(n, periodString, formatString),
+    datasets: [
+      {
+        data: dataArray,
+        borderColor
       }
-    )
+    ]
   }
 }
 
-const getPaymentsByWeek = (addressId: string, payments: Payment[]): KeyValueT<Payment[]> => {
-  const paymentsGroupedByKey: KeyValueT<Payment[]> = {}
-  for (const payment of payments) {
-    const weekKey = getPaymentsWeekKey(addressId, payment.timestamp)
-    if (weekKey in paymentsGroupedByKey) {
-      paymentsGroupedByKey[weekKey].push(payment)
-    } else {
-      paymentsGroupedByKey[weekKey] = [payment]
-    }
+const getPeriodData = function (n: number, periodString: string, paymentList: Payment[], borderColor: ChartColor, formatString = 'M/D'): PeriodData {
+  const revenuePaymentData = getChartRevenuePaymentData(n, periodString, paymentList)
+  const revenue = getChartData(n, periodString, revenuePaymentData.revenue, borderColor.revenue, formatString)
+  const payments = getChartData(n, periodString, revenuePaymentData.payments, borderColor.payments, formatString)
+  const buttons = getButtonPaymentData(n, periodString, paymentList)
+
+  return {
+    revenue,
+    payments,
+    totalRevenue: (revenue.datasets[0].data as any).reduce((a: Prisma.Decimal, b: Prisma.Decimal) => a.plus(b), new Prisma.Decimal(0)),
+    totalPayments: (payments.datasets[0].data as any).reduce((a: number, b: number) => a + b, 0),
+    buttons
   }
-  return paymentsGroupedByKey
 }
 
-const getGroupedPaymentsFromAddress = async (address: AddressWithTransactionsWithPrices): Promise<KeyValueT<Payment[]>> => {
-  let paymentList: Payment[] = []
-  const zero = new Prisma.Decimal(0)
-  for (const tx of address.transactions.filter(tx => tx.amount > zero)) {
-    const payment = await getPaymentFromTx(tx)
-    paymentList.push(payment)
-  }
-  paymentList = paymentList.filter((p) => p.value > new Prisma.Decimal(0))
-  return getPaymentsByWeek(address.id, paymentList)
-}
-
-export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[]> => {
-  const weekKeys = await getCachedWeekKeysForUser(userId)
-  const userButtonIds: string[] = (await fetchPaybuttonArrayByUserId(userId))
-    .map(p => p.id)
-  let allPayments: Payment[] = []
-  for (const weekKey of weekKeys) {
-    const paymentsString = await redis.get(weekKey)
-    if (paymentsString === null) {
-      throw new Error(RESPONSE_MESSAGES.CACHED_PAYMENT_NOT_FOUND_404.message)
-    }
-    let weekPayments: Payment[] = JSON.parse(paymentsString)
-    weekPayments = weekPayments
-      .map(pay => {
-        pay.buttonDisplayDataList = pay.buttonDisplayDataList.filter(d =>
-          userButtonIds.includes(d.id)
-        )
-        return pay
-      })
-    allPayments = allPayments.concat(weekPayments)
-  }
-  return allPayments
-}
-
-const cacheGroupedPayments = async (paymentsGroupedByKey: KeyValueT<Payment[]>): Promise<void> => {
-  await Promise.all(
-    Object.keys(paymentsGroupedByKey).map(async key =>
-      await redis.set(key, JSON.stringify(paymentsGroupedByKey[key]))
-    )
+const getNumberOfMonths = function (paymentList: Payment[]): number {
+  if (paymentList.length === 0) return 0
+  const oldestTimestamp = Math.min(...paymentList.map(p => p.timestamp)
   )
+  const oldestDate = moment(oldestTimestamp * 1000)
+  const today = moment()
+  const floatDiff = today.diff(oldestDate, 'months', true)
+  return Math.ceil(floatDiff) + 1
 }
 
-const cacheGroupedPaymentsRemove = async (weekKey: string, hash: string): Promise<void> => {
-  const paymentsString = await redis.get(weekKey)
-  let cachedPayments: Payment[] = (paymentsString === null) ? [] : JSON.parse(paymentsString)
-  cachedPayments = cachedPayments.filter(pay => pay.hash !== hash)
-  await redis.set(weekKey, JSON.stringify(cachedPayments))
-}
+export const getButtonPaymentData = (n: number, periodString: string, paymentList: Payment[]): PaymentDataByButton => {
+  const buttonPaymentData: PaymentDataByButton = {}
+  const lowerThreshold = moment().startOf('day').subtract(n, periodString as DurationInputArg2)
+  const upperThreshold = moment().endOf('day')
+  const periodPaymentList = filterLastPayments(lowerThreshold, upperThreshold, paymentList)
 
-export const uncacheManyTxs = async (txs: TransactionWithAddressAndPrices[]): Promise<void> => {
-  for (const tx of txs) {
-    const weekKey = getPaymentsWeekKey(tx.address.id, tx.timestamp)
-    void await cacheGroupedPaymentsRemove(weekKey, tx.hash)
-  }
-}
-
-const cacheGroupedPaymentsAppend = async (paymentsGroupedByKey: KeyValueT<Payment[]>): Promise<void> => {
-  await Promise.all(
-    Object.keys(paymentsGroupedByKey).map(async key => {
-      const paymentsString = await redis.get(key)
-      let cachedPayments: Payment[] = (paymentsString === null) ? [] : JSON.parse(paymentsString)
-      const newHashes = paymentsGroupedByKey[key].map(p => p.hash)
-      cachedPayments = cachedPayments
-        .filter(p => !newHashes.includes(p.hash))
-        .concat(
-          paymentsGroupedByKey[key]
-        )
-      await redis.set(key, JSON.stringify(cachedPayments))
+  for (const p of periodPaymentList) {
+    p.buttonDisplayDataList.forEach(b => {
+      const prev = Object.keys(buttonPaymentData).find(r => buttonPaymentData[r].displayData.id === b.id)
+      const prevObj = prev !== undefined ? buttonPaymentData[prev] : undefined
+      if (prevObj === undefined) {
+        const newEntry: ButtonData = {
+          displayData: {
+            ...b,
+            isXec: p.networkId === XEC_NETWORK_ID,
+            isBch: p.networkId === BCH_NETWORK_ID,
+            lastPayment: p.timestamp
+          },
+          total: {
+            payments: 1,
+            revenue: new Prisma.Decimal(p.value)
+          }
+        }
+        buttonPaymentData[b.id] = newEntry
+        return
+      }
+      prevObj.total.payments += 1
+      prevObj.total.revenue = prevObj.total.revenue.plus(p.value)
+      prevObj.displayData.isXec = prevObj.displayData.isXec === true || (p.networkId === XEC_NETWORK_ID)
+      prevObj.displayData.isBch = prevObj.displayData.isBch === true || (p.networkId === BCH_NETWORK_ID)
+      const lastPayment = prevObj.displayData.lastPayment as number
+      prevObj.displayData.lastPayment = lastPayment < p.timestamp ? p.timestamp : lastPayment
     })
-  )
-}
-
-export const cacheAddress = async (address: AddressWithTransactionsWithPrices): Promise<void> => {
-  const paymentsGroupedByKey = await getGroupedPaymentsFromAddress(address)
-  await cacheGroupedPayments(paymentsGroupedByKey)
-}
-
-export const cacheManyTxs = async (txs: TransactionWithAddressAndPrices[]): Promise<void> => {
-  const zero = new Prisma.Decimal(0)
-  for (const tx of txs.filter(tx => tx.amount > zero)) {
-    const payment = await getPaymentFromTx(tx)
-    if (payment.value !== new Prisma.Decimal(0)) {
-      const paymentsGroupedByKey = getPaymentsByWeek(tx.address.id, [payment])
-      void await cacheGroupedPaymentsAppend(paymentsGroupedByKey)
-    }
   }
+  return buttonPaymentData
 }
 
-export const appendPaybuttonToAddressesCache = async (addressIdList: string[], buttonDisplayData: ButtonDisplayData): Promise<void> => {
-  for (const id of addressIdList) {
-    const keys = await getCachedWeekKeysForAddress(id)
-    for (const key of keys) {
-      const paymentsString = await redis.get(key)
-      const weekPayments: Payment[] = (paymentsString === null) ? [] : JSON.parse(paymentsString)
-      weekPayments.forEach((p) =>
-        p.buttonDisplayDataList.push(buttonDisplayData)
-      )
-      await redis.set(key, JSON.stringify(weekPayments))
+export const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
+  let dashboardData = await getCachedDashboardData(userId)
+  if (dashboardData === null) {
+    const buttons = await fetchPaybuttonArrayByUserId(userId)
+    const paymentList = await getPaymentList(userId)
+
+    const totalRevenue = paymentList.map((p) => p.value).reduce((a, b) => a.plus(b), new Prisma.Decimal(0))
+    const nMonthsTotal = getNumberOfMonths(paymentList)
+
+    const thirtyDays: PeriodData = getPeriodData(30, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
+    const sevenDays: PeriodData = getPeriodData(7, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
+    const year: PeriodData = getPeriodData(12, 'months', paymentList, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM')
+    const all: PeriodData = getPeriodData(nMonthsTotal, 'months', paymentList, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM YYYY')
+
+    dashboardData = {
+      thirtyDays,
+      sevenDays,
+      year,
+      all,
+      paymentList,
+      total: {
+        revenue: totalRevenue,
+        payments: paymentList.length,
+        buttons: buttons.length
+      }
     }
+    await cacheDashboardData(userId, dashboardData) // WIP SET THIS NULL ON UPDATE BUTTONS & WS
+    return dashboardData
   }
+  return dashboardData
+}
+
+export const cacheDashboardData = async (userId: string, dashboardData: DashboardData): Promise<void> => {
+  const key = getDashboardSummaryKey(userId)
+  const {
+    paymentList,
+    ...cachable
+  } = dashboardData
+  await redis.set(key, JSON.stringify(cachable))
+}
+
+export const getCachedDashboardData = async (userId: string): Promise<DashboardData | null> => {
+  const key = getDashboardSummaryKey(userId)
+  const dashboardString = await redis.get(key)
+  const dashboardData: DashboardData | null = (dashboardString === null) ? null : JSON.parse(dashboardString)
+  return dashboardData
+}
+
+export const clearDashboardCache = async (userId: string): Promise<void> => {
+  const key = getDashboardSummaryKey(userId)
+  await redis.del(key, () => {})
 }

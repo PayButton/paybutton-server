@@ -2,8 +2,11 @@ import config from 'config'
 import IORedis from 'ioredis'
 
 class RedisMocked {
-  async get (_: string): Promise<string> {
-    return ''
+  async get (_: string): Promise<null> {
+    return null
+  }
+
+  async del (key: string, data: any): Promise<void> {
   }
 
   async set (key: string, data: any): Promise<void> {

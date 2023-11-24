@@ -19,7 +19,6 @@ export default function SignUp (): ReactElement {
         }]
       })
 
-      console.log('oia', response)
       if (response.status === 'FIELD_ERROR') {
         response.formFields.forEach(formField => {
           setError(formField.error)
@@ -45,7 +44,7 @@ export default function SignUp (): ReactElement {
       : <>
        <h2>Reset Password</h2>
        <p style={{ marginTop: '-10px' }}>Enter your email below to receive a link to reset your password</p>
-      <form onSubmit={handleSubmit(onSubmit)} method='post'>
+        <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
         <label htmlFor='email'>Email</label>
         <input {...register('email')} type='email' id='email' name='email' required style={{ marginBottom: '15px' }} />
         <div>

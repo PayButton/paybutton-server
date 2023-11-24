@@ -220,22 +220,23 @@ export async function upsertAddress (
   })
 }
 
-interface AddressPaymentInfo {
+export interface AddressPaymentInfo {
   balance: Prisma.Decimal
   paymentCount: number
 }
 
-export async function getAddressPaymentInfo (addressString: string): Promise<AddressPaymentInfo> {
+export async function generateAddressPaymentInfo (addressString: string): Promise<AddressPaymentInfo> {
   const transactionsAmounts = (await fetchAddressTransactions(addressString)).map((t) => t.amount)
   const balance = transactionsAmounts.reduce((a, b) => {
     return a.plus(b)
   }, new Prisma.Decimal(0))
   const zero = new Prisma.Decimal(0)
   const paymentCount = transactionsAmounts.filter(t => t > zero).length
-  return {
+  const info = {
     balance,
     paymentCount
   }
+  return info
 }
 
 export async function getLatestTxTimestampForAddress (addressId: string): Promise<number | undefined> {
