@@ -381,3 +381,16 @@ export async function fetchAllTransactionsWithNoPrices (): Promise<Transaction[]
   })
   return x
 }
+export async function fetchAllTransactionsWithOnePrice (): Promise<Transaction[]> {
+  const txs = await prisma.transaction.findMany({
+    where: {
+      prices: {
+        some: {}
+      }
+    },
+    include: {
+      prices: true
+    }
+  })
+  return txs.filter(t => t.prices.length === 1)
+}
