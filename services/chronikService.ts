@@ -2,7 +2,7 @@ import { ChronikClient, ScriptType, SubscribeMsg, Tx, Utxo, WsConfig, WsEndpoint
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, NodeJsGlobalChronik, TransactionDetails } from './blockchainService'
-import { NETWORK_SLUGS, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT } from 'constants/index'
+import { NETWORK_SLUGS, CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT } from 'constants/index'
 import { TransactionWithAddressAndPrices, createManyTransactions, deleteTransactions, fetchUnconfirmedTransactions, createTransaction, syncAddresses } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
@@ -12,8 +12,14 @@ import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
 import io, { Socket } from 'socket.io-client'
+import moment from 'moment'
 import { parseError } from 'utils/validators'
 import { executeAddressTriggers } from './triggerService'
+
+interface ProcessedMessages {
+  confirmed: KeyValueT<number>
+  unconfirmed: KeyValueT<number>
+}
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClient
@@ -21,6 +27,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
   subscribedAddresses: KeyValueT<Address>
   chronikWSEndpoint: WsEndpoint
   wsEndpoint: Socket
+  lastProcessedMessages: ProcessedMessages
 
   constructor () {
     if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
@@ -30,11 +37,49 @@ export class ChronikBlockchainClient implements BlockchainClient {
     this.availableNetworks = [NETWORK_SLUGS.ecash]
     this.subscribedAddresses = {}
     this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
+    this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
     this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
       query: {
         key: process.env.WS_AUTH_KEY
       }
     })
+  }
+
+  private clearOldMessages (): void {
+    const now = moment()
+    for (const key of Object.keys(this.lastProcessedMessages.unconfirmed)) {
+      const diff = moment.unix(this.lastProcessedMessages.unconfirmed[key]).diff(now)
+      if (diff > CHRONIK_MESSAGE_CACHE_DELAY) {
+        const { [key]: _, ...newConfirmed } = this.lastProcessedMessages.confirmed
+        this.lastProcessedMessages.confirmed = newConfirmed
+      }
+    }
+    for (const key of Object.keys(this.lastProcessedMessages.confirmed)) {
+      const diff = moment.unix(this.lastProcessedMessages.confirmed[key]).diff(now)
+      if (diff > CHRONIK_MESSAGE_CACHE_DELAY) {
+        const { [key]: _, ...newConfirmed } = this.lastProcessedMessages.confirmed
+        this.lastProcessedMessages.confirmed = newConfirmed
+      }
+    }
+  }
+
+  private isAlreadyBeingProcessed (txid: string, confirmed: boolean): boolean {
+    this.clearOldMessages()
+    if (confirmed) {
+      const lt = this.lastProcessedMessages.confirmed[txid]
+      if (lt === undefined) {
+        this.lastProcessedMessages.confirmed[txid] = moment().unix()
+        return false
+      }
+      return true
+    } else {
+      const lt = this.lastProcessedMessages.unconfirmed[txid]
+      if (lt === undefined) {
+        this.lastProcessedMessages.unconfirmed[txid] = moment().unix()
+        return false
+      }
+      return true
+    }
   }
 
   private validateNetwork (networkSlug: string): void {
@@ -211,6 +256,9 @@ export class ChronikBlockchainClient implements BlockchainClient {
       }
     } else if (msg.type === 'AddedToMempool' || msg.type === 'Confirmed') {
       // create unconfirmed or confirmed transaction
+      if (this.isAlreadyBeingProcessed(msg.txid, msg.type === 'Confirmed')) {
+        return
+      }
       console.log(`[${msg.type}] ${msg.txid}`)
       const transaction = await this.chronik.tx(msg.txid)
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
