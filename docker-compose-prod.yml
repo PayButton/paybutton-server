@@ -21,7 +21,7 @@ services:
     depends_on:
       - db
       - cache
-    image: registry.supertokens.io/supertokens/supertokens-mysql
+    image: registry.supertokens.io/supertokens/supertokens-mysql:15.04
     restart: always
     ports:
       - 3567:3567
