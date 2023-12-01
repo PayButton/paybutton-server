@@ -4,7 +4,6 @@ services:
     container_name: paybutton-dev
     restart: always
     depends_on:
-      - db
       - users-service
       - cache
     build: .
@@ -19,9 +18,8 @@ services:
   users-service:
     container_name: paybutton-users-service
     depends_on:
-      - db
       - cache
-    image: registry.supertokens.io/supertokens/supertokens-mysql:15.04
+    image: registry.supertokens.io/supertokens/supertokens-mysql:6.0
     restart: always
     ports:
       - 3567:3567
