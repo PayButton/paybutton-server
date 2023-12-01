@@ -87,7 +87,10 @@ export const connectAllTransactionsToPricesWorker = async (queueName: string): P
     queueName,
     async (job) => {
       console.log(`job ${job.id as string}: connecting prices to transactions...`)
-      const txs = await transactionService.fetchAllTransactionsWithNoPrices()
+      const txs = [
+        ...await transactionService.fetchAllTransactionsWithNoPrices(),
+        ...await transactionService.fetchAllTransactionsWithOnePrice()
+      ]
       void await transactionService.connectTransactionsListToPrices(txs)
     },
     {

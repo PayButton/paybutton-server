@@ -20,8 +20,8 @@ const getChartRevenuePaymentData = function (n: number, periodString: string, pa
   const paymentsArray: number[] = []
   const _ = [...new Array(n)]
   _.forEach((_, idx) => {
-    const lowerThreshold = moment().startOf(periodString === 'months' ? 'month' : 'day').subtract(idx, periodString as DurationInputArg2)
-    const upperThreshold = moment().endOf(periodString === 'months' ? 'month' : 'day').subtract(idx, periodString as DurationInputArg2)
+    const lowerThreshold = moment().subtract(idx, periodString as DurationInputArg2).startOf(periodString === 'months' ? 'month' : 'day')
+    const upperThreshold = moment().subtract(idx, periodString as DurationInputArg2).endOf(periodString === 'months' ? 'month' : 'day')
     const periodTransactionAmountArray = filterLastPayments(lowerThreshold, upperThreshold, paymentList).map((p) => p.value)
     const revenue = periodTransactionAmountArray.reduce((a, b) => {
       return a.plus(b)
