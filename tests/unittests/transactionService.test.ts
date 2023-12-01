@@ -28,6 +28,9 @@ describe('Create services', () => {
     prismaMock.pricesOnTransactions.upsert.mockResolvedValue(mockedUSDPriceOnTransaction)
     prisma.pricesOnTransactions.upsert = prismaMock.pricesOnTransactions.upsert
 
+    prismaMock.pricesOnTransactions.deleteMany.mockResolvedValue({ count: 2 })
+    prisma.pricesOnTransactions.deleteMany = prismaMock.pricesOnTransactions.deleteMany
+
     const mockCacheTxs = jest.spyOn(paymentCache, 'cacheManyTxs')
     mockCacheTxs.mockImplementation(async () => {
       // Do nothing

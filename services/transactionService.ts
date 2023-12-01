@@ -202,6 +202,12 @@ export async function createTransaction (
 export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient): Promise<void> {
   const networkId = await getTransactionNetworkId(tx)
   const allPrices = await fetchPricesForNetworkAndTimestamp(networkId, tx.timestamp, prisma)
+
+  void await prisma.pricesOnTransactions.deleteMany({
+    where: {
+      transactionId: tx.id
+    }
+  })
   void await prisma.pricesOnTransactions.upsert({
     where: {
       priceId_transactionId: {
