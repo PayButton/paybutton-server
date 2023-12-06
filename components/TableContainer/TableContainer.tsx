@@ -6,8 +6,9 @@ interface IProps {
 
 const TableContainer = ({ columns, data, opts, ssr }: IProps): JSX.Element => {
   const sortColumn = opts?.sortColumn
-  const localPageSize = localStorage.getItem('pageSize')
-  const localStoragePageSize = ssr ? 10 : localPageSize !== null ? +localPageSize : 10
+  const localPageSize = ssr ? 10 : localStorage.getItem('pageSize')
+  const localStoragePageSize = localPageSize === null ? 10 : +localPageSize
+
   const {
     getTableProps,
     getTableBodyProps,
