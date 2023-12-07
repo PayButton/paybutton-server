@@ -68,7 +68,7 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
       setSubbedAddresses(subbedAddressesTableData)
       setCurrentAddresses(currentAddressesTableData)
       setDifferent(ok?.different)
-      const ok2 = await (await fetch('users')).json()
+      const ok2 = await (await fetch('/api/users')).json()
       setUsers(ok2)
     })()
   }, [])
