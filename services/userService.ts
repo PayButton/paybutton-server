@@ -1,5 +1,5 @@
 import { UserProfile } from '@prisma/client'
-import supertokens from 'supertokens-node'
+import supertokens from 'supertokens-node/recipe/thirdpartyemailpassword'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import prisma from 'prisma/clientInstance'
 import crypto from 'crypto'
@@ -18,37 +18,18 @@ export interface SupertokensUser {
 
 export interface UserWithSupertokens {
   userProfile: UserProfile
-  stUser: SupertokensUser
-}
-
-export async function fetchUserListFromSupertokensDB (idList: string[]): Promise<SupertokensUser[]> {
-  const allSTUsers = await supertokens.getUsersNewestFirst({ tenantId: 'public' })
-  const users = allSTUsers.users.filter(u => idList.includes(u.user.id))
-  if (users.length === 0) {
-    return []
-  }
-  return users.map(u => u.user)
-}
-
-export async function fetchUserFromSupertokensDB (id: string): Promise<SupertokensUser> {
-  const allSTUsers = await supertokens.getUsersNewestFirst({ tenantId: 'public' })
-  const user = allSTUsers.users.find(u => u.user.id === id)
-  if (user === undefined) {
-    throw new Error(RESPONSE_MESSAGES.NO_USER_FOUND_404.message)
-  }
-  return user.user
+  stUser?: SupertokensUser
 }
 
 export async function fetchAllUsersWithSupertokens (): Promise<UserWithSupertokens[]> {
   const ret: UserWithSupertokens[] = []
   const userProfiles = await fetchAllUsers()
-  const stUsers = (await supertokens.getUsersNewestFirst({ tenantId: 'public' })).users.map(u => u.user)
-  for (const userProfile of userProfiles) {
+  await Promise.all(userProfiles.map(async (userProfile) =>
     ret.push({
       userProfile,
-      stUser: stUsers.find(u => u.id === userProfile.id)
+      stUser: await supertokens.getUserById(userProfile.id)
     })
-  }
+  ))
   return ret
 }
 
