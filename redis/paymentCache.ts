@@ -1,7 +1,7 @@
 import { redis } from 'redis/clientInstance'
 import { Prisma } from '@prisma/client'
 import { getTransactionValue, TransactionWithAddressAndPrices, TransactionWithPrices } from 'services/transactionService'
-import { AddressWithTransactionsWithPrices, fetchAllUserAddresses, fetchAddressById, AddressWithPaybuttons } from 'services/addressService'
+import { AddressWithTransactionsWithPrices, fetchAllUserAddresses, fetchAddressById, AddressWithPaybuttons, fetchAddressWithTxsAndPrices } from 'services/addressService'
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
@@ -32,7 +32,7 @@ export const getPaymentList = async (userId: string): Promise<Payment[]> => {
   return await getCachedPaymentsForUser(userId)
 }
 
-export const getCachedWeekKeysForAddress = async (addressString: string): Promise<string[]> => {
+const getCachedWeekKeysForAddress = async (addressString: string): Promise<string[]> => {
   return await redis.keys(`${addressString}:payments:*`)
 }
 
@@ -196,4 +196,14 @@ export const clearRecentAddressCache = async (addressString: string, timestamps:
       await redis.del(k, () => {})
     )
   )
+}
+
+export const initPaymentCache = async (addressString: string): Promise<boolean> => {
+  const cachedKeys = await getCachedWeekKeysForAddress(addressString)
+  if (cachedKeys.length === 0) {
+    const address = await fetchAddressWithTxsAndPrices(addressString)
+    await CacheSet.addressCreation(address)
+    return true
+  }
+  return false
 }
