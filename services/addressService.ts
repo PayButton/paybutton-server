@@ -293,3 +293,16 @@ export async function setSyncing (addressString: string, syncing: boolean): Prom
     throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
   }
 }
+
+export async function fetchAddressWithTxsAndPrices (addressString: string): Promise<AddressWithTransactionsWithPrices> {
+  const result = await prisma.address.findUnique({
+    where: {
+      address: addressString
+    },
+    include: addressWithTransactionsWithPrices.include
+  })
+  if (result === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
+  }
+  return result
+}
