@@ -2,7 +2,7 @@ import prisma from 'prisma/clientInstance'
 import * as transactionService from 'services/transactionService'
 import { prismaMock } from 'prisma/mockedClient'
 import { mockedBCHAddress, mockedUSDPriceOnTransaction, mockedCADPriceOnTransaction, mockedTransaction, mockedUserProfile } from '../mockedObjects'
-import * as paymentCache from 'redis/paymentCache'
+import { CacheSet } from 'redis/index'
 import { Prisma } from '@prisma/client'
 
 describe('Create services', () => {
@@ -31,7 +31,12 @@ describe('Create services', () => {
     prismaMock.pricesOnTransactions.deleteMany.mockResolvedValue({ count: 2 })
     prisma.pricesOnTransactions.deleteMany = prismaMock.pricesOnTransactions.deleteMany
 
-    const mockCacheTxs = jest.spyOn(paymentCache, 'cacheManyTxs')
+    const mockCacheTx = jest.spyOn(CacheSet, 'txCreation')
+    mockCacheTx.mockImplementation(async () => {
+      // Do nothing
+    })
+
+    const mockCacheTxs = jest.spyOn(CacheSet, 'txsCreation')
     mockCacheTxs.mockImplementation(async () => {
       // Do nothing
     })
