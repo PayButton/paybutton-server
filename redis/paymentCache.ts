@@ -32,7 +32,7 @@ export const getPaymentList = async (userId: string): Promise<Payment[]> => {
   return await getCachedPaymentsForUser(userId)
 }
 
-const getCachedWeekKeysForAddress = async (addressString: string): Promise<string[]> => {
+export const getCachedWeekKeysForAddress = async (addressString: string): Promise<string[]> => {
   return await redis.keys(`${addressString}:payments:*`)
 }
 
