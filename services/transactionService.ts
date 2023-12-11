@@ -298,26 +298,24 @@ export async function syncAddresses (addresses: Address[]): Promise<SyncAndSubsc
   let txsToSave: Prisma.TransactionCreateManyInput[] = []
 
   const productionAddressesIds = productionAddresses.map(addr => addr.id)
-  await Promise.all(
-    addresses.map(async (addr) => {
-      try {
-        const generator = syncTransactionsForAddress(addr.address)
-        while (true) {
-          const result = await generator.next()
-          if (result.done === true) break
-          if (productionAddressesIds.includes(addr.id)) {
-            const txs = result.value
-            txsToSave = txsToSave.concat(txs)
-            if (txsToSave.length !== 0) {
-              await appendTxsToFile(txsToSave)
-            }
+  for (const addr of addresses) {
+    try {
+      const generator = syncTransactionsForAddress(addr.address)
+      while (true) {
+        const result = await generator.next()
+        if (result.done === true) break
+        if (productionAddressesIds.includes(addr.id)) {
+          const txs = result.value
+          txsToSave = txsToSave.concat(txs)
+          if (txsToSave.length !== 0) {
+            await appendTxsToFile(txsToSave)
           }
         }
-      } catch (err: any) {
-        failedAddressesWithErrors[addr.address] = err.stack
       }
-    })
-  )
+    } catch (err: any) {
+      failedAddressesWithErrors[addr.address] = err.stack
+    }
+  }
   return {
     failedAddressesWithErrors
   }
