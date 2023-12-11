@@ -26,5 +26,9 @@ export const paybuttonAddressConnectors = [
   {
     addressId: 'ef55d382-ff55-4a96-92dd-bb04513dac98',
     paybuttonId: '5d75de09-dcea-42f6-b6ee-bc9d78ddb5af'
+  },
+  {
+    addressId: 'f22a0233-ff55-4a96-92dd-cc44f02dac98',
+    paybuttonId: 'f03981ab-8ded-4aab-93e8-b1d38f9b219b'
   }
 ]
