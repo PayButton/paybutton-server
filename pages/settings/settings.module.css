@@ -1,0 +1,60 @@
+.account_ctn {
+  display: flex;
+  flex-direction: column;
+  --max-width: 500px;
+}
+
+.account_card {
+  width: 100%;
+  background-color: var(--secondary-bg-color);
+  max-width: var(--max-width);
+  padding: 15px 20px;
+  margin: 4px 0;
+  border-radius: 10px;
+  display: inline-block;
+  font-weight: 600;
+  word-wrap: break-word;
+}
+
+.secret_card_ctn {
+  width: 100%;
+  max-width: var(--max-width);
+  display: flex;
+  align-items: center;
+  margin: 4px 0;
+  gap: 2px;
+}
+
+.secret_card {
+  width: 100%;
+  background-color: var(--secondary-bg-color);
+  max-width: calc(var(--max-width) - 40px);
+  padding: 15px 20px;
+  border-radius: 10px 0 0 10px;
+  display: inline-block;
+  font-weight: 600;
+  word-wrap: break-word;
+  position: relative;
+}
+
+.copy_btn {
+  flex-grow: 1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  background-color: var(--secondary-bg-color);
+  border-radius: 0 10px 10px 0;
+  justify-content: center;
+  transition: all ease-in-out 200ms;
+}
+
+
+
+body[data-theme='dark']  {
+
+}
+
+@media (max-width: 960px) {
+   
+  }

@@ -13,6 +13,7 @@ import ButtonsIcon from 'assets/button-icon.png'
 import Wallets from 'assets/wallet-icon.png'
 import Networks from 'assets/network-icon.png'
 import Account from 'assets/user-icon.png'
+import Settings from 'assets/settings-icon.png'
 import Docs from 'assets/docs.png'
 import Admin from 'assets/admin-icon.png'
 import Logout from 'assets/logout-icon.png'
@@ -47,14 +48,14 @@ const MENU_ITEMS = [
     image: Account
   },
   {
+    name: 'Settings',
+    image: Settings
+  },
+  {
     name: 'Admin',
     image: Admin,
     isRestricted: true
   },
-  // {
-  //   name:'Settings',
-  //   image: Settings
-  // },
   // {
   //   name:'Help',
   //   image: Help
