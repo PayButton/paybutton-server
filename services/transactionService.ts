@@ -265,7 +265,10 @@ export async function createManyTransactions (
             addressId: tx.addressId
           }
         },
-        update: {}
+        update: {
+          confirmed: tx.confirmed,
+          timestamp: tx.timestamp
+        }
       })
       insertedTransactionsDistinguished.push({
         tx: upsertedTx,
