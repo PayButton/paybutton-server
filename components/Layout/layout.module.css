@@ -19,13 +19,8 @@
   margin: 0 auto;
 }
 
-.layout main::-webkit-scrollbar {
-  display: none;
-}
-
 .layout main {
   -ms-overflow-style: none;
-  scrollbar-width: none;
 }
 
 .layout a,

@@ -315,11 +315,6 @@ body[data-theme='dark'] .table-eye {
     padding: 5px;
     overflow-x: scroll;
     -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .paybutton-table-ctn::-webkit-scrollbar {
-    display: none;
   }
 
   .paybutton-table-ctn td {
