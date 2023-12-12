@@ -362,6 +362,14 @@ input:checked + .slider:before {
   text-decoration: underline;
 }
 
+.form_ctn .get_address_link {
+  margin-right: 5px;
+  margin-left: auto;
+  opacity: 0.7;
+  font-size: 10px;
+  text-decoration: underline;
+}
+
 body[data-theme='dark'] .picker_ctn input {
   background-color: #fff !important;
 }

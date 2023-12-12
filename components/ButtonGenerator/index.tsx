@@ -295,6 +295,16 @@ export default function ButtonGenerator (): JSX.Element {
                               <p>{field.helpText}</p>
                             </div>
                           }
+                          {field.key === 'to' && (
+                            <a
+                              href="https://cashtab.com/"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={s.get_address_link}>
+                                Get an address
+                            </a>
+                          )
+                        }
                         </div>
                       </label>
                       {fieldComponent}
