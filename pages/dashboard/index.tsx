@@ -10,6 +10,7 @@ import { COOKIE_NAMES, USD_QUOTE_ID } from 'constants/index'
 import Leaderboard from 'components/Dashboard/Leaderboard'
 import { DashboardData, PeriodData } from 'redis/types'
 import { loadStateFromCookie, saveStateToCookie } from 'utils/cookies'
+import { SettingsProps } from '../_app'
 const Chart = dynamic(async () => await import('components/Chart'), {
   ssr: false
 })
@@ -53,9 +54,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
 interface PaybuttonsProps {
   userId: string
+  settings: SettingsProps['settings']
+  setSettings: SettingsProps['setSettings']
 }
 
-export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElement {
+export default function Dashboard ({ userId, settings, setSettings }: PaybuttonsProps): React.ReactElement {
   const [dashboardData, setDashboardData] = useState<DashboardData>()
   const [activePeriod, setActivePeriod] = useState<PeriodData>()
   const [activePeriodString, setActivePeriodString] = useState<PeriodString>('1M')
@@ -112,9 +115,21 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
 
   return (
     <>
-      <h2>Dashboard</h2>
+      <div className={style.header_ctn}>
+        <h2>Dashboard</h2>
+          <span
+            className={style.value_type_toggle}
+            onClick={() =>
+              setSettings((prevSettings) => ({
+                ...prevSettings,
+                xecDashboard: !prevSettings.xecDashboard
+              }))}
+          >
+            {settings.xecDashboard ? 'USD' : 'XEC'}
+          </span>
+      </div>
       <div className={style.number_ctn}>
-        <NumberBlock value={'$'.concat(formatQuoteValue(dashboardData.total.revenue, USD_QUOTE_ID)) } text='Revenue (lifetime)' />
+        <NumberBlock value={settings.xecDashboard ? 'Value in XEC' : '$'.concat(formatQuoteValue(dashboardData.total.revenue, USD_QUOTE_ID)) } text='Revenue (lifetime)' />
         <NumberBlock value={formatQuoteValue(dashboardData.total.payments)} text='Payments (lifetime)' />
         <NumberBlock value={dashboardData.total.buttons} text='Buttons' />
       </div>

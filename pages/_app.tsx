@@ -22,9 +22,15 @@ const AUTHORIZED_UNLOGGED_URLS = [
   '/auth/reset-password'
 ]
 
+export interface SettingsProps {
+  settings: { xecDashboard: boolean }
+  setSettings: React.Dispatch<React.SetStateAction<{ xecDashboard: boolean }>>
+}
+
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
   const [chart, setChart] = useState(true)
   const [user, setUser] = useState()
+  const [settings, setSettings] = useState({ xecDashboard: false })
 
   useEffect(() => {
     void (async () => {
@@ -67,7 +73,7 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
       </Head>
       <ErrorBoundary>
         <Page chart={chart} setChart={setChart} loggedUser={user}>
-          <Component {...pageProps} />
+          <Component {...pageProps} settings={settings} setSettings={setSettings} />
         </Page>
       </ErrorBoundary>
     </>
