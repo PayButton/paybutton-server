@@ -330,9 +330,12 @@ export class ChronikBlockchainClient implements BlockchainClient {
   public async syncMissedTransactions (): Promise<void> {
     const addresses = await fetchAllAddressesForNetworkId(XEC_NETWORK_ID)
     try {
-      const { failedAddressesWithErrors } = await syncAddresses(addresses)
+      const { failedAddressesWithErrors, successfulAddressesWithCount } = await syncAddresses(addresses)
       Object.keys(failedAddressesWithErrors).forEach((addr) => {
         console.error(`When syncing missing addresses for address ${addr} encountered error: ${failedAddressesWithErrors[addr]}`)
+      })
+      Object.keys(successfulAddressesWithCount).forEach((addr) => {
+        console.log(`Successful synced ${successfulAddressesWithCount[addr]} txs for ${addr}`)
       })
     } catch (err: any) {
       console.error(`ERROR: (skipping anyway) initial missing transactions sync failed: ${err.message as string} ${err.stack as string}`)
