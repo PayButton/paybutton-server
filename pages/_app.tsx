@@ -23,14 +23,23 @@ const AUTHORIZED_UNLOGGED_URLS = [
 ]
 
 export interface SettingsProps {
-  settings: { xecDashboard: boolean }
-  setSettings: React.Dispatch<React.SetStateAction<{ xecDashboard: boolean }>>
+  xecDashboard: boolean
+  setXecDashboard: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
   const [chart, setChart] = useState(true)
   const [user, setUser] = useState()
-  const [settings, setSettings] = useState({ xecDashboard: false })
+  const [xecDashboard, setXecDashboard] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedValue = localStorage.getItem('xecDashboard')
+      if (storedValue !== null) {
+        setXecDashboard(JSON.parse(storedValue))
+      }
+    }
+  }, [])
 
   useEffect(() => {
     void (async () => {
@@ -73,7 +82,7 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
       </Head>
       <ErrorBoundary>
         <Page chart={chart} setChart={setChart} loggedUser={user}>
-          <Component {...pageProps} settings={settings} setSettings={setSettings} />
+          <Component {...pageProps} xecDashboard={xecDashboard} setXecDashboard={setXecDashboard} />
         </Page>
       </ErrorBoundary>
     </>
