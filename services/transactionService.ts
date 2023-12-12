@@ -3,7 +3,7 @@ import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
 import { fetchAddressBySubstring, fetchAddressById } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT } from 'constants/index'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
@@ -272,7 +272,11 @@ export async function createManyTransactions (
         isCreated: upsertedTx.createdAt.getTime() === upsertedTx.updatedAt.getTime()
       })
     }
-  })
+  },
+  {
+    timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT
+  }
+  )
   const insertedTransactions = insertedTransactionsDistinguished
     .filter(txD => txD.isCreated)
     .map(txD => txD.tx)
