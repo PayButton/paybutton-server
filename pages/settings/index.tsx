@@ -27,17 +27,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 }
 
-const Settings: React.FC<SettingsProps> = ({ settings, setSettings }) => {
+const Settings: React.FC<SettingsProps> = ({ xecDashboard, setXecDashboard }) => {
   return (
     <>
       <h2>Settings</h2>
-      <div onClick={() =>
-        setSettings((prevSettings) => ({
-          ...prevSettings,
-          xecDashboard: !prevSettings.xecDashboard
-        }))
-        }
-        >Xec Dashboard Setting: {settings.xecDashboard ? 'Enabled' : 'Disabled'}</div>
+      <div onClick={() => setXecDashboard(!xecDashboard)}
+        >Xec Dashboard Setting: {xecDashboard ? 'Enabled' : 'Disabled'}</div>
     </>
   )
 }

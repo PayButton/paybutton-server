@@ -54,11 +54,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
 interface PaybuttonsProps {
   userId: string
-  settings: SettingsProps['settings']
-  setSettings: SettingsProps['setSettings']
+  xecDashboard: SettingsProps['xecDashboard']
+  setXecDashboard: SettingsProps['setXecDashboard']
 }
 
-export default function Dashboard ({ userId, settings, setSettings }: PaybuttonsProps): React.ReactElement {
+export default function Dashboard ({ userId, xecDashboard, setXecDashboard }: PaybuttonsProps): React.ReactElement {
   const [dashboardData, setDashboardData] = useState<DashboardData>()
   const [activePeriod, setActivePeriod] = useState<PeriodData>()
   const [activePeriodString, setActivePeriodString] = useState<PeriodString>('1M')
@@ -113,23 +113,22 @@ export default function Dashboard ({ userId, settings, setSettings }: Paybuttons
 
   if (dashboardData === undefined || activePeriod === undefined) return <></>
 
+  const HandleValueTypeClick = (value: boolean): void => {
+    setXecDashboard(value)
+    localStorage.setItem('xecDashboard', JSON.stringify(value))
+  }
+
   return (
     <>
       <div className={style.header_ctn}>
         <h2>Dashboard</h2>
-          <span
-            className={style.value_type_toggle}
-            onClick={() =>
-              setSettings((prevSettings) => ({
-                ...prevSettings,
-                xecDashboard: !prevSettings.xecDashboard
-              }))}
-          >
-            {settings.xecDashboard ? 'USD' : 'XEC'}
-          </span>
+          <div className={style.value_type_toggle_ctn}>
+            <span className={!xecDashboard ? style.active : ''} onClick={() => HandleValueTypeClick(false)}>USD</span>
+            <span className={xecDashboard ? style.active : ''} onClick={() => HandleValueTypeClick(true)}>XEC</span>
+          </div>
       </div>
       <div className={style.number_ctn}>
-        <NumberBlock value={settings.xecDashboard ? 'Value in XEC' : '$'.concat(formatQuoteValue(dashboardData.total.revenue, USD_QUOTE_ID)) } text='Revenue (lifetime)' />
+        <NumberBlock value={xecDashboard ? 'XEC Value' : '$'.concat(formatQuoteValue(dashboardData.total.revenue, USD_QUOTE_ID)) } text='Revenue (lifetime)' />
         <NumberBlock value={formatQuoteValue(dashboardData.total.payments)} text='Payments (lifetime)' />
         <NumberBlock value={dashboardData.total.buttons} text='Buttons' />
       </div>
@@ -143,10 +142,10 @@ export default function Dashboard ({ userId, settings, setSettings }: Paybuttons
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h5>Revenue</h5>
-            <h5>{totalString}: ${formatQuoteValue(activePeriod.totalRevenue, USD_QUOTE_ID)}</h5>
+            <h5>{totalString}: {xecDashboard ? 'XEC Value' : `$${formatQuoteValue(activePeriod.totalRevenue, USD_QUOTE_ID)}`}</h5>
           </div>
           <div className={style.chart_ctn}>
-            <Chart data={activePeriod.revenue} usd={true} />
+            <Chart data={activePeriod.revenue} usd={!xecDashboard} xecDashboard={xecDashboard} />
           </div>
         </div>
         <div className={style.chart_inner_ctn}>
@@ -163,7 +162,7 @@ export default function Dashboard ({ userId, settings, setSettings }: Paybuttons
             <h5>Button Leaderboard</h5>
             <div></div>
           </div>
-            <Leaderboard totalString={totalString} buttons={activePeriod.buttons}/>
+            <Leaderboard totalString={totalString} buttons={activePeriod.buttons} xecDashboard={xecDashboard} />
         </div>
       </div>
     </>
