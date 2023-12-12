@@ -336,6 +336,7 @@ export async function syncAddresses (addresses: Address[]): Promise<SyncAndSubsc
 
 export const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<SyncAndSubscriptionReturn> => {
   const failedAddressesWithErrors: KeyValueT<string> = {}
+  const successfulAddressesWithCount: KeyValueT<number> = {}
   let txsToSave: Prisma.TransactionCreateManyInput[] = []
 
   const productionAddressesIds = productionAddresses.map(addr => addr.id)
@@ -344,17 +345,20 @@ export const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<S
       try {
         await subscribeAddresses([addr])
         const generator = syncTransactionsForAddress(addr.address)
+        let count = 0
         while (true) {
           const result = await generator.next()
           if (result.done === true) break
           if (productionAddressesIds.includes(addr.id)) {
             const txs = result.value
+            count += txs.length
             txsToSave = txsToSave.concat(txs)
             if (txsToSave.length !== 0) {
               await appendTxsToFile(txsToSave)
             }
           }
         }
+        successfulAddressesWithCount[addr.address] = count
       } catch (err: any) {
         failedAddressesWithErrors[addr.address] = err.stack
       }
@@ -364,7 +368,8 @@ export const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<S
     await appendTxsToFile(txsToSave)
   }
   return {
-    failedAddressesWithErrors
+    failedAddressesWithErrors,
+    successfulAddressesWithCount
   }
 }
 
