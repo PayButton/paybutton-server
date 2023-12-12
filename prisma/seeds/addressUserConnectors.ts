@@ -23,5 +23,10 @@ export const addressUserConnectors = [
     addressId: 'ef55d382-ff55-4a96-92dd-bb04513dac98',
     walletId: '80fcbeb5-f6bd-4b3b-aca8-d604a670e978',
     userId: 'dev-uid'
+  },
+  {
+    addressId: 'f22a0233-ff55-4a96-92dd-cc44f02dac98',
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    userId: 'dev-uid'
   }
 ]

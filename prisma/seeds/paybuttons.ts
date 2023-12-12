@@ -32,6 +32,14 @@ export const paybuttons = [
     buttonData: '{}'
   },
   {
+    id: 'f03981ab-8ded-4aab-93e8-b1d38f9b219b',
+    providerUserId: 'dev-uid',
+    name: 'Dev',
+    url: '',
+    description: '',
+    buttonData: '{}'
+  },
+  {
     id: 'ef45a4e7-8ded-4aab-93e8-b1d3e8b4f69d',
     providerUserId: 'dev-uid',
     name: 'Bar XEC',

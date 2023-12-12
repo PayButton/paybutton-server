@@ -26,5 +26,13 @@ export const walletUserConnectors = [
     isBCHDefault: true,
     createdAt: new Date(),
     updatedAt: new Date()
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    userId: 'dev-uid',
+    isXECDefault: false,
+    isBCHDefault: false,
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ]
