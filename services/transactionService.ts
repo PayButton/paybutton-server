@@ -403,7 +403,8 @@ export async function fetchAllTransactionsWithNoPrices (): Promise<Transaction[]
   })
   return x
 }
-export async function fetchAllTransactionsWithOnePrice (): Promise<Transaction[]> {
+
+export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transaction[]> {
   const txs = await prisma.transaction.findMany({
     where: {
       prices: {
@@ -414,5 +415,5 @@ export async function fetchAllTransactionsWithOnePrice (): Promise<Transaction[]
       prices: true
     }
   })
-  return txs.filter(t => t.prices.length === 1)
+  return txs.filter(t => t.prices.length !== 2)
 }
