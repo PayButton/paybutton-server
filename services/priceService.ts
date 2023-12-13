@@ -68,6 +68,8 @@ export async function upsertPricesForNetworkId (responseData: IResponseData, net
 
 export async function upsertCurrentPricesForNetworkId (responseData: IResponseData, networkId: number): Promise<void> {
   await upsertPricesForNetworkId(responseData, networkId, 0)
+  const todaysTimestamp = flattenTimestamp(moment().unix())
+  await upsertPricesForNetworkId(responseData, networkId, todaysTimestamp)
 }
 
 function getPriceURLForDayAndNetworkTicker (day: moment.Moment, networkTicker: string): string {

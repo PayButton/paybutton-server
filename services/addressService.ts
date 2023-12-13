@@ -242,7 +242,8 @@ export async function generateAddressPaymentInfo (addressString: string): Promis
 export async function getLatestTxTimestampForAddress (addressId: string): Promise<number | undefined> {
   const tx = await prisma.transaction.findFirst({
     where: {
-      addressId
+      addressId,
+      confirmed: true
     },
     orderBy: {
       timestamp: 'desc'

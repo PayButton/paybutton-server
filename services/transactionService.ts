@@ -3,7 +3,7 @@ import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
 import { fetchAddressBySubstring, fetchAddressById } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT } from 'constants/index'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
@@ -199,15 +199,17 @@ export async function createTransaction (
   }
 }
 
-export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient): Promise<void> {
+export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient, disconnectBefore = true): Promise<void> {
   const networkId = await getTransactionNetworkId(tx)
   const allPrices = await fetchPricesForNetworkAndTimestamp(networkId, tx.timestamp, prisma)
 
-  void await prisma.pricesOnTransactions.deleteMany({
-    where: {
-      transactionId: tx.id
-    }
-  })
+  if (disconnectBefore) {
+    void await prisma.pricesOnTransactions.deleteMany({
+      where: {
+        transactionId: tx.id
+      }
+    })
+  }
   void await prisma.pricesOnTransactions.upsert({
     where: {
       priceId_transactionId: {
@@ -238,8 +240,15 @@ export async function connectTransactionToPrices (tx: Transaction, prisma: Prism
 
 export async function connectTransactionsListToPrices (txList: Transaction[]): Promise<void> {
   await prisma.$transaction(async (prisma) => {
+    void await prisma.pricesOnTransactions.deleteMany({
+      where: {
+        transactionId: {
+          in: txList.map(t => t.id)
+        }
+      }
+    })
     for (const tx of txList) {
-      await connectTransactionToPrices(tx, prisma)
+      await connectTransactionToPrices(tx, prisma, false)
     }
   })
 }
@@ -265,14 +274,21 @@ export async function createManyTransactions (
             addressId: tx.addressId
           }
         },
-        update: {}
+        update: {
+          confirmed: tx.confirmed,
+          timestamp: tx.timestamp
+        }
       })
       insertedTransactionsDistinguished.push({
         tx: upsertedTx,
         isCreated: upsertedTx.createdAt.getTime() === upsertedTx.updatedAt.getTime()
       })
     }
-  })
+  },
+  {
+    timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT
+  }
+  )
   const insertedTransactions = insertedTransactionsDistinguished
     .filter(txD => txD.isCreated)
     .map(txD => txD.tx)
@@ -291,40 +307,45 @@ export async function createManyTransactions (
 
 interface SyncAndSubscriptionReturn {
   failedAddressesWithErrors: KeyValueT<string>
+  successfulAddressesWithCount: KeyValueT<number>
 }
 
 export async function syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
   const failedAddressesWithErrors: KeyValueT<string> = {}
+  const successfulAddressesWithCount: KeyValueT<number> = {}
   let txsToSave: Prisma.TransactionCreateManyInput[] = []
 
   const productionAddressesIds = productionAddresses.map(addr => addr.id)
-  await Promise.all(
-    addresses.map(async (addr) => {
-      try {
-        const generator = syncTransactionsForAddress(addr.address)
-        while (true) {
-          const result = await generator.next()
-          if (result.done === true) break
-          if (productionAddressesIds.includes(addr.id)) {
-            const txs = result.value
-            txsToSave = txsToSave.concat(txs)
-            if (txsToSave.length !== 0) {
-              await appendTxsToFile(txsToSave)
-            }
+  for (const addr of addresses) {
+    try {
+      const generator = syncTransactionsForAddress(addr.address)
+      let count = 0
+      while (true) {
+        const result = await generator.next()
+        if (result.done === true) break
+        if (productionAddressesIds.includes(addr.id)) {
+          const txs = result.value
+          count += txs.length
+          txsToSave = txsToSave.concat(txs)
+          if (txsToSave.length !== 0) {
+            await appendTxsToFile(txsToSave)
           }
         }
-      } catch (err: any) {
-        failedAddressesWithErrors[addr.address] = err.stack
       }
-    })
-  )
+      successfulAddressesWithCount[addr.address] = count
+    } catch (err: any) {
+      failedAddressesWithErrors[addr.address] = err.stack
+    }
+  }
   return {
-    failedAddressesWithErrors
+    failedAddressesWithErrors,
+    successfulAddressesWithCount
   }
 }
 
 export const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<SyncAndSubscriptionReturn> => {
   const failedAddressesWithErrors: KeyValueT<string> = {}
+  const successfulAddressesWithCount: KeyValueT<number> = {}
   let txsToSave: Prisma.TransactionCreateManyInput[] = []
 
   const productionAddressesIds = productionAddresses.map(addr => addr.id)
@@ -333,17 +354,20 @@ export const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<S
       try {
         await subscribeAddresses([addr])
         const generator = syncTransactionsForAddress(addr.address)
+        let count = 0
         while (true) {
           const result = await generator.next()
           if (result.done === true) break
           if (productionAddressesIds.includes(addr.id)) {
             const txs = result.value
+            count += txs.length
             txsToSave = txsToSave.concat(txs)
             if (txsToSave.length !== 0) {
               await appendTxsToFile(txsToSave)
             }
           }
         }
+        successfulAddressesWithCount[addr.address] = count
       } catch (err: any) {
         failedAddressesWithErrors[addr.address] = err.stack
       }
@@ -353,7 +377,8 @@ export const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<S
     await appendTxsToFile(txsToSave)
   }
   return {
-    failedAddressesWithErrors
+    failedAddressesWithErrors,
+    successfulAddressesWithCount
   }
 }
 
@@ -387,7 +412,8 @@ export async function fetchAllTransactionsWithNoPrices (): Promise<Transaction[]
   })
   return x
 }
-export async function fetchAllTransactionsWithOnePrice (): Promise<Transaction[]> {
+
+export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transaction[]> {
   const txs = await prisma.transaction.findMany({
     where: {
       prices: {
@@ -398,5 +424,5 @@ export async function fetchAllTransactionsWithOnePrice (): Promise<Transaction[]
       prices: true
     }
   })
-  return txs.filter(t => t.prices.length === 1)
+  return txs.filter(t => t.prices.length !== 2)
 }
