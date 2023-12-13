@@ -199,15 +199,17 @@ export async function createTransaction (
   }
 }
 
-export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient): Promise<void> {
+export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient, disconnectBefore = true): Promise<void> {
   const networkId = await getTransactionNetworkId(tx)
   const allPrices = await fetchPricesForNetworkAndTimestamp(networkId, tx.timestamp, prisma)
 
-  void await prisma.pricesOnTransactions.deleteMany({
-    where: {
-      transactionId: tx.id
-    }
-  })
+  if (disconnectBefore) {
+    void await prisma.pricesOnTransactions.deleteMany({
+      where: {
+        transactionId: tx.id
+      }
+    })
+  }
   void await prisma.pricesOnTransactions.upsert({
     where: {
       priceId_transactionId: {
@@ -238,8 +240,15 @@ export async function connectTransactionToPrices (tx: Transaction, prisma: Prism
 
 export async function connectTransactionsListToPrices (txList: Transaction[]): Promise<void> {
   await prisma.$transaction(async (prisma) => {
+    void await prisma.pricesOnTransactions.deleteMany({
+      where: {
+        transactionId: {
+          in: txList.map(t => t.id)
+        }
+      }
+    })
     for (const tx of txList) {
-      await connectTransactionToPrices(tx, prisma)
+      await connectTransactionToPrices(tx, prisma, false)
     }
   })
 }
