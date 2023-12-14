@@ -10,7 +10,6 @@ import { COOKIE_NAMES, USD_QUOTE_ID } from 'constants/index'
 import Leaderboard from 'components/Dashboard/Leaderboard'
 import { DashboardData, PeriodData } from 'redis/types'
 import { loadStateFromCookie, saveStateToCookie } from 'utils/cookies'
-import { SettingsProps } from '../_app'
 const Chart = dynamic(async () => await import('components/Chart'), {
   ssr: false
 })
@@ -54,15 +53,23 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
 interface PaybuttonsProps {
   userId: string
-  xecDashboard: SettingsProps['xecDashboard']
-  setXecDashboard: SettingsProps['setXecDashboard']
 }
 
-export default function Dashboard ({ userId, xecDashboard, setXecDashboard }: PaybuttonsProps): React.ReactElement {
+export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElement {
   const [dashboardData, setDashboardData] = useState<DashboardData>()
   const [activePeriod, setActivePeriod] = useState<PeriodData>()
   const [activePeriodString, setActivePeriodString] = useState<PeriodString>('1M')
   const [totalString, setTotalString] = useState<string>()
+  const [dashboardCurrency, setDashboardCurrency] = useState<string>('USD')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedValue = localStorage.getItem('dashboardCurrency')
+      if (storedValue !== null) {
+        setDashboardCurrency(JSON.parse(storedValue))
+      }
+    }
+  }, [])
 
   const setPeriodFromString = (data?: DashboardData, periodString?: PeriodString): void => {
     if (data === undefined) return
@@ -113,9 +120,9 @@ export default function Dashboard ({ userId, xecDashboard, setXecDashboard }: Pa
 
   if (dashboardData === undefined || activePeriod === undefined) return <></>
 
-  const HandleValueTypeClick = (value: boolean): void => {
-    setXecDashboard(value)
-    localStorage.setItem('xecDashboard', JSON.stringify(value))
+  const HandleValueTypeClick = (value: string): void => {
+    setDashboardCurrency(value)
+    localStorage.setItem('dashboardCurrency', JSON.stringify(value))
   }
 
   return (

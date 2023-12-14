@@ -30,16 +30,6 @@ export interface SettingsProps {
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
   const [chart, setChart] = useState(true)
   const [user, setUser] = useState()
-  const [xecDashboard, setXecDashboard] = useState(false)
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedValue = localStorage.getItem('xecDashboard')
-      if (storedValue !== null) {
-        setXecDashboard(JSON.parse(storedValue))
-      }
-    }
-  }, [])
 
   useEffect(() => {
     void (async () => {
@@ -82,7 +72,7 @@ function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
       </Head>
       <ErrorBoundary>
         <Page chart={chart} setChart={setChart} loggedUser={user}>
-          <Component {...pageProps} xecDashboard={xecDashboard} setXecDashboard={setXecDashboard} />
+          <Component {...pageProps} />
         </Page>
       </ErrorBoundary>
     </>
