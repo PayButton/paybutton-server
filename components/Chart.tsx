@@ -26,11 +26,10 @@ ChartJS.register(
 
 interface Props {
   data: object
-  usd: boolean
-  xecDashboard: boolean
+  currency: string
 }
 
-const Chart: NextPage<Props> = ({ data, usd, xecDashboard }) => {
+const Chart: NextPage<Props> = ({ data, currency }) => {
   const chartData = data
 
   function cssvar (name): string {
@@ -55,7 +54,7 @@ const Chart: NextPage<Props> = ({ data, usd, xecDashboard }) => {
         displayColors: false,
         callbacks: {
           label: function (context) {
-            return xecDashboard !== undefined ? usd ? '$' + formatQuoteValue(context.raw, USD_QUOTE_ID) : formatQuoteValue(context.raw) + 'XEC' : formatQuoteValue(context.raw)
+            return currency !== undefined ? currency === 'USD' ? '$' + formatQuoteValue(context.raw, USD_QUOTE_ID) : formatQuoteValue(context.raw) + 'XEC' : formatQuoteValue(context.raw)
           }
         },
         mode: 'nearest',
@@ -84,7 +83,7 @@ const Chart: NextPage<Props> = ({ data, usd, xecDashboard }) => {
         ticks: {
           color: cssvar('--primary-text-color'),
           callback: function (value: string) {
-            return xecDashboard !== undefined ? usd ? '$' + formatQuoteValue(value, USD_QUOTE_ID) : formatQuoteValue(value) + ' XEC' : value
+            return currency !== undefined ? currency === 'USD' ? '$' + formatQuoteValue(value, USD_QUOTE_ID) : formatQuoteValue(value) + ' XEC' : value
           }
         },
         position: 'right'

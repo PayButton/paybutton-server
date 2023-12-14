@@ -23,8 +23,8 @@ const AUTHORIZED_UNLOGGED_URLS = [
 ]
 
 export interface SettingsProps {
-  xecDashboard: boolean
-  setXecDashboard: React.Dispatch<React.SetStateAction<boolean>>
+  timezone: string
+  setTimezone: React.Dispatch<React.SetStateAction<string>>
 }
 
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {

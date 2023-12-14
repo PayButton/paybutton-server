@@ -120,9 +120,9 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
 
   if (dashboardData === undefined || activePeriod === undefined) return <></>
 
-  const HandleValueTypeClick = (value: string): void => {
-    setDashboardCurrency(value)
-    localStorage.setItem('dashboardCurrency', JSON.stringify(value))
+  const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
+    setDashboardCurrency(event.target.value)
+    localStorage.setItem('dashboardCurrency', JSON.stringify(event.target.value))
   }
 
   return (
@@ -130,12 +130,14 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
       <div className={style.header_ctn}>
         <h2>Dashboard</h2>
           <div className={style.value_type_toggle_ctn}>
-            <span className={!xecDashboard ? style.active : ''} onClick={() => HandleValueTypeClick(false)}>USD</span>
-            <span className={xecDashboard ? style.active : ''} onClick={() => HandleValueTypeClick(true)}>XEC</span>
+             <select value={dashboardCurrency} onChange={handleSelectChange}>
+              <option value="USD">USD</option>
+              <option value="XEC">XEC</option>
+            </select>
           </div>
       </div>
       <div className={style.number_ctn}>
-        <NumberBlock value={xecDashboard ? 'XEC Value' : '$'.concat(formatQuoteValue(dashboardData.total.revenue, USD_QUOTE_ID)) } text='Revenue (lifetime)' />
+        <NumberBlock value={dashboardCurrency === 'XEC' ? 'XEC Value' : '$'.concat(formatQuoteValue(dashboardData.total.revenue, USD_QUOTE_ID)) } text='Revenue (lifetime)' />
         <NumberBlock value={formatQuoteValue(dashboardData.total.payments)} text='Payments (lifetime)' />
         <NumberBlock value={dashboardData.total.buttons} text='Buttons' />
       </div>
@@ -149,10 +151,10 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h5>Revenue</h5>
-            <h5>{totalString}: {xecDashboard ? 'XEC Value' : `$${formatQuoteValue(activePeriod.totalRevenue, USD_QUOTE_ID)}`}</h5>
+            <h5>{totalString}: {dashboardCurrency === 'XEC' ? 'XEC Value' : `$${formatQuoteValue(activePeriod.totalRevenue, USD_QUOTE_ID)}`}</h5>
           </div>
           <div className={style.chart_ctn}>
-            <Chart data={activePeriod.revenue} usd={!xecDashboard} xecDashboard={xecDashboard} />
+            <Chart data={activePeriod.revenue} currency={dashboardCurrency} />
           </div>
         </div>
         <div className={style.chart_inner_ctn}>
@@ -169,7 +171,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
             <h5>Button Leaderboard</h5>
             <div></div>
           </div>
-            <Leaderboard totalString={totalString} buttons={activePeriod.buttons} xecDashboard={xecDashboard} />
+            <Leaderboard totalString={totalString} buttons={activePeriod.buttons} currency={dashboardCurrency} />
         </div>
       </div>
     </>

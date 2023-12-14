@@ -10,10 +10,10 @@ import { formatQuoteValue } from 'utils'
 interface IProps {
   buttons: PaymentDataByButton
   totalString: string
-  xecDashboard: boolean
+  currency: string
 }
 
-export default ({ buttons, totalString, xecDashboard }: IProps): JSX.Element => {
+export default ({ buttons, totalString, currency }: IProps): JSX.Element => {
   const columns = useMemo(
     () => [
       {
@@ -40,7 +40,7 @@ export default ({ buttons, totalString, xecDashboard }: IProps): JSX.Element => 
         sortType: compareNumericString,
         Cell: (cellProps) => {
           return <div style={{ textAlign: 'right', fontWeight: '600' }}>
-            {xecDashboard ? 'XEC Value' : '$'.concat(formatQuoteValue(cellProps.cell.value, USD_QUOTE_ID))}
+            {currency === 'XEC' ? 'XEC Value' : '$'.concat(formatQuoteValue(cellProps.cell.value, USD_QUOTE_ID))}
           </div>
         }
       },
@@ -52,7 +52,7 @@ export default ({ buttons, totalString, xecDashboard }: IProps): JSX.Element => 
         }
       }
     ],
-    [totalString, xecDashboard]
+    [totalString, currency]
   )
   const buttonList = Object.keys(buttons).map(k => buttons[k])
 
