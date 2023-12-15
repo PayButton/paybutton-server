@@ -13,8 +13,8 @@ const syncAllAddressTransactionsForNetworkJob = async (job: Job): Promise<void> 
   try {
     let addresses = await addressService.fetchAllAddressesForNetworkId(job.data.networkId)
     console.log(`found ${addresses.length} addresses...`)
-    addresses = addresses.filter(addr => addr.lastSynced == null)
-    failedAddressesWithErrors = (await transactionService.syncAddresses(addresses)).failedAddressesWithErrors
+    addresses = job.data.fully === true ? addresses : addresses.filter(addr => addr.lastSynced == null)
+    failedAddressesWithErrors = (await transactionService.syncAddresses(addresses, job.data.fully === true)).failedAddressesWithErrors
   } catch (err: any) {
     const parsedError = parseError(err)
     if (parsedError.message === RESPONSE_MESSAGES.TRANSACTION_ALREADY_EXISTS_FOR_ADDRESS_400.message) {

@@ -146,7 +146,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     return (await this.chronik.script(type, hash160).history(page, pageSize)).txs
   }
 
-  public async * syncTransactionsForAddress (addressString: string): AsyncGenerator<TransactionWithAddressAndPrices[]> {
+  public async * syncTransactionsForAddress (addressString: string, fully = false): AsyncGenerator<TransactionWithAddressAndPrices[]> {
     const address = await fetchAddressBySubstring(addressString)
     const pageSize = FETCH_N
     let page = 0
@@ -164,7 +164,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         break
       }
       const latestBlockTimestamp = Number(transactions[0].block?.timestamp)
-      if (latestBlockTimestamp < latestTimestamp) break
+      if (!fully && latestBlockTimestamp < latestTimestamp) break
 
       const confirmedTransactions = transactions.filter(t => t.block !== undefined)
       const unconfirmedTransactions = transactions.filter(t => t.block === undefined)
@@ -176,6 +176,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       )
 
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
+      console.log(`added ${persistedTransactions.length} txs to ${addressString}`)
       const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
       broadcastTxData.messageType = 'OldTx'
       broadcastTxData.address = addressString
