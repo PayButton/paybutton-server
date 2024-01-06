@@ -11,34 +11,78 @@ interface IProps {
 }
 export default ({ paybuttonId }: IProps): JSX.Element => {
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
+  const [successText, setSuccessText] = useState('')
+  const [clearModal, setClearModal] = useState(false)
   const [currentTriggerId, setCurrentTriggerId] = useState<string>()
-  const { register, handleSubmit, reset, setValue } = useForm<PaybuttonTriggerPOSTParameters>()
+  const { register, handleSubmit, reset, setValue, watch } = useForm<PaybuttonTriggerPOSTParameters>()
+  const [initialStateURL, setInitialStateURL] = useState<string>()
+  const [initialStateData, setInitialStateData] = useState<string>()
+  const [disableSubmit, setDisableSubmit] = useState(false)
+
+  const getTrigger = async (): Promise<void> => {
+    const response = await axios.get(`/api/paybutton/triggers/${paybuttonId}`)
+    const ok = await response.data as PaybuttonTrigger[]
+    if (ok.length > 0) {
+      const trigger = ok[0]
+      setValue('postData', trigger.postData)
+      setValue('postURL', trigger.postURL)
+      setValue('sendEmail', trigger.sendEmail)
+      setInitialStateData(trigger.postData)
+      setInitialStateURL(trigger.postURL)
+      setCurrentTriggerId(trigger.id)
+    }
+  }
+
+  const [watchData, watchURL] = watch(['postData', 'postURL'])
 
   useEffect(() => {
-    const getTrigger = async (): Promise<void> => {
-      const response = await axios.get(`/api/paybutton/triggers/${paybuttonId}`)
-      const ok = await response.data as PaybuttonTrigger[]
-      if (ok.length > 0) {
-        const trigger = ok[0]
-        setValue('postData', trigger.postData)
-        setValue('postURL', trigger.postURL)
-        setValue('sendEmail', trigger.sendEmail)
-        setCurrentTriggerId(trigger.id)
-      }
-    }
     void getTrigger()
   }, [])
+
+  useEffect(() => {
+    if (
+      (watchData === initialStateData &&
+        watchURL === initialStateURL) ||
+      (watchData === '' || watchURL === '')
+    ) {
+      setDisableSubmit(true)
+    } else {
+      setDisableSubmit(false)
+    }
+  }, [initialStateURL, initialStateData, watchData, watchURL])
+
+  async function clearTrigger (): Promise<void> {
+    try {
+      const response = await axios.delete(`/api/paybutton/triggers/${paybuttonId}`, {
+        data: {
+          triggerId: currentTriggerId
+        }
+      })
+      if (response.status === 200) {
+        reset()
+        setError('')
+        setSuccessText('Cleared trigger')
+        setCurrentTriggerId(undefined)
+      }
+    } catch (err: any) {
+      setSuccessText('')
+      setError(err.response.data.message)
+    } finally {
+      setClearModal(false)
+    }
+  }
 
   async function onSubmit (params: PaybuttonTriggerPOSTParameters): Promise<void> {
     try {
       params.currentTriggerId = currentTriggerId
       const response = await axios.post(`/api/paybutton/triggers/${paybuttonId}`, params)
       if (response.status === 200) {
-        setSuccess(true)
-        reset()
+        setError('')
+        setSuccessText('Trigger set successfully')
+        void getTrigger()
       }
     } catch (err: any) {
+      setSuccessText('')
       setError(err.response.data.message)
     }
   }
@@ -47,9 +91,7 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
     <div>
       <div>
         <h4>When a Payment is Received...</h4>
-        {success
-          ? <p>Trigger set successfully</p>
-          : <div className={style.form_ctn}>
+        <div className={style.form_ctn}>
           <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
             {/* Checkbox */}
             {/* TODO: send email logic
@@ -89,17 +131,41 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
               <div className={style.tip}>
                 {/* Only triggers if payment &gt; X */}
               </div>
-                <div className={style.btn_row2}>
-                  {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
-                  <div>
-                    <button type='submit' className='button_main'>{currentTriggerId === undefined ? 'Create' : 'Update'}</button>
-                  </div>
+              <div className={style.btn_row2}>
+                {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
+                {(successText === undefined || successText === '') ? null : <div className={style.success_message}>{successText}</div>}
+                <div>
+                  <button disabled={disableSubmit} type='submit' className='button_main'>{currentTriggerId === undefined ? 'Create' : 'Update'}</button>
                 </div>
+                <div>
+                  {
+                    currentTriggerId !== undefined &&
+                      <button type='button' onClick={() => setClearModal(true)} className={style.delete_btn}>Clear</button>
+                  }
+                </div>
+              </div>
             </div>
           </form>
         </div>
-        }
       </div>
+      {clearModal
+        ? (
+          <div className={style.form_ctn_outer}>
+            <div className={style.form_ctn_inner}>
+              <h4>Clear trigger?</h4>
+              <div className={`${style.form_ctn} ${style.delete_button_form_ctn}`}>
+                <label htmlFor='name'>Are you sure you want to clear the trigger action?<br />This action cannot be undone.</label>
+                <div className={style.btn_row}>
+                  <div>
+
+                    <button onClick={() => { void clearTrigger() }} className={style.delete_confirm_btn}>Yes</button>
+                    <button onClick={() => { setClearModal(false) }} className={style.cancel_btn}>Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>)
+        : null}
     </div>
   )
 }
