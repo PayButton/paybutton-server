@@ -152,9 +152,9 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
         ? (
           <div className={style.form_ctn_outer}>
             <div className={style.form_ctn_inner}>
-              <h4>Clear trigger?</h4>
+              <h4>Clear Payment Trigger?</h4>
               <div className={`${style.form_ctn} ${style.delete_button_form_ctn}`}>
-                <label htmlFor='name'>Are you sure you want to clear the trigger action?<br />This action cannot be undone.</label>
+                <label htmlFor='name'>Are you sure you want to clear this payment trigger?<br />This action cannot be undone.</label>
                 <div className={style.btn_row}>
                   <div>
 
