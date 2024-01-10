@@ -6,12 +6,12 @@ https://paybutton.org
 ## Developing
 ### Installing and running PayButton locally
 - [Install and configure Docker](https://docs.docker.com/get-docker/)
-- [Install docker-compose](https://docs.docker.com/compose/install/)
 - Clone the repo and go to the repo directory
 - Copy `config/example-config.json` to `paybutton-config.json`
-- Create a `.env.local` file with two environment variables:
+- Create a `.env.local` file with the environment variables:
   + `PRICE_API_TOKEN="<COINDANCE_API_KEY>"`
   + `WS_AUTH_KEY="<RANDOMLY_GENERATED_UUID>"`
+  + `MASTER_SECRET_KEY="<RANDOMLY_GENERATED_UUID>"`
 
 - Run the following make command* to build/pull the relevant docker images and run the server locally:
 
