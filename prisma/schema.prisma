@@ -71,7 +71,7 @@ model Transaction {
   confirmed Boolean                @default(false)
   timestamp Int
   addressId String
-  extraData String                @db.LongText @default("")
+  opReturn String                @db.LongText @default("")
   address   Address                @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   prices    PricesOnTransactions[]
   createdAt DateTime                  @default(now())

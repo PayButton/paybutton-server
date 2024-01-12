@@ -404,7 +404,7 @@ export const mockedUSDPriceOnTransaction = {
 export const mockedTransaction = {
   id: 'mocked-uuid',
   hash: 'Yh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
-  extraData: '',
+  opReturn: '',
   addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
   confirmed: true,
   address: {
@@ -429,7 +429,7 @@ export const mockedTransactionList = [
   {
     id: 'mocked-uuid',
     hash: 'Yh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
-    extraData: '',
+    opReturn: '',
     confirmed: true,
     addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
     createdAt: new Date('2022-11-02T15:18:42.000Z'),
@@ -440,7 +440,7 @@ export const mockedTransactionList = [
   {
     id: 'mocked-uuid2',
     hash: 'hh5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
-    extraData: '',
+    opReturn: '',
     confirmed: true,
     addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
     createdAt: new Date('2022-11-02T15:18:42.000Z'),
@@ -451,7 +451,7 @@ export const mockedTransactionList = [
   {
     id: 'mocked-uuid3',
     hash: '5h5DRDjd3AarAvQA1nwpPI4daDihY6hQfnMV6UKFqZc=',
-    extraData: '',
+    opReturn: '',
     confirmed: true,
     addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
     createdAt: new Date('2022-11-02T15:18:42.000Z'),
