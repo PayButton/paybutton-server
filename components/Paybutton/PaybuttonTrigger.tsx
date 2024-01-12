@@ -123,6 +123,7 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
                 <li>&lt;amount&gt;</li>
                 <li>&lt;timestamp&gt;</li>
                 <li>&lt;txId&gt;</li>
+                <li>&lt;opReturn&gt;</li>
                 <li>&lt;hmac&gt;</li>
               </ul>
             </div>

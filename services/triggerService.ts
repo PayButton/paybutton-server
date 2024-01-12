@@ -183,6 +183,7 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData):
   const currency = NETWORK_TICKERS_FROM_ID[tx.address.networkId]
   const txId = tx.hash
   const timestamp = tx.timestamp
+  const opReturn = tx.opReturn
 
   const addressTriggers = await fetchTriggersForAddress(address)
   await Promise.all(addressTriggers.map(async (trigger) => {
@@ -192,7 +193,8 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData):
       txId,
       buttonName: trigger.paybutton.name,
       address,
-      timestamp
+      timestamp,
+      opReturn
     }
     const hmac = await hashPostData(trigger.paybutton.providerUserId, postDataParameters)
     await postDataForTrigger(trigger, {
@@ -210,6 +212,7 @@ export interface PostDataParameters {
   txId: string
   buttonName: string
   address: string
+  opReturn: string
 }
 
 export interface PostDataParametersHashed {
@@ -219,6 +222,7 @@ export interface PostDataParametersHashed {
   txId: string
   buttonName: string
   address: string
+  opReturn: string
   hmac: string
 }
 
