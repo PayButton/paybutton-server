@@ -76,7 +76,8 @@ export const RESPONSE_MESSAGES = {
   COULD_NOT_EXECUTE_TRIGGER_500: { statusCode: 500, message: 'Failed to execute trigger for paybutton address.' },
   INVALID_DATA_JSON_WITH_VARIABLES_400: (variables: string[]) => { return { statusCode: 400, message: `Data is not valid. Make sure that ${variables.join(', ')} are not inside quotes.` } },
   PAGE_SIZE_LIMIT_EXCEEDED_400: { statusCode: 400, message: `Page size limit should be at most ${TX_PAGE_SIZE_LIMIT}.` },
-  PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400: { statusCode: 400, message: 'pageSize and page parameters should be valid integers.' }
+  PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400: { statusCode: 400, message: 'pageSize and page parameters should be valid integers.' },
+  INVALID_OUTPUT_SCRIPT_LENGTH_500: (l: number) => { return { statusCode: 500, message: `Invalid outputScript length ${l}` } }
 }
 
 export type KeyValueT<T> = Record<string, T>

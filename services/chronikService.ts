@@ -108,15 +108,55 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
-  private async getTransactionAmount (transaction: Tx, addressString: string): Promise<Prisma.Decimal> {
+  private getNullDataScriptData (outputScript: string): string | null {
+    const opReturnCode = '6a'
+    // hexadecimal representation of 'paybutton$'
+    const encodedPrefix = '706179627574746f6e24'
+    // the +2 below represents the size of the byte representing the length
+    // of the message following it (2 hex chars)
+    const prefixLen = opReturnCode.length + 2 + encodedPrefix.length
+    const regexPattern = new RegExp(`${opReturnCode}.{2}${encodedPrefix}`, 'i')
+
+    if (outputScript.length < 2 || outputScript.length % 2 !== 0) {
+      throw new Error(RESPONSE_MESSAGES.INVALID_OUTPUT_SCRIPT_LENGTH_500(outputScript.length).message)
+    }
+    if (outputScript.length < prefixLen) {
+      return null
+    }
+
+    const byteStartIndexes = Array.from(
+      {
+        length:
+        (outputScript.length - prefixLen) / 2
+      },
+      (_, i) => i * 2
+    )
+
+    for (const idx of byteStartIndexes) {
+      const chunk = outputScript.slice(idx, idx + prefixLen)
+      if (regexPattern.test(chunk)) {
+        return outputScript.slice(idx + prefixLen)
+      }
+    }
+    return null
+  }
+
+  private async getTransactionAmountAndData (transaction: Tx, addressString: string): Promise<{amount: Prisma.Decimal, data: string}> {
     let totalOutput = 0
     let totalInput = 0
     const addressFormat = xecaddr.detectAddressFormat(addressString)
     const script = toHash160(addressString).hash160
+    let data = ''
 
     for (const output of transaction.outputs) {
       if (output.outputScript.includes(script)) {
         totalOutput += parseInt(output.value)
+      }
+      if (data === '') {
+        const outputData = this.getNullDataScriptData(output.outputScript)
+        if (outputData !== null) {
+          data = Buffer.from(outputData, 'hex').toString('utf8')
+        }
       }
     }
     for (const input of transaction.inputs) {
@@ -125,19 +165,21 @@ export class ChronikBlockchainClient implements BlockchainClient {
       }
     }
     const satoshis = new Prisma.Decimal(totalOutput).minus(totalInput)
-    return await satoshisToUnit(
-      satoshis,
-      addressFormat
-    )
+    return {
+      amount: await satoshisToUnit(satoshis, addressFormat),
+      data
+    }
   }
 
   private async getTransactionFromChronikTransaction (transaction: Tx, address: Address): Promise<Prisma.TransactionUncheckedCreateInput> {
+    const { amount, data } = await this.getTransactionAmountAndData(transaction, address.address)
     return {
       hash: transaction.txid,
-      amount: await this.getTransactionAmount(transaction, address.address),
+      amount,
       timestamp: transaction.block !== undefined ? parseInt(transaction.block.timestamp) : parseInt(transaction.timeFirstSeen),
       addressId: address.id,
-      confirmed: transaction.block !== undefined
+      confirmed: transaction.block !== undefined,
+      extraData: data
     }
   }
 
