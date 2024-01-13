@@ -19,7 +19,7 @@ https://paybutton.org
     ```
     make dev
     ```
-	_*If you run docker as root user, run the command above with `sudo`_
+	_*If you run docker as root, run the command above with `sudo`_
 
 - App will be available at http://localhost:3000.
 - Local changes on source code should trigger a reload immediately.
@@ -68,7 +68,7 @@ default: "http://localhost:5000"
 type: boolean
 default: false,
 ```
-> If the connection of test networks for eCash and BitcoinCash should appear in the Networks tab.
+> If the connection of test networks for eCash and Bitcoin Cash should appear in the Networks tab.
 
 
 #### grpcBCHNodeURL
@@ -92,7 +92,7 @@ default: "grpc.fabien.cash:8335"
 type: string
 default: "https://chronik.fabien.cash"
 ```
-> URL for the Chronik client to connect to.
+> URL for the Chronik client to connect to. Providing an array of URLs is supported.
 
 
 #### priceAPIURL
@@ -122,7 +122,7 @@ default: {
 }
 ```
 > Which client to use to get the blockchain information for each network. Currently, only "chronik" is supported for eCash 
-and bitcoincash is not supported.
+and Bitcoin Cash is not supported.
 
 
 #### networksUnderMaintenance
