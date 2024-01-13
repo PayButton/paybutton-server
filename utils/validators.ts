@@ -217,7 +217,7 @@ export interface PaybuttonTriggerPOSTParameters {
   currentTriggerId?: string
 }
 
-const triggerPostVariables = ['<amount>', '<currency>', '<txId>', '<buttonName>', '<address>', '<timestamp>', '<hmac>']
+const triggerPostVariables = ['<amount>', '<currency>', '<txId>', '<buttonName>', '<address>', '<timestamp>', '<opReturn>', '<hmac>']
 
 export function parseTriggerPostData (postData: string, postDataParametersHashed?: PostDataParametersHashed): any {
   let resultingData: string
@@ -230,6 +230,7 @@ export function parseTriggerPostData (postData: string, postDataParametersHashed
       buttonName: '',
       address: '',
       timestamp: 0,
+      opReturn: '',
       hmac: ''
     }
   }
@@ -242,10 +243,12 @@ export function parseTriggerPostData (postData: string, postDataParametersHashed
       .replace('<buttonName>', buttonName)
       .replace('<address>', `"${postDataParametersHashed.address}"`)
       .replace('<timestamp>', postDataParametersHashed.timestamp.toString())
+      .replace('<opReturn>', `"${postDataParametersHashed.opReturn}"`)
       .replace('<hmac>', `"${postDataParametersHashed.hmac}"`)
     const parsedResultingData = JSON.parse(resultingData)
     return parsedResultingData
   } catch (err: any) {
+    console.log('cathing err', err.name, err.message, err.stack)
     const includedVariables = triggerPostVariables.filter(v => postData.includes(v))
     if (includedVariables.length > 0) {
       throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_WITH_VARIABLES_400(includedVariables).message)
