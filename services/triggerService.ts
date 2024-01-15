@@ -212,7 +212,7 @@ export interface PostDataParameters {
   txId: string
   buttonName: string
   address: string
-  opReturn: string
+  opReturn: any
 }
 
 export interface PostDataParametersHashed {
@@ -222,7 +222,7 @@ export interface PostDataParametersHashed {
   txId: string
   buttonName: string
   address: string
-  opReturn: string
+  opReturn: any
   hmac: string
 }
 

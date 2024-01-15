@@ -236,6 +236,11 @@ export function parseTriggerPostData (postData: string, postDataParametersHashed
   }
   try {
     const buttonName = JSON.stringify(postDataParametersHashed.buttonName)
+    const opReturn = (
+      typeof postDataParametersHashed.opReturn === 'string'
+        ? postDataParametersHashed.opReturn
+        : JSON.stringify(postDataParametersHashed.opReturn, undefined, 2)
+    )
     resultingData = postData
       .replace('<amount>', postDataParametersHashed.amount.toString())
       .replace('<currency>', `"${postDataParametersHashed.currency}"`)
@@ -243,7 +248,7 @@ export function parseTriggerPostData (postData: string, postDataParametersHashed
       .replace('<buttonName>', buttonName)
       .replace('<address>', `"${postDataParametersHashed.address}"`)
       .replace('<timestamp>', postDataParametersHashed.timestamp.toString())
-      .replace('<opReturn>', `"${postDataParametersHashed.opReturn}"`)
+      .replace('<opReturn>', `"${opReturn}"`)
       .replace('<hmac>', `"${postDataParametersHashed.hmac}"`)
     const parsedResultingData = JSON.parse(resultingData)
     return parsedResultingData
@@ -329,4 +334,39 @@ export const validatePriceAPIUrlAndToken = function (): void {
 
 export interface WSGETParameters {
   addresses: string[]
+}
+
+// We look for | as separators, except if they are preceeded by a backslash.
+// In that case, we return the string without the backslash
+// In the other case, we return an array.
+export function parseStringToArray (str: string): string | string[] {
+  const pattern = /(?<!\\)\|/
+  // Split the input string using the pattern
+  const splitted = str.split(pattern)
+  if (splitted.length > 1) {
+    return splitted
+  }
+  return str
+}
+
+// We try to parse the opReturn string into k=v space-separated
+// pairs. If that goes wrong, we return the same string received
+export function parseOpReturnData (opReturn: string): any {
+  const parsedObject: any = {}
+  try {
+    const keyValuePairs = opReturn.split(' ')
+    for (const kvString of keyValuePairs) {
+      const splitted = kvString.split('=')
+      if (splitted[1] === undefined || splitted[0] === '' || splitted[0] === '') {
+        return parseStringToArray(opReturn)
+      }
+      const key = splitted[0]
+      const value = parseStringToArray(splitted[1])
+      // (parse value as array)
+      parsedObject[key] = value
+    }
+    return parsedObject
+  } catch (err: any) {
+    return parseStringToArray(opReturn)
+  }
 }
