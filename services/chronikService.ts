@@ -110,8 +110,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
   private getNullDataScriptData (outputScript: string): string | null {
     const opReturnCode = '6a'
-    // hexadecimal representation of 'paybutton#'
-    const encodedPrefix = '706179627574746f6e23'
+    // hexadecimal representation of 'paybutton@'
+    const encodedPrefix = '706179627574746f6e40'
     // the +2 below represents the size of the byte representing the length
     // of the message following it (2 hex chars)
     const prefixLen = opReturnCode.length + 2 + encodedPrefix.length
