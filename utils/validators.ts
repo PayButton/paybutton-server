@@ -344,12 +344,6 @@ export function parseStringToArray (str: string): string | string[] {
   }
   return str.replace('\\|', '|')
 }
-function getSimpleOpReturnObject (paymentId: string, data: string): OpReturnBroadcastData {
-  return {
-    paymentId,
-    data: parseStringToArray(data)
-  }
-}
 
 export interface OpReturnData {
   data: string
@@ -361,38 +355,25 @@ export const EMPTY_OP_RETURN: OpReturnData = {
   paymentId: ''
 }
 
-interface OpReturnBroadcastData {
-  data: any
-  paymentId: string
-}
-
 // We try to parse the opReturn string from k=v space-separated
 // pairs to  { [k] = v} . We also try to parse each
 // key has the unparsable string as value.
-export function parseOpReturnData (opReturn: string): OpReturnBroadcastData {
-  if (opReturn === '') {
-    return EMPTY_OP_RETURN
-  }
-
-  const { paymentId, data }: OpReturnData = JSON.parse(opReturn)
+export function parseOpReturnData (opReturnData: string): any {
   const dataObject: any = {}
   try {
-    const keyValuePairs = data.split(' ')
+    const keyValuePairs = opReturnData.split(' ')
     for (const kvString of keyValuePairs) {
       const splitted = kvString.split('=')
       if (splitted[1] === undefined || splitted[1] === '' || splitted[0] === '') {
-        return getSimpleOpReturnObject(paymentId, data)
+        return parseStringToArray(opReturnData)
       }
       const key = splitted[0]
       const value = parseStringToArray(splitted[1])
       // (parse value as array)
       dataObject[key] = value
     }
-    return {
-      paymentId,
-      data: dataObject
-    }
+    return dataObject
   } catch (err: any) {
-    return getSimpleOpReturnObject(paymentId, data)
+    return parseStringToArray(opReturnData)
   }
 }
