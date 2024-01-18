@@ -13,12 +13,85 @@ import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
 import io, { Socket } from 'socket.io-client'
 import moment from 'moment'
-import { OpReturnData, parseError } from 'utils/validators'
+import { OpReturnData, parseError, parseOpReturnData } from 'utils/validators'
 import { executeAddressTriggers } from './triggerService'
 
 interface ProcessedMessages {
   confirmed: KeyValueT<number>
   unconfirmed: KeyValueT<number>
+}
+
+export function getNullDataScriptData (outputScript: string): OpReturnData | null {
+  if (outputScript.length < 2 || outputScript.length % 2 !== 0) {
+    throw new Error(RESPONSE_MESSAGES.INVALID_OUTPUT_SCRIPT_LENGTH_500(outputScript.length).message)
+  }
+  const opReturnCode = '6a'
+  const encodedProtocolPushData = '04' // '\x04'
+  const encodedProtocol = '50415900' // 'PAY\x00'
+
+  const prefixLen = (
+    opReturnCode.length +
+    encodedProtocolPushData.length +
+    encodedProtocol.length +
+    2 // version byte
+  )
+
+  const regexPattern = new RegExp(
+    `${opReturnCode}${encodedProtocolPushData}${encodedProtocol}.{2}`,
+    'i'
+  )
+
+  if (!regexPattern.test(outputScript.slice(0, prefixLen))) {
+    return null
+  }
+
+  const dataStartIndex = prefixLen + 2
+
+  if (outputScript.length < dataStartIndex) {
+    return null
+  }
+
+  const dataPushDataHex = outputScript.slice(prefixLen, dataStartIndex)
+  const dataPushData = parseInt(dataPushDataHex, 16)
+  if (outputScript.length < dataStartIndex + dataPushData * 2) {
+    return null
+  }
+
+  let dataString = ''
+  for (let i = 0; i < dataPushData; i++) {
+    const hexByte = outputScript.slice(dataStartIndex + (i * 2), dataStartIndex + (i * 2) + 2)
+    const byteChar = String.fromCharCode(
+      parseInt(hexByte, 16)
+    )
+    dataString += byteChar
+  }
+
+  const ret: OpReturnData = {
+    data: parseOpReturnData(dataString),
+    paymentId: ''
+  }
+
+  const noncePushDataIndex = dataStartIndex + dataPushData * 2
+  const nonceStartIndex = noncePushDataIndex + 2
+  const hasNonce = outputScript.length >= nonceStartIndex
+  if (!hasNonce) {
+    return ret
+  }
+
+  const noncePushDataHex = outputScript.slice(noncePushDataIndex, nonceStartIndex)
+  const noncePushData = parseInt(noncePushDataHex, 16)
+  let nonceString = ''
+  if (outputScript.length < nonceStartIndex + noncePushData * 2) {
+    return ret
+  }
+  for (let i = 0; i < noncePushData; i++) {
+    const hexByte = outputScript.slice(nonceStartIndex + (i * 2), nonceStartIndex + (i * 2) + 2)
+    // we don't decode the hex for the nonce, since those are just random bytes.
+    nonceString += hexByte
+  }
+  ret.paymentId = nonceString
+
+  return ret
 }
 
 export class ChronikBlockchainClient implements BlockchainClient {
@@ -108,73 +181,6 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
-  private getNullDataScriptData (outputScript: string): OpReturnData | null {
-    if (outputScript.length < 2 || outputScript.length % 2 !== 0) {
-      throw new Error(RESPONSE_MESSAGES.INVALID_OUTPUT_SCRIPT_LENGTH_500(outputScript.length).message)
-    }
-    const opReturnCode = '6a'
-    const encodedProtocolPushData = '04' // '\x04'
-    const encodedProtocol = '50415900' // 'PAY\x00'
-
-    const prefixLen = (
-      opReturnCode.length +
-      encodedProtocolPushData.length +
-      encodedProtocol.length +
-      2 // version byte
-    )
-
-    const regexPattern = new RegExp(
-      `${opReturnCode}${encodedProtocolPushData}${encodedProtocol}.{2}`,
-      'i'
-    )
-
-    if (!regexPattern.test(outputScript.slice(0, prefixLen))) {
-      return null
-    }
-
-    const dataStartIndex = prefixLen + 2
-
-    if (outputScript.length < dataStartIndex) {
-      return null
-    }
-
-    const dataPushDataHex = outputScript.slice(prefixLen, dataStartIndex)
-    const dataPushData = parseInt(dataPushDataHex, 16)
-
-    let dataString = ''
-    for (let i = 0; i < dataPushData; i++) {
-      const hexByte = outputScript.slice(dataStartIndex + (i * 2), dataStartIndex + (i * 2) + 2)
-      const byteChar = String.fromCharCode(
-        parseInt(hexByte, 16)
-      )
-      dataString += byteChar
-    }
-
-    const ret: OpReturnData = {
-      data: dataString,
-      paymentId: ''
-    }
-
-    const noncePushDataIndex = dataStartIndex + dataPushData * 2
-    const nonceStartIndex = noncePushDataIndex + 2
-    const hasNonce = outputScript.length >= nonceStartIndex
-    if (!hasNonce) {
-      return ret
-    }
-
-    const noncePushDataHex = outputScript.slice(noncePushDataIndex, nonceStartIndex)
-    const noncePushData = parseInt(noncePushDataHex, 16)
-    let nonceString = ''
-    for (let i = 0; i < noncePushData; i++) {
-      const hexByte = outputScript.slice(nonceStartIndex + (i * 2), nonceStartIndex + (i * 2) + 2)
-      // we don't decode the hex for the nonce, since those are just random bytes.
-      nonceString += hexByte
-    }
-    ret.paymentId = nonceString
-
-    return ret
-  }
-
   private async getTransactionAmountAndData (transaction: Tx, addressString: string): Promise<{amount: Prisma.Decimal, opReturn: string}> {
     let totalOutput = 0
     let totalInput = 0
@@ -187,7 +193,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         totalOutput += parseInt(output.value)
       }
       if (opReturn === '') {
-        const nullScriptData = this.getNullDataScriptData(output.outputScript)
+        const nullScriptData = getNullDataScriptData(output.outputScript)
         if (nullScriptData !== null) {
           opReturn = JSON.stringify(
             nullScriptData
