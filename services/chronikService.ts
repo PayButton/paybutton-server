@@ -152,7 +152,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
     const ret: OpReturnData = {
       data: dataString,
-      token: ''
+      paymentId: ''
     }
 
     const noncePushDataIndex = dataStartIndex + dataPushData * 2
@@ -170,7 +170,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       // we don't decode the hex for the nonce, since those are just random bytes.
       nonceString += hexByte
     }
-    ret.token = nonceString
+    ret.paymentId = nonceString
 
     return ret
   }

@@ -344,26 +344,26 @@ export function parseStringToArray (str: string): string | string[] {
   }
   return str.replace('\\|', '|')
 }
-function getSimpleOpReturnObject (token: string, data: string): OpReturnBroadcastData {
+function getSimpleOpReturnObject (paymentId: string, data: string): OpReturnBroadcastData {
   return {
-    token,
+    paymentId,
     data: parseStringToArray(data)
   }
 }
 
 export interface OpReturnData {
   data: string
-  token: string
+  paymentId: string
 }
 
 export const EMPTY_OP_RETURN: OpReturnData = {
   data: '',
-  token: ''
+  paymentId: ''
 }
 
 interface OpReturnBroadcastData {
   data: any
-  token: string
+  paymentId: string
 }
 
 // We try to parse the opReturn string from k=v space-separated
@@ -374,14 +374,14 @@ export function parseOpReturnData (opReturn: string): OpReturnBroadcastData {
     return EMPTY_OP_RETURN
   }
 
-  const { token, data }: OpReturnData = JSON.parse(opReturn)
+  const { paymentId, data }: OpReturnData = JSON.parse(opReturn)
   const dataObject: any = {}
   try {
     const keyValuePairs = data.split(' ')
     for (const kvString of keyValuePairs) {
       const splitted = kvString.split('=')
       if (splitted[1] === undefined || splitted[1] === '' || splitted[0] === '') {
-        return getSimpleOpReturnObject(token, data)
+        return getSimpleOpReturnObject(paymentId, data)
       }
       const key = splitted[0]
       const value = parseStringToArray(splitted[1])
@@ -390,6 +390,6 @@ export function parseOpReturnData (opReturn: string): OpReturnBroadcastData {
     }
     return dataObject
   } catch (err: any) {
-    return getSimpleOpReturnObject(token, data)
+    return getSimpleOpReturnObject(paymentId, data)
   }
 }
