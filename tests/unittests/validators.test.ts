@@ -278,28 +278,27 @@ describe('parseStringToArray', () => {
 
 describe('parseOpReturn', () => {
   it('Cant parse equal sign at end', () => {
-    const opReturnData = 'justreandomakjds='
-    expect(v.parseOpReturnData(opReturnData)).toEqual('justreandomakjds=')
+    const opReturnData = 'key=value something='
+    expect(v.parseOpReturnData(opReturnData)).toEqual('key=value something=')
   })
   it('Cant parse equal sign at end and beginning', () => {
-    const opReturnData = '=justreandomakjds='
-    expect(v.parseOpReturnData(opReturnData)).toEqual('=justreandomakjds=')
+    const opReturnData = '=something key=value='
+    expect(v.parseOpReturnData(opReturnData)).toEqual('=something key=value=')
   })
   it('Cant parse equal sign at beginning', () => {
-    const opReturnData = '=justreandomakjds'
-    expect(v.parseOpReturnData(opReturnData)).toEqual('=justreandomakjds')
+    const opReturnData = '=something key=value'
+    expect(v.parseOpReturnData(opReturnData)).toEqual('=something key=value')
   })
-  it('Cant parse equal sign as value', () => {
-    const opReturnData = 'justreandomakjds=='
-    expect(v.parseOpReturnData(opReturnData)).toEqual('justreandomakjds==')
+  it('Can parse equal sign as value', () => {
+    const opReturnData = 'key=value something=='
+    expect(v.parseOpReturnData(opReturnData)).toEqual({
+      key: 'value',
+      something: '='
+    })
   })
   it('Cant parse equal sign as key', () => {
-    const opReturnData = '==justreandomakjds'
-    expect(v.parseOpReturnData(opReturnData)).toEqual('==justreandomakjds')
-  })
-  it('Cant parse equal sign not in pairs', () => {
-    const opReturnData = 'key=value=othervalue'
-    expect(v.parseOpReturnData(opReturnData)).toEqual('key=value=othervalue')
+    const opReturnData = '==something key=value'
+    expect(v.parseOpReturnData(opReturnData)).toEqual('==something key=value')
   })
   it('Cant parse if not ALL parsable', () => {
     const opReturnData = 'so=far so=good but=then notparsable'
@@ -344,5 +343,11 @@ describe('parseOpReturn', () => {
     expect(v.parseOpReturnData(opReturnData)).toEqual(
       ['item1', 'item2', 'item3']
     )
+  })
+  it('Consider only first equal sign on key=value', () => {
+    const opReturnData = 'key=value=othervalue'
+    expect(v.parseOpReturnData(opReturnData)).toEqual({
+      key: 'value=othervalue'
+    })
   })
 })

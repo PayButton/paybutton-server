@@ -355,6 +355,12 @@ export const EMPTY_OP_RETURN: OpReturnData = {
   paymentId: ''
 }
 
+function splitAtFirst (str: string, separator: string): string[] {
+  const index = str.indexOf(separator)
+  if (index === -1) { return [str] };
+  return [str.slice(0, index), str.slice(index + separator.length)]
+}
+
 // We try to parse the opReturn string from k=v space-separated
 // pairs to  { [k] = v} . We also try to parse each
 // key has the unparsable string as value.
@@ -363,7 +369,7 @@ export function parseOpReturnData (opReturnData: string): any {
   try {
     const keyValuePairs = opReturnData.split(' ')
     for (const kvString of keyValuePairs) {
-      const splitted = kvString.split('=')
+      const splitted = splitAtFirst(kvString, '=')
       if (splitted[1] === undefined || splitted[1] === '' || splitted[0] === '') {
         return parseStringToArray(opReturnData)
       }
