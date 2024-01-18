@@ -278,123 +278,71 @@ describe('parseStringToArray', () => {
 
 describe('parseOpReturn', () => {
   it('Cant parse equal sign at end', () => {
-    const opReturn = {
-      paymentId: '66c682719fb0e45e',
-      data: 'justreandomakjds='
-    }
-    expect(v.parseOpReturnData(JSON.stringify(opReturn))).toEqual({
-      paymentId: '66c682719fb0e45e',
-      data: 'justreandomakjds='
-    })
+    const opReturnData = 'justreandomakjds='
+    expect(v.parseOpReturnData(opReturnData)).toEqual('justreandomakjds=')
   })
   it('Cant parse equal sign at end and beginning', () => {
-    const opReturn = {
-      paymentId: '66c682719fb0e45e',
-      data: '=justreandomakjds='
-    }
-    expect(v.parseOpReturnData(JSON.stringify(opReturn))).toEqual({
-      paymentId: '66c682719fb0e45e',
-      data: '=justreandomakjds='
-    })
+    const opReturnData = '=justreandomakjds='
+    expect(v.parseOpReturnData(opReturnData)).toEqual('=justreandomakjds=')
   })
   it('Cant parse equal sign at beginning', () => {
-    const opReturn = {
-      paymentId: '66c682719fb0e45e',
-      data: '=justreandomakjds'
-    }
-    expect(v.parseOpReturnData(JSON.stringify(opReturn))).toEqual({
-      paymentId: '66c682719fb0e45e',
-      data: '=justreandomakjds'
-    })
+    const opReturnData = '=justreandomakjds'
+    expect(v.parseOpReturnData(opReturnData)).toEqual('=justreandomakjds')
   })
   it('Cant parse equal sign as value', () => {
-    const opReturn = {
-      paymentId: '66c682719fb0e45e',
-      data: 'justreandomakjds=='
-    }
-    expect(v.parseOpReturnData(JSON.stringify(opReturn))).toEqual({
-      paymentId: '66c682719fb0e45e',
-      data: 'justreandomakjds=='
-    })
+    const opReturnData = 'justreandomakjds=='
+    expect(v.parseOpReturnData(opReturnData)).toEqual('justreandomakjds==')
   })
   it('Cant parse equal sign as key', () => {
-    const opReturn = {
-      paymentId: '66c682719fb0e45e',
-      data: '==justreandomakjds'
-    }
-    expect(v.parseOpReturnData(JSON.stringify(opReturn))).toEqual({
-      paymentId: '66c682719fb0e45e',
-      data: '==justreandomakjds'
-    })
+    const opReturnData = '==justreandomakjds'
+    expect(v.parseOpReturnData(opReturnData)).toEqual('==justreandomakjds')
+  })
+  it('Cant parse equal sign not in pairs', () => {
+    const opReturnData = 'key=value=othervalue'
+    expect(v.parseOpReturnData(opReturnData)).toEqual('key=value=othervalue')
   })
   it('Cant parse if not ALL parsable', () => {
-    const opReturn = {
-      paymentId: '66c682719fb0e45e',
-      data: 'so=far so=good but=then notparsable'
-    }
-    expect(v.parseOpReturnData(JSON.stringify(opReturn))).toEqual({
-      paymentId: '66c682719fb0e45e',
-      data: 'so=far so=good but=then notparsable'
-    })
+    const opReturnData = 'so=far so=good but=then notparsable'
+    expect(v.parseOpReturnData(opReturnData)).toEqual('so=far so=good but=then notparsable')
   })
   it('Simple parse', () => {
-    const opReturn = {
-      paymentId: '66c682719fb0e45e',
-      data: 'sofar=sogood'
-    }
-    expect(v.parseOpReturnData(JSON.stringify(opReturn))).toEqual({
-      paymentId: '66c682719fb0e45e',
-      data: {
+    const opReturnData = 'sofar=sogood'
+    expect(v.parseOpReturnData(opReturnData)).toEqual(
+      {
         sofar: 'sogood'
       }
-    })
+    )
   })
   it('Parses case sensitively', () => {
-    const opReturn = {
-      paymentId: '66c682719fb0e45e',
-      data: 'soFar=soGood'
-    }
-    expect(v.parseOpReturnData(JSON.stringify(opReturn))).toEqual({
-      paymentId: '66c682719fb0e45e',
-      data: {
+    const opReturnData = 'soFar=soGood'
+    expect(v.parseOpReturnData(opReturnData)).toEqual(
+      {
         soFar: 'soGood'
       }
-    })
+    )
   })
   it('Parses key=value and array', () => {
-    const opReturn = {
-      paymentId: '66c682719fb0e45e',
-      data: 'sofar=sogood many=item1|item2|item3'
-    }
-    expect(v.parseOpReturnData(JSON.stringify(opReturn))).toEqual({
-      paymentId: '66c682719fb0e45e',
-      data: {
+    const opReturnData = 'sofar=sogood many=item1|item2|item3'
+    expect(v.parseOpReturnData(opReturnData)).toEqual(
+      {
         sofar: 'sogood',
         many: ['item1', 'item2', 'item3']
       }
-    })
+    )
   })
   it('Parses array with backslash', () => {
-    const opReturn = {
-      paymentId: '66c682719fb0e45e',
-      data: 'sofar=sogood many=item1|item2\\|item3'
-    }
-    expect(v.parseOpReturnData(JSON.stringify(opReturn))).toEqual({
-      paymentId: '66c682719fb0e45e',
-      data: {
+    const opReturnData = 'sofar=sogood many=item1|item2\\|item3'
+    expect(v.parseOpReturnData(opReturnData)).toEqual(
+      {
         sofar: 'sogood',
         many: ['item1', 'item2|item3']
       }
-    })
+    )
   })
   it('Parses array', () => {
-    const opReturn = {
-      paymentId: '66c682719fb0e45e',
-      data: 'item1|item2|item3'
-    }
-    expect(v.parseOpReturnData(JSON.stringify(opReturn))).toEqual({
-      paymentId: '66c682719fb0e45e',
-      data: ['item1', 'item2', 'item3']
-    })
+    const opReturnData = 'item1|item2|item3'
+    expect(v.parseOpReturnData(opReturnData)).toEqual(
+      ['item1', 'item2', 'item3']
+    )
   })
 })
