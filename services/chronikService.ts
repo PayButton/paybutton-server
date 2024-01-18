@@ -45,13 +45,17 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
     return null
   }
 
-  const dataStartIndex = prefixLen + 2
+  let dataStartIndex = prefixLen + 2
 
   if (outputScript.length < dataStartIndex) {
     return null
   }
 
-  const dataPushDataHex = outputScript.slice(prefixLen, dataStartIndex)
+  let dataPushDataHex = outputScript.slice(prefixLen, dataStartIndex)
+  if (dataPushDataHex.toLowerCase() === '4c') {
+    dataStartIndex = dataStartIndex + 2
+    dataPushDataHex = outputScript.slice(prefixLen + 2, dataStartIndex)
+  }
   const dataPushData = parseInt(dataPushDataHex, 16)
   if (outputScript.length < dataStartIndex + dataPushData * 2) {
     return null
