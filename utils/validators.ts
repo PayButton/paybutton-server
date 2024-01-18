@@ -388,7 +388,10 @@ export function parseOpReturnData (opReturn: string): OpReturnBroadcastData {
       // (parse value as array)
       dataObject[key] = value
     }
-    return dataObject
+    return {
+      paymentId,
+      data: dataObject
+    }
   } catch (err: any) {
     return getSimpleOpReturnObject(paymentId, data)
   }
