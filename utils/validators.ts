@@ -230,17 +230,13 @@ export function parseTriggerPostData (postData: string, postDataParametersHashed
       buttonName: '',
       address: '',
       timestamp: 0,
-      opReturn: '',
+      opReturn: EMPTY_OP_RETURN,
       hmac: ''
     }
   }
   try {
     const buttonName = JSON.stringify(postDataParametersHashed.buttonName)
-    const opReturn = (
-      typeof postDataParametersHashed.opReturn === 'string'
-        ? postDataParametersHashed.opReturn
-        : JSON.stringify(postDataParametersHashed.opReturn, undefined, 2)
-    )
+    const opReturn = JSON.stringify(postDataParametersHashed.opReturn, undefined, 2)
     resultingData = postData
       .replace('<amount>', postDataParametersHashed.amount.toString())
       .replace('<currency>', `"${postDataParametersHashed.currency}"`)
@@ -248,7 +244,7 @@ export function parseTriggerPostData (postData: string, postDataParametersHashed
       .replace('<buttonName>', buttonName)
       .replace('<address>', `"${postDataParametersHashed.address}"`)
       .replace('<timestamp>', postDataParametersHashed.timestamp.toString())
-      .replace('<opReturn>', `"${opReturn}"`)
+      .replace('<opReturn>', opReturn)
       .replace('<hmac>', `"${postDataParametersHashed.hmac}"`)
     const parsedResultingData = JSON.parse(resultingData)
     return parsedResultingData
@@ -344,29 +340,56 @@ export function parseStringToArray (str: string): string | string[] {
   // Split the input string using the pattern
   const splitted = str.split(pattern)
   if (splitted.length > 1) {
-    return splitted
+    return splitted.map(s => s.replace('\\|', '|'))
   }
-  return str
+  return str.replace('\\|', '|')
+}
+function getSimpleOpReturnObject (token: string, data: string): OpReturnBroadcastData {
+  return {
+    token,
+    data: parseStringToArray(data)
+  }
 }
 
-// We try to parse the opReturn string into k=v space-separated
-// pairs. If that goes wrong, we return the same string received
-export function parseOpReturnData (opReturn: string): any {
-  const parsedObject: any = {}
+export interface OpReturnData {
+  data: string
+  token: string
+}
+
+export const EMPTY_OP_RETURN: OpReturnData = {
+  data: '',
+  token: ''
+}
+
+interface OpReturnBroadcastData {
+  data: any
+  token: string
+}
+
+// We try to parse the opReturn string from k=v space-separated
+// pairs to  { [k] = v} . We also try to parse each
+// key has the unparsable string as value.
+export function parseOpReturnData (opReturn: string): OpReturnBroadcastData {
+  if (opReturn === '') {
+    return EMPTY_OP_RETURN
+  }
+
+  const { token, data }: OpReturnData = JSON.parse(opReturn)
+  const dataObject: any = {}
   try {
-    const keyValuePairs = opReturn.split(' ')
+    const keyValuePairs = data.split(' ')
     for (const kvString of keyValuePairs) {
       const splitted = kvString.split('=')
-      if (splitted[1] === undefined || splitted[0] === '' || splitted[0] === '') {
-        return parseStringToArray(opReturn)
+      if (splitted[1] === undefined || splitted[1] === '' || splitted[0] === '') {
+        return getSimpleOpReturnObject(token, data)
       }
       const key = splitted[0]
       const value = parseStringToArray(splitted[1])
       // (parse value as array)
-      parsedObject[key] = value
+      dataObject[key] = value
     }
-    return parsedObject
+    return dataObject
   } catch (err: any) {
-    return parseStringToArray(opReturn)
+    return getSimpleOpReturnObject(token, data)
   }
 }

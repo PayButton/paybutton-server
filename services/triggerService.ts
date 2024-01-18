@@ -2,7 +2,7 @@ import { PaybuttonTrigger, Prisma } from '@prisma/client'
 import axios from 'axios'
 import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID } from 'constants/index'
 import prisma from 'prisma/clientInstance'
-import { parseTriggerPostData } from 'utils/validators'
+import { OpReturnData, parseOpReturnData, parseTriggerPostData } from 'utils/validators'
 import { BroadcastTxData } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
 import config from 'config'
@@ -183,7 +183,7 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData):
   const currency = NETWORK_TICKERS_FROM_ID[tx.address.networkId]
   const txId = tx.hash
   const timestamp = tx.timestamp
-  const opReturn = tx.opReturn
+  const opReturn = parseOpReturnData(tx.opReturn)
 
   const addressTriggers = await fetchTriggersForAddress(address)
   await Promise.all(addressTriggers.map(async (trigger) => {
@@ -212,7 +212,7 @@ export interface PostDataParameters {
   txId: string
   buttonName: string
   address: string
-  opReturn: any
+  opReturn: OpReturnData
 }
 
 export interface PostDataParametersHashed {
@@ -222,7 +222,7 @@ export interface PostDataParametersHashed {
   txId: string
   buttonName: string
   address: string
-  opReturn: any
+  opReturn: OpReturnData
   hmac: string
 }
 
