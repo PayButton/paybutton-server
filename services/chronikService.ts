@@ -13,7 +13,7 @@ import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
 import io, { Socket } from 'socket.io-client'
 import moment from 'moment'
-import { parseError } from 'utils/validators'
+import { OpReturnData, parseError } from 'utils/validators'
 import { executeAddressTriggers } from './triggerService'
 
 interface ProcessedMessages {
@@ -108,37 +108,71 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
-  private getNullDataScriptData (outputScript: string): string | null {
-    const opReturnCode = '6a'
-    // hexadecimal representation of 'paybutton@'
-    const encodedPrefix = '706179627574746f6e40'
-    // the +2 below represents the size of the byte representing the length
-    // of the message following it (2 hex chars)
-    const prefixLen = opReturnCode.length + 2 + encodedPrefix.length
-    const regexPattern = new RegExp(`${opReturnCode}.{2}${encodedPrefix}`, 'i')
-
+  private getNullDataScriptData (outputScript: string): OpReturnData | null {
     if (outputScript.length < 2 || outputScript.length % 2 !== 0) {
       throw new Error(RESPONSE_MESSAGES.INVALID_OUTPUT_SCRIPT_LENGTH_500(outputScript.length).message)
     }
-    if (outputScript.length < prefixLen) {
+    const opReturnCode = '6a'
+    const encodedProtocolPushData = '04' // '\x04'
+    const encodedProtocol = '50415900' // 'PAY\x00'
+
+    const prefixLen = (
+      opReturnCode.length +
+      encodedProtocolPushData.length +
+      encodedProtocol.length +
+      2 // version byte
+    )
+
+    const regexPattern = new RegExp(
+      `${opReturnCode}${encodedProtocolPushData}${encodedProtocol}.{2}`,
+      'i'
+    )
+
+    if (!regexPattern.test(outputScript.slice(0, prefixLen))) {
       return null
     }
 
-    const byteStartIndexes = Array.from(
-      {
-        length:
-        (outputScript.length - prefixLen) / 2
-      },
-      (_, i) => i * 2
-    )
+    const dataStartIndex = prefixLen + 2
 
-    for (const idx of byteStartIndexes) {
-      const chunk = outputScript.slice(idx, idx + prefixLen)
-      if (regexPattern.test(chunk)) {
-        return outputScript.slice(idx + prefixLen)
-      }
+    if (outputScript.length < dataStartIndex) {
+      return null
     }
-    return null
+
+    const dataPushDataHex = outputScript.slice(prefixLen, dataStartIndex)
+    const dataPushData = parseInt(dataPushDataHex, 16)
+
+    let dataString = ''
+    for (let i = 0; i < dataPushData; i++) {
+      const hexByte = outputScript.slice(dataStartIndex + (i * 2), dataStartIndex + (i * 2) + 2)
+      const byteChar = String.fromCharCode(
+        parseInt(hexByte, 16)
+      )
+      dataString += byteChar
+    }
+
+    const ret: OpReturnData = {
+      data: dataString,
+      token: ''
+    }
+
+    const noncePushDataIndex = dataStartIndex + dataPushData * 2
+    const nonceStartIndex = noncePushDataIndex + 2
+    const hasNonce = outputScript.length >= nonceStartIndex
+    if (!hasNonce) {
+      return ret
+    }
+
+    const noncePushDataHex = outputScript.slice(noncePushDataIndex, nonceStartIndex)
+    const noncePushData = parseInt(noncePushDataHex, 16)
+    let nonceString = ''
+    for (let i = 0; i < noncePushData; i++) {
+      const hexByte = outputScript.slice(nonceStartIndex + (i * 2), nonceStartIndex + (i * 2) + 2)
+      // we don't decode the hex for the nonce, since those are just random bytes.
+      nonceString += hexByte
+    }
+    ret.token = nonceString
+
+    return ret
   }
 
   private async getTransactionAmountAndData (transaction: Tx, addressString: string): Promise<{amount: Prisma.Decimal, opReturn: string}> {
@@ -153,9 +187,11 @@ export class ChronikBlockchainClient implements BlockchainClient {
         totalOutput += parseInt(output.value)
       }
       if (opReturn === '') {
-        const outputData = this.getNullDataScriptData(output.outputScript)
-        if (outputData !== null) {
-          opReturn = Buffer.from(outputData, 'hex').toString('utf8')
+        const nullScriptData = this.getNullDataScriptData(output.outputScript)
+        if (nullScriptData !== null) {
+          opReturn = JSON.stringify(
+            nullScriptData
+          )
         }
       }
     }
