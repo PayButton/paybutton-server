@@ -32,7 +32,7 @@ describe('getNullDataScriptData tests', () => {
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual(EMPTY_OP_RETURN)
   })
-  it('Empty if data explicitly empty and nonce too', async () => {
+  it('Empty if data explicitly empty and paymentId too', async () => {
     const script = '6a' + '04' + '50415900' + '00' + '00' + '00'
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual(EMPTY_OP_RETURN)
@@ -102,7 +102,7 @@ describe('getNullDataScriptData tests', () => {
       data: '😂👍©ĸðМжЪы% ŋæPßđĸł„»“æ}¹↓£³→²'
     })
   })
-  it('String data with nonce', async () => {
+  it('String data with paymentId', async () => {
     const script = '6a' + '04' + '50415900' + '00' + '08' + '5051525354555657' + '03' + '010203'
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
@@ -110,7 +110,7 @@ describe('getNullDataScriptData tests', () => {
       data: 'PQRSTUVW'
     })
   })
-  it('String data with explicitly empty nonce', async () => {
+  it('String data with explicitly empty paymentId', async () => {
     const script = '6a' + '04' + '50415900' + '00' + '08' + '5051525354555657' + '00'
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
@@ -118,7 +118,7 @@ describe('getNullDataScriptData tests', () => {
       data: 'PQRSTUVW'
     })
   })
-  it('Ignore incomplete nonce', async () => {
+  it('Ignore incomplete paymentId', async () => {
     const script = '6a' + '04' + '50415900' + '00' + '08' + '5051525354555657' + '03' + 'aabb'
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
