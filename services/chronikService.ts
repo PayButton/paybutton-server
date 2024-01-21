@@ -16,6 +16,8 @@ import moment from 'moment'
 import { OpReturnData, parseError, parseOpReturnData } from 'utils/validators'
 import { executeAddressTriggers } from './triggerService'
 
+const decoder = new TextDecoder()
+
 interface ProcessedMessages {
   confirmed: KeyValueT<number>
   unconfirmed: KeyValueT<number>
@@ -61,14 +63,11 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
     return null
   }
 
-  let dataString = ''
-  for (let i = 0; i < dataPushData; i++) {
-    const hexByte = outputScript.slice(dataStartIndex + (i * 2), dataStartIndex + (i * 2) + 2)
-    const byteChar = String.fromCharCode(
-      parseInt(hexByte, 16)
-    )
-    dataString += byteChar
-  }
+  const dataHexBuffer = Buffer.from(
+    outputScript.slice(dataStartIndex, dataStartIndex + dataPushData * 2),
+    'hex'
+  )
+  const dataString = decoder.decode(dataHexBuffer)
 
   const ret: OpReturnData = {
     data: parseOpReturnData(dataString),
