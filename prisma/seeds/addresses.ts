@@ -28,6 +28,41 @@ export const addresses = [
     id: 'f22a0233-ff55-4a96-92dd-cc44f02dac98',
     address: 'ecash:qpun29ufvq56sksyxztwe7ntn0h60rah856a972rx6',
     networkId: 1
+  },
+  {
+    id: '68882fe9-b887-11ee-a146-0242c0a88003',
+    address: 'ecash:qq7p63sdtcy5sw3e4xf436g8rxn27c93mude333j9d',
+    networkId: 1
+  },
+  {
+    id: '688838e4-b887-11ee-a146-0242c0a88003',
+    address: 'ecash:qpxqkww4xu0xntchadw4zhetxhavx9l7lqxv9wzu3z',
+    networkId: 1
+  },
+  {
+    id: '688839eb-b887-11ee-a146-0242c0a88003',
+    address: 'ecash:qp5h4eetqcj407nfl82dpyvz22w6x69tdyxpprn8zg',
+    networkId: 1
+  },
+  {
+    id: '6888601e-b887-11ee-a146-0242c0a88003',
+    address: 'ecash:qzkm7gc8seg55vtq60xgr2lha65xj9ak5u25jgrtrs',
+    networkId: 1
+  },
+  {
+    id: '6888610a-b887-11ee-a146-0242c0a88003',
+    address: 'ecash:qz802yfcxf79peh49tr2vtdz33lvf76zkvfpcn0q7n',
+    networkId: 1
+  },
+  {
+    id: '68886794-b887-11ee-a146-0242c0a88003',
+    address: 'ecash:qqphqrt5zpsfztwjlhhudjc6dlnlcnfuxuufm4sjlq',
+    networkId: 1
+  },
+  {
+    id: '68886b53-b887-11ee-a146-0242c0a88003',
+    address: 'ecash:qqz2ndeqfwynwe0wlvvq5jrcgt5fq3y65ged73tnu5',
+    networkId: 1
   }
 ]
 

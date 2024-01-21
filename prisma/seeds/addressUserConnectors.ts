@@ -28,5 +28,40 @@ export const addressUserConnectors = [
     addressId: 'f22a0233-ff55-4a96-92dd-cc44f02dac98',
     walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
     userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '68882fe9-b887-11ee-a146-0242c0a88003',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '688838e4-b887-11ee-a146-0242c0a88003',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '688839eb-b887-11ee-a146-0242c0a88003',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '6888601e-b887-11ee-a146-0242c0a88003',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '6888610a-b887-11ee-a146-0242c0a88003',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '68886794-b887-11ee-a146-0242c0a88003',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '68886b53-b887-11ee-a146-0242c0a88003',
+    userId: 'dev-uid'
   }
 ]

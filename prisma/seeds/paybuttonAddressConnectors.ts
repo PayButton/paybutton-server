@@ -30,5 +30,33 @@ export const paybuttonAddressConnectors = [
   {
     addressId: 'f22a0233-ff55-4a96-92dd-cc44f02dac98',
     paybuttonId: 'f03981ab-8ded-4aab-93e8-b1d38f9b219b'
+  },
+  {
+    addressId: '68882fe9-b887-11ee-a146-0242c0a88003',
+    paybuttonId: '688e9bfa-b887-11ee-a146-0242c0a88003'
+  },
+  {
+    addressId: '688838e4-b887-11ee-a146-0242c0a88003',
+    paybuttonId: '688e9bfa-b887-11ee-a146-0242c0a88003'
+  },
+  {
+    addressId: '688839eb-b887-11ee-a146-0242c0a88003',
+    paybuttonId: '688e9bfa-b887-11ee-a146-0242c0a88003'
+  },
+  {
+    addressId: '6888601e-b887-11ee-a146-0242c0a88003',
+    paybuttonId: '688e9bfa-b887-11ee-a146-0242c0a88003'
+  },
+  {
+    addressId: '6888610a-b887-11ee-a146-0242c0a88003',
+    paybuttonId: '688e9bfa-b887-11ee-a146-0242c0a88003'
+  },
+  {
+    addressId: '68886794-b887-11ee-a146-0242c0a88003',
+    paybuttonId: '688e9bfa-b887-11ee-a146-0242c0a88003'
+  },
+  {
+    addressId: '68886b53-b887-11ee-a146-0242c0a88003',
+    paybuttonId: '688e9bfa-b887-11ee-a146-0242c0a88003'
   }
 ]
