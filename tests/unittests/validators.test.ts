@@ -252,3 +252,102 @@ describe('parsePaybuttonTriggerPOSTRequest', () => {
     }).toThrow(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
   })
 })
+
+describe('parseStringToArray', () => {
+  it('Divides simple three items', () => {
+    const str = 'one|two|three'
+    expect(v.parseStringToArray(str)).toEqual(['one', 'two', 'three'])
+  })
+  it('Returns string if backslashed', () => {
+    const str = 'one\\|two'
+    expect(v.parseStringToArray(str)).toEqual('one|two')
+  })
+  it('Returns Array with backslashed string at beginning', () => {
+    const str = 'one\\|two|three|four'
+    expect(v.parseStringToArray(str)).toEqual(['one|two', 'three', 'four'])
+  })
+  it('Returns Array with backslashed string at end', () => {
+    const str = 'one|two|three\\|four'
+    expect(v.parseStringToArray(str)).toEqual(['one', 'two', 'three|four'])
+  })
+  it('Returns Array with backslashed string at middle', () => {
+    const str = 'one|two\\|three|four'
+    expect(v.parseStringToArray(str)).toEqual(['one', 'two|three', 'four'])
+  })
+})
+
+describe('parseOpReturn', () => {
+  it('Cant parse equal sign at end', () => {
+    const opReturnData = 'key=value something='
+    expect(v.parseOpReturnData(opReturnData)).toEqual('key=value something=')
+  })
+  it('Cant parse equal sign at end and beginning', () => {
+    const opReturnData = '=something key=value='
+    expect(v.parseOpReturnData(opReturnData)).toEqual('=something key=value=')
+  })
+  it('Cant parse equal sign at beginning', () => {
+    const opReturnData = '=something key=value'
+    expect(v.parseOpReturnData(opReturnData)).toEqual('=something key=value')
+  })
+  it('Can parse equal sign as value', () => {
+    const opReturnData = 'key=value something=='
+    expect(v.parseOpReturnData(opReturnData)).toEqual({
+      key: 'value',
+      something: '='
+    })
+  })
+  it('Cant parse equal sign as key', () => {
+    const opReturnData = '==something key=value'
+    expect(v.parseOpReturnData(opReturnData)).toEqual('==something key=value')
+  })
+  it('Cant parse if not ALL parsable', () => {
+    const opReturnData = 'so=far so=good but=then notparsable'
+    expect(v.parseOpReturnData(opReturnData)).toEqual('so=far so=good but=then notparsable')
+  })
+  it('Simple parse', () => {
+    const opReturnData = 'sofar=sogood'
+    expect(v.parseOpReturnData(opReturnData)).toEqual(
+      {
+        sofar: 'sogood'
+      }
+    )
+  })
+  it('Parses case sensitively', () => {
+    const opReturnData = 'soFar=soGood'
+    expect(v.parseOpReturnData(opReturnData)).toEqual(
+      {
+        soFar: 'soGood'
+      }
+    )
+  })
+  it('Parses key=value and array', () => {
+    const opReturnData = 'sofar=sogood many=item1|item2|item3'
+    expect(v.parseOpReturnData(opReturnData)).toEqual(
+      {
+        sofar: 'sogood',
+        many: ['item1', 'item2', 'item3']
+      }
+    )
+  })
+  it('Parses array with backslash', () => {
+    const opReturnData = 'sofar=sogood many=item1|item2\\|item3'
+    expect(v.parseOpReturnData(opReturnData)).toEqual(
+      {
+        sofar: 'sogood',
+        many: ['item1', 'item2|item3']
+      }
+    )
+  })
+  it('Parses array', () => {
+    const opReturnData = 'item1|item2|item3'
+    expect(v.parseOpReturnData(opReturnData)).toEqual(
+      ['item1', 'item2', 'item3']
+    )
+  })
+  it('Consider only first equal sign on key=value', () => {
+    const opReturnData = 'key=value=othervalue'
+    expect(v.parseOpReturnData(opReturnData)).toEqual({
+      key: 'value=othervalue'
+    })
+  })
+})

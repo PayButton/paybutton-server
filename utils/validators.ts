@@ -230,12 +230,13 @@ export function parseTriggerPostData (postData: string, postDataParametersHashed
       buttonName: '',
       address: '',
       timestamp: 0,
-      opReturn: '',
+      opReturn: EMPTY_OP_RETURN,
       hmac: ''
     }
   }
   try {
     const buttonName = JSON.stringify(postDataParametersHashed.buttonName)
+    const opReturn = JSON.stringify(postDataParametersHashed.opReturn, undefined, 2)
     resultingData = postData
       .replace('<amount>', postDataParametersHashed.amount.toString())
       .replace('<currency>', `"${postDataParametersHashed.currency}"`)
@@ -243,7 +244,7 @@ export function parseTriggerPostData (postData: string, postDataParametersHashed
       .replace('<buttonName>', buttonName)
       .replace('<address>', `"${postDataParametersHashed.address}"`)
       .replace('<timestamp>', postDataParametersHashed.timestamp.toString())
-      .replace('<opReturn>', `"${postDataParametersHashed.opReturn}"`)
+      .replace('<opReturn>', opReturn)
       .replace('<hmac>', `"${postDataParametersHashed.hmac}"`)
     const parsedResultingData = JSON.parse(resultingData)
     return parsedResultingData
@@ -329,4 +330,56 @@ export const validatePriceAPIUrlAndToken = function (): void {
 
 export interface WSGETParameters {
   addresses: string[]
+}
+
+// We look for | as separators, except if they are preceeded by a backslash.
+// In that case, we return the string without the backslash
+// In the other case, we return an array.
+export function parseStringToArray (str: string): string | string[] {
+  const pattern = /(?<!\\)\|/
+  // Split the input string using the pattern
+  const splitted = str.split(pattern)
+  if (splitted.length > 1) {
+    return splitted.map(s => s.replace('\\|', '|'))
+  }
+  return str.replace('\\|', '|')
+}
+
+export interface OpReturnData {
+  data: string
+  paymentId: string
+}
+
+export const EMPTY_OP_RETURN: OpReturnData = {
+  data: '',
+  paymentId: ''
+}
+
+function splitAtFirst (str: string, separator: string): string[] {
+  const index = str.indexOf(separator)
+  if (index === -1) { return [str] };
+  return [str.slice(0, index), str.slice(index + separator.length)]
+}
+
+// We try to parse the opReturn string from k=v space-separated
+// pairs to  { [k] = v} . We also try to parse each
+// key has the unparsable string as value.
+export function parseOpReturnData (opReturnData: string): any {
+  const dataObject: any = {}
+  try {
+    const keyValuePairs = opReturnData.split(' ')
+    for (const kvString of keyValuePairs) {
+      const splitted = splitAtFirst(kvString, '=')
+      if (splitted[1] === undefined || splitted[1] === '' || splitted[0] === '') {
+        return parseStringToArray(opReturnData)
+      }
+      const key = splitted[0]
+      const value = parseStringToArray(splitted[1])
+      // (parse value as array)
+      dataObject[key] = value
+    }
+    return dataObject
+  } catch (err: any) {
+    return parseStringToArray(opReturnData)
+  }
 }

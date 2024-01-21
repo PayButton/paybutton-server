@@ -1,6 +1,14 @@
 #!/bin/sh
 . .env
 . .env.local
+
+echo Waiting for db...                                              
+while true; do                                                      
+  nc -z -p "$MAIN_DB_PORT" "$MAIN_DB_HOST" "$MAIN_DB_PORT" && break                             
+  sleep 1
+done                                                                
+echo Connected to the db.
+
 yarn || exit 1
 rm logs/*
 if [ "$ENVIRONMENT" = "production" ]; then

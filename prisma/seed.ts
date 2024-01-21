@@ -6,6 +6,7 @@ import { paybuttonAddressConnectors } from './seeds/paybuttonAddressConnectors'
 import { walletUserConnectors } from './seeds/walletUserConnectors'
 import { addressUserConnectors } from './seeds/addressUserConnectors'
 import { wallets } from './seeds/wallets'
+import { paybuttonTriggers } from './seeds/triggers'
 import { getPrices } from './seeds/prices'
 import { quotes } from './seeds/quotes'
 import { createDevUsersRawQueryList, createAdminUserRawQueryList, devUserProfiles, adminUserProfiles } from './seeds/users'
@@ -37,6 +38,10 @@ async function main (): Promise<void> {
     await prisma.paybutton.createMany({ data: paybuttons })
     await prisma.address.createMany({ data: addresses })
     await prisma.addressesOnButtons.createMany({ data: paybuttonAddressConnectors })
+  }
+  // create paybuttonTriggers
+  if (await prisma.paybuttonTrigger.count() === 0) {
+    await prisma.paybuttonTrigger.createMany({ data: paybuttonTriggers })
   }
   // create users
   for (const q of createDevUsersRawQueryList) {
