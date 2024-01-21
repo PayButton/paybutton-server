@@ -42,7 +42,7 @@ describe('getNullDataScriptData tests', () => {
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual(null)
   })
-  it('Simple string data', async () => {
+  it('String data', async () => {
     const script = '6a' + '04' + '50415900' + '00' + '08' + '5051525354555657'
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
@@ -50,7 +50,7 @@ describe('getNullDataScriptData tests', () => {
       data: 'PQRSTUVW'
     })
   })
-  it('Simple array data', async () => {
+  it('Array data', async () => {
     const script = '6a' + '04' + '50415900' + '00' + '0b' + '6974656d317c6974656d32'
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
@@ -58,7 +58,7 @@ describe('getNullDataScriptData tests', () => {
       data: ['item1', 'item2']
     })
   })
-  it('Simple dict data', async () => {
+  it('Dict data', async () => {
     const script = '6a' + '04' + '50415900' + '00' + '14' + '6b65793d76616c756520736f6d653d6f74686572'
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
@@ -69,7 +69,7 @@ describe('getNullDataScriptData tests', () => {
       }
     })
   })
-  it('Simple dict with array', async () => {
+  it('Dict with array', async () => {
     const script = '6a' + '04' + '50415900' + '00' + '1c' + '6b65793d76616c756520736f6d653d76616c7565317c76616c756532'
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
@@ -80,7 +80,7 @@ describe('getNullDataScriptData tests', () => {
       }
     })
   })
-  it('Simple string data with nonce', async () => {
+  it('String data with nonce', async () => {
     const script = '6a' + '04' + '50415900' + '00' + '08' + '505152535455565703010203'
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
@@ -88,7 +88,7 @@ describe('getNullDataScriptData tests', () => {
       data: 'PQRSTUVW'
     })
   })
-  it('Simple string data with explicitly empty nonce', async () => {
+  it('String data with explicitly empty nonce', async () => {
     const script = '6a' + '04' + '50415900' + '00' + '08' + '5051525354555657' + '00'
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
