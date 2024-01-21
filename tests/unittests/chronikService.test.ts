@@ -80,8 +80,30 @@ describe('getNullDataScriptData tests', () => {
       }
     })
   })
+  it('Non-ASCII data', async () => {
+    const script = (
+      '6a' + '04' + '50415900' + '00' + '3e' +
+      'f09f9882f09f918dc2a9c4b8c3b0d09cd0b6d0aad18b2520c58bc3a650c39fc491c4b8c582e2809ec2bbe2809cc3a67dc2b9e28693c2a3c2b3e28692c2b2'
+    )
+    const data = getNullDataScriptData(script)
+    expect(data).toStrictEqual({
+      paymentId: '',
+      data: '😂👍©ĸðМжЪы% ŋæPßđĸł„»“æ}¹↓£³→²'
+    })
+  })
+  it('Non-ASCII data with paymentId', async () => {
+    const script = ('6a' + '04' + '50415900' + '00' + '3e' +
+      'f09f9882f09f918dc2a9c4b8c3b0d09cd0b6d0aad18b2520c58bc3a650c39fc491c4b8c582e2809ec2bbe2809cc3a67dc2b9e28693c2a3c2b3e28692c2b2' +
+      '08' + 'ab192bcafd745acd'
+    )
+    const data = getNullDataScriptData(script)
+    expect(data).toStrictEqual({
+      paymentId: 'ab192bcafd745acd',
+      data: '😂👍©ĸðМжЪы% ŋæPßđĸł„»“æ}¹↓£³→²'
+    })
+  })
   it('String data with nonce', async () => {
-    const script = '6a' + '04' + '50415900' + '00' + '08' + '505152535455565703010203'
+    const script = '6a' + '04' + '50415900' + '00' + '08' + '5051525354555657' + '03' + '010203'
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
       paymentId: '010203',
