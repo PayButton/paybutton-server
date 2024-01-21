@@ -76,8 +76,8 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
 
   const paymentIdPushDataIndex = dataStartIndex + dataPushData * 2
   const paymentIdStartIndex = paymentIdPushDataIndex + 2
-  const hasNonce = outputScript.length >= paymentIdStartIndex
-  if (!hasNonce) {
+  const hasPaymentId = outputScript.length >= paymentIdStartIndex
+  if (!hasPaymentId) {
     return ret
   }
 
