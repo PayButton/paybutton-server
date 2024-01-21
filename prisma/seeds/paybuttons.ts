@@ -54,5 +54,13 @@ export const paybuttons = [
     description: 'Paybutton for dev @chedieck',
     name: 'Estevão',
     buttonData: '{}'
+  },
+  {
+    id: '688e9bfa-b887-11ee-a146-0242c0a88003',
+    providerUserId: 'dev-uid',
+    name: "Estevão's triggered Button",
+    url: '',
+    description: 'Paybutton with triggers for dev Estevão.',
+    buttonData: '{}'
   }
 ]
