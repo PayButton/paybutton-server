@@ -4,7 +4,7 @@
 
 echo Waiting for db...                                              
 while true; do                                                      
-  nc -z -p "$MAIN_DB_PORT" "$MAIN_DB_HOST" "$MAIN_DB_PORT" && break                             
+  nc -z -p "$MAIN_DB_PORT" "$MAIN_DB_HOST" "$MAIN_DB_PORT" && nc -z -p 3567 paybutton-users-service 3567 && break
   sleep 1
 done                                                                
 echo Connected to the db.
