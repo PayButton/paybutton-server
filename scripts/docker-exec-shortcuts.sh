@@ -5,9 +5,11 @@
 node_container_name="paybutton-dev"
 db_container_name="paybutton-db"
 cache_container_name="paybutton-cache"
+users_container_name="paybutton-users-service"
 base_command_node="docker exec -it $node_container_name"
 base_command_node_root="docker exec  -it -u 0 $node_container_name"
 base_command_db="docker exec -it $db_container_name"
+base_command_users="docker exec -it $users_container_name"
 base_command_cache="docker exec -it $cache_container_name"
 command="$1"
 
@@ -65,6 +67,9 @@ case "$command" in
         ;;
     "testcoverage" | "tc")
         eval "$base_command_node" yarn test --coverage --verbose  "$@"
+        ;;
+    "stshell" | "sts")
+        eval "$base_command_users" bash -l
         ;;
     "nodeshell" | "ns")
         eval "$base_command_node" bash -l
@@ -152,6 +157,7 @@ case "$command" in
         echo "  t, test                     [$node_container_name]     run tests"
         echo "  tw, testwatch               [$node_container_name]     run tests watching it"
         echo "  tc, testcoverage            [$node_container_name]     test coverage"
+        echo "  sts, stshell                [$users_container_name]    enter the supertokens container"
         echo "  ns, nodeshell               [$node_container_name]     enter the node container"
         echo "  rns, rootnodeshell          [$node_container_name]     enter the node container as root"
         echo "  y, yarn                     [$node_container_name]     run \`yarn\` on the node container"
