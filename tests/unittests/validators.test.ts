@@ -350,4 +350,47 @@ describe('parseOpReturn', () => {
       key: 'value=othervalue'
     })
   })
+  it('Parses simple JSON', () => {
+    const opReturnData = '{"foo": "bar"}'
+    expect(v.parseOpReturnData(opReturnData)).toEqual({
+      foo: 'bar'
+    })
+  })
+  it('Parses nested JSON', () => {
+    const opReturnData = '{"foo": {"bar": {"baz": {"qux": "qix"}}}}'
+    const result = v.parseOpReturnData(opReturnData)
+    expect(result).toEqual({
+      foo: {
+        bar: {
+          baz: {
+            qux: 'qix'
+          }
+        }
+      }
+    })
+  })
+  it('Parses number string into string', () => {
+    // This large number, if interpreted as a number and not as a string,
+    // will come out as 9007199254740996 due to floating point approximation
+    const opReturnData = '9007199254740995'
+    const result = v.parseOpReturnData(opReturnData)
+    expect(result).toStrictEqual('9007199254740995')
+  })
+  it('Parses number string into string', () => {
+    // JSON.parse would consider this as `0`
+    const opReturnData = '-0'
+    const result = v.parseOpReturnData(opReturnData)
+    expect(result).toStrictEqual('-0')
+  })
+  it('Parses exponential number string into string', () => {
+    // JSON.parse would consider this as `100000`
+    const opReturnData = '10e5'
+    const result = v.parseOpReturnData(opReturnData)
+    expect(result).toStrictEqual('10e5')
+  })
+  it('Parses empty string into empty string', () => {
+    const opReturnData = ''
+    const result = v.parseOpReturnData(opReturnData)
+    expect(result).toStrictEqual('')
+  })
 })

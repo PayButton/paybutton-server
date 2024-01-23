@@ -366,6 +366,16 @@ function splitAtFirst (str: string, separator: string): string[] {
 // key has the unparsable string as value.
 export function parseOpReturnData (opReturnData: string): any {
   const dataObject: any = {}
+  // Try to parse it as JSON first, excluding simple numbers
+  try {
+    const jsonParsed = JSON.parse(opReturnData)
+    if (typeof jsonParsed === 'number') {
+      throw new Error()
+    }
+    return jsonParsed
+  } catch {}
+
+  // Try to parse it as k=v pairs
   try {
     const keyValuePairs = opReturnData.split(' ')
     for (const kvString of keyValuePairs) {
