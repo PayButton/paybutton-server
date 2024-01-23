@@ -63,6 +63,56 @@ export const addresses = [
     id: '68886b53-b887-11ee-a146-0242c0a88003',
     address: 'ecash:qqz2ndeqfwynwe0wlvvq5jrcgt5fq3y65ged73tnu5',
     networkId: 1
+  },
+  {
+    id: 'b15ff5e0-9e49-49d2-82a3-16f98035b4b7',
+    address: 'ecash:qp2v7kemclu7mv5y3h9qprwp0mrevkqt9gprvmm7yl',
+    networkId: 1
+  },
+  {
+    id: '30bd89d2-702b-403a-aad8-afb13f7aba9f',
+    address: 'ecash:qz0rgej87x70gcj7g06x7zzccqshv87rxysxnfrap5',
+    networkId: 1
+  },
+  {
+    id: 'd8e77bef-2acd-4fe8-9d9e-01409d3ea2bb',
+    address: 'ecash:qrlzdvlm8uqn029u8a6pkalgztrr9xg3wqjm85rc6v',
+    networkId: 1
+  },
+  {
+    id: '543706d7-d312-40ad-8355-3b26c4ff0944',
+    address: 'ecash:qprxt3hy34ettmm0wfxhzgtm4sv9xm2gxvgpkm93ca',
+    networkId: 1
+  },
+  {
+    id: '8aa35eeb-b0e4-4092-b80d-53fcf3564bae',
+    address: 'ecash:qrf4zh4vgrdal8d8gu905d90w5u2y60djcd2d5h6un',
+    networkId: 1
+  },
+  {
+    id: '014cb04e-56e7-418f-b273-d603bba09760',
+    address: 'ecash:qzex50mafylu6vvwvxjnzv7gallmmx7l358rhfegas',
+    networkId: 1
+  },
+  {
+    id: '4c054310-2e9c-4862-b234-6581c2ce30cf',
+    address: 'ecash:qrv5f5pfx9k5zrdgqrpcwrq95m8lh8n52q2pghg4qw',
+    networkId: 1
+  },
+  {
+    id: '09a177b0-3af4-48ae-a6e7-0fa25eeb31a9',
+    address: 'ecash:qq4yvfrujv4eswe8jmeennltpe8q89anmqkvwvperl',
+    networkId: 1
+  },
+  {
+    id: '6555787c-d347-4cec-9ea1-5f26d9b6683e',
+    address: 'ecash:qrdq99s8akyx7nmyp84y46wdq7zld939cuck2lrlt0',
+    networkId: 1
+  },
+  {
+    id: 'c385d4e9-3e34-4657-b6cf-8e2221f4e8bd',
+    address: 'ecash:qpcngtkqvdns6at2wq09fjytunlljvczxuchefwhln',
+    networkId: 1
   }
 ]
 

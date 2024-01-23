@@ -63,5 +63,55 @@ export const addressUserConnectors = [
     walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
     addressId: '68886b53-b887-11ee-a146-0242c0a88003',
     userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: 'b15ff5e0-9e49-49d2-82a3-16f98035b4b7',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '30bd89d2-702b-403a-aad8-afb13f7aba9f',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: 'd8e77bef-2acd-4fe8-9d9e-01409d3ea2bb',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '543706d7-d312-40ad-8355-3b26c4ff0944',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '8aa35eeb-b0e4-4092-b80d-53fcf3564bae',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '014cb04e-56e7-418f-b273-d603bba09760',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '4c054310-2e9c-4862-b234-6581c2ce30cf',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '09a177b0-3af4-48ae-a6e7-0fa25eeb31a9',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: '6555787c-d347-4cec-9ea1-5f26d9b6683e',
+    userId: 'dev-uid'
+  },
+  {
+    walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
+    addressId: 'c385d4e9-3e34-4657-b6cf-8e2221f4e8bd',
+    userId: 'dev-uid'
   }
 ]
