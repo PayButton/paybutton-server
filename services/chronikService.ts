@@ -74,25 +74,25 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
     paymentId: ''
   }
 
-  const noncePushDataIndex = dataStartIndex + dataPushData * 2
-  const nonceStartIndex = noncePushDataIndex + 2
-  const hasNonce = outputScript.length >= nonceStartIndex
-  if (!hasNonce) {
+  const paymentIdPushDataIndex = dataStartIndex + dataPushData * 2
+  const paymentIdStartIndex = paymentIdPushDataIndex + 2
+  const hasPaymentId = outputScript.length >= paymentIdStartIndex
+  if (!hasPaymentId) {
     return ret
   }
 
-  const noncePushDataHex = outputScript.slice(noncePushDataIndex, nonceStartIndex)
-  const noncePushData = parseInt(noncePushDataHex, 16)
-  let nonceString = ''
-  if (outputScript.length < nonceStartIndex + noncePushData * 2) {
+  const paymentIdPushDataHex = outputScript.slice(paymentIdPushDataIndex, paymentIdStartIndex)
+  const paymentIdPushData = parseInt(paymentIdPushDataHex, 16)
+  let paymentIdString = ''
+  if (outputScript.length < paymentIdStartIndex + paymentIdPushData * 2) {
     return ret
   }
-  for (let i = 0; i < noncePushData; i++) {
-    const hexByte = outputScript.slice(nonceStartIndex + (i * 2), nonceStartIndex + (i * 2) + 2)
-    // we don't decode the hex for the nonce, since those are just random bytes.
-    nonceString += hexByte
+  for (let i = 0; i < paymentIdPushData; i++) {
+    const hexByte = outputScript.slice(paymentIdStartIndex + (i * 2), paymentIdStartIndex + (i * 2) + 2)
+    // we don't decode the hex for the paymentId, since those are just random bytes.
+    paymentIdString += hexByte
   }
-  ret.paymentId = nonceString
+  ret.paymentId = paymentIdString
 
   return ret
 }
