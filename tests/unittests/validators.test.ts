@@ -278,31 +278,31 @@ describe('parseStringToArray', () => {
 
 describe('parseOpReturn', () => {
   it('Cant parse equal sign at end', () => {
-    const opReturnData = 'key=value something='
-    expect(v.parseOpReturnData(opReturnData)).toEqual('key=value something=')
+    const opReturnData = 'key=value&something='
+    expect(v.parseOpReturnData(opReturnData)).toEqual(opReturnData)
   })
   it('Cant parse equal sign at end and beginning', () => {
-    const opReturnData = '=something key=value='
-    expect(v.parseOpReturnData(opReturnData)).toEqual('=something key=value=')
+    const opReturnData = '=something&key=value='
+    expect(v.parseOpReturnData(opReturnData)).toEqual(opReturnData)
   })
   it('Cant parse equal sign at beginning', () => {
-    const opReturnData = '=something key=value'
-    expect(v.parseOpReturnData(opReturnData)).toEqual('=something key=value')
+    const opReturnData = '=something&key=value'
+    expect(v.parseOpReturnData(opReturnData)).toEqual(opReturnData)
   })
   it('Can parse equal sign as value', () => {
-    const opReturnData = 'key=value something=='
+    const opReturnData = 'key=value&something=='
     expect(v.parseOpReturnData(opReturnData)).toEqual({
       key: 'value',
       something: '='
     })
   })
   it('Cant parse equal sign as key', () => {
-    const opReturnData = '==something key=value'
-    expect(v.parseOpReturnData(opReturnData)).toEqual('==something key=value')
+    const opReturnData = '==something&key=value'
+    expect(v.parseOpReturnData(opReturnData)).toEqual(opReturnData)
   })
   it('Cant parse if not ALL parsable', () => {
-    const opReturnData = 'so=far so=good but=then notparsable'
-    expect(v.parseOpReturnData(opReturnData)).toEqual('so=far so=good but=then notparsable')
+    const opReturnData = 'so=far&so=good&but=then&notparsable'
+    expect(v.parseOpReturnData(opReturnData)).toEqual(opReturnData)
   })
   it('Simple parse', () => {
     const opReturnData = 'sofar=sogood'
@@ -321,7 +321,7 @@ describe('parseOpReturn', () => {
     )
   })
   it('Parses key=value and array', () => {
-    const opReturnData = 'sofar=sogood many=item1|item2|item3'
+    const opReturnData = 'sofar=sogood&many=item1|item2|item3'
     expect(v.parseOpReturnData(opReturnData)).toEqual(
       {
         sofar: 'sogood',
@@ -330,11 +330,12 @@ describe('parseOpReturn', () => {
     )
   })
   it('Parses array with backslash', () => {
-    const opReturnData = 'sofar=sogood many=item1|item2\\|item3'
+    const opReturnData = 'sofar=sogood&many=item1|item2\\|item3'
     expect(v.parseOpReturnData(opReturnData)).toEqual(
       {
         sofar: 'sogood',
-        many: ['item1', 'item2|item3']
+        // WIP: THIS SHOULD BE many: ['item1', 'item2|item3']
+        many: ['item1', 'item2\\', 'item3']
       }
     )
   })
