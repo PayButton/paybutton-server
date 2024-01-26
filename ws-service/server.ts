@@ -46,6 +46,18 @@ const addressRouteConnection = (socket: Socket): void => {
 
 const broadcastTxs = async (broadcastTxData: BroadcastTxData): Promise<void> => {
   console.log('broadcasting', broadcastTxData.txs.length, broadcastTxData.messageType, 'txs to', broadcastTxData.address)
+  try {
+    const parsedTxs = broadcastTxData.txs.map(
+      t => {
+        const parsedOpReturnData = t.opReturn === '' ? null : JSON.parse(t.opReturn)
+        t.opReturn = parsedOpReturnData
+        return t
+      })
+    broadcastTxData.txs = parsedTxs
+  } catch (err: any) {
+    console.error(RESPONSE_MESSAGES.FAILED_TO_PARSE_TX_OP_RETURN_500.message)
+    console.error('Error stack:', err.stack)
+  }
   if (broadcastTxData?.txs?.length === 0) {
     console.warn(RESPONSE_MESSAGES.BROADCAST_EMPTY_TX_400)
     return
