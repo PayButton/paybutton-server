@@ -51,7 +51,9 @@ describe('getNullDataScriptData tests', () => {
     })
   })
   it('Array data', async () => {
-    const script = '6a' + '04' + '50415900' + '00' + '0b' + '6974656d317c6974656d32'
+    // hex for 'item1|item2'
+    const hexData = '6974656d317c6974656d32'
+    const script = '6a' + '04' + '50415900' + '00' + '0b' + hexData
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
       paymentId: '',
@@ -59,9 +61,11 @@ describe('getNullDataScriptData tests', () => {
     })
   })
   it('Dict data', async () => {
-    const script = '6a' + '04' + '50415900' + '00' + '14' + '6b65793d76616c756520736f6d653d6f74686572'
+    // hex for 'key=value&some=other'
+    const hexData = '6b65793d76616c756526736f6d653d6f74686572'
+    const script = '6a' + '04' + '50415900' + '00' + '14' + hexData
     const data = getNullDataScriptData(script)
-    expect(data).toStrictEqual({
+    expect(data).toEqual({
       paymentId: '',
       data: {
         key: 'value',
@@ -70,9 +74,11 @@ describe('getNullDataScriptData tests', () => {
     })
   })
   it('Dict with array', async () => {
-    const script = '6a' + '04' + '50415900' + '00' + '1c' + '6b65793d76616c756520736f6d653d76616c7565317c76616c756532'
+    // data for 'key=value&some=value1|value2'
+    const hexData = '6b65793d76616c756526736f6d653d76616c7565317c76616c756532'
+    const script = '6a' + '04' + '50415900' + '00' + '1c' + hexData
     const data = getNullDataScriptData(script)
-    expect(data).toStrictEqual({
+    expect(data).toEqual({
       paymentId: '',
       data: {
         key: 'value',
@@ -81,10 +87,8 @@ describe('getNullDataScriptData tests', () => {
     })
   })
   it('Non-ASCII data', async () => {
-    const script = (
-      '6a' + '04' + '50415900' + '00' + '3e' +
-      'f09f9882f09f918dc2a9c4b8c3b0d09cd0b6d0aad18b2520c58bc3a650c39fc491c4b8c582e2809ec2bbe2809cc3a67dc2b9e28693c2a3c2b3e28692c2b2'
-    )
+    const hexData = 'f09f9882f09f918dc2a9c4b8c3b0d09cd0b6d0aad18b2520c58bc3a650c39fc491c4b8c582e2809ec2bbe2809cc3a67dc2b9e28693c2a3c2b3e28692c2b2'
+    const script = '6a' + '04' + '50415900' + '00' + '3e' + hexData
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
       paymentId: '',
@@ -92,10 +96,8 @@ describe('getNullDataScriptData tests', () => {
     })
   })
   it('Non-ASCII data with paymentId', async () => {
-    const script = ('6a' + '04' + '50415900' + '00' + '3e' +
-      'f09f9882f09f918dc2a9c4b8c3b0d09cd0b6d0aad18b2520c58bc3a650c39fc491c4b8c582e2809ec2bbe2809cc3a67dc2b9e28693c2a3c2b3e28692c2b2' +
-      '08' + 'ab192bcafd745acd'
-    )
+    const hexData = 'f09f9882f09f918dc2a9c4b8c3b0d09cd0b6d0aad18b2520c58bc3a650c39fc491c4b8c582e2809ec2bbe2809cc3a67dc2b9e28693c2a3c2b3e28692c2b2'
+    const script = '6a' + '04' + '50415900' + '00' + '3e' + hexData + '08' + 'ab192bcafd745acd'
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
       paymentId: 'ab192bcafd745acd',
