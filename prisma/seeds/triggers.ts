@@ -5,7 +5,7 @@ export const paybuttonTriggers = [
     sendEmail: false,
     postData: `{
       "env": "dev",
-      "OP_RETURN": <opReturn>,
+      "opReturn": <opReturn>,
       "name": <buttonName>,
       "address": <address>,
       "amount": <amount>,
