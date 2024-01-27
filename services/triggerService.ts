@@ -200,10 +200,10 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData):
       timestamp,
       opReturn
     }
-    const hmac = await hashPostData(trigger.paybutton.providerUserId, postDataParameters)
+    const signature = await signPostData(trigger.paybutton.providerUserId, postDataParameters)
     await postDataForTrigger(trigger, {
       ...postDataParameters,
-      hmac
+      signature
     }
     )
   }))
@@ -227,16 +227,14 @@ export interface PostDataParametersHashed {
   buttonName: string
   address: string
   opReturn: OpReturnData
-  hmac: string
+  signature: string
 }
 
-async function hashPostData (userId: string, { amount, currency, address, timestamp, txId }: PostDataParameters): Promise<string> {
-  const dataHash = crypto.createHash('sha256')
-  dataHash.update(`${amount.toString()}+${currency}+${address}+${timestamp.toString()}+${txId}`)
-  const dataHashDigest = dataHash.digest('hex')
-  const hmac = crypto.createHmac('sha256', await getUserSecretKey(userId))
-  hmac.update(dataHashDigest)
-  return hmac.digest('hex')
+async function signPostData (userId: string, { amount, currency, address, timestamp, txId }: PostDataParameters): Promise<string> {
+  const dataSigner = crypto.createSign('sha256')
+  dataSigner.update(`${amount.toString()}&${currency}&${address}&${timestamp.toString()}&${txId}`)
+  const signature = dataSigner.sign(await getUserSecretKey(userId), 'hex')
+  return signature
 }
 
 async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParametersHashed: PostDataParametersHashed): Promise<void> {
