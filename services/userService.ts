@@ -42,6 +42,28 @@ export async function updateLastSentVerificationEmailAt (id: string): Promise<vo
   })
 }
 
+export async function getUserPublicKey (id: string): Promise<string> {
+  let userPublicKey = (
+    await prisma.userProfile.findUniqueOrThrow({ where: { id }, select: { publicKey: true } })
+  ).publicKey
+  if (userPublicKey === '') {
+    const userPrivateKey = await getUserSecretKey(id)
+    const newPublicKey = crypto.createPublicKey(userPrivateKey)
+    const publicKeyHex = newPublicKey.export({ type: 'spki', format: 'der' }).toString('hex')
+
+    await prisma.userProfile.update({
+      where: {
+        id
+      },
+      data: {
+        publicKey: publicKeyHex
+      }
+    })
+    userPublicKey = publicKeyHex
+  }
+  return userPublicKey
+}
+
 export async function getUserSecretKey (id: string): Promise<string> {
   const secretKey = process.env.MASTER_SECRET_KEY as string
   return crypto.createHash('sha256').update(secretKey + id).digest('hex')

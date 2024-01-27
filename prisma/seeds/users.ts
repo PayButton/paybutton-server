@@ -16,11 +16,13 @@ export const devUserProfiles = [
   {
     id: 'dev-uid',
     createdAt: new Date(),
+    publicKey: '',
     updatedAt: new Date()
   },
   {
     id: 'dev2-uid',
     createdAt: new Date(),
+    publicKey: '',
     updatedAt: new Date()
   }
 ]
@@ -42,6 +44,7 @@ export const adminUserProfiles = [
     id: '085211a0-215f-4f3f-bf07-68f55bb6c7ed',
     createdAt: new Date(),
     updatedAt: new Date(),
-    isAdmin: true
+    isAdmin: true,
+    publicKey: ''
   }
 ]
