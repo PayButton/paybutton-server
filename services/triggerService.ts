@@ -232,7 +232,7 @@ export interface PostDataParametersHashed {
 
 async function signPostData (userId: string, { amount, currency, address, timestamp, txId }: PostDataParameters): Promise<string> {
   const dataSigner = crypto.createSign('sha256')
-  dataSigner.update(`${amount.toString()}&${currency}&${address}&${timestamp.toString()}&${txId}`)
+  dataSigner.update(`${amount.toString()}+${currency}+${address}+${timestamp.toString()}+${txId}`)
   const signature = dataSigner.sign(await getUserPrivateKey(userId), 'hex')
   return signature
 }
