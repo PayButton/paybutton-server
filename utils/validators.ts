@@ -217,7 +217,7 @@ export interface PaybuttonTriggerPOSTParameters {
   currentTriggerId?: string
 }
 
-const triggerPostVariables = ['<amount>', '<currency>', '<txId>', '<buttonName>', '<address>', '<timestamp>', '<opReturn>', '<hmac>']
+const triggerPostVariables = ['<amount>', '<currency>', '<txId>', '<buttonName>', '<address>', '<timestamp>', '<opReturn>', '<signature>']
 
 export function parseTriggerPostData (postData: string, postDataParametersHashed?: PostDataParametersHashed): any {
   let resultingData: string
@@ -231,7 +231,7 @@ export function parseTriggerPostData (postData: string, postDataParametersHashed
       address: '',
       timestamp: 0,
       opReturn: EMPTY_OP_RETURN,
-      hmac: ''
+      signature: ''
     }
   }
   try {
@@ -245,7 +245,7 @@ export function parseTriggerPostData (postData: string, postDataParametersHashed
       .replace('<address>', `"${postDataParametersHashed.address}"`)
       .replace('<timestamp>', postDataParametersHashed.timestamp.toString())
       .replace('<opReturn>', opReturn)
-      .replace('<hmac>', `"${postDataParametersHashed.hmac}"`)
+      .replace('<signature>', `"${postDataParametersHashed.signature}"`)
     const parsedResultingData = JSON.parse(resultingData)
     return parsedResultingData
   } catch (err: any) {
