@@ -47,7 +47,7 @@ export async function getUserPublicKey (id: string): Promise<string> {
     await prisma.userProfile.findUniqueOrThrow({ where: { id }, select: { publicKey: true } })
   ).publicKey
   if (userPublicKey === '') {
-    const userPrivateKey = await getUserSecretKey(id)
+    const userPrivateKey = await getUserPrivateKey(id)
     const newPublicKey = crypto.createPublicKey(userPrivateKey)
     const publicKeyHex = newPublicKey.export({ type: 'spki', format: 'der' }).toString('hex')
 
@@ -64,7 +64,7 @@ export async function getUserPublicKey (id: string): Promise<string> {
   return userPublicKey
 }
 
-export async function getUserSecretKey (id: string): Promise<string> {
+export async function getUserPrivateKey (id: string): Promise<string> {
   const secretKey = process.env.MASTER_SECRET_KEY as string
   return crypto.createHash('sha256').update(secretKey + id).digest('hex')
 }

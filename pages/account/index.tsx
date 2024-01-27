@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import Image from 'next/image';
+import Image from 'next/image'
 import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
@@ -8,8 +8,8 @@ import { GetServerSideProps } from 'next'
 import Page from 'components/Page'
 import ChangePassword from 'components/Account/ChangePassword'
 import style from './account.module.css'
-import { getUserSecretKey } from 'services/userService'
-import CopyIcon from '/assets/copy-black.png';
+import { getUserPrivateKey } from 'services/userService'
+import CopyIcon from '../../assets/copy-black.png'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -33,7 +33,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     props: {
       userId,
       user: await ThirdPartyEmailPasswordNode.getUserById(userId),
-      userSecret: await getUserSecretKey(userId)
+      userSecret: await getUserPrivateKey(userId)
     }
   }
 }
@@ -47,7 +47,7 @@ interface IProps {
 export default function Account ({ user, userId, userSecret }: IProps): React.ReactElement {
   const [changePassword, setChangePassword] = useState(false)
   const [secretKeyInfo, setSecretKeyInfo] = useState(false)
-  const [isCopied, setIsCopied] = useState(false);
+  const [isCopied, setIsCopied] = useState(false)
   const toggleChangePassword = (): void => {
     setChangePassword(!changePassword)
   }
@@ -58,15 +58,15 @@ export default function Account ({ user, userId, userSecret }: IProps): React.Re
   const handleCopyClick = async (): Promise<void> => {
     const textToCopy = userSecret
     try {
-      await navigator.clipboard.writeText(textToCopy);
-      setIsCopied(true);
+      await navigator.clipboard.writeText(textToCopy)
+      setIsCopied(true)
       setTimeout(() => {
-        setIsCopied(false);
-      }, 1000);
+        setIsCopied(false)
+      }, 1000)
     } catch (error) {
-      console.error('Copy failed:', error);
+      console.error('Copy failed:', error)
     }
-  };
+  }
 
   if (user !== null) {
     return (
@@ -92,7 +92,7 @@ export default function Account ({ user, userId, userSecret }: IProps): React.Re
             {userSecret}
             {isCopied && <div className={style.copied_confirmation}>Copied!</div>}
           </div>
-          <div className={style.copy_btn} onClick={handleCopyClick}><Image src={CopyIcon} alt="copy" /></div>
+          <div className={style.copy_btn} onClick={() => { void handleCopyClick() } }><Image src={CopyIcon} alt="copy" /></div>
         </div>
         {secretKeyInfo && (
             <div className={style.secret_info_ctn}>
