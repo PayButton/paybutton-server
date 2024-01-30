@@ -110,7 +110,7 @@ export default function CodeBlock ({ button }): JSX.Element {
 <div
   class="paybutton${button.widget === true ? '-widget' : ''}"
   to="${button.to as string}"
-${generateCode(button, 'html')}/>`,
+${generateCode(button, 'html')}></div>`,
       javascript: `<script src="https://unpkg.com/@paybutton/paybutton/dist/paybutton.js"></script>
 
 <div id="my_button"></div>
