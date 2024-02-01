@@ -6,6 +6,7 @@ import { type CreateWalletInput, type UpdateWalletInput } from '../services/wall
 import { getAddressPrefix, parseWebsiteURL } from './index'
 import xecaddr from 'xecaddrjs'
 import { CreatePaybuttonTriggerInput, PostDataParametersHashed } from 'services/triggerService'
+import queryString from 'query-string'
 
 /* The functions exported here should validate the data structure / syntax of an
  * input by throwing an error in case something is different from the expected.
@@ -355,17 +356,10 @@ export const EMPTY_OP_RETURN: OpReturnData = {
   paymentId: ''
 }
 
-function splitAtFirst (str: string, separator: string): string[] {
-  const index = str.indexOf(separator)
-  if (index === -1) { return [str] };
-  return [str.slice(0, index), str.slice(index + separator.length)]
-}
-
 // We try to parse the opReturn string from k=v space-separated
 // pairs to  { [k] = v} . We also try to parse each
 // key has the unparsable string as value.
 export function parseOpReturnData (opReturnData: string): any {
-  const dataObject: any = {}
   // Try to parse it as JSON first, excluding simple numbers
   try {
     const jsonParsed = JSON.parse(opReturnData)
@@ -375,20 +369,24 @@ export function parseOpReturnData (opReturnData: string): any {
     return jsonParsed
   } catch {}
 
+  // Try to parse it as a query string
+
   // Try to parse it as k=v pairs
   try {
-    const keyValuePairs = opReturnData.split(' ')
-    for (const kvString of keyValuePairs) {
-      const splitted = splitAtFirst(kvString, '=')
-      if (splitted[1] === undefined || splitted[1] === '' || splitted[0] === '') {
-        return parseStringToArray(opReturnData)
-      }
-      const key = splitted[0]
-      const value = parseStringToArray(splitted[1])
-      // (parse value as array)
-      dataObject[key] = value
+    const parsedAsQuery = queryString.parse(opReturnData, {
+      arrayFormat: 'separator',
+      arrayFormatSeparator: '|'
+    })
+    const keys = Object.keys(parsedAsQuery)
+    const values = Object.values(parsedAsQuery)
+    if (
+      (keys.length === 0) ||
+      (keys.some(k => k === null || k === undefined || k === '')) ||
+      (values.some(v => v === null || v === undefined || v === ''))
+    ) {
+      return parseStringToArray(opReturnData)
     }
-    return dataObject
+    return parsedAsQuery
   } catch (err: any) {
     return parseStringToArray(opReturnData)
   }
