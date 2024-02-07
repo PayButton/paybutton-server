@@ -84,19 +84,23 @@ function getAllPricesURLForNetworkTicker (networkTicker: string): string {
   return `${config.priceAPIURL}/dailyprices/${process.env.PRICE_API_TOKEN!}/${networkTicker}`
 }
 
-export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networkTicker: string, attempt: number = 1): Promise<IResponseData | null> {
+export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networkTicker: string, attempt: number = 1): Promise<IResponseData> {
   try {
     const res = await axios.get(getPriceURLForDayAndNetworkTicker(day, networkTicker), {
       timeout: PRICE_API_TIMEOUT
     })
 
-    if (res.data.success !== false) { return res.data } else { return null }
+    if (res.data.success !== false) { return res.data } else {
+      throw new Error(RESPONSE_MESSAGES.FAILED_TO_FETCH_PRICE_FROM_API_500(day.format(PRICE_API_DATE_FORMAT), networkTicker).message)
+    }
   } catch (error) {
     console.error(`Problem getting price of ${networkTicker} ${day.format(HUMAN_READABLE_DATE_FORMAT)} -> ${error as string} (attempt ${attempt})`)
 
     if (attempt < PRICE_API_MAX_RETRIES) {
       return await getPriceForDayAndNetworkTicker(day, networkTicker, attempt + 1)
-    } else { return null }
+    } else {
+      throw error
+    }
   }
 }
 
@@ -159,21 +163,14 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
   )
 }
 
-export async function syncCurrentPrices (): Promise<boolean> {
-  let success = true
+export async function syncCurrentPrices (): Promise<void> {
   const today = moment()
 
   const bchPrice = await getPriceForDayAndNetworkTicker(today, NETWORK_TICKERS.bitcoincash)
-  if (bchPrice != null) {
-    void upsertCurrentPricesForNetworkId(bchPrice, BCH_NETWORK_ID)
-  } else success = false
+  void upsertCurrentPricesForNetworkId(bchPrice, BCH_NETWORK_ID)
 
   const xecPrice = await getPriceForDayAndNetworkTicker(today, NETWORK_TICKERS.ecash)
-  if (xecPrice != null) {
-    void upsertCurrentPricesForNetworkId(xecPrice, XEC_NETWORK_ID)
-  } else success = false
-
-  return success
+  void upsertCurrentPricesForNetworkId(xecPrice, XEC_NETWORK_ID)
 }
 
 export async function getCurrentPrices (): Promise<Price[]> {
@@ -252,11 +249,8 @@ export async function fetchPricesForNetworkAndTimestamp (networkId: number, time
 
 async function renewPricesForTimestamp (timestamp: number): Promise<void> {
   const xecPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.ecash)
-  if (xecPrice !== null) {
-    await upsertPricesForNetworkId(xecPrice, XEC_NETWORK_ID, timestamp)
-  }
+  await upsertPricesForNetworkId(xecPrice, XEC_NETWORK_ID, timestamp)
+
   const bchPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.bitcoincash)
-  if (bchPrice !== null) {
-    await upsertPricesForNetworkId(bchPrice, BCH_NETWORK_ID, timestamp)
-  }
+  await upsertPricesForNetworkId(bchPrice, BCH_NETWORK_ID, timestamp)
 }
