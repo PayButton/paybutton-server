@@ -1,22 +1,18 @@
-import { TransactionWithAddressAndPrices } from 'services/transactionService'
+import { TransactionWithAddressAndPrices } from 'services/transactionService';
 
-type TxBroadcast = 'NewTx' | 'OldTx'
+type TxBroadcastType = 'NewTx' | 'OldTx';
 
 export interface BroadcastTxData {
-  address: string
-  txs: TransactionWithAddressAndPrices[]
-  messageType: TxBroadcast
-}
-export interface BroadcastTransactionPayload {
-  address: string
-  transactions: Transaction[]
-  messageType: TxBroadcast
+  address: string;
+  txs: (TransactionWithAddressAndPrices | SimplifiedTransaction)[];
+  messageType: TxBroadcastType;
 }
 
-export interface Transaction {
+export interface SimplifiedTransaction {
   hash: string;
   amount: string;
   paymentId?: string;
   confirmed?: boolean;
   message?: string;
+  opReturn?: string;
 }

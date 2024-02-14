@@ -1,6 +1,6 @@
 import express from 'express'
 import cors from 'cors'
-import { BroadcastTxData, BroadcastTransactionPayload, Transaction } from './types'
+import { BroadcastTxData, SimplifiedTransaction } from './types'
 import { createServer } from 'http'
 import { Server, Socket } from 'socket.io'
 import { RESPONSE_MESSAGES } from '../constants/index'
@@ -44,34 +44,51 @@ const addressRouteConnection = (socket: Socket): void => {
   console.log('  total:', countA)
 }
 
+const resolveOpReturn = (opr:any) => { 
+  try { 
+    if(typeof opr === 'string' && opr !== '') 
+    {
+      return JSON.parse(opr);
+    }
+  } catch (e) {
+    return null; 
+  }
+}
+
 const broadcastTxs = async (broadcastTxData: BroadcastTxData): Promise<void> => {
   console.log('broadcasting', broadcastTxData.txs.length, broadcastTxData.messageType, 'txs to', broadcastTxData.address)
   try {
-    const {address, messageType} = broadcastTxData
-    const broadcastTransactionPayload:BroadcastTransactionPayload = {
-      transactions: [],
+    const {address, messageType, txs} = broadcastTxData
+    const broadcastedTransactions:BroadcastTxData = {
+      txs: [],
       address,
-      messageType
+      messageType,
     }
-    broadcastTxData.txs.forEach(
+
+    txs.forEach(
       t => {
-        const parsedOpReturnData = t.opReturn === '' ? null : JSON.parse(t.opReturn)
-        t.opReturn = parsedOpReturnData
+        const { opReturn, hash, amount, confirmed } = t
         
-        const newTransaction:Transaction = {
-          hash: t.hash,
-          amount: t.amount.toString(),
-          paymentId: parsedOpReturnData?.paymentId,
-          confirmed: t.confirmed,
-          message: parsedOpReturnData?.message
+        const parsedOpReturn = resolveOpReturn(opReturn) ;
+
+        const newSimplifiedTransaction:SimplifiedTransaction = {
+          hash,
+          amount: amount.toString(),
+          paymentId: parsedOpReturn?.paymentId,
+          confirmed: confirmed,
+          message: parsedOpReturn?.message
         }
-        broadcastTransaction.transactions.push(newTransaction)
+
+        broadcastedTransactions.txs.push(newSimplifiedTransaction)
     })
-    if (broadcastTxData?.txs?.length === 0) {
+
+    if (broadcastedTransactions?.txs?.length === 0) {
       console.warn(RESPONSE_MESSAGES.BROADCAST_EMPTY_TX_400)
       return
     }
-    addressesNs.to(broadcastTxData.address).emit('incoming-txs', broadcastTransactionPayload)
+
+    addressesNs.to(address)
+      .emit('incoming-txs', broadcastedTransactions)
   } catch (err: any) {
     console.error(RESPONSE_MESSAGES.FAILED_TO_PARSE_TX_OP_RETURN_500.message)
     console.error('Error stack:', err.stack)
