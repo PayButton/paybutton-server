@@ -7,7 +7,7 @@ import { BroadcastTxData } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
 import config from 'config'
 import crypto from 'crypto'
-import { getUserSeedHash } from './userService'
+import { getUserPrivateKey } from './userService'
 
 const triggerWithPaybutton = Prisma.validator<Prisma.PaybuttonTriggerArgs>()({
   include: { paybutton: true }
@@ -232,7 +232,7 @@ export interface PostDataParametersHashed {
 async function signPostData (userId: string, { amount, currency, address, timestamp, txId }: PostDataParameters): Promise<string> {
   const dataSigner = crypto.createSign('sha256')
   dataSigner.update(`${amount.toString()}+${currency}+${address}+${timestamp.toString()}+${txId}`)
-  const signature = dataSigner.sign(await getUserSeedHash(userId), 'hex')
+  const signature = dataSigner.sign(await getUserPrivateKey(userId), 'hex')
   return signature
 }
 

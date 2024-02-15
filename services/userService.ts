@@ -49,16 +49,12 @@ async function generateKeyPairForUser (userId: string): Promise<{
   // Create an elliptic curve Diffie-Hellman key exchange object using the prime256v1 curve
   const ecdh = crypto.createECDH('prime256v1')
 
-  // Set the private key based on the hashed seed
-  const seedHash = await getUserSeedHash(userId)
-  ecdh.setPrivateKey(seedHash)
-
-  // Generate the public key
-  const publicKey = ecdh.generateKeys()
+  const privateKey = await getUserPrivateKey(userId)
+  ecdh.setPrivateKey(privateKey)
 
   // Convert keys to hex strings
   const privateKeyHex = ecdh.getPrivateKey().toString('hex')
-  const publicKeyHex = publicKey.toString('hex')
+  const publicKeyHex = ecdh.getPublicKey().toString('hex')
 
   return { privateKey: privateKeyHex, publicKey: publicKeyHex }
 }
@@ -83,7 +79,7 @@ export async function getUserPublicKey (id: string): Promise<string> {
   return userPublicKey
 }
 
-export async function getUserSeedHash (userId: string): Promise<Buffer> {
+export async function getUserPrivateKey (userId: string): Promise<Buffer> {
   const secretKey = process.env.MASTER_SECRET_KEY as string
   return crypto.createHash('sha256').update(secretKey + userId).digest()
 }
