@@ -44,43 +44,42 @@ const addressRouteConnection = (socket: Socket): void => {
   console.log('  total:', countA)
 }
 
-const resolveOpReturn = (opr:any) => { 
-  try { 
-    if(typeof opr === 'string' && opr !== '') 
-    {
-      return JSON.parse(opr);
+const resolveOpReturn = (opr: any) => {
+  try {
+    if (typeof opr === 'string' && opr !== '') {
+      return JSON.parse(opr)
     }
   } catch (e) {
-    return null; 
+    return null
   }
 }
 
 const broadcastTxs = async (broadcastTxData: BroadcastTxData): Promise<void> => {
   console.log('broadcasting', broadcastTxData.txs.length, broadcastTxData.messageType, 'txs to', broadcastTxData.address)
   try {
-    const {address, messageType, txs} = broadcastTxData
-    const broadcastedTransactions:BroadcastTxData = {
+    const { address, messageType, txs } = broadcastTxData
+    const broadcastedTransactions: BroadcastTxData = {
       txs: [],
       address,
-      messageType,
+      messageType
     }
 
     txs.forEach(
       t => {
         const { opReturn, hash, amount, confirmed } = t
-        
-        const parsedOpReturn = resolveOpReturn(opReturn) ;
 
-        const newSimplifiedTransaction:SimplifiedTransaction = {
+        const parsedOpReturn = resolveOpReturn(opReturn)
+
+        const newSimplifiedTransaction: SimplifiedTransaction = {
           hash,
           amount: amount.toString(),
           paymentId: parsedOpReturn?.paymentId,
-          confirmed: confirmed,
+          confirmed,
           message: parsedOpReturn?.message
         }
 
         broadcastedTransactions.txs.push(newSimplifiedTransaction)
-    })
+      })
 
     if (broadcastedTransactions?.txs?.length === 0) {
       console.warn(RESPONSE_MESSAGES.BROADCAST_EMPTY_TX_400)
