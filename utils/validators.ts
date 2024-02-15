@@ -237,6 +237,7 @@ export function parseTriggerPostData (postData: string, postDataParametersHashed
   try {
     const buttonName = JSON.stringify(postDataParametersHashed.buttonName)
     const opReturn = JSON.stringify(postDataParametersHashed.opReturn, undefined, 2)
+
     resultingData = postData
       .replace('<amount>', postDataParametersHashed.amount.toString())
       .replace('<currency>', `"${postDataParametersHashed.currency}"`)
@@ -346,12 +347,12 @@ export function parseStringToArray (str: string): string | string[] {
 }
 
 export interface OpReturnData {
-  data: string
+  message: string
   paymentId: string
 }
 
 export const EMPTY_OP_RETURN: OpReturnData = {
-  data: '',
+  message: '',
   paymentId: ''
 }
 

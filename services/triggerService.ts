@@ -176,29 +176,28 @@ interface PostDataTriggerLog {
   responseData: string
 }
 
-export async function executeAddressTriggers (broadcastTxData: BroadcastTxData): Promise<void> {
+export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, networkId: number): Promise<void> {
   const address = broadcastTxData.address
   const tx = broadcastTxData.txs[0]
-  const amount = tx.amount
-  const currency = NETWORK_TICKERS_FROM_ID[tx.address.networkId]
-  const txId = tx.hash
-  const timestamp = tx.timestamp
-  let opReturn: OpReturnData = EMPTY_OP_RETURN
-
-  if (tx.opReturn !== '') {
-    opReturn = JSON.parse(tx.opReturn)
-  }
+  const currency = NETWORK_TICKERS_FROM_ID[networkId]
+  const {
+    amount,
+    hash,
+    timestamp,
+    paymentId,
+    message
+  } = tx
 
   const addressTriggers = await fetchTriggersForAddress(address)
   await Promise.all(addressTriggers.map(async (trigger) => {
     const postDataParameters: PostDataParameters = {
       amount,
       currency,
-      txId,
+      txId: hash,
       buttonName: trigger.paybutton.name,
       address,
       timestamp,
-      opReturn
+      opReturn: { paymentId, message } ?? EMPTY_OP_RETURN
     }
     const signature = await signPostData(trigger.paybutton.providerUserId, postDataParameters)
     await postDataForTrigger(trigger, {

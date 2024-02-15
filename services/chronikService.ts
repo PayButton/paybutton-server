@@ -3,7 +3,16 @@ import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, NodeJsGlobalChronik, TransactionDetails } from './blockchainService'
 import { NETWORK_SLUGS, CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT } from 'constants/index'
-import { TransactionWithAddressAndPrices, createManyTransactions, deleteTransactions, fetchUnconfirmedTransactions, createTransaction, syncAddresses } from './transactionService'
+import {
+  TransactionWithAddressAndPrices,
+  createManyTransactions,
+  deleteTransactions,
+  fetchUnconfirmedTransactions,
+  createTransaction,
+  syncAddresses,
+  getSimplifiedTransactions,
+  getSimplifiedTrasaction
+} from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
@@ -70,7 +79,7 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
   const dataString = decoder.decode(dataHexBuffer)
 
   const ret: OpReturnData = {
-    data: parseOpReturnData(dataString),
+    message: parseOpReturnData(dataString),
     paymentId: ''
   }
 
@@ -261,14 +270,18 @@ export class ChronikBlockchainClient implements BlockchainClient {
       const transactionsToPersist = await Promise.all(
         [...confirmedTransactions, ...unconfirmedTransactions].map(async tx => await this.getTransactionFromChronikTransaction(tx, address))
       )
-
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
-      console.log(`added ${persistedTransactions.length} txs to ${addressString}`)
+      const simplifiedTransactions = getSimplifiedTransactions(persistedTransactions)
+
+      console.log(`added ${simplifiedTransactions.length} txs to ${addressString}`)
+
       const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
       broadcastTxData.messageType = 'OldTx'
       broadcastTxData.address = addressString
-      broadcastTxData.txs = persistedTransactions
+      broadcastTxData.txs = simplifiedTransactions
+
       this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
+
       yield persistedTransactions
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
@@ -356,7 +369,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
           const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
           broadcastTxData.address = addressWithTransaction.address.address
           broadcastTxData.messageType = 'NewTx'
-          broadcastTxData.txs = [tx]
+          const newSimplifiedTransaction = getSimplifiedTrasaction(tx)
+          broadcastTxData.txs = [newSimplifiedTransaction]
           try { // emit broadcast for both unconfirmed and confirmed txs
             this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
           } catch (err: any) {
@@ -364,7 +378,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
           }
           if (created) { // only execute trigger for unconfirmed tx arriving
             try {
-              await executeAddressTriggers(broadcastTxData)
+              await executeAddressTriggers(broadcastTxData, tx.address.networkId)
             } catch (err: any) {
               console.error(RESPONSE_MESSAGES.COULD_NOT_EXECUTE_TRIGGER_500.message, err.stack)
             }
