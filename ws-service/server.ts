@@ -46,11 +46,12 @@ const addressRouteConnection = (socket: Socket): void => {
 
 const resolveOpReturn = (opr: any) => {
   try {
-    if (typeof opr === 'string' && opr !== '') {
-      return JSON.parse(opr)
+    if (!(typeof opr === 'string' && opr !== '')) {
+      throw new Error("Error parsing Opreturn options")
     }
+    return JSON.parse(opr)
   } catch (e) {
-    return null
+    return undefined
   }
 }
 
@@ -72,7 +73,7 @@ const broadcastTxs = async (broadcastTxData: BroadcastTxData): Promise<void> => 
 
         const newSimplifiedTransaction: SimplifiedTransaction = {
           hash,
-          amount: amount.toString(),
+          amount,
           paymentId: parsedOpReturn?.paymentId,
           confirmed,
           message: parsedOpReturn?.message
