@@ -16,7 +16,7 @@
   word-wrap: break-word;
 }
 
-.secret_card_ctn {
+.public_key_card_ctn {
   width: 100%;
   max-width: var(--max-width);
   display: flex;
@@ -25,7 +25,7 @@
   gap: 2px;
 }
 
-.secret_card {
+.public_key_card {
   width: 100%;
   background-color: var(--secondary-bg-color);
   max-width: calc(var(--max-width) - 40px);
@@ -86,7 +86,7 @@
   font-size: 14px;
 }
 
-.secret_info_btn {
+.public_key_info_btn {
   cursor: pointer;
   color: var(--accent-color);
   font-size: 12px;
@@ -96,7 +96,7 @@
   top: 3px;
 }
 
-.secret_info_ctn {
+.public_key_info_ctn {
   width: 100%;
   background-color: var(--secondary-bg-color);
   max-width: var(--max-width);
@@ -131,8 +131,8 @@ body[data-theme='dark'] .copy_btn:hover img {
 
 @media (max-width: 960px) {
     .account_card,
-    .secret_card_ctn,
-    .secret_info_ctn,
+    .public_key_card_ctn,
+    .public_key_info_ctn,
     .label {
      max-width: unset;
     }
@@ -141,7 +141,7 @@ body[data-theme='dark'] .copy_btn:hover img {
       width: 50px;
     }
 
-    .secret_card {
+    .public_key_card {
       max-width: unset;
       width: calc(100% - 50px);
     }

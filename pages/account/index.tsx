@@ -8,7 +8,7 @@ import { GetServerSideProps } from 'next'
 import Page from 'components/Page'
 import ChangePassword from 'components/Account/ChangePassword'
 import style from './account.module.css'
-import { getUserPrivateKey } from 'services/userService'
+import { getUserPublicKey } from 'services/userService'
 import CopyIcon from '../../assets/copy-black.png'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
@@ -33,30 +33,29 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     props: {
       userId,
       user: await ThirdPartyEmailPasswordNode.getUserById(userId),
-      userSecret: await getUserPrivateKey(userId)
+      userPublicKey: await getUserPublicKey(userId)
     }
   }
 }
 
 interface IProps {
-  userId: string
   user: ThirdPartyEmailPasswordNode.User | undefined
-  userSecret: string
+  userPublicKey: string
 }
 
-export default function Account ({ user, userId, userSecret }: IProps): React.ReactElement {
+export default function Account ({ user, userPublicKey }: IProps): React.ReactElement {
   const [changePassword, setChangePassword] = useState(false)
-  const [secretKeyInfo, setSecretKeyInfo] = useState(false)
+  const [publicKeyInfo, setPublicKeyInfo] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
   const toggleChangePassword = (): void => {
     setChangePassword(!changePassword)
   }
-  const toggleSecretKeyInfo = (): void => {
-    setSecretKeyInfo(!secretKeyInfo)
+  const togglePublicKeyInfo = (): void => {
+    setPublicKeyInfo(!publicKeyInfo)
   }
 
   const handleCopyClick = async (): Promise<void> => {
-    const textToCopy = userSecret
+    const textToCopy = userPublicKey
     try {
       await navigator.clipboard.writeText(textToCopy)
       setIsCopied(true)
@@ -73,7 +72,7 @@ export default function Account ({ user, userId, userSecret }: IProps): React.Re
       <div className={style.account_ctn}>
         <h2>Account</h2>
         <div className={style.label}>Email</div>
-        <div className={style.account_card}>{user.email}</div>
+        <div className={style.account_card}>{user?.email}</div>
         {changePassword && (
           <>
             <div className={style.label}>Update Password</div>
@@ -86,16 +85,16 @@ export default function Account ({ user, userId, userSecret }: IProps): React.Re
         >
           {!changePassword ? 'Update Password' : 'Cancel'}
         </div>
-         <div className={style.label} style={{ marginTop: '50px' }}>Secret key <span className={style.secret_info_btn} onClick={() => toggleSecretKeyInfo()}>What is this?</span></div>
-        <div className={style.secret_card_ctn}>
-          <div className={style.secret_card}>
-            {userSecret}
+         <div className={style.label} style={{ marginTop: '50px' }}>Public key <span className={style.public_key_info_btn} onClick={() => togglePublicKeyInfo()}>What is this?</span></div>
+        <div className={style.public_key_card_ctn}>
+          <div className={style.public_key_card}>
+            {userPublicKey}
             {isCopied && <div className={style.copied_confirmation}>Copied!</div>}
           </div>
           <div className={style.copy_btn} onClick={() => { void handleCopyClick() } }><Image src={CopyIcon} alt="copy" /></div>
         </div>
-        {secretKeyInfo && (
-            <div className={style.secret_info_ctn}>
+        {publicKeyInfo && (
+            <div className={style.public_key_info_ctn}>
               This can be used to verify the authenticity of a message received from a paybutton trigger.
               <br/>
               <br/>
@@ -105,16 +104,16 @@ export default function Account ({ user, userId, userSecret }: IProps): React.Re
               Next, pass this concatenated string to the `sha256` hash function to generate a hash. Make sure to get the output in hexadecimal format. This will give you the data hash digest.
               <br/>
               <br/>
-              Now, you'll need your secret key. Use this secret key to create an HMAC (Hash-based Message Authentication Code) using the `sha256` algorithm. Pass the data hash digest you just generated as the data to hash.
+              Now, you'll need your public key. Use this public key to create an HMAC (Hash-based Message Authentication Code) using the `sha256` algorithm. Pass the data hash digest you just generated as the data to hash.
               <br/>
               <br/>
               Finally, compare the resulting HMAC digest with the one you received. If they match, the message is authentic and has not been tampered with.
 
           </div>
         )}
-         {secretKeyInfo &&
+         {publicKeyInfo &&
           <div
-          onClick={() => toggleSecretKeyInfo()}
+          onClick={() => togglePublicKeyInfo()}
           className={`${style.updatebtn} button_outline`}
           >Close</div>
         }

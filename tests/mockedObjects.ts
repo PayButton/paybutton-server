@@ -668,6 +668,7 @@ export const mockPrices: Price[] = [
 
 export const mockedUserProfile: UserProfile = {
   id: 'mocked-user-profileb0fc-13a007cc584b',
+  publicKey: '',
   createdAt: new Date(),
   updatedAt: new Date(),
   isAdmin: false,

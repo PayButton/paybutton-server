@@ -42,31 +42,50 @@ export async function updateLastSentVerificationEmailAt (id: string): Promise<vo
   })
 }
 
+async function generateKeyPairForUser (userId: string): Promise<{
+  privateKey: string
+  publicKey: string
+}> {
+  // Create an elliptic curve Diffie-Hellman key exchange object using the prime256v1 curve
+  const ecdh = crypto.createECDH('prime256v1')
+
+  // Set the private key based on the hashed seed
+  const seedHash = await getUserSeedHash(userId)
+  ecdh.setPrivateKey(seedHash)
+
+  // Generate the public key
+  const publicKey = ecdh.generateKeys()
+
+  // Convert keys to hex strings
+  const privateKeyHex = ecdh.getPrivateKey().toString('hex')
+  const publicKeyHex = publicKey.toString('hex')
+
+  return { privateKey: privateKeyHex, publicKey: publicKeyHex }
+}
+
 export async function getUserPublicKey (id: string): Promise<string> {
   let userPublicKey = (
     await prisma.userProfile.findUniqueOrThrow({ where: { id }, select: { publicKey: true } })
   ).publicKey
   if (userPublicKey === '') {
-    const userPrivateKey = await getUserPrivateKey(id)
-    const newPublicKey = crypto.createPublicKey(userPrivateKey)
-    const publicKeyHex = newPublicKey.export({ type: 'spki', format: 'der' }).toString('hex')
+    const { publicKey } = await generateKeyPairForUser(id)
 
     await prisma.userProfile.update({
       where: {
         id
       },
       data: {
-        publicKey: publicKeyHex
+        publicKey
       }
     })
-    userPublicKey = publicKeyHex
+    userPublicKey = publicKey
   }
   return userPublicKey
 }
 
-export async function getUserPrivateKey (id: string): Promise<string> {
+export async function getUserSeedHash (userId: string): Promise<Buffer> {
   const secretKey = process.env.MASTER_SECRET_KEY as string
-  return crypto.createHash('sha256').update(secretKey + id).digest('hex')
+  return crypto.createHash('sha256').update(secretKey + userId).digest()
 }
 
 export async function fetchAllUsers (): Promise<UserProfile[]> {
