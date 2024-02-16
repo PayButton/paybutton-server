@@ -95,19 +95,18 @@ export default function Account ({ user, userPublicKey }: IProps): React.ReactEl
         </div>
         {publicKeyInfo && (
             <div className={style.public_key_info_ctn}>
+              !! WIP !!
               This can be used to verify the authenticity of a message received from a paybutton trigger.
               <br/>
               <br/>
-              To verify, take the variables &lt;amount&gt;, &lt;currency&gt;, &lt;address&gt;, &lt;timestamp&gt;, and &lt;txId&gt; and concatenate them into a single string using the plus (+) symbol as a separator. The string should look like this: `&lt;amount&gt;+&lt;currency&gt;+&lt;address&gt;+&lt;timestamp&gt;+&lt;txId&gt;`.
+              To verify, check variable &lt;signature&gt;, it should contain two keys:
+              <br/>
+              - payload: The transaction data variables present in the POST request concatenated using the plus (+) symbol as a separator
+              <br/>
+              - signature: The signature of the payload.
               <br/>
               <br/>
-              Next, pass this concatenated string to the `sha256` hash function to generate a hash. Make sure to get the output in hexadecimal format. This will give you the data hash digest.
-              <br/>
-              <br/>
-              Now, you'll need your public key. Use this public key to create an HMAC (Hash-based Message Authentication Code) using the `sha256` algorithm. Pass the data hash digest you just generated as the data to hash.
-              <br/>
-              <br/>
-              Finally, compare the resulting HMAC digest with the one you received. If they match, the message is authentic and has not been tampered with.
+              Check if the payload's signature came from the private key paired to this public key using your preferred method.
 
           </div>
         )}
