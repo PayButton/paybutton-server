@@ -1,8 +1,8 @@
 import { PaybuttonTrigger, Prisma } from '@prisma/client'
 import axios from 'axios'
-import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID } from 'constants/index'
+import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID, TRIGGER_POST_VARIABLES } from 'constants/index'
 import prisma from 'prisma/clientInstance'
-import { EMPTY_OP_RETURN, OpReturnData, parseTriggerPostData } from 'utils/validators'
+import { EMPTY_OP_RETURN, OpReturnData, parseTriggerPostData, PaybuttonTriggerParseParameters } from 'utils/validators'
 import { BroadcastTxData } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
 import config from 'config'
@@ -199,12 +199,7 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
       timestamp,
       opReturn: { paymentId, message } ?? EMPTY_OP_RETURN
     }
-    const signature = await signPostData(trigger.paybutton.providerUserId, postDataParameters)
-    await postDataForTrigger(trigger, {
-      ...postDataParameters,
-      signature
-    }
-    )
+    await postDataForTrigger(trigger, postDataParameters)
   }))
 }
 
@@ -218,30 +213,50 @@ export interface PostDataParameters {
   opReturn: OpReturnData
 }
 
-export interface PostDataParametersHashed {
-  amount: Prisma.Decimal
-  currency: string
-  timestamp: number
-  txId: string
-  buttonName: string
-  address: string
-  opReturn: OpReturnData
+interface TriggerSignature {
+  payload: string
   signature: string
 }
 
-async function signPostData (userId: string, { amount, currency, address, timestamp, txId }: PostDataParameters): Promise<string> {
-  const dataSigner = crypto.createSign('sha256')
-  dataSigner.update(`${amount.toString()}+${currency}+${address}+${timestamp.toString()}+${txId}`)
-  const signature = dataSigner.sign(await getUserPrivateKey(userId), 'hex')
-  return signature
+function getSignaturePayload (postData: string, postDataParameters: PostDataParameters): string {
+  const includedVariables = TRIGGER_POST_VARIABLES.filter(v => postData.includes(v)).sort()
+  return includedVariables.map(varString => {
+    const key = varString.replace('<', '').replace('>', '') as keyof PostDataParameters
+    let valueString = ''
+    if (key === 'opReturn') {
+      const value = postDataParameters[key]
+      valueString = `${value.paymentId}+${value.data}`
+    } else {
+      valueString = postDataParameters[key] as string
+    }
+    return valueString
+  }).join('+')
 }
 
-async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParametersHashed: PostDataParametersHashed): Promise<void> {
+export function signPostData ({ userId, postData, postDataParameters }: PaybuttonTriggerParseParameters): TriggerSignature {
+  const payload = getSignaturePayload(postData, postDataParameters)
+  const pk = getUserPrivateKey(userId)
+  const signature = crypto.sign(
+    null,
+    Buffer.from(payload),
+    pk
+  )
+  return {
+    payload,
+    signature: signature.toString('hex')
+  }
+}
+
+async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParameters: PostDataParameters): Promise<void> {
   const actionType: TriggerLogActionType = 'PostData'
   let logData!: PostDataTriggerLog | PostDataTriggerLogError
   let isError = false
   try {
-    const parsedPostDataParameters = parseTriggerPostData(trigger.postData, postDataParametersHashed)
+    const parsedPostDataParameters = parseTriggerPostData({
+      userId: trigger.paybutton.providerUserId,
+      postData: trigger.postData,
+      postDataParameters
+    })
     const response = await axios.post(
       trigger.postURL,
       parsedPostDataParameters,

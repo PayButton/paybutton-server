@@ -1,11 +1,13 @@
-import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN, NETWORK_TICKERS } from '../constants/index'
+import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN, NETWORK_TICKERS, TRIGGER_POST_VARIABLES } from '../constants/index'
 import { Prisma } from '@prisma/client'
 import config from '../config/index'
 import { type CreatePaybuttonInput, type UpdatePaybuttonInput } from '../services/paybuttonService'
 import { type CreateWalletInput, type UpdateWalletInput } from '../services/walletService'
 import { getAddressPrefix, parseWebsiteURL } from './index'
 import xecaddr from 'xecaddrjs'
-import { CreatePaybuttonTriggerInput, PostDataParametersHashed } from 'services/triggerService'
+import { CreatePaybuttonTriggerInput, PostDataParameters } from 'services/triggerService'
+import crypto from 'crypto'
+import { getUserPrivateKey } from '../services/userService'
 
 /* The functions exported here should validate the data structure / syntax of an
  * input by throwing an error in case something is different from the expected.
@@ -217,41 +219,64 @@ export interface PaybuttonTriggerPOSTParameters {
   currentTriggerId?: string
 }
 
-const triggerPostVariables = ['<amount>', '<currency>', '<txId>', '<buttonName>', '<address>', '<timestamp>', '<opReturn>', '<signature>']
+export interface PaybuttonTriggerParseParameters {
+  userId: string
+  postData: string
+  postDataParameters: PostDataParameters
+}
 
-export function parseTriggerPostData (postData: string, postDataParametersHashed?: PostDataParametersHashed): any {
-  let resultingData: string
-  // Allows to test the validity of postData without data to replace
-  if (postDataParametersHashed === undefined) {
-    postDataParametersHashed = {
-      amount: new Prisma.Decimal(0),
-      currency: '',
-      txId: '',
-      buttonName: '',
-      address: '',
-      timestamp: 0,
-      opReturn: EMPTY_OP_RETURN,
-      signature: ''
+interface TriggerSignature {
+  payload: string
+  signature: string
+}
+
+function getSignaturePayload (postData: string, postDataParameters: PostDataParameters): string {
+  const includedVariables = TRIGGER_POST_VARIABLES.filter(v => postData.includes(v)).sort()
+  return includedVariables.map(varString => {
+    const key = varString.replace('<', '').replace('>', '') as keyof PostDataParameters
+    let valueString = ''
+    if (key === 'opReturn') {
+      const value = postDataParameters[key]
+      valueString = `${value.paymentId}+${value.data}`
+    } else {
+      valueString = postDataParameters[key] as string
     }
-  }
-  try {
-    const buttonName = JSON.stringify(postDataParametersHashed.buttonName)
-    const opReturn = JSON.stringify(postDataParametersHashed.opReturn, undefined, 2)
+    return valueString
+  }).join('+')
+}
 
-    resultingData = postData
-      .replace('<amount>', postDataParametersHashed.amount.toString())
-      .replace('<currency>', `"${postDataParametersHashed.currency}"`)
-      .replace('<txId>', `"${postDataParametersHashed.txId}"`)
+export function signPostData ({ userId, postData, postDataParameters }: PaybuttonTriggerParseParameters): TriggerSignature {
+  const payload = getSignaturePayload(postData, postDataParameters)
+  const pk = getUserPrivateKey(userId)
+  const signature = crypto.sign(
+    null,
+    Buffer.from(payload),
+    pk
+  )
+  return {
+    payload,
+    signature: signature.toString('hex')
+  }
+}
+
+export function parseTriggerPostData ({ userId, postData, postDataParameters }: PaybuttonTriggerParseParameters): any {
+  try {
+    const buttonName = JSON.stringify(postDataParameters.buttonName)
+    const opReturn = JSON.stringify(postDataParameters.opReturn, undefined, 2)
+    const signature = signPostData({ userId, postData, postDataParameters })
+    const resultingData = postData
+      .replace('<amount>', postDataParameters.amount.toString())
+      .replace('<currency>', `"${postDataParameters.currency}"`)
+      .replace('<txId>', `"${postDataParameters.txId}"`)
       .replace('<buttonName>', buttonName)
-      .replace('<address>', `"${postDataParametersHashed.address}"`)
-      .replace('<timestamp>', postDataParametersHashed.timestamp.toString())
+      .replace('<address>', `"${postDataParameters.address}"`)
+      .replace('<timestamp>', postDataParameters.timestamp.toString())
       .replace('<opReturn>', opReturn)
-      .replace('<signature>', `"${postDataParametersHashed.signature}"`)
+      .replace('<signature>', `${JSON.stringify(signature, undefined, 2)}`)
     const parsedResultingData = JSON.parse(resultingData)
     return parsedResultingData
   } catch (err: any) {
-    console.log('cathing err', err.name, err.message, err.stack)
-    const includedVariables = triggerPostVariables.filter(v => postData.includes(v))
+    const includedVariables = TRIGGER_POST_VARIABLES.filter(v => postData.includes(v))
     if (includedVariables.length > 0) {
       throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_WITH_VARIABLES_400(includedVariables).message)
     }
@@ -278,7 +303,20 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
   // postData
   let postData: string | undefined
   if (params.postData === undefined || params.postData === '') { postData = undefined } else {
-    const parsed = parseTriggerPostData(params.postData)
+    const dummyPostDataParameters = {
+      amount: new Prisma.Decimal(0),
+      currency: '',
+      txId: '',
+      buttonName: '',
+      address: '',
+      timestamp: 0,
+      opReturn: EMPTY_OP_RETURN
+    }
+    const parsed = parseTriggerPostData({
+      userId: params.userId,
+      postData: params.postData,
+      postDataParameters: dummyPostDataParameters
+    })
     if (parsed === null || typeof parsed !== 'object') {
       throw new Error(RESPONSE_MESSAGES.INVALID_DATA_JSON_400.message)
     }

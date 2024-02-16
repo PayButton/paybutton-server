@@ -182,3 +182,14 @@ export const COOKIE_NAMES = {
 export const DEFAULT_EMPTY_TABLE_MESSAGE = 'No rows to show.'
 
 export const CHRONIK_MESSAGE_CACHE_DELAY = 3000
+
+export const TRIGGER_POST_VARIABLES = [
+  '<address>',
+  '<amount>',
+  '<buttonName>',
+  '<currency>',
+  '<opReturn>',
+  '<signature>',
+  '<timestamp>',
+  '<txId>'
+]

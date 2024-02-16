@@ -8,7 +8,7 @@ import { GetServerSideProps } from 'next'
 import Page from 'components/Page'
 import ChangePassword from 'components/Account/ChangePassword'
 import style from './account.module.css'
-import { getUserPublicKey } from 'services/userService'
+import { getUserPublicKeyHex } from 'services/userService'
 import CopyIcon from '../../assets/copy-black.png'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
@@ -33,7 +33,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     props: {
       userId,
       user: await ThirdPartyEmailPasswordNode.getUserById(userId),
-      userPublicKey: await getUserPublicKey(userId)
+      userPublicKey: await getUserPublicKeyHex(userId)
     }
   }
 }

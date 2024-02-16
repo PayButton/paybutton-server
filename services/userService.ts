@@ -42,29 +42,28 @@ export async function updateLastSentVerificationEmailAt (id: string): Promise<vo
   })
 }
 
-async function generateKeyPairForUser (userId: string): Promise<{
-  privateKey: string
-  publicKey: string
-}> {
-  // Create an elliptic curve Diffie-Hellman key exchange object using the prime256v1 curve
-  const ecdh = crypto.createECDH('prime256v1')
-
-  const privateKey = await getUserPrivateKey(userId)
-  ecdh.setPrivateKey(privateKey)
-
-  // Convert keys to hex strings
-  const privateKeyHex = ecdh.getPrivateKey().toString('hex')
-  const publicKeyHex = ecdh.getPublicKey().toString('hex')
-
-  return { privateKey: privateKeyHex, publicKey: publicKeyHex }
+function getUserSeedHash (userId: string): Buffer {
+  const secretKey = process.env.MASTER_SECRET_KEY as string
+  return crypto.createHash('sha256').update(secretKey + userId).digest()
 }
 
-export async function getUserPublicKey (id: string): Promise<string> {
+export function getUserPrivateKey (userId: string): crypto.KeyObject {
+  const seed = getUserSeedHash(userId)
+  const prefixPrivateEd25519 = Buffer.from('302e020100300506032b657004220420', 'hex')
+  const der = Buffer.concat([prefixPrivateEd25519, seed])
+  return crypto.createPrivateKey({ key: der, format: 'der', type: 'pkcs8' })
+}
+
+export async function getUserPublicKeyHex (id: string): Promise<string> {
   let userPublicKey = (
     await prisma.userProfile.findUniqueOrThrow({ where: { id }, select: { publicKey: true } })
   ).publicKey
   if (userPublicKey === '') {
-    const { publicKey } = await generateKeyPairForUser(id)
+    const privateKey = getUserPrivateKey(id)
+    const publicKey = crypto.createPublicKey(privateKey).export({
+      type: 'spki',
+      format: 'der'
+    }).toString('hex')
 
     await prisma.userProfile.update({
       where: {
@@ -77,11 +76,6 @@ export async function getUserPublicKey (id: string): Promise<string> {
     userPublicKey = publicKey
   }
   return userPublicKey
-}
-
-export async function getUserPrivateKey (userId: string): Promise<Buffer> {
-  const secretKey = process.env.MASTER_SECRET_KEY as string
-  return crypto.createHash('sha256').update(secretKey + userId).digest()
 }
 
 export async function fetchAllUsers (): Promise<UserProfile[]> {
