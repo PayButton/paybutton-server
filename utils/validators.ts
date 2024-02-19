@@ -237,7 +237,7 @@ function getSignaturePayload (postData: string, postDataParameters: PostDataPara
     let valueString = ''
     if (key === 'opReturn') {
       const value = postDataParameters[key]
-      valueString = `${value.paymentId}+${value.data}`
+      valueString = `${value.data}+${value.paymentId}`
     } else {
       valueString = postDataParameters[key] as string
     }
@@ -431,4 +431,8 @@ export function parseOpReturnData (opReturnData: string): any {
   } catch (err: any) {
     return parseStringToArray(opReturnData)
   }
+}
+
+export const exportedForTesting = {
+  getSignaturePayload
 }
