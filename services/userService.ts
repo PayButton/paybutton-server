@@ -105,3 +105,7 @@ export async function isUserAdmin (id: string): Promise<boolean> {
 
   return user?.isAdmin === true
 }
+
+export const exportedForTesting = {
+  getUserSeedHash
+}
