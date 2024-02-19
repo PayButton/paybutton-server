@@ -1,13 +1,11 @@
 import { PaybuttonTrigger, Prisma } from '@prisma/client'
 import axios from 'axios'
-import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID, TRIGGER_POST_VARIABLES } from 'constants/index'
+import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID } from 'constants/index'
 import prisma from 'prisma/clientInstance'
-import { EMPTY_OP_RETURN, OpReturnData, parseTriggerPostData, PaybuttonTriggerParseParameters } from 'utils/validators'
+import { EMPTY_OP_RETURN, OpReturnData, parseTriggerPostData } from 'utils/validators'
 import { BroadcastTxData } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
 import config from 'config'
-import crypto from 'crypto'
-import { getUserPrivateKey } from './userService'
 
 const triggerWithPaybutton = Prisma.validator<Prisma.PaybuttonTriggerArgs>()({
   include: { paybutton: true }
@@ -211,40 +209,6 @@ export interface PostDataParameters {
   buttonName: string
   address: string
   opReturn: OpReturnData
-}
-
-interface TriggerSignature {
-  payload: string
-  signature: string
-}
-
-function getSignaturePayload (postData: string, postDataParameters: PostDataParameters): string {
-  const includedVariables = TRIGGER_POST_VARIABLES.filter(v => postData.includes(v)).sort()
-  return includedVariables.map(varString => {
-    const key = varString.replace('<', '').replace('>', '') as keyof PostDataParameters
-    let valueString = ''
-    if (key === 'opReturn') {
-      const value = postDataParameters[key]
-      valueString = `${value.paymentId}${value.data}`
-    } else {
-      valueString = postDataParameters[key] as string
-    }
-    return valueString
-  }).join('+')
-}
-
-export function signPostData ({ userId, postData, postDataParameters }: PaybuttonTriggerParseParameters): TriggerSignature {
-  const payload = getSignaturePayload(postData, postDataParameters)
-  const pk = getUserPrivateKey(userId)
-  const signature = crypto.sign(
-    null,
-    Buffer.from(payload),
-    pk
-  )
-  return {
-    payload,
-    signature: signature.toString('hex')
-  }
 }
 
 async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParameters: PostDataParameters): Promise<void> {
