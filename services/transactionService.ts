@@ -8,13 +8,16 @@ import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
 import { CacheSet } from 'redis/index'
+import { SimplifiedTransaction } from 'ws-service/types'
 
 export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
   }
-  if (transaction.prices.length !== N_OF_QUOTES) throw new Error(`txid${transaction.id}, ts${transaction.timestamp} ${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}: found ${transaction.prices.length}.`)
+  if (transaction.prices.length !== N_OF_QUOTES) {
+    throw new Error(`txid${transaction.id}, ts${transaction.timestamp} ${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}: found ${transaction.prices.length}.`)
+  }
   for (const p of transaction.prices) {
     if (p.price.quoteId === USD_QUOTE_ID) {
       ret.usd = ret.usd.plus(p.price.value.times(transaction.amount))
@@ -24,6 +27,50 @@ export async function getTransactionValue (transaction: TransactionWithPrices): 
     }
   }
   return ret
+}
+
+export function getSimplifiedTransactions (transactionsToPersist: TransactionWithAddressAndPrices[]): SimplifiedTransaction[] {
+  const mappedTransactions: SimplifiedTransaction[] = []
+  transactionsToPersist.forEach(
+    tx => {
+      const newSimplifiedTransaction = getSimplifiedTrasaction(tx)
+
+      mappedTransactions.push(newSimplifiedTransaction)
+    }
+  )
+  return mappedTransactions
+}
+
+export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices): SimplifiedTransaction {
+  const {
+    hash,
+    amount,
+    confirmed,
+    opReturn,
+    address
+  } = tx
+
+  const parsedOpReturn = resolveOpReturn(opReturn)
+
+  const newSimplifiedTransaction: SimplifiedTransaction = {
+    hash,
+    amount,
+    paymentId: parsedOpReturn?.paymentId,
+    confirmed,
+    address,
+    message: parsedOpReturn?.message
+  }
+
+  return newSimplifiedTransaction
+}
+
+const resolveOpReturn = (opr: string): { paymentId: string, message: string } | null => {
+  try {
+    return opr === '' ? null : JSON.parse(opr)
+  } catch (e) {
+    console.error(RESPONSE_MESSAGES.FAILED_TO_PARSE_TX_OP_RETURN_500.message)
+    return null
+  }
 }
 
 const includePrices = {

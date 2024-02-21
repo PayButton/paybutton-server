@@ -1,11 +1,10 @@
-import { Prisma } from '@prisma/client'
-import { TransactionWithAddressAndPrices } from 'services/transactionService'
+import { Address, Prisma } from '@prisma/client'
 
 type TxBroadcastType = 'NewTx' | 'OldTx'
 
 export interface BroadcastTxData {
   address: string
-  txs: Array<TransactionWithAddressAndPrices | SimplifiedTransaction>
+  txs: SimplifiedTransaction[]
   messageType: TxBroadcastType
 }
 
@@ -15,7 +14,7 @@ export interface SimplifiedTransaction {
   paymentId?: string
   confirmed?: boolean
   message?: string
-  opReturn?: any
-  address?: any
-  timestamp?: any
+  opReturn?: string
+  timestamp: number
+  address: Address
 }

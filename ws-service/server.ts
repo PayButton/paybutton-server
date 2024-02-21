@@ -1,6 +1,6 @@
 import express from 'express'
 import cors from 'cors'
-import { BroadcastTxData, SimplifiedTransaction } from './types'
+import { BroadcastTxData } from './types'
 import { createServer } from 'http'
 import { Server, Socket } from 'socket.io'
 import { RESPONSE_MESSAGES } from '../constants/index'
@@ -44,53 +44,20 @@ const addressRouteConnection = (socket: Socket): void => {
   console.log('  total:', countA)
 }
 
-const resolveOpReturn = (opr: any) => {
-  try {
-    if (!(typeof opr === 'string' && opr !== '')) {
-      throw new Error("Error parsing Opreturn options")
-    }
-    return JSON.parse(opr)
-  } catch (e) {
-    return undefined
-  }
-}
-
 const broadcastTxs = async (broadcastTxData: BroadcastTxData): Promise<void> => {
   console.log('broadcasting', broadcastTxData.txs.length, broadcastTxData.messageType, 'txs to', broadcastTxData.address)
   try {
-    const { address, messageType, txs } = broadcastTxData
-    const broadcastedTransactions: BroadcastTxData = {
-      txs: [],
-      address,
-      messageType
-    }
+    const { address, txs } = broadcastTxData
 
-    txs.forEach(
-      t => {
-        const { opReturn, hash, amount, confirmed } = t
-
-        const parsedOpReturn = resolveOpReturn(opReturn)
-
-        const newSimplifiedTransaction: SimplifiedTransaction = {
-          hash,
-          amount,
-          paymentId: parsedOpReturn?.paymentId,
-          confirmed,
-          message: parsedOpReturn?.message
-        }
-
-        broadcastedTransactions.txs.push(newSimplifiedTransaction)
-      })
-
-    if (broadcastedTransactions?.txs?.length === 0) {
+    if (txs?.length === 0) {
       console.warn(RESPONSE_MESSAGES.BROADCAST_EMPTY_TX_400)
       return
     }
 
-    addressesNs.to(address)
-      .emit('incoming-txs', broadcastedTransactions)
+    addressesNs
+      .to(address)
+      .emit('incoming-txs', broadcastTxData)
   } catch (err: any) {
-    console.error(RESPONSE_MESSAGES.FAILED_TO_PARSE_TX_OP_RETURN_500.message)
     console.error('Error stack:', err.stack)
   }
 }

@@ -13,7 +13,7 @@ import { BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValue
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { fetchAddressBySubstring, setSyncing, updateLastSynced } from './addressService'
-import { TransactionWithAddressAndPrices, createTransaction, createManyTransactions, base64HashToHex } from './transactionService'
+import { TransactionWithAddressAndPrices, createTransaction, createManyTransactions, base64HashToHex, getSimplifiedTrasaction } from './transactionService'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
 import io, { Socket } from 'socket.io-client'
@@ -290,10 +290,12 @@ export class GrpcBlockchainClient implements BlockchainClient {
     await Promise.all(
       [...addressWithUnconfirmedTransactions, ...addressWithConfirmedTransactions].map(async addressWithTransaction => {
         const { tx } = await createTransaction(addressWithTransaction.transaction)
+
         if (tx !== undefined) {
+          const newTransaction = getSimplifiedTrasaction(tx)
           broadcastTxData.address = addressWithTransaction.address.address
           broadcastTxData.messageType = 'NewTx'
-          broadcastTxData.txs = [tx]
+          broadcastTxData.txs = [newTransaction]
           // TODO: implement triggers
         }
         return tx
