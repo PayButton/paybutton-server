@@ -79,7 +79,7 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
   const dataString = decoder.decode(dataHexBuffer)
 
   const ret: OpReturnData = {
-    data: parseOpReturnData(dataString),
+    message: parseOpReturnData(dataString),
     paymentId: ''
   }
 

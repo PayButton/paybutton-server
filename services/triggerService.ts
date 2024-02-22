@@ -179,27 +179,28 @@ interface PostDataTriggerLog {
 export async function executeAddressTriggers (broadcastTxData: BroadcastTxData): Promise<void> {
   const address = broadcastTxData.address
   const tx = broadcastTxData.txs[0]
-  const amount = tx.amount
   const currency = NETWORK_TICKERS_FROM_ID[tx.address.networkId]
-  const txId = tx.hash
-  const timestamp = tx.timestamp
-  let opReturn: OpReturnData = EMPTY_OP_RETURN
-
-  if (tx.opReturn !== '') {
-    opReturn = JSON.parse(tx.opReturn)
-  }
+  const {
+    amount,
+    hash,
+    timestamp,
+    paymentId,
+    message,
+    opReturn
+  } = tx
 
   const addressTriggers = await fetchTriggersForAddress(address)
   await Promise.all(addressTriggers.map(async (trigger) => {
-    
     const postDataParameters: PostDataParameters = {
       amount,
       currency,
-      txId,
+      txId: hash,
       buttonName: trigger.paybutton.name,
       address,
       timestamp,
-      opReturn
+      paymentId: paymentId ?? '',
+      message,
+      opReturn: opReturn ?? EMPTY_OP_RETURN
     }
     const hmac = await hashPostData(trigger.paybutton.providerUserId, postDataParameters)
     await postDataForTrigger(trigger, {
@@ -217,6 +218,8 @@ export interface PostDataParameters {
   txId: string
   buttonName: string
   address: string
+  paymentId: string
+  message: string
   opReturn: OpReturnData
 }
 
@@ -227,8 +230,10 @@ export interface PostDataParametersHashed {
   txId: string
   buttonName: string
   address: string
-  opReturn: OpReturnData
+  paymentId: string
+  message: string
   hmac: string
+  opReturn: OpReturnData
 }
 
 async function hashPostData (userId: string, { amount, currency, address, timestamp, txId }: PostDataParameters): Promise<string> {
