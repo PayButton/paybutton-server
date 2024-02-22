@@ -271,14 +271,14 @@ export class ChronikBlockchainClient implements BlockchainClient {
         [...confirmedTransactions, ...unconfirmedTransactions].map(async tx => await this.getTransactionFromChronikTransaction(tx, address))
       )
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
-      const mappedTransactions = await getSimplifiedTransactions(persistedTransactions)
+      const simplifiedTransactions = await getSimplifiedTransactions(persistedTransactions)
 
-      console.log(`added ${mappedTransactions.length} txs to ${addressString}`)
+      console.log(`added ${simplifiedTransactions.length} txs to ${addressString}`)
 
       const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
       broadcastTxData.messageType = 'OldTx'
       broadcastTxData.address = addressString
-      broadcastTxData.txs = mappedTransactions
+      broadcastTxData.txs = simplifiedTransactions
 
       this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
 
