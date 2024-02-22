@@ -378,7 +378,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
           }
           if (created) { // only execute trigger for unconfirmed tx arriving
             try {
-              await executeAddressTriggers(broadcastTxData)
+              await executeAddressTriggers(broadcastTxData, tx.address.networkId)
             } catch (err: any) {
               console.error(RESPONSE_MESSAGES.COULD_NOT_EXECUTE_TRIGGER_500.message, err.stack)
             }

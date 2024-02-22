@@ -11,7 +11,7 @@ export interface BroadcastTxData {
 export interface SimplifiedTransaction {
   hash: string
   amount: Prisma.Decimal
-  paymentId?: string
+  paymentId: string
   confirmed?: boolean
   message: string
   timestamp: number
