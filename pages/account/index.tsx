@@ -95,13 +95,13 @@ export default function Account ({ user, userPublicKey }: IProps): React.ReactEl
         </div>
         {publicKeyInfo && (
             <div className={style.public_key_info_ctn}>
-              !! WIP !!
               This can be used to verify the authenticity of a message received from a paybutton trigger.
               <br/>
               <br/>
-              To verify, check variable &lt;signature&gt;, it should contain two keys:
+              To verify, check variable &lt;signature&gt; variable. It should contain two keys:
+
               <br/>
-              - payload: The transaction data variables present in the POST request concatenated using the plus (+) symbol as a separator
+              - payload: The transaction data variables present in the POST request concatenated using the plus (+) symbol as a separator.
               <br/>
               - signature: The signature of the payload.
               <br/>
