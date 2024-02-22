@@ -292,10 +292,10 @@ export class GrpcBlockchainClient implements BlockchainClient {
         const { tx } = await createTransaction(addressWithTransaction.transaction)
 
         if (tx !== undefined) {
-          const newTransaction = getSimplifiedTrasaction(tx)
+          const simplifiedTransaction = getSimplifiedTrasaction(tx)
           broadcastTxData.address = addressWithTransaction.address.address
           broadcastTxData.messageType = 'NewTx'
-          broadcastTxData.txs = [newTransaction]
+          broadcastTxData.txs = [simplifiedTransaction]
           // TODO: implement triggers
         }
         return tx
