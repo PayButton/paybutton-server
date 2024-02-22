@@ -47,7 +47,7 @@ describe('getNullDataScriptData tests', () => {
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
       paymentId: '',
-      data: 'PQRSTUVW'
+      message: 'PQRSTUVW'
     })
   })
   it('Array data', async () => {
@@ -55,7 +55,7 @@ describe('getNullDataScriptData tests', () => {
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
       paymentId: '',
-      data: ['item1', 'item2']
+      message: ['item1', 'item2']
     })
   })
   it('Dict data', async () => {
@@ -63,7 +63,7 @@ describe('getNullDataScriptData tests', () => {
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
       paymentId: '',
-      data: {
+      message: {
         key: 'value',
         some: 'other'
       }
@@ -74,7 +74,7 @@ describe('getNullDataScriptData tests', () => {
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
       paymentId: '',
-      data: {
+      message: {
         key: 'value',
         some: ['value1', 'value2']
       }
@@ -88,7 +88,7 @@ describe('getNullDataScriptData tests', () => {
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
       paymentId: '',
-      data: '😂👍©ĸðМжЪы% ŋæPßđĸł„»“æ}¹↓£³→²'
+      message: '😂👍©ĸðМжЪы% ŋæPßđĸł„»“æ}¹↓£³→²'
     })
   })
   it('Non-ASCII data with paymentId', async () => {
@@ -99,7 +99,7 @@ describe('getNullDataScriptData tests', () => {
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
       paymentId: 'ab192bcafd745acd',
-      data: '😂👍©ĸðМжЪы% ŋæPßđĸł„»“æ}¹↓£³→²'
+      message: '😂👍©ĸðМжЪы% ŋæPßđĸł„»“æ}¹↓£³→²'
     })
   })
   it('String data with paymentId', async () => {
@@ -107,7 +107,7 @@ describe('getNullDataScriptData tests', () => {
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
       paymentId: '010203',
-      data: 'PQRSTUVW'
+      message: 'PQRSTUVW'
     })
   })
   it('String data with explicitly empty paymentId', async () => {
@@ -115,7 +115,7 @@ describe('getNullDataScriptData tests', () => {
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
       paymentId: '',
-      data: 'PQRSTUVW'
+      message: 'PQRSTUVW'
     })
   })
   it('Ignore incomplete paymentId', async () => {
@@ -123,7 +123,7 @@ describe('getNullDataScriptData tests', () => {
     const data = getNullDataScriptData(script)
     expect(data).toStrictEqual({
       paymentId: '',
-      data: 'PQRSTUVW'
+      message: 'PQRSTUVW'
     })
   })
 })
