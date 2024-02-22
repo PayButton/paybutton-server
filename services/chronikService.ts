@@ -271,7 +271,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         [...confirmedTransactions, ...unconfirmedTransactions].map(async tx => await this.getTransactionFromChronikTransaction(tx, address))
       )
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
-      const simplifiedTransactions = await getSimplifiedTransactions(persistedTransactions)
+      const simplifiedTransactions = getSimplifiedTransactions(persistedTransactions)
 
       console.log(`added ${simplifiedTransactions.length} txs to ${addressString}`)
 
