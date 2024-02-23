@@ -230,8 +230,6 @@ export function parseTriggerPostData (postData: string, postDataParametersHashed
       buttonName: '',
       address: '',
       timestamp: 0,
-      paymentId: '',
-      message: '',
       opReturn: EMPTY_OP_RETURN,
       hmac: ''
     }

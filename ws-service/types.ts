@@ -1,5 +1,4 @@
-import { Address, Prisma } from '@prisma/client'
-import { OpReturnData } from 'utils/validators'
+import { Prisma } from '@prisma/client'
 
 type TxBroadcastType = 'NewTx' | 'OldTx'
 
@@ -12,10 +11,9 @@ export interface BroadcastTxData {
 export interface SimplifiedTransaction {
   hash: string
   amount: Prisma.Decimal
-  paymentId?: string
+  paymentId: string
   confirmed?: boolean
   message: string
-  opReturn?: OpReturnData
   timestamp: number
-  address: Address
+  address: string
 }

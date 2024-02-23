@@ -57,12 +57,11 @@ export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices): S
   const simplifiedTransaction: SimplifiedTransaction = {
     hash,
     amount,
-    paymentId: parsedOpReturn?.paymentId,
+    paymentId: parsedOpReturn?.paymentId ?? '',
     confirmed,
-    address,
+    address: address.address,
     timestamp,
-    message: parsedOpReturn?.message ?? '',
-    opReturn: parsedOpReturn ?? undefined
+    message: parsedOpReturn?.message ?? ''
   }
 
   return simplifiedTransaction
