@@ -2,6 +2,7 @@ import * as v from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { Prisma } from '@prisma/client'
 import { exampleAddresses } from 'tests/utils'
+import { PostDataParameters } from 'services/triggerService'
 
 describe('parseAddress', () => {
   it('Accept example addresses without prefix', () => {
@@ -392,5 +393,99 @@ describe('parseOpReturn', () => {
     const opReturnData = ''
     const result = v.parseOpReturnData(opReturnData)
     expect(result).toStrictEqual('')
+  })
+})
+
+describe('Signature payload', () => {
+  const params: PostDataParameters = {
+    amount: new Prisma.Decimal(12),
+    currency: 'XEC',
+    timestamp: 123456789,
+    txId: 'mocked-txid',
+    buttonName: 'Button Name',
+    address: 'ecash:mockedhexaddr',
+    opReturn: {
+      message: 'my custom opReturn data',
+      paymentId: '123paymentId'
+    }
+  }
+  it('Gets payload for single variable', () => {
+    const postData = '{"myVar": 3, "amount": <amount>}'
+    const result = v.exportedForTesting.getSignaturePayload(postData, params)
+    expect(result).toEqual('12')
+  })
+  it('Gets payload for two variables', () => {
+    const postData = '{"myVar": 3, "amount": <amount>, "ts": <timestamp>}'
+    const result = v.exportedForTesting.getSignaturePayload(postData, params)
+    expect(result).toEqual('12+123456789')
+  })
+  it('Gets payload for three variables', () => {
+    const postData = '{"id": <txId>, "myVar": 3, "amount": <amount>, "ts": <timestamp>}'
+    const result = v.exportedForTesting.getSignaturePayload(postData, params)
+    expect(result).toEqual('12+123456789+mocked-txid')
+  })
+  it('Gets payload for four variables', () => {
+    const postData = '{"id": <txId>, "myVar": 3, "OP_RETURN": <opReturn>, "amount": <amount>, "ts": <timestamp>}'
+    const result = v.exportedForTesting.getSignaturePayload(postData, params)
+    expect(result).toEqual('12+my custom opReturn data+123paymentId+123456789+mocked-txid')
+  })
+  it('Gets payload for five variables', () => {
+    const postData = '{"id": <txId>, "myVar": 3, "OP_RETURN": <opReturn>, "name": <buttonName>, "amount": <amount>, "ts": <timestamp>}'
+    const result = v.exportedForTesting.getSignaturePayload(postData, params)
+    expect(result).toEqual('12+Button Name+my custom opReturn data+123paymentId+123456789+mocked-txid')
+  })
+  it('Gets payload for six variables', () => {
+    const postData = '{"id": <txId>, "coin": <currency>, "myVar": 3, "OP_RETURN": <opReturn>, "name": <buttonName>, "amount": <amount>, "ts": <timestamp>}'
+    const result = v.exportedForTesting.getSignaturePayload(postData, params)
+    expect(result).toEqual('12+Button Name+XEC+my custom opReturn data+123paymentId+123456789+mocked-txid')
+  })
+  it('Gets payload for six variables with empty opReturn', () => {
+    const params: PostDataParameters = {
+      amount: new Prisma.Decimal(12),
+      currency: 'XEC',
+      timestamp: 123456789,
+      txId: 'mocked-txid',
+      buttonName: 'Button Name',
+      address: 'ecash:mockedhexaddr',
+      opReturn: {
+        message: '',
+        paymentId: ''
+      }
+    }
+    const postData = '{"id": <txId>, "coin": <currency>, "myVar": 3, "OP_RETURN": <opReturn>, "name": <buttonName>, "amount": <amount>, "ts": <timestamp>}'
+    const result = v.exportedForTesting.getSignaturePayload(postData, params)
+    expect(result).toEqual('12+Button Name+XEC+++123456789+mocked-txid')
+  })
+  it('Gets payload for all seven variables', () => {
+    const postData = '{"id": <txId>, "coin": <currency>, "myVar": 3, "OP_RETURN": <opReturn>, "to": <address>, "name": <buttonName>, "amount": <amount>, "ts": <timestamp>}'
+    const result = v.exportedForTesting.getSignaturePayload(postData, params)
+    expect(result).toEqual('ecash:mockedhexaddr+12+Button Name+XEC+my custom opReturn data+123paymentId+123456789+mocked-txid')
+  })
+})
+
+describe('Sign post data', () => {
+  const params: PostDataParameters = {
+    amount: new Prisma.Decimal(12),
+    currency: 'XEC',
+    timestamp: 123456789,
+    txId: 'mocked-txid',
+    buttonName: 'Button Name',
+    address: 'ecash:mockedhexaddr',
+    opReturn: {
+      message: 'my custom opReturn data',
+      paymentId: '123paymentId'
+    }
+  }
+  it('Sign full payload', () => {
+    const postData = '{"id": <txId>, "coin": <currency>, "myVar": 3, "OP_RETURN": <opReturn>, "to": <address>, "name": <buttonName>, "amount": <amount>, "ts": <timestamp>}'
+    const result = v.signPostData({
+      userId: 'test-uid',
+      postData,
+      postDataParameters: params
+    })
+    expect(result).toStrictEqual({
+      signature: '23459a7946ecec218cbc9417d5e9b7614db94602bff650aa22be0ee056347cfd62669105487e893c4148f6b7eedee89d521ddb56611b36728e50d074d832fb04',
+      payload: 'ecash:mockedhexaddr+12+Button Name+XEC+my custom opReturn data+123paymentId+123456789+mocked-txid'
+    })
   })
 })
