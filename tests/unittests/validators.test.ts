@@ -405,7 +405,7 @@ describe('Signature payload', () => {
     buttonName: 'Button Name',
     address: 'ecash:mockedhexaddr',
     opReturn: {
-      data: 'my custom opReturn data',
+      message: 'my custom opReturn data',
       paymentId: '123paymentId'
     }
   }
@@ -448,7 +448,7 @@ describe('Signature payload', () => {
       buttonName: 'Button Name',
       address: 'ecash:mockedhexaddr',
       opReturn: {
-        data: '',
+        message: '',
         paymentId: ''
       }
     }
@@ -472,7 +472,7 @@ describe('Sign post data', () => {
     buttonName: 'Button Name',
     address: 'ecash:mockedhexaddr',
     opReturn: {
-      data: 'my custom opReturn data',
+      message: 'my custom opReturn data',
       paymentId: '123paymentId'
     }
   }

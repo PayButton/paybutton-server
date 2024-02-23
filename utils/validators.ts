@@ -237,7 +237,7 @@ function getSignaturePayload (postData: string, postDataParameters: PostDataPara
     let valueString = ''
     if (key === 'opReturn') {
       const value = postDataParameters[key]
-      valueString = `${value.data}+${value.paymentId}`
+      valueString = `${value.message}+${value.paymentId}`
     } else {
       valueString = postDataParameters[key] as string
     }
