@@ -4,7 +4,7 @@ export interface ResponseMessage {
   statusCode: number
   message: string
 }
-export const TX_PAGE_SIZE_LIMIT = 200
+export const TX_PAGE_SIZE_LIMIT = 2000
 export const RESPONSE_MESSAGES = {
   SUCCESSFULLY_SYNCED_200: { statusCode: 200, message: 'Successfully synced.' },
   STARTED_SYNC_200: { statusCode: 200, message: 'Sync started.' },
