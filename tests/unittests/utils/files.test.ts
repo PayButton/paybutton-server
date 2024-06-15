@@ -16,13 +16,13 @@ describe("valuesToCsvLine", () => {
         const headers = ["header1", "header2", "header3"];
         const result = valuesToCsvLine(headers, ",");
 
-        expect(result).toBe("header1,header2,header3");
+        expect(result).toBe("header1,header2,header3"+"\n");
     });
     it("should join headers with \t delimiter", () => {
         const headers = ["header1", "header2", "header3"];
         const result = valuesToCsvLine(headers, "\t");
 
-        expect(result).toBe("header1\theader2\theader3");
+        expect(result).toBe("header1\theader2\theader3"+"\n");
     });
 });
 
