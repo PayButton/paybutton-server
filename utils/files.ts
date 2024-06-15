@@ -3,14 +3,14 @@ import { NextApiResponse } from "next";
 import { Transform } from "stream";
 
 export function valuesToCsvLine(values: string[], delimiter: string): string {
-    return values.join(delimiter);
+    return values.join(delimiter) + '\n';
 }
 interface DataObject {
     [key: string]: any;
 }
 
-export function getDataFromValues(data: DataObject, headers: string[]): Partial<DataObject> {
-    const result: Partial<DataObject> = {};
+export function getDataFromValues(data: DataObject, headers: string[]): DataObject {
+    const result: DataObject = {};
     headers.forEach(header => {
         result[header] = data[header];
     });
@@ -21,7 +21,7 @@ export function getDataFromValues(data: DataObject, headers: string[]): Partial<
 export const getTransform = (headers: string[], delimiter: string) => new Transform({
     objectMode: true,
     transform(chunk: any, encoding: BufferEncoding, callback: () => void) {
-        const csvLine = valuesToCsvLine(headers.map(header => chunk[header]), delimiter) + '\n';
+        const csvLine = valuesToCsvLine(headers.map(header => chunk[header]), delimiter);
         this.push(csvLine);
         callback();
     },
@@ -33,7 +33,7 @@ export function streamToCSV(values: object[], headers: string[], delimiter: stri
     const transform = getTransform(headers, delimiter);
 
     try {
-        res.write(csvLineHeaders + '\n');
+        res.write(csvLineHeaders);
         values.slice(0, maxRecords).forEach((data: object) => {
             const formattedData = getDataFromValues(data, headers);
             transform.write(formattedData);
