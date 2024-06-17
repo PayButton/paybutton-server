@@ -5,12 +5,9 @@ import { Transform } from "stream";
 export function valuesToCsvLine(values: string[], delimiter: string): string {
     return values.join(delimiter) + '\n';
 }
-interface DataObject {
-    [key: string]: any;
-}
 
-export function getDataFromValues(data: DataObject, headers: string[]): DataObject {
-    const result: DataObject = {};
+export function getDataFromValues(data: Record<string, any>, headers: string[]):  Record<string, any> {
+    const result: Record<string, any> = {};
     headers.forEach(header => {
         result[header] = data[header];
     });
