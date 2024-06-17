@@ -5,7 +5,7 @@ import {
   UnspentOutput
 } from 'grpc-bchrpc-node'
 
-import { Prisma, Price, UserProfile } from '@prisma/client'
+import { Prisma, Price, UserProfile, AddressesOnButtons } from '@prisma/client'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import { USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, NETWORK_SLUGS } from 'constants/index'
@@ -683,3 +683,25 @@ export const mockedUserProfileWithPublicKey: UserProfile = {
   isAdmin: false,
   lastSentVerificationEmailAt: null
 }
+
+export const mockedAddressesOnButtons: AddressesOnButtons[] = [
+  {
+    paybuttonId: '3f3c4415-2ccc-11ef-b540-0242ac120002',
+    addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
+    createdAt: new Date('2024-06-17T17:16:07.549Z'),
+    updatedAt: new Date('2024-06-17T17:16:07.549Z')
+  },
+  {
+    paybuttonId: '3f3c4415-2ccc-11ef-b540-0242ac120002',
+    addressId: '48ea75c9-2ccd-11ef-b540-0242ac120002',
+    createdAt: new Date('2024-06-17T17:16:07.549Z'),
+    updatedAt: new Date('2024-06-17T17:16:07.549Z')
+  }
+]
+
+export const mockedAddressIdList = [
+  '0a03a880-86fe-4d82-9aa2-8df270cf032d',
+  'a37b9a8c-d262-468b-b1dd-571434a16308',
+  '1ca6b7f5-6930-42a7-8ea4-8de57de03251',
+  '4f68e74f-de19-467a-b195-139d98217ada',
+]

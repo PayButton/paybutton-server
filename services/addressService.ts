@@ -307,3 +307,11 @@ export async function fetchAddressWithTxsAndPrices (addressString: string): Prom
   }
   return result
 }
+
+export async function fetchAddressesByPaybuttonId(paybuttonId: string): Promise<string[]> {
+  return await prisma.addressesOnButtons.findMany({
+    where: {
+      paybuttonId: paybuttonId
+    },
+  }).then(results => results.map(result => result.addressId))
+}
