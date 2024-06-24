@@ -309,9 +309,16 @@ export async function fetchAddressWithTxsAndPrices (addressString: string): Prom
 }
 
 export async function fetchAddressesByPaybuttonId(paybuttonId: string): Promise<string[]> {
-  return await prisma.addressesOnButtons.findMany({
+  const addresses  = await prisma.addressesOnButtons.findMany({
     where: {
       paybuttonId: paybuttonId
     },
-  }).then(results => results.map(result => result.addressId))
+  })
+  const addressesIds = addresses.map(result => result.addressId)
+
+  if (addressesIds.length === 0) {
+    throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
+  }
+
+  return addressesIds
 }
