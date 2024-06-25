@@ -122,6 +122,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     this.availableNetworks = [NETWORK_SLUGS.ecash]
     this.subscribedAddresses = {}
     this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
+    void this.chronikWSEndpoint.waitForOpen()
     this.chronikWSEndpoint.subscribeToBlocks()
     this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
     this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
