@@ -2,7 +2,7 @@ import prisma from 'prisma/clientInstance'
 import { Prisma } from '@prisma/client'
 import * as addressService from 'services/addressService'
 import { prismaMock } from 'prisma/mockedClient'
-import { mockedBCHAddress, mockedNetwork, mockedTransactionList } from '../mockedObjects'
+import { mockedBCHAddress, mockedNetwork, mockedTransactionList, mockedAddressesOnButtons, mockedAddressIdList } from '../mockedObjects'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 describe('Find by substring', () => {
@@ -34,6 +34,16 @@ describe('Find by substring', () => {
     const result = await addressService.generateAddressPaymentInfo('mock')
     expect(result).toHaveProperty('balance', new Prisma.Decimal('6.01247724'))
     expect(result).toHaveProperty('paymentCount', 3)
+  })
+  it('Get addresses by paybuttonId', async () => {
+    prismaMock.addressesOnButtons.findMany.mockResolvedValue(mockedAddressesOnButtons)
+    prisma.addressesOnButtons.findMany = prismaMock.addressesOnButtons.findMany
+    jest.spyOn(addressService, 'fetchAddressesByPaybuttonId').mockImplementation(async (_: string) => {
+      return mockedAddressIdList
+    })
+    const result = await addressService.fetchAddressesByPaybuttonId('mock')
+    expect(result).toHaveLength(mockedAddressIdList.length)
+    expect(result[0]).toEqual(mockedAddressIdList[0])
   })
 })
 
