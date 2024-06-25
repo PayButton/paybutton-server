@@ -1,6 +1,6 @@
 git_hook_setup = cp .githooks/pre-commit .git/hooks/pre-commit
 git_diff_to_master = git diff --name-only --diff-filter=ACMRTUXB origin/master > DIFF
-create_test_paybutton_json = echo { \"priceAPIURL\": \"foo\", \"networkBlockchainClients\": { \"ecash\": \"chronik\", \"bitcoincash\": \"grpc\" }, \"chronikClientURL\": \"https://chronik.be.cash/xec\", \"wsBaseURL\": \"localhost:5000\" } > paybutton-config.json
+create_test_paybutton_json = echo { \"priceAPIURL\": \"foo\", \"networkBlockchainClients\": { \"ecash\": \"chronik\", \"bitcoincash\": \"grpc\" }, \"chronikClientURL\": \"https://xec.paybutton.io\", \"wsBaseURL\": \"localhost:5000\" } > paybutton-config.json
 touch_local_env = touch .env.local
 
 prod:
