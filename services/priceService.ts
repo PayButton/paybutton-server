@@ -242,7 +242,7 @@ export async function fetchPricesForNetworkAndTimestamp (networkId: number, time
     if (attempt < PRICE_API_MAX_RETRIES) {
       return await fetchPricesForNetworkAndTimestamp(networkId, timestamp, prisma, attempt + 1)
     }
-    throw new Error(RESPONSE_MESSAGES.NO_PRICES_FOUND_404.message)
+    throw new Error(RESPONSE_MESSAGES.NO_PRICES_FOUND_404(networkId, timestamp).message)
   }
   return {
     cad: cadPrice,
