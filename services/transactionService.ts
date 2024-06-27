@@ -478,8 +478,8 @@ export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transa
 }
 
 export async function fetchTransactionsByPaybuttonId(paybuttonId: string): Promise<Transaction[]>{
-  const addressesList = await fetchAddressesByPaybuttonId(paybuttonId);
-  const transactions = await fetchAddressListTransactions(addressesList)
+  const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId);
+  const transactions = await fetchAddressListTransactions(addressIdList)
   
   if(transactions.length === 0){
     throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
