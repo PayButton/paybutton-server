@@ -1,3 +1,4 @@
+import { RESPONSE_MESSAGES } from 'constants/index';
 import { NextApiRequest, NextApiResponse } from 'next'
 import { fetchTransactionsByPaybuttonId } from 'services/transactionService'
 
@@ -11,9 +12,15 @@ export default async ( req: NextApiRequest, res: NextApiResponse): Promise<void>
         .status(200)
         .json({ transactions });
     } catch (err: any) {
-      res
-        .status(500)
-        .json({ statusCode: 500, message: err.message })
+      if (err.message === RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message){
+        res
+        .status(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.statusCode)
+        .json(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404)
+      }else{
+        res
+          .status(500)
+          .json({ statusCode: 500, message: err.message })
+      }
     }
   } else {
     res
