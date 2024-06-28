@@ -43,6 +43,7 @@ export const RESPONSE_MESSAGES = {
   INVALID_RESOURCE_UPDATE_400: { statusCode: 400, message: 'Invalid attempt of updating resource.' },
   MISSING_PRICE_API_URL_400: { statusCode: 400, message: 'Missing PRICE_API_URL environment variable.' },
   MISSING_PRICE_API_TOKEN_400: { statusCode: 400, message: 'Missing PRICE_API_TOKEN environment variable.' },
+  FAILED_TO_FETCH_PRICE_FROM_API_500: (day: string, ticker: string) => { return { statusCode: 500, message: `Failed to fetch ${ticker} price for day ${day}` } },
   MISSING_WS_AUTH_KEY_400: { statusCode: 400, message: 'Missing WS_AUTH_KEY environment variable' },
   MISSING_PRICE_FOR_TRANSACTION_400: { statusCode: 400, message: 'Missing price for transaction.' },
   INVALID_PRICE_STATE_400: { statusCode: 400, message: 'Missing expected quote price for transaction.' },
