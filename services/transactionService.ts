@@ -1,7 +1,7 @@
 import prisma from 'prisma/clientInstance'
 import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
-import { fetchAddressBySubstring, fetchAddressById } from 'services/addressService'
+import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
@@ -475,4 +475,15 @@ export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transa
     }
   })
   return txs.filter(t => t.prices.length !== 2)
+}
+
+export async function fetchTransactionsByPaybuttonId(paybuttonId: string): Promise<Transaction[]>{
+  const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId);
+  const transactions = await fetchAddressListTransactions(addressIdList)
+  
+  if(transactions.length === 0){
+    throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
+  }
+  
+  return transactions;
 }
