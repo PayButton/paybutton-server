@@ -25,6 +25,6 @@ export default async ( req: NextApiRequest, res: NextApiResponse): Promise<void>
   } else {
     res
       .status(405)
-      .json({ statusCode: 405, message: 'Method not allowed' })
+      .json(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED)
   }
 }
