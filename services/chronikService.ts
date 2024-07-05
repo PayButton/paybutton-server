@@ -2,7 +2,7 @@ import { BlockInfo_InNode, ChronikClientNode, ScriptType_InNode, ScriptUtxo_InNo
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, NodeJsGlobalChronik, TransactionDetails } from './blockchainService'
-import { NETWORK_SLUGS, CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT } from 'constants/index'
+import { NETWORK_SLUGS, CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, SOCKET_MESSAGES } from 'constants/index'
 import {
   TransactionWithAddressAndPrices,
   createManyTransactions,
@@ -282,7 +282,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       broadcastTxData.address = addressString
       broadcastTxData.txs = simplifiedTransactions
 
-      this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
+      this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
 
       yield persistedTransactions
 
@@ -375,7 +375,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
             const newSimplifiedTransaction = getSimplifiedTrasaction(tx)
             broadcastTxData.txs = [newSimplifiedTransaction]
             try { // emit broadcast for both unconfirmed and confirmed txs
-              this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
+              this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
             } catch (err: any) {
               console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
             }

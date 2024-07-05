@@ -3,7 +3,7 @@ import cors from 'cors'
 import { BroadcastTxData } from './types'
 import { createServer } from 'http'
 import { Server, Socket } from 'socket.io'
-import { RESPONSE_MESSAGES } from '../constants/index'
+import { RESPONSE_MESSAGES, SOCKET_MESSAGES } from '../constants/index'
 
 // Configure server
 const app = express()
@@ -56,7 +56,7 @@ const broadcastTxs = async (broadcastTxData: BroadcastTxData): Promise<void> => 
 
     addressesNs
       .to(address)
-      .emit('incoming-txs', broadcastTxData)
+      .emit(SOCKET_MESSAGES.INCOMING_TXS, broadcastTxData)
   } catch (err: any) {
     console.error('Error stack:', err.stack)
   }
@@ -70,7 +70,7 @@ const broadcastRouteConnection = (socket: Socket): void => {
     socket.disconnect(true)
     return
   }
-  void socket.on('txs-broadcast', broadcastTxs)
+  void socket.on(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxs)
 }
 
 addressesNs.on('connection', addressRouteConnection)

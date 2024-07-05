@@ -82,6 +82,16 @@ export const RESPONSE_MESSAGES = {
   FAILED_TO_PARSE_TX_OP_RETURN_500: { statusCode: 500, message: 'Failed to parse OP_RETURN data in Tx.' }
 }
 
+export const SOCKET_MESSAGES = {
+  INCOMING_TXS: 'incoming-txs',
+  TXS_BROADCAST: 'txs-broadcast',
+  GET_SIDESHIFT_RATE: 'get-sideshift-rate',
+  SEND_SIDESHIFT_RATE: 'send-sideshift-rate',
+  SEND_SIDESHIFT_COINS_INFO: 'send-sideshift-coins-info',
+  CREATE_SIDESHIFT_QUOTE: 'create-sideshift-quote',
+  SEND_SIDESHIFT_QUOTE_INFO: 'send-sideshift-quote-info'
+}
+
 export type KeyValueT<T> = Record<string, T>
 
 export const NETWORK_SLUGS: KeyValueT<string> = {
