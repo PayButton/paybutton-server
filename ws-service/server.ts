@@ -1,6 +1,6 @@
 import express from 'express'
 import cors from 'cors'
-import { BroadcastTxData } from './types'
+import { BroadcastTxData, CreateQuoteData, GetPairRateData, SideShiftCoin, SideshiftPair } from './types'
 import { createServer } from 'http'
 import { Server, Socket } from 'socket.io'
 import { RESPONSE_MESSAGES, SOCKET_MESSAGES } from '../constants/index'
@@ -73,8 +73,45 @@ const broadcastRouteConnection = (socket: Socket): void => {
   void socket.on(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxs)
 }
 
+const BASE_SIDESHIFT_URL = 'https://sideshift.ai/api/v2/' // WIP
+
+const sendSideshiftPairRate = async (getPairRateData: GetPairRateData): Promise<SideshiftPair> => {
+  const res = await fetch(BASE_SIDESHIFT_URL + `pair/${getPairRateData.from}/${getPairRateData.to}`)
+  const data = await res.json()
+  return data as SideshiftPair
+}
+
+const createSideshiftQuote = async (createQuoteData: CreateQuoteData): Promise<void> => {
+  console.log('create quote!')
+  void sendSideshiftQuoteInfo(createQuoteData)
+}
+
+const sendSideshiftQuoteInfo = async (createQuoteData: CreateQuoteData): Promise<void> => {
+  console.log('send quote!', createQuoteData)
+}
+
+const sendSideshiftCoinsInfo = async (): Promise<SideShiftCoin[]> => {
+  const res = await fetch(BASE_SIDESHIFT_URL + 'coins')
+  const data = await res.json()
+
+  const coins = data as SideShiftCoin[]
+  coins.sort((a, b) => a.name < b.name ? -1 : 1)
+  return coins
+}
+
+const sideshiftNs = io.of('/sideshift')
+const sideshiftRouteConnection = async (socket: Socket): Promise<void> => {
+  const uuid: string = socket.handshake.query.uuid as string
+  void socket.join(uuid)
+  const coins = await sendSideshiftCoinsInfo()
+  void sideshiftNs.to(uuid).emit(SOCKET_MESSAGES.SEND_SIDESHIFT_COINS_INFO, coins)
+  void socket.on(SOCKET_MESSAGES.GET_SIDESHIFT_RATE, sendSideshiftPairRate)
+  void socket.on(SOCKET_MESSAGES.CREATE_SIDESHIFT_QUOTE, createSideshiftQuote)
+}
+
 addressesNs.on('connection', addressRouteConnection)
 broadcastNs.on('connection', broadcastRouteConnection)
+sideshiftNs.on('connection', sideshiftRouteConnection)
 httpServer.listen(5000, () => {
   console.log('WS service listening')
 })
