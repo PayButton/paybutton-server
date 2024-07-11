@@ -18,11 +18,47 @@ export interface SimplifiedTransaction {
   address: string
 }
 
-export interface CreateQuoteData {
-  settleAmount: string
+export interface CreateQuoteAndShiftData {
+  depositAmount: string
   settleCoin: string
   depositCoin: string
   depositNetwork: string
+  settleAddress: string
+}
+
+export interface SideshiftShift {
+  id: string
+  createdAt: string
+  depositCoin: string
+  settleCoin: string
+  depositNetwork: string
+  settleNetwork: string
+  depositAddress: string
+  settleAddress: string
+  depositMin: string
+  depositMax: string
+  averageShiftSeconds: string
+  depositAmount: string
+  expiresAt: string
+  quoteId: string
+  rate: string
+  settleAmount: string
+  status: string
+  type: string
+}
+
+export interface SideshiftQuote {
+  id: string
+  createdAt: string
+  depositCoin: string
+  settleCoin: string
+  depositNetwork: string
+  settleNetwork: string
+  expiresAt: string
+  depositAmount: string
+  settleAmount: string
+  rate: string
+  affiliateId: string
 }
 
 interface TokenDetails {

@@ -89,7 +89,7 @@ export const SOCKET_MESSAGES = {
   SEND_SIDESHIFT_RATE: 'send-sideshift-rate',
   SEND_SIDESHIFT_COINS_INFO: 'send-sideshift-coins-info',
   CREATE_SIDESHIFT_QUOTE: 'create-sideshift-quote',
-  SEND_SIDESHIFT_QUOTE_INFO: 'send-sideshift-quote-info'
+  SHIFT_CREATED: 'shift-created'
 }
 
 export type KeyValueT<T> = Record<string, T>
@@ -166,8 +166,6 @@ export const NETWORK_BLOCKCHAIN_CLIENTS: KeyValueT<BLOCKCHAIN_CLIENT_OPTIONS> = 
   bitcoincash: 'grpc'
 }
 
-export const CHRONIK_CLIENT_URL = 'https://chronik.be.cash/xec'
-
 export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 45000
 export const DEFAULT_TX_PAGE_SIZE = 100
 
@@ -204,3 +202,5 @@ export const TRIGGER_POST_VARIABLES = [
   '<timestamp>',
   '<txId>'
 ]
+
+export const BASE_SIDESHIFT_URL = 'https://sideshift.ai/api/v2/'
