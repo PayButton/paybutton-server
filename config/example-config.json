@@ -7,7 +7,7 @@
   "showTestNetworks": false,
   "grpcBCHNodeURL": "bchd.greyh.at:8335",
   "grpcXECNodeURL": "grpc.fabien.cash:8335",
-  "chronikClientURL": "https://chronik.fabien.cash",
+  "chronikClientURL": "https://xec.paybutton.io",
   "priceAPIURL": "https://coin.dance/api/",
   "redisURL": "redis://paybutton-cache:6379",
   "networkBlockchainClients": {
@@ -17,5 +17,6 @@
   "networksUnderMaintenance": {
     "bitcoincash": true
   },
-  "triggerPOSTTimeout": 3000
+  "triggerPOSTTimeout": 3000,
+  "sideshiftAffiliateId": "JPk84U3xN"
 }
