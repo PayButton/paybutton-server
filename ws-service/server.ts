@@ -80,7 +80,13 @@ const sendSideshiftPairRate = async (getPairRateData: GetPairRateData): Promise<
   return data as SideshiftPair
 }
 
-const createQuote = async (createQuoteData: CreateQuoteAndShiftData): Promise<SideshiftQuote | undefined> => {
+type ErrorType = 'quote-error' | 'shift-error'
+interface SideshiftError {
+  errorType: ErrorType
+  errorMessage: string
+}
+
+const createQuote = async (createQuoteData: CreateQuoteAndShiftData): Promise<SideshiftQuote | SideshiftError> => {
   const requestBody = JSON.stringify({
     ...createQuoteData,
     affiliateId: config.sideshiftAffiliateId
@@ -100,7 +106,10 @@ const createQuote = async (createQuoteData: CreateQuoteAndShiftData): Promise<Si
       createQuoteData,
       responseData: data
     })
-    return
+    return {
+      errorType: 'quote-error',
+      errorMessage: data.error.message
+    }
   }
   const quoteResponse = data as SideshiftQuote
   console.log('created quote', quoteResponse)
@@ -112,7 +121,7 @@ interface CreateShiftData {
   settleAddress: string
 }
 
-const createShift = async (createShiftData: CreateShiftData): Promise<SideshiftShift | undefined> => {
+const createShift = async (createShiftData: CreateShiftData): Promise<SideshiftShift | SideshiftError> => {
   const { quoteId, settleAddress } = createShiftData
   const requestBody = JSON.stringify({
     affiliateId: config.sideshiftAffiliateId,
@@ -134,7 +143,10 @@ const createShift = async (createShiftData: CreateShiftData): Promise<SideshiftS
       createShiftData,
       responseData: data
     })
-    return
+    return {
+      errorType: 'shift-error',
+      errorMessage: data.error.message
+    }
   }
   const shiftResponse = data as SideshiftShift
   console.log('Successfully created shift.', { shiftResponse })
@@ -163,12 +175,20 @@ const sideshiftRouteConnection = async (socket: Socket): Promise<void> => {
   })
   void socket.on(SOCKET_MESSAGES.CREATE_SIDESHIFT_QUOTE, async (createQuoteData: CreateQuoteAndShiftData) => {
     const createdQuote = await createQuote(createQuoteData)
-    if (createdQuote !== undefined) {
+    if ('errorType' in createdQuote) {
+      const quoteError = createdQuote
+      socket.emit(SOCKET_MESSAGES.ERROR_WHEN_CREATING_QUOTE, quoteError)
+    } else {
       const createdShift = await createShift({
         quoteId: createdQuote.id,
         settleAddress: createQuoteData.settleAddress
       })
-      socket.emit(SOCKET_MESSAGES.SHIFT_CREATED, createdShift)
+      if ('errorType' in createdShift) {
+        const shiftError = createdShift
+        socket.emit(SOCKET_MESSAGES.ERROR_WHEN_CREATING_SHIFT, shiftError)
+      } else {
+        socket.emit(SOCKET_MESSAGES.SHIFT_CREATED, createdShift)
+      }
     }
   })
 }

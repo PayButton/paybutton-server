@@ -89,7 +89,9 @@ export const SOCKET_MESSAGES = {
   SEND_SIDESHIFT_RATE: 'send-sideshift-rate',
   SEND_SIDESHIFT_COINS_INFO: 'send-sideshift-coins-info',
   CREATE_SIDESHIFT_QUOTE: 'create-sideshift-quote',
-  SHIFT_CREATED: 'shift-created'
+  SHIFT_CREATED: 'shift-created',
+  ERROR_WHEN_CREATING_QUOTE: 'quote-creation-error',
+  ERROR_WHEN_CREATING_SHIFT: 'shift-creation-error'
 }
 
 export type KeyValueT<T> = Record<string, T>
