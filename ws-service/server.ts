@@ -96,7 +96,10 @@ const createQuote = async (createQuoteData: CreateQuoteAndShiftData): Promise<Si
   })
   const data = await res.json()
   if ('error' in data) {
-    console.error('Error when creating sideshift quote:', data)
+    console.error('Error when creating sideshift quote.', {
+      createQuoteData,
+      responseData: data
+    })
     return
   }
   const quoteResponse = data as SideshiftQuote
@@ -104,14 +107,18 @@ const createQuote = async (createQuoteData: CreateQuoteAndShiftData): Promise<Si
   return quoteResponse
 }
 
-const createShift = async (quoteId: string, settleAddress: string): Promise<SideshiftShift | undefined> => {
-  console.log('sA', settleAddress)
+interface CreateShiftData {
+  quoteId: string
+  settleAddress: string
+}
+
+const createShift = async (createShiftData: CreateShiftData): Promise<SideshiftShift | undefined> => {
+  const { quoteId, settleAddress } = createShiftData
   const requestBody = JSON.stringify({
     affiliateId: config.sideshiftAffiliateId,
     settleAddress,
     quoteId
   })
-  console.log('sstringsijg', requestBody)
 
   const res = await fetch(BASE_SIDESHIFT_URL + 'shifts/fixed', {
     method: 'POST',
@@ -123,11 +130,14 @@ const createShift = async (quoteId: string, settleAddress: string): Promise<Side
   })
   const data = await res.json()
   if ('error' in data) {
-    console.error('Error when creating sideshift shift:', data)
+    console.error('Error when creating sideshift shift.', {
+      createShiftData,
+      responseData: data
+    })
     return
   }
   const shiftResponse = data as SideshiftShift
-  console.log('created shift!', shiftResponse)
+  console.log('Successfully created shift.', { shiftResponse })
   return shiftResponse
 }
 
@@ -149,13 +159,15 @@ const sideshiftRouteConnection = async (socket: Socket): Promise<void> => {
   void socket.emit(SOCKET_MESSAGES.SEND_SIDESHIFT_COINS_INFO, coins)
   void socket.on(SOCKET_MESSAGES.GET_SIDESHIFT_RATE, async (getPairRateData: GetPairRateData) => {
     const pairRate = await sendSideshiftPairRate(getPairRateData)
-    console.log('sending pair rate', pairRate)
     socket.emit(SOCKET_MESSAGES.SEND_SIDESHIFT_RATE, pairRate)
   })
   void socket.on(SOCKET_MESSAGES.CREATE_SIDESHIFT_QUOTE, async (createQuoteData: CreateQuoteAndShiftData) => {
     const createdQuote = await createQuote(createQuoteData)
     if (createdQuote !== undefined) {
-      const createdShift = await createShift(createdQuote.id, createQuoteData.settleAddress)
+      const createdShift = await createShift({
+        quoteId: createdQuote.id,
+        settleAddress: createQuoteData.settleAddress
+      })
       socket.emit(SOCKET_MESSAGES.SHIFT_CREATED, createdShift)
     }
   })
