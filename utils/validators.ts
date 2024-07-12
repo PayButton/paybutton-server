@@ -385,11 +385,13 @@ export function parseStringToArray (str: string): string | string[] {
 }
 
 export interface OpReturnData {
+  rawMessage: string
   message: string
   paymentId: string
 }
 
 export const EMPTY_OP_RETURN: OpReturnData = {
+  rawMessage: '',
   message: '',
   paymentId: ''
 }
