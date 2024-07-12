@@ -79,7 +79,8 @@ export const RESPONSE_MESSAGES = {
   PAGE_SIZE_LIMIT_EXCEEDED_400: { statusCode: 400, message: `Page size limit should be at most ${TX_PAGE_SIZE_LIMIT}.` },
   PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400: { statusCode: 400, message: 'pageSize and page parameters should be valid integers.' },
   INVALID_OUTPUT_SCRIPT_LENGTH_500: (l: number) => { return { statusCode: 500, message: `Invalid outputScript length ${l}` } },
-  FAILED_TO_PARSE_TX_OP_RETURN_500: { statusCode: 500, message: 'Failed to parse OP_RETURN data in Tx.' }
+  FAILED_TO_PARSE_TX_OP_RETURN_500: { statusCode: 500, message: 'Failed to parse OP_RETURN data in Tx.' },
+  METHOD_NOT_ALLOWED: { statusCode: 500, message: 'Method not allowed.' }
 }
 
 export type KeyValueT<T> = Record<string, T>
