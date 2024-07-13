@@ -1,10 +1,11 @@
 import express from 'express'
 import cors from 'cors'
-import { BroadcastTxData, SideshiftQuote, CreateQuoteAndShiftData, GetPairRateData, SideShiftCoin, SideshiftPair, SideshiftShift } from './types'
+import { BroadcastTxData, SideshiftQuoteRes, CreateQuoteAndShiftData, GetPairRateData, SideShiftCoinRes, SideshiftPairRes, SideshiftShiftRes } from './types'
 import { createServer } from 'http'
 import { Server, Socket } from 'socket.io'
 import { BASE_SIDESHIFT_URL, RESPONSE_MESSAGES, SOCKET_MESSAGES } from '../constants/index'
 import config from 'config/index'
+import { createSideshiftShift } from 'services/sideshiftService'
 
 // Configure server
 const app = express()
@@ -74,10 +75,10 @@ const broadcastRouteConnection = (socket: Socket): void => {
   void socket.on(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxs)
 }
 
-const sendSideshiftPairRate = async (getPairRateData: GetPairRateData): Promise<SideshiftPair> => {
+const sendSideshiftPairRate = async (getPairRateData: GetPairRateData): Promise<SideshiftPairRes> => {
   const res = await fetch(BASE_SIDESHIFT_URL + `pair/${getPairRateData.from}/${getPairRateData.to}`)
   const data = await res.json()
-  return data as SideshiftPair
+  return data as SideshiftPairRes
 }
 
 type ErrorType = 'quote-error' | 'shift-error'
@@ -86,7 +87,7 @@ interface SideshiftError {
   errorMessage: string
 }
 
-const createQuote = async (createQuoteData: CreateQuoteAndShiftData): Promise<SideshiftQuote | SideshiftError> => {
+const createQuote = async (createQuoteData: CreateQuoteAndShiftData): Promise<SideshiftQuoteRes | SideshiftError> => {
   const requestBody = JSON.stringify({
     ...createQuoteData,
     affiliateId: config.sideshiftAffiliateId
@@ -111,7 +112,7 @@ const createQuote = async (createQuoteData: CreateQuoteAndShiftData): Promise<Si
       errorMessage: data.error.message
     }
   }
-  const quoteResponse = data as SideshiftQuote
+  const quoteResponse = data as SideshiftQuoteRes
   console.log('created quote', quoteResponse)
   return quoteResponse
 }
@@ -121,7 +122,7 @@ interface CreateShiftData {
   settleAddress: string
 }
 
-const createShift = async (createShiftData: CreateShiftData): Promise<SideshiftShift | SideshiftError> => {
+const createShift = async (createShiftData: CreateShiftData): Promise<SideshiftShiftRes | SideshiftError> => {
   const { quoteId, settleAddress } = createShiftData
   const requestBody = JSON.stringify({
     affiliateId: config.sideshiftAffiliateId,
@@ -148,25 +149,22 @@ const createShift = async (createShiftData: CreateShiftData): Promise<SideshiftS
       errorMessage: data.error.message
     }
   }
-  const shiftResponse = data as SideshiftShift
+  const shiftResponse = data as SideshiftShiftRes
   console.log('Successfully created shift.', { shiftResponse })
   return shiftResponse
 }
 
-const sendSideshiftCoinsInfo = async (): Promise<SideShiftCoin[]> => {
+const sendSideshiftCoinsInfo = async (): Promise<SideShiftCoinRes[]> => {
   const res = await fetch(BASE_SIDESHIFT_URL + 'coins')
   const data = await res.json()
 
-  const coins = data as SideShiftCoin[]
+  const coins = data as SideShiftCoinRes[]
   coins.sort((a, b) => a.name < b.name ? -1 : 1)
   return coins
 }
 
 const sideshiftNs = io.of('/sideshift')
 const sideshiftRouteConnection = async (socket: Socket): Promise<void> => {
-  const uuid: string = socket.handshake.query.uuid as string
-  void socket.join(uuid)
-  // WIP two lines above are useless so far
   const coins = await sendSideshiftCoinsInfo()
   void socket.emit(SOCKET_MESSAGES.SEND_SIDESHIFT_COINS_INFO, coins)
   void socket.on(SOCKET_MESSAGES.GET_SIDESHIFT_RATE, async (getPairRateData: GetPairRateData) => {
@@ -174,20 +172,19 @@ const sideshiftRouteConnection = async (socket: Socket): Promise<void> => {
     socket.emit(SOCKET_MESSAGES.SEND_SIDESHIFT_RATE, pairRate)
   })
   void socket.on(SOCKET_MESSAGES.CREATE_SIDESHIFT_QUOTE, async (createQuoteData: CreateQuoteAndShiftData) => {
-    const createdQuote = await createQuote(createQuoteData)
-    if ('errorType' in createdQuote) {
-      const quoteError = createdQuote
-      socket.emit(SOCKET_MESSAGES.ERROR_WHEN_CREATING_QUOTE, quoteError)
+    const createdQuoteRes = await createQuote(createQuoteData)
+    if ('errorType' in createdQuoteRes) {
+      socket.emit(SOCKET_MESSAGES.ERROR_WHEN_CREATING_QUOTE, createdQuoteRes)
     } else {
-      const createdShift = await createShift({
-        quoteId: createdQuote.id,
+      const createdShiftRes = await createShift({
+        quoteId: createdQuoteRes.id,
         settleAddress: createQuoteData.settleAddress
       })
-      if ('errorType' in createdShift) {
-        const shiftError = createdShift
-        socket.emit(SOCKET_MESSAGES.ERROR_WHEN_CREATING_SHIFT, shiftError)
+      if ('errorType' in createdShiftRes) {
+        socket.emit(SOCKET_MESSAGES.ERROR_WHEN_CREATING_SHIFT, createdShiftRes)
       } else {
-        socket.emit(SOCKET_MESSAGES.SHIFT_CREATED, createdShift)
+        await createSideshiftShift(createdShiftRes)
+        socket.emit(SOCKET_MESSAGES.SHIFT_CREATED, createdShiftRes)
       }
     }
   })

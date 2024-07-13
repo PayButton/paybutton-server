@@ -26,7 +26,7 @@ export interface CreateQuoteAndShiftData {
   settleAddress: string
 }
 
-export interface SideshiftShift {
+export interface SideshiftShiftRes {
   id: string
   createdAt: string
   depositCoin: string
@@ -47,7 +47,7 @@ export interface SideshiftShift {
   type: string
 }
 
-export interface SideshiftQuote {
+export interface SideshiftQuoteRes {
   id: string
   createdAt: string
   depositCoin: string
@@ -68,7 +68,7 @@ interface TokenDetails {
   }
 }
 
-export interface SideShiftCoin {
+export interface SideShiftCoinRes {
   networks: string[]
   coin: string
   name: string
@@ -80,7 +80,7 @@ export interface SideShiftCoin {
   settleOffline?: string[] | boolean
 }
 
-export interface SideshiftPair {
+export interface SideshiftPairRes {
   min: string
   max: string
   rate: string
