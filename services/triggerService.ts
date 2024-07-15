@@ -183,7 +183,8 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
     hash,
     timestamp,
     paymentId,
-    message
+    message,
+    rawMessage
   } = tx
 
   const addressTriggers = await fetchTriggersForAddress(address)
@@ -195,7 +196,11 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
       buttonName: trigger.paybutton.name,
       address,
       timestamp,
-      opReturn: { paymentId, message } ?? EMPTY_OP_RETURN
+      opReturn: { 
+        paymentId, 
+        message, 
+        rawMessage  
+      } ?? EMPTY_OP_RETURN
     }
     await postDataForTrigger(trigger, postDataParameters)
   }))

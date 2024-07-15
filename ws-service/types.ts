@@ -16,4 +16,5 @@ export interface SimplifiedTransaction {
   message: string
   timestamp: number
   address: string
+  rawMessage: string
 }

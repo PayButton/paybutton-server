@@ -406,7 +406,8 @@ describe('Signature payload', () => {
     address: 'ecash:mockedhexaddr',
     opReturn: {
       message: 'my custom opReturn data',
-      paymentId: '123paymentId'
+      paymentId: '123paymentId',
+      rawMessage: 'my custom opReturn data'
     }
   }
   it('Gets payload for single variable', () => {
@@ -449,7 +450,8 @@ describe('Signature payload', () => {
       address: 'ecash:mockedhexaddr',
       opReturn: {
         message: '',
-        paymentId: ''
+        paymentId: '',
+        rawMessage: ''
       }
     }
     const postData = '{"id": <txId>, "coin": <currency>, "myVar": 3, "OP_RETURN": <opReturn>, "name": <buttonName>, "amount": <amount>, "ts": <timestamp>}'
@@ -473,7 +475,8 @@ describe('Sign post data', () => {
     address: 'ecash:mockedhexaddr',
     opReturn: {
       message: 'my custom opReturn data',
-      paymentId: '123paymentId'
+      paymentId: '123paymentId',
+      rawMessage: 'my custom opReturn data'
     }
   }
   it('Sign full payload', () => {

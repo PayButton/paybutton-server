@@ -61,7 +61,8 @@ export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices): S
     confirmed,
     address: address.address,
     timestamp,
-    message: parsedOpReturn?.message ?? ''
+    message: parsedOpReturn?.message ?? '',
+    rawMessage: parsedOpReturn?.rawMessage ?? ''
   }
 
   return simplifiedTransaction
