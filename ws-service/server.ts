@@ -113,7 +113,7 @@ const createQuote = async (createQuoteData: CreateQuoteAndShiftData): Promise<Si
     }
   }
   const quoteResponse = data as SideshiftQuoteRes
-  console.log('created quote', quoteResponse)
+  console.log('Successfully created quote.', { quoteResponse })
   return quoteResponse
 }
 
