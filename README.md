@@ -12,7 +12,7 @@ https://paybutton.org
   + `PRICE_API_TOKEN="<COINDANCE_API_KEY>"`
   + `WS_AUTH_KEY="<RANDOMLY_GENERATED_UUID>"`
   + `MASTER_SECRET_KEY="<RANDOMLY_GENERATED_UUID>"`
-  + `SIDESHIFT_SECRET_KEY="<SIDESHIFT_SECRET_KEY>"` (necessary only for when working with the paybutton client for SideShift integration)
+  + `SIDESHIFT_SECRET_KEY="<SIDESHIFT_SECRET_KEY>"` (necessary only when working with the paybutton client for SideShift integration)
 
 - Run the following make command* to build/pull the relevant docker images and run the server locally:
 

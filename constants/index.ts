@@ -205,4 +205,4 @@ export const TRIGGER_POST_VARIABLES = [
   '<txId>'
 ]
 
-export const BASE_SIDESHIFT_URL = 'https://sideshift.ai/api/v2/'
+export const SIDESHIFT_BASE_URL = 'https://sideshift.ai/api/v2/'

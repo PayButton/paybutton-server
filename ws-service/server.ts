@@ -1,9 +1,9 @@
 import express from 'express'
 import cors from 'cors'
-import { BroadcastTxData, SideshiftQuoteRes, CreateQuoteAndShiftData, GetPairRateData, SideShiftCoinRes, SideshiftPairRes, SideshiftShiftRes } from './types'
+import { BroadcastTxData, SideshiftQuoteRes, CreateQuoteAndShiftData, GetPairRateData, SideShiftCoinRes, SideshiftPairRes, SideshiftShiftRes, SideshiftError } from './types'
 import { createServer } from 'http'
 import { Server, Socket } from 'socket.io'
-import { BASE_SIDESHIFT_URL, RESPONSE_MESSAGES, SOCKET_MESSAGES } from '../constants/index'
+import { SIDESHIFT_BASE_URL, RESPONSE_MESSAGES, SOCKET_MESSAGES } from '../constants/index'
 import config from 'config/index'
 import { createSideshiftShift } from 'services/sideshiftService'
 
@@ -76,15 +76,9 @@ const broadcastRouteConnection = (socket: Socket): void => {
 }
 
 const sendSideshiftPairRate = async (getPairRateData: GetPairRateData): Promise<SideshiftPairRes> => {
-  const res = await fetch(BASE_SIDESHIFT_URL + `pair/${getPairRateData.from}/${getPairRateData.to}`)
+  const res = await fetch(SIDESHIFT_BASE_URL + `pair/${getPairRateData.from}/${getPairRateData.to}`)
   const data = await res.json()
   return data as SideshiftPairRes
-}
-
-type ErrorType = 'quote-error' | 'shift-error'
-interface SideshiftError {
-  errorType: ErrorType
-  errorMessage: string
 }
 
 const createQuote = async (createQuoteData: CreateQuoteAndShiftData): Promise<SideshiftQuoteRes | SideshiftError> => {
@@ -93,7 +87,7 @@ const createQuote = async (createQuoteData: CreateQuoteAndShiftData): Promise<Si
     affiliateId: config.sideshiftAffiliateId
   })
 
-  const res = await fetch(BASE_SIDESHIFT_URL + 'quotes', {
+  const res = await fetch(SIDESHIFT_BASE_URL + 'quotes', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -130,7 +124,7 @@ const createShift = async (createShiftData: CreateShiftData): Promise<SideshiftS
     quoteId
   })
 
-  const res = await fetch(BASE_SIDESHIFT_URL + 'shifts/fixed', {
+  const res = await fetch(SIDESHIFT_BASE_URL + 'shifts/fixed', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -155,7 +149,7 @@ const createShift = async (createShiftData: CreateShiftData): Promise<SideshiftS
 }
 
 const sendSideshiftCoinsInfo = async (): Promise<SideShiftCoinRes[]> => {
-  const res = await fetch(BASE_SIDESHIFT_URL + 'coins')
+  const res = await fetch(SIDESHIFT_BASE_URL + 'coins')
   const data = await res.json()
 
   const coins = data as SideShiftCoinRes[]

@@ -94,3 +94,9 @@ export interface GetPairRateData {
   from: string
   to: string
 }
+
+type SideshiftErrorType = 'quote-error' | 'shift-error'
+export interface SideshiftError {
+  errorType: SideshiftErrorType
+  errorMessage: string
+}
