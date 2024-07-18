@@ -80,6 +80,7 @@ export const RESPONSE_MESSAGES = {
   PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400: { statusCode: 400, message: 'pageSize and page parameters should be valid integers.' },
   INVALID_OUTPUT_SCRIPT_LENGTH_500: (l: number) => { return { statusCode: 500, message: `Invalid outputScript length ${l}` } },
   FAILED_TO_PARSE_TX_OP_RETURN_500: { statusCode: 500, message: 'Failed to parse OP_RETURN data in Tx.' },
+  PAYBUTTON_ID_NOT_PROVIDED_400: { statusCode: 400, message: 'Paybutton id not provided' },
   METHOD_NOT_ALLOWED: { statusCode: 500, message: 'Method not allowed.' }
 }
 
@@ -205,3 +206,24 @@ export const TRIGGER_POST_VARIABLES = [
   '<timestamp>',
   '<txId>'
 ]
+
+export const DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_HEADERS = [
+  'Date',
+  'Amount',
+  'Value',
+  'Rate',
+  'Transaction Id',
+  'Paybutton Name'
+]
+
+export const DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_HEADERS_IDS = [
+  'date',
+  'amount',
+  'value',
+  'rate',
+  'transactionId',
+  'paybuttonName'
+]
+
+export const DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_DELIMITER = '\t'
+export const DEFAULT_MAX_RECORDS_FILES = 2000
