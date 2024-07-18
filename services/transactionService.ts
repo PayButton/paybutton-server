@@ -478,13 +478,13 @@ export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transa
   return txs.filter(t => t.prices.length !== 2)
 }
 
-export async function fetchTransactionsByPaybuttonId(paybuttonId: string): Promise<Transaction[]>{
-  const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId);
+export async function fetchTransactionsByPaybuttonId (paybuttonId: string): Promise<TransactionWithAddressAndPrices[]> {
+  const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
   const transactions = await fetchAddressListTransactions(addressIdList)
-  
-  if(transactions.length === 0){
+
+  if (transactions.length === 0) {
     throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
   }
-  
-  return transactions;
+
+  return transactions
 }
