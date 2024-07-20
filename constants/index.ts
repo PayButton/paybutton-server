@@ -207,23 +207,14 @@ export const TRIGGER_POST_VARIABLES = [
   '<txId>'
 ]
 
-export const DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_HEADERS = [
-  'Date',
-  'Amount',
-  'Value',
-  'Rate',
-  'Transaction Id',
-  'Paybutton Name'
-]
-
-export const DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_HEADERS_IDS = [
-  'date',
-  'amount',
-  'value',
-  'rate',
-  'transactionId',
-  'paybuttonName'
-]
+export const PAYBUTTON_TRANSACTIONS_FILE_HEADERS = {
+  date: 'Date',
+  amount: 'Amount',
+  value: 'Value',
+  rate: 'Rate',
+  transactionId: 'Transaction Id',
+  paybuttonName: 'Paybutton Name'
+}
 
 export const DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_DELIMITER = '\t'
-export const DEFAULT_MAX_RECORDS_FILES = 2000
+export const MAX_RECORDS_PER_FILE = 2000

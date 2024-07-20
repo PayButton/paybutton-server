@@ -8,8 +8,7 @@ import {
   SUPPORTED_QUOTES,
   RESPONSE_MESSAGES,
   DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_DELIMITER,
-  DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_HEADERS,
-  DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_HEADERS_IDS
+  PAYBUTTON_TRANSACTIONS_FILE_HEADERS
 } from 'constants/index'
 import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonId } from 'services/transactionService'
 import { PaybuttonWithAddresses, fetchPaybuttonById } from 'services/paybuttonService'
@@ -82,13 +81,15 @@ export const downloadPaybuttonTransactionsFile = async (res: NextApiResponse, pa
     const data = getPaybuttonTransactionsFileData(tx, paybutton)
     return formatPaybuttonTransactionsFileData(data)
   })
+  const headers = Object.keys(PAYBUTTON_TRANSACTIONS_FILE_HEADERS)
+  const formmattedHeaders = Object.values(PAYBUTTON_TRANSACTIONS_FILE_HEADERS)
 
   streamToCSV(
     mappedTransactionsData,
-    DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_HEADERS_IDS,
+    headers,
     DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_DELIMITER,
     res,
-    DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_HEADERS
+    formmattedHeaders
   )
 }
 

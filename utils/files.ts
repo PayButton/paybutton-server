@@ -1,4 +1,4 @@
-import { DEFAULT_MAX_RECORDS_FILES, RESPONSE_MESSAGES } from '../constants/index'
+import { MAX_RECORDS_PER_FILE, RESPONSE_MESSAGES } from '../constants/index'
 import { NextApiResponse } from 'next'
 import { Transform } from 'stream'
 
@@ -30,7 +30,7 @@ export function streamToCSV (
   delimiter: string,
   res: NextApiResponse,
   formattedHeaders?: string[]): void {
-  const maxRecords = DEFAULT_MAX_RECORDS_FILES
+  const maxRecords = MAX_RECORDS_PER_FILE
   const csvLineHeaders = valuesToCsvLine(formattedHeaders ?? headers, delimiter)
   const transform = getTransform(headers, delimiter)
 
