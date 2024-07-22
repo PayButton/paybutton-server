@@ -1,6 +1,7 @@
 import { SideshiftQuoteRes, CreateQuoteAndShiftData, GetPairRateData, SideShiftCoinRes, SideshiftPairRes, SideshiftShiftRes, SideshiftError } from './types'
-import { SIDESHIFT_BASE_URL } from '../constants/index'
 import config from 'config/index'
+
+export const SIDESHIFT_BASE_URL = 'https://sideshift.ai/api/v2/'
 
 export const getSideshiftPairRate = async (getPairRateData: GetPairRateData): Promise<SideshiftPairRes> => {
   const res = await fetch(SIDESHIFT_BASE_URL + `pair/${getPairRateData.from}/${getPairRateData.to}`)

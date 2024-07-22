@@ -85,10 +85,10 @@ export const RESPONSE_MESSAGES = {
 export const SOCKET_MESSAGES = {
   INCOMING_TXS: 'incoming-txs',
   TXS_BROADCAST: 'txs-broadcast',
-  GET_SIDESHIFT_RATE: 'get-sideshift-rate',
-  SEND_SIDESHIFT_RATE: 'send-sideshift-rate',
-  SEND_SIDESHIFT_COINS_INFO: 'send-sideshift-coins-info',
-  CREATE_SIDESHIFT_QUOTE: 'create-sideshift-quote',
+  GET_ALTPAYMENT_RATE: 'get-altpayment-rate',
+  SEND_ALTPAYMENT_RATE: 'send-altpayment-rate',
+  SEND_ALTPAYMENT_COINS_INFO: 'send-altpayment-coins-info',
+  CREATE_ALTPAYMENT_QUOTE: 'create-altpayment-quote',
   SHIFT_CREATED: 'shift-created',
   ERROR_WHEN_CREATING_QUOTE: 'quote-creation-error',
   ERROR_WHEN_CREATING_SHIFT: 'shift-creation-error'
@@ -204,5 +204,3 @@ export const TRIGGER_POST_VARIABLES = [
   '<timestamp>',
   '<txId>'
 ]
-
-export const SIDESHIFT_BASE_URL = 'https://sideshift.ai/api/v2/'

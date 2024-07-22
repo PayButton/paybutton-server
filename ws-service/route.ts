@@ -75,15 +75,15 @@ const broadcastRouteConnection = (socket: Socket): void => {
   void socket.on(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxs)
 }
 
-const sideshiftNs = io.of('/sideshift')
-const sideshiftRouteConnection = async (socket: Socket): Promise<void> => {
+const altpaymentNs = io.of('/altpayment')
+const altpaymentRouteConnection = async (socket: Socket): Promise<void> => {
   const coins = await getSideshiftCoinsInfo()
-  void socket.emit(SOCKET_MESSAGES.SEND_SIDESHIFT_COINS_INFO, coins)
-  void socket.on(SOCKET_MESSAGES.GET_SIDESHIFT_RATE, async (getPairRateData: GetPairRateData) => {
+  void socket.emit(SOCKET_MESSAGES.SEND_ALTPAYMENT_COINS_INFO, coins)
+  void socket.on(SOCKET_MESSAGES.GET_ALTPAYMENT_RATE, async (getPairRateData: GetPairRateData) => {
     const pairRate = await getSideshiftPairRate(getPairRateData)
-    socket.emit(SOCKET_MESSAGES.SEND_SIDESHIFT_RATE, pairRate)
+    socket.emit(SOCKET_MESSAGES.SEND_ALTPAYMENT_RATE, pairRate)
   })
-  void socket.on(SOCKET_MESSAGES.CREATE_SIDESHIFT_QUOTE, async (createQuoteData: CreateQuoteAndShiftData) => {
+  void socket.on(SOCKET_MESSAGES.CREATE_ALTPAYMENT_QUOTE, async (createQuoteData: CreateQuoteAndShiftData) => {
     const createdQuoteRes = await postSideshiftQuote(createQuoteData)
     if ('errorType' in createdQuoteRes) {
       socket.emit(SOCKET_MESSAGES.ERROR_WHEN_CREATING_QUOTE, createdQuoteRes)
@@ -104,7 +104,7 @@ const sideshiftRouteConnection = async (socket: Socket): Promise<void> => {
 
 addressesNs.on('connection', addressRouteConnection)
 broadcastNs.on('connection', broadcastRouteConnection)
-sideshiftNs.on('connection', sideshiftRouteConnection)
+altpaymentNs.on('connection', altpaymentRouteConnection)
 httpServer.listen(5000, () => {
   console.log('WS service listening')
 })
