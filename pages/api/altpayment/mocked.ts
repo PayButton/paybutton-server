@@ -2,6 +2,7 @@ import { NextApiResponse, NextApiRequest } from 'next/types'
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   if (req.method === 'GET') {
+    res.setHeader('Access-Control-Allow-Origin', '*')
     res.status(200).json({
       id: 'mockedSideshiftId',
       createdAt: '2024-07-19T11:39:54.614Z',
