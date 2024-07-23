@@ -37,7 +37,7 @@ export interface SideshiftShiftRes {
   settleAddress: string
   depositMin: string
   depositMax: string
-  averageShiftSeconds: string
+  averageShiftSeconds?: string // Sideshift says this is always there, but it isn't (BitDAO, for example)
   depositAmount: string
   expiresAt: string
   quoteId: string
