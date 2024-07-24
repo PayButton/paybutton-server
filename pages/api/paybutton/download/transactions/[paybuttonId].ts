@@ -15,8 +15,27 @@ import { PaybuttonWithAddresses, fetchPaybuttonById } from 'services/paybuttonSe
 import { streamToCSV } from 'utils/files'
 import { setSession } from 'utils/setSession'
 import { NextApiResponse } from 'next'
-import { TransactionFileData, FormattedTransactionFileData } from 'types'
+import { Decimal } from '@prisma/client/runtime'
+
 type SupportedQuotesType = typeof SUPPORTED_QUOTES[number]
+
+export interface TransactionFileData {
+  amount: Decimal
+  date: moment.Moment
+  value: number
+  rate: number
+  paybuttonName: string
+  transactionId: string
+}
+
+export interface FormattedTransactionFileData {
+  amount: string
+  date: string
+  value: string
+  rate: string
+  paybuttonName: string
+  transactionId: string
+}
 
 const cors = Cors({ methods: ['GET', 'HEAD'] })
 
