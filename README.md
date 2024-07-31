@@ -71,28 +71,16 @@ default: false,
 > If the connection of test networks for eCash and Bitcoin Cash should appear in the Networks tab.
 
 
-#### grpcBCHNodeURL
-```
-type: string
-default: "bchd.greyh.at:8335"
-```
-> GRPC URL to connect to for BCH (unsupported at the moment).
-
-
-#### grpcXECNodeURL
-```
-type: string
-default: "grpc.fabien.cash:8335"
-```
-> GRPC URL to connect to for XEC (unsupported at the moment).
-
-
-#### chronikClientURL
-```
-type: string
 default: "https://chronik.fabien.cash"
+#### networkBlockchainURLs
 ```
-> URL for the Chronik client to connect to. Providing an array of URLs is supported.
+type: {
+   "ecash": string
+   "bitcoincash": string
+}
+
+```
+> What URLs to connect each network chosen client to (from networkBlockchainClients)
 
 
 #### priceAPIURL

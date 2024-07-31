@@ -54,6 +54,7 @@ export const RESPONSE_MESSAGES = {
   INVALID_QUOTE_SLUG_400: { statusCode: 400, message: 'Invalid quote slug.' },
   INVALID_TICKER_400: { statusCode: 400, message: 'Invalid ticker.' },
   MISSING_BLOCKCHAIN_CLIENT_400: { statusCode: 400, message: 'There is no blockchain client chosen for this network.' },
+  MISSING_BLOCKCHAIN_CLIENT_URL_400: (networkSlug: string) => { return { statusCode: 400, message: `Missing client URL for network ${networkSlug}` } },
   NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400: { statusCode: 400, message: 'Blockchain client was not instantiated.' },
   DEFAULT_WALLET_CANNOT_BE_DELETED_400: { statusCode: 400, message: 'A default wallet cannot be deleted.' },
   NO_USER_PROFILE_FOUND_404: { statusCode: 404, message: 'User profile not found.' },

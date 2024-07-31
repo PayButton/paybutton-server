@@ -64,9 +64,9 @@ function getBlockchainClient (networkSlug: string): BlockchainClient {
     case 'grpc' as BlockchainClientOptions:
       return new GrpcBlockchainClient()
     case 'chronik' as BlockchainClientOptions:
-      if (global.chronik === undefined && ChronikBlockchainClient !== undefined) {
+      if (global.chronik === undefined) {
         console.log('creating chronik instance...')
-        global.chronik = new ChronikBlockchainClient()
+        global.chronik = new ChronikBlockchainClient(networkSlug)
         // Subscribe addresses & Sync lost transactions on DB upon client initialization
         if (
           process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD &&

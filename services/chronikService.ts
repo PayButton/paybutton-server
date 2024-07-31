@@ -115,12 +115,13 @@ export class ChronikBlockchainClient implements BlockchainClient {
   wsEndpoint: Socket
   lastProcessedMessages: ProcessedMessages
 
-  constructor () {
+  constructor (networkSlug: string) {
     if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
       throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
     }
-    this.chronik = new ChronikClientNode([config.chronikClientURL])
-    this.availableNetworks = [NETWORK_SLUGS.ecash]
+
+    this.chronik = new ChronikClientNode([config.networkBlockchainURLs[networkSlug]])
+    this.availableNetworks = [NETWORK_SLUGS.ecash, NETWORK_SLUGS.bitcoincash]
     this.subscribedAddresses = {}
     this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
     void this.chronikWSEndpoint.waitForOpen()
@@ -276,7 +277,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
       const simplifiedTransactions = getSimplifiedTransactions(persistedTransactions)
 
-      console.log(`added ${simplifiedTransactions.length} txs to ${addressString}`)
+      console.log(`[CHRONIK]: added ${simplifiedTransactions.length} txs to ${addressString}`)
 
       const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
       broadcastTxData.messageType = 'OldTx'
@@ -336,10 +337,10 @@ export class ChronikBlockchainClient implements BlockchainClient {
   private getWsConfig (): WsConfig_InNode {
     return {
       onMessage: (msg: WsMsgClient) => { void this.processWsMessage(msg) },
-      onError: (e: ws.ErrorEvent) => { console.log(`Chronik webSocket error, type: ${e.type} | message: ${e.message} | error: ${e.error as string}`) },
-      onReconnect: (_: ws.Event) => { console.log('Chronik webSocket unexpectedly closed.') },
-      onConnect: (_: ws.Event) => { console.log('Chronik webSocket connection (re)established.') },
-      onEnd: (e: ws.Event) => { console.log(`Chronik WebSocket ended, type: ${e.type}.`) },
+      onError: (e: ws.ErrorEvent) => { console.log(`[CHRONIK]: Chronik webSocket error, type: ${e.type} | message: ${e.message} | error: ${e.error as string}`) },
+      onReconnect: (_: ws.Event) => { console.log('[CHRONIK]: Chronik webSocket unexpectedly closed.') },
+      onConnect: (_: ws.Event) => { console.log('[CHRONIK]: Chronik webSocket connection (re)established.') },
+      onEnd: (e: ws.Event) => { console.log(`[CHRONIK]: Chronik WebSocket ended, type: ${e.type}.`) },
       autoReconnect: true
     }
   }
@@ -349,7 +350,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     // if they were cancelled and not confirmed
     if (msg.type === 'Tx') {
       if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
-        console.log(`[${msg.type}] ${msg.txid}`)
+        console.log(`[CHRONIK]: [${msg.type}] ${msg.txid}`)
         const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
         try {
           await deleteTransactions(transactionsToDelete)
@@ -364,7 +365,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         if (this.isAlreadyBeingProcessed(msg.txid, msg.msgType === 'TX_CONFIRMED')) {
           return
         }
-        console.log(`[${msg.type}] ${msg.txid}`)
+        console.log(`[CHRONIK]: [${msg.type}] ${msg.txid}`)
         const transaction = await this.chronik.tx(msg.txid)
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
@@ -391,9 +392,9 @@ export class ChronikBlockchainClient implements BlockchainClient {
         }
       }
     } else if (msg.type === 'Block') {
-      console.log(`[${msg.type.toString()}] ${msg.msgType} Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
+      console.log(`[CHRONIK]: [${msg.type}] ${msg.msgType} Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
     } else if (msg.type === 'Error') {
-      console.log(`[${msg.type}] ${JSON.stringify(msg.msg)}`)
+      console.log(`[CHRONIK]: [${msg.type}] ${JSON.stringify(msg.msg)}`)
     }
   }
 
@@ -417,7 +418,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
     const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address))
     addressesAlreadySubscribed.forEach(address => {
-      console.log(`This address was already subscribed: ${address.address}`)
+      console.warn(`[CHRONIK]: address already subscribed: ${address.address}`)
     })
     if (addressesAlreadySubscribed.length === addresses.length) return
     addresses = addresses.filter(address => !addressesAlreadySubscribed.includes(address))
@@ -426,7 +427,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
     for (const [, networkAddresses] of Object.entries(addressesByNetwork)) {
       networkAddresses.forEach(address => {
-        console.log('subbing', address.address)
+        console.log('[CHRONIK]: subscribing ', address.address)
         this.chronikWSEndpoint.subscribeToAddress(address.address)
         this.subscribedAddresses[address.address] = address
       })
@@ -438,13 +439,13 @@ export class ChronikBlockchainClient implements BlockchainClient {
     try {
       const { failedAddressesWithErrors, successfulAddressesWithCount } = await syncAddresses(addresses)
       Object.keys(failedAddressesWithErrors).forEach((addr) => {
-        console.error(`When syncing missing addresses for address ${addr} encountered error: ${failedAddressesWithErrors[addr]}`)
+        console.error(`[CHRONIK]: When syncing missing addresses for address ${addr} encountered error: ${failedAddressesWithErrors[addr]}`)
       })
       Object.keys(successfulAddressesWithCount).forEach((addr) => {
-        console.log(`Successful synced ${successfulAddressesWithCount[addr]} txs for ${addr}`)
+        console.log(`[CHRONIK]: Successful synced ${successfulAddressesWithCount[addr]} txs for ${addr}`)
       })
     } catch (err: any) {
-      console.error(`ERROR: (skipping anyway) initial missing transactions sync failed: ${err.message as string} ${err.stack as string}`)
+      console.error(`[CHRONIK]: ERROR: (skipping anyway) initial missing transactions sync failed: ${err.message as string} ${err.stack as string}`)
     }
   }
 
@@ -453,7 +454,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     try {
       await this.subscribeAddresses(addresses)
     } catch (err: any) {
-      console.error(`ERROR: (skipping anyway) initial chronik subscription failed: ${err.message as string} ${err.stack as string}`)
+      console.error(`[CHRONIK]: ERROR: (skipping anyway) initial chronik subscription failed: ${err.message as string} ${err.stack as string}`)
     }
   }
 }
@@ -484,7 +485,7 @@ export function toHash160 (address: string): {type: ScriptType_InNode, hash160: 
     )
     return { type: type.toLowerCase() as ScriptType_InNode, hash160: addrHash160 }
   } catch (err) {
-    console.log('Error converting address to hash160')
+    console.log('[CHRONIK]: Error converting address to hash160')
     throw err
   }
 }

@@ -5,14 +5,15 @@
   "websiteDomain": "http://localhost:3000",
   "wsBaseURL": "http://localhost:5000",
   "showTestNetworks": false,
-  "grpcBCHNodeURL": "bchd.greyh.at:8335",
-  "grpcXECNodeURL": "grpc.fabien.cash:8335",
-  "chronikClientURL": "https://chronik.fabien.cash",
   "priceAPIURL": "https://coin.dance/api/",
   "redisURL": "redis://paybutton-cache:6379",
   "networkBlockchainClients": {
     "ecash": "chronik",
     "bitcoincash": "grpc"
+  },
+  "networkBlockchainURLs": {
+    "ecash": "https://chronik.fabien.cash",
+    "bitcoincash": "https://chronik.pay2stay.com/bch"
   },
   "networksUnderMaintenance": {
     "bitcoincash": true

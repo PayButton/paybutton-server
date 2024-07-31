@@ -1,4 +1,4 @@
-import { KeyValueT } from 'constants/index'
+import { KeyValueT, RESPONSE_MESSAGES } from 'constants/index'
 import localConfig from '../paybutton-config.json'
 
 export type BlockchainClientOptions = 'grpc' | 'chronik'
@@ -12,12 +12,10 @@ interface Config {
 
   wsBaseURL: string
   showTestNetworks: false
-  grpcBCHNodeURL: string
-  grpcXECNodeURL: string
-  chronikClientURL: string
   priceAPIURL: string
   redisURL: string
   networkBlockchainClients: KeyValueT<BlockchainClientOptions>
+  networkBlockchainURLs: KeyValueT<string>
   networksUnderMaintenance: KeyValueT<boolean>
   triggerPOSTTimeout: number
 }
@@ -27,6 +25,23 @@ const readConfig = (): Config => {
   config.appName = 'PayButton'
   if (config.networksUnderMaintenance === undefined) {
     config.networksUnderMaintenance = {}
+  }
+  if (
+    (
+      config.networkBlockchainURLs.ecash === undefined ||
+      config.networkBlockchainURLs.ecash === ''
+    ) &&
+    !config.networksUnderMaintenance.ecash
+  ) {
+    throw new Error(RESPONSE_MESSAGES.MISSING_BLOCKCHAIN_CLIENT_URL_400('ecash').message)
+  } else if (
+    (
+      config.networkBlockchainURLs.bitcoincash === undefined ||
+      config.networkBlockchainURLs.bitcoincash === ''
+    ) &&
+    !config.networksUnderMaintenance.bitcoincash
+  ) {
+    throw new Error(RESPONSE_MESSAGES.MISSING_BLOCKCHAIN_CLIENT_URL_400('bitcoincash').message)
   }
   const wsURLSplit = config.wsBaseURL.split('//')
   const noProtocolWsURL = wsURLSplit[wsURLSplit.length - 1]
