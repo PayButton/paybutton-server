@@ -1,23 +1,17 @@
 import Cors from 'cors'
 import moment from 'moment'
 import {
-  CAD_QUOTE_ID,
-  DEFAULT_QUOTE_SLUG,
   PRICE_API_DATE_FORMAT,
-  USD_QUOTE_ID,
-  SUPPORTED_QUOTES,
   RESPONSE_MESSAGES,
   DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_DELIMITER,
   PAYBUTTON_TRANSACTIONS_FILE_HEADERS
 } from 'constants/index'
-import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonId } from 'services/transactionService'
+import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonId, getTransactionValueInCurrency } from 'services/transactionService'
 import { PaybuttonWithAddresses, fetchPaybuttonById } from 'services/paybuttonService'
 import { streamToCSV } from 'utils/files'
 import { setSession } from 'utils/setSession'
 import { NextApiResponse } from 'next'
 import { Decimal } from '@prisma/client/runtime'
-
-type SupportedQuotesType = typeof SUPPORTED_QUOTES[number]
 
 export interface TransactionFileData {
   amount: Decimal
@@ -39,30 +33,9 @@ export interface FormattedTransactionFileData {
 
 const cors = Cors({ methods: ['GET', 'HEAD'] })
 
-const getPrice = (transaction: TransactionWithAddressAndPrices, currency?: SupportedQuotesType): number => {
-  let stringCurrency: string = currency ?? ''
-  const isCurrencyEmptyOrUndefined = currency === '' || currency === undefined
-
-  if (isCurrencyEmptyOrUndefined) {
-    stringCurrency = DEFAULT_QUOTE_SLUG
-  }
-  const { prices, amount } = transaction
-  const result: { [key in SupportedQuotesType]: number } = {}
-
-  for (const p of prices) {
-    if (p.price.quoteId === USD_QUOTE_ID) {
-      result.usd = p.price.value.times(amount).toNumber()
-    }
-    if (p.price.quoteId === CAD_QUOTE_ID) {
-      result.cad = p.price.value.times(amount).toNumber()
-    }
-  }
-  return (!isCurrencyEmptyOrUndefined ? result[stringCurrency] : result.usd)
-}
-
 const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, paybutton: PaybuttonWithAddresses): TransactionFileData => {
   const { amount, createdAt, id } = transaction
-  const value = getPrice(transaction)
+  const value = getTransactionValueInCurrency(transaction)
   const date = moment(createdAt)
 
   const rate = value / amount.toNumber()
@@ -84,6 +57,23 @@ const formatPaybuttonTransactionsFileData = (data: TransactionFileData): Formatt
     value,
     rate
   } = data
+  console.log({
+    amount,
+    date,
+    value,
+    rate
+  })
+  console.log({
+    formmated: {
+
+      ...data,
+      amount: amount.toFixed(2),
+      date: date.format(PRICE_API_DATE_FORMAT),
+      value: value.toFixed(2),
+      rate: rate.toFixed(14)
+
+    }
+  })
   return {
     ...data,
     amount: amount.toFixed(2),
