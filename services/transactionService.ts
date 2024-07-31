@@ -491,42 +491,30 @@ export async function fetchTransactionsByPaybuttonId (paybuttonId: string): Prom
   return transactions
 }
 
-export const getTransactionValueInCurrency = (transaction: TransactionWithAddressAndPrices, currency?: SupportedQuotesType): number | undefined => {
-  try {
-    const isCurrencyEmptyOrUndefined = currency === '' || currency === undefined
-    const stringCurrency = isCurrencyEmptyOrUndefined ? DEFAULT_QUOTE_SLUG : currency
-    const { prices, amount } = transaction
+export const getTransactionValueInCurrency = (transaction: TransactionWithAddressAndPrices, currency?: SupportedQuotesType): number => {
+  const {
+    prices,
+    amount,
+    id,
+    timestamp
+  } = transaction
 
-    const result: { [key in SupportedQuotesType]: number } = {}
+  const isCurrencyEmptyOrUndefined = currency === '' || currency === undefined
+  const stringCurrency = isCurrencyEmptyOrUndefined ? DEFAULT_QUOTE_SLUG : currency
+  const result: { [key in SupportedQuotesType]: number } = {}
 
-    for (const p of prices) {
-      if (p.price.quoteId === USD_QUOTE_ID) {
-        result.usd = p.price.value.times(amount).toNumber()
-      }
-      if (p.price.quoteId === CAD_QUOTE_ID) {
-        result.cad = p.price.value.times(amount).toNumber()
-      }
-    }
-    return result[stringCurrency]
-  } catch (error: any) {
-    console.log(error.message)
+  if (prices.length !== N_OF_QUOTES) {
+    throw new Error(`${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}, txId ${id}, at ${timestamp}`)
   }
+
+  for (const p of prices) {
+    if (p.price.quoteId === USD_QUOTE_ID) {
+      result.usd = p.price.value.times(amount).toNumber()
+    }
+    if (p.price.quoteId === CAD_QUOTE_ID) {
+      result.cad = p.price.value.times(amount).toNumber()
+    }
+  }
+
+  return result[stringCurrency]
 }
-
-// export const getTransactionValueInCurrency = (transaction: TransactionWithAddressAndPrices, currency?: SupportedQuotesType): number => {
-//   const isCurrencyEmptyOrUndefined = currency === '' || currency === undefined
-//   const stringCurrency: string = isCurrencyEmptyOrUndefined ? '' : DEFAULT_QUOTE_SLUG
-
-//   const { prices, amount } = transaction
-//   const result: { [key in SupportedQuotesType]: number } = {}
-
-//   for (const p of prices) {
-//     if (p.price.quoteId === USD_QUOTE_ID) {
-//       result.usd = p.price.value.times(amount).toNumber()
-//     }
-//     if (p.price.quoteId === CAD_QUOTE_ID) {
-//       result.cad = p.price.value.times(amount).toNumber()
-//     }
-//   }
-//   return (isCurrencyEmptyOrUndefined ? result.usd : result[stringCurrency])
-// }

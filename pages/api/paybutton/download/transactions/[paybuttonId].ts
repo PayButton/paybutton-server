@@ -57,23 +57,6 @@ const formatPaybuttonTransactionsFileData = (data: TransactionFileData): Formatt
     value,
     rate
   } = data
-  console.log({
-    amount,
-    date,
-    value,
-    rate
-  })
-  console.log({
-    formmated: {
-
-      ...data,
-      amount: amount.toFixed(2),
-      date: date.format(PRICE_API_DATE_FORMAT),
-      value: value.toFixed(2),
-      rate: rate.toFixed(14)
-
-    }
-  })
   return {
     ...data,
     amount: amount.toFixed(2),
@@ -138,6 +121,9 @@ export default async (req: any, res: any): Promise<void> => {
     } else if (error.message === RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.message) {
       res.status(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.statusCode)
         .json(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED)
+    } else if (error.message === RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message) {
+      res.status(RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.statusCode)
+        .json(RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400)
     } else {
       res.status(500).json({ message: error.message })
     }
