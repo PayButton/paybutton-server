@@ -20,6 +20,7 @@ interface Config {
   networkBlockchainClients: KeyValueT<BlockchainClientOptions>
   networksUnderMaintenance: KeyValueT<boolean>
   triggerPOSTTimeout: number
+  sideshiftAffiliateId: string
 }
 
 const readConfig = (): Config => {
