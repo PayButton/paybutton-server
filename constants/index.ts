@@ -152,13 +152,7 @@ export const NETWORK_TICKERS_FROM_ID: KeyValueT<string> = {
 export const NETWORK_IDS: KeyValueT<number> = { XEC: 1, BCH: 2 }
 export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
 
-export type BLOCKCHAIN_CLIENT_OPTIONS = 'grpc' | 'chronik'
-export const NETWORK_BLOCKCHAIN_CLIENTS: KeyValueT<BLOCKCHAIN_CLIENT_OPTIONS> = {
-  ecash: 'chronik',
-  bitcoincash: 'grpc'
-}
-
-export const CHRONIK_CLIENT_URL = 'https://chronik.be.cash/xec'
+export type BLOCKCHAIN_CLIENT_OPTIONS = 'chronik'
 
 export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 45000
 export const DEFAULT_TX_PAGE_SIZE = 100

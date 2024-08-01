@@ -1,4 +1,3 @@
-import { GrpcBlockchainClient } from './grpcService'
 import { ChronikBlockchainClient } from './chronikService'
 import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils/index'
 import { RESPONSE_MESSAGES, KeyValueT, NETWORK_IDS, NETWORK_TICKERS } from '../constants/index'
@@ -61,8 +60,6 @@ function getBlockchainClient (networkSlug: string): BlockchainClient {
   if (!Object.keys(config.networkBlockchainClients).includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.MISSING_BLOCKCHAIN_CLIENT_400.message) }
 
   switch (config.networkBlockchainClients[networkSlug]) {
-    case 'grpc' as BlockchainClientOptions:
-      return new GrpcBlockchainClient()
     case 'chronik' as BlockchainClientOptions:
       if (global.chronik === undefined) {
         console.log('creating chronik instance...')

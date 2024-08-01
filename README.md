@@ -71,12 +71,11 @@ default: false,
 > If the connection of test networks for eCash and Bitcoin Cash should appear in the Networks tab.
 
 
-default: "https://chronik.fabien.cash"
 #### networkBlockchainURLs
 ```
 type: {
-   "ecash": string
-   "bitcoincash": string
+   "ecash": "https://chronik.fabien.cash",
+   "bitcoincash": "https://chronik.pay2stay.com/bch"
 }
 
 ```
@@ -101,16 +100,15 @@ default: "redis://paybutton-cache:6379"
 #### networkBlockchainClients
 ```
 type: {
-    "ecash": "chronik" | "grpc"
-    "bitcoincash": "grpc"
+    "ecash": "chronik",
+    "bitcoincash": "chronik"
 }
 default: {
     "ecash": "chronik",
-    "bitcoincash": "grpc"
+    "bitcoincash": "chronik"
 }
 ```
-> Which client to use to get the blockchain information for each network. Currently, only "chronik" is supported for eCash 
-and Bitcoin Cash is not supported.
+> Which client to use to get the blockchain information for each network. Currently, only "chronik" is supported for eCash and Bitcoin Cash.
 
 
 #### networksUnderMaintenance
