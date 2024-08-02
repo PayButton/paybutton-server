@@ -93,9 +93,15 @@ export const NETWORK_SLUGS: KeyValueT<string> = {
   bchtest: 'bchtest',
   bchreg: 'bchreg'
 }
+
 export const NETWORK_IDS_FROM_SLUGS: KeyValueT<number> = {
   ecash: 1,
   bitcoincash: 2
+}
+
+export const NETWORK_SLUGS_FROM_IDS: Record<number, string> = {
+  1: 'ecash',
+  2: 'bitcoincash'
 }
 
 // When fetching some address transactions, number of transactions to fetch at a time.

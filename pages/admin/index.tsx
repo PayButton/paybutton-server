@@ -49,9 +49,8 @@ interface IProps {
 
 export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
   const router = useRouter()
-  const [subbedAddresses, setSubbedAddresses] = useState([])
-  const [currentAddresses, setCurrentAddresses] = useState([])
-  const [different, setDifferent] = useState(false)
+  const [ecashSubscribedAddresses, setEcashSubscribedAddresses] = useState<string[]>([])
+  const [bitcoincashSubscribedAddresses, setBitcoincashSubscribedAddresses] = useState<string[]>([])
   const [users, setUsers] = useState<UserWithSupertokens[]>([])
 
   useEffect(() => {
@@ -63,11 +62,11 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
   useEffect(() => {
     void (async () => {
       const ok = await (await fetch('chronikStatus')).json()
-      const subbedAddressesTableData = ok.registeredSubscriptions.map((value) => ({ address: value }))
-      const currentAddressesTableData = ok.currentSubscriptions.map((value) => ({ address: value }))
-      setSubbedAddresses(subbedAddressesTableData)
-      setCurrentAddresses(currentAddressesTableData)
-      setDifferent(ok?.different)
+      console.log('ok', ok) // WIP
+      const subscribedEcashAddresses = ok.ecash.map((value: string) => ({ address: value }))
+      const subscribedBitcoincashAddresses = ok.bitcoincash.map((value: string) => ({ address: value }))
+      setEcashSubscribedAddresses(subscribedEcashAddresses)
+      setBitcoincashSubscribedAddresses(subscribedBitcoincashAddresses)
       const ok2 = await (await fetch('/api/users')).json()
       setUsers(ok2)
     })()
@@ -101,12 +100,10 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
     return <>
       <h2>Admin Dashboard</h2>
       <div className={style.admin_ctn}>
-      <TableContainer columns={columns} data={subbedAddresses} ssr/>
-        { different && <>
-          <p className={style.warning_message}> Warning!<br />The subscribed addresses registered since the beginning of the last deploy (list above) is different than the addresses being read by the chronik object instance (list below).</p>
-           <TableContainer columns={columns} data={currentAddresses} />
-        </>
-        }
+        <h3> Ecash</h3>
+      <TableContainer columns={columns} data={ecashSubscribedAddresses} ssr/>
+        <h3> Bitcoin Cash</h3>
+      <TableContainer columns={columns} data={bitcoincashSubscribedAddresses} ssr/>
         <a
           target="_blank"
           rel="noopener noreferrer"
