@@ -2455,14 +2455,14 @@ chokidar@^3.5.2:
   optionalDependencies:
     fsevents "~2.3.2"
 
-chronik-client@^0.28.0:
-  version "0.28.0"
-  resolved "https://registry.yarnpkg.com/chronik-client/-/chronik-client-0.28.0.tgz#4a194a91ec9b26da19435b2ca8aca6f929fb8ac1"
-  integrity sha512-Wx3cz6+dKXQs5zvP2Qcsrwas/pK0gs+1L0eyXuXpr3JHSd24+nRyBNkY0Zi9LdMsQkvhGSTifTDyCN5/qLN25w==
+chronik-client@^0.28.1:
+  version "0.28.1"
+  resolved "https://registry.yarnpkg.com/chronik-client/-/chronik-client-0.28.1.tgz#475c36f61db0458e88fbd509a0ff940eb3df2f2e"
+  integrity sha512-mOuThrTH6JfZBlXs0B9tD9IvNTa5h4K4ehx8xi7Xl0rAvtEdbVEmfIFLeER02DvXKkMnfuEA/v4M/jxQLWnptw==
   dependencies:
     "@types/ws" "^8.2.1"
     axios "^1.6.3"
-    ecashaddrjs "^1.5.6"
+    ecashaddrjs "file:../.cache/yarn/v6/npm-chronik-client-0.28.1-475c36f61db0458e88fbd509a0ff940eb3df2f2e-integrity/node_modules/ecashaddrjs"
     isomorphic-ws "^4.0.1"
     protobufjs "^6.8.8"
     ws "^8.3.0"
@@ -2904,10 +2904,10 @@ ecashaddrjs@^1.0.7:
   dependencies:
     big-integer "1.6.36"
 
-ecashaddrjs@^1.5.6:
-  version "1.5.7"
-  resolved "https://registry.yarnpkg.com/ecashaddrjs/-/ecashaddrjs-1.5.7.tgz#67e7c0c6a474727f48280522ab0fd066f1f58452"
-  integrity sha512-KEsh2bbKS+7PEngrbcMVT4YeYRXR12LFFdmXv/ZSAgJCjoHBs8f80Akl8JgAYK27+hpuMXBESz5IurUbCdflDw==
+ecashaddrjs@^1.5.8, "ecashaddrjs@file:../../../.cache/yarn/v6/npm-chronik-client-0.28.1-475c36f61db0458e88fbd509a0ff940eb3df2f2e-integrity/node_modules/ecashaddrjs":
+  version "1.5.8"
+  resolved "https://registry.yarnpkg.com/ecashaddrjs/-/ecashaddrjs-1.5.8.tgz#fff684d14a944cfd4bca56dd8dc3adbfce8016f9"
+  integrity sha512-EBL052a1Hd1+wwaBQr3Q+jXY4XfH0jXR1tK360P8GQ9YJUZ5zLG+0I7yee8/QgHY04zdoCzDOY0fRlwqtqDhRg==
   dependencies:
     big-integer "1.6.36"
     bs58check "^3.0.1"
