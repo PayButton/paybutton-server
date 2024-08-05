@@ -3,7 +3,7 @@ import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, DEFAULT_QUOTE_SLUG, SUPPORTED_QUOTES } from 'constants/index'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SUPPORTED_QUOTES } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
@@ -11,7 +11,7 @@ import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData } from 'utils/validators'
 
-type SupportedQuotesType = typeof SUPPORTED_QUOTES[number]
+export type SupportedQuotesType = typeof SUPPORTED_QUOTES[number]
 
 export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
@@ -491,7 +491,7 @@ export async function fetchTransactionsByPaybuttonId (paybuttonId: string): Prom
   return transactions
 }
 
-export const getTransactionValueInCurrency = (transaction: TransactionWithAddressAndPrices, currency?: SupportedQuotesType): number => {
+export const getTransactionValueInCurrency = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType): number => {
   const {
     prices,
     amount,
@@ -499,8 +499,6 @@ export const getTransactionValueInCurrency = (transaction: TransactionWithAddres
     timestamp
   } = transaction
 
-  const isCurrencyEmptyOrUndefined = currency === '' || currency === undefined
-  const stringCurrency = isCurrencyEmptyOrUndefined ? DEFAULT_QUOTE_SLUG : currency
   const result: { [key in SupportedQuotesType]: number } = {}
 
   if (prices.length !== N_OF_QUOTES) {
@@ -516,5 +514,5 @@ export const getTransactionValueInCurrency = (transaction: TransactionWithAddres
     }
   }
 
-  return result[stringCurrency]
+  return result[currency]
 }

@@ -4,7 +4,10 @@ import {
   PRICE_API_DATE_FORMAT,
   RESPONSE_MESSAGES,
   DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_DELIMITER,
-  PAYBUTTON_TRANSACTIONS_FILE_HEADERS
+  PAYBUTTON_TRANSACTIONS_FILE_HEADERS,
+  DECIMALS,
+  SUPPORTED_QUOTES,
+  DEFAULT_QUOTE_SLUG
 } from 'constants/index'
 import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonId, getTransactionValueInCurrency } from 'services/transactionService'
 import { PaybuttonWithAddresses, fetchPaybuttonById } from 'services/paybuttonService'
@@ -20,6 +23,7 @@ export interface TransactionFileData {
   rate: number
   paybuttonName: string
   transactionId: string
+  currency: string
 }
 
 export interface FormattedTransactionFileData {
@@ -31,11 +35,15 @@ export interface FormattedTransactionFileData {
   transactionId: string
 }
 
+function isCurrencyValid (currency: string): boolean {
+  return SUPPORTED_QUOTES.includes(currency)
+}
+
 const cors = Cors({ methods: ['GET', 'HEAD'] })
 
-const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, paybutton: PaybuttonWithAddresses): TransactionFileData => {
+const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, paybutton: PaybuttonWithAddresses, currency: string): TransactionFileData => {
   const { amount, createdAt, id } = transaction
-  const value = getTransactionValueInCurrency(transaction)
+  const value = getTransactionValueInCurrency(transaction, currency)
   const date = moment(createdAt)
 
   const rate = value / amount.toNumber()
@@ -46,7 +54,8 @@ const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAnd
     transactionId: id,
     value,
     rate,
-    paybuttonName: paybutton.name
+    paybuttonName: paybutton.name,
+    currency
   }
 }
 
@@ -55,22 +64,26 @@ const formatPaybuttonTransactionsFileData = (data: TransactionFileData): Formatt
     amount,
     date,
     value,
-    rate
+    rate,
+    currency
   } = data
   return {
     ...data,
-    amount: amount.toFixed(2),
+    amount: amount.toFixed(DECIMALS[currency]),
     date: date.format(PRICE_API_DATE_FORMAT),
-    value: value.toFixed(2),
+    value: value.toFixed(DECIMALS[currency]),
     rate: rate.toFixed(14)
   }
 }
 
-export const downloadPaybuttonTransactionsFile = async (res: NextApiResponse, paybutton: PaybuttonWithAddresses): Promise<void> => {
+export const downloadPaybuttonTransactionsFile = async (
+  res: NextApiResponse,
+  paybutton: PaybuttonWithAddresses,
+  currency: string): Promise<void> => {
   const transactions = await fetchTransactionsByPaybuttonId(paybutton.id)
 
   const mappedTransactionsData = transactions.map(tx => {
-    const data = getPaybuttonTransactionsFileData(tx, paybutton)
+    const data = getPaybuttonTransactionsFileData(tx, paybutton, currency)
     return formatPaybuttonTransactionsFileData(data)
   })
   const headers = Object.keys(PAYBUTTON_TRANSACTIONS_FILE_HEADERS)
@@ -101,31 +114,39 @@ export default async (req: any, res: any): Promise<void> => {
     if ((req.query.paybuttonId === undefined)) {
       throw new Error(RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400.message)
     }
+
     await setSession(req, res)
+
     const userId = req.session.userId
     const paybuttonId = req.query.paybuttonId as string
-    const paybutton = await fetchPaybuttonById(paybuttonId)
+    const currency = isCurrencyValid(req.query.currency) ? req.query.currency as string : DEFAULT_QUOTE_SLUG
 
+    const paybutton = await fetchPaybuttonById(paybuttonId)
     if (paybutton.providerUserId !== userId) {
       throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
     }
+
     const fileName = `${paybutton.name}-${paybutton.id}-transactions.csv`
     res.setHeader('Content-Type', 'text/csv')
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`)
 
-    await downloadPaybuttonTransactionsFile(res, paybutton)
+    await downloadPaybuttonTransactionsFile(res, paybutton, currency)
   } catch (error: any) {
-    if (error.message === RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400.message) {
-      res.status(RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400.statusCode)
-        .json(RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400)
-    } else if (error.message === RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.message) {
-      res.status(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.statusCode)
-        .json(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED)
-    } else if (error.message === RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message) {
-      res.status(RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.statusCode)
-        .json(RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400)
-    } else {
-      res.status(500).json({ message: error.message })
+    switch (error.message) {
+      case RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400.message:
+        res.status(RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400.statusCode)
+          .json(RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400)
+        break
+      case RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.message:
+        res.status(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.statusCode)
+          .json(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED)
+        break
+      case RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message:
+        res.status(RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.statusCode)
+          .json(RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400)
+        break
+      default:
+        res.status(500).json({ message: error.message })
     }
   }
 }

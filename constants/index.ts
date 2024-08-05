@@ -218,3 +218,9 @@ export const PAYBUTTON_TRANSACTIONS_FILE_HEADERS = {
 
 export const DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_DELIMITER = '\t'
 export const MAX_RECORDS_PER_FILE = 2000
+
+export const DECIMALS: { [key: string]: number } = {
+  BCH: 8,
+  XEC: 2,
+  FIAT: 2
+}
