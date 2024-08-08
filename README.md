@@ -12,6 +12,7 @@ https://paybutton.org
   + `PRICE_API_TOKEN="<COINDANCE_API_KEY>"`
   + `WS_AUTH_KEY="<RANDOMLY_GENERATED_UUID>"`
   + `MASTER_SECRET_KEY="<RANDOMLY_GENERATED_UUID>"`
+  + `SIDESHIFT_SECRET_KEY="<SIDESHIFT_SECRET_KEY>"` (necessary only when working with the paybutton client for SideShift integration)
 
 - Run the following make command* to build/pull the relevant docker images and run the server locally:
 
@@ -132,6 +133,12 @@ default: 3000
 ```
 > How long a POST request triggered from a button payment will wait for an answer to be marked as successful.
 
+#### sideshiftAffiliateId
+```
+type: string
+default: N/A
+```
+> Necessary only for paybutton client to interact with sideshift through the server.
 
 ---
 

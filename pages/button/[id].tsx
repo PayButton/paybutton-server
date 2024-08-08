@@ -9,7 +9,7 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
 import { BroadcastTxData } from 'ws-service/types'
-import { KeyValueT, ResponseMessage } from 'constants/index'
+import { KeyValueT, ResponseMessage, SOCKET_MESSAGES } from 'constants/index'
 import config from 'config'
 import io from 'socket.io-client'
 import PaybuttonTrigger from 'components/Paybutton/PaybuttonTrigger'
@@ -85,7 +85,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
       query: { addresses }
     })
 
-    socket.on('incoming-txs', (broadcastedData: BroadcastTxData) => {
+    socket.on(SOCKET_MESSAGES.INCOMING_TXS, (broadcastedData: BroadcastTxData) => {
       setTableRefreshCount(tableRefreshCount + 1)
       updateIsSyncing([broadcastedData.address])
     })

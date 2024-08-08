@@ -292,7 +292,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       broadcastTxData.address = addressString
       broadcastTxData.txs = simplifiedTransactions
 
-      this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
+      this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
 
       yield persistedTransactions
 
@@ -385,7 +385,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
             const newSimplifiedTransaction = getSimplifiedTrasaction(tx)
             broadcastTxData.txs = [newSimplifiedTransaction]
             try { // emit broadcast for both unconfirmed and confirmed txs
-              this.wsEndpoint.emit('txs-broadcast', broadcastTxData)
+              this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
             } catch (err: any) {
               console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
             }

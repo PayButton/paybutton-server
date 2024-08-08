@@ -84,6 +84,18 @@ export const RESPONSE_MESSAGES = {
   METHOD_NOT_ALLOWED: { statusCode: 500, message: 'Method not allowed.' }
 }
 
+export const SOCKET_MESSAGES = {
+  INCOMING_TXS: 'incoming-txs',
+  TXS_BROADCAST: 'txs-broadcast',
+  GET_ALTPAYMENT_RATE: 'get-altpayment-rate',
+  SEND_ALTPAYMENT_RATE: 'send-altpayment-rate',
+  SEND_ALTPAYMENT_COINS_INFO: 'send-altpayment-coins-info',
+  CREATE_ALTPAYMENT_QUOTE: 'create-altpayment-quote',
+  SHIFT_CREATED: 'shift-created',
+  ERROR_WHEN_CREATING_QUOTE: 'quote-creation-error',
+  ERROR_WHEN_CREATING_SHIFT: 'shift-creation-error'
+}
+
 export type KeyValueT<T> = Record<string, T>
 
 export const NETWORK_SLUGS: KeyValueT<string> = {

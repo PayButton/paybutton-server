@@ -18,5 +18,6 @@
   "networksUnderMaintenance": {
     "bitcoincash": true
   },
-  "triggerPOSTTimeout": 3000
+  "triggerPOSTTimeout": 3000,
+  "sideshiftAffiliateId": "JPk84U3xN"
 }
