@@ -110,6 +110,7 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClientNode
   networkId: number
+  networkSlug: string
   chronikWSEndpoint: WsEndpoint_InNode
   wsEndpoint: Socket
   CHRONIK_MSG_PREFIX: string
@@ -120,6 +121,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
     }
 
+    this.networkSlug = networkSlug
     this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
     this.chronik = new ChronikClientNode([config.networkBlockchainURLs[networkSlug]])
     this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
@@ -153,7 +155,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
   }
 
   public getSubscribedAddresses (): string[] {
-    const ret = this.chronikWSEndpoint.subs.scripts.map((script: WsSubScriptClient) => fromHash160(script.scriptType, script.payload))
+    const ret = this.chronikWSEndpoint.subs.scripts.map((script: WsSubScriptClient) => fromHash160(this.networkSlug, script.scriptType, script.payload))
     return [...new Set(ret)]
   }
 
@@ -327,13 +329,13 @@ export class ChronikBlockchainClient implements BlockchainClient {
     for (const input of tx.inputs) {
       details.inputs.push({
         value: new Prisma.Decimal(input.value),
-        address: outputScriptToAddress(input.outputScript)
+        address: outputScriptToAddress(this.networkSlug, input.outputScript)
       })
     }
     for (const output of tx.outputs) {
       details.outputs.push({
         value: new Prisma.Decimal(output.value),
-        address: outputScriptToAddress(output.outputScript)
+        address: outputScriptToAddress(this.networkSlug, output.outputScript)
       })
     }
     return details
@@ -355,7 +357,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     // if they were cancelled and not confirmed
     if (msg.type === 'Tx') {
       if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
-        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.type}] ${msg.txid}`)
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
         try {
           await deleteTransactions(transactionsToDelete)
@@ -370,7 +372,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         if (this.isAlreadyBeingProcessed(msg.txid, msg.msgType === 'TX_CONFIRMED')) {
           return
         }
-        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.type}] ${msg.txid}`)
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transaction = await this.chronik.tx(msg.txid)
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
@@ -397,7 +399,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         }
       }
     } else if (msg.type === 'Block') {
-      console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.type}] ${msg.msgType} Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
+      console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.msgType} Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
     } else if (msg.type === 'Error') {
       console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.type}] ${JSON.stringify(msg.msg)}`)
     }
@@ -463,7 +465,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
   }
 }
 
-export function fromHash160 (type: string, hash160: string): string {
+export function fromHash160 (networkSlug: string, type: string, hash160: string): string {
   const buffer = Buffer.from(hash160, 'hex')
 
   // Because ecashaddrjs only accepts Uint8Array as input type, convert
@@ -474,7 +476,7 @@ export function fromHash160 (type: string, hash160: string): string {
   }
 
   return encode(
-    'ecash',
+    networkSlug,
     type.toUpperCase(),
     hash160Uint8Array
   )
@@ -495,7 +497,7 @@ export function toHash160 (address: string): {type: ScriptType_InNode, hash160: 
 }
 
 // returns P2SH (type 76a914...88ac) or P2PKH (type a914...87) address
-export function outputScriptToAddress (outputScript: string | undefined): string | undefined {
+export function outputScriptToAddress (networkSlug: string, outputScript: string | undefined): string | undefined {
   if (outputScript === undefined) return undefined
 
   const typeTestSlice = outputScript.slice(0, 4)
@@ -522,7 +524,7 @@ export function outputScriptToAddress (outputScript: string | undefined): string
 
   if (hash160.length !== 40) return undefined
 
-  return fromHash160(addressType, hash160)
+  return fromHash160(networkSlug, addressType, hash160)
 }
 
 export interface SubbedAddressesLog {
