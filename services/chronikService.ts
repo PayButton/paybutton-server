@@ -259,6 +259,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     let page = 0
     const latestTimestamp = await getLatestTxTimestampForAddress(address.id) ?? 0
 
+    if (address.syncing) { return }
     await setSyncing(addressString, true)
     while (true) {
       let transactions = await this.getPaginatedTxs(addressString, page, pageSize)
