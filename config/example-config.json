@@ -9,7 +9,7 @@
   "redisURL": "redis://paybutton-cache:6379",
   "networkBlockchainClients": {
     "ecash": "chronik",
-    "bitcoincash": "grpc"
+    "bitcoincash": "chronik"
   },
   "networkBlockchainURLs": {
     "ecash": "https://chronik.fabien.cash",
