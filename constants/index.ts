@@ -54,6 +54,7 @@ export const RESPONSE_MESSAGES = {
   INVALID_QUOTE_SLUG_400: { statusCode: 400, message: 'Invalid quote slug.' },
   INVALID_TICKER_400: { statusCode: 400, message: 'Invalid ticker.' },
   MISSING_BLOCKCHAIN_CLIENT_400: { statusCode: 400, message: 'There is no blockchain client chosen for this network.' },
+  MISSING_BLOCKCHAIN_CLIENT_URL_400: (networkSlug: string) => { return { statusCode: 400, message: `Missing client URL for network ${networkSlug}` } },
   NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400: { statusCode: 400, message: 'Blockchain client was not instantiated.' },
   DEFAULT_WALLET_CANNOT_BE_DELETED_400: { statusCode: 400, message: 'A default wallet cannot be deleted.' },
   NO_USER_PROFILE_FOUND_404: { statusCode: 404, message: 'User profile not found.' },
@@ -104,9 +105,15 @@ export const NETWORK_SLUGS: KeyValueT<string> = {
   bchtest: 'bchtest',
   bchreg: 'bchreg'
 }
+
 export const NETWORK_IDS_FROM_SLUGS: KeyValueT<number> = {
   ecash: 1,
   bitcoincash: 2
+}
+
+export const NETWORK_SLUGS_FROM_IDS: Record<number, string> = {
+  1: 'ecash',
+  2: 'bitcoincash'
 }
 
 // When fetching some address transactions, number of transactions to fetch at a time.
@@ -163,11 +170,7 @@ export const NETWORK_TICKERS_FROM_ID: KeyValueT<string> = {
 export const NETWORK_IDS: KeyValueT<number> = { XEC: 1, BCH: 2 }
 export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
 
-export type BLOCKCHAIN_CLIENT_OPTIONS = 'grpc' | 'chronik'
-export const NETWORK_BLOCKCHAIN_CLIENTS: KeyValueT<BLOCKCHAIN_CLIENT_OPTIONS> = {
-  ecash: 'chronik',
-  bitcoincash: 'grpc'
-}
+export type BLOCKCHAIN_CLIENT_OPTIONS = 'chronik'
 
 export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 45000
 export const DEFAULT_TX_PAGE_SIZE = 100

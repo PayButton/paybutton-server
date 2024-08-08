@@ -184,7 +184,7 @@ export async function fetchAllAddressesForNetworkId (networkId: number): Promise
   })
 }
 
-export async function fetchAddressesInList (prefixedAddressList: string[]): Promise<AddressWithTransactionsAndNetwork[]> {
+export async function fetchAddressesArray (prefixedAddressList: string[]): Promise<AddressWithTransactionsAndNetwork[]> {
   return await prisma.address.findMany({
     where: {
       address: {
