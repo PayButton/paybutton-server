@@ -58,6 +58,6 @@ github-test-integration:
 	sleep 15
 	$(create_test_paybutton_json)
 	$(touch_local_env)
-	sed -i "s/db/localhost/g" .env.test
-	sed -i "s/paybutton-cache/localhost/g" .env.test
+	#sed -i "s/db/localhost/g" .env.test
+	#sed -i "s/paybutton-cache/localhost/g" .env.test
 	yarn ci:integration:test

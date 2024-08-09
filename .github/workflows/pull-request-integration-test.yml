@@ -17,6 +17,6 @@ jobs:
       - name: Add local env file
         run: touch .env.local
       - name: Spin up required database containers
-        run: docker-compose up -d db users-service cache
+        run: source .env.test && docker compose up --force-recreate --build -d db users-service cache
       - name: Run integration tests
         run: make github-test-integration

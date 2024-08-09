@@ -37,8 +37,8 @@ services:
     volumes:
       - ./scripts/db/mysql-config.cnf:/etc/mysql/conf.d/mysql-config.cnf
       - ./scripts/db-entrypoint.sh:/docker-entrypoint-initdb.d/1-db-entrypoint.sh
-      - ./scripts/db/init-test-db.sql:/home/mysql/raw_entrypoint/2-init-test-db.sql
-      - ./scripts/db/init-supertokens-db.sql:/home/mysql/raw_entrypoint/3-init-supertokens-db.sql
+      - ./scripts/db/init-supertokens-db.sql:/home/mysql/raw_entrypoint/2-init-supertokens-db.sql
+      - ./scripts/db/init-test-db.sql:/home/mysql/raw_entrypoint/3-init-test-db.sql
       - ./scripts/db/prisma-shadow-db-fix.sql:/home/mysql/raw_entrypoint/4-prisma-shadow-db-fix.sql
 
   users-service:
