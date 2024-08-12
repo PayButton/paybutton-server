@@ -216,7 +216,7 @@ export const PAYBUTTON_TRANSACTIONS_FILE_HEADERS = {
   paybuttonName: 'Paybutton Name'
 }
 
-export const DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_DELIMITER = '\t'
+export const DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER = ','
 export const MAX_RECORDS_PER_FILE = 2000
 
 export const DECIMALS: { [key: string]: number } = {

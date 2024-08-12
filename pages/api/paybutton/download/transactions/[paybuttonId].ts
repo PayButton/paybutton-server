@@ -3,7 +3,7 @@ import moment from 'moment'
 import {
   PRICE_API_DATE_FORMAT,
   RESPONSE_MESSAGES,
-  DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_DELIMITER,
+  DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER,
   PAYBUTTON_TRANSACTIONS_FILE_HEADERS,
   DECIMALS,
   SUPPORTED_QUOTES,
@@ -92,7 +92,7 @@ export const downloadPaybuttonTransactionsFile = async (
   streamToCSV(
     mappedTransactionsData,
     headers,
-    DEFAULT_PAYBUTTON_TRANSACTIONS_FILE_DELIMITER,
+    DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER,
     res,
     formmattedHeaders
   )
