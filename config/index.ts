@@ -27,6 +27,9 @@ const readConfig = (): Config => {
   if (config.networksUnderMaintenance === undefined) {
     config.networksUnderMaintenance = {}
   }
+  if (config.networkBlockchainURLs === undefined) {
+    config.networkBlockchainURLs = {}
+  }
   if (
     (
       config.networkBlockchainURLs.ecash === undefined ||
