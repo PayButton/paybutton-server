@@ -42,7 +42,7 @@ function isCurrencyValid (currency: string): boolean {
 const cors = Cors({ methods: ['GET', 'HEAD'] })
 
 const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, paybutton: PaybuttonWithAddresses, currency: string): TransactionFileData => {
-  const { amount, createdAt, id } = transaction
+  const { amount, createdAt, hash } = transaction
   const value = getTransactionValueInCurrency(transaction, currency)
   const date = moment(createdAt)
 
@@ -51,7 +51,7 @@ const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAnd
   return {
     amount,
     date,
-    transactionId: id,
+    transactionId: hash,
     value,
     rate,
     paybuttonName: paybutton.name,
