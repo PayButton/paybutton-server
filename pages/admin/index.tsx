@@ -62,7 +62,6 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
   useEffect(() => {
     void (async () => {
       const ok = await (await fetch('chronikStatus')).json()
-      console.log('ok', ok) // WIP
       const subscribedEcashAddresses = ok.ecash.map((value: string) => ({ address: value }))
       const subscribedBitcoincashAddresses = ok.bitcoincash.map((value: string) => ({ address: value }))
       setEcashSubscribedAddresses(subscribedEcashAddresses)
