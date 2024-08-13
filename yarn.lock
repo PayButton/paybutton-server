@@ -2904,7 +2904,7 @@ ecashaddrjs@^1.0.7:
   dependencies:
     big-integer "1.6.36"
 
-ecashaddrjs@^1.5.8, "ecashaddrjs@file:../../../.cache/yarn/v6/npm-chronik-client-0.28.1-475c36f61db0458e88fbd509a0ff940eb3df2f2e-integrity/node_modules/ecashaddrjs":
+ecashaddrjs@^1.5.8, "ecashaddrjs@file:../.cache/yarn/v6/npm-chronik-client-0.28.1-475c36f61db0458e88fbd509a0ff940eb3df2f2e-integrity/node_modules/ecashaddrjs":
   version "1.5.8"
   resolved "https://registry.yarnpkg.com/ecashaddrjs/-/ecashaddrjs-1.5.8.tgz#fff684d14a944cfd4bca56dd8dc3adbfce8016f9"
   integrity sha512-EBL052a1Hd1+wwaBQr3Q+jXY4XfH0jXR1tK360P8GQ9YJUZ5zLG+0I7yee8/QgHY04zdoCzDOY0fRlwqtqDhRg==
