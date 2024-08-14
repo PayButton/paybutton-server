@@ -1,8 +1,8 @@
 import { BlockInfo_InNode, ChronikClientNode, ScriptType_InNode, ScriptUtxo_InNode, Tx_InNode, WsConfig_InNode, WsEndpoint_InNode, WsMsgClient, WsSubScriptClient } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, NodeJsGlobalChronik, TransactionDetails } from './blockchainService'
-import { NETWORK_SLUGS, CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, SOCKET_MESSAGES } from 'constants/index'
+import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, NodeJsGlobalChronik, TransactionDetails, Networks } from './blockchainService'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, NETWORK_SLUGS_FROM_IDS, SOCKET_MESSAGES } from 'constants/index'
 import {
   TransactionWithAddressAndPrices,
   createManyTransactions,
@@ -16,7 +16,7 @@ import {
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
-import { fetchAddressBySubstring, fetchAllAddressesForNetworkId, getLatestTxTimestampForAddress, setSyncing, updateLastSynced } from './addressService'
+import { fetchAddressBySubstring, fetchAddressesArray, fetchAllAddressesForNetworkId, getLatestTxTimestampForAddress, setSyncing, updateLastSynced } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
@@ -109,23 +109,26 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
 
 export class ChronikBlockchainClient implements BlockchainClient {
   chronik: ChronikClientNode
-  availableNetworks: string[]
-  subscribedAddresses: KeyValueT<Address>
+  networkId: number
+  networkSlug: string
   chronikWSEndpoint: WsEndpoint_InNode
   wsEndpoint: Socket
+  CHRONIK_MSG_PREFIX: string
   lastProcessedMessages: ProcessedMessages
 
-  constructor () {
+  constructor (networkSlug: string) {
     if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
       throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
     }
-    this.chronik = new ChronikClientNode([config.chronikClientURL])
-    this.availableNetworks = [NETWORK_SLUGS.ecash]
-    this.subscribedAddresses = {}
+
+    this.networkSlug = networkSlug
+    this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
+    this.chronik = new ChronikClientNode([config.networkBlockchainURLs[networkSlug]])
     this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
     void this.chronikWSEndpoint.waitForOpen()
     this.chronikWSEndpoint.subscribeToBlocks()
     this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
+    this.CHRONIK_MSG_PREFIX = `[CHRONIK ${networkSlug}]`
     this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
       query: {
         key: process.env.WS_AUTH_KEY
@@ -151,6 +154,11 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
+  public getSubscribedAddresses (): string[] {
+    const ret = this.chronikWSEndpoint.subs.scripts.map((script: WsSubScriptClient) => fromHash160(this.networkSlug, script.scriptType, script.payload))
+    return [...new Set(ret)]
+  }
+
   private isAlreadyBeingProcessed (txid: string, confirmed: boolean): boolean {
     this.clearOldMessages()
     if (confirmed) {
@@ -171,7 +179,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
   }
 
   private validateNetwork (networkSlug: string): void {
-    if (!this.availableNetworks.includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message) }
+    if (NETWORK_IDS_FROM_SLUGS[networkSlug] !== this.networkId) { throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message) }
   }
 
   async getBlockchainInfo (networkSlug: string): Promise<BlockchainInfo> {
@@ -251,6 +259,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     let page = 0
     const latestTimestamp = await getLatestTxTimestampForAddress(address.id) ?? 0
 
+    if (address.syncing) { return }
     await setSyncing(addressString, true)
     while (true) {
       let transactions = await this.getPaginatedTxs(addressString, page, pageSize)
@@ -276,7 +285,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
       const simplifiedTransactions = getSimplifiedTransactions(persistedTransactions)
 
-      console.log(`added ${simplifiedTransactions.length} txs to ${addressString}`)
+      console.log(`${this.CHRONIK_MSG_PREFIX}: added ${simplifiedTransactions.length} txs to ${addressString}`)
 
       const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
       broadcastTxData.messageType = 'OldTx'
@@ -321,13 +330,13 @@ export class ChronikBlockchainClient implements BlockchainClient {
     for (const input of tx.inputs) {
       details.inputs.push({
         value: new Prisma.Decimal(input.value),
-        address: outputScriptToAddress(input.outputScript)
+        address: outputScriptToAddress(this.networkSlug, input.outputScript)
       })
     }
     for (const output of tx.outputs) {
       details.outputs.push({
         value: new Prisma.Decimal(output.value),
-        address: outputScriptToAddress(output.outputScript)
+        address: outputScriptToAddress(this.networkSlug, output.outputScript)
       })
     }
     return details
@@ -336,10 +345,10 @@ export class ChronikBlockchainClient implements BlockchainClient {
   private getWsConfig (): WsConfig_InNode {
     return {
       onMessage: (msg: WsMsgClient) => { void this.processWsMessage(msg) },
-      onError: (e: ws.ErrorEvent) => { console.log(`Chronik webSocket error, type: ${e.type} | message: ${e.message} | error: ${e.error as string}`) },
-      onReconnect: (_: ws.Event) => { console.log('Chronik webSocket unexpectedly closed.') },
-      onConnect: (_: ws.Event) => { console.log('Chronik webSocket connection (re)established.') },
-      onEnd: (e: ws.Event) => { console.log(`Chronik WebSocket ended, type: ${e.type}.`) },
+      onError: (e: ws.ErrorEvent) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik webSocket error, type: ${e.type} | message: ${e.message} | error: ${e.error as string}`) },
+      onReconnect: (_: ws.Event) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik webSocket unexpectedly closed.`) },
+      onConnect: (_: ws.Event) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik webSocket connection (re)established.`) },
+      onEnd: (e: ws.Event) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik WebSocket ended, type: ${e.type}.`) },
       autoReconnect: true
     }
   }
@@ -349,7 +358,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     // if they were cancelled and not confirmed
     if (msg.type === 'Tx') {
       if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
-        console.log(`[${msg.type}] ${msg.txid}`)
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
         try {
           await deleteTransactions(transactionsToDelete)
@@ -364,7 +373,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         if (this.isAlreadyBeingProcessed(msg.txid, msg.msgType === 'TX_CONFIRMED')) {
           return
         }
-        console.log(`[${msg.type}] ${msg.txid}`)
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transaction = await this.chronik.tx(msg.txid)
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
@@ -391,14 +400,15 @@ export class ChronikBlockchainClient implements BlockchainClient {
         }
       }
     } else if (msg.type === 'Block') {
-      console.log(`[${msg.type.toString()}] ${msg.msgType} Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
+      console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.msgType} Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
     } else if (msg.type === 'Error') {
-      console.log(`[${msg.type}] ${JSON.stringify(msg.msg)}`)
+      console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.type}] ${JSON.stringify(msg.msg)}`)
     }
   }
 
   private async getAddressesForTransaction (transaction: Tx_InNode): Promise<AddressWithTransaction[]> {
-    const addressesWithTransactions: AddressWithTransaction[] = await Promise.all(Object.values(this.subscribedAddresses).map(
+    const addressesFromStringArray = await fetchAddressesArray(this.getSubscribedAddresses())
+    const addressesWithTransactions: AddressWithTransaction[] = await Promise.all(addressesFromStringArray.map(
       async address => {
         return {
           address,
@@ -415,50 +425,49 @@ export class ChronikBlockchainClient implements BlockchainClient {
   public async subscribeAddresses (addresses: Address[]): Promise<void> {
     if (addresses.length === 0) return
 
-    const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.subscribedAddresses).includes(address.address))
+    const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.getSubscribedAddresses()).includes(address.address))
     addressesAlreadySubscribed.forEach(address => {
-      console.log(`This address was already subscribed: ${address.address}`)
+      console.warn(`${this.CHRONIK_MSG_PREFIX}: address already subscribed: ${address.address}`)
     })
     if (addressesAlreadySubscribed.length === addresses.length) return
     addresses = addresses.filter(address => !addressesAlreadySubscribed.includes(address))
 
-    const addressesByNetwork: KeyValueT<Address[]> = groupAddressesByNetwork(this.availableNetworks, addresses)
+    const addressesByNetwork: KeyValueT<Address[]> = groupAddressesByNetwork([NETWORK_SLUGS_FROM_IDS[this.networkId]], addresses)
 
     for (const [, networkAddresses] of Object.entries(addressesByNetwork)) {
       networkAddresses.forEach(address => {
-        console.log('subbing', address.address)
+        console.log(`${this.CHRONIK_MSG_PREFIX}: subscribing `, address.address)
         this.chronikWSEndpoint.subscribeToAddress(address.address)
-        this.subscribedAddresses[address.address] = address
       })
     }
   }
 
   public async syncMissedTransactions (): Promise<void> {
-    const addresses = await fetchAllAddressesForNetworkId(XEC_NETWORK_ID)
+    const addresses = await fetchAllAddressesForNetworkId(this.networkId)
     try {
       const { failedAddressesWithErrors, successfulAddressesWithCount } = await syncAddresses(addresses)
       Object.keys(failedAddressesWithErrors).forEach((addr) => {
-        console.error(`When syncing missing addresses for address ${addr} encountered error: ${failedAddressesWithErrors[addr]}`)
+        console.error(`${this.CHRONIK_MSG_PREFIX}: When syncing missing addresses for address ${addr} encountered error: ${failedAddressesWithErrors[addr]}`)
       })
       Object.keys(successfulAddressesWithCount).forEach((addr) => {
-        console.log(`Successful synced ${successfulAddressesWithCount[addr]} txs for ${addr}`)
+        console.log(`${this.CHRONIK_MSG_PREFIX}: Successful synced ${successfulAddressesWithCount[addr]} txs for ${addr}`)
       })
     } catch (err: any) {
-      console.error(`ERROR: (skipping anyway) initial missing transactions sync failed: ${err.message as string} ${err.stack as string}`)
+      console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR: (skipping anyway) initial missing transactions sync failed: ${err.message as string} ${err.stack as string}`)
     }
   }
 
   public async subscribeInitialAddresses (): Promise<void> {
-    const addresses = await fetchAllAddressesForNetworkId(XEC_NETWORK_ID)
+    const addresses = await fetchAllAddressesForNetworkId(this.networkId)
     try {
       await this.subscribeAddresses(addresses)
     } catch (err: any) {
-      console.error(`ERROR: (skipping anyway) initial chronik subscription failed: ${err.message as string} ${err.stack as string}`)
+      console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR: (skipping anyway) initial chronik subscription failed: ${err.message as string} ${err.stack as string}`)
     }
   }
 }
 
-export function fromHash160 (type: string, hash160: string): string {
+export function fromHash160 (networkSlug: string, type: string, hash160: string): string {
   const buffer = Buffer.from(hash160, 'hex')
 
   // Because ecashaddrjs only accepts Uint8Array as input type, convert
@@ -469,7 +478,7 @@ export function fromHash160 (type: string, hash160: string): string {
   }
 
   return encode(
-    'ecash',
+    networkSlug,
     type.toUpperCase(),
     hash160Uint8Array
   )
@@ -484,13 +493,13 @@ export function toHash160 (address: string): {type: ScriptType_InNode, hash160: 
     )
     return { type: type.toLowerCase() as ScriptType_InNode, hash160: addrHash160 }
   } catch (err) {
-    console.log('Error converting address to hash160')
+    console.log('[CHRONIK]: Error converting address to hash160')
     throw err
   }
 }
 
 // returns P2SH (type 76a914...88ac) or P2PKH (type a914...87) address
-export function outputScriptToAddress (outputScript: string | undefined): string | undefined {
+export function outputScriptToAddress (networkSlug: string, outputScript: string | undefined): string | undefined {
   if (outputScript === undefined) return undefined
 
   const typeTestSlice = outputScript.slice(0, 4)
@@ -517,30 +526,22 @@ export function outputScriptToAddress (outputScript: string | undefined): string
 
   if (hash160.length !== 40) return undefined
 
-  return fromHash160(addressType, hash160)
+  return fromHash160(networkSlug, addressType, hash160)
 }
 
 export interface SubbedAddressesLog {
-  registeredSubscriptions: string[]
-  currentSubscriptions: string[]
-  different: boolean
+  [k: string]: string[]
 }
 
-export function getSubbedAddresses (): SubbedAddressesLog {
-  const chronik = (global as unknown as NodeJsGlobalChronik).chronik
-  const ret = {} as any
-  ret.registeredSubscriptions = Object.keys(chronik.subscribedAddresses)
-  ret.currentSubscriptions = chronik.chronikWSEndpoint.subs.scripts.map((script: WsSubScriptClient) => fromHash160(script.scriptType, script.payload))
-  ret.different = currentSubscriptionsDifferentThanRegistered(ret.registeredSubscriptions, ret.currentSubscriptions)
-  return ret
-}
-
-function currentSubscriptionsDifferentThanRegistered (registeredSubscriptions: string[], currentSubscriptions: string[]): boolean {
-  if (registeredSubscriptions.length !== currentSubscriptions.length) return true
-
-  for (let i = 0; i < registeredSubscriptions.length; i++) {
-    if (registeredSubscriptions[i] !== currentSubscriptions[i]) return true
+export function getAllSubscribedAddresses (): SubbedAddressesLog {
+  const chronikClients = (global as unknown as NodeJsGlobalChronik).chronik
+  if (chronikClients === undefined) {
+    throw new Error('No chronik client instantiated to see subscribed addresses')
   }
-
-  return false
+  const ret = {} as any
+  // chronik?.ecash?.chronikWSEndpoint.subs
+  for (const key of Object.keys(chronikClients)) {
+    ret[key] = chronikClients[key as Networks]?.getSubscribedAddresses()
+  }
+  return ret
 }

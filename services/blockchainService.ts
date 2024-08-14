@@ -1,4 +1,3 @@
-import { GrpcBlockchainClient } from './grpcService'
 import { ChronikBlockchainClient } from './chronikService'
 import { getObjectValueForAddress, getObjectValueForNetworkSlug } from '../utils/index'
 import { RESPONSE_MESSAGES, KeyValueT, NETWORK_IDS, NETWORK_TICKERS } from '../constants/index'
@@ -52,21 +51,33 @@ export interface BlockchainClient {
   subscribeAddresses: (addresses: Address[]) => Promise<void>
 }
 
+interface NetworkClients{
+  ecash?: ChronikBlockchainClient
+  bitcoincash?: ChronikBlockchainClient
+}
+
+export type Networks = 'ecash' | 'bitcoincash'
+
 export interface NodeJsGlobalChronik extends NodeJS.Global {
-  chronik: ChronikBlockchainClient
+  chronik?: NetworkClients
 }
 declare const global: NodeJsGlobalChronik
 
-function getBlockchainClient (networkSlug: string): BlockchainClient {
+function getBlockchainClient (networkSlug: Networks): BlockchainClient {
   if (!Object.keys(config.networkBlockchainClients).includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.MISSING_BLOCKCHAIN_CLIENT_400.message) }
 
   switch (config.networkBlockchainClients[networkSlug]) {
-    case 'grpc' as BlockchainClientOptions:
-      return new GrpcBlockchainClient()
     case 'chronik' as BlockchainClientOptions:
-      if (global.chronik === undefined && ChronikBlockchainClient !== undefined) {
-        console.log('creating chronik instance...')
-        global.chronik = new ChronikBlockchainClient()
+      if (global.chronik === undefined || global.chronik[networkSlug] === undefined) {
+        console.log('creating chronik client for ', networkSlug)
+        const newClient = new ChronikBlockchainClient(networkSlug)
+        if (global.chronik === undefined) {
+          global.chronik = {
+            [networkSlug]: newClient
+          }
+        } else {
+          global.chronik[networkSlug] = newClient
+        }
         // Subscribe addresses & Sync lost transactions on DB upon client initialization
         if (
           process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD &&
@@ -74,12 +85,12 @@ function getBlockchainClient (networkSlug: string): BlockchainClient {
           process.env.JOBS_ENV === undefined
         ) {
           console.log('subscribing existent addresses...')
-          void global.chronik.subscribeInitialAddresses()
+          void newClient.subscribeInitialAddresses()
           console.log('syncing missed transactions...')
-          void global.chronik.syncMissedTransactions()
+          void newClient.syncMissedTransactions()
         }
       }
-      return global.chronik
+      return global.chronik[networkSlug] as BlockchainClient
     default:
       throw new Error(RESPONSE_MESSAGES.NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400.message)
   }
