@@ -499,7 +499,7 @@ export const getTransactionValueInCurrency = (transaction: TransactionWithAddres
     timestamp
   } = transaction
 
-  const result: { [key in SupportedQuotesType]: number } = {}
+  const result: Record<SupportedQuotesType, number> = {}
 
   if (prices.length !== N_OF_QUOTES) {
     throw new Error(`${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}, txId ${id}, at ${timestamp}`)
