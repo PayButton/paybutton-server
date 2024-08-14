@@ -1,4 +1,3 @@
-import Cors from 'cors'
 import moment from 'moment'
 import {
   PRICE_API_DATE_FORMAT,
@@ -38,8 +37,6 @@ export interface FormattedTransactionFileData {
 function isCurrencyValid (currency: string): boolean {
   return SUPPORTED_QUOTES.includes(currency)
 }
-
-const cors = Cors({ methods: ['GET', 'HEAD'] })
 
 const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, paybutton: PaybuttonWithAddresses, currency: string): TransactionFileData => {
   const { amount, createdAt, hash } = transaction
@@ -100,14 +97,6 @@ export const downloadPaybuttonTransactionsFile = async (
 
 export default async (req: any, res: any): Promise<void> => {
   try {
-    await new Promise((resolve, reject) => {
-      cors(req, res, (result) => {
-        if (result instanceof Error) {
-          return reject(result)
-        }
-        return resolve(result)
-      })
-    })
     if (req.method !== 'GET') {
       throw new Error(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.message)
     }
