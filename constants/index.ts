@@ -214,8 +214,7 @@ export const PAYBUTTON_TRANSACTIONS_FILE_HEADERS = {
   amount: 'Amount',
   value: 'Value',
   rate: 'Rate',
-  transactionId: 'Transaction Id',
-  paybuttonName: 'Paybutton Name'
+  transactionId: 'Transaction Id'
 }
 
 export const DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER = ','

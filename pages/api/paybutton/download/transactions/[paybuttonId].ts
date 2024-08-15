@@ -21,7 +21,6 @@ export interface TransactionFileData {
   date: moment.Moment
   value: number
   rate: number
-  paybuttonName: string
   transactionId: string
   currency: string
 }
@@ -31,7 +30,6 @@ export interface FormattedTransactionFileData {
   date: string
   value: string
   rate: string
-  paybuttonName: string
   transactionId: string
 }
 
@@ -39,7 +37,7 @@ function isCurrencyValid (currency: SupportedQuotesType): boolean {
   return SUPPORTED_QUOTES.includes(currency)
 }
 
-const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, paybutton: PaybuttonWithAddresses, currency: SupportedQuotesType): TransactionFileData => {
+const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType): TransactionFileData => {
   const { amount, createdAt, hash } = transaction
   const value = getTransactionValueInCurrency(transaction, currency)
   const date = moment(createdAt)
@@ -52,7 +50,6 @@ const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAnd
     transactionId: hash,
     value,
     rate,
-    paybuttonName: paybutton.name,
     currency
   }
 }
@@ -81,7 +78,7 @@ export const downloadPaybuttonTransactionsFile = async (
   const transactions = await fetchTransactionsByPaybuttonId(paybutton.id)
 
   const mappedTransactionsData = transactions.map(tx => {
-    const data = getPaybuttonTransactionsFileData(tx, paybutton, currency)
+    const data = getPaybuttonTransactionsFileData(tx, currency)
     return formatPaybuttonTransactionsFileData(data)
   })
   const headers = Object.keys(PAYBUTTON_TRANSACTIONS_FILE_HEADERS)
