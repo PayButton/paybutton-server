@@ -23,6 +23,7 @@ export interface TransactionFileData {
   rate: number
   transactionId: string
   currency: string
+  address: string
 }
 
 export interface FormattedTransactionFileData {
@@ -31,6 +32,7 @@ export interface FormattedTransactionFileData {
   value: string
   rate: string
   transactionId: string
+  address: string
 }
 
 function isCurrencyValid (currency: SupportedQuotesType): boolean {
@@ -38,7 +40,7 @@ function isCurrencyValid (currency: SupportedQuotesType): boolean {
 }
 
 const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType): TransactionFileData => {
-  const { amount, createdAt, hash } = transaction
+  const { amount, createdAt, hash, address } = transaction
   const value = getTransactionValueInCurrency(transaction, currency)
   const date = moment(createdAt)
 
@@ -50,7 +52,8 @@ const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAnd
     transactionId: hash,
     value,
     rate,
-    currency
+    currency,
+    address: address.address
   }
 }
 
