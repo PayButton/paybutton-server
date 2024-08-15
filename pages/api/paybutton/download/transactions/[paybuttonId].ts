@@ -6,7 +6,8 @@ import {
   PAYBUTTON_TRANSACTIONS_FILE_HEADERS,
   DECIMALS,
   SUPPORTED_QUOTES,
-  DEFAULT_QUOTE_SLUG
+  DEFAULT_QUOTE_SLUG,
+  SupportedQuotesType
 } from 'constants/index'
 import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonId, getTransactionValueInCurrency } from 'services/transactionService'
 import { PaybuttonWithAddresses, fetchPaybuttonById } from 'services/paybuttonService'
@@ -34,11 +35,11 @@ export interface FormattedTransactionFileData {
   transactionId: string
 }
 
-function isCurrencyValid (currency: string): boolean {
+function isCurrencyValid (currency: SupportedQuotesType): boolean {
   return SUPPORTED_QUOTES.includes(currency)
 }
 
-const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, paybutton: PaybuttonWithAddresses, currency: string): TransactionFileData => {
+const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, paybutton: PaybuttonWithAddresses, currency: SupportedQuotesType): TransactionFileData => {
   const { amount, createdAt, hash } = transaction
   const value = getTransactionValueInCurrency(transaction, currency)
   const date = moment(createdAt)
@@ -76,7 +77,7 @@ const formatPaybuttonTransactionsFileData = (data: TransactionFileData): Formatt
 export const downloadPaybuttonTransactionsFile = async (
   res: NextApiResponse,
   paybutton: PaybuttonWithAddresses,
-  currency: string): Promise<void> => {
+  currency: SupportedQuotesType): Promise<void> => {
   const transactions = await fetchTransactionsByPaybuttonId(paybutton.id)
 
   const mappedTransactionsData = transactions.map(tx => {
@@ -108,7 +109,7 @@ export default async (req: any, res: any): Promise<void> => {
 
     const userId = req.session.userId
     const paybuttonId = req.query.paybuttonId as string
-    const currency = isCurrencyValid(req.query.currency) ? req.query.currency as string : DEFAULT_QUOTE_SLUG
+    const currency = isCurrencyValid(req.query.currency) ? req.query.currency as SupportedQuotesType : DEFAULT_QUOTE_SLUG
 
     const paybutton = await fetchPaybuttonById(paybuttonId)
     if (paybutton.providerUserId !== userId) {

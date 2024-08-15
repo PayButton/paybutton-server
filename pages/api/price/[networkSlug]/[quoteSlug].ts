@@ -2,7 +2,7 @@ import { NextApiResponse, NextApiRequest } from 'next/types'
 import { getNetworkFromSlug } from 'services/networkService'
 import { getCurrentPricesForNetworkId, QuoteValues } from 'services/priceService'
 import { parseError } from 'utils/validators'
-import { RESPONSE_MESSAGES, SUPPORTED_QUOTES } from 'constants/index'
+import { RESPONSE_MESSAGES, SupportedQuotesType, SUPPORTED_QUOTES } from 'constants/index'
 import Cors from 'cors'
 import { runMiddleware } from 'utils/index'
 
@@ -22,7 +22,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       if (networkSlug === '' || networkSlug === undefined) {
         throw new Error(RESPONSE_MESSAGES.NETWORK_SLUG_NOT_PROVIDED_400.message)
       }
-      if (!SUPPORTED_QUOTES.includes(quoteSlug)) {
+      if (!SUPPORTED_QUOTES.includes(quoteSlug as SupportedQuotesType)) {
         throw new Error(RESPONSE_MESSAGES.INVALID_QUOTE_SLUG_400.message)
       }
       const networkId = (await getNetworkFromSlug(networkSlug)).id

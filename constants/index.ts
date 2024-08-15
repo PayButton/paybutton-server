@@ -129,10 +129,12 @@ export const BCH_NETWORK_ID = 2
 export const USD_QUOTE_ID = 1
 export const CAD_QUOTE_ID = 2
 export const N_OF_QUOTES = 2 // USD and CAD for now
-export const DEFAULT_QUOTE_SLUG = 'usd'
+export type SupportedQuotesType = 'usd' | 'cad'
+export const DEFAULT_QUOTE_SLUG = 'usd' as SupportedQuotesType
+
 export const SUPPORTED_QUOTES = [ // avoids hitting the DB every time for data that won't change
-  'usd',
-  'cad'
+  'usd' as SupportedQuotesType,
+  'cad' as SupportedQuotesType
 ]
 
 export const HUMAN_READABLE_DATE_FORMAT = 'YYYY-MM-DD'
