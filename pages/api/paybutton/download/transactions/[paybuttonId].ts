@@ -80,7 +80,9 @@ export const downloadPaybuttonTransactionsFile = async (
   currency: SupportedQuotesType): Promise<void> => {
   const transactions = await fetchTransactionsByPaybuttonId(paybutton.id)
 
-  const mappedTransactionsData = transactions.map(tx => {
+  const mappedTransactionsData = transactions.sort((a, b) => {
+    return (a.timestamp - b.timestamp)
+  }).map(tx => {
     const data = getPaybuttonTransactionsFileData(tx, currency)
     return formatPaybuttonTransactionsFileData(data)
   })
