@@ -40,9 +40,9 @@ function isCurrencyValid (currency: SupportedQuotesType): boolean {
 }
 
 const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType): TransactionFileData => {
-  const { amount, createdAt, hash, address } = transaction
+  const { amount, hash, address, timestamp } = transaction
   const value = getTransactionValueInCurrency(transaction, currency)
-  const date = moment(createdAt)
+  const date = moment(timestamp * 1000)
 
   const rate = value / amount.toNumber()
 
