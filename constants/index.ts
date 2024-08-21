@@ -81,6 +81,7 @@ export const RESPONSE_MESSAGES = {
   PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400: { statusCode: 400, message: 'pageSize and page parameters should be valid integers.' },
   INVALID_OUTPUT_SCRIPT_LENGTH_500: (l: number) => { return { statusCode: 500, message: `Invalid outputScript length ${l}` } },
   FAILED_TO_PARSE_TX_OP_RETURN_500: { statusCode: 500, message: 'Failed to parse OP_RETURN data in Tx.' },
+  PAYBUTTON_ID_NOT_PROVIDED_400: { statusCode: 400, message: 'Paybutton id not provided' },
   METHOD_NOT_ALLOWED: { statusCode: 500, message: 'Method not allowed.' }
 }
 
@@ -135,10 +136,12 @@ export const BCH_NETWORK_ID = 2
 export const USD_QUOTE_ID = 1
 export const CAD_QUOTE_ID = 2
 export const N_OF_QUOTES = 2 // USD and CAD for now
-export const DEFAULT_QUOTE_SLUG = 'usd'
+export type SupportedQuotesType = 'usd' | 'cad'
+export const DEFAULT_QUOTE_SLUG = 'usd' as SupportedQuotesType
+
 export const SUPPORTED_QUOTES = [ // avoids hitting the DB every time for data that won't change
-  'usd',
-  'cad'
+  'usd' as SupportedQuotesType,
+  'cad' as SupportedQuotesType
 ]
 
 export const HUMAN_READABLE_DATE_FORMAT = 'YYYY-MM-DD'
@@ -208,3 +211,22 @@ export const TRIGGER_POST_VARIABLES = [
   '<timestamp>',
   '<txId>'
 ]
+
+export const PAYBUTTON_TRANSACTIONS_FILE_HEADERS = {
+  date: 'Date',
+  amount: 'Amount',
+  value: 'Value',
+  rate: 'Rate',
+  transactionId: 'Transaction Id',
+  address: 'Address'
+
+}
+
+export const DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER = ','
+export const MAX_RECORDS_PER_FILE = 2000
+
+export const DECIMALS: Record<string, number> = {
+  BCH: 8,
+  XEC: 2,
+  FIAT: 2
+}

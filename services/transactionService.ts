@@ -3,7 +3,7 @@ import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT } from 'constants/index'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
@@ -478,13 +478,42 @@ export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transa
   return txs.filter(t => t.prices.length !== 2)
 }
 
-export async function fetchTransactionsByPaybuttonId(paybuttonId: string): Promise<Transaction[]>{
-  const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId);
+export async function fetchTransactionsByPaybuttonId (paybuttonId: string): Promise<TransactionWithAddressAndPrices[]> {
+  const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
   const transactions = await fetchAddressListTransactions(addressIdList)
-  
-  if(transactions.length === 0){
+
+  if (transactions.length === 0) {
     throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
   }
-  
-  return transactions;
+
+  return transactions
+}
+
+export const getTransactionValueInCurrency = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType): number => {
+  const {
+    prices,
+    amount,
+    id,
+    timestamp
+  } = transaction
+
+  const result: Record<SupportedQuotesType, number> = {
+    usd: 0,
+    cad: 0
+  }
+
+  if (prices.length !== N_OF_QUOTES) {
+    throw new Error(`${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}, txId ${id}, at ${timestamp}`)
+  }
+
+  for (const p of prices) {
+    if (p.price.quoteId === USD_QUOTE_ID) {
+      result.usd = p.price.value.times(amount).toNumber()
+    }
+    if (p.price.quoteId === CAD_QUOTE_ID) {
+      result.cad = p.price.value.times(amount).toNumber()
+    }
+  }
+
+  return result[currency]
 }
