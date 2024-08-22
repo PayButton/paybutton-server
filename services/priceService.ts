@@ -28,42 +28,46 @@ interface IResponseDataDaily extends IResponseData {
 }
 
 export async function upsertPricesForNetworkId (responseData: IResponseData, networkId: number, timestamp: number): Promise<void> {
-  await prisma.price.upsert({
-    where: {
-      Price_timestamp_quoteId_networkId_unique_constraint: {
+  try {
+    await prisma.price.upsert({
+      where: {
+        Price_timestamp_quoteId_networkId_unique_constraint: {
+          quoteId: USD_QUOTE_ID,
+          networkId,
+          timestamp
+        }
+      },
+      create: {
         quoteId: USD_QUOTE_ID,
         networkId,
-        timestamp
+        timestamp,
+        value: new Prisma.Decimal(responseData.Price_in_USD)
+      },
+      update: {
+        value: new Prisma.Decimal(responseData.Price_in_USD)
       }
-    },
-    create: {
-      quoteId: USD_QUOTE_ID,
-      networkId,
-      timestamp,
-      value: new Prisma.Decimal(responseData.Price_in_USD)
-    },
-    update: {
-      value: new Prisma.Decimal(responseData.Price_in_USD)
-    }
-  })
-  await prisma.price.upsert({
-    where: {
-      Price_timestamp_quoteId_networkId_unique_constraint: {
+    })
+    await prisma.price.upsert({
+      where: {
+        Price_timestamp_quoteId_networkId_unique_constraint: {
+          quoteId: CAD_QUOTE_ID,
+          networkId,
+          timestamp
+        }
+      },
+      create: {
         quoteId: CAD_QUOTE_ID,
         networkId,
-        timestamp
+        timestamp,
+        value: new Prisma.Decimal(responseData.Price_in_CAD)
+      },
+      update: {
+        value: new Prisma.Decimal(responseData.Price_in_CAD)
       }
-    },
-    create: {
-      quoteId: CAD_QUOTE_ID,
-      networkId,
-      timestamp,
-      value: new Prisma.Decimal(responseData.Price_in_CAD)
-    },
-    update: {
-      value: new Prisma.Decimal(responseData.Price_in_CAD)
-    }
-  })
+    })
+  } catch (error) {
+    console.error(`Problem inserting current price for ${networkId} at timestamp ${timestamp} using data`, responseData, `:\n${error as string}`)
+  }
 }
 
 export async function upsertCurrentPricesForNetworkId (responseData: IResponseData, networkId: number): Promise<void> {
@@ -239,7 +243,7 @@ export async function fetchPricesForNetworkAndTimestamp (networkId: number, time
     if (attempt < PRICE_API_MAX_RETRIES) {
       return await fetchPricesForNetworkAndTimestamp(networkId, timestamp, prisma, attempt + 1)
     }
-    throw new Error(RESPONSE_MESSAGES.NO_PRICES_FOUND_404.message)
+    throw new Error(RESPONSE_MESSAGES.NO_PRICES_FOUND_404(networkId, timestamp).message)
   }
   return {
     cad: cadPrice,

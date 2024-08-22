@@ -9,7 +9,7 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
 import { BroadcastTxData } from 'ws-service/types'
-import { KeyValueT, ResponseMessage } from 'constants/index'
+import { KeyValueT, ResponseMessage, SOCKET_MESSAGES } from 'constants/index'
 import config from 'config'
 import io from 'socket.io-client'
 import PaybuttonTrigger from 'components/Paybutton/PaybuttonTrigger'
@@ -85,7 +85,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
       query: { addresses }
     })
 
-    socket.on('incoming-txs', (broadcastedData: BroadcastTxData) => {
+    socket.on(SOCKET_MESSAGES.INCOMING_TXS, (broadcastedData: BroadcastTxData) => {
       setTableRefreshCount(tableRefreshCount + 1)
       updateIsSyncing([broadcastedData.address])
     })
@@ -101,12 +101,44 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
     void getDataAndSetUpSocket()
   }, [])
 
+  const downloadCSV = async (paybutton: { id: string }): Promise<void> => {
+    try {
+      const response = await fetch(`/api/paybutton/download/transactions/${paybutton.id}`)
+
+      if (!response.ok) {
+        throw new Error('Failed to download CSV')
+      }
+
+      const blob = await response.blob()
+
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = `${paybutton.id}-transactions.csv`
+
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    } catch (error) {
+      console.error('An error occurred while downloading the CSV:', error)
+    }
+  }
+
   if (paybutton != null) {
     return (
       <>
         <div className='back_btn' onClick={() => router.back()}>Back</div>
         <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton}/>
-        <h4>Transactions</h4>
+        <div style={{ display: 'flex', alignItems: 'center', alignContent: 'center', justifyContent: 'space-between' }}>
+          <h4>Transactions</h4>
+
+          <div
+            onClick={() => { void downloadCSV(paybutton) }}
+            className="button_outline button_small export_btn"
+
+          > Export as CSV</div>
+      </div>
+
         <AddressTransactions addressSyncing={isSyncing} tableRefreshCount={tableRefreshCount}/>
         <PaybuttonTrigger paybuttonId={paybutton.id}/>
       </>

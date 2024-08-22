@@ -12,6 +12,7 @@ https://paybutton.org
   + `PRICE_API_TOKEN="<COINDANCE_API_KEY>"`
   + `WS_AUTH_KEY="<RANDOMLY_GENERATED_UUID>"`
   + `MASTER_SECRET_KEY="<RANDOMLY_GENERATED_UUID>"`
+  + `SIDESHIFT_SECRET_KEY="<SIDESHIFT_SECRET_KEY>"` (necessary only when working with the paybutton client for SideShift integration)
 
 - Run the following make command* to build/pull the relevant docker images and run the server locally:
 
@@ -71,28 +72,15 @@ default: false,
 > If the connection of test networks for eCash and Bitcoin Cash should appear in the Networks tab.
 
 
-#### grpcBCHNodeURL
+#### networkBlockchainURLs
 ```
-type: string
-default: "bchd.greyh.at:8335"
-```
-> GRPC URL to connect to for BCH (unsupported at the moment).
+type: {
+   "ecash": "https://chronik.fabien.cash",
+   "bitcoincash": "https://chronik.pay2stay.com/bch"
+}
 
-
-#### grpcXECNodeURL
 ```
-type: string
-default: "grpc.fabien.cash:8335"
-```
-> GRPC URL to connect to for XEC (unsupported at the moment).
-
-
-#### chronikClientURL
-```
-type: string
-default: "https://chronik.fabien.cash"
-```
-> URL for the Chronik client to connect to. Providing an array of URLs is supported.
+> What URLs to connect each network chosen client to (from networkBlockchainClients)
 
 
 #### priceAPIURL
@@ -113,16 +101,15 @@ default: "redis://paybutton-cache:6379"
 #### networkBlockchainClients
 ```
 type: {
-    "ecash": "chronik" | "grpc"
-    "bitcoincash": "grpc"
+    "ecash": "chronik",
+    "bitcoincash": "chronik"
 }
 default: {
     "ecash": "chronik",
-    "bitcoincash": "grpc"
+    "bitcoincash": "chronik"
 }
 ```
-> Which client to use to get the blockchain information for each network. Currently, only "chronik" is supported for eCash 
-and Bitcoin Cash is not supported.
+> Which client to use to get the blockchain information for each network. Currently, only "chronik" is supported for eCash and Bitcoin Cash.
 
 
 #### networksUnderMaintenance
@@ -146,6 +133,12 @@ default: 3000
 ```
 > How long a POST request triggered from a button payment will wait for an answer to be marked as successful.
 
+#### sideshiftAffiliateId
+```
+type: string
+default: N/A
+```
+> Necessary only for paybutton client to interact with sideshift through the server.
 
 ---
 

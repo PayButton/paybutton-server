@@ -162,6 +162,7 @@ model UserProfile {
   createdAt DateTime                  @default(now())
   updatedAt DateTime                  @updatedAt
   isAdmin   Boolean?
+  publicKey String                    @db.VarChar(255)@default("")
   lastSentVerificationEmailAt DateTime?
   wallets   WalletsOnUserProfile[]
   addresses AddressesOnUserProfiles[]
@@ -189,4 +190,25 @@ model TriggerLog {
   isError   Boolean
   actionType   String
   data       String               @db.LongText
+}
+
+model SideshiftShift {
+  id                  String @id
+  createdAt           DateTime
+  depositCoin         String
+  settleCoin          String
+  depositNetwork      String
+  settleNetwork       String
+  depositAddress      String
+  settleAddress       String
+  depositMin          String
+  depositMax          String
+  averageShiftSeconds String
+  depositAmount       String
+  expiresAt           DateTime
+  quoteId             String
+  rate                String
+  settleAmount        String
+  status              String
+  type                String
 }

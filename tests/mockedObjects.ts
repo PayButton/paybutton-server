@@ -1,11 +1,7 @@
 // Paybutton
 // GRPC-BCHRPC
-import {
-  Transaction,
-  UnspentOutput
-} from 'grpc-bchrpc-node'
 
-import { Prisma, Price, UserProfile } from '@prisma/client'
+import { Prisma, Price, UserProfile, AddressesOnButtons } from '@prisma/client'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import { USD_QUOTE_ID, CAD_QUOTE_ID, XEC_NETWORK_ID, NETWORK_SLUGS } from 'constants/index'
@@ -461,152 +457,6 @@ export const mockedTransactionList = [
   }
 ]
 
-// BCH GRPC
-export const unspentOutputFromObject = (obj: UnspentOutput.AsObject): UnspentOutput => {
-  const uo = new UnspentOutput()
-  uo.setPubkeyScript(obj.pubkeyScript)
-  uo.setValue(obj.value)
-  uo.setIsCoinbase(obj.isCoinbase)
-  uo.setBlockHeight(obj.blockHeight)
-  return uo
-}
-
-const outputFromObject = (obj: Transaction.Output.AsObject): Transaction.Output => {
-  const out = new Transaction.Output()
-  out.setIndex(obj.index)
-  out.setValue(obj.value)
-  out.setPubkeyScript(obj.pubkeyScript)
-  out.setAddress(obj.address)
-  out.setScriptClass(obj.scriptClass)
-  out.setDisassembledScript(obj.disassembledScript)
-  return out
-}
-
-const inputFromObject = (obj: Transaction.Input.AsObject): Transaction.Input => {
-  const inp = new Transaction.Input()
-  inp.setIndex(obj.index)
-  inp.setSignatureScript(obj.signatureScript)
-  inp.setSequence(obj.sequence)
-  inp.setValue(obj.value)
-  inp.setPreviousScript(obj.previousScript)
-  inp.setAddress(obj.address)
-  return inp
-}
-
-export const transactionFromObject = (obj: Transaction.AsObject): Transaction => {
-  const t = new Transaction()
-  t.setHash(obj.hash)
-  t.setVersion(obj.version)
-  t.setLockTime(obj.lockTime)
-  t.setSize(obj.size)
-  t.setTimestamp(obj.timestamp)
-  t.setConfirmations(obj.confirmations)
-  t.setBlockHeight(obj.blockHeight)
-  t.setBlockHash(obj.blockHash)
-  t.setOutputsList(obj.outputsList.map((out) => outputFromObject(out)))
-  t.setInputsList(obj.inputsList.map((inp) => inputFromObject(inp)))
-  return t
-}
-
-export const mockedGrpc = {
-  transaction1: transactionFromObject({
-    hash: 'LUZSpMOab+ZYlyQNxF0XasKpArgQAX633LoA5CBPGgE=',
-    version: 1,
-    lockTime: 0,
-    size: 219,
-    timestamp: 1653460454,
-    confirmations: 60,
-    blockHeight: 741620,
-    blockHash: 'jzSPV4kkI3x5Fdoow/ei3f7Zit+oGMYCAAAAAAAAAAA=',
-    inputsList: [
-      {
-        index: 0,
-        outpoint: { hash: 'NTkmyHCk82XbV43ew+Ev8mSN6hSF1SNPv2q+9MEVQNw=', index: 2 },
-        signatureScript: 'RzBEAiATvPHhB2XZSDBh4qPKGbpZnthiP7b6F5nNq0jl9e9segIgQb/p7YKnBcAkXrn1ePKRQOCb3CS2TqjLl55Q46xLA7FBIQI+0YnB1MWonyW6U8ydXQbD46v80yMEO61nvbuLGgeMlA==',
-        sequence: 4294967295,
-        value: 5179951,
-        previousScript: 'dqkUsDxLgAuwV19sDxHhVVQcwGYaj5qIrA==',
-        address: 'qzcrcjuqpwc9whmvpug7z425rnqxvx50ngl60rrjst',
-        slpToken: undefined
-      },
-      {
-        index: 1,
-        outpoint: { hash: 'cnPvSV4O12UwKBSyPX9RoD+xem14XBlcUFhklAowLjE=', index: 1 },
-        signatureScript: 'RzBEAiBVcKX1SZ08kwIvKt+CJCFcq2AMPuJh9xNoZPbFCBtO8AIgDcTg6dy/l8+Se0hD5Fb6zXhaVLZi9JyShl3qlChlCF5BIQNVw6/pYXrkj4YXjrHuzGDWysHPUCvUVptjbOmlkVmamA==',
-        sequence: 4294967295,
-        value: 546,
-        previousScript: 'dqkUi4A+rsJZAKFsCtIAF8coYnYGLEqIrA==',
-        address: 'qz9cq04wcfvspgtvptfqq9789p38vp3vfgt3y66gue',
-        slpToken: {
-          tokenId: 'MS4wCpRkWFBcGVx4bXqxP6BRfz2yFCgwZdcOXknvc3I=',
-          amount: '1',
-          isMintBaton: false,
-          address: 'qz9cq04wcfvspgtvptfqq9789p38vp3vfg820p0gz8',
-          decimals: 0,
-          slpAction: 10,
-          tokenType: 65
-        }
-      }
-    ],
-    outputsList: [{
-      index: 0,
-      value: 431247724,
-      pubkeyScript: 'dqkUeCxnbWKveaKpCSRhJC/poE+saL+IrA==',
-      address: mockedBCHAddress.address,
-      scriptClass: 'pubkeyhash',
-      disassembledScript: 'OP_DUP OP_HASH160 782c676d62af79a2a9092461242fe9a04fac68bf OP_EQUALVERIFY OP_CHECKSIG'
-    }, {
-      index: 1,
-      value: 227413293,
-      pubkeyScript: 'dqkUokKnAjaab8AVlPxzrrxk1aRq4BOIrA==',
-      address: 'qz3y9fczx6dxlsq4jn788t4uvn26g6hqzvrczjuzz2',
-      scriptClass: 'pubkeyhash',
-      disassembledScript: 'OP_DUP OP_HASH160 a242a702369a6fc01594fc73aebc64d5a46ae013 OP_EQUALVERIFY OP_CHECKSIG'
-    }]
-  }),
-  transaction2: transactionFromObject({
-    hash: 'jiZHfE+AohEJglMO29nQ5aTR6F/n4Om2whzEZUiXcHk=',
-    version: 2,
-    lockTime: 0,
-    size: 225,
-    timestamp: 1653459437,
-    confirmations: 61,
-    blockHeight: 741619,
-    blockHash: 'A6kjJsl4gaVrY0Z15k0SoRzfKv0Fis8EAAAAAAAAAAA=',
-    inputsList: [
-      {
-        index: 0,
-        outpoint: { hash: 'NTkmyHCk82XbV43ew+Ev8mSN6hSF1SNPv2q+9MEVQNw=', index: 2 },
-        signatureScript: 'RzBEAiATvPHhB2XZSDBh4qPKGbpZnthiP7b6F5nNq0jl9e9segIgQb/p7YKnBcAkXrn1ePKRQOCb3CS2TqjLl55Q46xLA7FBIQI+0YnB1MWonyW6U8ydXQbD46v80yMEO61nvbuLGgeMlA==',
-        sequence: 4294967295,
-        value: 5179951,
-        previousScript: 'dqkUsDxLgAuwV19sDxHhVVQcwGYaj5qIrA==',
-        address: 'qzcrcjuqpwc9whmvpug7z425rnqxvx50ngl60rrjst',
-        slpToken: undefined
-      },
-      {
-        index: 1,
-        outpoint: { hash: 'cnPvSV4O12UwKBSyPX9RoD+xem14XBlcUFhklAowLjE=', index: 1 },
-        signatureScript: 'RzBEAiBVcKX1SZ08kwIvKt+CJCFcq2AMPuJh9xNoZPbFCBtO8AIgDcTg6dy/l8+Se0hD5Fb6zXhaVLZi9JyShl3qlChlCF5BIQNVw6/pYXrkj4YXjrHuzGDWysHPUCvUVptjbOmlkVmamA==',
-        sequence: 4294967295,
-        value: 546,
-        previousScript: 'dqkUi4A+rsJZAKFsCtIAF8coYnYGLEqIrA==',
-        address: mockedBCHAddress.address,
-        slpToken: {
-          tokenId: 'MS4wCpRkWFBcGVx4bXqxP6BRfz2yFCgwZdcOXknvc3I=',
-          amount: '1',
-          isMintBaton: false,
-          address: 'qz9cq04wcfvspgtvptfqq9789p38vp3vfg820p0gz8',
-          decimals: 0,
-          slpAction: 10,
-          tokenType: 65
-        }
-      }
-    ],
-    outputsList: []
-  })
-}
-
 export const mockedUSDPrice = {
   id: 1,
   value: new Prisma.Decimal(10),
@@ -668,8 +518,40 @@ export const mockPrices: Price[] = [
 
 export const mockedUserProfile: UserProfile = {
   id: 'mocked-user-profileb0fc-13a007cc584b',
+  publicKey: '',
   createdAt: new Date(),
   updatedAt: new Date(),
   isAdmin: false,
   lastSentVerificationEmailAt: null
 }
+
+export const mockedUserProfileWithPublicKey: UserProfile = {
+  id: 'mocked-user-profileb0fc-13a007cc584b',
+  publicKey: 'mocked-already-set-public-key-1b3a0d9f',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  isAdmin: false,
+  lastSentVerificationEmailAt: null
+}
+
+export const mockedAddressesOnButtons: AddressesOnButtons[] = [
+  {
+    paybuttonId: '3f3c4415-2ccc-11ef-b540-0242ac120002',
+    addressId: '0a03a880-86fe-4d82-9aa2-8df270cf032d',
+    createdAt: new Date('2024-06-17T17:16:07.549Z'),
+    updatedAt: new Date('2024-06-17T17:16:07.549Z')
+  },
+  {
+    paybuttonId: '3f3c4415-2ccc-11ef-b540-0242ac120002',
+    addressId: '48ea75c9-2ccd-11ef-b540-0242ac120002',
+    createdAt: new Date('2024-06-17T17:16:07.549Z'),
+    updatedAt: new Date('2024-06-17T17:16:07.549Z')
+  }
+]
+
+export const mockedAddressIdList = [
+  '0a03a880-86fe-4d82-9aa2-8df270cf032d',
+  'a37b9a8c-d262-468b-b1dd-571434a16308',
+  '1ca6b7f5-6930-42a7-8ea4-8de57de03251',
+  '4f68e74f-de19-467a-b195-139d98217ada'
+]

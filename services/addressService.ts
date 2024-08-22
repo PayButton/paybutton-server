@@ -184,7 +184,7 @@ export async function fetchAllAddressesForNetworkId (networkId: number): Promise
   })
 }
 
-export async function fetchAddressesInList (prefixedAddressList: string[]): Promise<AddressWithTransactionsAndNetwork[]> {
+export async function fetchAddressesArray (prefixedAddressList: string[]): Promise<AddressWithTransactionsAndNetwork[]> {
   return await prisma.address.findMany({
     where: {
       address: {
@@ -306,4 +306,19 @@ export async function fetchAddressWithTxsAndPrices (addressString: string): Prom
     throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
   }
   return result
+}
+
+export async function fetchAddressesByPaybuttonId (paybuttonId: string): Promise<string[]> {
+  const addresses = await prisma.addressesOnButtons.findMany({
+    where: {
+      paybuttonId
+    }
+  })
+  const addressesIds = addresses.map(result => result.addressId)
+
+  if (addressesIds.length === 0) {
+    throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
+  }
+
+  return addressesIds
 }

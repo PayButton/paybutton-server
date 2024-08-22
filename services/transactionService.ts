@@ -1,20 +1,24 @@
 import prisma from 'prisma/clientInstance'
 import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
-import { fetchAddressBySubstring, fetchAddressById } from 'services/addressService'
+import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT } from 'constants/index'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
 import { CacheSet } from 'redis/index'
+import { SimplifiedTransaction } from 'ws-service/types'
+import { OpReturnData } from 'utils/validators'
 
 export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
   }
-  if (transaction.prices.length !== N_OF_QUOTES) throw new Error(`txid${transaction.id}, ts${transaction.timestamp} ${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}: found ${transaction.prices.length}.`)
+  if (transaction.prices.length !== N_OF_QUOTES) {
+    throw new Error(`Error: ${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message} found in ${transaction.prices.length}. txId: ${transaction.id}, at ${transaction.timestamp}`)
+  }
   for (const p of transaction.prices) {
     if (p.price.quoteId === USD_QUOTE_ID) {
       ret.usd = ret.usd.plus(p.price.value.times(transaction.amount))
@@ -24,6 +28,53 @@ export async function getTransactionValue (transaction: TransactionWithPrices): 
     }
   }
   return ret
+}
+
+export function getSimplifiedTransactions (transactionsToPersist: TransactionWithAddressAndPrices[]): SimplifiedTransaction[] {
+  const simplifiedTransactions: SimplifiedTransaction[] = []
+  transactionsToPersist.forEach(
+    tx => {
+      const simplifiedTransaction = getSimplifiedTrasaction(tx)
+
+      simplifiedTransactions.push(simplifiedTransaction)
+    }
+  )
+  return simplifiedTransactions
+}
+
+export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices): SimplifiedTransaction {
+  const {
+    hash,
+    amount,
+    confirmed,
+    opReturn,
+    address,
+    timestamp
+  } = tx
+
+  const parsedOpReturn = resolveOpReturn(opReturn)
+
+  const simplifiedTransaction: SimplifiedTransaction = {
+    hash,
+    amount,
+    paymentId: parsedOpReturn?.paymentId ?? '',
+    confirmed,
+    address: address.address,
+    timestamp,
+    message: parsedOpReturn?.message ?? '',
+    rawMessage: parsedOpReturn?.rawMessage ?? ''
+  }
+
+  return simplifiedTransaction
+}
+
+const resolveOpReturn = (opReturn: string): OpReturnData | null => {
+  try {
+    return opReturn === '' ? null : JSON.parse(opReturn)
+  } catch (e) {
+    console.error(RESPONSE_MESSAGES.FAILED_TO_PARSE_TX_OP_RETURN_500.message)
+    return null
+  }
 }
 
 const includePrices = {
@@ -425,4 +476,44 @@ export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transa
     }
   })
   return txs.filter(t => t.prices.length !== 2)
+}
+
+export async function fetchTransactionsByPaybuttonId (paybuttonId: string): Promise<TransactionWithAddressAndPrices[]> {
+  const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
+  const transactions = await fetchAddressListTransactions(addressIdList)
+
+  if (transactions.length === 0) {
+    throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
+  }
+
+  return transactions
+}
+
+export const getTransactionValueInCurrency = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType): number => {
+  const {
+    prices,
+    amount,
+    id,
+    timestamp
+  } = transaction
+
+  const result: Record<SupportedQuotesType, number> = {
+    usd: 0,
+    cad: 0
+  }
+
+  if (prices.length !== N_OF_QUOTES) {
+    throw new Error(`${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}, txId ${id}, at ${timestamp}`)
+  }
+
+  for (const p of prices) {
+    if (p.price.quoteId === USD_QUOTE_ID) {
+      result.usd = p.price.value.times(amount).toNumber()
+    }
+    if (p.price.quoteId === CAD_QUOTE_ID) {
+      result.cad = p.price.value.times(amount).toNumber()
+    }
+  }
+
+  return result[currency]
 }

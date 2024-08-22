@@ -4,7 +4,7 @@ export interface ResponseMessage {
   statusCode: number
   message: string
 }
-export const TX_PAGE_SIZE_LIMIT = 200
+export const TX_PAGE_SIZE_LIMIT = 2000
 export const RESPONSE_MESSAGES = {
   SUCCESSFULLY_SYNCED_200: { statusCode: 200, message: 'Successfully synced.' },
   STARTED_SYNC_200: { statusCode: 200, message: 'Sync started.' },
@@ -51,10 +51,11 @@ export const RESPONSE_MESSAGES = {
   NETWORK_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'networkSlug' not provided." },
   QUOTE_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'quoteSlug' not provided." },
   NO_CURRENT_PRICES_FOUND_404: { statusCode: 404, message: 'Current prices not found.' },
-  NO_PRICES_FOUND_404: { statusCode: 404, message: 'Prices not found.' },
+  NO_PRICES_FOUND_404: (networkId: number, timestamp: number) => { return { statusCode: 404, message: `Prices not found for ${NETWORK_TICKERS_FROM_ID[networkId]} at timestamp ${timestamp}.` } },
   INVALID_QUOTE_SLUG_400: { statusCode: 400, message: 'Invalid quote slug.' },
   INVALID_TICKER_400: { statusCode: 400, message: 'Invalid ticker.' },
   MISSING_BLOCKCHAIN_CLIENT_400: { statusCode: 400, message: 'There is no blockchain client chosen for this network.' },
+  MISSING_BLOCKCHAIN_CLIENT_URL_400: (networkSlug: string) => { return { statusCode: 400, message: `Missing client URL for network ${networkSlug}` } },
   NO_BLOCKCHAIN_CLIENT_INSTANTIATED_400: { statusCode: 400, message: 'Blockchain client was not instantiated.' },
   DEFAULT_WALLET_CANNOT_BE_DELETED_400: { statusCode: 400, message: 'A default wallet cannot be deleted.' },
   NO_USER_PROFILE_FOUND_404: { statusCode: 404, message: 'User profile not found.' },
@@ -75,11 +76,26 @@ export const RESPONSE_MESSAGES = {
   LIMIT_TRIGGERS_PER_BUTTON_400: { statusCode: 400, message: 'This paybutton already has a trigger.' },
   LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400: { statusCode: 400, message: 'This paybutton addresses already have a trigger from another paybutton.' },
   COULD_NOT_EXECUTE_TRIGGER_500: { statusCode: 500, message: 'Failed to execute trigger for paybutton address.' },
+  COULD_NOT_DOWNLOAD_FILE_500: { statusCode: 500, message: 'Failed to download file.' },
   INVALID_DATA_JSON_WITH_VARIABLES_400: (variables: string[]) => { return { statusCode: 400, message: `Data is not valid. Make sure that ${variables.join(', ')} are not inside quotes.` } },
   PAGE_SIZE_LIMIT_EXCEEDED_400: { statusCode: 400, message: `Page size limit should be at most ${TX_PAGE_SIZE_LIMIT}.` },
   PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400: { statusCode: 400, message: 'pageSize and page parameters should be valid integers.' },
   INVALID_OUTPUT_SCRIPT_LENGTH_500: (l: number) => { return { statusCode: 500, message: `Invalid outputScript length ${l}` } },
-  FAILED_TO_PARSE_TX_OP_RETURN_500: { statusCode: 500, message: 'Failed to parse OP_RETURN data in Tx.' }
+  FAILED_TO_PARSE_TX_OP_RETURN_500: { statusCode: 500, message: 'Failed to parse OP_RETURN data in Tx.' },
+  PAYBUTTON_ID_NOT_PROVIDED_400: { statusCode: 400, message: 'Paybutton id not provided' },
+  METHOD_NOT_ALLOWED: { statusCode: 500, message: 'Method not allowed.' }
+}
+
+export const SOCKET_MESSAGES = {
+  INCOMING_TXS: 'incoming-txs',
+  TXS_BROADCAST: 'txs-broadcast',
+  GET_ALTPAYMENT_RATE: 'get-altpayment-rate',
+  SEND_ALTPAYMENT_RATE: 'send-altpayment-rate',
+  SEND_ALTPAYMENT_COINS_INFO: 'send-altpayment-coins-info',
+  CREATE_ALTPAYMENT_QUOTE: 'create-altpayment-quote',
+  SHIFT_CREATED: 'shift-created',
+  ERROR_WHEN_CREATING_QUOTE: 'quote-creation-error',
+  ERROR_WHEN_CREATING_SHIFT: 'shift-creation-error'
 }
 
 export type KeyValueT<T> = Record<string, T>
@@ -91,9 +107,15 @@ export const NETWORK_SLUGS: KeyValueT<string> = {
   bchtest: 'bchtest',
   bchreg: 'bchreg'
 }
+
 export const NETWORK_IDS_FROM_SLUGS: KeyValueT<number> = {
   ecash: 1,
   bitcoincash: 2
+}
+
+export const NETWORK_SLUGS_FROM_IDS: Record<number, string> = {
+  1: 'ecash',
+  2: 'bitcoincash'
 }
 
 // When fetching some address transactions, number of transactions to fetch at a time.
@@ -115,10 +137,12 @@ export const BCH_NETWORK_ID = 2
 export const USD_QUOTE_ID = 1
 export const CAD_QUOTE_ID = 2
 export const N_OF_QUOTES = 2 // USD and CAD for now
-export const DEFAULT_QUOTE_SLUG = 'usd'
+export type SupportedQuotesType = 'usd' | 'cad'
+export const DEFAULT_QUOTE_SLUG = 'usd' as SupportedQuotesType
+
 export const SUPPORTED_QUOTES = [ // avoids hitting the DB every time for data that won't change
-  'usd',
-  'cad'
+  'usd' as SupportedQuotesType,
+  'cad' as SupportedQuotesType
 ]
 
 export const HUMAN_READABLE_DATE_FORMAT = 'YYYY-MM-DD'
@@ -150,13 +174,7 @@ export const NETWORK_TICKERS_FROM_ID: KeyValueT<string> = {
 export const NETWORK_IDS: KeyValueT<number> = { XEC: 1, BCH: 2 }
 export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
 
-export type BLOCKCHAIN_CLIENT_OPTIONS = 'grpc' | 'chronik'
-export const NETWORK_BLOCKCHAIN_CLIENTS: KeyValueT<BLOCKCHAIN_CLIENT_OPTIONS> = {
-  ecash: 'chronik',
-  bitcoincash: 'grpc'
-}
-
-export const CHRONIK_CLIENT_URL = 'https://chronik.be.cash/xec'
+export type BLOCKCHAIN_CLIENT_OPTIONS = 'chronik'
 
 export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 45000
 export const DEFAULT_TX_PAGE_SIZE = 100
@@ -183,3 +201,33 @@ export const COOKIE_NAMES = {
 export const DEFAULT_EMPTY_TABLE_MESSAGE = 'No rows to show.'
 
 export const CHRONIK_MESSAGE_CACHE_DELAY = 3000
+
+export const TRIGGER_POST_VARIABLES = [
+  '<address>',
+  '<amount>',
+  '<buttonName>',
+  '<currency>',
+  '<opReturn>',
+  '<signature>',
+  '<timestamp>',
+  '<txId>'
+]
+
+export const PAYBUTTON_TRANSACTIONS_FILE_HEADERS = {
+  date: 'Date',
+  amount: 'Amount',
+  value: 'Value',
+  rate: 'Rate',
+  transactionId: 'Transaction Id',
+  address: 'Address'
+
+}
+
+export const DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER = ','
+export const MAX_RECORDS_PER_FILE = 2000
+
+export const DECIMALS: Record<string, number> = {
+  BCH: 8,
+  XEC: 2,
+  FIAT: 2
+}

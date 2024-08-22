@@ -1,9 +1,24 @@
 import prisma from 'prisma/clientInstance'
 import * as transactionService from 'services/transactionService'
 import { prismaMock } from 'prisma/mockedClient'
-import { mockedBCHAddress, mockedUSDPriceOnTransaction, mockedCADPriceOnTransaction, mockedTransaction, mockedUserProfile } from '../mockedObjects'
+import { mockedBCHAddress, mockedUSDPriceOnTransaction, mockedCADPriceOnTransaction, mockedTransaction, mockedUserProfile, mockedAddressIdList, mockedTransactionList } from '../mockedObjects'
 import { CacheSet } from 'redis/index'
 import { Prisma } from '@prisma/client'
+import * as addressService from 'services/addressService'
+import { RESPONSE_MESSAGES } from 'constants/index'
+
+const includePrices = {
+  prices: {
+    include: {
+      price: true
+    }
+  }
+}
+
+const includeAddressAndPrices = {
+  address: true,
+  ...includePrices
+}
 
 describe('Create services', () => {
   it('Return created transaction', async () => {
@@ -92,5 +107,43 @@ describe('Amount transactioned', () => {
     const amount = await transactionService.getTransactionValue(mockedTransaction)
     expect(amount.usd.toString()).toBe('0.0000758564746516')
     expect(amount.cad.toString()).toBe('0.000075899599424')
+  })
+})
+
+describe('Fetch transactions by paybuttonId', () => {
+  it('fetch transactions by paybuttonId', async () => {
+    prismaMock.transaction.findMany.mockResolvedValue(mockedTransactionList)
+    prisma.transaction.findMany = prismaMock.transaction.findMany
+    prisma.addressesOnButtons.findMany = prismaMock.addressesOnButtons.findMany
+
+    jest.spyOn(addressService, 'fetchAddressesByPaybuttonId').mockImplementation(async (_: string) => {
+      return mockedAddressIdList
+    })
+
+    const query = {
+      where: {
+        addressId: {
+          in: mockedAddressIdList
+        }
+      },
+      include: includeAddressAndPrices
+    }
+
+    const result = await transactionService.fetchTransactionsByPaybuttonId('mock')
+
+    expect(prismaMock.transaction.findMany).toHaveBeenCalledWith(query)
+    expect(result).toHaveLength(mockedTransactionList.length)
+    expect(result[0]).toEqual(mockedTransactionList[0])
+  })
+
+  it('handle no transaction found for paybuttonId', async () => {
+    prismaMock.transaction.findMany.mockResolvedValue([])
+    prisma.transaction.findMany = prismaMock.transaction.findMany
+
+    try {
+      await transactionService.fetchTransactionsByPaybuttonId('mock')
+    } catch (error: any) {
+      expect(error.message).toEqual(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
+    }
   })
 })
