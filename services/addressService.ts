@@ -308,11 +308,11 @@ export async function fetchAddressWithTxsAndPrices (addressString: string): Prom
   return result
 }
 
-export async function fetchAddressesByPaybuttonId(paybuttonId: string): Promise<string[]> {
-  const addresses  = await prisma.addressesOnButtons.findMany({
+export async function fetchAddressesByPaybuttonId (paybuttonId: string): Promise<string[]> {
+  const addresses = await prisma.addressesOnButtons.findMany({
     where: {
-      paybuttonId: paybuttonId
-    },
+      paybuttonId
+    }
   })
   const addressesIds = addresses.map(result => result.addressId)
 
