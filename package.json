@@ -1,6 +1,10 @@
 {
-  "name": "custom-server-typescript",
-  "version": "1.0.0",
+  "name": "paybutton-server",
+  "version": "3.0.0",
+  "description": "The easiest way to accept eCash online",
+  "author": "Blockchain Ventures Corp.",
+  "repository": "https://github.com/PayButton/paybutton-server.git",
+  "license": "MIT",
   "scripts": {
     "dev": "dotenv -e .env -c -- next dev",
     "build": "next build",
