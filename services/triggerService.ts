@@ -196,10 +196,10 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
       buttonName: trigger.paybutton.name,
       address,
       timestamp,
-      opReturn: {
-        paymentId,
-        message,
-        rawMessage
+      opReturn: { 
+        paymentId, 
+        message, 
+        rawMessage  
       } ?? EMPTY_OP_RETURN
     }
     await postDataForTrigger(trigger, postDataParameters)

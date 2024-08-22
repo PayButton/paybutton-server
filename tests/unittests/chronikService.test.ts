@@ -69,7 +69,7 @@ describe('getNullDataScriptData tests', () => {
         key: 'value',
         some: 'other'
       },
-      rawMessage: 'key=value some=other'
+      rawMessage: "key=value some=other"
     })
   })
   it('Dict with array', async () => {
@@ -81,7 +81,7 @@ describe('getNullDataScriptData tests', () => {
         key: 'value',
         some: ['value1', 'value2']
       },
-      rawMessage: 'key=value some=value1|value2'
+      rawMessage: "key=value some=value1|value2"
     })
   })
   it('Non-ASCII data', async () => {
@@ -93,7 +93,7 @@ describe('getNullDataScriptData tests', () => {
     expect(data).toStrictEqual({
       paymentId: '',
       message: '😂👍©ĸðМжЪы% ŋæPßđĸł„»“æ}¹↓£³→²',
-      rawMessage: '😂👍©ĸðМжЪы% ŋæPßđĸł„»“æ}¹↓£³→²'
+      rawMessage: "😂👍©ĸðМжЪы% ŋæPßđĸł„»“æ}¹↓£³→²",
     })
   })
   it('Non-ASCII data with paymentId', async () => {
@@ -123,7 +123,7 @@ describe('getNullDataScriptData tests', () => {
     expect(data).toStrictEqual({
       paymentId: '',
       message: 'PQRSTUVW',
-      rawMessage: 'PQRSTUVW'
+      rawMessage: 'PQRSTUVW',
     })
   })
   it('Ignore incomplete paymentId', async () => {
@@ -132,7 +132,7 @@ describe('getNullDataScriptData tests', () => {
     expect(data).toStrictEqual({
       paymentId: '',
       message: 'PQRSTUVW',
-      rawMessage: 'PQRSTUVW'
+      rawMessage: 'PQRSTUVW',
     })
   })
 })

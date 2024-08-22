@@ -1,11 +1,11 @@
 import prisma from 'prisma/clientInstance'
 import * as transactionService from 'services/transactionService'
 import { prismaMock } from 'prisma/mockedClient'
-import { mockedBCHAddress, mockedUSDPriceOnTransaction, mockedCADPriceOnTransaction, mockedTransaction, mockedUserProfile, mockedAddressIdList, mockedTransactionList } from '../mockedObjects'
+import { mockedBCHAddress, mockedUSDPriceOnTransaction, mockedCADPriceOnTransaction, mockedTransaction, mockedUserProfile, mockedAddressIdList, mockedAddressesOnButtons, mockedTransactionList } from '../mockedObjects'
 import { CacheSet } from 'redis/index'
 import { Prisma } from '@prisma/client'
 import * as addressService from 'services/addressService'
-import { RESPONSE_MESSAGES } from 'constants/index'
+import { RESPONSE_MESSAGES }  from 'constants/index'
 
 const includePrices = {
   prices: {
@@ -115,7 +115,7 @@ describe('Fetch transactions by paybuttonId', () => {
     prismaMock.transaction.findMany.mockResolvedValue(mockedTransactionList)
     prisma.transaction.findMany = prismaMock.transaction.findMany
     prisma.addressesOnButtons.findMany = prismaMock.addressesOnButtons.findMany
-
+    
     jest.spyOn(addressService, 'fetchAddressesByPaybuttonId').mockImplementation(async (_: string) => {
       return mockedAddressIdList
     })
@@ -147,3 +147,4 @@ describe('Fetch transactions by paybuttonId', () => {
     }
   })
 })
+
