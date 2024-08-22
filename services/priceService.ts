@@ -94,9 +94,11 @@ export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networ
       timeout: PRICE_API_TIMEOUT
     })
 
-    if (res.data.success !== false) { return res.data } else {
-      throw new Error(RESPONSE_MESSAGES.FAILED_TO_FETCH_PRICE_FROM_API_500(day.format(PRICE_API_DATE_FORMAT), networkTicker).message)
+    if (res.data.success !== false) {
+      const data = res.data
+      if (data !== undefined) return data
     }
+    throw new Error(RESPONSE_MESSAGES.FAILED_TO_FETCH_PRICE_FROM_API_500(day.format(PRICE_API_DATE_FORMAT), networkTicker).message)
   } catch (error) {
     console.error(`Problem getting price of ${networkTicker} ${day.format(HUMAN_READABLE_DATE_FORMAT)} -> ${error as string} (attempt ${attempt})`)
 
