@@ -96,7 +96,7 @@ export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networ
 
     if (res.data.success !== false) {
       const data = res.data
-      if (data !== undefined) return data
+      if (isResponseAsExpected(data)) return data
     }
     throw new Error(RESPONSE_MESSAGES.FAILED_TO_FETCH_PRICE_FROM_API_500(day.format(PRICE_API_DATE_FORMAT), networkTicker).message)
   } catch (error) {
@@ -110,6 +110,10 @@ export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networ
   }
 }
 
+function isResponseAsExpected (data: any): boolean {
+  return data.Price_in_CAD !== undefined && data.Price_in_USD !== undefined
+}
+
 export async function getAllPricesByNetworkTicker (networkTicker: string, attempt: number = 1): Promise<IResponseDataDaily[]> {
   try {
     const res = await axios.get(getAllPricesURLForNetworkTicker(networkTicker), {
@@ -117,14 +121,18 @@ export async function getAllPricesByNetworkTicker (networkTicker: string, attemp
     })
 
     if (res.data.success !== false) {
-      const dailyPrices: IResponseDataDaily[] = Object.entries<IResponseData>(res.data).map(([day, priceData]) => {
-        return {
-          day,
-          ...priceData
-        }
-      })
-      return dailyPrices
-    } else { console.error(`No success when getting price of ${networkTicker} (attempt ${attempt})`) }
+      const data = res.data
+      if (isResponseAsExpected(data)) {
+        const dailyPrices: IResponseDataDaily[] = Object.entries<IResponseData>(res.data).map(([day, priceData]) => {
+          return {
+            day,
+            ...priceData
+          }
+        })
+        return dailyPrices
+      }
+    }
+    throw new Error(RESPONSE_MESSAGES.FAILED_TO_FETCH_PRICE_FROM_API_500('ALL_DAYS', networkTicker).message)
   } catch (error) {
     console.error(`Problem getting price of ${networkTicker} -> ${error as string} (attempt ${attempt})`)
   }
@@ -255,6 +263,7 @@ export async function fetchPricesForNetworkAndTimestamp (networkId: number, time
 
 async function renewPricesForTimestamp (timestamp: number): Promise<void> {
   const xecPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.ecash)
+  console.log('pegou como xequepra', xecPrice)
   await upsertPricesForNetworkId(xecPrice, XEC_NETWORK_ID, timestamp)
 
   const bchPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.bitcoincash)
