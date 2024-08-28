@@ -111,7 +111,13 @@ export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networ
 }
 
 function isResponseAsExpected (data: any): boolean {
-  return data.Price_in_CAD !== undefined && data.Price_in_USD !== undefined
+  const isExpectedObj = data.Price_in_CAD !== undefined && data.Price_in_USD !== undefined
+  if (isExpectedObj) return true
+  if (data.length > 0) {
+    const firstElementIsExpectedObj = data[0].Price_in_CAD !== undefined && data[0].Price_in_USD !== undefined
+    if (firstElementIsExpectedObj) return true
+  }
+  return false
 }
 
 export async function getAllPricesByNetworkTicker (networkTicker: string, attempt: number = 1): Promise<IResponseDataDaily[]> {
