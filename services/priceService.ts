@@ -113,9 +113,10 @@ export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networ
 function isResponseAsExpected (data: any): boolean {
   const isExpectedObj = data.Price_in_CAD !== undefined && data.Price_in_USD !== undefined
   if (isExpectedObj) return true
-  if (data.length > 0) {
-    const firstElementIsExpectedObj = data[0].Price_in_CAD !== undefined && data[0].Price_in_USD !== undefined
-    if (firstElementIsExpectedObj) return true
+  const values = Object.values(data)
+  if (values.length > 0) {
+    const firstValueIsExpectedObj = values[0].Price_in_CAD !== undefined && values[0].Price_in_USD !== undefined
+    if (firstValueIsExpectedObj) return true
   }
   return false
 }
