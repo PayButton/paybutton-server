@@ -25,6 +25,9 @@ export async function ignoreConflicts (callback: Function): Promise<void> {
 }
 
 async function main (): Promise<void> {
+  // don't seed in prod
+  if (process.env.NODE_ENV === 'production' || process.env.ENVIRONMENT === 'production') return
+
   // create networks
   if (await prisma.network.count() === 0) {
     await prisma.network.createMany({ data: networks })
