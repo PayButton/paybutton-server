@@ -121,6 +121,7 @@ export async function getAllPricesByNetworkTicker (networkTicker: string, attemp
     })
 
     if (res.data.success !== false) {
+      console.log('data success is true')
       const data = res.data
       if (isResponseAsExpected(data)) {
         const dailyPrices: IResponseDataDaily[] = Object.entries<IResponseData>(res.data).map(([day, priceData]) => {
@@ -131,7 +132,10 @@ export async function getAllPricesByNetworkTicker (networkTicker: string, attemp
         })
         return dailyPrices
       }
+    } else {
+      console.log('data success is false')
     }
+    console.log('will error for data', res.data)
     throw new Error(RESPONSE_MESSAGES.FAILED_TO_FETCH_PRICE_FROM_API_500('ALL_DAYS', networkTicker).message)
   } catch (error) {
     console.error(`Problem getting price of ${networkTicker} -> ${error as string} (attempt ${attempt})`)
