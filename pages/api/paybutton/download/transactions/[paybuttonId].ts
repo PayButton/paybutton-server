@@ -69,7 +69,7 @@ const formatPaybuttonTransactionsFileData = (data: TransactionFileData): Formatt
     ...data,
     amount: amount.toFixed(DECIMALS[currency]),
     date: date.format(PRICE_API_DATE_FORMAT),
-    value: value.toFixed(DECIMALS[currency]),
+    value: value.toFixed(2),
     rate: rate.toFixed(14)
   }
 }
