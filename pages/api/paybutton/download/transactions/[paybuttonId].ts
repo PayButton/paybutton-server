@@ -74,7 +74,11 @@ const formatPaybuttonTransactionsFileData = (data: TransactionFileData): Formatt
   }
 }
 
-export const downloadPaybuttonTransactionsFile = async (
+const formatNumberHeaders = (headers: string[], currency: string): string[] => {
+  return headers.map(h => h === PAYBUTTON_TRANSACTIONS_FILE_HEADERS.value ? h + ` (${currency.toUpperCase()})` : h)
+}
+
+const downloadPaybuttonTransactionsFile = async (
   res: NextApiResponse,
   paybutton: PaybuttonWithAddresses,
   currency: SupportedQuotesType): Promise<void> => {
@@ -87,14 +91,14 @@ export const downloadPaybuttonTransactionsFile = async (
     return formatPaybuttonTransactionsFileData(data)
   })
   const headers = Object.keys(PAYBUTTON_TRANSACTIONS_FILE_HEADERS)
-  const formmattedHeaders = Object.values(PAYBUTTON_TRANSACTIONS_FILE_HEADERS)
+  const humanReadableHeaders = Object.values(PAYBUTTON_TRANSACTIONS_FILE_HEADERS)
 
   streamToCSV(
     mappedTransactionsData,
     headers,
     DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER,
     res,
-    formmattedHeaders
+    formatNumberHeaders(humanReadableHeaders, currency)
   )
 }
 
