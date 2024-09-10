@@ -42,10 +42,10 @@ interface PaybuttonProps {
 }
 
 export default function Button (props: PaybuttonProps): React.ReactElement {
-  const [paybutton, setPaybutton] = useState<PaybuttonWithAddresses | undefined>(undefined)
+  const [paybutton, setPaybutton] = useState(undefined as PaybuttonWithAddresses | undefined)
   const [isSyncing, setIsSyncing] = useState<KeyValueT<boolean>>({})
   const [tableRefreshCount, setTableRefreshCount] = useState<number>(0)
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('all')
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('unselected')
   const router = useRouter()
 
   const updateIsSyncing = (addressStringList: string[]): void => {
@@ -125,11 +125,14 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
       }
     } catch (error) {
       console.error('An error occurred while downloading the CSV:', error)
+    } finally {
+      setSelectedCurrency('unselected')
     }
   }
 
-  const handleExport = (): void => {
-    const currencyParam = selectedCurrency === 'all' ? '' : selectedCurrency
+  const handleExport = (event: React.ChangeEvent<HTMLSelectElement>): void => {
+    const currencyParam = event.target.value === 'all' || event.target.value === 'unselected' ? '' : event.target.value
+    setSelectedCurrency(event.target.value)
     void downloadCSV(paybutton!, currencyParam)
   }
 
@@ -143,25 +146,23 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <select
+              id='export-btn'
               value={selectedCurrency}
-              onChange={(e) => setSelectedCurrency(e.target.value)}
+              onChange={handleExport}
               className="button_outline button_small"
               style={{ marginBottom: '0' }}
             >
-              <option value='all'>All Currencies</option>
+              <option key='unselected' value='unselected'>Export as CSV</option>
+              <option key='all' value='all'>
+                All Currencies
+              </option>
               {SUPPORTED_QUOTES.map(currency => (
                 <option key={currency} value={currency}>
-                  {currency}
+                  {currency.toUpperCase()}
                 </option>
               ))}
             </select>
 
-            <div
-              onClick={handleExport}
-              className="button_outline button_small export_btn"
-            >
-              Export as CSV
-            </div>
           </div>
         </div>
 
