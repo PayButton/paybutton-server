@@ -91,14 +91,14 @@ const downloadPaybuttonTransactionsFile = async (
     return formatPaybuttonTransactionsFileData(data)
   })
   const headers = Object.keys(PAYBUTTON_TRANSACTIONS_FILE_HEADERS)
-  const humanReadableHeaders = Object.values(PAYBUTTON_TRANSACTIONS_FILE_HEADERS)
+  const humanReadableHeaders = formatNumberHeaders(Object.values(PAYBUTTON_TRANSACTIONS_FILE_HEADERS), currency)
 
   streamToCSV(
     mappedTransactionsData,
     headers,
     DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER,
     res,
-    formatNumberHeaders(humanReadableHeaders, currency)
+    humanReadableHeaders
   )
 }
 
@@ -115,17 +115,15 @@ export default async (req: any, res: any): Promise<void> => {
 
     const userId = req.session.userId
     const paybuttonId = req.query.paybuttonId as string
-    const currency = isCurrencyValid(req.query.currency) ? req.query.currency as SupportedQuotesType : DEFAULT_QUOTE_SLUG
+    const reqCurrency = req.query.currency.toLowerCase() as SupportedQuotesType
+    const currency = isCurrencyValid(reqCurrency) ? reqCurrency : DEFAULT_QUOTE_SLUG
 
     const paybutton = await fetchPaybuttonById(paybuttonId)
     if (paybutton.providerUserId !== userId) {
       throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
     }
 
-    const fileName = `${paybutton.name}-${paybutton.id}-transactions.csv`
     res.setHeader('Content-Type', 'text/csv')
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`)
-
     await downloadPaybuttonTransactionsFile(res, paybutton, currency)
   } catch (error: any) {
     switch (error.message) {

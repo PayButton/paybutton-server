@@ -9,13 +9,12 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
 import { BroadcastTxData } from 'ws-service/types'
-import { KeyValueT, ResponseMessage, SOCKET_MESSAGES } from 'constants/index'
+import { KeyValueT, ResponseMessage, SOCKET_MESSAGES, SUPPORTED_QUOTES } from 'constants/index'
 import config from 'config'
 import io from 'socket.io-client'
 import PaybuttonTrigger from 'components/Paybutton/PaybuttonTrigger'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  // this runs on the backend, so we must call init on supertokens-node SDK
   supertokensNode.init(SuperTokensConfig.backendConfig())
   let session
   try {
@@ -43,9 +42,10 @@ interface PaybuttonProps {
 }
 
 export default function Button (props: PaybuttonProps): React.ReactElement {
-  const [paybutton, setPaybutton] = useState(undefined as PaybuttonWithAddresses | undefined)
+  const [paybutton, setPaybutton] = useState<PaybuttonWithAddresses | undefined>(undefined)
   const [isSyncing, setIsSyncing] = useState<KeyValueT<boolean>>({})
   const [tableRefreshCount, setTableRefreshCount] = useState<number>(0)
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('all')
   const router = useRouter()
 
   const updateIsSyncing = (addressStringList: string[]): void => {
@@ -101,27 +101,36 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
     void getDataAndSetUpSocket()
   }, [])
 
-  const downloadCSV = async (paybutton: { id: string }): Promise<void> => {
+  const downloadCSV = async (paybutton: { id: string }, currency: string): Promise<void> => {
     try {
-      const response = await fetch(`/api/paybutton/download/transactions/${paybutton.id}`)
+      const currencies = currency === '' ? SUPPORTED_QUOTES : [currency]
+      for (let index = 0; index < currencies.length; index++) {
+        const c = currencies[index]
+        const response = await fetch(`/api/paybutton/download/transactions/${paybutton.id}?currency=${c}`)
 
-      if (!response.ok) {
-        throw new Error('Failed to download CSV')
+        if (!response.ok) {
+          throw new Error('Failed to download CSV')
+        }
+        const fileName = `${paybutton.id}-${c}-transactions`
+
+        const blob = await response.blob()
+        const downloadUrl = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.download = `${fileName}.csv`
+
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
       }
-
-      const blob = await response.blob()
-
-      const downloadUrl = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.download = `${paybutton.id}-transactions.csv`
-
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
     } catch (error) {
       console.error('An error occurred while downloading the CSV:', error)
     }
+  }
+
+  const handleExport = (): void => {
+    const currencyParam = selectedCurrency === 'all' ? '' : selectedCurrency
+    void downloadCSV(paybutton!, currencyParam)
   }
 
   if (paybutton != null) {
@@ -132,12 +141,29 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
         <div style={{ display: 'flex', alignItems: 'center', alignContent: 'center', justifyContent: 'space-between' }}>
           <h4>Transactions</h4>
 
-          <div
-            onClick={() => { void downloadCSV(paybutton) }}
-            className="button_outline button_small export_btn"
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <select
+              value={selectedCurrency}
+              onChange={(e) => setSelectedCurrency(e.target.value)}
+              className="button_outline button_small"
+              style={{ marginBottom: '0' }}
+            >
+              <option value='all'>All Currencies</option>
+              {SUPPORTED_QUOTES.map(currency => (
+                <option key={currency} value={currency}>
+                  {currency}
+                </option>
+              ))}
+            </select>
 
-          > Export as CSV</div>
-      </div>
+            <div
+              onClick={handleExport}
+              className="button_outline button_small export_btn"
+            >
+              Export as CSV
+            </div>
+          </div>
+        </div>
 
         <AddressTransactions addressSyncing={isSyncing} tableRefreshCount={tableRefreshCount}/>
         <PaybuttonTrigger paybuttonId={paybutton.id}/>
