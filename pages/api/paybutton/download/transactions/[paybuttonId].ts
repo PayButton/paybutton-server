@@ -7,7 +7,9 @@ import {
   DECIMALS,
   SUPPORTED_QUOTES,
   DEFAULT_QUOTE_SLUG,
-  SupportedQuotesType
+  SupportedQuotesType,
+  NetworkTickersType,
+  NETWORK_TICKERS
 } from 'constants/index'
 import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonId, getTransactionValueInCurrency } from 'services/transactionService'
 import { PaybuttonWithAddresses, fetchPaybuttonById } from 'services/paybuttonService'
@@ -15,6 +17,7 @@ import { streamToCSV } from 'utils/files'
 import { setSession } from 'utils/setSession'
 import { NextApiResponse } from 'next'
 import { Decimal } from '@prisma/client/runtime'
+import { getNetworkIdFromSlug } from 'services/networkService'
 
 export interface TransactionFileData {
   amount: Decimal
@@ -34,9 +37,12 @@ export interface FormattedTransactionFileData {
   transactionId: string
   address: string
 }
-
-function isCurrencyValid (currency: SupportedQuotesType): boolean {
+export function isCurrencyValid (currency: SupportedQuotesType): boolean {
   return SUPPORTED_QUOTES.includes(currency)
+}
+
+function isNetworkValid (slug: NetworkTickersType): boolean {
+  return Object.values(NETWORK_TICKERS).includes(slug)
 }
 
 const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType): TransactionFileData => {
@@ -81,8 +87,12 @@ const formatNumberHeaders = (headers: string[], currency: string): string[] => {
 const downloadPaybuttonTransactionsFile = async (
   res: NextApiResponse,
   paybutton: PaybuttonWithAddresses,
-  currency: SupportedQuotesType): Promise<void> => {
-  const transactions = await fetchTransactionsByPaybuttonId(paybutton.id)
+  currency: SupportedQuotesType,
+  networkTicker?: NetworkTickersType): Promise<void> => {
+  const slug = Object.keys(NETWORK_TICKERS).find(key => NETWORK_TICKERS[key] === networkTicker)
+  const networkId = await getNetworkIdFromSlug(slug ?? NETWORK_TICKERS.ecash)
+  const networkIdArray = [networkId]
+  const transactions = await fetchTransactionsByPaybuttonId(paybutton.id, networkIdArray)
 
   const mappedTransactionsData = transactions.sort((a, b) => {
     return (a.timestamp - b.timestamp)
@@ -115,8 +125,9 @@ export default async (req: any, res: any): Promise<void> => {
 
     const userId = req.session.userId
     const paybuttonId = req.query.paybuttonId as string
-    const reqCurrency = req.query.currency.toLowerCase() as SupportedQuotesType
-    const currency = isCurrencyValid(reqCurrency) ? reqCurrency : DEFAULT_QUOTE_SLUG
+    const networkTickerReq = req.query.network as string
+
+    const networkTicker = (networkTickerReq !== '' && isNetworkValid(networkTickerReq as NetworkTickersType)) ? networkTickerReq.toUpperCase() as NetworkTickersType : undefined
 
     const paybutton = await fetchPaybuttonById(paybuttonId)
     if (paybutton.providerUserId !== userId) {
@@ -124,7 +135,7 @@ export default async (req: any, res: any): Promise<void> => {
     }
 
     res.setHeader('Content-Type', 'text/csv')
-    await downloadPaybuttonTransactionsFile(res, paybutton, currency)
+    await downloadPaybuttonTransactionsFile(res, paybutton, DEFAULT_QUOTE_SLUG, networkTicker)
   } catch (error: any) {
     switch (error.message) {
       case RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400.message:
