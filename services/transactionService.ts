@@ -508,7 +508,9 @@ export async function fetchTransactionsByPaybuttonIdGroupedByNetwork (
 
   const groupedTransactions = transactions.reduce<Record<number, TransactionWithAddressAndPrices[]>>((acc, transaction) => {
     const networkId = transaction.address.networkId
-
+    if (acc[networkId] === undefined || acc[networkId] === null) {
+      acc[networkId] = []
+    }
     acc[networkId].push(transaction)
     return acc
   }, {})
