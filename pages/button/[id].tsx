@@ -9,7 +9,7 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
 import { BroadcastTxData } from 'ws-service/types'
-import { KeyValueT, ResponseMessage, SOCKET_MESSAGES, SUPPORTED_QUOTES } from 'constants/index'
+import { KeyValueT, NETWORK_TICKERS, ResponseMessage, SOCKET_MESSAGES } from 'constants/index'
 import config from 'config'
 import io from 'socket.io-client'
 import PaybuttonTrigger from 'components/Paybutton/PaybuttonTrigger'
@@ -103,26 +103,27 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
 
   const downloadCSV = async (paybutton: { id: string }, currency: string): Promise<void> => {
     try {
-      const currencies = currency === '' ? SUPPORTED_QUOTES : [currency]
-      for (let index = 0; index < currencies.length; index++) {
-        const c = currencies[index]
-        const response = await fetch(`/api/paybutton/download/transactions/${paybutton.id}?currency=${c}`)
-
-        if (!response.ok) {
-          throw new Error('Failed to download CSV')
-        }
-        const fileName = `${paybutton.id}-${c}-transactions`
-
-        const blob = await response.blob()
-        const downloadUrl = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = downloadUrl
-        link.download = `${fileName}.csv`
-
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
+      let url = `/api/paybutton/download/transactions/${paybutton.id}`
+      const isCurrencyEmpty = (value: string): boolean => (value === '')
+      if (!isCurrencyEmpty(currency)) {
+        url += `?network=${currency}`
       }
+      const response = await fetch(url)
+
+      if (!response.ok) {
+        throw new Error('Failed to download CSV')
+      }
+      const fileName = `${paybutton.id}${isCurrencyEmpty(currency) ? `-${currency}-` : '-'}transactions`
+
+      const blob = await response.blob()
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = `${fileName}.csv`
+
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
     } catch (error) {
       console.error('An error occurred while downloading the CSV:', error)
     } finally {
@@ -152,11 +153,11 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
               className="button_outline button_small"
               style={{ marginBottom: '0' }}
             >
-              <option key='unselected' value='unselected'>Export as CSV</option>
+              <option hidden>Export as CSV</option>
               <option key='all' value='all'>
                 All Currencies
               </option>
-              {SUPPORTED_QUOTES.map(currency => (
+              {Object.values(NETWORK_TICKERS).map(currency => (
                 <option key={currency} value={currency}>
                   {currency.toUpperCase()}
                 </option>
