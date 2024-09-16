@@ -166,6 +166,8 @@ export const NETWORK_TICKERS: KeyValueT<string> = {
   bitcoincash: 'BCH'
 }
 
+export type NetworkTickersType = 'XEC' | 'BCH'
+
 export const NETWORK_TICKERS_FROM_ID: KeyValueT<string> = {
   1: 'XEC',
   2: 'BCH'
