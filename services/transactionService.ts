@@ -102,7 +102,10 @@ const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionArgs>
 
 export type TransactionWithAddressAndPrices = Prisma.TransactionGetPayload<typeof transactionWithAddressAndPrices>
 
-export async function fetchTransactionsByAddressList (addressIdList: string[], networkIdsList?: number[]): Promise<TransactionWithAddressAndPrices[]> {
+export async function fetchTransactionsByAddressList (
+  addressIdList: string[],
+  networkIdsList?: number[]
+): Promise<TransactionWithAddressAndPrices[]> {
   return await prisma.transaction.findMany({
     where: {
       addressId: {
@@ -114,7 +117,10 @@ export async function fetchTransactionsByAddressList (addressIdList: string[], n
         }
       }
     },
-    include: includeAddressAndPrices
+    include: includeAddressAndPrices,
+    orderBy: {
+      timestamp: 'asc'
+    }
   })
 }
 
