@@ -151,7 +151,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
               value={selectedCurrency}
               onChange={handleExport}
               className="button_outline button_small"
-              style={{ marginBottom: '0' }}
+              style={{ marginBottom: '0', cursor: 'pointer' }}
             >
               <option hidden>Export as CSV</option>
               <option key='all' value='all'>
