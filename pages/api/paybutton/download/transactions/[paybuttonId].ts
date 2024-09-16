@@ -9,9 +9,10 @@ import {
   DEFAULT_QUOTE_SLUG,
   SupportedQuotesType,
   NetworkTickersType,
-  NETWORK_TICKERS
+  NETWORK_TICKERS,
+  NETWORK_IDS
 } from 'constants/index'
-import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonId, getTransactionValueInCurrency } from 'services/transactionService'
+import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonIdGroupedByNetwork, getTransactionValueInCurrency } from 'services/transactionService'
 import { PaybuttonWithAddresses, fetchPaybuttonById } from 'services/paybuttonService'
 import { streamToCSV } from 'utils/files'
 import { setSession } from 'utils/setSession'
@@ -89,14 +90,18 @@ const downloadPaybuttonTransactionsFile = async (
   paybutton: PaybuttonWithAddresses,
   currency: SupportedQuotesType,
   networkTicker?: NetworkTickersType): Promise<void> => {
-  const slug = Object.keys(NETWORK_TICKERS).find(key => NETWORK_TICKERS[key] === networkTicker)
-  const networkId = await getNetworkIdFromSlug(slug ?? NETWORK_TICKERS.ecash)
-  const networkIdArray = [networkId]
-  const transactions = await fetchTransactionsByPaybuttonId(paybutton.id, networkIdArray)
-
-  const mappedTransactionsData = transactions.sort((a, b) => {
-    return (a.timestamp - b.timestamp)
-  }).map(tx => {
+  let networkIdArray = Object.values(NETWORK_IDS)
+  if (networkTicker !== undefined) {
+    const slug = Object.keys(NETWORK_TICKERS).find(key => NETWORK_TICKERS[key] === networkTicker)
+    const networkId = await getNetworkIdFromSlug(slug ?? NETWORK_TICKERS.ecash)
+    networkIdArray = [networkId]
+  }
+  const transactionsGrouped = await fetchTransactionsByPaybuttonIdGroupedByNetwork(paybutton.id, networkIdArray)
+  const transactions = Object.values(transactionsGrouped).reduce(
+    (acc, curr) => acc.concat(curr),
+    []
+  )
+  const mappedTransactionsData = transactions.map(tx => {
     const data = getPaybuttonTransactionsFileData(tx, currency)
     return formatPaybuttonTransactionsFileData(data)
   })
