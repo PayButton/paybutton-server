@@ -9,7 +9,7 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
 import { BroadcastTxData } from 'ws-service/types'
-import { KeyValueT, NETWORK_TICKERS, ResponseMessage, SOCKET_MESSAGES } from 'constants/index'
+import { KeyValueT, NETWORK_TICKERS_FROM_ID, ResponseMessage, SOCKET_MESSAGES } from 'constants/index'
 import config from 'config'
 import io from 'socket.io-client'
 import PaybuttonTrigger from 'components/Paybutton/PaybuttonTrigger'
@@ -45,6 +45,8 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   const [paybutton, setPaybutton] = useState(undefined as PaybuttonWithAddresses | undefined)
   const [isSyncing, setIsSyncing] = useState<KeyValueT<boolean>>({})
   const [tableRefreshCount, setTableRefreshCount] = useState<number>(0)
+  const [paybuttonNetworks, setPaybuttonNetworks] = useState<number[]>([])
+
   const [selectedCurrency, setSelectedCurrency] = useState<string>('unselected')
   const router = useRouter()
 
@@ -94,6 +96,9 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   const getDataAndSetUpSocket = async (): Promise<void> => {
     const paybuttonData = await fetchPaybutton()
     const addresses: string[] = paybuttonData.addresses.map(c => c.address.address)
+    const networkIds: number[] = paybuttonData.addresses.map(c => c.address.networkId)
+
+    setPaybuttonNetworks(networkIds)
     await setUpSocket(addresses)
   }
 
@@ -157,11 +162,13 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
               <option key='all' value='all'>
                 All Currencies
               </option>
-              {Object.values(NETWORK_TICKERS).map(currency => (
-                <option key={currency} value={currency}>
-                  {currency.toUpperCase()}
-                </option>
-              ))}
+              {Object.entries(NETWORK_TICKERS_FROM_ID)
+                .filter(([id]) => paybuttonNetworks.includes(Number(id)))
+                .map(([id, ticker]) => (
+                  <option key={id} value={ticker}>
+                    {ticker.toUpperCase()}
+                  </option>
+                ))}
             </select>
 
           </div>
@@ -172,6 +179,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
       </>
     )
   }
+
   return (
     <Page />
   )
