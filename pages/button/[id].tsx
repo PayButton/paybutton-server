@@ -106,7 +106,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
     void getDataAndSetUpSocket()
   }, [])
 
-  const downloadCSV = async (paybutton: { id: string }, currency: string): Promise<void> => {
+  const downloadCSV = async (paybutton: { id: string, name: string }, currency: string): Promise<void> => {
     try {
       let url = `/api/paybutton/download/transactions/${paybutton.id}`
       const isCurrencyEmpty = (value: string): boolean => (value === '')
@@ -118,7 +118,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
       if (!response.ok) {
         throw new Error('Failed to download CSV')
       }
-      const fileName = `${paybutton.id}${isCurrencyEmpty(currency) ? `-${currency}-` : '-'}transactions`
+      const fileName = `${paybutton.name}-transactions`
 
       const blob = await response.blob()
       const downloadUrl = window.URL.createObjectURL(blob)
@@ -151,26 +151,39 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
           <h4>Transactions</h4>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <select
-              id='export-btn'
-              value={selectedCurrency}
-              onChange={handleExport}
-              className="button_outline button_small"
-              style={{ marginBottom: '0', cursor: 'pointer' }}
-            >
-              <option hidden>Export as CSV</option>
-              <option key='all' value='all'>
-                All Currencies
-              </option>
-              {Object.entries(NETWORK_TICKERS_FROM_ID)
-                .filter(([id]) => paybuttonNetworks.includes(Number(id)))
-                .map(([id, ticker]) => (
-                  <option key={id} value={ticker}>
-                    {ticker.toUpperCase()}
-                  </option>
-                ))}
-            </select>
-
+            {new Set(paybuttonNetworks).size > 1
+              ? (
+              <select
+                id='export-btn'
+                value={selectedCurrency}
+                onChange={handleExport}
+                className="button_outline button_small"
+                style={{ marginBottom: '0', cursor: 'pointer' }}
+              >
+                <option hidden>Export as CSV</option>
+                <option key='all' value='all'>
+                  All Currencies
+                </option>
+                {Object.entries(NETWORK_TICKERS_FROM_ID)
+                  .filter(([id]) => paybuttonNetworks.includes(Number(id)))
+                  .map(([id, ticker]) => (
+                    <option key={id} value={ticker}>
+                      {ticker.toUpperCase()}
+                    </option>
+                  ))}
+              </select>
+                )
+              : (
+              <a
+                id='export-btn'
+                value={selectedCurrency}
+                onClick={handleExport}
+                className="button_outline button_small"
+                style={{ marginBottom: '0', cursor: 'pointer' }}
+              >
+                Export as CSV
+              </a>
+                )}
           </div>
         </div>
 
