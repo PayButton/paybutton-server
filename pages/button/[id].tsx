@@ -109,8 +109,8 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   const downloadCSV = async (paybutton: { id: string, name: string }, currency: string): Promise<void> => {
     try {
       let url = `/api/paybutton/download/transactions/${paybutton.id}`
-      const isCurrencyEmpty = (value: string): boolean => (value === '')
-      if (!isCurrencyEmpty(currency)) {
+      const isCurrencyEmptyOrUndefined = (value: string): boolean => (value === '' || value === undefined)
+      if (!isCurrencyEmptyOrUndefined(currency)) {
         url += `?network=${currency}`
       }
       const response = await fetch(url)
@@ -118,7 +118,8 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
       if (!response.ok) {
         throw new Error('Failed to download CSV')
       }
-      const fileName = `${paybutton.name}-transactions`
+
+      const fileName = `${paybutton.name}-${isCurrencyEmptyOrUndefined(currency) ? 'all' : `${currency.toLowerCase()}`}-transactions`
 
       const blob = await response.blob()
       const downloadUrl = window.URL.createObjectURL(blob)
@@ -174,15 +175,13 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
               </select>
                 )
               : (
-              <a
-                id='export-btn'
-                value={selectedCurrency}
+              <div
                 onClick={handleExport}
                 className="button_outline button_small"
                 style={{ marginBottom: '0', cursor: 'pointer' }}
               >
                 Export as CSV
-              </a>
+              </div>
                 )}
           </div>
         </div>
