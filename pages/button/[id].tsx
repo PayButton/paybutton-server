@@ -47,7 +47,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   const [tableRefreshCount, setTableRefreshCount] = useState<number>(0)
   const [paybuttonNetworks, setPaybuttonNetworks] = useState<number[]>([])
 
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('unselected')
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('')
   const router = useRouter()
 
   const updateIsSyncing = (addressStringList: string[]): void => {
@@ -133,13 +133,13 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
     } catch (error) {
       console.error('An error occurred while downloading the CSV:', error)
     } finally {
-      setSelectedCurrency('unselected')
+      setSelectedCurrency('')
     }
   }
 
   const handleExport = (event: React.ChangeEvent<HTMLSelectElement>): void => {
-    const currencyParam = event.target.value === 'all' || event.target.value === 'unselected' ? '' : event.target.value
-    setSelectedCurrency(event.target.value)
+    const currencyParam = event.target.value
+    setSelectedCurrency(currencyParam)
     void downloadCSV(paybutton!, currencyParam)
   }
 
@@ -162,7 +162,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
                 style={{ marginBottom: '0', cursor: 'pointer' }}
               >
                 <option hidden>Export as CSV</option>
-                <option key='all' value='all'>
+                <option value=''>
                   All Currencies
                 </option>
                 {Object.entries(NETWORK_TICKERS_FROM_ID)
