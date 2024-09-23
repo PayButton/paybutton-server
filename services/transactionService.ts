@@ -104,7 +104,7 @@ export type TransactionWithAddressAndPrices = Prisma.TransactionGetPayload<typeo
 
 export async function fetchTransactionsByAddressList (
   addressIdList: string[],
-  networkIdsList?: number[]
+  networkIdsListFilter?: number[]
 ): Promise<TransactionWithAddressAndPrices[]> {
   return await prisma.transaction.findMany({
     where: {
@@ -113,7 +113,7 @@ export async function fetchTransactionsByAddressList (
       },
       address: {
         networkId: {
-          in: networkIdsList ?? Object.values(NETWORK_IDS)
+          in: networkIdsListFilter ?? Object.values(NETWORK_IDS)
         }
       }
     },
