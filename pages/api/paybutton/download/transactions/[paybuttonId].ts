@@ -12,7 +12,7 @@ import {
   NETWORK_TICKERS,
   NETWORK_IDS
 } from 'constants/index'
-import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonIdGroupedByNetwork, getTransactionValueInCurrency } from 'services/transactionService'
+import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonId, getTransactionValueInCurrency } from 'services/transactionService'
 import { PaybuttonWithAddresses, fetchPaybuttonById } from 'services/paybuttonService'
 import { streamToCSV } from 'utils/files'
 import { setSession } from 'utils/setSession'
@@ -85,6 +85,24 @@ const formatNumberHeaders = (headers: string[], currency: string): string[] => {
   return headers.map(h => h === PAYBUTTON_TRANSACTIONS_FILE_HEADERS.value ? h + ` (${currency.toUpperCase()})` : h)
 }
 
+const getTransactionsGroupedByNetworkId = async (paybuttonId: string, networkIdArray: number[]): Promise<TransactionWithAddressAndPrices[]> => {
+  const transactions = await fetchTransactionsByPaybuttonId(paybuttonId, networkIdArray)
+
+  const groupedByNetworkIdTransactions = transactions.reduce<Record<number, TransactionWithAddressAndPrices[]>>((acc, transaction) => {
+    const networkId = transaction.address.networkId
+    if (acc[networkId] === undefined || acc[networkId] === null) {
+      acc[networkId] = []
+    }
+    acc[networkId].push(transaction)
+    return acc
+  }, {})
+
+  return Object.values(groupedByNetworkIdTransactions).reduce(
+    (acc, curr) => acc.concat(curr),
+    []
+  )
+}
+
 const downloadPaybuttonTransactionsFile = async (
   res: NextApiResponse,
   paybutton: PaybuttonWithAddresses,
@@ -96,11 +114,8 @@ const downloadPaybuttonTransactionsFile = async (
     const networkId = await getNetworkIdFromSlug(slug ?? NETWORK_TICKERS.ecash)
     networkIdArray = [networkId]
   }
-  const transactionsGrouped = await fetchTransactionsByPaybuttonIdGroupedByNetwork(paybutton.id, networkIdArray)
-  const transactions = Object.values(transactionsGrouped).reduce(
-    (acc, curr) => acc.concat(curr),
-    []
-  )
+  const transactions = await getTransactionsGroupedByNetworkId(paybutton.id, networkIdArray)
+
   const mappedTransactionsData = transactions.map(tx => {
     const data = getPaybuttonTransactionsFileData(tx, currency)
     return formatPaybuttonTransactionsFileData(data)

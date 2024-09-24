@@ -500,24 +500,6 @@ export async function fetchTransactionsByPaybuttonId (paybuttonId: string, netwo
   return transactions
 }
 
-export async function fetchTransactionsByPaybuttonIdGroupedByNetwork (
-  paybuttonId: string,
-  networkIds?: number[]
-): Promise<Record<number, TransactionWithAddressAndPrices[]>> {
-  const transactions = await fetchTransactionsByPaybuttonId(paybuttonId, networkIds)
-
-  const groupedTransactions = transactions.reduce<Record<number, TransactionWithAddressAndPrices[]>>((acc, transaction) => {
-    const networkId = transaction.address.networkId
-    if (acc[networkId] === undefined || acc[networkId] === null) {
-      acc[networkId] = []
-    }
-    acc[networkId].push(transaction)
-    return acc
-  }, {})
-
-  return groupedTransactions
-}
-
 export const getTransactionValueInCurrency = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType): number => {
   const {
     prices,
