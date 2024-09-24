@@ -193,7 +193,12 @@ export const TERTIARY_BCH_COLOR = '#231f20'
 export const BLOCKED_ADDRESSES: string[] = []
 
 export const NO_LAYOUT_ROUTES = [
-  '/'
+  '/',
+  '/signin',
+  '/signup',
+  '/reset-password',
+  '/auth/reset-password',
+  '/verify'
 ]
 
 export const COOKIE_NAMES = {
