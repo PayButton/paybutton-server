@@ -85,9 +85,7 @@ const formatNumberHeaders = (headers: string[], currency: string): string[] => {
   return headers.map(h => h === PAYBUTTON_TRANSACTIONS_FILE_HEADERS.value ? h + ` (${currency.toUpperCase()})` : h)
 }
 
-const getTransactionsGroupedByNetworkId = async (paybuttonId: string, networkIdArray: number[]): Promise<TransactionWithAddressAndPrices[]> => {
-  const transactions = await fetchTransactionsByPaybuttonId(paybuttonId, networkIdArray)
-
+const sortTransactionsByNetworkId = async (transactions: TransactionWithAddressAndPrices[]): Promise<TransactionWithAddressAndPrices[]> => {
   const groupedByNetworkIdTransactions = transactions.reduce<Record<number, TransactionWithAddressAndPrices[]>>((acc, transaction) => {
     const networkId = transaction.address.networkId
     if (acc[networkId] === undefined || acc[networkId] === null) {
@@ -111,12 +109,13 @@ const downloadPaybuttonTransactionsFile = async (
   let networkIdArray = Object.values(NETWORK_IDS)
   if (networkTicker !== undefined) {
     const slug = Object.keys(NETWORK_TICKERS).find(key => NETWORK_TICKERS[key] === networkTicker)
-    const networkId = await getNetworkIdFromSlug(slug ?? NETWORK_TICKERS.ecash)
+    const networkId = getNetworkIdFromSlug(slug ?? NETWORK_TICKERS.ecash)
     networkIdArray = [networkId]
   }
-  const transactions = await getTransactionsGroupedByNetworkId(paybutton.id, networkIdArray)
+  const transactions = await fetchTransactionsByPaybuttonId(paybutton.id, networkIdArray)
+  const sortedTransactions = await sortTransactionsByNetworkId(transactions)
 
-  const mappedTransactionsData = transactions.map(tx => {
+  const mappedTransactionsData = sortedTransactions.map(tx => {
     const data = getPaybuttonTransactionsFileData(tx, currency)
     return formatPaybuttonTransactionsFileData(data)
   })
