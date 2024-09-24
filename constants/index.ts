@@ -166,6 +166,8 @@ export const NETWORK_TICKERS: KeyValueT<string> = {
   bitcoincash: 'BCH'
 }
 
+export type NetworkTickersType = 'XEC' | 'BCH'
+
 export const NETWORK_TICKERS_FROM_ID: KeyValueT<string> = {
   1: 'XEC',
   2: 'BCH'
@@ -220,7 +222,6 @@ export const PAYBUTTON_TRANSACTIONS_FILE_HEADERS = {
   rate: 'Rate',
   transactionId: 'Transaction Id',
   address: 'Address'
-
 }
 
 export const DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER = ','

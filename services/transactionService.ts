@@ -3,7 +3,7 @@ import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType } from 'constants/index'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
@@ -102,14 +102,25 @@ const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionArgs>
 
 export type TransactionWithAddressAndPrices = Prisma.TransactionGetPayload<typeof transactionWithAddressAndPrices>
 
-export async function fetchAddressListTransactions (addressIdList: string[]): Promise<TransactionWithAddressAndPrices[]> {
+export async function fetchTransactionsByAddressList (
+  addressIdList: string[],
+  networkIdsListFilter?: number[]
+): Promise<TransactionWithAddressAndPrices[]> {
   return await prisma.transaction.findMany({
     where: {
       addressId: {
         in: addressIdList
+      },
+      address: {
+        networkId: {
+          in: networkIdsListFilter ?? Object.values(NETWORK_IDS)
+        }
       }
     },
-    include: includeAddressAndPrices
+    include: includeAddressAndPrices,
+    orderBy: {
+      timestamp: 'asc'
+    }
   })
 }
 
@@ -478,9 +489,9 @@ export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transa
   return txs.filter(t => t.prices.length !== 2)
 }
 
-export async function fetchTransactionsByPaybuttonId (paybuttonId: string): Promise<TransactionWithAddressAndPrices[]> {
+export async function fetchTransactionsByPaybuttonId (paybuttonId: string, networkIds?: number[]): Promise<TransactionWithAddressAndPrices[]> {
   const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
-  const transactions = await fetchAddressListTransactions(addressIdList)
+  const transactions = await fetchTransactionsByAddressList(addressIdList, networkIds)
 
   if (transactions.length === 0) {
     throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
