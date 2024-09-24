@@ -138,7 +138,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   }
 
   const handleExport = (event: React.ChangeEvent<HTMLSelectElement>): void => {
-    const currencyParam = event.target.value
+    const currencyParam = event.target.value !== 'all' ? event.target.value : ''
     setSelectedCurrency(currencyParam)
     void downloadCSV(paybutton!, currencyParam)
   }
@@ -161,8 +161,8 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
                 className="button_outline button_small"
                 style={{ marginBottom: '0', cursor: 'pointer' }}
               >
-                <option hidden>Export as CSV</option>
-                <option value=''>
+                <option value='' disabled> Export as CSV</option>
+                <option key="all" value="all">
                   All Currencies
                 </option>
                 {Object.entries(NETWORK_TICKERS_FROM_ID)
