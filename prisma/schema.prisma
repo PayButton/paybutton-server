@@ -166,6 +166,7 @@ model UserProfile {
   lastSentVerificationEmailAt DateTime?
   wallets   WalletsOnUserProfile[]
   addresses AddressesOnUserProfiles[]
+  preferredCurrencyId Int @default(1)
 }
 
 model PaybuttonTrigger {

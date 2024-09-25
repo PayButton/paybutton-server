@@ -522,7 +522,8 @@ export const mockedUserProfile: UserProfile = {
   createdAt: new Date(),
   updatedAt: new Date(),
   isAdmin: false,
-  lastSentVerificationEmailAt: null
+  lastSentVerificationEmailAt: null,
+  preferredCurrencyId: 1
 }
 
 export const mockedUserProfileWithPublicKey: UserProfile = {
@@ -531,7 +532,8 @@ export const mockedUserProfileWithPublicKey: UserProfile = {
   createdAt: new Date(),
   updatedAt: new Date(),
   isAdmin: false,
-  lastSentVerificationEmailAt: null
+  lastSentVerificationEmailAt: null,
+  preferredCurrencyId: 1
 }
 
 export const mockedAddressesOnButtons: AddressesOnButtons[] = [
