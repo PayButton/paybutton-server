@@ -167,6 +167,8 @@ model UserProfile {
   wallets   WalletsOnUserProfile[]
   addresses AddressesOnUserProfiles[]
   preferredCurrencyId Int @default(1)
+  organizationId String?
+  organization Organization?     @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 }
 
 model PaybuttonTrigger {
@@ -212,4 +214,25 @@ model SideshiftShift {
   settleAmount        String
   status              String
   type                String
+}
+
+model Organization {
+  id                          String                 @id @default(dbgenerated("(uuid())"))
+  name                        String               
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+  creatorId String                                   @unique
+  users                       UserProfile[]
+  invites                     OrganizationInvite[]
+}
+
+model OrganizationInvite {
+  id                          String                 @id @default(dbgenerated("(uuid())"))
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+  usedBy                      String
+  token                       String @unique
+
+  organizationId String
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
