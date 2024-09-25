@@ -13,6 +13,7 @@ import { KeyValueT, NETWORK_TICKERS_FROM_ID, ResponseMessage, SOCKET_MESSAGES } 
 import config from 'config'
 import io from 'socket.io-client'
 import PaybuttonTrigger from 'components/Paybutton/PaybuttonTrigger'
+import { UserProfile } from '@prisma/client'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   supertokensNode.init(SuperTokensConfig.backendConfig())
@@ -39,16 +40,32 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
 interface PaybuttonProps {
   paybuttonId: string
+  userId: string
 }
 
 export default function Button (props: PaybuttonProps): React.ReactElement {
-  const [paybutton, setPaybutton] = useState(undefined as PaybuttonWithAddresses | undefined)
+  const [paybutton, setPaybutton] = useState<PaybuttonWithAddresses | undefined>(undefined)
   const [isSyncing, setIsSyncing] = useState<KeyValueT<boolean>>({})
   const [tableRefreshCount, setTableRefreshCount] = useState<number>(0)
   const [paybuttonNetworks, setPaybuttonNetworks] = useState<number[]>([])
-
   const [selectedCurrency, setSelectedCurrency] = useState<string>('')
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+
   const router = useRouter()
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch('/api/user/', {
+          method: 'GET'
+        })
+        const profile = await res.json()
+        setUserProfile(profile)
+      } catch (error) {
+        console.error('Error fetching user profile:', error)
+      }
+    })()
+  }, [])
 
   const updateIsSyncing = (addressStringList: string[]): void => {
     const newIsSyncing = { ...isSyncing }
@@ -108,10 +125,11 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
 
   const downloadCSV = async (paybutton: { id: string, name: string }, currency: string): Promise<void> => {
     try {
-      let url = `/api/paybutton/download/transactions/${paybutton.id}`
+      const preferredCurrencyId = userProfile?.preferredCurrencyId ?? ''
+      let url = `/api/paybutton/download/transactions/${paybutton.id}?currency=${preferredCurrencyId}`
       const isCurrencyEmptyOrUndefined = (value: string): boolean => (value === '' || value === undefined)
       if (!isCurrencyEmptyOrUndefined(currency)) {
-        url += `?network=${currency}`
+        url += `&network=${currency}`
       }
       const response = await fetch(url)
 
