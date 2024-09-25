@@ -6,11 +6,11 @@ import {
   PAYBUTTON_TRANSACTIONS_FILE_HEADERS,
   DECIMALS,
   SUPPORTED_QUOTES,
-  DEFAULT_QUOTE_SLUG,
   SupportedQuotesType,
   NetworkTickersType,
   NETWORK_TICKERS,
-  NETWORK_IDS
+  NETWORK_IDS,
+  SUPPORTED_QUOTES_FROM_ID
 } from 'constants/index'
 import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonId, getTransactionValueInCurrency } from 'services/transactionService'
 import { PaybuttonWithAddresses, fetchPaybuttonById } from 'services/paybuttonService'
@@ -147,14 +147,15 @@ export default async (req: any, res: any): Promise<void> => {
     const networkTickerReq = req.query.network as string
 
     const networkTicker = (networkTickerReq !== '' && isNetworkValid(networkTickerReq as NetworkTickersType)) ? networkTickerReq.toUpperCase() as NetworkTickersType : undefined
-
+    const quoteId = req.query.currency as number
+    const quoteSlug = SUPPORTED_QUOTES_FROM_ID[quoteId]
     const paybutton = await fetchPaybuttonById(paybuttonId)
     if (paybutton.providerUserId !== userId) {
       throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
     }
 
     res.setHeader('Content-Type', 'text/csv')
-    await downloadPaybuttonTransactionsFile(res, paybutton, DEFAULT_QUOTE_SLUG, networkTicker)
+    await downloadPaybuttonTransactionsFile(res, paybutton, quoteSlug, networkTicker)
   } catch (error: any) {
     switch (error.message) {
       case RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400.message:
