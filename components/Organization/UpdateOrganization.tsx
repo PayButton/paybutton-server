@@ -6,14 +6,15 @@ interface IProps {
   user: UserWithSupertokens
   setError: Function
   setOrg: Function
+  setOrgEdit: Function
 }
 
 interface UpdateOrganizationForm {
   name: string
 }
 
-const UpdateOrganization = ({ user, setError, setOrg }: IProps): JSX.Element => {
-  const { register, handleSubmit } = useForm<UpdateOrganizationForm>({})
+const UpdateOrganization = ({ user, setError, setOrg, setOrgEdit }: IProps): JSX.Element => {
+  const { register, handleSubmit, reset } = useForm<UpdateOrganizationForm>({})
 
   const onSubmit = async (params: any): Promise<void> => {
     const res = await fetch('/api/organization', {
@@ -29,6 +30,8 @@ const UpdateOrganization = ({ user, setError, setOrg }: IProps): JSX.Element => 
     if (res.status === 200) {
       const data = await res.json()
       setOrg(data.organization)
+      reset()
+      setOrgEdit('')
     } else {
       const json = await res.json()
       setError(json.message)
@@ -43,6 +46,7 @@ const UpdateOrganization = ({ user, setError, setOrg }: IProps): JSX.Element => 
       method="post"
     >
       <label className={style.label}>Change name</label>
+      <div className={style.create_input_ctn}>
       <input
         {...register('name')}
         type="text"
@@ -50,11 +54,13 @@ const UpdateOrganization = ({ user, setError, setOrg }: IProps): JSX.Element => 
         required
         className={style.text_input}
       />
-      <div className={style.btn_ctn}>
         <button className={style.add_btn} onClick={() => (false)}>
           Update
         </button>
       </div>
+      <button className={style.cancel_btn} onClick={() => setOrgEdit('')}>
+          Cancel
+      </button>
     </form>
   )
 }

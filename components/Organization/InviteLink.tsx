@@ -35,7 +35,6 @@ const InviteLink = (): JSX.Element => {
           </>
         }
       </div>
-      (This link will expire in 24h)
     </div>
 
   </>

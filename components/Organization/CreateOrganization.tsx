@@ -45,6 +45,7 @@ const CreateOrganization = ({ user, setError, setOrg, setOrgMembers }: IProps): 
     }}
     method="post"
   >
+    <div className={style.create_input_ctn}>
     <input
       {...register('name')}
       type="text"
@@ -52,7 +53,6 @@ const CreateOrganization = ({ user, setError, setOrg, setOrgMembers }: IProps): 
       required
       className={style.text_input}
     />
-    <div className={style.btn_ctn}>
       <button className={style.add_btn} onClick={() => (false)}>
         Create
       </button>
