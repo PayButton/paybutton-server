@@ -1,5 +1,5 @@
 import xecaddr from 'xecaddrjs'
-import { Address, Prisma } from '@prisma/client'
+import { Address, Prisma, UserProfile } from '@prisma/client'
 import { RESPONSE_MESSAGES, NETWORK_SLUGS, USD_QUOTE_ID, KeyValueT } from '../constants/index'
 import * as bitcoinjs from 'bitcoinjs-lib'
 import { NextApiRequest, NextApiResponse } from 'next'
@@ -225,4 +225,31 @@ export const compareNumericString = (rowA: any, rowB: any, id: string, desc: boo
   if (a > b) return 1
   if (a < b) return -1
   return 0
+}
+
+export const copyTextToClipboard = (elementId: string, setCopySuccess: Function): void => {
+  const textElement = document.getElementById(elementId)
+  if (textElement != null) {
+    const text = textElement.textContent ?? textElement.innerText
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        setCopySuccess(elementId)
+        setTimeout(() => setCopySuccess(''), 2000)
+      })
+      .catch((err) => {
+        console.error('Error copying text: ', err)
+      })
+  }
+}
+
+export function removeDateFields<T extends { createdAt: any, updatedAt: any }> (obj: T): Omit<T, 'createdAt' | 'updatedAt'> {
+  const { createdAt, updatedAt, ...rest } = obj
+  return rest
+}
+
+export const removeUnserializableFields = (user: UserProfile): void => {
+  // `Date` objects are not serializable, so we convert it to string.
+  (user.createdAt as any) = user.createdAt.toString();
+  (user.lastSentVerificationEmailAt as any) = user.lastSentVerificationEmailAt === null ? null : user.lastSentVerificationEmailAt.toString();
+  (user.updatedAt as any) = user.updatedAt.toString()
 }
