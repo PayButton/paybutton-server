@@ -12,7 +12,7 @@ import CopyIcon from '../../assets/copy-black.png'
 import { ViewOrganization } from 'components/Organization'
 import { fetchOrganizationForUser, fetchOrganizationMembers } from 'services/organizationService'
 import { Organization, UserProfile } from '@prisma/client'
-import { removeUnserializableFields } from 'utils/index'
+import { removeDateFields, removeUnserializableFields } from 'utils/index'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -32,19 +32,22 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (session === undefined) return
   const userId = session?.getUserId()
   const user = await fetchUserWithSupertokens(userId)
+  removeUnserializableFields(user.userProfile)
   const organization = await fetchOrganizationForUser(userId)
+  let serializableOrg = null
   let members: UserProfile[] = []
 
   if (organization !== null) {
     members = await fetchOrganizationMembers(organization.id)
     members.forEach(m => removeUnserializableFields(m))
+    serializableOrg = removeDateFields(organization)
   } else {
     members = []
   }
   return {
     props: {
       userId,
-      organization,
+      organization: serializableOrg,
       orgMembersProps: members,
       user,
       userPublicKey: await getUserPublicKeyHex(userId)

@@ -6,7 +6,7 @@ import DeleteOrganization from './DeleteOrganization'
 import style from './organization.module.css'
 import InviteLink from './InviteLink'
 import LeaveOrganization from './LeaveOrganization'
-import { UserProfile } from '@prisma/client'
+import { Organization, UserProfile } from '@prisma/client'
 
 interface IProps {
   user: UserWithSupertokens
