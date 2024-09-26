@@ -1,5 +1,9 @@
 .org_ctn  {
   width: 100%;
+  background-color: #fff;
+  max-width: 800px;
+  padding: 20px;
+  border-radius: 10px;
 }
 
 .org_ctn p {
@@ -14,10 +18,12 @@
 
 .create_input_ctn input {
   width: 100%;
+  margin: 0;
 }
 
 .create_input_ctn button {
   width: 120px;
+  margin: 0;
   margin-left: 10px;
 }
 
@@ -46,15 +52,15 @@
 }
 
 .invite_link {
-  background-color: var(--gray);
   padding: 6px 10px;
   text-align: right;
   background-color: #e7f6ff;
-  border: 1px solid var(--blue);
+  border: 1px solid var(--accent);
   cursor: pointer;
   border-radius: 3px;
   overflow-wrap: break-word;
   font-size: 14px;
+  position: relative;
 }
 
 .row_ctn span {
