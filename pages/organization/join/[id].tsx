@@ -121,11 +121,11 @@ export default function JoinOrg ({ organization, organizationInvite }: IProps): 
         <Image src={logoImageSource} alt='Blockchain Poker' />
         <div className={style.login_box}>
           <div style={{ marginBottom: '20px' }}>
-            You have been invited to join {organization.name}
+            You have been invited to join <b>{organization.name}</b>
           </div>
           {error !== '' && <div className={style.error_message}>{error}</div>}
-          <div style={{ textAlign: 'center' }}>
-            <button onClick={() => { void onSubmit() } } className='button_main'>Join</button>
+          <div style={{ textAlign: 'center', width: '100%' }}>
+            <button onClick={() => { void onSubmit() } } className="button_main" style={{ width: '100%' }}>Join</button>
           </div>
         </div>
       </div>

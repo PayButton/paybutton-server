@@ -31,7 +31,8 @@ const InviteLink = (): JSX.Element => {
         {url === ''
           ? <p> loading </p>
           : <>
-            {copySuccess === elementId ? 'Copied!' : <b>{url}</b> }
+            <b>{url}{copySuccess === elementId && <div className={style.copied_text}>Copied!</div>}</b>
+
           </>
         }
       </div>

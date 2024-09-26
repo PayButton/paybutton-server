@@ -22,7 +22,7 @@ const Page = ({
   const currentRoute = router.pathname
 
   return <>
-    {(loggedUser === undefined || NO_LAYOUT_ROUTES.includes(currentRoute))
+    {(loggedUser === undefined || NO_LAYOUT_ROUTES.includes(currentRoute) || currentRoute.includes('/organization/join/'))
       ? children
       : (
           <Layout chart={chart} setChart={setChart} loggedUser={loggedUser}>
