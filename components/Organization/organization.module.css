@@ -6,6 +6,10 @@
   border-radius: 10px;
 }
 
+body[data-theme="dark"] .org_ctn {
+  background-color: var(--secondary-bg-color);
+}
+
 .org_ctn p {
   font-size: 16px;
 }
@@ -61,6 +65,10 @@
   overflow-wrap: break-word;
   font-size: 14px;
   position: relative;
+}
+
+body[data-theme="dark"] .invite_link {
+  color: black;
 }
 
 .row_ctn span {
