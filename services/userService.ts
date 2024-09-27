@@ -21,6 +21,14 @@ export interface UserWithSupertokens {
   stUser?: SupertokensUser
 }
 
+export async function fetchUserWithSupertokens (userId: string): Promise<UserWithSupertokens> {
+  const userProfile = await fetchUserProfileFromId(userId)
+  return {
+    userProfile,
+    stUser: await supertokens.getUserById(userProfile.id)
+  }
+}
+
 export async function fetchAllUsersWithSupertokens (): Promise<UserWithSupertokens[]> {
   const ret: UserWithSupertokens[] = []
   const userProfiles = await fetchAllUsers()

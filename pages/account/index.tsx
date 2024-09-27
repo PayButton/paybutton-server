@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
-import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
@@ -8,8 +7,12 @@ import { GetServerSideProps } from 'next'
 import Page from 'components/Page'
 import ChangePassword from 'components/Account/ChangePassword'
 import style from './account.module.css'
-import { getUserPublicKeyHex } from 'services/userService'
+import { fetchUserWithSupertokens, getUserPublicKeyHex, UserWithSupertokens } from 'services/userService'
 import CopyIcon from '../../assets/copy-black.png'
+import { ViewOrganization } from 'components/Organization'
+import { fetchOrganizationForUser, fetchOrganizationMembers } from 'services/organizationService'
+import { Organization, UserProfile } from '@prisma/client'
+import { removeDateFields, removeUnserializableFields } from 'utils/index'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -28,25 +31,42 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
   if (session === undefined) return
   const userId = session?.getUserId()
+  const user = await fetchUserWithSupertokens(userId)
+  removeUnserializableFields(user.userProfile)
+  const organization = await fetchOrganizationForUser(userId)
+  let serializableOrg = null
+  let members: UserProfile[] = []
 
+  if (organization !== null) {
+    members = await fetchOrganizationMembers(organization.id)
+    members.forEach(m => removeUnserializableFields(m))
+    serializableOrg = removeDateFields(organization)
+  } else {
+    members = []
+  }
   return {
     props: {
       userId,
-      user: await ThirdPartyEmailPasswordNode.getUserById(userId),
+      organization: serializableOrg,
+      orgMembersProps: members,
+      user,
       userPublicKey: await getUserPublicKeyHex(userId)
     }
   }
 }
 
 interface IProps {
-  user: ThirdPartyEmailPasswordNode.User | undefined
+  user: UserWithSupertokens
   userPublicKey: string
+  organization: Organization
+  orgMembersProps: UserProfile[]
 }
 
-export default function Account ({ user, userPublicKey }: IProps): React.ReactElement {
+export default function Account ({ user, userPublicKey, organization, orgMembersProps }: IProps): React.ReactElement {
   const [changePassword, setChangePassword] = useState(false)
   const [publicKeyInfo, setPublicKeyInfo] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
+  const [orgMembers, setOrgMembers] = useState(orgMembersProps)
   const toggleChangePassword = (): void => {
     setChangePassword(!changePassword)
   }
@@ -72,20 +92,20 @@ export default function Account ({ user, userPublicKey }: IProps): React.ReactEl
       <div className={style.account_ctn}>
         <h2>Account</h2>
         <div className={style.label}>Email</div>
-        <div className={style.account_card}>{user?.email}</div>
+        <div className={style.account_card}>{user.stUser?.email}</div>
         {changePassword && (
           <>
             <div className={style.label}>Update Password</div>
             <ChangePassword toggleChangePassword={toggleChangePassword} />
           </>
         )}
-         <div
+        <div
           onClick={() => setChangePassword(!changePassword)}
           className={`${style.updatebtn} button_outline`}
         >
           {!changePassword ? 'Update Password' : 'Cancel'}
         </div>
-         <div className={style.label} style={{ marginTop: '50px' }}>Public key <span className={style.public_key_info_btn} onClick={() => togglePublicKeyInfo()}>What is this?</span></div>
+        <div className={style.label} style={{ marginTop: '50px' }}>Public key <span className={style.public_key_info_btn} onClick={() => togglePublicKeyInfo()}>What is this?</span></div>
         <div className={style.public_key_card_ctn}>
           <div className={style.public_key_card}>
             {userPublicKey}
@@ -93,7 +113,8 @@ export default function Account ({ user, userPublicKey }: IProps): React.ReactEl
           </div>
           <div className={style.copy_btn} onClick={() => { void handleCopyClick() } }><Image src={CopyIcon} alt="copy" /></div>
         </div>
-        {publicKeyInfo && (
+        <div>
+          {publicKeyInfo && (
             <div className={style.public_key_info_ctn}>
               This can be used to verify the authenticity of a message received from a paybutton trigger.
               <br/>
@@ -108,16 +129,20 @@ export default function Account ({ user, userPublicKey }: IProps): React.ReactEl
               <br/>
               Check if the payload's signature came from the private key paired to this public key using your preferred method.
 
-          </div>
-        )}
-         {publicKeyInfo &&
-          <div
-          onClick={() => togglePublicKeyInfo()}
-          className={`${style.updatebtn} button_outline`}
-          >Close</div>
-        }
-      </div>
-    )
+            </div>
+          )}
+          {publicKeyInfo &&
+            <div
+              onClick={() => togglePublicKeyInfo()}
+              className={`${style.updatebtn} button_outline`}
+            >Close</div>
+          }
+        </div>
+        <div>
+          <h3 className={style.config_title}>Organization</h3>
+          <ViewOrganization user={user} orgMembers={orgMembers} setOrgMembers={setOrgMembers} organization={organization}/>
+        </div>
+      </div>)
   }
   return <Page />
 }

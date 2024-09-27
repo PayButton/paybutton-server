@@ -438,3 +438,60 @@ export function parseOpReturnData (opReturnData: string): any {
 export const exportedForTesting = {
   getSignaturePayload
 }
+
+export interface CreateOrganizationPOSTParameters {
+  creatorId?: string
+  name?: string
+}
+
+export interface CreateOrganizationInput {
+  creatorId: string
+  name: string
+}
+
+export interface UpdateOrganizationPUTParameters {
+  userId?: string
+  name?: string
+}
+
+export interface UpdateOrganizationInput {
+  userId: string
+  name: string
+}
+
+export interface JoinOrganizationPOSTParameters {
+  userId?: string
+  token?: string
+}
+
+export interface JoinOrganizationInput {
+  userId: string
+  token: string
+}
+
+export const parseJoinOrganizationPOSTRequest = function (params: JoinOrganizationPOSTParameters): JoinOrganizationInput {
+  if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+  if (params.token === '' || params.token === undefined) throw new Error(RESPONSE_MESSAGES.INVITATION_TOKEN_NOT_PROVIDED_400.message)
+  return {
+    userId: params.userId,
+    token: params.token
+  }
+}
+
+export const parseUpdateOrganizationPUTRequest = function (params: UpdateOrganizationPUTParameters): UpdateOrganizationInput {
+  if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+  if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.ORGANIZATION_NAME_NOT_PROVIDED_400.message)
+  return {
+    userId: params.userId,
+    name: params.name
+  }
+}
+
+export const parseCreateOrganizationPOSTRequest = function (params: CreateOrganizationPOSTParameters): CreateOrganizationInput {
+  if (params.creatorId === '' || params.creatorId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+  if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.ORGANIZATION_NAME_NOT_PROVIDED_400.message)
+  return {
+    creatorId: params.creatorId,
+    name: params.name
+  }
+}
