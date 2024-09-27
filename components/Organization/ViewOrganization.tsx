@@ -103,7 +103,7 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
              ? (
             <div className={style.leave_btn_ctn}>
                 <div
-                  className={style.edit_btn}
+                  className={style.delete_btn}
                   onClick={() => setOrgEdit('leave')}
                 >
                   Leave Organization

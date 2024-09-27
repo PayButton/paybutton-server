@@ -10,6 +10,10 @@ body[data-theme="dark"] .org_ctn {
   background-color: var(--secondary-bg-color);
 }
 
+body[data-theme="dark"] .org_ctn input {
+  border-color: var(--gray)
+}
+
 .org_ctn p {
   font-size: 16px;
 }
@@ -107,6 +111,11 @@ body[data-theme="dark"] .invite_link {
   border-color: #737373;
 }
 
+body[data-theme="dark"] .edit_btn:hover,
+body[data-theme="dark"] .cancel_btn:hover {
+  color: #000;
+}
+
 .delete_btn {
   color: rgb(198, 0, 0);
 }
@@ -137,7 +146,8 @@ body[data-theme="dark"] .invite_link {
   margin-top: 40px;
 }
 
-.leave_btn_ctn .edit_btn {
+.leave_btn_ctn .edit_btn,
+.leave_btn_ctn .delete_btn  {
   display: inline-block;
 }
 
