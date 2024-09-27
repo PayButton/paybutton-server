@@ -144,7 +144,10 @@ export const SUPPORTED_QUOTES = [ // avoids hitting the DB every time for data t
   'usd' as SupportedQuotesType,
   'cad' as SupportedQuotesType
 ]
-
+export const SUPPORTED_QUOTES_FROM_ID: KeyValueT<SupportedQuotesType> = {
+  1: 'usd',
+  2: 'cad'
+}
 export const HUMAN_READABLE_DATE_FORMAT = 'YYYY-MM-DD'
 
 export const PRICE_API_DATE_FORMAT = 'YYYY-MM-DD'
