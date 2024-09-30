@@ -14,8 +14,14 @@ import config from 'config'
 import io from 'socket.io-client'
 import PaybuttonTrigger from 'components/Paybutton/PaybuttonTrigger'
 import { UserProfile } from '@prisma/client'
+import Head from 'next/head'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
+  const host = config.wsBaseURL.split('//')[1]
+  context.res.setHeader(
+    'Content-Security-Policy',
+    `connect-src 'self' ${host}`
+  );
   supertokensNode.init(SuperTokensConfig.backendConfig())
   let session
   try {
@@ -100,10 +106,19 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   }
 
   const setUpSocket = async (addresses: string[]): Promise<void> => {
+    const host =  'https://' + config.wsBaseURL.split('//')[1]
     const socket = io(`${config.wsBaseURL}/addresses`, {
-      query: { addresses }
+      query: { addresses },
+      extraHeaders: { 'Content-Security-Policy': `connect-src 'self' ${host};` }
     })
+    console.log('failing?', {ws: config.wsBaseURL, socket})
 
+    socket.on("connection_error", (socket) => {
+      console.log('errheaders:', { socket })
+    });
+    socket.on("error", (socket) => {
+      console.log('err:', { socket });
+    });
     socket.on(SOCKET_MESSAGES.INCOMING_TXS, (broadcastedData: BroadcastTxData) => {
       setTableRefreshCount(tableRefreshCount + 1)
       updateIsSyncing([broadcastedData.address])
@@ -164,6 +179,12 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   if (paybutton != null) {
     return (
       <>
+        <Head>
+        <meta
+          httpEquiv="Content-Security-Policy"
+          content="connect-src 'self' https://socket.paybutton.org"
+        />
+        </Head>
         <div className='back_btn' onClick={() => router.back()}>Back</div>
         <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton}/>
         <div style={{ display: 'flex', alignItems: 'center', alignContent: 'center', justifyContent: 'space-between' }}>

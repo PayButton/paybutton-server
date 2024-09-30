@@ -501,6 +501,7 @@ export async function fetchTransactionsByPaybuttonId (paybuttonId: string, netwo
 }
 
 export const getTransactionValueInCurrency = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType): number => {
+  console.log('getting valu', {transaction, currency})
   const {
     prices,
     amount,
@@ -526,5 +527,6 @@ export const getTransactionValueInCurrency = (transaction: TransactionWithAddres
     }
   }
 
+  console.log('res', {result})
   return result[currency]
 }

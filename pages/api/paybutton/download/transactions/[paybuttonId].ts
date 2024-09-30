@@ -10,7 +10,8 @@ import {
   NetworkTickersType,
   NETWORK_TICKERS,
   NETWORK_IDS,
-  SUPPORTED_QUOTES_FROM_ID
+  SUPPORTED_QUOTES_FROM_ID,
+  USD_QUOTE_ID
 } from 'constants/index'
 import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonId, getTransactionValueInCurrency } from 'services/transactionService'
 import { PaybuttonWithAddresses, fetchPaybuttonById } from 'services/paybuttonService'
@@ -52,6 +53,10 @@ const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAnd
   const date = moment(timestamp * 1000)
 
   const rate = value / amount.toNumber()
+
+  if ([amount, hash, address, timestamp, value, date].includes(undefined)) {
+    console.log('WIP', { amount, hash, address, timestamp, value, date })
+  }
 
   return {
     amount,
@@ -147,7 +152,12 @@ export default async (req: any, res: any): Promise<void> => {
     const networkTickerReq = req.query.network as string
 
     const networkTicker = (networkTickerReq !== '' && isNetworkValid(networkTickerReq as NetworkTickersType)) ? networkTickerReq.toUpperCase() as NetworkTickersType : undefined
-    const quoteId = req.query.currency as number
+    let quoteId: number
+    if (req.query.currency === undefined || req.query.currency === '' || Number.isNaN(req.query.currency)) {
+      quoteId = USD_QUOTE_ID
+    } else {
+      quoteId = req.query.currency as number
+    }
     const quoteSlug = SUPPORTED_QUOTES_FROM_ID[quoteId]
     const paybutton = await fetchPaybuttonById(paybuttonId)
     if (paybutton.providerUserId !== userId) {
