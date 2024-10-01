@@ -4,7 +4,7 @@ import { getTransactionValue, TransactionWithAddressAndPrices, TransactionWithPr
 import { AddressWithTransactionsWithPrices, fetchAllUserAddresses, fetchAddressById, AddressWithPaybuttons, fetchAddressWithTxsAndPrices } from 'services/addressService'
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
-import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
+import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT, DEFAULT_QUOTE_SLUG } from 'constants/index'
 import moment from 'moment'
 import { CacheSet } from 'redis/index'
 import { ButtonDisplayData, Payment } from './types'
@@ -46,7 +46,7 @@ const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
 }
 
 export const generatePaymentFromTx = async (tx: TransactionWithPrices): Promise<Payment> => {
-  const value = (await getTransactionValue(tx)).usd
+  const value = getTransactionValue(tx)?.usd
   const txAddress = await fetchAddressById(tx.addressId, true) as AddressWithPaybuttons
   if (txAddress === undefined) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_FOR_TRANSACTION_404.message)
   return {
@@ -61,7 +61,11 @@ export const generatePaymentFromTx = async (tx: TransactionWithPrices): Promise<
           id: conn.paybutton.id
         }
       }
-    )
+    ),
+    amount: tx.amount,
+    address: tx.addressId,
+    date: moment(tx.timestamp),
+    currency: DEFAULT_QUOTE_SLUG
   }
 }
 

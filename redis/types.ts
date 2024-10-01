@@ -43,13 +43,16 @@ export interface ButtonDisplayData {
   isBch?: boolean
   lastPayment?: number
 }
-
 export interface Payment {
   timestamp: number
   value: Prisma.Decimal
   networkId: number
   hash: string
+  address: string
   buttonDisplayDataList: ButtonDisplayData[]
+  amount: Prisma.Decimal
+  date: moment.Moment
+  currency: string
 }
 
 export interface ButtonData {

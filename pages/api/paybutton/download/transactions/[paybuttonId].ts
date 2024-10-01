@@ -12,7 +12,7 @@ import {
   NETWORK_IDS,
   SUPPORTED_QUOTES_FROM_ID
 } from 'constants/index'
-import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonId, getTransactionValueInCurrency } from 'services/transactionService'
+import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonId, getTransactionValue } from 'services/transactionService'
 import { PaybuttonWithAddresses, fetchPaybuttonById } from 'services/paybuttonService'
 import { streamToCSV } from 'utils/files'
 import { setSession } from 'utils/setSession'
@@ -48,7 +48,7 @@ function isNetworkValid (slug: NetworkTickersType): boolean {
 
 const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType): TransactionFileData => {
   const { amount, hash, address, timestamp } = transaction
-  const value = getTransactionValueInCurrency(transaction, currency)
+  const value = Number(getTransactionValue(transaction)?.usd)
   const date = moment(timestamp * 1000)
 
   const rate = value / amount.toNumber()

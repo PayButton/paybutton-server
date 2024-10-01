@@ -3,7 +3,7 @@ import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS } from 'constants/index'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, NETWORK_IDS } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
@@ -11,7 +11,7 @@ import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData } from 'utils/validators'
 
-export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
+export function getTransactionValue (transaction: TransactionWithPrices): QuoteValues {
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
@@ -498,33 +498,4 @@ export async function fetchTransactionsByPaybuttonId (paybuttonId: string, netwo
   }
 
   return transactions
-}
-
-export const getTransactionValueInCurrency = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType): number => {
-  const {
-    prices,
-    amount,
-    id,
-    timestamp
-  } = transaction
-
-  const result: Record<SupportedQuotesType, number> = {
-    usd: 0,
-    cad: 0
-  }
-
-  if (prices.length !== N_OF_QUOTES) {
-    throw new Error(`${RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message}, txId ${id}, at ${timestamp}`)
-  }
-
-  for (const p of prices) {
-    if (p.price.quoteId === USD_QUOTE_ID) {
-      result.usd = p.price.value.times(amount).toNumber()
-    }
-    if (p.price.quoteId === CAD_QUOTE_ID) {
-      result.cad = p.price.value.times(amount).toNumber()
-    }
-  }
-
-  return result[currency]
 }
