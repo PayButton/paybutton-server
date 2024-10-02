@@ -109,7 +109,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
     const host =  'https://' + config.wsBaseURL.split('//')[1]
     const socket = io(`${config.wsBaseURL}/addresses`, {
       query: { addresses },
-      extraHeaders: { 'Content-Security-Policy': `connect-src 'self' ${host};` }
+      extraHeaders: { 'Content-Security-Policy': `connect-src 'self' wss: ${host};` }
     })
     console.log('failing?', {ws: config.wsBaseURL, socket})
 
@@ -182,7 +182,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
         <Head>
         <meta
           httpEquiv="Content-Security-Policy"
-          content="connect-src 'self' https://socket.paybutton.org"
+          content="connect-src 'self' wss: socket.paybutton.org"
         />
         </Head>
         <div className='back_btn' onClick={() => router.back()}>Back</div>
