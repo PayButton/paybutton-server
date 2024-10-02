@@ -99,7 +99,7 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
     return <>
       <h2>Admin Dashboard</h2>
       <div className={style.admin_ctn}>
-        <h3> Ecash</h3>
+        <h3> eCash</h3>
       <TableContainer columns={columns} data={ecashSubscribedAddresses} ssr/>
         <h3> Bitcoin Cash</h3>
       <TableContainer columns={columns} data={bitcoincashSubscribedAddresses} ssr/>
