@@ -30,6 +30,7 @@ export default function Navbar ({ userId }: IProps): JSX.Element {
               id="menu__toggle"
               className={style.menubtn_ctn}
               type="checkbox"
+              checked={mobileMenu}
               onClick={() => setMobileMenu(!mobileMenu)}
             />
             <label className={style.menu_btn} htmlFor="menu__toggle">
@@ -42,11 +43,12 @@ export default function Navbar ({ userId }: IProps): JSX.Element {
           style={mobileMenu ? { left: '0' } : { left: '-200px' }}
         >
           <ThemeToggle landingpage />
-          <Link href="#button-generator">Button Generator</Link>
+          <Link href="#button-generator" onClick={() => setMobileMenu(false)}>Button Generator</Link>
           <Link
             href="https://github.com/paybutton"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => setMobileMenu(false)}
           >
             GitHub
           </Link>
@@ -54,19 +56,20 @@ export default function Navbar ({ userId }: IProps): JSX.Element {
             href="https://t.me/paybutton"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => setMobileMenu(false)}
           >
             Telegram
           </Link>
-          <Link href="https://docs.paybutton.org/#/?id=what-is-paybutton">Docs</Link>
+          <Link href="https://docs.paybutton.org/#/?id=what-is-paybutton" onClick={() => setMobileMenu(false)}>Docs</Link>
           {userId === undefined
             ? <>
-            <a href="/signin">Sign In</a>
-            <a href="/signup" className="button_outline button_small">
+            <a href="/signin" onClick={() => setMobileMenu(false)}>Sign In</a>
+            <a href="/signup" className="button_outline button_small" onClick={() => setMobileMenu(false)}>
               Sign up
             </a>
           </>
             : <>
-            <a href="/dashboard">Dashboard</a>
+            <a href="/dashboard" onClick={() => setMobileMenu(false)}>Dashboard</a>
             <LogoutButton />
           </>
           }
