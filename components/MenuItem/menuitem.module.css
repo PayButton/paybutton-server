@@ -1,5 +1,7 @@
 .li {
   display: block;
+  border-radius: 10px;
+  margin-bottom: 10px;
 }
 
 .active {
@@ -59,4 +61,11 @@ body[data-theme='dark'] .li:hover {
   color: var(--secondary-bg-color);
   background: var(--primary-text-color);
   transition: all ease-in-out 200ms;
+}
+
+@media (max-width: 960px) {
+  .li {
+    border-radius: 0;
+    margin-bottom: 0;
+  }
 }

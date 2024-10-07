@@ -4,7 +4,7 @@
   justify-content: space-between;
   color: var(--primary-text-color);
   background-color: var(--secondary-bg-color);
-  padding: 25px 0;
+  padding: 25px 15px;
   position: relative;
   min-height: 100vh;
   width: 220px;
@@ -18,11 +18,18 @@
 }
 
 .section {
-  padding: 0 0 0 25px;
+  padding: 0;
   margin: 0;
   border-bottom: none;
   border-top: none;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
+}
+
+.section a {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .section img {
@@ -145,12 +152,13 @@ body[data-theme='dark'] .socialctn .moon {
     padding: 0 15px;
   }
 
-  .ul {
-    margin: 0;
+  .topmenu a {
+    display: flex;
+    align-items: center;
   }
 
-  .section {
-    padding-left: 15px;
+  .ul {
+    margin: 0;
   }
 
   .aside {
