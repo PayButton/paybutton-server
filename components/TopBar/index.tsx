@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import style from './topbar.module.css'
 
@@ -23,9 +22,6 @@ export default function TopBar ({ title, user }: TopBarProps): JSX.Element {
       </div>
       <div className={style.profile_ctn}>
         <Link className={style.profile} href="/account">
-          <div className={style.profile_pic}>
-            <Image src="/user-icon.png" alt="user" fill />
-          </div>
           {user}
         </Link>
       </div>

@@ -2,7 +2,7 @@
     width: 100%;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 20px;
 }
 
@@ -25,19 +25,27 @@
     display: flex;
     align-items: center;
     font-size: 14px;
+    border-radius: 10px;
+    padding: 5px 20px;
+    transition: all ease-in-out 200ms;
+    font-weight: 500;
 }
 
 .profile:hover {
-    text-decoration: underline;
+    background-color: var(--accent-color);
 }
 
-.profile_pic {
-    height: 35px;
-    width: 35px;
-    position: relative;
-    margin-right: 10px;
-}
+@media (max-width: 960px) {
+    .title_ctn h2 {
+        font-size: 26px;
+    }
 
-.profile_pic img {
-    object-fit: contain;
-}
+    .topbar_ctn {
+        margin-top: 20px;
+    }
+
+    .profile {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+  }
