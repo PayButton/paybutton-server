@@ -8,6 +8,9 @@ import WalletForm from 'components/Wallet/WalletForm'
 import { WalletWithPaymentInfo } from 'services/walletService'
 import { AddressWithPaybuttons } from 'services/addressService'
 import { UserNetworksInfo } from 'services/networkService'
+import TopBar from 'components/TopBar'
+import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
+import { removeUnserializableFields } from 'utils/index'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -25,13 +28,22 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
   }
 
+  if (session === undefined) return
+  const userId = session?.getUserId()
+  const user = await fetchUserWithSupertokens(userId)
+  removeUnserializableFields(user.userProfile)
+
   return {
-    props: { userId: session.getUserId() }
+    props: {
+      userId,
+      user
+    }
   }
 }
 
 interface WalletsProps {
   userId: string
+  user: UserWithSupertokens
 }
 
 interface WalletsState {
@@ -94,7 +106,7 @@ export default class Wallets extends React.Component<WalletsProps, WalletsState>
   render (): React.ReactElement {
     return (
       <>
-        <h2>Wallets</h2>
+        <TopBar title="Wallets" user={this.props.user.stUser?.email} />
         <div>
         {this.state.walletsWithPaymentInfo.sort((a, b) => {
           /* Sorts in the following order, from first to last, if they exist:

@@ -7,6 +7,9 @@ import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
+import TopBar from 'components/TopBar'
+import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
+import { removeUnserializableFields } from 'utils/index'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -24,13 +27,22 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
   }
 
+  if (session === undefined) return
+  const userId = session?.getUserId()
+  const user = await fetchUserWithSupertokens(userId)
+  removeUnserializableFields(user.userProfile)
+
   return {
-    props: { userId: session.getUserId() }
+    props: {
+      userId,
+      user
+    }
   }
 }
 
 interface PaybuttonsProps {
   userId: string
+  user: UserWithSupertokens
 }
 
 interface PaybuttonsState {
@@ -105,7 +117,7 @@ export default class Buttons extends React.Component<PaybuttonsProps, Paybuttons
   render (): React.ReactElement {
     return (
       <>
-        <h2>Buttons</h2>
+        <TopBar title="Buttons" user={this.props.user.stUser?.email} />
         <PaybuttonList paybuttons={this.state.paybuttons} />
         <PaybuttonForm onSubmit={this.onSubmit.bind(this)} paybuttons={this.state.paybuttons} wallets={this.state.wallets} error={this.state.error} />
       </>

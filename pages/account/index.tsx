@@ -13,6 +13,7 @@ import { ViewOrganization } from 'components/Organization'
 import { fetchOrganizationForUser, fetchOrganizationMembers } from 'services/organizationService'
 import { Organization, UserProfile } from '@prisma/client'
 import { removeDateFields, removeUnserializableFields } from 'utils/index'
+import TopBar from 'components/TopBar'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -90,7 +91,7 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
   if (user !== null) {
     return (
       <div className={style.account_ctn}>
-        <h2>Account</h2>
+        <TopBar title="Account" user={user.stUser?.email} />
         <div className={style.label}>Email</div>
         <div className={style.account_card}>{user.stUser?.email}</div>
         {changePassword && (
