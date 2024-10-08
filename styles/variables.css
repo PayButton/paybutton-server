@@ -9,8 +9,8 @@ body[data-theme='light'] {
 }
 
 body[data-theme='dark'] {
-  --primary-bg-color: #231f20;
-  --secondary-bg-color: #2f2f2f;
+  --primary-bg-color: #18181a;
+  --secondary-bg-color: #292929;
   --primary-text-color: #ffffff;
   --secondary-text-color: #cacaca;
   --accent-color: #669cfe;
