@@ -5,11 +5,13 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import style from './dashboard.module.css'
-import { formatQuoteValue } from 'utils/index'
+import { formatQuoteValue, removeUnserializableFields } from 'utils/index'
 import { COOKIE_NAMES, USD_QUOTE_ID } from 'constants/index'
 import Leaderboard from 'components/Dashboard/Leaderboard'
 import { DashboardData, PeriodData } from 'redis/types'
 import { loadStateFromCookie, saveStateToCookie } from 'utils/cookies'
+import TopBar from 'components/TopBar'
+import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
 const Chart = dynamic(async () => await import('components/Chart'), {
   ssr: false
 })
@@ -46,16 +48,25 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
   }
 
+  if (session === undefined) return
+  const userId = session?.getUserId()
+  const user = await fetchUserWithSupertokens(userId)
+  removeUnserializableFields(user.userProfile)
+
   return {
-    props: { userId: session.getUserId() }
+    props: {
+      userId,
+      user
+    }
   }
 }
 
 interface PaybuttonsProps {
   userId: string
+  user: UserWithSupertokens
 }
 
-export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElement {
+export default function Dashboard ({ userId, user }: PaybuttonsProps): React.ReactElement {
   const [dashboardData, setDashboardData] = useState<DashboardData>()
   const [activePeriod, setActivePeriod] = useState<PeriodData>()
   const [activePeriodString, setActivePeriodString] = useState<PeriodString>('1M')
@@ -112,7 +123,7 @@ export default function Dashboard ({ userId }: PaybuttonsProps): React.ReactElem
 
   return (
     <>
-      <h2>Dashboard</h2>
+      <TopBar title="Dashboard" user={user.stUser?.email} />
       <div className={style.number_ctn}>
         <NumberBlock value={'$'.concat(formatQuoteValue(dashboardData.total.revenue, USD_QUOTE_ID)) } text='Revenue (lifetime)' />
         <NumberBlock value={formatQuoteValue(dashboardData.total.payments)} text='Payments (lifetime)' />

@@ -1,5 +1,43 @@
 .topbar_ctn {
     width: 100%;
-    background-color: red;
-    height: 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.title_ctn h2 {
+    margin: 0;
+    line-height: 0.9
+}
+
+.title_ctn span {
+    font-size: 14px;
+    opacity: 0.6;
+}
+
+.profile_ctn {
+    display: flex;
+    align-items: center;
+}
+
+.profile {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.profile:hover {
+    text-decoration: underline;
+}
+
+.profile_pic {
+    height: 35px;
+    width: 35px;
+    position: relative;
+    margin-right: 10px;
+}
+
+.profile_pic img {
+    object-fit: contain;
 }
