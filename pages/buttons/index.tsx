@@ -28,20 +28,18 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 
   if (session === undefined) return
-  const userId = session?.getUserId()
+  const userId = session.getUserId()
   const user = await fetchUserWithSupertokens(userId)
   removeUnserializableFields(user.userProfile)
 
   return {
     props: {
-      userId,
       user
     }
   }
 }
 
 interface PaybuttonsProps {
-  userId: string
   user: UserWithSupertokens
 }
 
@@ -64,7 +62,7 @@ export default class Buttons extends React.Component<PaybuttonsProps, Paybuttons
   }
 
   async fetchPaybuttons (): Promise<void> {
-    const res = await fetch(`/api/paybuttons?userId=${this.props.userId}`, {
+    const res = await fetch(`/api/paybuttons?userId=${this.props.user.userProfile.id}`, {
       method: 'GET'
     })
     if (res.status === 200) {
@@ -75,7 +73,7 @@ export default class Buttons extends React.Component<PaybuttonsProps, Paybuttons
   }
 
   async fetchWallets (): Promise<void> {
-    const res = await fetch(`/api/wallets?userId=${this.props.userId}`, {
+    const res = await fetch(`/api/wallets?userId=${this.props.user.userProfile.id}`, {
       method: 'GET'
     })
     if (res.status === 200) {

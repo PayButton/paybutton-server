@@ -29,20 +29,18 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 
   if (session === undefined) return
-  const userId = session?.getUserId()
+  const userId = session.getUserId()
   const user = await fetchUserWithSupertokens(userId)
   removeUnserializableFields(user.userProfile)
 
   return {
     props: {
-      userId,
       user
     }
   }
 }
 
 interface WalletsProps {
-  userId: string
   user: UserWithSupertokens
 }
 
@@ -68,10 +66,10 @@ export default class Wallets extends React.Component<WalletsProps, WalletsState>
   }
 
   async fetchWallets (): Promise<void> {
-    const walletsResponse = await fetch(`/api/wallets?userId=${this.props.userId}`, {
+    const walletsResponse = await fetch(`/api/wallets?userId=${this.props.user.userProfile.id}`, {
       method: 'GET'
     })
-    const addressesResponse = await fetch(`/api/addresses?userId=${this.props.userId}&includePaybuttons=1`, {
+    const addressesResponse = await fetch(`/api/addresses?userId=${this.props.user.userProfile.id}&includePaybuttons=1`, {
       method: 'GET'
     })
     if (walletsResponse.status === 200) {
@@ -132,7 +130,7 @@ export default class Wallets extends React.Component<WalletsProps, WalletsState>
           />
         }
         )}
-        <WalletForm userAddresses={this.state.userAddresses} refreshWalletList={this.refreshWalletList} userId={this.props.userId} usedNetworks={this.state.networksInfo}/>
+        <WalletForm userAddresses={this.state.userAddresses} refreshWalletList={this.refreshWalletList} userId={this.props.user.userProfile.id} usedNetworks={this.state.networksInfo}/>
         </div>
       </>
     )

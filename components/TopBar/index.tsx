@@ -3,12 +3,12 @@ import style from './topbar.module.css'
 
 interface TopBarProps {
   title: string
-  user: string | undefined
+  user?: string
 }
 
 export default function TopBar ({ title, user }: TopBarProps): JSX.Element {
   const currentDate = new Date()
-  const month = currentDate.toLocaleString('default', { month: 'long' })
+  const month = currentDate.toLocaleString('en-US', { month: 'long' })
   const day = currentDate.getDate()
   const year = currentDate.getFullYear()
 

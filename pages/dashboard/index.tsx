@@ -49,24 +49,22 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 
   if (session === undefined) return
-  const userId = session?.getUserId()
+  const userId = session.getUserId()
   const user = await fetchUserWithSupertokens(userId)
   removeUnserializableFields(user.userProfile)
 
   return {
     props: {
-      userId,
       user
     }
   }
 }
 
 interface PaybuttonsProps {
-  userId: string
   user: UserWithSupertokens
 }
 
-export default function Dashboard ({ userId, user }: PaybuttonsProps): React.ReactElement {
+export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElement {
   const [dashboardData, setDashboardData] = useState<DashboardData>()
   const [activePeriod, setActivePeriod] = useState<PeriodData>()
   const [activePeriodString, setActivePeriodString] = useState<PeriodString>('1M')

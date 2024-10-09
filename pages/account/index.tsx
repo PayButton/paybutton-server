@@ -31,7 +31,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
   }
   if (session === undefined) return
-  const userId = session?.getUserId()
+  const userId = session.getUserId()
   const user = await fetchUserWithSupertokens(userId)
   removeUnserializableFields(user.userProfile)
   const organization = await fetchOrganizationForUser(userId)
@@ -47,7 +47,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
   return {
     props: {
-      userId,
       organization: serializableOrg,
       orgMembersProps: members,
       user,

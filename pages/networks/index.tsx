@@ -27,20 +27,18 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 
   if (session === undefined) return
-  const userId = session?.getUserId()
+  const userId = session.getUserId()
   const user = await fetchUserWithSupertokens(userId)
   removeUnserializableFields(user.userProfile)
 
   return {
     props: {
-      userId,
       user
     }
   }
 }
 
 interface NetworksProps {
-  userId: string
   user: UserWithSupertokens
 }
 

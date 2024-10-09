@@ -33,24 +33,22 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 
   if (session === undefined) return
-  const userId = session?.getUserId()
+  const userId = session.getUserId()
   const user = await fetchUserWithSupertokens(userId)
   removeUnserializableFields(user.userProfile)
 
   return {
     props: {
-      userId,
       user
     }
   }
 }
 
 interface PaybuttonsProps {
-  userId: string
   user: UserWithSupertokens
 }
 
-export default function Payments ({ userId, user }: PaybuttonsProps): React.ReactElement {
+export default function Payments ({ user }: PaybuttonsProps): React.ReactElement {
   const [data, setData] = useState([])
 
   useEffect(() => {
