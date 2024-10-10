@@ -5,7 +5,7 @@ import MenuItem from '../MenuItem'
 import style from './sidebar.module.css'
 import logoImageSource from 'assets/logo.png'
 import Telegram from 'assets/telegram.png'
-import Twitter from 'assets/twitter.png'
+import X from 'assets/x.png'
 import Image from 'next/image'
 import Dashboard from 'assets/dashboard-icon.png'
 import Payments from 'assets/payments-icon.png'
@@ -147,12 +147,12 @@ const Sidebar: React.FC = ({ chart, setChart, loggedUser }: IProps) => {
           <Image src={Telegram} alt='telegram' width={20} height={20} />
           <span className={style.tooltiptext}>Telegram</span>
         </a>
-        <a href='https://twitter.com/thepaybutton' target="_blank" rel="noreferrer noopener">
-          <Image src={Twitter} alt='twitter' width={20} height={20} />
-          <span className={style.tooltiptext}>Twitter</span>
+        <a href='https://x.com/thepaybutton' target="_blank" rel="noreferrer noopener">
+          <Image src={X} alt='X' width={20} height={20} />
+          <span className={style.tooltiptext}>X</span>
         </a>
         <a href='https://docs.paybutton.org/#/?id=what-is-paybutton' target="_blank" rel="noreferrer noopener">
-          <Image src={Docs} alt='twitter' width={20} height={20} />
+          <Image src={Docs} alt='docs' width={20} height={20} />
           <span className={style.tooltiptext}>Docs</span>
         </a>
       </div>

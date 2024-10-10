@@ -10,9 +10,11 @@ import Link from 'next/link'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
-import { formatQuoteValue, compareNumericString } from 'utils/index'
+import { formatQuoteValue, compareNumericString, removeUnserializableFields } from 'utils/index'
 import { XEC_NETWORK_ID, USD_QUOTE_ID } from 'constants/index'
 import moment from 'moment'
+import TopBar from 'components/TopBar'
+import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -30,16 +32,23 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
   }
 
+  if (session === undefined) return
+  const userId = session.getUserId()
+  const user = await fetchUserWithSupertokens(userId)
+  removeUnserializableFields(user.userProfile)
+
   return {
-    props: { userId: session.getUserId() }
+    props: {
+      user
+    }
   }
 }
 
 interface PaybuttonsProps {
-  userId: string
+  user: UserWithSupertokens
 }
 
-export default function Payments ({ userId }: PaybuttonsProps): React.ReactElement {
+export default function Payments ({ user }: PaybuttonsProps): React.ReactElement {
   const [data, setData] = useState([])
 
   useEffect(() => {
@@ -116,7 +125,7 @@ export default function Payments ({ userId }: PaybuttonsProps): React.ReactEleme
 
   return (
     <>
-      <h2>Payments</h2>
+      <TopBar title="Payments" user={user.stUser?.email} />
       {data.length === 0 ? <div className='no-payments'>No Payments to show yet</div> : <TableContainer columns={columns} data={data} />}
     </>
   )

@@ -6,6 +6,9 @@ import { GetServerSideProps } from 'next'
 import { NetworkList } from 'components/Network'
 import { Network } from '@prisma/client'
 import { UserNetworksInfo } from 'services/networkService'
+import TopBar from 'components/TopBar'
+import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
+import { removeUnserializableFields } from 'utils/index'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -23,15 +26,20 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
   }
 
+  if (session === undefined) return
+  const userId = session.getUserId()
+  const user = await fetchUserWithSupertokens(userId)
+  removeUnserializableFields(user.userProfile)
+
   return {
     props: {
-      userId: session.getUserId()
+      user
     }
   }
 }
 
 interface NetworksProps {
-  userId: string
+  user: UserWithSupertokens
 }
 
 interface NetworksState {
@@ -76,7 +84,7 @@ export default class Networks extends React.Component<NetworksProps, NetworksSta
     if (this.state.networks !== []) {
       return (
         <>
-          <h2>Networks</h2>
+          <TopBar title="Networks" user={this.props.user.stUser?.email} />
           <NetworkList networks={this.state.networks} userNetworks={this.state.userNetworks} />
         </>
       )
