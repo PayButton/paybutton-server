@@ -180,6 +180,7 @@ model PaybuttonTrigger {
   postData       String               @db.LongText
   postURL        String               @db.VarChar(255)
   logs           TriggerLog[]
+  emails         String               @db.Text @default("")
 
   paybutton      Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade)
 }
