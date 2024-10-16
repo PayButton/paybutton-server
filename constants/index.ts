@@ -90,7 +90,8 @@ export const RESPONSE_MESSAGES = {
   INVALID_INVITE_400: { statusCode: 400, message: 'Invalid invite.' },
   INVITATION_TOKEN_NOT_PROVIDED_400: { statusCode: 400, message: "'token' not provided." },
   ORGANIZATION_NAME_NOT_PROVIDED_400: { statusCode: 400, message: "'organizationName' not provided." },
-  INVITE_EXPIRED_400: { statusCode: 400, message: 'Invite expired.' }
+  INVITE_EXPIRED_400: { statusCode: 400, message: 'Invite expired.' },
+  INVALID_EMAIL_400: { statusCode: 400, message: 'Invalid email.' }
 }
 
 export const SOCKET_MESSAGES = {
@@ -247,3 +248,5 @@ export const DECIMALS: Record<string, number> = {
   XEC: 2,
   FIAT: 2
 }
+
+export const EMAIL_REGEX: RegExp = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/

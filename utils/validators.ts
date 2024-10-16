@@ -1,4 +1,4 @@
-import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN, NETWORK_TICKERS, TRIGGER_POST_VARIABLES } from '../constants/index'
+import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN, NETWORK_TICKERS, TRIGGER_POST_VARIABLES, EMAIL_REGEX } from '../constants/index'
 import { Prisma } from '@prisma/client'
 import config from '../config/index'
 import { type CreatePaybuttonInput, type UpdatePaybuttonInput } from '../services/paybuttonService'
@@ -214,6 +214,7 @@ export const parseWalletPATCHRequest = function (params: WalletPATCHParameters):
 export interface PaybuttonTriggerPOSTParameters {
   userId?: string
   sendEmail?: boolean
+  emails?: string
   postURL?: string
   postData?: string
   currentTriggerId?: string
@@ -327,12 +328,22 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
     throw new Error(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
   }
 
+  console.log('oia email', params.sendEmail, 'ytpeasklj', typeof params.sendEmail)
+  if (!isEmailValid(params.emails)) {
+    throw new Error(RESPONSE_MESSAGES.INVALID_EMAIL_400.message)
+  }
+
   return {
     sendEmail: params.sendEmail === true,
     postURL,
     postData,
     userId: params.userId
   }
+}
+
+const isEmailValid = (email?: string): boolean => {
+  if (email === undefined) return false
+  return EMAIL_REGEX.test(email)
 }
 
 export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters, paybuttonId: string): UpdatePaybuttonInput {
