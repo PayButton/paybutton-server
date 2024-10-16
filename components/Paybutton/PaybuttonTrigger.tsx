@@ -92,16 +92,8 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
       <div>
         <h4>When a Payment is Received...</h4>
         <div className={style.form_ctn}>
+          <h5>Send request</h5>
           <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
-            {/* Checkbox */}
-            {/* TODO: send email logic
-            <div className={style_w.input_field} key="sendEmail">
-              <input {...register('sendEmail')} type="checkbox" id="sendEmail" name="sendEmail" />
-              <label htmlFor="sendEmail">Receive email</label>
-            </div>
-              *}
-
-            {/* Input Fields */}
             <div>
               <label htmlFor="postURL">URL:</label>
               <input {...register('postURL')} type="text" id="postURL" name="postURL" />
@@ -145,6 +137,17 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
                   }
                 </div>
               </div>
+            </div>
+          <h5>Receive Email</h5>
+            <div className={style.row} key="sendEmail">
+              <div className={style.checkbox} >
+                <input {...register('sendEmail')} type="checkbox" id="sendEmail" name="sendEmail" />
+              </div>
+              <label htmlFor="sendEmail">Enabled</label>
+            </div>
+            <div>
+              <label htmlFor="sendEmail">Receive email</label>
+              <input {...register('emails')} type="text" id="emails" name="emails" />
             </div>
           </form>
         </div>
