@@ -169,7 +169,9 @@ model UserProfile {
   preferredCurrencyId Int @default(1)
   organizationId String?
   organization Organization?     @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-}
+
+  emailCredits Int  @default(100)
+  }
 
 model PaybuttonTrigger {
   id             String                    @id @default(dbgenerated("(uuid())"))
