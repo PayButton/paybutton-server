@@ -8,11 +8,12 @@ import { PaybuttonTrigger } from '@prisma/client'
 
 interface IProps {
   paybuttonId: string
+  emailCredits: number
 }
 
 type TriggerType = 'poster' | 'email'
 
-export default ({ paybuttonId }: IProps): JSX.Element => {
+export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
   const [posterError, setPosterError] = useState('')
   const [emailError, setEmailError] = useState('')
   const [posterSuccessText, setPosterSuccessText] = useState('')
@@ -203,7 +204,7 @@ export default ({ paybuttonId }: IProps): JSX.Element => {
           <form onSubmit={(e) => { void handleSubmitEmailTrigger(getSubmitTriggerHandler('email'))(e) }} method='post'>
             <h5>Receive Email</h5>
             <div>
-              <label htmlFor="emails">Receive email</label>
+              <label htmlFor="emails">Receive email</label>(<span>{emailCredits} credits</span>)
               <input {...registerEmailTrigger('emails')} type="text" id="emails" name="emails" />
             </div>
             <div>
