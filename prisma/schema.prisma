@@ -182,6 +182,7 @@ model PaybuttonTrigger {
   postURL        String               @db.VarChar(255)
   logs           TriggerLog[]
   emails         String               @db.Text @default("")
+  isEmailTrigger Boolean               @default(false)
 
   paybutton      Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade)
 }
