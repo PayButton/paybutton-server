@@ -213,11 +213,11 @@ export const parseWalletPATCHRequest = function (params: WalletPATCHParameters):
 
 export interface PaybuttonTriggerPOSTParameters {
   userId?: string
-  sendEmail?: boolean
-  emails?: string
   postURL?: string
   postData?: string
+  isEmailTrigger: boolean
   currentTriggerId?: string
+  emails?: string
 }
 
 export interface PaybuttonTriggerParseParameters {
@@ -289,6 +289,11 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
   // userId
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
 
+  // emails
+  if (params.emails !== undefined && params.emails !== '' && !isEmailValid(params.emails)) {
+    throw new Error(RESPONSE_MESSAGES.INVALID_EMAIL_400.message)
+  }
+
   // postURL
   let postURL: string | undefined
   if (params.postURL === undefined || params.postURL === '') { postURL = undefined } else {
@@ -324,20 +329,19 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
     postData = params.postData
   }
 
-  if ((postData === undefined || postURL === undefined)) {
+  if (
+    !params.isEmailTrigger &&
+    (postData === undefined || postURL === undefined)
+  ) {
     throw new Error(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
   }
 
-  console.log('oia email', params.sendEmail, 'ytpeasklj', typeof params.sendEmail)
-  if (!isEmailValid(params.emails)) {
-    throw new Error(RESPONSE_MESSAGES.INVALID_EMAIL_400.message)
-  }
-
   return {
-    sendEmail: params.sendEmail === true,
+    emails: params.emails,
     postURL,
     postData,
-    userId: params.userId
+    userId: params.userId,
+    isEmailTrigger: params.isEmailTrigger
   }
 }
 
