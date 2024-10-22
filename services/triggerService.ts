@@ -61,8 +61,8 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
     }
   }
 
-  const paybuttonEmailTriggers = paybutton.triggers.filter(t => t.postURL === '')
-  const paybuttonPosterTriggers = paybutton.triggers.filter(t => t.postURL !== '')
+  const paybuttonEmailTriggers = paybutton.triggers.filter(t => t.isEmailTrigger)
+  const paybuttonPosterTriggers = paybutton.triggers.filter(t => !t.isEmailTrigger)
 
   if (
     (isEmailTrigger && paybuttonEmailTriggers.length > 0) ||
@@ -71,8 +71,8 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
     throw new Error(RESPONSE_MESSAGES.LIMIT_TRIGGERS_PER_BUTTON_400.message)
   }
   const addressTriggers = (await fetchTriggersForPaybuttonAddresses(paybutton.id))
-  const addressEmailTriggers = addressTriggers.filter(t => t.postURL === '')
-  const addressPosterTriggers = addressTriggers.filter(t => t.postURL !== '')
+  const addressEmailTriggers = addressTriggers.filter(t => t.isEmailTrigger)
+  const addressPosterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
 
   if (
     (isEmailTrigger && addressEmailTriggers.length > 0) ||
@@ -94,6 +94,7 @@ export async function createTrigger (paybuttonId: string, values: CreatePaybutto
   const postURL = values.postURL ?? ''
   const postData = values.postData ?? ''
   const emails = values.emails ?? ''
+  const isEmailTrigger = values.isEmailTrigger
 
   await validateTriggerForPaybutton(paybuttonId, values)
   return await prisma.paybuttonTrigger.create({
@@ -101,7 +102,8 @@ export async function createTrigger (paybuttonId: string, values: CreatePaybutto
       paybuttonId,
       emails,
       postURL,
-      postData
+      postData,
+      isEmailTrigger
     }
   })
 }
@@ -221,7 +223,7 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
   } = tx
 
   const addressTriggers = await fetchTriggersForAddress(address)
-  const posterTriggers = addressTriggers.filter(t => t.postURL !== '')
+  const posterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
   await Promise.all(posterTriggers.map(async (trigger) => {
     const postDataParameters: PostDataParameters = {
       amount,
