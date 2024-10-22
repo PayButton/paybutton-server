@@ -221,7 +221,8 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
   } = tx
 
   const addressTriggers = await fetchTriggersForAddress(address)
-  await Promise.all(addressTriggers.map(async (trigger) => {
+  const posterTriggers = addressTriggers.filter(t => t.postURL !== '')
+  await Promise.all(posterTriggers.map(async (trigger) => {
     const postDataParameters: PostDataParameters = {
       amount,
       currency,
@@ -237,6 +238,8 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
     }
     await postDataForTrigger(trigger, postDataParameters)
   }))
+
+  // WIP send emails
 }
 
 export interface PostDataParameters {
