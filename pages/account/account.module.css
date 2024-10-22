@@ -76,8 +76,8 @@
 .updatebtn {
   font-size: 14px;
   cursor: pointer;
-  display: flex;
-  align-self: baseline;
+  display: inline-block;
+  align-self: flex-start;
   margin-top: 10px;
   position: relative;
   cursor: pointer;
@@ -144,5 +144,10 @@ body[data-theme='dark'] .copy_btn:hover img {
     .public_key_card {
       max-width: unset;
       width: calc(100% - 50px);
+    }
+
+    .updatebtn {
+     width: 100%;
+     text-align: center;
     }
   }
