@@ -178,7 +178,6 @@ model PaybuttonTrigger {
   paybuttonId    String
   createdAt      DateTime                  @default(now())
   updatedAt      DateTime                  @updatedAt
-  sendEmail      Boolean
   postData       String               @db.LongText
   postURL        String               @db.VarChar(255)
   logs           TriggerLog[]

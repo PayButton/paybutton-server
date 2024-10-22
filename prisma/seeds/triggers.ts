@@ -2,7 +2,6 @@ export const paybuttonTriggers = [
   {
     id: '78f98695-b887-11ee-a146-0242c0a88003',
     paybuttonId: '688e9bfa-b887-11ee-a146-0242c0a88003',
-    sendEmail: false,
     postData: `{
       "env": "dev",
       "opReturn": <opReturn>,
