@@ -21,6 +21,7 @@ export interface DeletePaybuttonTriggerInput {
 export interface UpdatePaybuttonTriggerInput {
   userId: string
   emails?: string
+  isEmailTrigger: boolean
   postURL?: string
   postData?: string
   triggerId: string
@@ -42,16 +43,22 @@ export async function fetchTriggersForPaybutton (paybuttonId: string, userId: st
   return paybutton.triggers
 }
 
-export async function createTrigger (paybuttonId: string, values: CreatePaybuttonTriggerInput): Promise<PaybuttonTrigger> {
+async function validateTriggerForPaybutton (paybuttonId: string, values: CreatePaybuttonTriggerInput | UpdatePaybuttonTriggerInput): Promise<void> {
   const postURL = values.postURL ?? ''
   const postData = values.postData ?? ''
   const isEmailTrigger = values.isEmailTrigger
   const emails = values.emails ?? ''
   const userId = values.userId
-
   const paybutton = await fetchPaybuttonWithTriggers(paybuttonId)
+
   if (paybutton.providerUserId !== userId) {
     throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
+  }
+
+  if ('triggerId' in values) {
+    if (!paybutton.triggers.map(t => t.id).includes(values.triggerId)) {
+      throw new Error(RESPONSE_MESSAGES.INVALID_RESOURCE_UPDATE_400.message)
+    }
   }
 
   const paybuttonEmailTriggers = paybutton.triggers.filter(t => t.postURL === '')
@@ -81,7 +88,14 @@ export async function createTrigger (paybuttonId: string, values: CreatePaybutto
   } else if (postURL === '' || postData === '') {
     throw new Error(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
   }
+}
 
+export async function createTrigger (paybuttonId: string, values: CreatePaybuttonTriggerInput): Promise<PaybuttonTrigger> {
+  const postURL = values.postURL ?? ''
+  const postData = values.postData ?? ''
+  const emails = values.emails ?? ''
+
+  await validateTriggerForPaybutton(paybuttonId, values)
   return await prisma.paybuttonTrigger.create({
     data: {
       paybuttonId,
@@ -116,13 +130,6 @@ function isEmptyUpdateParams (values: UpdatePaybuttonTriggerInput): boolean {
 }
 
 export async function updateTrigger (paybuttonId: string, values: UpdatePaybuttonTriggerInput): Promise<PaybuttonTrigger> {
-  const paybutton = await fetchPaybuttonWithTriggers(paybuttonId)
-  if (paybutton.providerUserId !== values.userId) {
-    throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
-  }
-  if (!paybutton.triggers.map(t => t.id).includes(values.triggerId)) {
-    throw new Error(RESPONSE_MESSAGES.INVALID_RESOURCE_UPDATE_400.message)
-  }
   if (isEmptyUpdateParams(values)) {
     return await prisma.paybuttonTrigger.delete({
       where: {
@@ -130,11 +137,12 @@ export async function updateTrigger (paybuttonId: string, values: UpdatePaybutto
       }
     })
   }
+  await validateTriggerForPaybutton(paybuttonId, values)
   return await prisma.paybuttonTrigger.update({
     data: {
       postURL: values.postURL ?? '',
       postData: values.postData ?? '',
-      emails: values.emails
+      emails: values.emails ?? ''
     },
     where: {
       id: values.triggerId
