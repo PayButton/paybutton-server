@@ -402,23 +402,3 @@ body[data-theme='dark'] .form_ctn_outer {
   display: inline-block;
   float: right;
 }
-
-.info_btn {
-  cursor: pointer;
-  color: var(--accent-color);
-  font-size: 12px;
-  right: 0;
-  user-select: none;
-  top: 3px;
-}
-
-.info_ctn {
-  width: 100%;
-  background-color: var(--secondary-bg-color);
-  max-width: var(--max-width);
-  padding: 20px;
-  border-radius: 10px;
-  margin-top: 10px;
-  font-size: 16px;
-}
-

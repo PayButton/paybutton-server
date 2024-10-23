@@ -28,7 +28,6 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
   const [initialStateEmails, setInitialStateEmails] = useState<string>()
   const [disablePosterSubmit, setDisablePosterSubmit] = useState(false)
   const [disableEmailSubmit, setDisableEmailSubmit] = useState(false)
-  const [creditInfo, setCreditInfo] = useState(false)
 
   const getTriggers = async (): Promise<void> => {
     const response = await axios.get(`/api/paybutton/triggers/${paybuttonId}`)
@@ -74,10 +73,6 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
       setDisableEmailSubmit(false)
     }
   }, [initialStateURL, initialStateData, watchPostData, watchPostURL, initialStateEmails, watchEmails])
-
-  const toggleCreditInfo = (): void => {
-    setCreditInfo(!creditInfo)
-  }
 
   function getDeleteTriggerHandler (triggerType: TriggerType): () => Promise<void> {
     let triggerToDelete: string | undefined
@@ -207,15 +202,9 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
             </div>
             </form>
           <form onSubmit={(e) => { void handleSubmitEmailTrigger(getSubmitTriggerHandler('email'))(e) }} method='post'>
-            <h5>Send Email</h5>
+            <h5>Receive Email</h5>
             <div>
               <label htmlFor="emails">Receive email</label>(<span>{emailCredits} credits</span>)
-              <span className={style.info_btn} onClick={() => toggleCreditInfo()}>What is this?</span>
-      {creditInfo &&
-        <span className={style.info_ctn}>
-          Lorem ipsum...
-        </span>
-      }
               <input {...registerEmailTrigger('emails')} type="text" id="emails" name="emails" />
             </div>
             <div>
