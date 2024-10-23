@@ -5,6 +5,7 @@ import { PaybuttonTriggerPOSTParameters } from 'utils/validators'
 import { useForm } from 'react-hook-form'
 import axios from 'axios'
 import { PaybuttonTrigger } from '@prisma/client'
+import { MAX_DAILY_EMAILS } from 'constants/index'
 
 interface IProps {
   paybuttonId: string
@@ -155,17 +156,18 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
       <div>
         <h4>When a Payment is Received...</h4>
         <div className={style.form_ctn}>
-          <h5>Send request</h5>
+          <h5>Send Request</h5>
           <form onSubmit={(e) => { void handleSubmitPosterTrigger(getSubmitTriggerHandler('poster'))(e) }} method='post'>
             <div>
-              <label htmlFor="postURL">URL:</label>
+              <label htmlFor="postURL">URL</label>
               <input {...registerPosterTrigger('postURL')} type="text" id="postURL" name="postURL" />
             </div>
 
             <div>
               <label htmlFor="postData">Post Data</label>
-              <textarea {...registerPosterTrigger('postData')} id="postData" name="postData" placeholder={`{
-    "name": <buttonName>,
+              <textarea {...registerPosterTrigger('postData')} className={style.post_data_area} id="postData" name="postData" placeholder={`{
+    "myButtonName": <buttonName>,
+    ...
 }`}></textarea>
               <p >
                 Available variables:
@@ -202,10 +204,17 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
             </div>
             </form>
           <form onSubmit={(e) => { void handleSubmitEmailTrigger(getSubmitTriggerHandler('email'))(e) }} method='post'>
-            <h5>Receive Email</h5>
             <div>
-              <label htmlFor="emails">Receive email</label>(<span>{emailCredits} credits</span>)
+              <h5>Receive Email</h5>
+                <label htmlFor="emails">Email</label>
               <input {...registerEmailTrigger('emails')} type="text" id="emails" name="emails" />
+              <div className={style.email_credits_info}>
+              <span>
+                {emailCredits < MAX_DAILY_EMAILS
+                  ? <span>You have sent <b>{MAX_DAILY_EMAILS - emailCredits}</b> of daily a maximum of <b>{MAX_DAILY_EMAILS}</b> emails.</span>
+                  : <span>You may send up to <b>{MAX_DAILY_EMAILS}</b> emails per day.</span>}
+              </span>
+              </div>
             </div>
             <div>
               <div className={style.btn_row2}>

@@ -402,3 +402,17 @@ body[data-theme='dark'] .form_ctn_outer {
   display: inline-block;
   float: right;
 }
+
+.email_credits_info {
+  display: inline-block;
+  font-size: 12px;
+  background-color: rgba(12, 18, 230, 0.15);
+  color: #333;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+
+.post_data_area {
+  min-height: 10rem;
+}
