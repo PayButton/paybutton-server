@@ -211,7 +211,7 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
               <div className={style.email_credits_info}>
               <span>
                 {emailCredits < MAX_DAILY_EMAILS
-                  ? <span>You have sent <b>{MAX_DAILY_EMAILS - emailCredits}</b> of daily a maximum of <b>{MAX_DAILY_EMAILS}</b> emails.</span>
+                  ? <span>You have sent <b>{MAX_DAILY_EMAILS - emailCredits}</b> of a daily maximum of <b>{MAX_DAILY_EMAILS}</b> emails.</span>
                   : <span>You may send up to <b>{MAX_DAILY_EMAILS}</b> emails per day.</span>}
               </span>
               </div>
