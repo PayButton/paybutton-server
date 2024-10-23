@@ -62,5 +62,13 @@ export const paybuttons = [
     url: '',
     description: 'Paybutton with triggers for dev Estevão.',
     buttonData: '{}'
+  },
+  {
+    id: 'paybutton-dev3',
+    providerUserId: 'dev3-uid',
+    name: 'Dev3 button',
+    url: '',
+    description: '',
+    buttonData: '{}'
   }
 ]

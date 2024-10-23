@@ -28,6 +28,13 @@ export const wallets = [
     providerUserId: 'dev-uid'
   },
   {
+    id: 'wallet-dev3',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    name: 'Default Wallet',
+    providerUserId: 'dev3-uid'
+  },
+  {
     id: 'db14e515-ede8-4949-b20a-a450f9171f77',
     createdAt: new Date(),
     updatedAt: new Date(),

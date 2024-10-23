@@ -113,5 +113,10 @@ export const addressUserConnectors = [
     walletId: 'f0d4026f-3fb0-4563-af9a-e6ad53f00d2c',
     addressId: 'c385d4e9-3e34-4657-b6cf-8e2221f4e8bd',
     userId: 'dev-uid'
+  },
+  {
+    walletId: 'wallet-dev3',
+    addressId: 'addr-dev3',
+    userId: 'dev3-uid'
   }
 ]
