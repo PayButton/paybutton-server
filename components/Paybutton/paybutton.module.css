@@ -412,6 +412,11 @@ body[data-theme='dark'] .form_ctn_outer {
   border-radius: 3px;
 }
 
+body[data-theme='dark'] .email_credits_info {
+  color: var(--secondary-text-color);
+}
+
+
 
 .post_data_area {
   min-height: 10rem;
