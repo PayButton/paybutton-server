@@ -1,7 +1,7 @@
 import { parseError, parsePaybuttonTriggerPOSTRequest, PaybuttonTriggerPOSTParameters } from 'utils/validators'
 import { setSession } from 'utils/setSession'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import { createTrigger, deleteTrigger, fetchTriggersForPaybutton, updateTrigger } from 'services/triggerService'
+import { createTrigger, DeletePaybuttonTriggerInput, deleteTrigger, fetchTriggersForPaybutton, updateTrigger } from 'services/triggerService'
 import { PaybuttonTrigger } from '@prisma/client'
 
 export default async (req: any, res: any): Promise<void> => {
@@ -73,7 +73,7 @@ export default async (req: any, res: any): Promise<void> => {
     }
   } else if (req.method === 'DELETE') {
     await setSession(req, res)
-    const values = req.body as PaybuttonTriggerPOSTParameters
+    const values = req.body as DeletePaybuttonTriggerInput
     values.userId = req.session.userId
     const paybuttonId = req.query.id as string
     try {

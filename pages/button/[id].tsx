@@ -14,6 +14,8 @@ import config from 'config'
 import io from 'socket.io-client'
 import PaybuttonTrigger from 'components/Paybutton/PaybuttonTrigger'
 import { UserProfile } from '@prisma/client'
+import { fetchUserProfileFromId } from 'services/userService'
+import { removeUnserializableFields } from 'utils'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   supertokensNode.init(SuperTokensConfig.backendConfig())
@@ -30,17 +32,21 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
   }
 
+  const userProfile = await fetchUserProfileFromId(session.getUserId())
+
+  removeUnserializableFields(userProfile)
+
   return {
     props: {
-      userId: session.getUserId(),
-      paybuttonId: context.params.id
+      userProfile,
+      paybuttonId: context.params?.id
     }
   }
 }
 
 interface PaybuttonProps {
   paybuttonId: string
-  userId: string
+  userProfile: UserProfile
 }
 
 export default function Button (props: PaybuttonProps): React.ReactElement {
@@ -49,23 +55,9 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   const [tableRefreshCount, setTableRefreshCount] = useState<number>(0)
   const [paybuttonNetworks, setPaybuttonNetworks] = useState<number[]>([])
   const [selectedCurrency, setSelectedCurrency] = useState<string>('')
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const userProfile = props.userProfile
 
   const router = useRouter()
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const res = await fetch('/api/user/', {
-          method: 'GET'
-        })
-        const profile = await res.json()
-        setUserProfile(profile)
-      } catch (error) {
-        console.error('Error fetching user profile:', error)
-      }
-    })()
-  }, [])
 
   const updateIsSyncing = (addressStringList: string[]): void => {
     const newIsSyncing = { ...isSyncing }
@@ -205,7 +197,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
         </div>
 
         <AddressTransactions addressSyncing={isSyncing} tableRefreshCount={tableRefreshCount}/>
-        <PaybuttonTrigger paybuttonId={paybutton.id}/>
+        <PaybuttonTrigger emailCredits={userProfile.emailCredits} paybuttonId={paybutton.id}/>
       </>
     )
   }

@@ -73,8 +73,9 @@ export const RESPONSE_MESSAGES = {
   INVALID_URL_400: { statusCode: 400, message: 'Invalid URL.' },
   INVALID_WEBSITE_URL_400: { statusCode: 400, message: 'Invalid website URL.' },
   POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400: { statusCode: 400, message: 'URL and post data must both be set.' },
-  LIMIT_TRIGGERS_PER_BUTTON_400: { statusCode: 400, message: 'This paybutton already has a trigger.' },
-  LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400: { statusCode: 400, message: 'This paybutton addresses already have a trigger from another paybutton.' },
+  MISSING_EMAIL_FOR_TRIGGER_400: { statusCode: 400, message: 'Missing email for the trigger.' },
+  LIMIT_TRIGGERS_PER_BUTTON_400: { statusCode: 400, message: 'This paybutton already has a trigger of this type.' },
+  LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400: { statusCode: 400, message: 'This paybutton addresses already have a trigger of this type from another paybutton.' },
   COULD_NOT_EXECUTE_TRIGGER_500: { statusCode: 500, message: 'Failed to execute trigger for paybutton address.' },
   COULD_NOT_DOWNLOAD_FILE_500: { statusCode: 500, message: 'Failed to download file.' },
   INVALID_DATA_JSON_WITH_VARIABLES_400: (variables: string[]) => { return { statusCode: 400, message: `Data is not valid. Make sure that ${variables.join(', ')} are not inside quotes.` } },
@@ -90,7 +91,8 @@ export const RESPONSE_MESSAGES = {
   INVALID_INVITE_400: { statusCode: 400, message: 'Invalid invite.' },
   INVITATION_TOKEN_NOT_PROVIDED_400: { statusCode: 400, message: "'token' not provided." },
   ORGANIZATION_NAME_NOT_PROVIDED_400: { statusCode: 400, message: "'organizationName' not provided." },
-  INVITE_EXPIRED_400: { statusCode: 400, message: 'Invite expired.' }
+  INVITE_EXPIRED_400: { statusCode: 400, message: 'Invite expired.' },
+  INVALID_EMAIL_400: { statusCode: 400, message: 'Invalid email.' }
 }
 
 export const SOCKET_MESSAGES = {
@@ -247,3 +249,7 @@ export const DECIMALS: Record<string, number> = {
   XEC: 2,
   FIAT: 2
 }
+
+export const EMAIL_REGEX: RegExp = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+
+export const MAX_DAILY_EMAILS = 100 // If changed, update the DB default accordingly

@@ -206,15 +206,13 @@ describe('parsePaybuttonPATCHRequest', () => {
 
 export interface PaybuttonTriggerPOSTParameters {
   userId?: string
-  sendEmail?: boolean
   postURL?: string
   postData?: string
 }
 
 describe('parsePaybuttonTriggerPOSTRequest', () => {
   const data: PaybuttonTriggerPOSTParameters = {
-    userId: '12345',
-    sendEmail: true
+    userId: '12345'
   }
 
   it('Invalid postData JSON throws error', () => {

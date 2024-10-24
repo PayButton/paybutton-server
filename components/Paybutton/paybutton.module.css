@@ -377,3 +377,47 @@ body[data-theme='dark'] .form_ctn_outer {
     display: none;
   }
 }
+
+.checkbox {
+  height: 18px;
+  width: 18px;
+  padding-right: 26px;
+  cursor: pointer;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: center;
+
+}
+
+.reset_btn {
+  text-align: right;
+  margin-top: 10px;
+  font-size: 14px;
+  opacity: 0.6;
+  cursor: pointer;
+  display: inline-block;
+  float: right;
+}
+
+.email_credits_info {
+  display: inline-block;
+  font-size: 12px;
+  background-color: rgba(12, 18, 230, 0.15);
+  color: #333;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+body[data-theme='dark'] .email_credits_info {
+  color: var(--secondary-text-color);
+}
+
+
+
+.post_data_area {
+  min-height: 10rem;
+}

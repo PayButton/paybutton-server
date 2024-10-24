@@ -113,6 +113,11 @@ export const addresses = [
     id: 'c385d4e9-3e34-4657-b6cf-8e2221f4e8bd',
     address: 'ecash:qpcngtkqvdns6at2wq09fjytunlljvczxuchefwhln',
     networkId: 1
+  },
+  {
+    address: 'ecash:qra37le5q5l8wsj4ssslma3qmv30kvg7qu8j55hfkj',
+    id: 'addr-dev3',
+    networkId: 1
   }
 ]
 

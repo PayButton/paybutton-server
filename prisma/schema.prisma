@@ -169,17 +169,20 @@ model UserProfile {
   preferredCurrencyId Int @default(1)
   organizationId String?
   organization Organization?     @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-}
+
+  emailCredits Int  @default(100)
+  }
 
 model PaybuttonTrigger {
   id             String                    @id @default(dbgenerated("(uuid())"))
   paybuttonId    String
   createdAt      DateTime                  @default(now())
   updatedAt      DateTime                  @updatedAt
-  sendEmail      Boolean
   postData       String               @db.LongText
   postURL        String               @db.VarChar(255)
   logs           TriggerLog[]
+  emails         String               @db.Text @default("")
+  isEmailTrigger Boolean               @default(false)
 
   paybutton      Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade)
 }

@@ -20,7 +20,8 @@ export interface DeletePaybuttonTriggerInput {
 
 export interface UpdatePaybuttonTriggerInput {
   userId: string
-  sendEmail: boolean
+  emails?: string
+  isEmailTrigger: boolean
   postURL?: string
   postData?: string
   triggerId: string
@@ -28,7 +29,8 @@ export interface UpdatePaybuttonTriggerInput {
 
 export interface CreatePaybuttonTriggerInput {
   userId: string
-  sendEmail: boolean
+  isEmailTrigger: boolean
+  emails?: string
   postURL?: string
   postData?: string
 }
@@ -41,28 +43,67 @@ export async function fetchTriggersForPaybutton (paybuttonId: string, userId: st
   return paybutton.triggers
 }
 
-export async function createTrigger (paybuttonId: string, values: CreatePaybuttonTriggerInput): Promise<PaybuttonTrigger> {
-  const paybutton = await fetchPaybuttonWithTriggers(paybuttonId)
-  if (paybutton.providerUserId !== values.userId) {
-    throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
-  }
-  if (paybutton.triggers.length !== 0) {
-    throw new Error(RESPONSE_MESSAGES.LIMIT_TRIGGERS_PER_BUTTON_400.message)
-  }
-  if ((await fetchTriggersForPaybuttonAddresses(paybutton.id)).length > 0) {
-    throw new Error(RESPONSE_MESSAGES.LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400.message)
-  }
+async function validateTriggerForPaybutton (paybuttonId: string, values: CreatePaybuttonTriggerInput | UpdatePaybuttonTriggerInput): Promise<void> {
   const postURL = values.postURL ?? ''
   const postData = values.postData ?? ''
-  if (postURL === '' || postData === '') {
+  const isEmailTrigger = values.isEmailTrigger
+  const emails = values.emails ?? ''
+  const userId = values.userId
+  const paybutton = await fetchPaybuttonWithTriggers(paybuttonId)
+
+  if (paybutton.providerUserId !== userId) {
+    throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
+  }
+
+  if ('triggerId' in values) {
+    if (!paybutton.triggers.map(t => t.id).includes(values.triggerId)) {
+      throw new Error(RESPONSE_MESSAGES.INVALID_RESOURCE_UPDATE_400.message)
+    }
+  }
+
+  const paybuttonEmailTriggers = paybutton.triggers.filter(t => t.isEmailTrigger)
+  const paybuttonPosterTriggers = paybutton.triggers.filter(t => !t.isEmailTrigger)
+
+  if (
+    (isEmailTrigger && paybuttonEmailTriggers.length > 0) ||
+    (!isEmailTrigger && paybuttonPosterTriggers.length > 0)
+  ) {
+    throw new Error(RESPONSE_MESSAGES.LIMIT_TRIGGERS_PER_BUTTON_400.message)
+  }
+  const addressTriggers = (await fetchTriggersForPaybuttonAddresses(paybutton.id))
+  const addressEmailTriggers = addressTriggers.filter(t => t.isEmailTrigger)
+  const addressPosterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
+
+  if (
+    (isEmailTrigger && addressEmailTriggers.length > 0) ||
+    (!isEmailTrigger && addressPosterTriggers.length > 0)
+  ) {
+    throw new Error(RESPONSE_MESSAGES.LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400.message)
+  }
+
+  if (isEmailTrigger) {
+    if (emails === '') {
+      throw new Error(RESPONSE_MESSAGES.MISSING_EMAIL_FOR_TRIGGER_400.message)
+    }
+  } else if (postURL === '' || postData === '') {
     throw new Error(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
   }
+}
+
+export async function createTrigger (paybuttonId: string, values: CreatePaybuttonTriggerInput): Promise<PaybuttonTrigger> {
+  const postURL = values.postURL ?? ''
+  const postData = values.postData ?? ''
+  const emails = values.emails ?? ''
+  const isEmailTrigger = values.isEmailTrigger
+
+  await validateTriggerForPaybutton(paybuttonId, values)
   return await prisma.paybuttonTrigger.create({
     data: {
       paybuttonId,
-      sendEmail: values.sendEmail,
+      emails,
       postURL,
-      postData
+      postData,
+      isEmailTrigger
     }
   })
 }
@@ -86,18 +127,11 @@ function isEmptyUpdateParams (values: UpdatePaybuttonTriggerInput): boolean {
   return (
     (values.postURL === '' || values.postURL === undefined) &&
     (values.postData === '' || values.postData === undefined) &&
-    (!values.sendEmail)
+    (values.emails === '' || values.emails === undefined)
   )
 }
 
 export async function updateTrigger (paybuttonId: string, values: UpdatePaybuttonTriggerInput): Promise<PaybuttonTrigger> {
-  const paybutton = await fetchPaybuttonWithTriggers(paybuttonId)
-  if (paybutton.providerUserId !== values.userId) {
-    throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
-  }
-  if (!paybutton.triggers.map(t => t.id).includes(values.triggerId)) {
-    throw new Error(RESPONSE_MESSAGES.INVALID_RESOURCE_UPDATE_400.message)
-  }
   if (isEmptyUpdateParams(values)) {
     return await prisma.paybuttonTrigger.delete({
       where: {
@@ -105,11 +139,12 @@ export async function updateTrigger (paybuttonId: string, values: UpdatePaybutto
       }
     })
   }
+  await validateTriggerForPaybutton(paybuttonId, values)
   return await prisma.paybuttonTrigger.update({
     data: {
-      sendEmail: values.sendEmail,
       postURL: values.postURL ?? '',
-      postData: values.postData ?? ''
+      postData: values.postData ?? '',
+      emails: values.emails ?? ''
     },
     where: {
       id: values.triggerId
@@ -188,7 +223,8 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
   } = tx
 
   const addressTriggers = await fetchTriggersForAddress(address)
-  await Promise.all(addressTriggers.map(async (trigger) => {
+  const posterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
+  await Promise.all(posterTriggers.map(async (trigger) => {
     const postDataParameters: PostDataParameters = {
       amount,
       currency,
@@ -196,14 +232,16 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
       buttonName: trigger.paybutton.name,
       address,
       timestamp,
-      opReturn: { 
-        paymentId, 
-        message, 
-        rawMessage  
+      opReturn: {
+        paymentId,
+        message,
+        rawMessage
       } ?? EMPTY_OP_RETURN
     }
     await postDataForTrigger(trigger, postDataParameters)
   }))
+
+  // WIP send emails
 }
 
 export interface PostDataParameters {

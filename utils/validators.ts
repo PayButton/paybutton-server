@@ -1,4 +1,4 @@
-import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN, NETWORK_TICKERS, TRIGGER_POST_VARIABLES } from '../constants/index'
+import { RESPONSE_MESSAGES, SUPPORTED_ADDRESS_PATTERN, NETWORK_TICKERS, TRIGGER_POST_VARIABLES, EMAIL_REGEX } from '../constants/index'
 import { Prisma } from '@prisma/client'
 import config from '../config/index'
 import { type CreatePaybuttonInput, type UpdatePaybuttonInput } from '../services/paybuttonService'
@@ -213,10 +213,11 @@ export const parseWalletPATCHRequest = function (params: WalletPATCHParameters):
 
 export interface PaybuttonTriggerPOSTParameters {
   userId?: string
-  sendEmail?: boolean
   postURL?: string
   postData?: string
+  isEmailTrigger: boolean
   currentTriggerId?: string
+  emails?: string
 }
 
 export interface PaybuttonTriggerParseParameters {
@@ -288,6 +289,11 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
   // userId
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
 
+  // emails
+  if (params.emails !== undefined && params.emails !== '' && !isEmailValid(params.emails)) {
+    throw new Error(RESPONSE_MESSAGES.INVALID_EMAIL_400.message)
+  }
+
   // postURL
   let postURL: string | undefined
   if (params.postURL === undefined || params.postURL === '') { postURL = undefined } else {
@@ -323,16 +329,25 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
     postData = params.postData
   }
 
-  if ((postData === undefined || postURL === undefined)) {
+  if (
+    !params.isEmailTrigger &&
+    (postData === undefined || postURL === undefined)
+  ) {
     throw new Error(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
   }
 
   return {
-    sendEmail: params.sendEmail === true,
+    emails: params.emails,
     postURL,
     postData,
-    userId: params.userId
+    userId: params.userId,
+    isEmailTrigger: params.isEmailTrigger
   }
+}
+
+const isEmailValid = (email?: string): boolean => {
+  if (email === undefined) return false
+  return EMAIL_REGEX.test(email)
 }
 
 export const parsePaybuttonPATCHRequest = function (params: PaybuttonPATCHParameters, paybuttonId: string): UpdatePaybuttonInput {
