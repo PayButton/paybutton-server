@@ -55,7 +55,9 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
     throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
   }
 
-  if ('triggerId' in values) {
+  // Update
+  const isUpdate = 'triggerId' in values
+  if (isUpdate) {
     if (!paybutton.triggers.map(t => t.id).includes(values.triggerId)) {
       throw new Error(RESPONSE_MESSAGES.INVALID_RESOURCE_UPDATE_400.message)
     }
@@ -65,8 +67,11 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
   const paybuttonPosterTriggers = paybutton.triggers.filter(t => !t.isEmailTrigger)
 
   if (
-    (isEmailTrigger && paybuttonEmailTriggers.length > 0) ||
-    (!isEmailTrigger && paybuttonPosterTriggers.length > 0)
+    !isUpdate &&
+    (
+      (isEmailTrigger && paybuttonEmailTriggers.length > 0) ||
+      (!isEmailTrigger && paybuttonPosterTriggers.length > 0)
+    )
   ) {
     throw new Error(RESPONSE_MESSAGES.LIMIT_TRIGGERS_PER_BUTTON_400.message)
   }
@@ -75,8 +80,11 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
   const addressPosterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
 
   if (
-    (isEmailTrigger && addressEmailTriggers.length > 0) ||
-    (!isEmailTrigger && addressPosterTriggers.length > 0)
+    !isUpdate &&
+    (
+      (isEmailTrigger && addressEmailTriggers.length > 0) ||
+      (!isEmailTrigger && addressPosterTriggers.length > 0)
+    )
   ) {
     throw new Error(RESPONSE_MESSAGES.LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400.message)
   }
