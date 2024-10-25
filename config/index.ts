@@ -19,6 +19,8 @@ interface Config {
   networksUnderMaintenance: KeyValueT<boolean>
   triggerPOSTTimeout: number
   sideshiftAffiliateId: string
+  smtpHost: string
+  smtpPort: number
 }
 
 const readConfig = (): Config => {
