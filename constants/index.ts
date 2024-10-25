@@ -92,7 +92,8 @@ export const RESPONSE_MESSAGES = {
   INVITATION_TOKEN_NOT_PROVIDED_400: { statusCode: 400, message: "'token' not provided." },
   ORGANIZATION_NAME_NOT_PROVIDED_400: { statusCode: 400, message: "'organizationName' not provided." },
   INVITE_EXPIRED_400: { statusCode: 400, message: 'Invite expired.' },
-  INVALID_EMAIL_400: { statusCode: 400, message: 'Invalid email.' }
+  INVALID_EMAIL_400: { statusCode: 400, message: 'Invalid email.' },
+  USER_OUT_OF_EMAIL_CREDITS_400: { statusCode: 400, message: 'User out of email credits.' }
 }
 
 export const SOCKET_MESSAGES = {
