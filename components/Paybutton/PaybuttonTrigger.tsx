@@ -115,6 +115,10 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
         setError(err.response.data.message)
       } finally {
         setClearModal(undefined)
+        setTimeout(() => {
+          setSuccess('');
+          setError('');
+      }, 3000);
       }
     }
   }
@@ -147,6 +151,11 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
       } catch (err: any) {
         setSuccess('')
         setError(err.response.data.message)
+      } finally {
+        setTimeout(() => {
+          setSuccess('');
+          setError('');
+      }, 3000);
       }
     }
   }
@@ -155,102 +164,205 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
     <div>
       <div>
         <h4>When a Payment is Received...</h4>
-        <div className={style.form_ctn}>
-          <h5>Send Request</h5>
-          <form onSubmit={(e) => { void handleSubmitPosterTrigger(getSubmitTriggerHandler('poster'))(e) }} method='post'>
-            <div>
-              <label htmlFor="postURL">URL</label>
-              <input {...registerPosterTrigger('postURL')} type="text" id="postURL" name="postURL" />
+        <div className={style.trigger_ctn}>
+          <div className={style.form_ctn}>
+            <div className={style.trigger_header}>
+              <h5>Send Request</h5>
+              {currentPosterTriggerId !== undefined && <div className={style.active_label}>Active</div>}
             </div>
+            <form
+              onSubmit={(e) => {
+                void handleSubmitPosterTrigger(
+                  getSubmitTriggerHandler('poster')
+                )(e);
+              }}
+              method="post"
+            >
+              <div>
+                <label htmlFor="postURL">URL</label>
+                <input
+                  {...registerPosterTrigger('postURL')}
+                  type="text"
+                  id="postURL"
+                  name="postURL"
+                  placeholder='The URL that will receive the request'
+                />
+              </div>
 
-            <div>
-              <label htmlFor="postData">Post Data</label>
-              <textarea {...registerPosterTrigger('postData')} className={style.post_data_area} id="postData" name="postData" placeholder={`{
-    "myButtonName": <buttonName>,
-    ...
-}`}></textarea>
-              <p >
-                Available variables:
-              </p>
-              <ul>
-                <li>&lt;buttonName&gt;</li>
-                <li>&lt;address&gt;</li>
-                <li>&lt;currency&gt;</li>
-                <li>&lt;amount&gt;</li>
-                <li>&lt;timestamp&gt;</li>
-                <li>&lt;txId&gt;</li>
-                <li>&lt;opReturn&gt;</li>
-                <li>&lt;signature&gt;</li>
-              </ul>
-            </div>
-            {/* Tooltip */}
-            <div >
-              <div className={style.tip}>
-                {/* Only triggers if payment &gt; X */}
-              </div>
-              <div className={style.btn_row2}>
-                {(posterError === undefined || posterError === '') ? null : <div className={style.error_message}>{posterError}</div>}
-                {(posterSuccessText === undefined || posterSuccessText === '') ? null : <div className={style.success_message}>{posterSuccessText}</div>}
-                <div>
-                  <button disabled={disablePosterSubmit} type='submit' className='button_main'>{currentPosterTriggerId === undefined ? 'Create' : 'Update'}</button>
-                </div>
-                <div>
-                  {
-                    currentPosterTriggerId !== undefined &&
-                      <button type='button' onClick={() => setClearModal('poster')} className={style.delete_btn}>Clear</button>
-                  }
+              <div>
+                <label htmlFor="postData">Post Data</label>
+                <textarea
+                  {...registerPosterTrigger('postData')}
+                  className={style.post_data_area}
+                  id="postData"
+                  name="postData"
+                  placeholder={`{
+  "myButtonName": <buttonName>,
+  "txId": <txId>,
+  "...
+}`}
+                ></textarea>
+                <p>Available variables:</p>
+                <div className={style.variables_list}>
+                  <div>&lt;buttonName&gt;</div>
+                  <div>&lt;address&gt;</div>
+                  <div>&lt;currency&gt;</div>
+                  <div>&lt;amount&gt;</div>
+                  <div>&lt;timestamp&gt;</div>
+                  <div>&lt;txId&gt;</div>
+                  <div>&lt;opReturn&gt;</div>
+                  <div>&lt;signature&gt;</div>
                 </div>
               </div>
-            </div>
+              {/* Tooltip */}
+              <div>
+                <div className={style.tip}>
+                  {/* Only triggers if payment &gt; X */}
+                </div>
+                  
+                <div className={style.trigger_btn_row}>
+
+                {posterError === undefined || posterError === '' ? null : (
+                    <div className={style.error_message_}>{posterError}</div>
+                  )}
+                  {posterSuccessText === undefined ||
+                  posterSuccessText === '' ? null : (
+                    <div className={style.success_message_}>
+                      {posterSuccessText}
+                    </div>
+                  )}
+                  {currentPosterTriggerId !== undefined && (
+                      <button
+                        type="button"
+                        onClick={() => setClearModal('poster')}
+                        className={style.trigger_delete_btn}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  <button
+                    disabled={disablePosterSubmit}
+                    type="submit"
+                    className="button_main"
+                  >
+                    {currentPosterTriggerId === undefined
+                      ? 'Create Send Request'
+                      : 'Update Send Request'}
+                  </button>
+              
+                </div>
+              </div>
             </form>
-          <form onSubmit={(e) => { void handleSubmitEmailTrigger(getSubmitTriggerHandler('email'))(e) }} method='post'>
-            <div>
-              <h5>Receive Email</h5>
+          </div>
+
+          <div className={style.form_ctn}>
+            <div className={style.trigger_header}>
+              <h5>Send Email</h5>
+              {currentEmailTriggerId !== undefined && <div className={style.active_label}>Active</div>}
+            </div>
+            <form
+              onSubmit={(e) => {
+                void handleSubmitEmailTrigger(getSubmitTriggerHandler('email'))(
+                  e
+                );
+              }}
+              method="post"
+            >
+             
+                
                 <label htmlFor="emails">Email</label>
-              <input {...registerEmailTrigger('emails')} type="text" id="emails" name="emails" />
-              <div className={style.email_credits_info}>
-              <span>
-                {emailCredits < MAX_DAILY_EMAILS
-                  ? <span>You have sent <b>{MAX_DAILY_EMAILS - emailCredits}</b> of a daily maximum of <b>{MAX_DAILY_EMAILS}</b> emails.</span>
-                  : <span>You may send up to <b>{MAX_DAILY_EMAILS}</b> emails per day.</span>}
-              </span>
-              </div>
-            </div>
-            <div>
-              <div className={style.btn_row2}>
-                {(emailError === undefined || emailError === '') ? null : <div className={style.error_message}>{emailError}</div>}
-                {(emailSuccessText === undefined || emailSuccessText === '') ? null : <div className={style.success_message}>{emailSuccessText}</div>}
-                <div>
-                  <button disabled={disableEmailSubmit} type='submit' className='button_main'>{currentEmailTriggerId === undefined ? 'Create' : 'Update'}</button>
+                <input
+                  {...registerEmailTrigger('emails')}
+                  type="text"
+                  id="emails"
+                  name="emails"
+                />
+                <div className={style.email_credits_info}>
+                    {emailCredits < MAX_DAILY_EMAILS ? (
+                      <span>
+                        You have sent <b>{MAX_DAILY_EMAILS - emailCredits}</b>{' '}
+                        of a daily maximum of <b>{MAX_DAILY_EMAILS}</b> emails.
+                      </span>
+                    ) : (
+                      <span>
+                        You may send up to <b>{MAX_DAILY_EMAILS}</b> emails per
+                        day.
+                      </span>
+                    )}
                 </div>
-                <div>
-                  {
-                    currentEmailTriggerId !== undefined &&
-                      <button type='button' onClick={() => setClearModal('email')} className={style.delete_btn}>Clear</button>
-                  }
+             
+              <div>
+                <div className={style.trigger_btn_row}>
+                  {emailError === undefined || emailError === '' ? null : (
+                    <div className={style.error_message_}>{emailError}</div>
+                  )}
+                  {emailSuccessText === undefined ||
+                  emailSuccessText === '' ? null : (
+                    <div className={style.success_message_}>
+                      {emailSuccessText}
+                    </div>
+                  )}
+                  {currentEmailTriggerId !== undefined && (
+                      <button
+                        type="button"
+                        onClick={() => setClearModal('email')}
+                        className={style.trigger_delete_btn}
+                      >
+                        Delete
+                      </button>
+                    )}
+                    <button
+                      disabled={disableEmailSubmit}
+                      type="submit"
+                      className="button_main"
+                    >
+                      {currentEmailTriggerId === undefined
+                        ? 'Create Send Email'
+                        : 'Update Send Email'}
+                    </button>
+                
                 </div>
               </div>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
-      {clearModal !== undefined
-        ? (
-          <div className={style.form_ctn_outer}>
-            <div className={style.form_ctn_inner}>
-              <h4>Clear Payment Trigger?</h4>
-              <div className={`${style.form_ctn} ${style.delete_button_form_ctn}`}>
-                <label htmlFor='name'>Are you sure you want to clear this payment trigger?<br />This action cannot be undone.</label>
-                <div className={style.btn_row}>
-                  <div>
-                    <button onClick={() => { void getDeleteTriggerHandler(clearModal)() }} className={style.delete_confirm_btn}>Yes</button>
-                    <button onClick={() => { setClearModal(undefined) }} className={style.cancel_btn}>Cancel</button>
-                  </div>
+      {clearModal !== undefined ? (
+        <div className={style.form_ctn_outer}>
+          <div className={style.form_ctn_inner}>
+            <h4>Clear Payment Trigger?</h4>
+            <div
+              className={`${style.form_ctn} ${style.delete_button_form_ctn}`}
+            >
+              <label htmlFor="name">
+                Are you sure you want to clear this payment trigger?
+                <br />
+                This action cannot be undone.
+              </label>
+              <div className={style.btn_row}>
+                <div>
+                  <button
+                    onClick={() => {
+                      void getDeleteTriggerHandler(clearModal)();
+                    }}
+                    className={style.delete_confirm_btn}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => {
+                      setClearModal(undefined);
+                    }}
+                    className={style.cancel_btn}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             </div>
-          </div>)
-        : null}
+          </div>
+        </div>
+      ) : null}
     </div>
-  )
+  );
 }
