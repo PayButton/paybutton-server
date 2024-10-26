@@ -163,7 +163,7 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
   return (
     <div>
       <div>
-        <h4>Payment Triggers</h4>
+        <h4>When a Payment is Received...</h4>
         <div className={style.trigger_ctn}>
           <div className={style.form_ctn}>
             <div className={style.trigger_header}>
@@ -185,7 +185,7 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                   type="text"
                   id="postURL"
                   name="postURL"
-                  placeholder='https://api.example.com'
+                  placeholder='The URL that will receive the request'
                 />
               </div>
 
@@ -257,7 +257,7 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
 
           <div className={style.form_ctn}>
             <div className={style.trigger_header}>
-              <h5>Receive Email</h5>
+              <h5>Send Email</h5>
               {currentEmailTriggerId !== undefined && <div className={style.active_label}>Active</div>}
             </div>
             <form
@@ -317,8 +317,8 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                       className="button_main"
                     >
                       {currentEmailTriggerId === undefined
-                        ? 'Create Receive Email'
-                        : 'Update Receive Email'}
+                        ? 'Create Send Email'
+                        : 'Update Send Email'}
                     </button>
                 
                 </div>
