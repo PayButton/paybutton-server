@@ -9,6 +9,7 @@ import XIcon from 'assets/x-icon.png'
 import TableContainerGetter from '../../components/TableContainer/TableContainerGetter'
 import { compareNumericString } from 'utils/index'
 import moment from 'moment'
+import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL } from 'constants/index'
 
 interface IProps {
   addressSyncing: {
@@ -78,7 +79,7 @@ export default ({ addressSyncing, tableRefreshCount }: IProps): JSX.Element => {
         accessor: 'hash',
         disableSortBy: true,
         Cell: (cellProps) => {
-          const url = cellProps.cell.row.values['address.networkId'] === 1 ? 'https://explorer.e.cash/tx/' : 'https://blockchair.com/bitcoin-cash/transaction/'
+          const url = cellProps.cell.row.values['address.networkId'] === 1 ? XEC_TX_EXPLORER_URL : BCH_TX_EXPLORER_URL
           return (
             <a href={url.concat(cellProps.cell.value)} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
               <div className="table-eye">

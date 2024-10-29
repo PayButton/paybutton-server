@@ -1,4 +1,4 @@
-import { PaybuttonTrigger, Prisma } from '@prisma/client'
+import { PaybuttonTrigger, Prisma, UserProfile } from '@prisma/client'
 import axios from 'axios'
 import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID } from 'constants/index'
 import prisma from 'prisma/clientInstance'
@@ -6,6 +6,7 @@ import { EMPTY_OP_RETURN, OpReturnData, parseTriggerPostData } from 'utils/valid
 import { BroadcastTxData } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
 import config from 'config'
+import { MAIL_FROM, MAIL_HTML_REPLACER, MAIL_SUBJECT, MAIL_TRANSPORTER, SendEmailParameters } from 'constants/mail'
 
 const triggerWithPaybutton = Prisma.validator<Prisma.PaybuttonTriggerArgs>()({
   include: { paybutton: true }
@@ -55,7 +56,9 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
     throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
   }
 
-  if ('triggerId' in values) {
+  // Update
+  const isUpdate = 'triggerId' in values
+  if (isUpdate) {
     if (!paybutton.triggers.map(t => t.id).includes(values.triggerId)) {
       throw new Error(RESPONSE_MESSAGES.INVALID_RESOURCE_UPDATE_400.message)
     }
@@ -65,8 +68,11 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
   const paybuttonPosterTriggers = paybutton.triggers.filter(t => !t.isEmailTrigger)
 
   if (
-    (isEmailTrigger && paybuttonEmailTriggers.length > 0) ||
-    (!isEmailTrigger && paybuttonPosterTriggers.length > 0)
+    !isUpdate &&
+    (
+      (isEmailTrigger && paybuttonEmailTriggers.length > 0) ||
+      (!isEmailTrigger && paybuttonPosterTriggers.length > 0)
+    )
   ) {
     throw new Error(RESPONSE_MESSAGES.LIMIT_TRIGGERS_PER_BUTTON_400.message)
   }
@@ -75,8 +81,11 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
   const addressPosterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
 
   if (
-    (isEmailTrigger && addressEmailTriggers.length > 0) ||
-    (!isEmailTrigger && addressPosterTriggers.length > 0)
+    !isUpdate &&
+    (
+      (isEmailTrigger && addressEmailTriggers.length > 0) ||
+      (!isEmailTrigger && addressPosterTriggers.length > 0)
+    )
   ) {
     throw new Error(RESPONSE_MESSAGES.LIMIT_TRIGGERS_PER_BUTTON_ADDRESSES_400.message)
   }
@@ -209,6 +218,18 @@ interface PostDataTriggerLog {
   responseData: string
 }
 
+interface EmailTriggerLogError {
+  errorName: string
+  errorMessage: string
+  errorStack: string
+  triggerEmail: string
+}
+
+interface EmailTriggerLog {
+  email: string
+  responseData: string
+}
+
 export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, networkId: number): Promise<void> {
   const address = broadcastTxData.address
   const tx = broadcastTxData.txs[0]
@@ -223,6 +244,8 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
   } = tx
 
   const addressTriggers = await fetchTriggersForAddress(address)
+
+  // Send post requests
   const posterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
   await Promise.all(posterTriggers.map(async (trigger) => {
     const postDataParameters: PostDataParameters = {
@@ -241,7 +264,115 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
     await postDataForTrigger(trigger, postDataParameters)
   }))
 
-  // WIP send emails
+  // Send emails
+  const emailTriggers = addressTriggers.filter(t => t.isEmailTrigger)
+  const sendEmailParameters: Partial<SendEmailParameters> = {
+    amount,
+    currency,
+    txId: hash,
+    address,
+    timestamp,
+    opReturn: {
+      paymentId,
+      message,
+      rawMessage
+    } ?? EMPTY_OP_RETURN
+  }
+  await Promise.all(emailTriggers.map(async (trigger) => {
+    sendEmailParameters.buttonName = trigger.paybutton.name
+    await sendEmailForTrigger(trigger, sendEmailParameters as SendEmailParameters)
+  }))
+}
+
+async function fetchUserFromTriggerId (triggerId: string): Promise<UserProfile> {
+  const result = await prisma.paybuttonTrigger.findUniqueOrThrow({
+    where: { id: triggerId },
+    select: {
+      paybutton: {
+        select: {
+          addresses: {
+            select: {
+              address: {
+                select: {
+                  userProfiles: {
+                    select: {
+                      userProfile: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+
+  // Since there may be multiple user profiles linked, extract the first one if needed
+  const userProfile = result.paybutton.addresses[0].address.userProfiles[0].userProfile
+  return userProfile
+}
+
+async function decrementUserCreditCount (userId: string): Promise<void> {
+  await prisma.userProfile.update({
+    where: {
+      id: userId
+    },
+    data: {
+      emailCredits: { decrement: 1 }
+    }
+  })
+}
+
+async function sendEmailForTrigger (trigger: TriggerWithPaybutton, sendEmailParameters: SendEmailParameters): Promise<void> {
+  const actionType: TriggerLogActionType = 'SendEmail'
+  let logData!: EmailTriggerLog | EmailTriggerLogError
+  let isError = false
+
+  const mailOptions = {
+    from: MAIL_FROM,
+    to: trigger.emails,
+    subject: MAIL_SUBJECT,
+    html: MAIL_HTML_REPLACER(sendEmailParameters)
+  }
+
+  try {
+    const user = await fetchUserFromTriggerId(trigger.id)
+    if (user.emailCredits > 0) {
+      const response = await MAIL_TRANSPORTER.sendMail(mailOptions)
+      logData = {
+        email: trigger.emails,
+        responseData: response.response
+      }
+      if (response.accepted.includes(trigger.emails)) {
+        await decrementUserCreditCount(user.id)
+      }
+    } else {
+      logData = {
+        errorName: 'USER_OUT_OF_EMAIL_CREDITS',
+        errorMessage: RESPONSE_MESSAGES.USER_OUT_OF_EMAIL_CREDITS_400.message,
+        errorStack: '',
+        triggerEmail: trigger.emails
+      }
+    }
+  } catch (err: any) {
+    isError = true
+    logData = {
+      errorName: err.name,
+      errorMessage: err.message,
+      errorStack: err.stack,
+      triggerEmail: trigger.emails
+    }
+  } finally {
+    await prisma.triggerLog.create({
+      data: {
+        triggerId: trigger.id,
+        isError,
+        actionType,
+        data: JSON.stringify(logData)
+      }
+    })
+  }
 }
 
 export interface PostDataParameters {

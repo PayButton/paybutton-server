@@ -270,7 +270,6 @@ export async function fetchPricesForNetworkAndTimestamp (networkId: number, time
 
 async function renewPricesForTimestamp (timestamp: number): Promise<void> {
   const xecPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.ecash)
-  console.log('pegou como xequepra', xecPrice)
   await upsertPricesForNetworkId(xecPrice, XEC_NETWORK_ID, timestamp)
 
   const bchPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.bitcoincash)
