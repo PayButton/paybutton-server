@@ -1,6 +1,6 @@
 import xecaddr from 'xecaddrjs'
 import { Address, Prisma, UserProfile } from '@prisma/client'
-import { RESPONSE_MESSAGES, NETWORK_SLUGS, USD_QUOTE_ID, KeyValueT } from '../constants/index'
+import { RESPONSE_MESSAGES, NETWORK_SLUGS, USD_QUOTE_ID, KeyValueT, NetworkSlugsType } from '../constants/index'
 import * as bitcoinjs from 'bitcoinjs-lib'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { URL } from 'url'
@@ -12,21 +12,21 @@ export const removeAddressPrefix = function (addressString: string): string {
   return addressString
 }
 
-export const getAddressPrefix = function (addressString: string): string {
+export const getAddressPrefix = function (addressString: string): NetworkSlugsType {
   try {
     const format = xecaddr.detectAddressFormat(addressString)
     const network = xecaddr.detectAddressNetwork(addressString)
     if (format === xecaddr.Format.Xecaddr) {
       if (network === xecaddr.Network.Mainnet) {
-        return NETWORK_SLUGS.ecash
+        return NETWORK_SLUGS.ecash as NetworkSlugsType
       } else if (network === xecaddr.Network.Testnet) {
-        return NETWORK_SLUGS.ectest
+        return NETWORK_SLUGS.ectest as NetworkSlugsType
       }
     } else if (format === xecaddr.Format.Cashaddr) {
       if (network === xecaddr.Network.Mainnet) {
-        return NETWORK_SLUGS.bitcoincash
+        return NETWORK_SLUGS.bitcoincash as NetworkSlugsType
       } else if (network === xecaddr.Network.Testnet) {
-        return NETWORK_SLUGS.bchtest
+        return NETWORK_SLUGS.bchtest as NetworkSlugsType
       }
     }
   } catch {

@@ -11,7 +11,7 @@ import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import { formatQuoteValue, compareNumericString, removeUnserializableFields } from 'utils/index'
-import { XEC_NETWORK_ID, USD_QUOTE_ID } from 'constants/index'
+import { XEC_NETWORK_ID, USD_QUOTE_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL } from 'constants/index'
 import moment from 'moment'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
@@ -109,7 +109,7 @@ export default function Payments ({ user }: PaybuttonsProps): React.ReactElement
         accessor: 'hash',
         disableSortBy: true,
         Cell: (cellProps) => {
-          const url = cellProps.cell.row.values.networkId === XEC_NETWORK_ID ? 'https://explorer.e.cash/tx/' : 'https://blockchair.com/bitcoin-cash/transaction/'
+          const url = cellProps.cell.row.values.networkId === XEC_NETWORK_ID ? XEC_TX_EXPLORER_URL : BCH_TX_EXPLORER_URL
           return (
             <a href={url.concat(cellProps.cell.value)} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
               <div className="table-eye">

@@ -180,6 +180,7 @@ export const NETWORK_TICKERS: KeyValueT<string> = {
 }
 
 export type NetworkTickersType = 'XEC' | 'BCH'
+export type NetworkSlugsType = 'ecash' | 'bitcoincash' | 'ectest' | 'bchtest'
 
 export const NETWORK_TICKERS_FROM_ID: KeyValueT<string> = {
   1: 'XEC',
@@ -254,3 +255,6 @@ export const DECIMALS: Record<string, number> = {
 export const EMAIL_REGEX: RegExp = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
 
 export const MAX_DAILY_EMAILS = 100 // If changed, update the DB default accordingly
+
+export const XEC_TX_EXPLORER_URL = 'https://explorer.e.cash/tx/'
+export const BCH_TX_EXPLORER_URL = 'https://blockchair.com/bitcoin-cash/transaction/'
