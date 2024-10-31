@@ -41,7 +41,7 @@ export default function ChangeFiatCurrency ({ preferredCurrencyId }: IProps): Re
     void onChangeCurrency(currencyId)
   }, [currency])
 
-  return (
+  return (<>
     <div className={style.changeCurrency_ctn}>
       <select
         id='currency'
@@ -49,15 +49,14 @@ export default function ChangeFiatCurrency ({ preferredCurrencyId }: IProps): Re
         value={currency}
         onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setCurrency(event.target.value as SupportedQuotesType)}
       >
-        <option value=''>Select currency</option>
         {SUPPORTED_QUOTES.map((currency: SupportedQuotesType) => (
           <option key={currency} value={currency}>
             {currency.toUpperCase()}
           </option>
         ))}
       </select>
-      {error !== '' && <p className={style.error_message}> {error} </p>}
-      {success !== '' && <p className={style.success_message}> {success} </p>}
     </div>
-  )
+    {error !== '' && <span className={style.error_message}> {error} </span>}
+    {success !== '' && <span className={style.success_message}> {success} </span>}
+    </>)
 }

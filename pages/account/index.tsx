@@ -100,13 +100,16 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
         <TopBar title="Account" user={user.stUser?.email} />
         <div className={style.label}>Email</div>
         <div className={style.account_card}>{user.stUser?.email}</div>
+        <div className={style.label}>Currency</div>
+        <div className={style.account_card}>
+          <ChangeFiatCurrency preferredCurrencyId={userProfile.preferredCurrencyId}/>
+        </div>
         {changePassword && (
           <>
             <div className={style.label}>Update Password</div>
             <ChangePassword toggleChangePassword={toggleChangePassword} />
           </>
         )}
-        <ChangeFiatCurrency preferredCurrencyId={userProfile.preferredCurrencyId}/>
 
         <div
           onClick={() => setChangePassword(!changePassword)}
