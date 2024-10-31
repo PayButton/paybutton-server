@@ -489,7 +489,7 @@ export interface JoinOrganizationInput {
 }
 
 export interface UpdatePreferredCurrencyPUTParameters {
-  currencyId?: string
+  currencyId?: string | number
 }
 
 export const parseJoinOrganizationPOSTRequest = function (params: JoinOrganizationPOSTParameters): JoinOrganizationInput {

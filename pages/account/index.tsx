@@ -106,7 +106,7 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
             <ChangePassword toggleChangePassword={toggleChangePassword} />
           </>
         )}
-        <ChangeFiatCurrency userProfile={userProfile}/>
+        <ChangeFiatCurrency preferredCurrencyId={userProfile.preferredCurrencyId}/>
 
         <div
           onClick={() => setChangePassword(!changePassword)}

@@ -1,33 +1,29 @@
-import React, { ReactElement, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import React, { ReactElement, useState, useEffect } from 'react'
 import style from './account.module.css'
-import { SUPPORTED_QUOTES, SUPPORTED_QUOTES_FROM_ID, SupportedQuotesType } from 'constants/index'
-import { UserProfile } from '@prisma/client'
-import { UpdatePreferredCurrencyPUTParameters } from 'utils/validators'
+import { SUPPORTED_QUOTES, SUPPORTED_QUOTES_FROM_ID, SupportedQuotesType, QUOTE_IDS } from 'constants/index'
 
 interface IProps {
-  userProfile: UserProfile
+  preferredCurrencyId: number
 }
 
-export default function ChangeFiatCurrency ({ userProfile }: IProps): ReactElement {
-  const preferredCurrency = SUPPORTED_QUOTES_FROM_ID[userProfile.preferredCurrencyId]
+export default function ChangeFiatCurrency ({ preferredCurrencyId }: IProps): ReactElement {
+  const preferredCurrency = SUPPORTED_QUOTES_FROM_ID[preferredCurrencyId]
   const [currency, setCurrency] = useState(preferredCurrency)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const { register, handleSubmit } = useForm<UpdatePreferredCurrencyPUTParameters>()
 
-  const onChangeCurrency = async (): Promise<void> => {
+  const onChangeCurrency = async (currencyId: number): Promise<void> => {
     try {
-      const res = await fetch('/api/user/preferredCurrency', {
-        method: 'POST',
+      const res = await fetch('/api/user', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ currency })
+        body: JSON.stringify({ currencyId })
       })
       if (res.status === 200) {
         setError('')
-        setSuccess('Updated currency successfully')
+        setSuccess('Updated currency successfully.')
       }
     } catch (err: any) {
       setSuccess('')
@@ -40,29 +36,28 @@ export default function ChangeFiatCurrency ({ userProfile }: IProps): ReactEleme
     }
   }
 
+  useEffect(() => {
+    const currencyId = QUOTE_IDS[currency.toUpperCase()]
+    void onChangeCurrency(currencyId)
+  }, [currency])
+
   return (
     <div className={style.changeCurrency_ctn}>
-      <form
-        onSubmit={(e) => { void handleSubmit(onChangeCurrency)(e) } }
-        method="put"
-      >
       <select
         id='currency'
         required
         value={currency}
-        {...register('currencyId')}
         onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setCurrency(event.target.value as SupportedQuotesType)}
       >
         <option value=''>Select currency</option>
         {SUPPORTED_QUOTES.map((currency: SupportedQuotesType) => (
           <option key={currency} value={currency}>
-            {currency}
+            {currency.toUpperCase()}
           </option>
         ))}
       </select>
-      </form>
-      {error !== '' ?? <p> {error} </p>}
-      {success !== '' ?? <p> {success} </p>}
+      {error !== '' && <p className={style.error_message}> {error} </p>}
+      {success !== '' && <p className={style.success_message}> {success} </p>}
     </div>
   )
 }

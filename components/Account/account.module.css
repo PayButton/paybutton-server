@@ -48,3 +48,15 @@ body[data-theme='dark'] .changepw_ctn input {
    max-width: unset;
   }
 }
+
+.error_message {
+  color: red;
+  font-size: 14px;
+  top: -20px;
+  left: 0;
+  background-color: rgba(255, 0, 0, 0.1);
+  position: absolute;
+  padding: 1px 10px;
+  border-radius: 5px;
+}
+
