@@ -12,11 +12,6 @@
   border-radius: 10px;
 }
 
-.error_message {
-  color: red;
-  font-size: 14px;
-}
-
 .changepw_ctn {
   width: 100%;
   background-color: var(--secondary-bg-color);
