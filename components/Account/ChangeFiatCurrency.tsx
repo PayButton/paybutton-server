@@ -1,4 +1,4 @@
-import React, { ReactElement, useState, useEffect } from 'react'
+import React, { ReactElement, useState } from 'react'
 import style from './account.module.css'
 import { SUPPORTED_QUOTES, SUPPORTED_QUOTES_FROM_ID, SupportedQuotesType, QUOTE_IDS } from 'constants/index'
 
@@ -12,7 +12,10 @@ export default function ChangeFiatCurrency ({ preferredCurrencyId }: IProps): Re
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const onChangeCurrency = async (currencyId: number): Promise<void> => {
+  const onChangeCurrency = async (thisCurrency: string): Promise<void> => {
+    const oldCurrency = currency
+    const currencyId = QUOTE_IDS[thisCurrency.toUpperCase()]
+    setCurrency(SUPPORTED_QUOTES_FROM_ID[currencyId])
     try {
       const res = await fetch('/api/user', {
         method: 'PUT',
@@ -28,6 +31,7 @@ export default function ChangeFiatCurrency ({ preferredCurrencyId }: IProps): Re
     } catch (err: any) {
       setSuccess('')
       setError(err.response.data.message)
+      setCurrency(oldCurrency)
     } finally {
       setTimeout(() => {
         setSuccess('')
@@ -36,18 +40,13 @@ export default function ChangeFiatCurrency ({ preferredCurrencyId }: IProps): Re
     }
   }
 
-  useEffect(() => {
-    const currencyId = QUOTE_IDS[currency.toUpperCase()]
-    void onChangeCurrency(currencyId)
-  }, [currency])
-
   return (<>
     <div className={style.changeCurrency_ctn}>
       <select
         id='currency'
         required
         value={currency}
-        onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setCurrency(event.target.value as SupportedQuotesType)}
+        onChange={(e) => { void onChangeCurrency(e.target.value) }}
       >
         {SUPPORTED_QUOTES.map((currency: SupportedQuotesType) => (
           <option key={currency} value={currency}>
