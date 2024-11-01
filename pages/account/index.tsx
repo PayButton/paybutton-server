@@ -6,8 +6,9 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import Page from 'components/Page'
 import ChangePassword from 'components/Account/ChangePassword'
+import ChangeFiatCurrency from 'components/Account/ChangeFiatCurrency'
 import style from './account.module.css'
-import { fetchUserWithSupertokens, getUserPublicKeyHex, UserWithSupertokens } from 'services/userService'
+import { fetchUserProfileFromId, fetchUserWithSupertokens, getUserPublicKeyHex, UserWithSupertokens } from 'services/userService'
 import CopyIcon from '../../assets/copy-black.png'
 import { ViewOrganization } from 'components/Organization'
 import { fetchOrganizationForUser, fetchOrganizationMembers } from 'services/organizationService'
@@ -16,7 +17,6 @@ import { removeDateFields, removeUnserializableFields } from 'utils/index'
 import TopBar from 'components/TopBar'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  // this runs on the backend, so we must call init on supertokens-node SDK
   supertokensNode.init(SuperTokensConfig.backendConfig())
   let session
   try {
@@ -35,6 +35,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const user = await fetchUserWithSupertokens(userId)
   removeUnserializableFields(user.userProfile)
   const organization = await fetchOrganizationForUser(userId)
+  const userProfile = await fetchUserProfileFromId(userId)
+
   let serializableOrg = null
   let members: UserProfile[] = []
 
@@ -45,12 +47,14 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   } else {
     members = []
   }
+  removeUnserializableFields(userProfile)
   return {
     props: {
       organization: serializableOrg,
       orgMembersProps: members,
       user,
-      userPublicKey: await getUserPublicKeyHex(userId)
+      userPublicKey: await getUserPublicKeyHex(userId),
+      userProfile
     }
   }
 }
@@ -60,16 +64,19 @@ interface IProps {
   userPublicKey: string
   organization: Organization
   orgMembersProps: UserProfile[]
+  userProfile: UserProfile
 }
 
-export default function Account ({ user, userPublicKey, organization, orgMembersProps }: IProps): React.ReactElement {
+export default function Account ({ user, userPublicKey, organization, orgMembersProps, userProfile }: IProps): React.ReactElement {
   const [changePassword, setChangePassword] = useState(false)
   const [publicKeyInfo, setPublicKeyInfo] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
   const [orgMembers, setOrgMembers] = useState(orgMembersProps)
+
   const toggleChangePassword = (): void => {
     setChangePassword(!changePassword)
   }
+
   const togglePublicKeyInfo = (): void => {
     setPublicKeyInfo(!publicKeyInfo)
   }
@@ -93,12 +100,17 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
         <TopBar title="Account" user={user.stUser?.email} />
         <div className={style.label}>Email</div>
         <div className={style.account_card}>{user.stUser?.email}</div>
+        <div className={style.label}>Currency</div>
+        <div className={style.account_card}>
+          <ChangeFiatCurrency preferredCurrencyId={userProfile.preferredCurrencyId}/>
+        </div>
         {changePassword && (
           <>
             <div className={style.label}>Update Password</div>
             <ChangePassword toggleChangePassword={toggleChangePassword} />
           </>
         )}
+
         <div
           onClick={() => setChangePassword(!changePassword)}
           className={`${style.updatebtn} button_outline`}
@@ -120,7 +132,6 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
               <br/>
               <br/>
               To verify, check variable &lt;signature&gt; variable. It should contain two keys:
-
               <br/>
               - payload: The transaction data variables present in the POST request concatenated using the plus (+) symbol as a separator.
               <br/>
@@ -128,7 +139,6 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
               <br/>
               <br/>
               Check if the payload's signature came from the private key paired to this public key using your preferred method.
-
             </div>
           )}
           {publicKeyInfo &&

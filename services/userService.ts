@@ -117,3 +117,12 @@ export async function isUserAdmin (id: string): Promise<boolean> {
 export const exportedForTesting = {
   getUserSeedHash
 }
+
+export async function updatePreferredCurrency (id: string, preferredCurrencyId: number): Promise<void> {
+  await prisma.userProfile.update({
+    where: { id },
+    data: {
+      preferredCurrencyId
+    }
+  })
+}

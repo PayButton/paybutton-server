@@ -110,6 +110,10 @@ export interface ChangePasswordInput {
   newPassword: string
 }
 
+export interface UpdatePreferredCurrencyInput {
+  currencyId: number
+}
+
 export const parseChangePasswordPOSTRequest = function (params: ChangePasswordPOSTParameters): ChangePasswordInput {
   if (
     params.newPassword !== params.newPasswordConfirmed ||
@@ -484,6 +488,10 @@ export interface JoinOrganizationInput {
   token: string
 }
 
+export interface UpdatePreferredCurrencyPUTParameters {
+  currencyId?: string | number
+}
+
 export const parseJoinOrganizationPOSTRequest = function (params: JoinOrganizationPOSTParameters): JoinOrganizationInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.token === '' || params.token === undefined) throw new Error(RESPONSE_MESSAGES.INVITATION_TOKEN_NOT_PROVIDED_400.message)
@@ -508,5 +516,17 @@ export const parseCreateOrganizationPOSTRequest = function (params: CreateOrgani
   return {
     creatorId: params.creatorId,
     name: params.name
+  }
+}
+
+export const parseUpdatePUTRequest = function (params: UpdatePreferredCurrencyPUTParameters): UpdatePreferredCurrencyInput {
+  if (params.currencyId === '' ||
+    params.currencyId === undefined
+  ) {
+    throw new Error(RESPONSE_MESSAGES.INVALID_PASSWORD_FORM_400.message)
+  }
+
+  return {
+    currencyId: Number(params.currencyId)
   }
 }
