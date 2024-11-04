@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client'
+import { QuoteValues } from 'services/priceService'
 
 export interface ChartColor {
   revenue: string
@@ -46,7 +47,7 @@ export interface ButtonDisplayData {
 
 export interface Payment {
   timestamp: number
-  value: Prisma.Decimal
+  values: QuoteValues
   networkId: number
   hash: string
   buttonDisplayDataList: ButtonDisplayData[]

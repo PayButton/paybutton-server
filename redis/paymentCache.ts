@@ -46,12 +46,12 @@ const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
 }
 
 export const generatePaymentFromTx = async (tx: TransactionWithPrices): Promise<Payment> => {
-  const value = (await getTransactionValue(tx)).usd
+  const values = (await getTransactionValue(tx))
   const txAddress = await fetchAddressById(tx.addressId, true) as AddressWithPaybuttons
   if (txAddress === undefined) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_FOR_TRANSACTION_404.message)
   return {
     timestamp: tx.timestamp,
-    value,
+    values,
     networkId: txAddress.networkId,
     hash: tx.hash,
     buttonDisplayDataList: txAddress.paybuttons.map(

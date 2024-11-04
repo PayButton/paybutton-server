@@ -140,7 +140,7 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
             <h5>{totalString}: ${formatQuoteValue(activePeriod.totalRevenue, USD_QUOTE_ID)}</h5>
           </div>
           <div className={style.chart_ctn}>
-            <Chart data={activePeriod.revenue} usd={true} />
+            <Chart data={activePeriod.revenue} fiat={true} />
           </div>
         </div>
         <div className={style.chart_inner_ctn}>
