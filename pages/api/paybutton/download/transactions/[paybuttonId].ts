@@ -10,8 +10,7 @@ import {
   NetworkTickersType,
   NETWORK_TICKERS,
   NETWORK_IDS,
-  SUPPORTED_QUOTES_FROM_ID,
-  USD_QUOTE_ID
+  SUPPORTED_QUOTES_FROM_ID
 } from 'constants/index'
 import { TransactionWithAddressAndPrices, fetchTransactionsByPaybuttonId, getTransactionValueInCurrency } from 'services/transactionService'
 import { PaybuttonWithAddresses, fetchPaybuttonById } from 'services/paybuttonService'
@@ -20,6 +19,7 @@ import { setSession } from 'utils/setSession'
 import { NextApiResponse } from 'next'
 import { Decimal } from '@prisma/client/runtime'
 import { getNetworkIdFromSlug } from 'services/networkService'
+import { fetchUserProfileFromId } from 'services/userService'
 
 export interface TransactionFileData {
   amount: Decimal
@@ -144,13 +144,14 @@ export default async (req: any, res: any): Promise<void> => {
     await setSession(req, res)
 
     const userId = req.session.userId
+    const user = await fetchUserProfileFromId(userId)
     const paybuttonId = req.query.paybuttonId as string
     const networkTickerReq = req.query.network as string
 
     const networkTicker = (networkTickerReq !== '' && isNetworkValid(networkTickerReq as NetworkTickersType)) ? networkTickerReq.toUpperCase() as NetworkTickersType : undefined
     let quoteId: number
     if (req.query.currency === undefined || req.query.currency === '' || Number.isNaN(req.query.currency)) {
-      quoteId = USD_QUOTE_ID
+      quoteId = user.preferredCurrencyId
     } else {
       quoteId = req.query.currency as number
     }

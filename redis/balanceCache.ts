@@ -1,8 +1,7 @@
 import { Prisma } from '@prisma/client'
-import { AddressPaymentInfo, generateAddressPaymentInfo } from 'services/addressService'
+import { AddressPaymentInfo, AddressWithTransactionsWithPrices, generateAddressPaymentInfo } from 'services/addressService'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import { redis } from './clientInstance'
-import { Payment } from './types'
 
 // ADDRESS:balance
 const getBalanceKey = (addressString: string): string => {
@@ -14,13 +13,16 @@ export const cacheAddressPaymentInfo = async (addressString: string, info: Addre
   await redis.set(balanceKey, JSON.stringify(info))
 }
 
-export const cacheBalanceFromPayments = async (addressString: string, payments: Payment[]): Promise<void> => {
-  const paymentsSum = payments.reduce((prev, curr) => prev.plus(curr.value), new Prisma.Decimal(0))
-  const info: AddressPaymentInfo = {
-    balance: paymentsSum,
-    paymentCount: payments.length
+export const cacheBalanceForAddress = async (address: AddressWithTransactionsWithPrices): Promise<void> => {
+  let balance = new Prisma.Decimal(0)
+  for (const tx of address.transactions) {
+    balance = balance.plus(tx.amount)
   }
-  await cacheAddressPaymentInfo(addressString, info)
+  const info: AddressPaymentInfo = {
+    balance,
+    paymentCount: address.transactions.filter(tx => tx.amount.gt(0)).length
+  }
+  await cacheAddressPaymentInfo(address.address, info)
 }
 
 export const getCachedBalanceForAddress = async (addressString: string): Promise<AddressPaymentInfo | null> => {

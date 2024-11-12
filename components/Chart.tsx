@@ -1,7 +1,6 @@
 import type { NextPage } from 'next'
 import React from 'react'
 import { formatQuoteValue } from 'utils/index'
-import { USD_QUOTE_ID } from 'constants/index'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,6 +12,9 @@ import {
   Legend
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
+import { ChartData } from 'redis/types'
+import { USD_QUOTE_ID } from 'constants/index'
+import { QuoteValues } from 'services/priceService'
 
 ChartJS.register(
   CategoryScale,
@@ -25,13 +27,28 @@ ChartJS.register(
 )
 
 interface Props {
-  data: object
-  fiat: boolean
+  chartData: ChartData
+  currencyId?: number
 }
 
-const Chart: NextPage<Props> = ({ data, fiat }) => {
-  const chartData = data
+function getQuoteOption (quoteValues: QuoteValues[], currencyId: number): number[] {
+  return quoteValues.map(qv => Number(currencyId === USD_QUOTE_ID ? qv.usd : qv.cad))
+}
 
+const Chart: NextPage<Props> = ({ chartData, currencyId }) => {
+  const data = chartData
+  if (chartData.isMultiQuote && currencyId !== undefined) {
+    if (data.datasets.length > 0) {
+      data.datasets = [
+        {
+          ...data.datasets[0],
+          data: Array.isArray(data.datasets[0].data) && typeof data.datasets[0].data[0] === 'object'
+            ? getQuoteOption(data.datasets[0].data as QuoteValues[], currencyId)
+            : data.datasets[0].data
+        }
+      ]
+    }
+  }
   function cssvar (name): string {
     /*
     if (typeof window !== "undefined") {
@@ -54,8 +71,8 @@ const Chart: NextPage<Props> = ({ data, fiat }) => {
         displayColors: false,
         callbacks: {
           label: function (context) {
-            // WIP get setting
-            return fiat ? '$' + formatQuoteValue(context.raw, USD_QUOTE_ID) : formatQuoteValue(context.raw)
+            const prefix = currencyId !== undefined ? '$' : ''
+            return prefix + formatQuoteValue(context.raw, currencyId)
           }
         },
         mode: 'nearest',
@@ -84,8 +101,7 @@ const Chart: NextPage<Props> = ({ data, fiat }) => {
         ticks: {
           color: cssvar('--primary-text-color'),
           callback: function (value: string) {
-            // WIP get setting
-            return fiat ? '$' + formatQuoteValue(value, USD_QUOTE_ID) : value
+            return currencyId !== undefined ? '$' + formatQuoteValue(value, currencyId) : value
           }
         },
         position: 'right'

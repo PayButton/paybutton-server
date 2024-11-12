@@ -3,16 +3,16 @@ import { useMemo } from 'react'
 import { PaymentDataByButton } from 'redis/types'
 import style from '../Transaction/transaction.module.css'
 import moment from 'moment'
-import { USD_QUOTE_ID } from 'constants/index'
 import { compareNumericString } from 'utils/index'
 import { formatQuoteValue } from 'utils'
 
 interface IProps {
   buttons: PaymentDataByButton
   totalString: string
+  currencyId: number
 }
 
-export default ({ buttons, totalString }: IProps): JSX.Element => {
+export default ({ buttons, totalString, currencyId }: IProps): JSX.Element => {
   const columns = useMemo(
     () => [
       {
@@ -39,7 +39,7 @@ export default ({ buttons, totalString }: IProps): JSX.Element => {
         sortType: compareNumericString,
         Cell: (cellProps) => {
           return <div style={{ textAlign: 'right', fontWeight: '600' }}>
-            {'$'.concat(formatQuoteValue(cellProps.cell.value, USD_QUOTE_ID))}
+            {'$'.concat(formatQuoteValue(cellProps.cell.value, currencyId))}
           </div>
         }
       },
