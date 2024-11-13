@@ -142,7 +142,7 @@ export const sumPaymentsValue = function (paymentList: Payment[]): QuoteValues {
 
   for (const p of paymentList) {
     ret.usd = ret.usd.plus(p.values.usd)
-    ret.cad = ret.usd.plus(p.values.cad)
+    ret.cad = ret.cad.plus(p.values.cad)
   }
   return ret
 }
