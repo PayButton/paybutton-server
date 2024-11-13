@@ -377,14 +377,20 @@ export class ChronikBlockchainClient implements BlockchainClient {
         const transaction = await this.chronik.tx(msg.txid)
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
+          console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: will create tx for ${msg.txid}`)
           const { created, tx } = await createTransaction(addressWithTransaction.transaction)
+          console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: will create tx for ${msg.txid}`)
+          console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: created tx for ${msg.txid}`)
           if (tx !== undefined) {
             const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
             broadcastTxData.address = addressWithTransaction.address.address
             broadcastTxData.messageType = 'NewTx'
+            console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: will simplify tx for ${msg.txid}`)
             const newSimplifiedTransaction = getSimplifiedTrasaction(tx)
+            console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: simplified tx for ${msg.txid}`)
             broadcastTxData.txs = [newSimplifiedTransaction]
             try { // emit broadcast for both unconfirmed and confirmed txs
+              console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: emitting ${msg.txid} to ${broadcastTxData.address}`)
               this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
             } catch (err: any) {
               console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
