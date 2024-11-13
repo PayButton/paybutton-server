@@ -204,15 +204,10 @@ describe('parsePaybuttonPATCHRequest', () => {
   })
 })
 
-export interface PaybuttonTriggerPOSTParameters {
-  userId?: string
-  postURL?: string
-  postData?: string
-}
-
-describe('parsePaybuttonTriggerPOSTRequest', () => {
-  const data: PaybuttonTriggerPOSTParameters = {
-    userId: '12345'
+describe('parsePaybuttonTriggerPOSTRequest non email', () => {
+  const data: v.PaybuttonTriggerPOSTParameters = {
+    userId: '12345',
+    isEmailTrigger: false
   }
 
   it('Invalid postData JSON throws error', () => {
@@ -249,6 +244,18 @@ describe('parsePaybuttonTriggerPOSTRequest', () => {
     expect(() => {
       v.parsePaybuttonTriggerPOSTRequest({ ...data })
     }).toThrow(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
+  })
+
+  it('Invalid if is email but no email', () => {
+    expect(() => {
+      v.parsePaybuttonTriggerPOSTRequest({ ...data, isEmailTrigger: true })
+    }).toThrow(RESPONSE_MESSAGES.MISSING_EMAIL_FOR_TRIGGER_400.message)
+  })
+
+  it('Invalid if is email but invalid email', () => {
+    expect(() => {
+      v.parsePaybuttonTriggerPOSTRequest({ ...data, isEmailTrigger: true, emails: 'thisisnotvalid@email' })
+    }).toThrow(RESPONSE_MESSAGES.INVALID_EMAIL_400.message)
   })
 })
 

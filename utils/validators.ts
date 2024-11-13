@@ -340,6 +340,13 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
     throw new Error(RESPONSE_MESSAGES.POST_URL_AND_DATA_MUST_BE_SET_TOGETHER_400.message)
   }
 
+  if (
+    params.isEmailTrigger &&
+    (params.emails === '' || params.emails === undefined)
+  ) {
+    throw new Error(RESPONSE_MESSAGES.MISSING_EMAIL_FOR_TRIGGER_400.message)
+  }
+
   return {
     emails: params.emails,
     postURL,
