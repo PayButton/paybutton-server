@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client'
+import { QuoteValues } from 'services/priceService'
 
 export interface ChartColor {
   revenue: string
@@ -6,10 +6,11 @@ export interface ChartColor {
 }
 
 export interface ChartData {
+  isMultiQuote: boolean
   labels: string[]
   datasets: [
     {
-      data: number[] | Prisma.Decimal[]
+      data: number[] | QuoteValues[]
       borderColor: string
     }
   ]
@@ -18,7 +19,7 @@ export interface ChartData {
 export interface PeriodData {
   revenue: ChartData
   payments: ChartData
-  totalRevenue: Prisma.Decimal
+  totalRevenue: QuoteValues
   totalPayments: number
   buttons: PaymentDataByButton
 }
@@ -30,7 +31,7 @@ export interface DashboardData {
   all: PeriodData
   paymentList?: Payment[]
   total: {
-    revenue: Prisma.Decimal
+    revenue: QuoteValues
     payments: number
     buttons: number
   }
@@ -46,7 +47,7 @@ export interface ButtonDisplayData {
 
 export interface Payment {
   timestamp: number
-  value: Prisma.Decimal
+  values: QuoteValues
   networkId: number
   hash: string
   buttonDisplayDataList: ButtonDisplayData[]
@@ -55,7 +56,7 @@ export interface Payment {
 export interface ButtonData {
   displayData: ButtonDisplayData
   total: {
-    revenue: Prisma.Decimal
+    revenue: QuoteValues
     payments: number
   }
 }

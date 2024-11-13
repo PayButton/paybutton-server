@@ -11,7 +11,7 @@ import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import { formatQuoteValue, compareNumericString, removeUnserializableFields } from 'utils/index'
-import { XEC_NETWORK_ID, USD_QUOTE_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL } from 'constants/index'
+import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL } from 'constants/index'
 import moment from 'moment'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
@@ -71,10 +71,10 @@ export default function Payments ({ user }: PaybuttonsProps): React.ReactElement
       },
       {
         Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
-        accessor: 'value',
+        accessor: 'values',
         sortType: compareNumericString,
         Cell: (cellProps) => {
-          return <div style={{ textAlign: 'right', fontWeight: '600' }}>${formatQuoteValue(cellProps.cell.value, USD_QUOTE_ID)}</div>
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}>${formatQuoteValue(cellProps.cell.value, user.userProfile.preferredCurrencyId)}</div>
         }
       },
       {

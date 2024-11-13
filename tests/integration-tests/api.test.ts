@@ -1355,7 +1355,10 @@ describe('GET /api/dashboard', () => {
       all: expectedPeriodData,
       paymentList: expect.any(Array),
       total: {
-        revenue: expect.any(String),
+        revenue: {
+          usd: expect.any(String),
+          cad: expect.any(String)
+        },
         payments: expect.any(Number),
         buttons: expect.any(Number)
       }

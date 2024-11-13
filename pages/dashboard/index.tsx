@@ -6,7 +6,7 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import style from './dashboard.module.css'
 import { formatQuoteValue, removeUnserializableFields } from 'utils/index'
-import { COOKIE_NAMES, USD_QUOTE_ID } from 'constants/index'
+import { COOKIE_NAMES } from 'constants/index'
 import Leaderboard from 'components/Dashboard/Leaderboard'
 import { DashboardData, PeriodData } from 'redis/types'
 import { loadStateFromCookie, saveStateToCookie } from 'utils/cookies'
@@ -123,7 +123,7 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
     <>
       <TopBar title="Dashboard" user={user.stUser?.email} />
       <div className={style.number_ctn}>
-        <NumberBlock value={'$'.concat(formatQuoteValue(dashboardData.total.revenue, USD_QUOTE_ID)) } text='Revenue (lifetime)' />
+        <NumberBlock value={'$'.concat(formatQuoteValue(dashboardData.total.revenue, user.userProfile.preferredCurrencyId)) } text='Revenue (lifetime)' />
         <NumberBlock value={formatQuoteValue(dashboardData.total.payments)} text='Payments (lifetime)' />
         <NumberBlock value={dashboardData.total.buttons} text='Buttons' />
       </div>
@@ -137,10 +137,10 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
             <h5>Revenue</h5>
-            <h5>{totalString}: ${formatQuoteValue(activePeriod.totalRevenue, USD_QUOTE_ID)}</h5>
+            <h5>{totalString}: ${formatQuoteValue(activePeriod.totalRevenue, user.userProfile.preferredCurrencyId)}</h5>
           </div>
           <div className={style.chart_ctn}>
-            <Chart data={activePeriod.revenue} usd={true} />
+            <Chart chartData={activePeriod.revenue} currencyId={user.userProfile.preferredCurrencyId} />
           </div>
         </div>
         <div className={style.chart_inner_ctn}>
@@ -149,7 +149,7 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
             <h5>{totalString}: {formatQuoteValue(activePeriod.totalPayments)}</h5>
           </div>
           <div className={style.chart_ctn}>
-            <Chart data={activePeriod.payments} />
+            <Chart chartData={activePeriod.payments} />
           </div>
         </div>
         <div className={`${style.full_width} ${style.chart_inner_ctn}`}>
@@ -157,7 +157,7 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
             <h5>Button Leaderboard</h5>
             <div></div>
           </div>
-            <Leaderboard totalString={totalString} buttons={activePeriod.buttons}/>
+            <Leaderboard totalString={totalString} buttons={activePeriod.buttons} currencyId={user.userProfile.preferredCurrencyId}/>
         </div>
       </div>
     </>

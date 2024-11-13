@@ -46,12 +46,12 @@ const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
 }
 
 export const generatePaymentFromTx = async (tx: TransactionWithPrices): Promise<Payment> => {
-  const value = (await getTransactionValue(tx)).usd
+  const values = (await getTransactionValue(tx))
   const txAddress = await fetchAddressById(tx.addressId, true) as AddressWithPaybuttons
   if (txAddress === undefined) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_FOR_TRANSACTION_404.message)
   return {
     timestamp: tx.timestamp,
-    value,
+    values,
     networkId: txAddress.networkId,
     hash: tx.hash,
     buttonDisplayDataList: txAddress.paybuttons.map(
@@ -85,7 +85,7 @@ export const generateGroupedPaymentsForAddress = async (address: AddressWithTran
     const payment = await generatePaymentFromTx(tx)
     paymentList.push(payment)
   }
-  paymentList = paymentList.filter((p) => p.value > new Prisma.Decimal(0))
+  paymentList = paymentList.filter((p) => p.values.usd > new Prisma.Decimal(0))
   return getPaymentsByWeek(address.address, paymentList)
 }
 
@@ -154,7 +154,7 @@ export const cacheManyTxs = async (txs: TransactionWithAddressAndPrices[]): Prom
   const zero = new Prisma.Decimal(0)
   for (const tx of txs.filter(tx => tx.amount > zero)) {
     const payment = await generatePaymentFromTx(tx)
-    if (payment.value !== new Prisma.Decimal(0)) {
+    if (payment.values.usd !== new Prisma.Decimal(0)) {
       const paymentsGroupedByKey = getPaymentsByWeek(tx.address.address, [payment])
       void await cacheGroupedPaymentsAppend(paymentsGroupedByKey)
     }

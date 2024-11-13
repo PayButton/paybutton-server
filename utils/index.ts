@@ -1,9 +1,10 @@
 import xecaddr from 'xecaddrjs'
 import { Address, Prisma, UserProfile } from '@prisma/client'
-import { RESPONSE_MESSAGES, NETWORK_SLUGS, USD_QUOTE_ID, KeyValueT, NetworkSlugsType } from '../constants/index'
+import { RESPONSE_MESSAGES, NETWORK_SLUGS, KeyValueT, NetworkSlugsType, USD_QUOTE_ID } from '../constants/index'
 import * as bitcoinjs from 'bitcoinjs-lib'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { URL } from 'url'
+import { QuoteValues } from 'services/priceService'
 
 export const removeAddressPrefix = function (addressString: string): string {
   if (addressString.includes(':')) {
@@ -82,11 +83,20 @@ const findFirstSignificantDigit = (floatNumber: number): number | undefined => {
   }
   return ret
 }
-export const formatQuoteValue = (numberString: string, quoteId?: number): string => {
-  const parsedFloat = parseFloat(numberString)
+
+export const formatQuoteValue = (numberString: string | QuoteValues | number, quoteId?: number): string => {
+  let parsedFloat: number
+  if (typeof numberString === 'object' && 'usd' in numberString) {
+    parsedFloat = quoteId === USD_QUOTE_ID ? Number(numberString.usd) : Number(numberString.cad)
+  } else if (typeof numberString === 'string') {
+    parsedFloat = parseFloat(numberString)
+  } else {
+    parsedFloat = numberString
+  }
+
   let minDigits: number
   let maxDigits: number
-  if (quoteId === USD_QUOTE_ID) {
+  if (quoteId !== undefined) {
     minDigits = 2
     if (parsedFloat < 0.01) {
       maxDigits = findFirstSignificantDigit(parsedFloat) ?? 2
