@@ -381,7 +381,6 @@ export class ChronikBlockchainClient implements BlockchainClient {
         for (const addressWithTransaction of addressesWithTransactions) {
           console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: will create tx for ${msg.txid}`)
           const { created, tx } = await createTransaction(addressWithTransaction.transaction)
-          console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: will create tx for ${msg.txid}`)
           console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: created tx for ${msg.txid}`)
           if (tx !== undefined) {
             const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
@@ -415,7 +414,11 @@ export class ChronikBlockchainClient implements BlockchainClient {
   }
 
   private async getAddressesForTransaction (transaction: Tx_InNode): Promise<AddressWithTransaction[]> {
-    const addressesFromStringArray = await fetchAddressesArray(this.getSubscribedAddresses())
+    console.log('WIP gettings subbedAddresses')
+    const subbedAddresses = this.getSubscribedAddresses()
+    console.log(`WIP got subbedAddresses ${subbedAddresses.length}, will fetch addresses`)
+    const addressesFromStringArray = await fetchAddressesArray(subbedAddresses)
+    console.log(`WIP fetched ${addressesFromStringArray.length} addresses, will promise many`)
     const addressesWithTransactions: AddressWithTransaction[] = await Promise.all(addressesFromStringArray.map(
       async address => {
         return {
@@ -424,6 +427,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         }
       }
     ))
+    console.log('WIP finished all promises')
     const zero = new Prisma.Decimal(0)
     return addressesWithTransactions.filter(
       addressWithTransaction => !(zero.equals(addressWithTransaction.transaction.amount as Prisma.Decimal))
