@@ -413,11 +413,17 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
+  private async getRelatedAddressesForTransaction (transaction: Tx_InNode): Promise<string[]> {
+    const inputAddresses = transaction.inputs.map(inp => outputScriptToAddress(this.networkSlug, inp.outputScript))
+    const outputAddresses = transaction.outputs.map(out => outputScriptToAddress(this.networkSlug, out.outputScript))
+    return [...inputAddresses, ...outputAddresses].filter(a => a !== undefined) as string[]
+  }
+
   private async getAddressesForTransaction (transaction: Tx_InNode): Promise<AddressWithTransaction[]> {
     console.log('WIP gettings subbedAddresses')
-    const subbedAddresses = this.getSubscribedAddresses()
-    console.log(`WIP got subbedAddresses ${subbedAddresses.length}, will fetch addresses`)
-    const addressesFromStringArray = await fetchAddressesArray(subbedAddresses)
+    const relatedAddresses = await this.getRelatedAddressesForTransaction(transaction)
+    console.log(`WIP got subbedAddresses ${relatedAddresses.length}, will fetch addresses`)
+    const addressesFromStringArray = await fetchAddressesArray(relatedAddresses)
     console.log(`WIP fetched ${addressesFromStringArray.length} addresses, will promise many`)
     const addressesWithTransactions: AddressWithTransaction[] = await Promise.all(addressesFromStringArray.map(
       async address => {
