@@ -374,7 +374,9 @@ export class ChronikBlockchainClient implements BlockchainClient {
           return
         }
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
+        console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: will get tx ${msg.txid} from chronik`)
         const transaction = await this.chronik.tx(msg.txid)
+        console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: will get addr ${msg.txid} from db`)
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
           console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: will create tx for ${msg.txid}`)
