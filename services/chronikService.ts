@@ -374,24 +374,17 @@ export class ChronikBlockchainClient implements BlockchainClient {
           return
         }
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
-        console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: will get tx ${msg.txid} from chronik`)
         const transaction = await this.chronik.tx(msg.txid)
-        console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: will get addr ${msg.txid} from db`)
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
-          console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: will create tx for ${msg.txid}`)
           const { created, tx } = await createTransaction(addressWithTransaction.transaction)
-          console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: created tx for ${msg.txid}`)
           if (tx !== undefined) {
             const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
             broadcastTxData.address = addressWithTransaction.address.address
             broadcastTxData.messageType = 'NewTx'
-            console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: will simplify tx for ${msg.txid}`)
             const newSimplifiedTransaction = getSimplifiedTrasaction(tx)
-            console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: simplified tx for ${msg.txid}`)
             broadcastTxData.txs = [newSimplifiedTransaction]
             try { // emit broadcast for both unconfirmed and confirmed txs
-              console.log(`WIP ${this.CHRONIK_MSG_PREFIX}: emitting ${msg.txid} to ${broadcastTxData.address}`)
               this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
             } catch (err: any) {
               console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
@@ -420,11 +413,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
   }
 
   private async getAddressesForTransaction (transaction: Tx_InNode): Promise<AddressWithTransaction[]> {
-    console.log('WIP gettings subbedAddresses')
     const relatedAddresses = await this.getRelatedAddressesForTransaction(transaction)
-    console.log(`WIP got subbedAddresses ${relatedAddresses.length}, will fetch addresses`)
     const addressesFromStringArray = await fetchAddressesArray(relatedAddresses)
-    console.log(`WIP fetched ${addressesFromStringArray.length} addresses, will promise many`)
     const addressesWithTransactions: AddressWithTransaction[] = await Promise.all(addressesFromStringArray.map(
       async address => {
         return {
@@ -433,7 +423,6 @@ export class ChronikBlockchainClient implements BlockchainClient {
         }
       }
     ))
-    console.log('WIP finished all promises')
     const zero = new Prisma.Decimal(0)
     return addressesWithTransactions.filter(
       addressWithTransaction => !(zero.equals(addressWithTransaction.transaction.amount as Prisma.Decimal))

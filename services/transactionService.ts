@@ -12,7 +12,6 @@ import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData } from 'utils/validators'
 
 export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
-  console.log('will depend on tx', transaction.hash, 'having prices set')
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
@@ -299,7 +298,6 @@ export async function connectTransactionToPrices (tx: Transaction, prisma: Prism
     },
     update: {}
   })
-  console.log('finished connecting tx', tx.hash, 'to prices')
 }
 
 export async function connectTransactionsListToPrices (txList: Transaction[]): Promise<void> {
