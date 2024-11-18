@@ -9,7 +9,7 @@ import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
 import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
-import { OpReturnData } from 'utils/validators'
+import { OpReturnData, parseAddress } from 'utils/validators'
 
 export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
@@ -135,7 +135,6 @@ export async function fetchTxCountByAddressString (addressString: string): Promi
 }
 
 export async function fetchPaginatedAddressTransactions (addressString: string, page: number, pageSize: number, orderBy?: string, orderDesc = true): Promise<TransactionWithAddressAndPrices[]> {
-  const address = await fetchAddressBySubstring(addressString)
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
 
   // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
@@ -160,15 +159,18 @@ export async function fetchPaginatedAddressTransactions (addressString: string, 
     }
   }
 
-  return await prisma.transaction.findMany({
+  const txs = await prisma.transaction.findMany({
     where: {
-      addressId: address.id
+      address: {
+        address: parseAddress(addressString)
+      }
     },
     include: includeAddressAndPrices,
     orderBy: orderByQuery,
     skip: page * pageSize,
     take: pageSize
   })
+  return txs
 }
 
 export async function fetchAddressTransactions (addressString: string): Promise<TransactionWithAddressAndPrices[]> {
