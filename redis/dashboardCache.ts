@@ -124,12 +124,12 @@ const generateDashboardDataFromStream = async function (
   nMonthsTotal: number,
   borderColor: ChartColor
 ): Promise<DashboardData> {
-  // Initialize accumulators for periods
+  // initialize accumulators for periods
   const revenueAccumulators = {
-    thirtyDays: Array(30).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
-    sevenDays: Array(7).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
-    year: Array(12).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
-    all: Array(nMonthsTotal).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) })
+    thirtyDays: Array(30).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }) as QuoteValues[],
+    sevenDays: Array(7).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }) as QuoteValues[],
+    year: Array(12).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }) as QuoteValues[],
+    all: Array(nMonthsTotal).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }) as QuoteValues[]
   }
 
   const paymentCounters = {
@@ -141,7 +141,6 @@ const generateDashboardDataFromStream = async function (
 
   const buttonPaymentData: PaymentDataByButton = {}
 
-  // Precompute reference points for periods
   const today = moment().startOf('day')
   const monthStart = moment().startOf('month')
   const thresholds = {
@@ -151,11 +150,11 @@ const generateDashboardDataFromStream = async function (
     all: monthStart.clone().subtract(nMonthsTotal, 'months')
   }
 
-  // Process payments incrementally
+  // process all payments only once
   for await (const payment of paymentStream) {
     const paymentTime = moment(payment.timestamp * 1000)
 
-    // Accumulate button data
+    // button data
     payment.buttonDisplayDataList.forEach((button) => {
       if (buttonPaymentData[button.id] === undefined) {
         buttonPaymentData[button.id] = {
@@ -181,7 +180,7 @@ const generateDashboardDataFromStream = async function (
       }
     })
 
-    // Accumulate period data efficiently
+    // period data accumulators
     if (paymentTime.isSameOrAfter(thresholds.thirtyDays)) {
       const dayIndex = today.diff(paymentTime, 'days')
       if (dayIndex < 30) {
@@ -227,10 +226,19 @@ const generateDashboardDataFromStream = async function (
     }
   }
 
+  revenueAccumulators.thirtyDays.reverse()
+  paymentCounters.thirtyDays.reverse()
+  revenueAccumulators.sevenDays.reverse()
+  paymentCounters.sevenDays.reverse()
+  revenueAccumulators.year.reverse()
+  paymentCounters.year.reverse()
+  revenueAccumulators.all.reverse()
+  paymentCounters.all.reverse()
+
   // Generate PeriodData for each period
   const thirtyDays: PeriodData = {
-    revenue: getChartData(30, 'days', revenueAccumulators.thirtyDays.reverse(), borderColor.revenue),
-    payments: getChartData(30, 'days', paymentCounters.thirtyDays.reverse(), borderColor.payments),
+    revenue: getChartData(30, 'days', revenueAccumulators.thirtyDays, borderColor.revenue),
+    payments: getChartData(30, 'days', paymentCounters.thirtyDays, borderColor.payments),
     totalRevenue: revenueAccumulators.thirtyDays.reduce(sumQuoteValues, {
       usd: new Prisma.Decimal(0),
       cad: new Prisma.Decimal(0)
@@ -240,8 +248,8 @@ const generateDashboardDataFromStream = async function (
   }
 
   const sevenDays: PeriodData = {
-    revenue: getChartData(7, 'days', revenueAccumulators.sevenDays.reverse(), borderColor.revenue),
-    payments: getChartData(7, 'days', paymentCounters.sevenDays.reverse(), borderColor.payments),
+    revenue: getChartData(7, 'days', revenueAccumulators.sevenDays, borderColor.revenue),
+    payments: getChartData(7, 'days', paymentCounters.sevenDays, borderColor.payments),
     totalRevenue: revenueAccumulators.sevenDays.reduce(sumQuoteValues, {
       usd: new Prisma.Decimal(0),
       cad: new Prisma.Decimal(0)
@@ -251,8 +259,8 @@ const generateDashboardDataFromStream = async function (
   }
 
   const year: PeriodData = {
-    revenue: getChartData(12, 'months', revenueAccumulators.year.reverse(), borderColor.revenue, 'MMM'),
-    payments: getChartData(12, 'months', paymentCounters.year.reverse(), borderColor.payments, 'MMM'),
+    revenue: getChartData(12, 'months', revenueAccumulators.year, borderColor.revenue, 'MMM'),
+    payments: getChartData(12, 'months', paymentCounters.year, borderColor.payments, 'MMM'),
     totalRevenue: revenueAccumulators.year.reduce(sumQuoteValues, {
       usd: new Prisma.Decimal(0),
       cad: new Prisma.Decimal(0)
@@ -262,8 +270,8 @@ const generateDashboardDataFromStream = async function (
   }
 
   const all: PeriodData = {
-    revenue: getChartData(nMonthsTotal, 'months', revenueAccumulators.all.reverse(), borderColor.revenue, 'MMM YYYY'),
-    payments: getChartData(nMonthsTotal, 'months', paymentCounters.all.reverse(), borderColor.payments, 'MMM YYYY'),
+    revenue: getChartData(nMonthsTotal, 'months', revenueAccumulators.all, borderColor.revenue, 'MMM YYYY'),
+    payments: getChartData(nMonthsTotal, 'months', paymentCounters.all, borderColor.payments, 'MMM YYYY'),
     totalRevenue: revenueAccumulators.all.reduce(sumQuoteValues, {
       usd: new Prisma.Decimal(0),
       cad: new Prisma.Decimal(0)
@@ -278,11 +286,8 @@ const generateDashboardDataFromStream = async function (
     year,
     all,
     total: {
-      revenue: revenueAccumulators.all.reduce(sumQuoteValues, {
-        usd: new Prisma.Decimal(0),
-        cad: new Prisma.Decimal(0)
-      }),
-      payments: paymentCounters.all.reduce((a, b) => a + b, 0),
+      revenue: all.totalRevenue,
+      payments: all.totalPayments,
       buttons: Object.keys(buttonPaymentData).length
     }
   }
