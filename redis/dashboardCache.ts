@@ -1,6 +1,6 @@
 import { redis } from './clientInstance'
 import { getCachedWeekKeysForUser, getPaymentsForWeekKey, getPaymentStream } from 'redis/paymentCache'
-import { ChartData, DashboardData, Payment, ButtonData, PaymentDataByButton, ChartColor } from './types'
+import { ChartData, DashboardData, Payment, ButtonData, PaymentDataByButton, ChartColor, PeriodData } from './types'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
@@ -124,28 +124,31 @@ const generateDashboardDataFromStream = async function (
   nMonthsTotal: number,
   borderColor: ChartColor
 ): Promise<DashboardData> {
-  // Initialize accumulators for each period
+  // Initialize accumulators for periods
   const revenueAccumulators = {
-    thirtyDays: { usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) },
-    sevenDays: { usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) },
-    year: { usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) },
-    all: { usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }
+    thirtyDays: Array(30).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
+    sevenDays: Array(7).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
+    year: Array(12).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
+    all: Array(nMonthsTotal).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) })
   }
+
   const paymentCounters = {
-    thirtyDays: 0,
-    sevenDays: 0,
-    year: 0,
-    all: 0
+    thirtyDays: Array(30).fill(0) as number[],
+    sevenDays: Array(7).fill(0) as number[],
+    year: Array(12).fill(0) as number[],
+    all: Array(nMonthsTotal).fill(0) as number[]
   }
 
   const buttonPaymentData: PaymentDataByButton = {}
 
-  // Define thresholds for each period
+  // Precompute reference points for periods
+  const today = moment().startOf('day')
+  const monthStart = moment().startOf('month')
   const thresholds = {
-    thirtyDays: moment().startOf('day').subtract(30, 'days'),
-    sevenDays: moment().startOf('day').subtract(7, 'days'),
-    year: moment().startOf('day').subtract(12, 'months'),
-    all: moment().startOf('day').subtract(nMonthsTotal, 'months')
+    thirtyDays: today.clone().subtract(30, 'days'),
+    sevenDays: today.clone().subtract(7, 'days'),
+    year: monthStart.clone().subtract(12, 'months'),
+    all: monthStart.clone().subtract(nMonthsTotal, 'months')
   }
 
   // Process payments incrementally
@@ -171,59 +174,101 @@ const generateDashboardDataFromStream = async function (
         const buttonData = buttonPaymentData[button.id]
         buttonData.total.revenue = sumQuoteValues(buttonData.total.revenue, payment.values)
         buttonData.total.payments += 1
-        buttonData.displayData.lastPayment = Math.max(buttonData.displayData.lastPayment ?? 0, payment.timestamp)
+        buttonData.displayData.lastPayment = Math.max(
+          buttonData.displayData.lastPayment ?? 0,
+          payment.timestamp
+        )
       }
     })
 
-    // Accumulate period data
-    if (paymentTime.isAfter(thresholds.thirtyDays)) {
-      revenueAccumulators.thirtyDays = sumQuoteValues(revenueAccumulators.thirtyDays, payment.values)
-      paymentCounters.thirtyDays += 1
+    // Accumulate period data efficiently
+    if (paymentTime.isSameOrAfter(thresholds.thirtyDays)) {
+      const dayIndex = today.diff(paymentTime, 'days')
+      if (dayIndex < 30) {
+        revenueAccumulators.thirtyDays[dayIndex] = sumQuoteValues(
+          revenueAccumulators.thirtyDays[dayIndex],
+          payment.values
+        )
+        paymentCounters.thirtyDays[dayIndex] += 1
+      }
     }
-    if (paymentTime.isAfter(thresholds.sevenDays)) {
-      revenueAccumulators.sevenDays = sumQuoteValues(revenueAccumulators.sevenDays, payment.values)
-      paymentCounters.sevenDays += 1
+
+    if (paymentTime.isSameOrAfter(thresholds.sevenDays)) {
+      const dayIndex = today.diff(paymentTime, 'days')
+      if (dayIndex < 7) {
+        revenueAccumulators.sevenDays[dayIndex] = sumQuoteValues(
+          revenueAccumulators.sevenDays[dayIndex],
+          payment.values
+        )
+        paymentCounters.sevenDays[dayIndex] += 1
+      }
     }
-    if (paymentTime.isAfter(thresholds.year)) {
-      revenueAccumulators.year = sumQuoteValues(revenueAccumulators.year, payment.values)
-      paymentCounters.year += 1
+
+    if (paymentTime.isSameOrAfter(thresholds.year)) {
+      const monthIndex = monthStart.diff(paymentTime, 'months')
+      if (monthIndex < 12) {
+        revenueAccumulators.year[monthIndex] = sumQuoteValues(
+          revenueAccumulators.year[monthIndex],
+          payment.values
+        )
+        paymentCounters.year[monthIndex] += 1
+      }
     }
-    if (paymentTime.isAfter(thresholds.all)) {
-      revenueAccumulators.all = sumQuoteValues(revenueAccumulators.all, payment.values)
-      paymentCounters.all += 1
+
+    if (paymentTime.isSameOrAfter(thresholds.all)) {
+      const monthIndex = monthStart.diff(paymentTime, 'months')
+      if (monthIndex < nMonthsTotal) {
+        revenueAccumulators.all[monthIndex] = sumQuoteValues(
+          revenueAccumulators.all[monthIndex],
+          payment.values
+        )
+        paymentCounters.all[monthIndex] += 1
+      }
     }
   }
 
   // Generate PeriodData for each period
   const thirtyDays: PeriodData = {
-    revenue: getChartData(30, 'days', Array(30).fill(revenueAccumulators.thirtyDays), borderColor.revenue),
-    payments: getChartData(30, 'days', Array(30).fill(paymentCounters.thirtyDays), borderColor.payments),
-    totalRevenue: revenueAccumulators.thirtyDays,
-    totalPayments: paymentCounters.thirtyDays,
+    revenue: getChartData(30, 'days', revenueAccumulators.thirtyDays.reverse(), borderColor.revenue),
+    payments: getChartData(30, 'days', paymentCounters.thirtyDays.reverse(), borderColor.payments),
+    totalRevenue: revenueAccumulators.thirtyDays.reduce(sumQuoteValues, {
+      usd: new Prisma.Decimal(0),
+      cad: new Prisma.Decimal(0)
+    }),
+    totalPayments: paymentCounters.thirtyDays.reduce((a, b) => a + b, 0),
     buttons: buttonPaymentData
   }
 
   const sevenDays: PeriodData = {
-    revenue: getChartData(7, 'days', Array(7).fill(revenueAccumulators.sevenDays), borderColor.revenue),
-    payments: getChartData(7, 'days', Array(7).fill(paymentCounters.sevenDays), borderColor.payments),
-    totalRevenue: revenueAccumulators.sevenDays,
-    totalPayments: paymentCounters.sevenDays,
+    revenue: getChartData(7, 'days', revenueAccumulators.sevenDays.reverse(), borderColor.revenue),
+    payments: getChartData(7, 'days', paymentCounters.sevenDays.reverse(), borderColor.payments),
+    totalRevenue: revenueAccumulators.sevenDays.reduce(sumQuoteValues, {
+      usd: new Prisma.Decimal(0),
+      cad: new Prisma.Decimal(0)
+    }),
+    totalPayments: paymentCounters.sevenDays.reduce((a, b) => a + b, 0),
     buttons: buttonPaymentData
   }
 
   const year: PeriodData = {
-    revenue: getChartData(12, 'months', Array(12).fill(revenueAccumulators.year), borderColor.revenue, 'MMM'),
-    payments: getChartData(12, 'months', Array(12).fill(paymentCounters.year), borderColor.payments, 'MMM'),
-    totalRevenue: revenueAccumulators.year,
-    totalPayments: paymentCounters.year,
+    revenue: getChartData(12, 'months', revenueAccumulators.year.reverse(), borderColor.revenue, 'MMM'),
+    payments: getChartData(12, 'months', paymentCounters.year.reverse(), borderColor.payments, 'MMM'),
+    totalRevenue: revenueAccumulators.year.reduce(sumQuoteValues, {
+      usd: new Prisma.Decimal(0),
+      cad: new Prisma.Decimal(0)
+    }),
+    totalPayments: paymentCounters.year.reduce((a, b) => a + b, 0),
     buttons: buttonPaymentData
   }
 
   const all: PeriodData = {
-    revenue: getChartData(nMonthsTotal, 'months', Array(nMonthsTotal).fill(revenueAccumulators.all), borderColor.revenue, 'MMM YYYY'),
-    payments: getChartData(nMonthsTotal, 'months', Array(nMonthsTotal).fill(paymentCounters.all), borderColor.payments, 'MMM YYYY'),
-    totalRevenue: revenueAccumulators.all,
-    totalPayments: paymentCounters.all,
+    revenue: getChartData(nMonthsTotal, 'months', revenueAccumulators.all.reverse(), borderColor.revenue, 'MMM YYYY'),
+    payments: getChartData(nMonthsTotal, 'months', paymentCounters.all.reverse(), borderColor.payments, 'MMM YYYY'),
+    totalRevenue: revenueAccumulators.all.reduce(sumQuoteValues, {
+      usd: new Prisma.Decimal(0),
+      cad: new Prisma.Decimal(0)
+    }),
+    totalPayments: paymentCounters.all.reduce((a, b) => a + b, 0),
     buttons: buttonPaymentData
   }
 
@@ -233,8 +278,11 @@ const generateDashboardDataFromStream = async function (
     year,
     all,
     total: {
-      revenue: revenueAccumulators.all,
-      payments: paymentCounters.all,
+      revenue: revenueAccumulators.all.reduce(sumQuoteValues, {
+        usd: new Prisma.Decimal(0),
+        cad: new Prisma.Decimal(0)
+      }),
+      payments: paymentCounters.all.reduce((a, b) => a + b, 0),
       buttons: Object.keys(buttonPaymentData).length
     }
   }
