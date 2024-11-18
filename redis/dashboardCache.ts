@@ -1,10 +1,9 @@
 import { redis } from './clientInstance'
-import { getCachedWeekKeysForUser, getPaymentList, getPaymentsForWeekKey } from 'redis/paymentCache'
-import { ChartData, PeriodData, DashboardData, Payment, ButtonData, PaymentDataByButton, ChartColor } from './types'
+import { getCachedWeekKeysForUser, getPaymentsForWeekKey, getPaymentStream } from 'redis/paymentCache'
+import { ChartData, DashboardData, Payment, ButtonData, PaymentDataByButton, ChartColor } from './types'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
-import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 import { QuoteValues } from 'services/priceService'
 
 // USERID:dashboard
@@ -14,30 +13,6 @@ const getDashboardSummaryKey = (userId: string): string => {
 
 const getChartLabels = function (n: number, periodString: string, formatString = 'M/D'): string[] {
   return [...new Array(n)].map((_, idx) => moment().startOf('day').subtract(idx, periodString as DurationInputArg2).format(formatString)).reverse()
-}
-
-interface RevenuePaymentData {
-  revenue: QuoteValues[]
-  payments: number[]
-}
-
-const getChartRevenuePaymentData = function (n: number, periodString: string, paymentList: Payment[]): RevenuePaymentData {
-  const revenueArray: QuoteValues[] = []
-  const paymentsArray: number[] = []
-  const _ = [...new Array(n)]
-  _.forEach((_, idx) => {
-    const lowerThreshold = moment().subtract(idx, periodString as DurationInputArg2).startOf(periodString === 'months' ? 'month' : 'day')
-    const upperThreshold = moment().subtract(idx, periodString as DurationInputArg2).endOf(periodString === 'months' ? 'month' : 'day')
-    const periodPaymentList = filterLastPayments(lowerThreshold, upperThreshold, paymentList)
-    const revenue = sumPaymentsValue(periodPaymentList)
-    const paymentCount = periodPaymentList.length
-    revenueArray.push(revenue)
-    paymentsArray.push(paymentCount)
-  })
-  return {
-    revenue: revenueArray.reverse(),
-    payments: paymentsArray.reverse()
-  }
 }
 
 const filterLastPayments = function (lowerThreshold: moment.Moment, upperThreshold: moment.Moment, paymentList: Payment[]): Payment[] {
@@ -64,23 +39,6 @@ const getChartData = function (n: number, periodString: string, dataArray: numbe
   }
 }
 
-const getPeriodData = function (n: number, periodString: string, paymentList: Payment[], borderColor: ChartColor, formatString = 'M/D'): PeriodData {
-  const revenuePaymentData = getChartRevenuePaymentData(n, periodString, paymentList)
-  const revenue = getChartData(n, periodString, revenuePaymentData.revenue, borderColor.revenue, formatString)
-  const payments = getChartData(n, periodString, revenuePaymentData.payments, borderColor.payments, formatString)
-  const buttons = getButtonPaymentData(n, periodString, paymentList)
-  const totalRevenue = (revenue.datasets[0].data as QuoteValues[]).reduce(sumQuoteValues, { usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) })
-  const totalPayments = (payments.datasets[0].data as any).reduce((a: number, b: number) => a + b, 0)
-
-  return {
-    revenue,
-    payments,
-    totalRevenue,
-    totalPayments,
-    buttons
-  }
-}
-
 function getOldestDateKey (keys: string[]): string {
   const keyDatePairs = keys.map(k => [k, k.split(':').slice(-2).map(Number)] as [string, [number, number]])
   keyDatePairs.sort((a, b) => {
@@ -88,7 +46,7 @@ function getOldestDateKey (keys: string[]): string {
     const [bYear, bWeek] = b[1]
 
     // compare year first, then week
-    return aYear - bYear > 0 || aWeek - bWeek > 0
+    return (aYear !== bYear ? aYear - bYear : aWeek - bWeek)
   })
   return keyDatePairs[0][0]
 }
@@ -161,32 +119,138 @@ export const sumPaymentsValue = function (paymentList: Payment[]): QuoteValues {
   return ret
 }
 
-export const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
-  let dashboardData = await getCachedDashboardData(userId)
-  if (dashboardData === null) {
-    const buttons = await fetchPaybuttonArrayByUserId(userId)
-    const paymentList = await getPaymentList(userId)
+const generateDashboardDataFromStream = async function (
+  paymentStream: AsyncGenerator<Payment>,
+  nMonthsTotal: number,
+  borderColor: ChartColor
+): Promise<DashboardData> {
+  // Initialize accumulators for each period
+  const revenueAccumulators = {
+    thirtyDays: { usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) },
+    sevenDays: { usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) },
+    year: { usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) },
+    all: { usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }
+  }
+  const paymentCounters = {
+    thirtyDays: 0,
+    sevenDays: 0,
+    year: 0,
+    all: 0
+  }
 
-    const totalRevenue = sumPaymentsValue(paymentList)
-    const nMonthsTotal = await getNumberOfMonths(buttons)
+  const buttonPaymentData: PaymentDataByButton = {}
 
-    const thirtyDays: PeriodData = getPeriodData(30, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
-    const sevenDays: PeriodData = getPeriodData(7, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
-    const year: PeriodData = getPeriodData(12, 'months', paymentList, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM')
-    const all: PeriodData = getPeriodData(nMonthsTotal, 'months', paymentList, { revenue: '#66fe91', payments: '#669cfe' }, 'MMM YYYY')
+  // Define thresholds for each period
+  const thresholds = {
+    thirtyDays: moment().startOf('day').subtract(30, 'days'),
+    sevenDays: moment().startOf('day').subtract(7, 'days'),
+    year: moment().startOf('day').subtract(12, 'months'),
+    all: moment().startOf('day').subtract(nMonthsTotal, 'months')
+  }
 
-    dashboardData = {
-      thirtyDays,
-      sevenDays,
-      year,
-      all,
-      paymentList,
-      total: {
-        revenue: totalRevenue,
-        payments: paymentList.length,
-        buttons: buttons.length
+  // Process payments incrementally
+  for await (const payment of paymentStream) {
+    const paymentTime = moment(payment.timestamp * 1000)
+
+    // Accumulate button data
+    payment.buttonDisplayDataList.forEach((button) => {
+      if (buttonPaymentData[button.id] === undefined) {
+        buttonPaymentData[button.id] = {
+          displayData: {
+            ...button,
+            isXec: payment.networkId === XEC_NETWORK_ID,
+            isBch: payment.networkId === BCH_NETWORK_ID,
+            lastPayment: payment.timestamp
+          },
+          total: {
+            revenue: payment.values,
+            payments: 1
+          }
+        }
+      } else {
+        const buttonData = buttonPaymentData[button.id]
+        buttonData.total.revenue = sumQuoteValues(buttonData.total.revenue, payment.values)
+        buttonData.total.payments += 1
+        buttonData.displayData.lastPayment = Math.max(buttonData.displayData.lastPayment ?? 0, payment.timestamp)
       }
+    })
+
+    // Accumulate period data
+    if (paymentTime.isAfter(thresholds.thirtyDays)) {
+      revenueAccumulators.thirtyDays = sumQuoteValues(revenueAccumulators.thirtyDays, payment.values)
+      paymentCounters.thirtyDays += 1
     }
+    if (paymentTime.isAfter(thresholds.sevenDays)) {
+      revenueAccumulators.sevenDays = sumQuoteValues(revenueAccumulators.sevenDays, payment.values)
+      paymentCounters.sevenDays += 1
+    }
+    if (paymentTime.isAfter(thresholds.year)) {
+      revenueAccumulators.year = sumQuoteValues(revenueAccumulators.year, payment.values)
+      paymentCounters.year += 1
+    }
+    if (paymentTime.isAfter(thresholds.all)) {
+      revenueAccumulators.all = sumQuoteValues(revenueAccumulators.all, payment.values)
+      paymentCounters.all += 1
+    }
+  }
+
+  // Generate PeriodData for each period
+  const thirtyDays: PeriodData = {
+    revenue: getChartData(30, 'days', Array(30).fill(revenueAccumulators.thirtyDays), borderColor.revenue),
+    payments: getChartData(30, 'days', Array(30).fill(paymentCounters.thirtyDays), borderColor.payments),
+    totalRevenue: revenueAccumulators.thirtyDays,
+    totalPayments: paymentCounters.thirtyDays,
+    buttons: buttonPaymentData
+  }
+
+  const sevenDays: PeriodData = {
+    revenue: getChartData(7, 'days', Array(7).fill(revenueAccumulators.sevenDays), borderColor.revenue),
+    payments: getChartData(7, 'days', Array(7).fill(paymentCounters.sevenDays), borderColor.payments),
+    totalRevenue: revenueAccumulators.sevenDays,
+    totalPayments: paymentCounters.sevenDays,
+    buttons: buttonPaymentData
+  }
+
+  const year: PeriodData = {
+    revenue: getChartData(12, 'months', Array(12).fill(revenueAccumulators.year), borderColor.revenue, 'MMM'),
+    payments: getChartData(12, 'months', Array(12).fill(paymentCounters.year), borderColor.payments, 'MMM'),
+    totalRevenue: revenueAccumulators.year,
+    totalPayments: paymentCounters.year,
+    buttons: buttonPaymentData
+  }
+
+  const all: PeriodData = {
+    revenue: getChartData(nMonthsTotal, 'months', Array(nMonthsTotal).fill(revenueAccumulators.all), borderColor.revenue, 'MMM YYYY'),
+    payments: getChartData(nMonthsTotal, 'months', Array(nMonthsTotal).fill(paymentCounters.all), borderColor.payments, 'MMM YYYY'),
+    totalRevenue: revenueAccumulators.all,
+    totalPayments: paymentCounters.all,
+    buttons: buttonPaymentData
+  }
+
+  return {
+    thirtyDays,
+    sevenDays,
+    year,
+    all,
+    total: {
+      revenue: revenueAccumulators.all,
+      payments: paymentCounters.all,
+      buttons: Object.keys(buttonPaymentData).length
+    }
+  }
+}
+
+export const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
+  const dashboardData = await getCachedDashboardData(userId)
+  if (dashboardData === null) {
+    const nMonthsTotal = await getNumberOfMonths(userId)
+    const paymentStream = getPaymentStream(userId)
+
+    const dashboardData = await generateDashboardDataFromStream(
+      paymentStream,
+      nMonthsTotal,
+      { revenue: '#66fe91', payments: '#669cfe' }
+    )
     await cacheDashboardData(userId, dashboardData) // WIP SET THIS NULL ON UPDATE BUTTONS & WS
     return dashboardData
   }

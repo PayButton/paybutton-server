@@ -212,3 +212,19 @@ export const initPaymentCache = async (addressString: string): Promise<boolean> 
   }
   return false
 }
+
+export async function * getPaymentStream (userId: string): AsyncGenerator<Payment> {
+  const weekKeys = await getCachedWeekKeysForUser(userId)
+
+  for (const weekKey of weekKeys) {
+    const paymentsString = await redis.get(weekKey)
+
+    if (paymentsString !== null) {
+      const weekPayments: Payment[] = JSON.parse(paymentsString)
+
+      for (const payment of weekPayments) {
+        yield payment // Yield one payment at a time
+      }
+    }
+  }
+}
