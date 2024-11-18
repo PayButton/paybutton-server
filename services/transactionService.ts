@@ -124,11 +124,12 @@ export async function fetchTransactionsByAddressList (
   })
 }
 
-export async function fetchTxCount (addressString: string): Promise<number> {
-  const address = await fetchAddressBySubstring(addressString)
+export async function fetchTxCountByAddressString (addressString: string): Promise<number> {
   return await prisma.transaction.count({
     where: {
-      addressId: address.id
+      address: {
+        address: addressString
+      }
     }
   })
 }
