@@ -124,16 +124,18 @@ export async function fetchAddressBySubstring (substring: string): Promise<Addre
   return results[0]
 }
 
-export async function addressExistsBySubstring (substring: string): Promise<boolean> {
+export async function addressExists (addressString: string, raise = false): Promise<boolean> {
   try {
-    await fetchAddressBySubstring(substring)
+    await prisma.address.findUniqueOrThrow({
+      where: {
+        address: addressString
+      }
+    })
   } catch (err: any) {
-    switch (err.message) {
-      case RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message:
-        return false
-      default:
-        throw new Error(err)
+    if (raise) {
+      throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
     }
+    return false
   }
   return true
 }

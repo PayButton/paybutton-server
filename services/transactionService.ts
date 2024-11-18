@@ -1,7 +1,7 @@
 import prisma from 'prisma/clientInstance'
 import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
-import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId } from 'services/addressService'
+import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
@@ -159,10 +159,12 @@ export async function fetchPaginatedAddressTransactions (addressString: string, 
     }
   }
 
+  const parsedAddress = parseAddress(addressString)
+  await addressExists(parsedAddress, true)
   const txs = await prisma.transaction.findMany({
     where: {
       address: {
-        address: parseAddress(addressString)
+        address: parsedAddress
       }
     },
     include: includeAddressAndPrices,
