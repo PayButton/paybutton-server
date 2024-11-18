@@ -36,7 +36,7 @@ const getCachedWeekKeysForAddress = async (addressString: string): Promise<strin
   return await redis.keys(`${addressString}:payments:*`)
 }
 
-const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
+export const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
   const addresses = await fetchAllUserAddresses(userId)
   let ret: string[] = []
   for (const addr of addresses) {
@@ -118,6 +118,11 @@ export const cacheGroupedPayments = async (paymentsGroupedByKey: KeyValueT<Payme
       await redis.set(key, JSON.stringify(paymentsGroupedByKey[key]))
     )
   )
+}
+
+export const getPaymentsForWeekKey = async (weekKey: string): Promise<Payment[]> => {
+  const paymentsString = await redis.get(weekKey)
+  return (paymentsString === null) ? [] : JSON.parse(paymentsString)
 }
 
 const cacheGroupedPaymentsRemove = async (weekKey: string, hash: string): Promise<void> => {

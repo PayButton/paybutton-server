@@ -1,5 +1,5 @@
 import { redis } from './clientInstance'
-import { getPaymentList } from 'redis/paymentCache'
+import { getCachedWeekKeysForUser, getPaymentList, getPaymentsForWeekKey } from 'redis/paymentCache'
 import { ChartData, PeriodData, DashboardData, Payment, ButtonData, PaymentDataByButton, ChartColor } from './types'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
@@ -81,10 +81,24 @@ const getPeriodData = function (n: number, periodString: string, paymentList: Pa
   }
 }
 
-const getNumberOfMonths = function (paymentList: Payment[]): number {
-  if (paymentList.length === 0) return 0
-  const oldestTimestamp = Math.min(...paymentList.map(p => p.timestamp)
-  )
+function getOldestDateKey (keys: string[]): string {
+  const keyDatePairs = keys.map(k => [k, k.split(':').slice(-2).map(Number)] as [string, [number, number]])
+  keyDatePairs.sort((a, b) => {
+    const [aYear, aWeek] = a[1]
+    const [bYear, bWeek] = b[1]
+
+    // compare year first, then week
+    return aYear - bYear > 0 || aWeek - bWeek > 0
+  })
+  return keyDatePairs[0][0]
+}
+
+const getNumberOfMonths = async function (userId: string): Promise<number> {
+  const weekKeys = await getCachedWeekKeysForUser(userId)
+  if (weekKeys.length === 0) return 0
+  const oldestKey = getOldestDateKey(weekKeys)
+  const oldestPayments = await getPaymentsForWeekKey(oldestKey)
+  const oldestTimestamp = Math.min(...oldestPayments.map(p => p.timestamp))
   const oldestDate = moment(oldestTimestamp * 1000)
   const today = moment()
   const floatDiff = today.diff(oldestDate, 'months', true)
@@ -154,7 +168,7 @@ export const getUserDashboardData = async function (userId: string): Promise<Das
     const paymentList = await getPaymentList(userId)
 
     const totalRevenue = sumPaymentsValue(paymentList)
-    const nMonthsTotal = getNumberOfMonths(paymentList)
+    const nMonthsTotal = await getNumberOfMonths(buttons)
 
     const thirtyDays: PeriodData = getPeriodData(30, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
     const sevenDays: PeriodData = getPeriodData(7, 'days', paymentList, { revenue: '#66fe91', payments: '#669cfe' })
