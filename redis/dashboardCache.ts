@@ -1,6 +1,6 @@
 import { redis } from './clientInstance'
 import { getCachedWeekKeysForUser, getPaymentsForWeekKey, getPaymentStream } from 'redis/paymentCache'
-import { ChartData, DashboardData, Payment, ButtonData, PaymentDataByButton, ChartColor, PeriodData } from './types'
+import { ChartData, DashboardData, Payment, ButtonData, PaymentDataByButton, ChartColor, PeriodData, ButtonDisplayData } from './types'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
@@ -124,40 +124,174 @@ const generateDashboardDataFromStream = async function (
   nMonthsTotal: number,
   borderColor: ChartColor
 ): Promise<DashboardData> {
-  // initialize accumulators for periods
-  const revenueAccumulators = {
-    thirtyDays: Array(30).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }) as QuoteValues[],
-    sevenDays: Array(7).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }) as QuoteValues[],
-    year: Array(12).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }) as QuoteValues[],
-    all: Array(nMonthsTotal).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }) as QuoteValues[]
-  }
-
-  const paymentCounters = {
-    thirtyDays: Array(30).fill(0) as number[],
-    sevenDays: Array(7).fill(0) as number[],
-    year: Array(12).fill(0) as number[],
-    all: Array(nMonthsTotal).fill(0) as number[]
-  }
-
-  const buttonPaymentData: PaymentDataByButton = {}
+  // Initialize accumulators for periods
+  const revenueAccumulators = createRevenueAccumulators(nMonthsTotal)
+  const paymentCounters = createPaymentCounters(nMonthsTotal)
+  const buttonDataAccumulators = createButtonDataAccumulators()
 
   const today = moment().startOf('day')
   const monthStart = moment().startOf('month')
-  const thresholds = {
+  const thresholds = createThresholds(today, monthStart, nMonthsTotal)
+
+  // Process all payments
+  for await (const payment of paymentStream) {
+    const paymentTime = moment(payment.timestamp * 1000)
+
+    // Process button data and assign to relevant periods
+    payment.buttonDisplayDataList.forEach((button) => {
+      processButtonData(button, payment, paymentTime, buttonDataAccumulators, thresholds)
+    })
+
+    // Accumulate period data
+    const periods = ['thirtyDays', 'sevenDays', 'year', 'all'] as const
+    periods.forEach((period) => {
+      if (paymentTime.isSameOrAfter(thresholds[period])) {
+        const index =
+          period === 'thirtyDays' || period === 'sevenDays'
+            ? today.diff(paymentTime, 'days')
+            : monthStart.diff(paymentTime, 'months')
+        if (index < revenueAccumulators[period].length) {
+          revenueAccumulators[period][index] = sumQuoteValues(revenueAccumulators[period][index], payment.values)
+          paymentCounters[period][index] += 1
+        }
+      }
+    })
+  }
+
+  reverseAccumulators(revenueAccumulators, paymentCounters)
+
+  // Generate PeriodData for each period
+  const thirtyDays = createPeriodData(
+    30,
+    'days',
+    revenueAccumulators.thirtyDays,
+    paymentCounters.thirtyDays,
+    buttonDataAccumulators.thirtyDays,
+    borderColor.revenue,
+    borderColor.payments
+  )
+
+  const sevenDays = createPeriodData(
+    7,
+    'days',
+    revenueAccumulators.sevenDays,
+    paymentCounters.sevenDays,
+    buttonDataAccumulators.sevenDays,
+    borderColor.revenue,
+    borderColor.payments
+  )
+
+  const year = createPeriodData(
+    12,
+    'months',
+    revenueAccumulators.year,
+    paymentCounters.year,
+    buttonDataAccumulators.year,
+    borderColor.revenue,
+    borderColor.payments,
+    'MMM'
+  )
+
+  const all = createPeriodData(
+    nMonthsTotal,
+    'months',
+    revenueAccumulators.all,
+    paymentCounters.all,
+    buttonDataAccumulators.all,
+    borderColor.revenue,
+    borderColor.payments,
+    'MMM YYYY'
+  )
+
+  return {
+    thirtyDays,
+    sevenDays,
+    year,
+    all,
+    total: {
+      revenue: all.totalRevenue,
+      payments: all.totalPayments,
+      buttons: Object.keys(buttonDataAccumulators.all).length
+    }
+  }
+}
+
+interface PeriodRevenueAccumulators {
+  thirtyDays: QuoteValues[]
+  sevenDays: QuoteValues[]
+  year: QuoteValues[]
+  all: QuoteValues[]
+}
+
+function createRevenueAccumulators (nMonthsTotal: number): PeriodRevenueAccumulators {
+  return {
+    thirtyDays: Array(30).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
+    sevenDays: Array(7).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
+    year: Array(12).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
+    all: Array(nMonthsTotal).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) })
+  }
+}
+
+interface PeriodPaymentCounters {
+  thirtyDays: number[]
+  sevenDays: number[]
+  year: number[]
+  all: number[]
+}
+
+function createPaymentCounters (nMonthsTotal: number): PeriodPaymentCounters {
+  return {
+    thirtyDays: Array(30).fill(0),
+    sevenDays: Array(7).fill(0),
+    year: Array(12).fill(0),
+    all: Array(nMonthsTotal).fill(0)
+  }
+}
+
+interface PeriodButtonDataAccumulators {
+  thirtyDays: PaymentDataByButton
+  sevenDays: PaymentDataByButton
+  year: PaymentDataByButton
+  all: PaymentDataByButton
+}
+
+function createButtonDataAccumulators (): PeriodButtonDataAccumulators {
+  return {
+    thirtyDays: {},
+    sevenDays: {},
+    year: {},
+    all: {}
+  }
+}
+
+interface PeriodThresholds {
+  thirtyDays: moment.Moment
+  sevenDays: moment.Moment
+  year: moment.Moment
+  all: moment.Moment
+}
+
+function createThresholds (today: moment.Moment, monthStart: moment.Moment, nMonthsTotal: number): PeriodThresholds {
+  return {
     thirtyDays: today.clone().subtract(30, 'days'),
     sevenDays: today.clone().subtract(7, 'days'),
     year: monthStart.clone().subtract(12, 'months'),
     all: monthStart.clone().subtract(nMonthsTotal, 'months')
   }
+}
 
-  // process all payments only once
-  for await (const payment of paymentStream) {
-    const paymentTime = moment(payment.timestamp * 1000)
-
-    // button data
-    payment.buttonDisplayDataList.forEach((button) => {
-      if (buttonPaymentData[button.id] === undefined) {
-        buttonPaymentData[button.id] = {
+function processButtonData (
+  button: ButtonDisplayData,
+  payment: Payment,
+  paymentTime: moment.Moment,
+  buttonDataAccumulators: ReturnType<typeof createButtonDataAccumulators>,
+  thresholds: ReturnType<typeof createThresholds>
+): void {
+  const periods = ['thirtyDays', 'sevenDays', 'year', 'all'] as const
+  periods.forEach((period) => {
+    if (paymentTime.isSameOrAfter(thresholds[period])) {
+      if (buttonDataAccumulators[period][button.id] === undefined) {
+        buttonDataAccumulators[period][button.id] = {
           displayData: {
             ...button,
             isXec: payment.networkId === XEC_NETWORK_ID,
@@ -170,7 +304,7 @@ const generateDashboardDataFromStream = async function (
           }
         }
       } else {
-        const buttonData = buttonPaymentData[button.id]
+        const buttonData = buttonDataAccumulators[period][button.id]
         buttonData.total.revenue = sumQuoteValues(buttonData.total.revenue, payment.values)
         buttonData.total.payments += 1
         buttonData.displayData.lastPayment = Math.max(
@@ -178,118 +312,36 @@ const generateDashboardDataFromStream = async function (
           payment.timestamp
         )
       }
-    })
-
-    // period data accumulators
-    if (paymentTime.isSameOrAfter(thresholds.thirtyDays)) {
-      const dayIndex = today.diff(paymentTime, 'days')
-      if (dayIndex < 30) {
-        revenueAccumulators.thirtyDays[dayIndex] = sumQuoteValues(
-          revenueAccumulators.thirtyDays[dayIndex],
-          payment.values
-        )
-        paymentCounters.thirtyDays[dayIndex] += 1
-      }
     }
+  })
+}
 
-    if (paymentTime.isSameOrAfter(thresholds.sevenDays)) {
-      const dayIndex = today.diff(paymentTime, 'days')
-      if (dayIndex < 7) {
-        revenueAccumulators.sevenDays[dayIndex] = sumQuoteValues(
-          revenueAccumulators.sevenDays[dayIndex],
-          payment.values
-        )
-        paymentCounters.sevenDays[dayIndex] += 1
-      }
-    }
+function reverseAccumulators (
+  revenueAccumulators: ReturnType<typeof createRevenueAccumulators>,
+  paymentCounters: ReturnType<typeof createPaymentCounters>
+): void {
+  Object.keys(revenueAccumulators).forEach((key) => {
+    revenueAccumulators[key as keyof typeof revenueAccumulators].reverse()
+    paymentCounters[key as keyof typeof paymentCounters].reverse()
+  })
+}
 
-    if (paymentTime.isSameOrAfter(thresholds.year)) {
-      const monthIndex = monthStart.diff(paymentTime, 'months')
-      if (monthIndex < 12) {
-        revenueAccumulators.year[monthIndex] = sumQuoteValues(
-          revenueAccumulators.year[monthIndex],
-          payment.values
-        )
-        paymentCounters.year[monthIndex] += 1
-      }
-    }
-
-    if (paymentTime.isSameOrAfter(thresholds.all)) {
-      const monthIndex = monthStart.diff(paymentTime, 'months')
-      if (monthIndex < nMonthsTotal) {
-        revenueAccumulators.all[monthIndex] = sumQuoteValues(
-          revenueAccumulators.all[monthIndex],
-          payment.values
-        )
-        paymentCounters.all[monthIndex] += 1
-      }
-    }
-  }
-
-  revenueAccumulators.thirtyDays.reverse()
-  paymentCounters.thirtyDays.reverse()
-  revenueAccumulators.sevenDays.reverse()
-  paymentCounters.sevenDays.reverse()
-  revenueAccumulators.year.reverse()
-  paymentCounters.year.reverse()
-  revenueAccumulators.all.reverse()
-  paymentCounters.all.reverse()
-
-  // Generate PeriodData for each period
-  const thirtyDays: PeriodData = {
-    revenue: getChartData(30, 'days', revenueAccumulators.thirtyDays, borderColor.revenue),
-    payments: getChartData(30, 'days', paymentCounters.thirtyDays, borderColor.payments),
-    totalRevenue: revenueAccumulators.thirtyDays.reduce(sumQuoteValues, {
-      usd: new Prisma.Decimal(0),
-      cad: new Prisma.Decimal(0)
-    }),
-    totalPayments: paymentCounters.thirtyDays.reduce((a, b) => a + b, 0),
-    buttons: buttonPaymentData
-  }
-
-  const sevenDays: PeriodData = {
-    revenue: getChartData(7, 'days', revenueAccumulators.sevenDays, borderColor.revenue),
-    payments: getChartData(7, 'days', paymentCounters.sevenDays, borderColor.payments),
-    totalRevenue: revenueAccumulators.sevenDays.reduce(sumQuoteValues, {
-      usd: new Prisma.Decimal(0),
-      cad: new Prisma.Decimal(0)
-    }),
-    totalPayments: paymentCounters.sevenDays.reduce((a, b) => a + b, 0),
-    buttons: buttonPaymentData
-  }
-
-  const year: PeriodData = {
-    revenue: getChartData(12, 'months', revenueAccumulators.year, borderColor.revenue, 'MMM'),
-    payments: getChartData(12, 'months', paymentCounters.year, borderColor.payments, 'MMM'),
-    totalRevenue: revenueAccumulators.year.reduce(sumQuoteValues, {
-      usd: new Prisma.Decimal(0),
-      cad: new Prisma.Decimal(0)
-    }),
-    totalPayments: paymentCounters.year.reduce((a, b) => a + b, 0),
-    buttons: buttonPaymentData
-  }
-
-  const all: PeriodData = {
-    revenue: getChartData(nMonthsTotal, 'months', revenueAccumulators.all, borderColor.revenue, 'MMM YYYY'),
-    payments: getChartData(nMonthsTotal, 'months', paymentCounters.all, borderColor.payments, 'MMM YYYY'),
-    totalRevenue: revenueAccumulators.all.reduce(sumQuoteValues, {
-      usd: new Prisma.Decimal(0),
-      cad: new Prisma.Decimal(0)
-    }),
-    totalPayments: paymentCounters.all.reduce((a, b) => a + b, 0),
-    buttons: buttonPaymentData
-  }
-
+function createPeriodData (
+  periodLength: number,
+  periodUnit: string,
+  revenueData: QuoteValues[],
+  paymentData: number[],
+  buttonData: PaymentDataByButton,
+  revenueColor: string,
+  paymentColor: string,
+  labelFormat = 'M/D'
+): PeriodData {
   return {
-    thirtyDays,
-    sevenDays,
-    year,
-    all,
-    total: {
-      revenue: all.totalRevenue,
-      payments: all.totalPayments,
-      buttons: Object.keys(buttonPaymentData).length
-    }
+    revenue: getChartData(periodLength, periodUnit, revenueData, revenueColor, labelFormat),
+    payments: getChartData(periodLength, periodUnit, paymentData, paymentColor, labelFormat),
+    totalRevenue: revenueData.reduce(sumQuoteValues, { usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
+    totalPayments: paymentData.reduce((a, b) => a + b, 0),
+    buttons: buttonData
   }
 }
 
@@ -313,7 +365,6 @@ export const getUserDashboardData = async function (userId: string): Promise<Das
 export const cacheDashboardData = async (userId: string, dashboardData: DashboardData): Promise<void> => {
   const key = getDashboardSummaryKey(userId)
   const {
-    paymentList,
     ...cachable
   } = dashboardData
   await redis.set(key, JSON.stringify(cachable))
