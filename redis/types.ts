@@ -29,7 +29,6 @@ export interface DashboardData {
   year: PeriodData
   sevenDays: PeriodData
   all: PeriodData
-  paymentList?: Payment[]
   total: {
     revenue: QuoteValues
     payments: number

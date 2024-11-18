@@ -1,7 +1,7 @@
 import prisma from 'prisma/clientInstance'
 import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
-import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId } from 'services/addressService'
+import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
@@ -9,7 +9,7 @@ import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
 import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
-import { OpReturnData } from 'utils/validators'
+import { OpReturnData, parseAddress } from 'utils/validators'
 
 export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
@@ -124,17 +124,17 @@ export async function fetchTransactionsByAddressList (
   })
 }
 
-export async function fetchTxCount (addressString: string): Promise<number> {
-  const address = await fetchAddressBySubstring(addressString)
+export async function fetchTxCountByAddressString (addressString: string): Promise<number> {
   return await prisma.transaction.count({
     where: {
-      addressId: address.id
+      address: {
+        address: addressString
+      }
     }
   })
 }
 
 export async function fetchPaginatedAddressTransactions (addressString: string, page: number, pageSize: number, orderBy?: string, orderDesc = true): Promise<TransactionWithAddressAndPrices[]> {
-  const address = await fetchAddressBySubstring(addressString)
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
 
   // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
@@ -159,15 +159,20 @@ export async function fetchPaginatedAddressTransactions (addressString: string, 
     }
   }
 
-  return await prisma.transaction.findMany({
+  const parsedAddress = parseAddress(addressString)
+  await addressExists(parsedAddress, true)
+  const txs = await prisma.transaction.findMany({
     where: {
-      addressId: address.id
+      address: {
+        address: parsedAddress
+      }
     },
     include: includeAddressAndPrices,
     orderBy: orderByQuery,
     skip: page * pageSize,
     take: pageSize
   })
+  return txs
 }
 
 export async function fetchAddressTransactions (addressString: string): Promise<TransactionWithAddressAndPrices[]> {
