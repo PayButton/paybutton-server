@@ -161,4 +161,23 @@ export const generatorFormFields = [
     helpText: 'Allow changing the payment amount',
     advanced: true
   },
+  {
+    name: 'OP-Return',
+    placeholder: 'myCustomMessage',
+    key: 'opReturn',
+    className: 'col_lg',
+    type: 'input',
+    onChange: 'handleChange',
+    helpText: 'Custom message that will be sent with the transaction',
+    advanced: true
+  },
+  {
+    name: 'Disable Payment ID',
+    key: 'disablePaymentId',
+    className: 'col_sm_center',
+    type: 'boolean',
+    default: false,
+    helpText: 'Removes the random ID generated for the payment that is used to prevent the onSuccess callback to be triggered by a person who has the payment screen open at the same time as another',
+    advanced: true
+  },
 ]
