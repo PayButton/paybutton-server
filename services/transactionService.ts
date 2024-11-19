@@ -314,9 +314,9 @@ export async function connectTransactionsListToPrices (txList: Transaction[]): P
         }
       }
     })
-    for (const tx of txList) {
+    await Promise.all(txList.map(async tx =>
       await connectTransactionToPrices(tx, prisma, false)
-    }
+    ))
   })
 }
 
