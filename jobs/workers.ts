@@ -91,6 +91,7 @@ export const connectAllTransactionsToPricesWorker = async (queueName: string): P
         ...await transactionService.fetchAllTransactionsWithNoPrices(),
         ...await transactionService.fetchAllTransactionsWithIrregularPrices()
       ]
+      console.log(`found, ${txs.length} with irregular prices`)
       void await transactionService.connectTransactionsListToPrices(txs)
     },
     {
