@@ -1,4 +1,2 @@
 #!/bin/sh
-echo "PATH is: $PATH"
-which npx
 npx lint-staged
