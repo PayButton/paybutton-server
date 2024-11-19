@@ -134,11 +134,7 @@ const generateDashboardDataFromStream = async function (
   const thresholds = createThresholds(today, monthStart, nMonthsTotal)
 
   // Process all payments
-  console.log('WIP will go through paymentStream', paymentStream)
-  let wip = 0
   for await (const payment of paymentStream) {
-    console.log('wip counter', wip)
-    wip += 1
     const paymentTime = moment(payment.timestamp * 1000)
 
     // Process button data and assign to relevant periods
