@@ -144,6 +144,8 @@
   padding: 25px;
   border-radius: 10px;
   border: 1px solid var(--secondary-text-color);
+  overflow-y: auto;
+  max-height: 90vh;
 }
 
 .form_ctn p {
