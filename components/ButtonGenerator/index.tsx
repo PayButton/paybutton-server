@@ -35,6 +35,8 @@ interface ButtonState {
   disabled: boolean
   editable: boolean
   widget: boolean
+  disablePaymentId: boolean
+  opReturn: string
   [key: string]: any
 }
 
@@ -70,7 +72,9 @@ export const initialButtonState: ButtonState = {
   disableEnforceFocus: true,
   disabled: false,
   editable: false,
-  widget: false
+  widget: false,
+  disablePaymentId: false,
+  opReturn: ''
 }
 
 export default function ButtonGenerator (): JSX.Element {
