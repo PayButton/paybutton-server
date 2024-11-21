@@ -8,6 +8,7 @@ import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants
 import moment from 'moment'
 import { CacheSet } from 'redis/index'
 import { ButtonDisplayData, Payment } from './types'
+import { getUserDashboardData } from './dashboardCache'
 // ADDRESS:payments:YYYY:MM
 const getPaymentsWeekKey = (addressString: string, timestamp: number): string => {
   return `${addressString}:payments:${moment.unix(timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
@@ -110,6 +111,12 @@ export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[
     allPayments = allPayments.concat(weekPayments)
   }
   return allPayments
+}
+
+export const getCachedPaymentsCountForUser = async (userId: string): Promise<number> => {
+  const dashboardData = await getUserDashboardData(userId)
+
+  return dashboardData.total.payments
 }
 
 export const cacheGroupedPayments = async (paymentsGroupedByKey: KeyValueT<Payment[]>): Promise<void> => {
