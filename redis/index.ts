@@ -85,7 +85,7 @@ export const CacheGet = {
   addressBalance: async (addressString: string): Promise<AddressPaymentInfo> => {
     return await getBalanceForAddress(addressString)
   },
-  paymentListCount: async (userId: string) => {
+  paymentsCount: async (userId: string) => {
     return await getCachedPaymentsCountForUser(userId)
   }
 }

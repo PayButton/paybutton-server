@@ -6,7 +6,7 @@ export default async (req: any, res: any): Promise<void> => {
     await setSession(req, res)
     const userId = req.session.userId
 
-    const resJSON = await CacheGet.paymentListCount(userId)
+    const resJSON = await CacheGet.paymentsCount(userId)
     res.status(200).json(resJSON)
   }
 }
