@@ -4,7 +4,7 @@ import { TransactionsWithPaybuttonsAndPrices } from 'services/transactionService
 import { fetchUsersForAddress } from 'services/userService'
 import { cacheBalanceForAddress, clearBalanceCache, getBalanceForAddress, updateBalanceCacheFromTx } from './balanceCache'
 import { clearDashboardCache, getUserDashboardData } from './dashboardCache'
-import { appendPaybuttonToAddressesCache, cacheGroupedPayments, cacheManyTxs, generateAndCacheGroupedPaymentsAndInfoForAddress, getCachedPaymentsCountForUser, getPaymentList, initPaymentCache, removePaybuttonToAddressesCache } from './paymentCache'
+import { appendPaybuttonToAddressesCache, cacheGroupedPayments, cacheManyTxs, generateAndCacheGroupedPaymentsAndInfoForAddress, getCachedPaymentsCountForUser, getCachedPaymentsForUserWithPagination, getPaymentList, initPaymentCache, removePaybuttonToAddressesCache } from './paymentCache'
 import { DashboardData, Payment } from './types'
 import { Address } from '@prisma/client'
 
@@ -130,5 +130,9 @@ export class CacheGet {
     return await this.executeCall(userId, 'paymentsCount', async () => {
       return await getCachedPaymentsCountForUser(userId)
     })
+  }
+  
+  static async paymentListPaginated (userId: string, page: number, pageSize: number): Promise<Payment[]> {
+    return await getCachedPaymentsForUserWithPagination(userId, page, pageSize)
   }
 }
