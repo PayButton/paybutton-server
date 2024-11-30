@@ -32,6 +32,52 @@ export const getPaymentList = async (userId: string): Promise<Payment[]> => {
   return await getCachedPaymentsForUser(userId)
 }
 
+export const getCachedPaymentsForUserWithPagination = async (
+  userId: string,
+  page: number,
+  pageSize: number
+): Promise<Payment[]> => {
+  const weekKeys = await getCachedWeekKeysForUser(userId)
+  const userButtonIds: string[] = (await fetchPaybuttonArrayByUserId(userId))
+    .map(p => p.id)
+
+  const allPayments: Payment[] = []
+  const startIndex = page * pageSize
+  const endIndex = Number(startIndex) + Number(pageSize)
+  let currentIndex = 0
+
+  for (const weekKey of weekKeys) {
+    const paymentsString = await redis.get(weekKey)
+    if (paymentsString === null) {
+      throw new Error(RESPONSE_MESSAGES.CACHED_PAYMENT_NOT_FOUND_404.message)
+    }
+
+    let weekPayments: Payment[] = JSON.parse(paymentsString)
+    weekPayments = weekPayments.map(pay => {
+      pay.buttonDisplayDataList = pay.buttonDisplayDataList.filter(d =>
+        userButtonIds.includes(d.id)
+      )
+      return pay
+    })
+
+    for (const payment of weekPayments) {
+      if (currentIndex >= startIndex && currentIndex < endIndex) {
+        allPayments.push(payment)
+      }
+      currentIndex++
+
+      if (currentIndex >= endIndex) {
+        break
+      }
+    }
+
+    if (currentIndex >= endIndex) {
+      break
+    }
+  }
+  return allPayments
+}
+
 const getCachedWeekKeysForAddress = async (addressString: string): Promise<string[]> => {
   return await redis.keys(`${addressString}:payments:*`)
 }
