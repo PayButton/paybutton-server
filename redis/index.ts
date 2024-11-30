@@ -4,7 +4,7 @@ import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import { fetchUsersForAddress } from 'services/userService'
 import { cacheBalanceForAddress, clearBalanceCache, getBalanceForAddress, updateBalanceCacheFromTx } from './balanceCache'
 import { clearDashboardCache, getUserDashboardData } from './dashboardCache'
-import { appendPaybuttonToAddressesCache, cacheGroupedPayments, cacheManyTxs, generateGroupedPaymentsForAddress, getCachedPaymentsCountForUser, getPaymentList, initPaymentCache, removePaybuttonToAddressesCache } from './paymentCache'
+import { appendPaybuttonToAddressesCache, cacheGroupedPayments, cacheManyTxs, generateGroupedPaymentsForAddress, getCachedPaymentsCountForUser, getCachedPaymentsForUserWithPagination, getPaymentList, initPaymentCache, removePaybuttonToAddressesCache } from './paymentCache'
 import { DashboardData, Payment } from './types'
 
 interface PaybuttonCreationParams {
@@ -87,5 +87,8 @@ export const CacheGet = {
   },
   paymentsCount: async (userId: string) => {
     return await getCachedPaymentsCountForUser(userId)
+  },
+  paymentListPaginated: async (userId: string, page: number, pageSize: number): Promise<Payment[]> => {
+    return await getCachedPaymentsForUserWithPagination(userId, page, pageSize)
   }
 }
