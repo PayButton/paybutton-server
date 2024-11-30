@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
-import TableContainer from '../../components/TableContainer/TableContainer'
+import TableContainerGetter from '../../components/TableContainer/TableContainerGetter'
 import { ButtonDisplayData } from 'redis/types'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -49,16 +49,17 @@ interface PaybuttonsProps {
 }
 
 export default function Payments ({ user }: PaybuttonsProps): React.ReactElement {
-  const [data, setData] = useState([])
-
-  useEffect(() => {
-    const fetchData = async (): Promise<void> => {
-      const response = await fetch('api/payments')
-      const payments = await response.json()
-      setData(payments)
+  function fetchData (): Function {
+    return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
+      const data = await fetch(`/api/payments?page=${page}&pageSize=${pageSize}`)
+      const response = await fetch('/api/payments/count')
+      const totalCount = await response.json()
+      return {
+        data: await data.json(),
+        totalCount
+      }
     }
-    fetchData().catch(console.error)
-  }, [])
+  }
 
   const columns = useMemo(
     () => [
@@ -125,8 +126,13 @@ export default function Payments ({ user }: PaybuttonsProps): React.ReactElement
 
   return (
     <>
-      <TopBar title="Payments" user={user.stUser?.email} />
-      {data.length === 0 ? <div className='no-payments'>No Payments to show yet</div> : <TableContainer columns={columns} data={data} />}
+      <TopBar title="Payments" user={user?.stUser?.email} />
+      <TableContainerGetter
+        columns={columns}
+        dataGetter={fetchData()}
+        tableRefreshCount={1}
+        emptyMessage='No Payments to show yet'
+        />
     </>
   )
 }
