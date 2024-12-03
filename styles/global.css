@@ -388,6 +388,17 @@ body[data-theme='dark'] .button_main {
   color: #231f20 !important;
 }
 
+.button_outline:disabled {
+  background-color: #c0c0c0;
+  color: #5f5e5e !important;
+}
+
+.button_outline:disabled:hover {
+  background-color: #c0c0c0 !important;
+  color: #5f5e5e !important;
+}
+
+
 body[data-theme='dark'] .button_outline:hover {
   border-color: #000;
 }
