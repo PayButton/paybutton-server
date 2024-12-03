@@ -392,12 +392,19 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
     userId: params.userId
   })
 
-  // Send async request to sync created addresses transactions for addresses
+  // Send non-blocking async request to sync created addresses transactions for addresses
   // that are new (did not exist in any other buttons)
-  void syncAndSubscribeAddresses(
-    paybuttonNewAddresses
-      .filter(a => !addressesThatAlreadyExistedStringList.includes(a.address))
+  console.log('WIP> this should not be blocked, meaning...')
+  void Promise.resolve().then(() => {
+    void syncAndSubscribeAddresses(
+      paybuttonNewAddresses.filter(
+        (a) => !addressesThatAlreadyExistedStringList.includes(a.address)
+      )
+    )
+    console.log('WIP> finished long process of synching and submitting all addresses')
+  }
   )
+  console.log('WIP> ...that it should jump to this line immediately')
 
   return paybutton
 }
