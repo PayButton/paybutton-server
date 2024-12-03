@@ -55,8 +55,11 @@ export default async (
         userId
       }
       const updatePaybuttonInput = parsePaybuttonPATCHRequest(params, paybuttonId)
+      console.log('WIP> will call updatePaybutton')
       const paybutton = await paybuttonService.updatePaybutton(updatePaybuttonInput)
+      console.log('WIP> calld updatePaybutton, got', { paybutton })
       res.status(200).json(paybutton)
+      return
     } catch (err: any) {
       const parsedError = parseError(err)
       switch (parsedError.message) {
