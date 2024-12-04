@@ -2,26 +2,38 @@ import { Prisma } from '@prisma/client'
 import config from 'config/index'
 import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL } from 'constants/index'
 import nodemailer from 'nodemailer'
+import SMTPTransport from 'nodemailer/lib/smtp-transport'
 import { getAddressPrefix } from 'utils'
 import { OpReturnData } from 'utils/validators'
 
-export const MAIL_TRANSPORTER = nodemailer.createTransport({
-  host: config.smtpHost,
-  secure: config.smtpPort === 465,
-  logger: true,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD
-  }
-})
+export interface MailerGlobal extends NodeJS.Global {
+  mailerTransporter?: nodemailer.Transporter<SMTPTransport.SentMessageInfo, SMTPTransport.Options>
+}
 
-MAIL_TRANSPORTER.verify((error, _success) => {
-  if (error != null) {
-    console.error('ERROR SETTING UP MAILER:', error)
-  } else {
-    console.log('Mailer ready to send messages')
+declare const global: MailerGlobal
+
+export const getMailerTransporter = (): nodemailer.Transporter<SMTPTransport.SentMessageInfo, SMTPTransport.Options> => {
+  if (global.mailerTransporter === undefined) {
+    global.mailerTransporter = nodemailer.createTransport({
+      host: config.smtpHost,
+      secure: config.smtpPort === 465,
+      logger: true,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD
+      }
+    })
+    global.mailerTransporter.verify((error, _success) => {
+      if (error != null) {
+        console.error('ERROR SETTING UP MAILER:', error)
+        global.mailerTransporter = undefined
+      } else {
+        console.log('Mailer ready to send messages')
+      }
+    })
   }
-})
+  return global.mailerTransporter
+}
 
 export const MAIL_FROM = 'no-reply@paybutton.org'
 export const MAIL_SUBJECT = 'New Payment Received'
