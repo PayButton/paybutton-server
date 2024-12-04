@@ -6,7 +6,7 @@ import { EMPTY_OP_RETURN, OpReturnData, parseTriggerPostData } from 'utils/valid
 import { BroadcastTxData } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
 import config from 'config'
-import { MAIL_FROM, MAIL_HTML_REPLACER, MAIL_SUBJECT, MAIL_TRANSPORTER, SendEmailParameters } from 'constants/mail'
+import { MAIL_FROM, MAIL_HTML_REPLACER, MAIL_SUBJECT, getMailerTransporter, SendEmailParameters } from 'constants/mail'
 
 const triggerWithPaybutton = Prisma.validator<Prisma.PaybuttonTriggerArgs>()({
   include: { paybutton: true }
@@ -339,7 +339,7 @@ async function sendEmailForTrigger (trigger: TriggerWithPaybutton, sendEmailPara
   try {
     const user = await fetchUserFromTriggerId(trigger.id)
     if (user.emailCredits > 0) {
-      const response = await MAIL_TRANSPORTER.sendMail(mailOptions)
+      const response = await getMailerTransporter().sendMail(mailOptions)
       logData = {
         email: trigger.emails,
         responseData: response.response
