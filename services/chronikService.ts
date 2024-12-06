@@ -441,12 +441,14 @@ export class ChronikBlockchainClient implements BlockchainClient {
 
     const addressesByNetwork: KeyValueT<Address[]> = groupAddressesByNetwork([NETWORK_SLUGS_FROM_IDS[this.networkId]], addresses)
 
-    for (const [, networkAddresses] of Object.entries(addressesByNetwork)) {
-      networkAddresses.forEach(address => {
-        console.log(`${this.CHRONIK_MSG_PREFIX}: subscribing `, address.address)
-        this.chronikWSEndpoint.subscribeToAddress(address.address)
-      })
-    }
+    await Promise.all(
+      Object.values(addressesByNetwork).map(networkAddresses =>
+        networkAddresses.map(async address => {
+          console.log(`${this.CHRONIK_MSG_PREFIX}: subscribing `, address.address)
+          this.chronikWSEndpoint.subscribeToAddress(address.address)
+        })
+      )
+    )
   }
 
   public async syncMissedTransactions (): Promise<void> {
