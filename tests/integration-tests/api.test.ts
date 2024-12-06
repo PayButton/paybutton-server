@@ -1473,6 +1473,6 @@ describe('POST /api/addresses/sync', () => {
     const res = await testEndpoint(baseRequestOptions, syncAddressesEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(400)
-    expect(responseData.message).toEqual(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400)
+    expect(responseData).toBe(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400)
   })
 })
