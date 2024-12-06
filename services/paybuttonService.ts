@@ -148,7 +148,7 @@ async function updateAddressUserConnectors ({
   )
 }
 
-interface CreatePaybuttonReturn {
+export interface CreatePaybuttonReturn {
   paybutton: PaybuttonWithAddresses
   createdAddresses: string[]
 }

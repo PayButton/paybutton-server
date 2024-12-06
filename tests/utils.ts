@@ -1,6 +1,6 @@
 import * as httpMocks from 'node-mocks-http'
 import prisma from 'prisma/clientInstance'
-import { createPaybutton, PaybuttonWithAddresses } from 'services/paybuttonService'
+import { createPaybutton, CreatePaybuttonReturn } from 'services/paybuttonService'
 import { createWallet, WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import { upsertCurrentPricesForNetworkId } from 'services/priceService'
 import { SUPPORTED_ADDRESS_PATTERN } from 'constants/index'
@@ -44,10 +44,11 @@ export const createUserProfile = async (userId: string): Promise<UserProfile> =>
   })
 }
 
-export const createPaybuttonForUser = async (userId: string, addressList?: string[], walletId?: string): Promise<PaybuttonWithAddresses> => {
+export const createPaybuttonForUser = async (userId: string, addressList?: string[], walletId?: string): Promise<CreatePaybuttonReturn> => {
+  const newAddr = 'ecash:' + addressRandexp.gen()
   let prefixedAddressList = [
     'bitcoincash:' + addressRandexp.gen(),
-    'ecash:' + addressRandexp.gen()
+    newAddr
   ]
   if (addressList !== undefined) {
     prefixedAddressList = addressList
