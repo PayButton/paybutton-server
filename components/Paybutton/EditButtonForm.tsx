@@ -44,9 +44,7 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
       params.name = paybutton.name
     }
     try {
-      console.log('WIP> calling api')
       void await axios.patch(`/api/paybutton/${paybutton.id}`, params)
-      console.log('WIP> called api')
       refreshPaybutton()
     } catch (err: any) {
       setError(err.response.data.message)
