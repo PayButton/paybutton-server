@@ -1458,7 +1458,7 @@ describe('GET /api/prices/current/[networkSlug]/[quoteSlug]', () => {
   })
 })
 
-describe.only('POST /api/addresses/sync', () => {
+describe('POST /api/addresses/sync', () => {
   const baseRequestOptions: RequestOptions = {
     method: 'POST' as RequestMethod,
     headers: {
@@ -1469,10 +1469,10 @@ describe.only('POST /api/addresses/sync', () => {
     }
   }
 
-  it('Should return HTTP 200', async () => {
+  it('Should return HTTP 400 if no addresses', async () => {
     const res = await testEndpoint(baseRequestOptions, syncAddressesEndpoint)
     const responseData = res._getJSONData()
-    expect(res.statusCode).toBe(200)
-    expect(responseData).toEqual('200')
+    expect(res.statusCode).toBe(400)
+    expect(responseData.message).toEqual(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400)
   })
 })
