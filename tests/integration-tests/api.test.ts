@@ -48,10 +48,14 @@ jest.mock('../../utils/setSession', () => {
 
 beforeAll(async () => {
   await setUpUsers()
+  jest.spyOn(console, 'log').mockImplementation(() => {})
+  jest.spyOn(console, 'warn').mockImplementation(() => {})
+  jest.spyOn(console, 'error').mockImplementation(() => {})
 })
 
 afterAll(async () => {
   await clearPaybuttonsAndAddresses()
+  jest.restoreAllMocks()
 })
 
 describe('POST /api/paybutton/', () => {
