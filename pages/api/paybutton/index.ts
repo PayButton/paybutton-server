@@ -2,6 +2,7 @@ import * as paybuttonService from 'services/paybuttonService'
 import { parseError, parsePaybuttonPOSTRequest } from 'utils/validators'
 import { setSession } from 'utils/setSession'
 import { RESPONSE_MESSAGES } from 'constants/index'
+import config from 'config'
 
 export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'POST') {
@@ -11,7 +12,7 @@ export default async (req: any, res: any): Promise<void> => {
     try {
       const createPaybuttonInput = parsePaybuttonPOSTRequest(values)
       const createdPaybuttonObj = await paybuttonService.createPaybutton(createPaybuttonInput)
-      void fetch('/api/addresses/sync/', {
+      void fetch(`${config.apiDomain}/api/addresses/sync`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
