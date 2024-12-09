@@ -17,8 +17,17 @@ interface IProps {
   emptyMessage?: string
 }
 
+const getLocalStorageItem = (itemName: string): string | null => {
+  try {
+    return localStorage.getItem(itemName)
+  } catch (error: any) {
+    console.error(error.message)
+    return null
+  }
+}
+
 const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emptyMessage }: IProps): JSX.Element => {
-  const localPageSize = localStorage.getItem('pageSize')
+  const localPageSize = getLocalStorageItem('pageSize')
   const localStoragePageSize = ssr ? 10 : localPageSize !== null ? +localPageSize : 10
   const [data, setData] = useState<any[]>([])
   const [sortColumn, setSortColumn] = useState(opts?.sortColumn ?? 'timestamp')
