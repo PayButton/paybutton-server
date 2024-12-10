@@ -24,6 +24,7 @@ import io, { Socket } from 'socket.io-client'
 import moment from 'moment'
 import { OpReturnData, parseError, parseOpReturnData } from 'utils/validators'
 import { executeAddressTriggers } from './triggerService'
+import { clearAllDashboardCache } from 'redis/dashboardCache'
 
 const decoder = new TextDecoder()
 
@@ -459,6 +460,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
       Object.keys(successfulAddressesWithCount).forEach((addr) => {
         console.log(`${this.CHRONIK_MSG_PREFIX}: Successful synced ${successfulAddressesWithCount[addr]} txs for ${addr}`)
       })
+      void clearAllDashboardCache()
     } catch (err: any) {
       console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR: (skipping anyway) initial missing transactions sync failed: ${err.message as string} ${err.stack as string}`)
     }
