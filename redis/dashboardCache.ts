@@ -53,6 +53,7 @@ function getOldestDateKey (keys: string[]): string {
 
 const getNumberOfMonths = async function (userId: string): Promise<number> {
   const weekKeys = await getCachedWeekKeysForUser(userId)
+  console.log('number of months had weekkeys as', weekKeys.length)
   if (weekKeys.length === 0) return 0
   const oldestKey = getOldestDateKey(weekKeys)
   const oldestPayments = await getPaymentsForWeekKey(oldestKey)
@@ -347,15 +348,19 @@ function createPeriodData (
 
 export const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
   const dashboardData = await getCachedDashboardData(userId)
+  console.log('will get user dashboard data, curr cache is null?', dashboardData === null)
   if (dashboardData === null) {
     const nMonthsTotal = await getNumberOfMonths(userId)
+    console.log('will get payment stream')
     const paymentStream = getPaymentStream(userId)
 
+    console.log('will generate dashboard data from stream')
     const dashboardData = await generateDashboardDataFromStream(
       paymentStream,
       nMonthsTotal,
       { revenue: '#66fe91', payments: '#669cfe' }
     )
+    console.log('will cache everything')
     await cacheDashboardData(userId, dashboardData) // WIP SET THIS NULL ON UPDATE BUTTONS & WS
     return dashboardData
   }

@@ -140,6 +140,22 @@ export async function addressExists (addressString: string, raise = false): Prom
   return true
 }
 
+// WIP
+export async function fetchAllUserAddressStrings (userId: string): Promise<string[]> {
+  return (await prisma.address.findMany({
+    where: {
+      paybuttons: {
+        some: {
+          paybutton: {
+            providerUserId: userId
+          }
+        }
+      }
+    }
+  })
+  ).map(a => a.address)
+}
+
 export async function fetchAllUserAddresses (userId: string, includeTransactions = false, includePaybuttons = false): Promise<
 Address[]
 | AddressWithTransactionsWithPrices[]
