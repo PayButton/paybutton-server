@@ -90,13 +90,13 @@ const includeAddressAndPrices = {
   ...includePrices
 }
 
-const transactionWithPrices = Prisma.validator<Prisma.TransactionArgs>()(
+const transactionWithPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
   { include: includePrices }
 )
 
 export type TransactionWithPrices = Prisma.TransactionGetPayload<typeof transactionWithPrices>
 
-const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionArgs>()(
+const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
   { include: includeAddressAndPrices }
 )
 

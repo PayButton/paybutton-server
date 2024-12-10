@@ -48,7 +48,7 @@ const includeAddressesWithPaybuttons = {
   }
 }
 
-const walletWithAddressesWithPaybuttons = Prisma.validator<Prisma.WalletArgs>()({
+const walletWithAddressesWithPaybuttons = Prisma.validator<Prisma.WalletDefaultArgs>()({
   include: includeAddressesWithPaybuttons
 })
 export type WalletWithAddressesWithPaybuttons = Prisma.WalletGetPayload<typeof walletWithAddressesWithPaybuttons>

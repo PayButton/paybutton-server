@@ -17,12 +17,12 @@ import { PaybuttonWithAddresses, fetchPaybuttonById } from 'services/paybuttonSe
 import { streamToCSV } from 'utils/files'
 import { setSession } from 'utils/setSession'
 import { NextApiResponse } from 'next'
-import { Decimal } from '@prisma/client/runtime'
 import { getNetworkIdFromSlug } from 'services/networkService'
 import { fetchUserProfileFromId } from 'services/userService'
+import { Prisma } from '@prisma/client'
 
 export interface TransactionFileData {
-  amount: Decimal
+  amount: Prisma.Decimal
   date: moment.Moment
   value: number
   rate: number
