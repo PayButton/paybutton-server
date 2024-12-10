@@ -1,7 +1,7 @@
 import { redis } from 'redis/clientInstance'
 import { Prisma } from '@prisma/client'
 import { getTransactionValue, TransactionWithAddressAndPrices, TransactionWithPrices } from 'services/transactionService'
-import { AddressWithTransactionsWithPrices, fetchAllUserAddresses, fetchAddressById, AddressWithPaybuttons, fetchAddressWithTxsAndPrices, fetchAllUserAddressStrings } from 'services/addressService'
+import { AddressWithTransactionsWithPrices, fetchAllUserAddresses, fetchAddressById, AddressWithPaybuttons, fetchAddressWithTxsAndPrices } from 'services/addressService'
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
@@ -39,11 +39,11 @@ const getCachedWeekKeysForAddress = async (addressString: string): Promise<strin
 
 export const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
   console.log('will get addresses strings')
-  const addresses = await fetchAllUserAddressStrings(userId)
+  const addresses = await fetchAllUserAddresses(userId)
   console.log('got addresses strings', addresses.length)
   let ret: string[] = []
-  for (const addrString of addresses) {
-    ret = ret.concat(await getCachedWeekKeysForAddress(addrString))
+  for (const addr of addresses) {
+    ret = ret.concat(await getCachedWeekKeysForAddress(addr.address))
   }
   return ret
 }

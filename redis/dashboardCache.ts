@@ -126,6 +126,7 @@ const generateDashboardDataFromStream = async function (
   borderColor: ChartColor
 ): Promise<DashboardData> {
   // Initialize accumulators for periods
+  console.log('creatting accumulators')
   const revenueAccumulators = createRevenueAccumulators(nMonthsTotal)
   const paymentCounters = createPaymentCounters(nMonthsTotal)
   const buttonDataAccumulators = createButtonDataAccumulators()
@@ -135,6 +136,7 @@ const generateDashboardDataFromStream = async function (
   const thresholds = createThresholds(today, monthStart, nMonthsTotal)
 
   // Process all payments
+  console.log('processing payments')
   for await (const payment of paymentStream) {
     const paymentTime = moment(payment.timestamp * 1000)
 
@@ -158,8 +160,10 @@ const generateDashboardDataFromStream = async function (
       }
     })
   }
+  console.log('processed payments, will reverse')
 
   reverseAccumulators(revenueAccumulators, paymentCounters)
+  console.log('reversed acc, will create thirtyDays')
 
   // Generate PeriodData for each period
   const thirtyDays = createPeriodData(
@@ -171,6 +175,7 @@ const generateDashboardDataFromStream = async function (
     borderColor.revenue,
     borderColor.payments
   )
+  console.log('seven days')
 
   const sevenDays = createPeriodData(
     7,
@@ -182,6 +187,7 @@ const generateDashboardDataFromStream = async function (
     borderColor.payments
   )
 
+  console.log('year')
   const year = createPeriodData(
     12,
     'months',
@@ -193,6 +199,7 @@ const generateDashboardDataFromStream = async function (
     'MMM'
   )
 
+  console.log('all')
   const all = createPeriodData(
     nMonthsTotal,
     'months',
@@ -204,6 +211,7 @@ const generateDashboardDataFromStream = async function (
     'MMM YYYY'
   )
 
+  console.log('will RET FINALLY')
   return {
     thirtyDays,
     sevenDays,
