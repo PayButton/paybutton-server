@@ -222,7 +222,8 @@ export const initPaymentCache = async (addressString: string): Promise<boolean> 
 
 export async function * getPaymentStream (userId: string): AsyncGenerator<Payment> {
   for (const address of await getUserUncachedAddresses(userId)) {
-    void await CacheSet.addressCreation(address)
+    console.log('will create cache for addr', address.address)
+    await CacheSet.addressCreation(address)
   }
   const weekKeys = await getCachedWeekKeysForUser(userId)
 
