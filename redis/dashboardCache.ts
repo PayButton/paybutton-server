@@ -388,9 +388,11 @@ export const clearAllDashboardCache = async (): Promise<void> => {
     match: '*:dashboard'
   })
   stream.on('data', (keys: string[]) => {
+    console.log('clearing', keys.length, 'keys')
     if (keys.length > 0) {
       const pipeline = redis.pipeline()
       keys.forEach((key) => {
+        console.log('will delete key', key)
         pipeline.del(key)
       })
       pipeline.exec()
