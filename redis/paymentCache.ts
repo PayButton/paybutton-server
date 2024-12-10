@@ -14,20 +14,20 @@ const getPaymentsWeekKey = (addressString: string, timestamp: number): string =>
   return `${addressString}:payments:${moment.unix(timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
 }
 
-export const getUserUncachedAddresses = async (userId: string): Promise<AddressWithTransactionsWithPrices[]> => {
+export async function * getUserUncachedAddresses (userId: string): AsyncGenerator<AddressWithTransactionsWithPrices> {
   const addresses = await fetchAllUserAddresses(userId, true) as AddressWithTransactionsWithPrices[]
-  const ret: AddressWithTransactionsWithPrices[] = []
   for (const addr of addresses) {
     const keys = await getCachedWeekKeysForAddress(addr.address)
     if (keys.length === 0) {
-      ret.push(addr)
+      yield addr
     }
   }
-  return ret
 }
 
 export const getPaymentList = async (userId: string): Promise<Payment[]> => {
-  for (const address of await getUserUncachedAddresses(userId)) {
+  const uncachedAddressStream = getUserUncachedAddresses(userId)
+  for await (const address of uncachedAddressStream) {
+    console.log('payment list: will create cache for addr', address.address)
     void await CacheSet.addressCreation(address)
   }
   return await getCachedPaymentsForUser(userId)
@@ -221,8 +221,9 @@ export const initPaymentCache = async (addressString: string): Promise<boolean> 
 }
 
 export async function * getPaymentStream (userId: string): AsyncGenerator<Payment> {
-  for (const address of await getUserUncachedAddresses(userId)) {
-    console.log('will create cache for addr', address.address)
+  const uncachedAddressStream = getUserUncachedAddresses(userId)
+  for await (const address of uncachedAddressStream) {
+    console.log('payment stream: will create cache for addr', address.address)
     await CacheSet.addressCreation(address)
   }
   const weekKeys = await getCachedWeekKeysForUser(userId)
