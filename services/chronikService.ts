@@ -397,8 +397,10 @@ export class ChronikBlockchainClient implements BlockchainClient {
       }
     } else if (msg.type === 'Block') {
       console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.msgType} Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
-      await this.syncBlockTransactions(msg.blockHash)
-      this.confirmedTxsHashesFromLastBlock = []
+      if (msg.msgType === 'BLK_FINALIZED') {
+        await this.syncBlockTransactions(msg.blockHash)
+        this.confirmedTxsHashesFromLastBlock = []
+      }
     } else if (msg.type === 'Error') {
       console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.type}] ${JSON.stringify(msg.msg)}`)
     }
