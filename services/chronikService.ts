@@ -113,6 +113,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
   networkId: number
   networkSlug: string
   chronikWSEndpoint: WsEndpoint_InNode
+  confirmedTxsHashesFromLastBlock: string[]
   wsEndpoint: Socket
   CHRONIK_MSG_PREFIX: string
   lastProcessedMessages: ProcessedMessages
@@ -126,6 +127,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
     this.chronik = new ChronikClientNode([config.networkBlockchainURLs[networkSlug]])
     this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
+    this.confirmedTxsHashesFromLastBlock = []
     void this.chronikWSEndpoint.waitForOpen()
     this.chronikWSEndpoint.subscribeToBlocks()
     this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
@@ -369,9 +371,11 @@ export class ChronikBlockchainClient implements BlockchainClient {
             throw err
           }
         }
-      } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL' || msg.msgType === 'TX_CONFIRMED') {
-        // create unconfirmed or confirmed transaction
-        if (this.isAlreadyBeingProcessed(msg.txid, msg.msgType === 'TX_CONFIRMED')) {
+      } else if (msg.msgType === 'TX_CONFIRMED') {
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
+        this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
+      } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
+        if (this.isAlreadyBeingProcessed(msg.txid, false)) {
           return
         }
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
@@ -380,16 +384,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         for (const addressWithTransaction of addressesWithTransactions) {
           const { created, tx } = await createTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
-            const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
-            broadcastTxData.address = addressWithTransaction.address.address
-            broadcastTxData.messageType = 'NewTx'
-            const newSimplifiedTransaction = getSimplifiedTrasaction(tx)
-            broadcastTxData.txs = [newSimplifiedTransaction]
-            try { // emit broadcast for both unconfirmed and confirmed txs
-              this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
-            } catch (err: any) {
-              console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
-            }
+            const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx)
             if (created) { // only execute trigger for unconfirmed tx arriving
               try {
                 await executeAddressTriggers(broadcastTxData, tx.address.networkId)
@@ -402,8 +397,52 @@ export class ChronikBlockchainClient implements BlockchainClient {
       }
     } else if (msg.type === 'Block') {
       console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.msgType} Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
+      await this.syncBlockTransactions(msg.blockHash)
+      this.confirmedTxsHashesFromLastBlock = []
     } else if (msg.type === 'Error') {
       console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.type}] ${JSON.stringify(msg.msg)}`)
+    }
+  }
+
+  private broadcastIncomingTx (addressString: string, createdTx: TransactionWithAddressAndPrices): BroadcastTxData {
+    const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
+    broadcastTxData.address = addressString
+    broadcastTxData.messageType = 'NewTx'
+    const newSimplifiedTransaction = getSimplifiedTrasaction(createdTx)
+    broadcastTxData.txs = [newSimplifiedTransaction]
+    try { // emit broadcast for both unconfirmed and confirmed txs
+      this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
+    } catch (err: any) {
+      console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
+    }
+    return broadcastTxData
+  }
+
+  private async syncBlockTransactions (blockHash: string): Promise<void> {
+    console.log('syncing block txs, expects', this.confirmedTxsHashesFromLastBlock.length, 'txs to be synced')
+    let page = 0
+    const pageSize = 200
+    let blockTxsPage = (await this.chronik.blockTxs(blockHash, page, pageSize)).txs
+    let blockTxsToSync: Tx_InNode[] = []
+    console.log('first page has', blockTxsPage.length)
+    while (blockTxsPage.length > 0 && blockTxsToSync.length !== this.confirmedTxsHashesFromLastBlock.length) {
+      const thisBlockTxsToSync = blockTxsPage.filter(tx => this.confirmedTxsHashesFromLastBlock.includes(tx.txid))
+      blockTxsToSync = [...blockTxsToSync, ...thisBlockTxsToSync]
+      page += 1
+      blockTxsPage = (await this.chronik.blockTxs(blockHash, page, pageSize)).txs
+      console.log(page + 1, ' page has', blockTxsPage.length)
+    }
+    console.log('got', blockTxsToSync.length, 'txs in blockTxsToSync')
+    for (const transaction of blockTxsToSync) {
+      const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+      for (const addressWithTransaction of addressesWithTransactions) {
+        console.log('hmm will confirm', addressWithTransaction.transaction.hash)
+        const { tx } = await createTransaction(addressWithTransaction.transaction)
+        console.log('did confirm?', { tx: tx?.hash, conf: tx?.confirmed })
+        if (tx !== undefined) {
+          this.broadcastIncomingTx(addressWithTransaction.address.address, tx)
+        }
+      }
     }
   }
 
