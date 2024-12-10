@@ -383,6 +383,7 @@ export const clearDashboardCache = async (userId: string): Promise<void> => {
 }
 
 export const clearAllDashboardCache = async (): Promise<void> => {
+  console.log('clearing all dashboard cache')
   const stream = redis.scanStream({
     match: '*:dashboard'
   })
