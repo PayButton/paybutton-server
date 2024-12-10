@@ -381,3 +381,18 @@ export const clearDashboardCache = async (userId: string): Promise<void> => {
   const key = getDashboardSummaryKey(userId)
   await redis.del(key, () => {})
 }
+
+export const clearAllDashboardCache = async (): Promise<void> => {
+  const stream = redis.scanStream({
+    match: '*:dashboard'
+  })
+  stream.on('data', (keys: string[]) => {
+    if (keys.length > 0) {
+      const pipeline = redis.pipeline()
+      keys.forEach((key) => {
+        pipeline.del(key)
+      })
+      pipeline.exec()
+    }
+  })
+}

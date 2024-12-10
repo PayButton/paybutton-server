@@ -5,6 +5,7 @@ import { TransactionWithAddressAndPrices } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import config, { BlockchainClientOptions } from 'config'
 import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
+import { clearAllDashboardCache } from 'redis/dashboardCache'
 
 export interface BlockchainInfo {
   height: number
@@ -88,6 +89,8 @@ function getBlockchainClient (networkSlug: Networks): BlockchainClient {
           void newClient.subscribeInitialAddresses()
           console.log('syncing missed transactions...')
           void newClient.syncMissedTransactions()
+          console.log('clearing dashboard caches')
+          void clearAllDashboardCache()
         }
       }
       return global.chronik[networkSlug] as BlockchainClient
