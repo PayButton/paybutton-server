@@ -2,7 +2,7 @@ import { BlockInfo_InNode, ChronikClientNode, ScriptType_InNode, ScriptUtxo_InNo
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, NodeJsGlobalChronik, TransactionDetails, Networks } from './blockchainService'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, NETWORK_SLUGS_FROM_IDS, SOCKET_MESSAGES } from 'constants/index'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, NETWORK_SLUGS_FROM_IDS, SOCKET_MESSAGES, PROCESS_TX_DELAY } from 'constants/index'
 import {
   TransactionWithAddressAndPrices,
   createManyTransactions,
@@ -115,6 +115,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
   wsEndpoint: Socket
   CHRONIK_MSG_PREFIX: string
   lastProcessedMessages: ProcessedMessages
+  txProcessingBlocked: boolean
 
   constructor (networkSlug: string) {
     if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
@@ -128,12 +129,19 @@ export class ChronikBlockchainClient implements BlockchainClient {
     void this.chronikWSEndpoint.waitForOpen()
     this.chronikWSEndpoint.subscribeToBlocks()
     this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
+    this.txProcessingBlocked = false
     this.CHRONIK_MSG_PREFIX = `[CHRONIK ${networkSlug}]`
     this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
       query: {
         key: process.env.WS_AUTH_KEY
       }
     })
+  }
+
+  private async waitAndBlockProcessing (): Promise<void> {
+    while (this.txProcessingBlocked) {
+      await new Promise(resolve => setTimeout(resolve, PROCESS_TX_DELAY))
+    }
   }
 
   private clearOldMessages (): void {
@@ -373,30 +381,36 @@ export class ChronikBlockchainClient implements BlockchainClient {
         if (this.isAlreadyBeingProcessed(msg.txid, msg.msgType === 'TX_CONFIRMED')) {
           return
         }
-        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
-        const transaction = await this.chronik.tx(msg.txid)
-        const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-        for (const addressWithTransaction of addressesWithTransactions) {
-          const { created, tx } = await createTransaction(addressWithTransaction.transaction)
-          if (tx !== undefined) {
-            const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
-            broadcastTxData.address = addressWithTransaction.address.address
-            broadcastTxData.messageType = 'NewTx'
-            const newSimplifiedTransaction = getSimplifiedTrasaction(tx)
-            broadcastTxData.txs = [newSimplifiedTransaction]
-            try { // emit broadcast for both unconfirmed and confirmed txs
-              this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
-            } catch (err: any) {
-              console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
-            }
-            if (created) { // only execute trigger for unconfirmed tx arriving
-              try {
-                await executeAddressTriggers(broadcastTxData, tx.address.networkId)
+        try {
+          await this.waitAndBlockProcessing()
+          this.txProcessingBlocked = true
+          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
+          const transaction = await this.chronik.tx(msg.txid)
+          const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+          for (const addressWithTransaction of addressesWithTransactions) {
+            const { created, tx } = await createTransaction(addressWithTransaction.transaction)
+            if (tx !== undefined) {
+              const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
+              broadcastTxData.address = addressWithTransaction.address.address
+              broadcastTxData.messageType = 'NewTx'
+              const newSimplifiedTransaction = getSimplifiedTrasaction(tx)
+              broadcastTxData.txs = [newSimplifiedTransaction]
+              try { // emit broadcast for both unconfirmed and confirmed txs
+                this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
               } catch (err: any) {
-                console.error(RESPONSE_MESSAGES.COULD_NOT_EXECUTE_TRIGGER_500.message, err.stack)
+                console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
+              }
+              if (created) { // only execute trigger for unconfirmed tx arriving
+                try {
+                  await executeAddressTriggers(broadcastTxData, tx.address.networkId)
+                } catch (err: any) {
+                  console.error(RESPONSE_MESSAGES.COULD_NOT_EXECUTE_TRIGGER_500.message, err.stack)
+                }
               }
             }
           }
+        } finally {
+          this.txProcessingBlocked = false
         }
       }
     } else if (msg.type === 'Block') {
@@ -409,7 +423,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
   private async getRelatedAddressesForTransaction (transaction: Tx_InNode): Promise<string[]> {
     const inputAddresses = transaction.inputs.map(inp => outputScriptToAddress(this.networkSlug, inp.outputScript))
     const outputAddresses = transaction.outputs.map(out => outputScriptToAddress(this.networkSlug, out.outputScript))
-    return [...inputAddresses, ...outputAddresses].filter(a => a !== undefined) as string[]
+    return [...inputAddresses, ...outputAddresses].filter(a => a !== undefined)
   }
 
   private async getAddressesForTransaction (transaction: Tx_InNode): Promise<AddressWithTransaction[]> {
