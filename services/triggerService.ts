@@ -8,7 +8,7 @@ import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonServi
 import config from 'config'
 import { MAIL_FROM, MAIL_HTML_REPLACER, MAIL_SUBJECT, getMailerTransporter, SendEmailParameters } from 'constants/mail'
 
-const triggerWithPaybutton = Prisma.validator<Prisma.PaybuttonTriggerArgs>()({
+const triggerWithPaybutton = Prisma.validator<Prisma.PaybuttonTriggerDefaultArgs>()({
   include: { paybutton: true }
 })
 
@@ -255,11 +255,13 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
       buttonName: trigger.paybutton.name,
       address,
       timestamp,
-      opReturn: {
-        paymentId,
-        message,
-        rawMessage
-      } ?? EMPTY_OP_RETURN
+      opReturn: paymentId !== '' || message !== ''
+        ? {
+            paymentId,
+            message,
+            rawMessage
+          }
+        : EMPTY_OP_RETURN
     }
     await postDataForTrigger(trigger, postDataParameters)
   }))
@@ -272,11 +274,13 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
     txId: hash,
     address,
     timestamp,
-    opReturn: {
-      paymentId,
-      message,
-      rawMessage
-    } ?? EMPTY_OP_RETURN
+    opReturn: paymentId !== '' || message !== ''
+      ? {
+          paymentId,
+          message,
+          rawMessage
+        }
+      : EMPTY_OP_RETURN
   }
   await Promise.all(emailTriggers.map(async (trigger) => {
     sendEmailParameters.buttonName = trigger.paybutton.name

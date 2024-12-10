@@ -4,18 +4,18 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 import { fetchAddressTransactions } from 'services/transactionService'
 import { getNetworkFromSlug } from 'services/networkService'
 
-const addressWithTransactionAndNetwork = Prisma.validator<Prisma.AddressArgs>()({
+const addressWithTransactionAndNetwork = Prisma.validator<Prisma.AddressDefaultArgs>()({
   include: { transactions: true, network: true }
 })
 type AddressWithTransactionsAndNetwork = Prisma.AddressGetPayload<typeof addressWithTransactionAndNetwork>
 
-const addressWithTransactions = Prisma.validator<Prisma.AddressArgs>()({
+const addressWithTransactions = Prisma.validator<Prisma.AddressDefaultArgs>()({
   include: { transactions: true }
 })
 
 export type AddressWithTransactions = Prisma.AddressGetPayload<typeof addressWithTransactions>
 
-const addressWithTransactionsWithPrices = Prisma.validator<Prisma.AddressArgs>()({
+const addressWithTransactionsWithPrices = Prisma.validator<Prisma.AddressDefaultArgs>()({
   include: {
     transactions: {
       include: {
@@ -31,7 +31,7 @@ const addressWithTransactionsWithPrices = Prisma.validator<Prisma.AddressArgs>()
 
 export type AddressWithTransactionsWithPrices = Prisma.AddressGetPayload<typeof addressWithTransactionsWithPrices>
 
-const addressWithUserProfiles = Prisma.validator<Prisma.AddressArgs>()({
+const addressWithUserProfiles = Prisma.validator<Prisma.AddressDefaultArgs>()({
   include: {
     userProfiles: {
       include: {
@@ -51,7 +51,7 @@ export const includePaybuttonsNested = {
   }
 }
 
-const addressWithPaybuttons = Prisma.validator<Prisma.AddressArgs>()({
+const addressWithPaybuttons = Prisma.validator<Prisma.AddressDefaultArgs>()({
   include: includePaybuttonsNested
 })
 
@@ -72,7 +72,7 @@ export function includeUserPaybuttonsNested (userId: string): Prisma.AddressIncl
 
 export type AddressWithPaybuttons = Prisma.AddressGetPayload<typeof addressWithPaybuttons>
 
-const addressWithPaybuttonsAndUserProfiles = Prisma.validator<Prisma.AddressArgs>()({
+const addressWithPaybuttonsAndUserProfiles = Prisma.validator<Prisma.AddressDefaultArgs>()({
   include: {
     ...includePaybuttonsNested,
     userProfiles: {
@@ -85,7 +85,7 @@ const addressWithPaybuttonsAndUserProfiles = Prisma.validator<Prisma.AddressArgs
 
 export type AddressWithPaybuttonsAndUserProfiles = Prisma.AddressGetPayload<typeof addressWithPaybuttonsAndUserProfiles>
 
-const addressWithTransactionsAndPaybuttons = Prisma.validator<Prisma.AddressArgs>()({
+const addressWithTransactionsAndPaybuttons = Prisma.validator<Prisma.AddressDefaultArgs>()({
   include: { transactions: true, paybuttons: includePaybuttonsNested.paybuttons }
 })
 
@@ -103,7 +103,7 @@ const includeTransactionNetworkUserProfile = {
   }
 }
 
-const addressWithTransactionNetworkUserProfile = Prisma.validator<Prisma.AddressArgs>()(
+const addressWithTransactionNetworkUserProfile = Prisma.validator<Prisma.AddressDefaultArgs>()(
   includeTransactionNetworkUserProfile
 )
 export type AddressWithTransactionNetworkUserProfile = Prisma.AddressGetPayload<typeof addressWithTransactionNetworkUserProfile>
