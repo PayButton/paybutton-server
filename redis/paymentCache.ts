@@ -15,10 +15,13 @@ const getPaymentsWeekKey = (addressString: string, timestamp: number): string =>
 }
 
 export async function * getUserUncachedAddresses (userId: string): AsyncGenerator<AddressWithTransactionsWithPrices> {
+  console.log('getting all addresses...')
   const addresses = await fetchAllUserAddresses(userId, true) as AddressWithTransactionsWithPrices[]
+  console.log('got them, will get week keys')
   for (const addr of addresses) {
     const keys = await getCachedWeekKeysForAddress(addr.address)
     if (keys.length === 0) {
+      console.log('yielding address', addr.address, 'with all of its txs...')
       yield addr
     }
   }
@@ -223,6 +226,7 @@ export const initPaymentCache = async (addressString: string): Promise<boolean> 
 }
 
 export async function * getPaymentStream (userId: string): AsyncGenerator<Payment> {
+  console.log('getting payment stream')
   const uncachedAddressStream = getUserUncachedAddresses(userId)
   for await (const address of uncachedAddressStream) {
     console.log('payment stream: will create cache for addr', address.address)
