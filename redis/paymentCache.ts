@@ -1,7 +1,7 @@
 import { redis } from 'redis/clientInstance'
 import { Prisma } from '@prisma/client'
 import { getTransactionValue, TransactionWithAddressAndPrices, TransactionWithPrices } from 'services/transactionService'
-import { AddressWithTransactionsWithPrices, fetchAllUserAddresses, fetchAddressById, AddressWithPaybuttons, fetchAddressWithTxsAndPrices } from 'services/addressService'
+import { AddressWithTransactionsWithPrices, fetchAllUserAddresses, fetchAddressById, AddressWithPaybuttons, fetchAddressWithTxsAndPrices, AddressPaymentInfo } from 'services/addressService'
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
@@ -84,15 +84,34 @@ const getPaymentsByWeek = (addressString: string, payments: Payment[]): KeyValue
   return paymentsGroupedByKey
 }
 
-export const generateGroupedPaymentsForAddress = async (address: AddressWithTransactionsWithPrices): Promise<KeyValueT<Payment[]>> => {
+interface GroupedPaymentsAndInfoObject {
+  groupedPayments: KeyValueT<Payment[]>
+  info: AddressPaymentInfo
+}
+
+export const generateGroupedPaymentsAndInfoForAddress = async (address: AddressWithTransactionsWithPrices): Promise<GroupedPaymentsAndInfoObject> => {
   let paymentList: Payment[] = []
-  const zero = new Prisma.Decimal(0)
-  for (const tx of address.transactions.filter(tx => tx.amount > zero)) {
-    const payment = await generatePaymentFromTx(tx)
-    paymentList.push(payment)
+  let balance = new Prisma.Decimal(0)
+  let paymentCount = 0
+  for (const tx of address.transactions) {
+    balance = balance.plus(tx.amount)
+    if (tx.amount.gt(0)) {
+      const payment = await generatePaymentFromTx(tx)
+      paymentList.push(payment)
+      paymentCount++
+    }
   }
+  const info: AddressPaymentInfo = {
+    balance,
+    paymentCount
+  }
+
   paymentList = paymentList.filter((p) => p.values.usd > new Prisma.Decimal(0))
-  return getPaymentsByWeek(address.address, paymentList)
+  const groupedPayments = getPaymentsByWeek(address.address, paymentList)
+  return {
+    groupedPayments,
+    info
+  }
 }
 
 export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[]> => {
