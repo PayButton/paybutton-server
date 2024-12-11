@@ -8,9 +8,7 @@ interface CustomNodeJsGlobal extends NodeJS.Global {
 declare const global: CustomNodeJsGlobal
 
 if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient({
-    log: ['query', 'warn', 'info', 'error']
-  })
+  prisma = new PrismaClient()
 } else {
   if (global.prisma === undefined) {
     global.prisma = new PrismaClient()
