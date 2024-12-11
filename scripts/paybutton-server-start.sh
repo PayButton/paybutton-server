@@ -12,7 +12,6 @@ echo Connected to the db.
 yarn || exit 1
 rm logs/*
 if [ "$ENVIRONMENT" = "production" ]; then
-    export DEBUG="prisma*"
     yarn prisma migrate deploy || exit 1
     pm2 start yarn --time --interpreter ash --name jobs -- initJobs || exit 1
     pm2 start yarn --time --interpreter ash --name WSServer -- initWSServer || exit 1
