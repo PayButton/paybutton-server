@@ -88,7 +88,7 @@ export class CacheGet {
     methodName: MethodName,
     fn: () => Promise<T>
   ): Promise<T> {
-    if (this.pendingCalls[userId] === null) {
+    if (this.pendingCalls[userId] === undefined) {
       this.pendingCalls[userId] = new Set()
     }
 
