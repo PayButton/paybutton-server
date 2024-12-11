@@ -136,9 +136,12 @@ const generateDashboardDataFromStream = async function (
   const thresholds = createThresholds(today, monthStart, nMonthsTotal)
 
   // Process all payments
-  console.log('processing payments')
+  console.log('processing payments!!!!')
   let i = 0
   for await (const payment of paymentStream) {
+    if (i === 0) console.log('i é zero')
+    if (i === 1) console.log('i é um')
+    if (i === 2) console.log('i é dois')
     if (i % 100 === 0) {
       console.log('processing payment number', i)
     }

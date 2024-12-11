@@ -228,9 +228,14 @@ export async function * getPaymentStream (userId: string): AsyncGenerator<Paymen
     console.log('payment stream: will create cache for addr', address.address)
     await CacheSet.addressCreation(address)
   }
+  console.log('CREATED CACHE!')
   const weekKeys = await getCachedWeekKeysForUser(userId)
 
+  console.log('will now yield payments')
+  let i = 0
   for (const weekKey of weekKeys) {
+    if (i % 100 === 0) console.log('yielding payment number', i)
+    i++
     const paymentsString = await redis.get(weekKey)
 
     if (paymentsString !== null) {
