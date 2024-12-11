@@ -137,7 +137,12 @@ const generateDashboardDataFromStream = async function (
 
   // Process all payments
   console.log('processing payments')
+  let i = 0
   for await (const payment of paymentStream) {
+    if (i % 100 === 0) {
+      console.log('processing payment number', i)
+    }
+    i++
     const paymentTime = moment(payment.timestamp * 1000)
 
     // Process button data and assign to relevant periods
