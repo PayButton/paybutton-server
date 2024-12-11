@@ -47,6 +47,7 @@
     "micro": "^9.3.4",
     "micro-cors": "^0.1.1",
     "moment": "^2.29.4",
+    "moment-timezone": "^0.5.46",
     "mysql2": "^2.3.3",
     "next": "^13.2.3",
     "node-mocks-http": "^1.11.0",
@@ -101,6 +102,5 @@
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} -r tsconfig-paths/register prisma/seed.ts"
-  },
-  "license": "MIT"
+  }
 }

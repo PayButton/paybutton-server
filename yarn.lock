@@ -2493,7 +2493,7 @@ chronik-client@^0.28.1:
   dependencies:
     "@types/ws" "^8.2.1"
     axios "^1.6.3"
-    ecashaddrjs "file:../.cache/yarn/v6/npm-chronik-client-0.28.1-475c36f61db0458e88fbd509a0ff940eb3df2f2e-integrity/node_modules/ecashaddrjs"
+    ecashaddrjs "file:../../../Library/Caches/Yarn/v6/npm-chronik-client-0.28.1-475c36f61db0458e88fbd509a0ff940eb3df2f2e-integrity/node_modules/ecashaddrjs"
     isomorphic-ws "^4.0.1"
     protobufjs "^6.8.8"
     ws "^8.3.0"
@@ -5170,6 +5170,13 @@ minimist@^1.2.0, minimist@^1.2.5, minimist@^1.2.6:
   version "1.2.8"
   resolved "https://registry.npmjs.org/minimist/-/minimist-1.2.8.tgz"
   integrity sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==
+
+moment-timezone@^0.5.46:
+  version "0.5.46"
+  resolved "https://registry.yarnpkg.com/moment-timezone/-/moment-timezone-0.5.46.tgz#a21aa6392b3c6b3ed916cd5e95858a28d893704a"
+  integrity sha512-ZXm9b36esbe7OmdABqIWJuBBiLLwAjrN7CE+7sYdCCx82Nabt1wHDj8TVseS59QIlfFPbOoiBPm6ca9BioG4hw==
+  dependencies:
+    moment "^2.29.4"
 
 moment@^2.29.4:
   version "2.29.4"
