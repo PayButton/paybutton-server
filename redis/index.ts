@@ -1,11 +1,12 @@
-import { AddressPaymentInfo, AddressWithTransactionsWithPrices } from 'services/addressService'
+import { AddressPaymentInfo } from 'services/addressService'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import { fetchUsersForAddress } from 'services/userService'
 import { cacheBalanceForAddress, clearBalanceCache, getBalanceForAddress, updateBalanceCacheFromTx } from './balanceCache'
 import { clearDashboardCache, getUserDashboardData } from './dashboardCache'
-import { appendPaybuttonToAddressesCache, cacheGroupedPayments, cacheManyTxs, generateGroupedPaymentsAndInfoForAddress, getCachedPaymentsCountForUser, getPaymentList, initPaymentCache, removePaybuttonToAddressesCache } from './paymentCache'
+import { appendPaybuttonToAddressesCache, cacheGroupedPayments, cacheManyTxs, generateAndCacheGroupedPaymentsAndInfoForAddress, getCachedPaymentsCountForUser, getPaymentList, initPaymentCache, removePaybuttonToAddressesCache } from './paymentCache'
 import { DashboardData, Payment } from './types'
+import { Address } from '@prisma/client'
 
 interface PaybuttonCreationParams {
   paybutton: PaybuttonWithAddresses
@@ -17,14 +18,13 @@ type PaybuttonUpdateParams = PaybuttonCreationParams
 type PaybuttonDeletionParams = PaybuttonCreationParams
 
 export const CacheSet = {
-  addressCreation: async (address: AddressWithTransactionsWithPrices): Promise<void> => {
-    const groupedPaymentsAndInfo = await generateGroupedPaymentsAndInfoForAddress(address)
+  addressCreation: async (address: Address): Promise<void> => {
+    const groupedPaymentsAndInfo = await generateAndCacheGroupedPaymentsAndInfoForAddress(address)
     await cacheGroupedPayments(groupedPaymentsAndInfo.groupedPayments)
     await cacheBalanceForAddress(groupedPaymentsAndInfo.info, address.address)
   },
   txCreation: async (tx: TransactionWithAddressAndPrices): Promise<void> => {
-    const addressString = tx.address.address
-    const cacheInitialized = await initPaymentCache(addressString)
+    const cacheInitialized = await initPaymentCache(tx.address)
     if (cacheInitialized) return
     void await cacheManyTxs([tx])
     const userIds = await fetchUsersForAddress(tx.address.address)

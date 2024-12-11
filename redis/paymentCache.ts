@@ -1,7 +1,7 @@
 import { redis } from 'redis/clientInstance'
-import { Prisma } from '@prisma/client'
-import { getTransactionValue, TransactionWithAddressAndPrices, TransactionWithPrices } from 'services/transactionService'
-import { AddressWithTransactionsWithPrices, fetchAllUserAddresses, fetchAddressById, AddressWithPaybuttons, fetchAddressWithTxsAndPrices, AddressPaymentInfo } from 'services/addressService'
+import { Address, Prisma } from '@prisma/client'
+import { fetchTransactionsWithPaybuttonsAndPricesForAddress, getTransactionValue, TransactionsWithPaybuttonsAndPrices, TransactionWithAddressAndPrices } from 'services/transactionService'
+import { fetchAllUserAddresses, AddressPaymentInfo } from 'services/addressService'
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
@@ -14,15 +14,13 @@ const getPaymentsWeekKey = (addressString: string, timestamp: number): string =>
   return `${addressString}:payments:${moment.unix(timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
 }
 
-export async function * getUserUncachedAddresses (userId: string): AsyncGenerator<AddressWithTransactionsWithPrices> {
-  console.log('getting all addresses...')
-  const addresses = await fetchAllUserAddresses(userId, true) as AddressWithTransactionsWithPrices[]
-  console.log('got them, will get week keys')
-  for (const addr of addresses) {
-    const keys = await getCachedWeekKeysForAddress(addr.address)
+export async function * getUserUncachedAddresses (userId: string): AsyncGenerator<Address> {
+  const addresses = await fetchAllUserAddresses(userId, false, false) as Address[]
+  for (const address of addresses) {
+    const keys = await getCachedWeekKeysForAddress(address.address)
     if (keys.length === 0) {
-      console.log('yielding address', addr.address, 'with all of its txs...')
-      yield addr
+      console.log('yielding address', address.address, 'with all of its txs...')
+      yield address
     }
   }
 }
@@ -51,26 +49,6 @@ export const getCachedWeekKeysForUser = async (userId: string): Promise<string[]
   return ret
 }
 
-export const generatePaymentFromTx = async (tx: TransactionWithPrices): Promise<Payment> => {
-  const values = (await getTransactionValue(tx))
-  const txAddress = await fetchAddressById(tx.addressId, true) as AddressWithPaybuttons
-  if (txAddress === undefined) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_FOR_TRANSACTION_404.message)
-  return {
-    timestamp: tx.timestamp,
-    values,
-    networkId: txAddress.networkId,
-    hash: tx.hash,
-    buttonDisplayDataList: txAddress.paybuttons.map(
-      (conn) => {
-        return {
-          name: conn.paybutton.name,
-          id: conn.paybutton.id
-        }
-      }
-    )
-  }
-}
-
 const getPaymentsByWeek = (addressString: string, payments: Payment[]): KeyValueT<Payment[]> => {
   const paymentsGroupedByKey: KeyValueT<Payment[]> = {}
   for (const payment of payments) {
@@ -89,11 +67,30 @@ interface GroupedPaymentsAndInfoObject {
   info: AddressPaymentInfo
 }
 
-export const generateGroupedPaymentsAndInfoForAddress = async (address: AddressWithTransactionsWithPrices): Promise<GroupedPaymentsAndInfoObject> => {
+export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPrices): Promise<Payment> => {
+  const values = (await getTransactionValue(tx))
+  return {
+    timestamp: tx.timestamp,
+    values,
+    networkId: tx.address.networkId,
+    hash: tx.hash,
+    buttonDisplayDataList: tx.address.paybuttons.map(
+      (conn) => {
+        return {
+          name: conn.paybutton.name,
+          id: conn.paybutton.id
+        }
+      }
+    )
+  }
+}
+
+export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: Address): Promise<GroupedPaymentsAndInfoObject> => {
   let paymentList: Payment[] = []
   let balance = new Prisma.Decimal(0)
   let paymentCount = 0
-  for (const tx of address.transactions) {
+  const txsWithPaybuttons = await fetchTransactionsWithPaybuttonsAndPricesForAddress(address.id)
+  for (const tx of txsWithPaybuttons) {
     balance = balance.plus(tx.amount)
     if (tx.amount.gt(0)) {
       const payment = await generatePaymentFromTx(tx)
@@ -234,10 +231,9 @@ export const clearRecentAddressCache = async (addressString: string, timestamps:
   )
 }
 
-export const initPaymentCache = async (addressString: string): Promise<boolean> => {
-  const cachedKeys = await getCachedWeekKeysForAddress(addressString)
+export const initPaymentCache = async (address: Address): Promise<boolean> => {
+  const cachedKeys = await getCachedWeekKeysForAddress(address.address)
   if (cachedKeys.length === 0) {
-    const address = await fetchAddressWithTxsAndPrices(addressString)
     await CacheSet.addressCreation(address)
     return true
   }
@@ -247,9 +243,9 @@ export const initPaymentCache = async (addressString: string): Promise<boolean> 
 export async function * getPaymentStream (userId: string): AsyncGenerator<Payment> {
   console.log('getting payment stream')
   const uncachedAddressStream = getUserUncachedAddresses(userId)
-  for await (const address of uncachedAddressStream) {
-    console.log('payment stream: will create cache for addr', address.address)
-    await CacheSet.addressCreation(address)
+  for await (const addressId of uncachedAddressStream) {
+    console.log('payment stream: will create cache for addr', addressId)
+    await CacheSet.addressCreation(addressId)
   }
   console.log('CREATED CACHE!')
   const weekKeys = await getCachedWeekKeysForUser(userId)

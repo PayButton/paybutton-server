@@ -11,7 +11,7 @@ import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
 
-export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
+export async function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
@@ -102,6 +102,25 @@ const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionDefau
 
 export type TransactionWithAddressAndPrices = Prisma.TransactionGetPayload<typeof transactionWithAddressAndPrices>
 
+const transactionsWithPaybuttonsAndPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
+  {
+    include: {
+      address: {
+        include: {
+          paybuttons: {
+            include: {
+              paybutton: true
+            }
+          }
+        }
+      },
+      ...includePrices
+    }
+  }
+)
+
+export type TransactionsWithPaybuttonsAndPrices = Prisma.TransactionGetPayload<typeof transactionsWithPaybuttonsAndPrices>
+
 export async function fetchTransactionsByAddressList (
   addressIdList: string[],
   networkIdsListFilter?: number[]
@@ -130,6 +149,26 @@ export async function fetchTxCountByAddressString (addressString: string): Promi
       address: {
         address: addressString
       }
+    }
+  })
+}
+
+export async function fetchTransactionsWithPaybuttonsAndPricesForAddress (addressId: string): Promise<TransactionsWithPaybuttonsAndPrices[]> {
+  return await prisma.transaction.findMany({
+    where: {
+      addressId
+    },
+    include: {
+      address: {
+        include: {
+          paybuttons: {
+            include: {
+              paybutton: true
+            }
+          }
+        }
+      },
+      ...includePrices
     }
   })
 }
