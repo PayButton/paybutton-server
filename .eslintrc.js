@@ -7,6 +7,7 @@ module.exports = {
   rules: {
     '@typescript-eslint/no-non-null-assertion': 'off',
     '@typescript-eslint/triple-slash-reference': 'off',
-    '@typescript-eslint/consistent-type-assertions': 'off'
+    '@typescript-eslint/consistent-type-assertions': 'off',
+    '@typescript-eslint/no-extraneous-class': 'off'
   }
 }
