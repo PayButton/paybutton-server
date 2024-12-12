@@ -69,12 +69,9 @@ interface GroupedPaymentsAndInfoObject {
 
 export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPrices): Promise<Payment> => {
   const values = (await getTransactionValue(tx))
-  return {
-    timestamp: tx.timestamp,
-    values,
-    networkId: tx.address.networkId,
-    hash: tx.hash,
-    buttonDisplayDataList: tx.address.paybuttons.map(
+  let buttonDisplayDataList: Array<{ name: string, id: string}> = []
+  if (tx.address.paybuttons !== undefined) {
+    buttonDisplayDataList = tx.address.paybuttons.map(
       (conn) => {
         return {
           name: conn.paybutton.name,
@@ -82,6 +79,15 @@ export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPri
         }
       }
     )
+  } else {
+    console.log('DEBUG! why tx of', { id: tx.id, hash: tx.hash, addr: tx.address.address, addrId: tx.addressId }, 'has no paybuttons')
+  }
+  return {
+    timestamp: tx.timestamp,
+    values,
+    networkId: tx.address.networkId,
+    hash: tx.hash,
+    buttonDisplayDataList
   }
 }
 
