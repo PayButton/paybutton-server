@@ -45,10 +45,9 @@ const getRedisClient = (isBullMQ = false): IORedis | RedisMocked => {
     })
   }
 
-  const r = new IORedis(config.redisURL, {
+  return new IORedis(config.redisURL, {
     maxRetriesPerRequest: null
   })
-  return r
 }
 
 export const redis = getRedisClient()
