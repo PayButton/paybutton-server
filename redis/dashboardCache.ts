@@ -1,10 +1,11 @@
 import { redis } from './clientInstance'
-import { getCachedWeekKeysForUser, getPaymentsForWeekKey, getPaymentStream } from 'redis/paymentCache'
+import { getPaymentStream } from 'redis/paymentCache'
 import { ChartData, DashboardData, Payment, ButtonData, PaymentDataByButton, ChartColor, PeriodData, ButtonDisplayData } from './types'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { QuoteValues } from 'services/priceService'
+import { getOldestTxForUser } from 'services/transactionService'
 
 // USERID:dashboard
 const getDashboardSummaryKey = (userId: string): string => {
@@ -39,26 +40,10 @@ const getChartData = function (n: number, periodString: string, dataArray: numbe
   }
 }
 
-function getOldestDateKey (keys: string[]): string {
-  const keyDatePairs = keys.map(k => [k, k.split(':').slice(-2).map(Number)] as [string, [number, number]])
-  keyDatePairs.sort((a, b) => {
-    const [aYear, aWeek] = a[1]
-    const [bYear, bWeek] = b[1]
-
-    // compare year first, then week
-    return (aYear !== bYear ? aYear - bYear : aWeek - bWeek)
-  })
-  return keyDatePairs[0][0]
-}
-
 const getNumberOfMonths = async function (userId: string): Promise<number> {
-  const weekKeys = await getCachedWeekKeysForUser(userId)
-  console.log('number of months had weekkeys as', weekKeys.length)
-  if (weekKeys.length === 0) return 0
-  const oldestKey = getOldestDateKey(weekKeys)
-  const oldestPayments = await getPaymentsForWeekKey(oldestKey)
-  const oldestTimestamp = Math.min(...oldestPayments.map(p => p.timestamp))
-  const oldestDate = moment(oldestTimestamp * 1000)
+  const oldestTx = await getOldestTxForUser(userId)
+  if (oldestTx === null) return 0
+  const oldestDate = moment(oldestTx.timestamp * 1000)
   const today = moment()
   const floatDiff = today.diff(oldestDate, 'months', true)
   return Math.ceil(floatDiff) + 1
@@ -152,7 +137,7 @@ const generateDashboardDataFromStream = async function (
 
     // Accumulate period data
     const periods = ['thirtyDays', 'sevenDays', 'year', 'all'] as const
-    periods.forEach((period) => {
+    for (const period of periods) {
       if (paymentTime.isSameOrAfter(thresholds[period])) {
         const index =
           period === 'thirtyDays' || period === 'sevenDays'
@@ -163,7 +148,7 @@ const generateDashboardDataFromStream = async function (
           paymentCounters[period][index] += 1
         }
       }
-    })
+    }
   }
   console.log('processed payments, will reverse')
 
