@@ -7,13 +7,9 @@ const getBalanceKey = (addressString: string): string => {
   return `${addressString}:balance`
 }
 
-export const cacheAddressPaymentInfo = async (addressString: string, info: AddressPaymentInfo): Promise<void> => {
+export const cacheBalanceForAddress = async (info: AddressPaymentInfo, addressString: string): Promise<void> => {
   const balanceKey = getBalanceKey(addressString)
   await redis.set(balanceKey, JSON.stringify(info))
-}
-
-export const cacheBalanceForAddress = async (info: AddressPaymentInfo, addressString: string): Promise<void> => {
-  await cacheAddressPaymentInfo(addressString, info)
 }
 
 export const getCachedBalanceForAddress = async (addressString: string): Promise<AddressPaymentInfo | null> => {
@@ -27,7 +23,7 @@ export const getBalanceForAddress = async (addressString: string): Promise<Addre
   let paymentInfo = await getCachedBalanceForAddress(addressString)
   if (paymentInfo === null) {
     paymentInfo = await generateAddressPaymentInfo(addressString)
-    await cacheAddressPaymentInfo(addressString, paymentInfo)
+    await cacheBalanceForAddress(paymentInfo, addressString)
   }
   return paymentInfo
 }
@@ -40,7 +36,7 @@ export const updateBalanceCacheFromTx = async (tx: TransactionWithAddressAndPric
   }
   cached.balance = tx.amount.plus(cached.balance)
   cached.paymentCount += 1
-  await cacheAddressPaymentInfo(addressString, cached)
+  await cacheBalanceForAddress(cached, addressString)
 }
 
 export const clearBalanceCache = async (addressString: string): Promise<void> => {
