@@ -185,7 +185,7 @@ const cacheGroupedPaymentsAppend = async (paymentsGroupedByKey: KeyValueT<Paymen
   )
 }
 
-export const cacheManyTxs = async (txs: TransactionWithAddressAndPrices[]): Promise<void> => {
+export const cacheManyTxs = async (txs: TransactionsWithPaybuttonsAndPrices[]): Promise<void> => {
   const zero = new Prisma.Decimal(0)
   for (const tx of txs.filter(tx => tx.amount > zero)) {
     const payment = await generatePaymentFromTx(tx)

@@ -102,20 +102,22 @@ const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionDefau
 
 export type TransactionWithAddressAndPrices = Prisma.TransactionGetPayload<typeof transactionWithAddressAndPrices>
 
+const includePaybuttonsAndPrices = {
+  address: {
+    include: {
+      paybuttons: {
+        include: {
+          paybutton: true
+        }
+      }
+    }
+  },
+  ...includePrices
+}
+
 const transactionsWithPaybuttonsAndPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
   {
-    include: {
-      address: {
-        include: {
-          paybuttons: {
-            include: {
-              paybutton: true
-            }
-          }
-        }
-      },
-      ...includePrices
-    }
+    include: includePaybuttonsAndPrices
   }
 )
 
@@ -153,23 +155,32 @@ export async function fetchTxCountByAddressString (addressString: string): Promi
   })
 }
 
+export async function fetchTransactionWithPaybuttonsAndPrices (txId: string): Promise<TransactionsWithPaybuttonsAndPrices> {
+  return await prisma.transaction.findUniqueOrThrow({
+    where: {
+      id: txId
+    },
+    include: includePaybuttonsAndPrices
+  })
+}
+
+export async function fetchTransactionsWithPaybuttonsAndPricesForIdList (txIdList: string[]): Promise<TransactionsWithPaybuttonsAndPrices[]> {
+  return await prisma.transaction.findMany({
+    where: {
+      id: {
+        in: txIdList
+      }
+    },
+    include: includePaybuttonsAndPrices
+  })
+}
+
 export async function fetchTransactionsWithPaybuttonsAndPricesForAddress (addressId: string): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   return await prisma.transaction.findMany({
     where: {
       addressId
     },
-    include: {
-      address: {
-        include: {
-          paybuttons: {
-            include: {
-              paybutton: true
-            }
-          }
-        }
-      },
-      ...includePrices
-    }
+    include: includePaybuttonsAndPrices
   })
 }
 
@@ -297,10 +308,10 @@ export async function createTransaction (
   })
   const created = createdTx.createdAt.getTime() === createdTx.updatedAt.getTime()
   void await connectTransactionToPrices(createdTx, prisma)
-  const txWithPrices = await fetchTransactionById(createdTx.id)
-  void await CacheSet.txCreation(txWithPrices)
+  const txWithPaybuttonsAndPrices = await fetchTransactionWithPaybuttonsAndPrices(createdTx.id)
+  void await CacheSet.txCreation(txWithPaybuttonsAndPrices)
   return {
-    tx: txWithPrices,
+    tx: txWithPaybuttonsAndPrices,
     created
   }
 }
@@ -399,16 +410,9 @@ export async function createManyTransactions (
     .filter(txD => txD.isCreated)
     .map(txD => txD.tx)
   void await connectTransactionsListToPrices(insertedTransactions)
-  const txsWithPrices = await prisma.transaction.findMany({
-    where: {
-      id: {
-        in: insertedTransactions.map(tx => tx.id)
-      }
-    },
-    include: includeAddressAndPrices
-  })
-  void await CacheSet.txsCreation(txsWithPrices)
-  return txsWithPrices
+  const txsWithPaybuttonsAndPrices = await fetchTransactionsWithPaybuttonsAndPricesForIdList(insertedTransactions.map(tx => tx.id))
+  void await CacheSet.txsCreation(txsWithPaybuttonsAndPrices)
+  return txsWithPaybuttonsAndPrices
 }
 
 interface SyncAndSubscriptionReturn {

@@ -1,6 +1,6 @@
 import { AddressPaymentInfo } from 'services/addressService'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
-import { TransactionWithAddressAndPrices } from 'services/transactionService'
+import { TransactionsWithPaybuttonsAndPrices } from 'services/transactionService'
 import { fetchUsersForAddress } from 'services/userService'
 import { cacheBalanceForAddress, clearBalanceCache, getBalanceForAddress, updateBalanceCacheFromTx } from './balanceCache'
 import { clearDashboardCache, getUserDashboardData } from './dashboardCache'
@@ -23,7 +23,7 @@ export const CacheSet = {
     await cacheGroupedPayments(groupedPaymentsAndInfo.groupedPayments)
     await cacheBalanceForAddress(groupedPaymentsAndInfo.info, address.address)
   },
-  txCreation: async (tx: TransactionWithAddressAndPrices): Promise<void> => {
+  txCreation: async (tx: TransactionsWithPaybuttonsAndPrices): Promise<void> => {
     const cacheInitialized = await initPaymentCache(tx.address)
     if (cacheInitialized) return
     void await cacheManyTxs([tx])
@@ -35,7 +35,7 @@ export const CacheSet = {
       })
     )
   },
-  txsCreation: async (txs: TransactionWithAddressAndPrices[]): Promise<void> => {
+  txsCreation: async (txs: TransactionsWithPaybuttonsAndPrices[]): Promise<void> => {
     void await cacheManyTxs(txs)
     const differentAddresses = new Set(txs.map(tx => tx.address.address))
     for (const addr of differentAddresses) {
