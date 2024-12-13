@@ -6,6 +6,7 @@ import moment, { DurationInputArg2 } from 'moment'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { QuoteValues } from 'services/priceService'
 import { getOldestTxForUser } from 'services/transactionService'
+import { Decimal } from '@prisma/client/runtime/library'
 
 // USERID:dashboard
 const getDashboardSummaryKey = (userId: string): string => {
@@ -110,8 +111,6 @@ const generateDashboardDataFromStream = async function (
   nMonthsTotal: number,
   borderColor: ChartColor
 ): Promise<DashboardData> {
-  // Initialize accumulators for periods
-  console.log('creatting accumulators')
   const revenueAccumulators = createRevenueAccumulators(nMonthsTotal)
   const paymentCounters = createPaymentCounters(nMonthsTotal)
   const buttonDataAccumulators = createButtonDataAccumulators()
@@ -121,13 +120,7 @@ const generateDashboardDataFromStream = async function (
   const thresholds = createThresholds(today, monthStart, nMonthsTotal)
 
   // Process all payments
-  console.log('processing payments!!!!')
-  let i = 0
   for await (const payment of paymentStream) {
-    if (i % 500 === 0) {
-      console.log('processing payment number', i)
-    }
-    i++
     const paymentTime = moment(payment.timestamp * 1000)
 
     // Process button data and assign to relevant periods
@@ -150,10 +143,8 @@ const generateDashboardDataFromStream = async function (
       }
     }
   }
-  console.log('processed payments, will reverse')
 
   reverseAccumulators(revenueAccumulators, paymentCounters)
-  console.log('reversed acc, will create thirtyDays')
 
   // Generate PeriodData for each period
   const thirtyDays = createPeriodData(
@@ -165,7 +156,6 @@ const generateDashboardDataFromStream = async function (
     borderColor.revenue,
     borderColor.payments
   )
-  console.log('seven days')
 
   const sevenDays = createPeriodData(
     7,
@@ -177,7 +167,6 @@ const generateDashboardDataFromStream = async function (
     borderColor.payments
   )
 
-  console.log('year')
   const year = createPeriodData(
     12,
     'months',
@@ -189,7 +178,6 @@ const generateDashboardDataFromStream = async function (
     'MMM'
   )
 
-  console.log('all')
   const all = createPeriodData(
     nMonthsTotal,
     'months',
@@ -201,7 +189,6 @@ const generateDashboardDataFromStream = async function (
     'MMM YYYY'
   )
 
-  console.log('will RET FINALLY')
   return {
     thirtyDays,
     sevenDays,
@@ -224,10 +211,10 @@ interface PeriodRevenueAccumulators {
 
 function createRevenueAccumulators (nMonthsTotal: number): PeriodRevenueAccumulators {
   return {
-    thirtyDays: Array(30).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
-    sevenDays: Array(7).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
-    year: Array(12).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
-    all: Array(nMonthsTotal).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) })
+    thirtyDays: Array(30).fill({ usd: new Decimal(0), cad: new Decimal(0) }),
+    sevenDays: Array(7).fill({ usd: new Decimal(0), cad: new Decimal(0) }),
+    year: Array(12).fill({ usd: new Decimal(0), cad: new Decimal(0) }),
+    all: Array(nMonthsTotal).fill({ usd: new Decimal(0), cad: new Decimal(0) })
   }
 }
 
@@ -338,7 +325,7 @@ function createPeriodData (
   return {
     revenue: getChartData(periodLength, periodUnit, revenueData, revenueColor, labelFormat),
     payments: getChartData(periodLength, periodUnit, paymentData, paymentColor, labelFormat),
-    totalRevenue: revenueData.reduce(sumQuoteValues, { usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
+    totalRevenue: revenueData.reduce(sumQuoteValues, { usd: new Decimal(0), cad: new Decimal(0) }),
     totalPayments: paymentData.reduce((a, b) => a + b, 0),
     buttons: buttonData
   }
@@ -346,20 +333,17 @@ function createPeriodData (
 
 export const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
   const dashboardData = await getCachedDashboardData(userId)
-  console.log('will get user dashboard data, curr cache is null?', dashboardData === null)
   if (dashboardData === null) {
+    console.log('[CACHE]: Recreating dashboard for user', userId)
     const nMonthsTotal = await getNumberOfMonths(userId)
-    console.log('will get payment stream')
     const paymentStream = getPaymentStream(userId)
 
-    console.log('will generate dashboard data from stream')
     const dashboardData = await generateDashboardDataFromStream(
       paymentStream,
       nMonthsTotal,
       { revenue: '#66fe91', payments: '#669cfe' }
     )
-    console.log('will cache everything')
-    await cacheDashboardData(userId, dashboardData) // WIP SET THIS NULL ON UPDATE BUTTONS & WS
+    await cacheDashboardData(userId, dashboardData)
     return dashboardData
   }
   return dashboardData
