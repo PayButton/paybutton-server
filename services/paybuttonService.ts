@@ -39,13 +39,13 @@ const includeAddresses = {
   }
 }
 
-const paybuttonWithAddresses = Prisma.validator<Prisma.PaybuttonArgs>()(
+const paybuttonWithAddresses = Prisma.validator<Prisma.PaybuttonDefaultArgs>()(
   { include: includeAddresses }
 )
 
 export type PaybuttonWithAddresses = Prisma.PaybuttonGetPayload<typeof paybuttonWithAddresses>
 
-const paybuttonWithTriggers = Prisma.validator<Prisma.PaybuttonArgs>()(
+const paybuttonWithTriggers = Prisma.validator<Prisma.PaybuttonDefaultArgs>()(
   { include: { triggers: true } }
 )
 
