@@ -19,7 +19,6 @@ export async function * getUserUncachedAddresses (userId: string): AsyncGenerato
   for (const address of addresses) {
     const keys = await getCachedWeekKeysForAddress(address.address)
     if (keys.length === 0) {
-      console.log('yielding address', address.address, 'with all of its txs...')
       yield address
     }
   }
@@ -28,7 +27,6 @@ export async function * getUserUncachedAddresses (userId: string): AsyncGenerato
 export const getPaymentList = async (userId: string): Promise<Payment[]> => {
   const uncachedAddressStream = getUserUncachedAddresses(userId)
   for await (const address of uncachedAddressStream) {
-    console.log('payment list: will create cache for addr', address.address)
     void await CacheSet.addressCreation(address)
   }
   return await getCachedPaymentsForUser(userId)
@@ -39,9 +37,7 @@ const getCachedWeekKeysForAddress = async (addressString: string): Promise<strin
 }
 
 export const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
-  console.log('will get addresses strings')
   const addresses = await fetchAllUserAddresses(userId)
-  console.log('got addresses strings', addresses.length)
   let ret: string[] = []
   for (const addr of addresses) {
     ret = ret.concat(await getCachedWeekKeysForAddress(addr.address))
@@ -80,7 +76,7 @@ export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPri
       }
     )
   } else {
-    console.log('DEBUG! why tx of', { id: tx.id, hash: tx.hash, addr: tx.address.address, addrId: tx.addressId }, 'has no paybuttons')
+    console.warn('Orphan address:', tx.address.address)
   }
   return {
     timestamp: tx.timestamp,
@@ -247,20 +243,14 @@ export const initPaymentCache = async (address: Address): Promise<boolean> => {
 }
 
 export async function * getPaymentStream (userId: string): AsyncGenerator<Payment> {
-  console.log('getting payment stream')
   const uncachedAddressStream = getUserUncachedAddresses(userId)
   for await (const address of uncachedAddressStream) {
-    console.log('payment stream: will create cache for addr', address.address)
+    console.log('[CACHE]: Creating cache for address', address.address)
     await CacheSet.addressCreation(address)
   }
-  console.log('CREATED CACHE!')
   const weekKeys = await getCachedWeekKeysForUser(userId)
 
-  console.log('will now yield payments')
-  let i = 0
   for (const weekKey of weekKeys) {
-    if (i % 100 === 0) console.log('yielding payment number', i)
-    i++
     const paymentsString = await redis.get(weekKey)
 
     if (paymentsString !== null) {
