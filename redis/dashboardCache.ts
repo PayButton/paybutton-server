@@ -6,7 +6,6 @@ import moment, { DurationInputArg2 } from 'moment'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { QuoteValues } from 'services/priceService'
 import { getOldestTxForUser } from 'services/transactionService'
-import { Decimal } from '@prisma/client/runtime/library'
 
 // USERID:dashboard
 const getDashboardSummaryKey = (userId: string): string => {
@@ -211,10 +210,10 @@ interface PeriodRevenueAccumulators {
 
 function createRevenueAccumulators (nMonthsTotal: number): PeriodRevenueAccumulators {
   return {
-    thirtyDays: Array(30).fill({ usd: new Decimal(0), cad: new Decimal(0) }),
-    sevenDays: Array(7).fill({ usd: new Decimal(0), cad: new Decimal(0) }),
-    year: Array(12).fill({ usd: new Decimal(0), cad: new Decimal(0) }),
-    all: Array(nMonthsTotal).fill({ usd: new Decimal(0), cad: new Decimal(0) })
+    thirtyDays: Array(30).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
+    sevenDays: Array(7).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
+    year: Array(12).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
+    all: Array(nMonthsTotal).fill({ usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) })
   }
 }
 
@@ -325,7 +324,7 @@ function createPeriodData (
   return {
     revenue: getChartData(periodLength, periodUnit, revenueData, revenueColor, labelFormat),
     payments: getChartData(periodLength, periodUnit, paymentData, paymentColor, labelFormat),
-    totalRevenue: revenueData.reduce(sumQuoteValues, { usd: new Decimal(0), cad: new Decimal(0) }),
+    totalRevenue: revenueData.reduce(sumQuoteValues, { usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }),
     totalPayments: paymentData.reduce((a, b) => a + b, 0),
     buttons: buttonData
   }
