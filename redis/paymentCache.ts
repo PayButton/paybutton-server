@@ -248,13 +248,22 @@ export async function * getPaymentStream (userId: string): AsyncGenerator<Paymen
     console.log('[CACHE]: Creating cache for address', address.address)
     await CacheSet.addressCreation(address)
   }
+  const userButtonIds: string[] = (await fetchPaybuttonArrayByUserId(userId))
+    .map(p => p.id)
   const weekKeys = await getCachedWeekKeysForUser(userId)
 
   for (const weekKey of weekKeys) {
     const paymentsString = await redis.get(weekKey)
 
     if (paymentsString !== null) {
-      const weekPayments: Payment[] = JSON.parse(paymentsString)
+      let weekPayments: Payment[] = JSON.parse(paymentsString)
+      weekPayments = weekPayments
+        .map(pay => {
+          pay.buttonDisplayDataList = pay.buttonDisplayDataList.filter(d =>
+            userButtonIds.includes(d.id)
+          )
+          return pay
+        })
 
       for (const payment of weekPayments) {
         yield payment // Yield one payment at a time
