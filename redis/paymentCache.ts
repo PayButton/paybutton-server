@@ -35,9 +35,11 @@ export const getPaymentList = async (userId: string): Promise<Payment[]> => {
 export const getCachedPaymentsForUserWithPagination = async (
   userId: string,
   page: number,
-  pageSize: number
+  pageSize: number,
+  orderDesc: boolean
 ): Promise<Payment[]> => {
   const weekKeys = await getCachedWeekKeysForUser(userId)
+
   const userButtonIds: string[] = (await fetchPaybuttonArrayByUserId(userId))
     .map(p => p.id)
 
@@ -45,37 +47,49 @@ export const getCachedPaymentsForUserWithPagination = async (
   const startIndex = page * pageSize
   const endIndex = Number(startIndex) + Number(pageSize)
   let currentIndex = 0
-
-  for (const weekKey of weekKeys) {
+  const sortedWeekKeys = sortByDate(weekKeys, (orderDesc ? 'descending' : 'ascending'))
+  for (const weekKey of sortedWeekKeys) {
     const paymentsString = await redis.get(weekKey)
+
     if (paymentsString === null) {
       throw new Error(RESPONSE_MESSAGES.CACHED_PAYMENT_NOT_FOUND_404.message)
     }
 
-    let weekPayments: Payment[] = JSON.parse(paymentsString)
-    weekPayments = weekPayments.map(pay => {
-      pay.buttonDisplayDataList = pay.buttonDisplayDataList.filter(d =>
-        userButtonIds.includes(d.id)
-      )
-      return pay
-    })
+    const weekPayments: Payment[] = JSON.parse(paymentsString)
 
     for (const payment of weekPayments) {
       if (currentIndex >= startIndex && currentIndex < endIndex) {
+        payment.buttonDisplayDataList = payment.buttonDisplayDataList.filter(d =>
+          userButtonIds.includes(d.id)
+        )
         allPayments.push(payment)
       }
       currentIndex++
 
       if (currentIndex >= endIndex) {
+        console.log('break')
         break
       }
     }
-
     if (currentIndex >= endIndex) {
       break
     }
   }
   return allPayments
+}
+
+function sortByDate (keys: string[], order: 'ascending' | 'descending'): string[] {
+  const getDateValue = (str: string): number => {
+    const parts = str.split(':')
+    const year = parseInt(parts[parts.length - 2], 10)
+    const week = parseInt(parts[parts.length - 1], 10)
+    return year * 100 + week
+  }
+
+  return keys.sort((a, b) => {
+    const comparison = getDateValue(a) - getDateValue(b)
+    return order === 'ascending' ? comparison : -comparison
+  })
 }
 
 const getCachedWeekKeysForAddress = async (addressString: string): Promise<string[]> => {

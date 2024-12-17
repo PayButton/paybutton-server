@@ -51,7 +51,7 @@ interface PaybuttonsProps {
 export default function Payments ({ user }: PaybuttonsProps): React.ReactElement {
   function fetchData (): Function {
     return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
-      const paymentsResponse = await fetch(`/api/payments?page=${page}&pageSize=${pageSize}`)
+      const paymentsResponse = await fetch(`/api/payments?page=${page}&pageSize=${pageSize}&orderDesc=${String(orderDesc)}`)
       const paymentsCountResponse = await fetch('/api/payments/count')
       const totalCount = await paymentsCountResponse.json()
       const payments = await paymentsResponse.json()

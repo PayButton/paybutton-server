@@ -131,8 +131,8 @@ export class CacheGet {
       return await getCachedPaymentsCountForUser(userId)
     })
   }
-  
-  static async paymentListPaginated (userId: string, page: number, pageSize: number): Promise<Payment[]> {
-    return await getCachedPaymentsForUserWithPagination(userId, page, pageSize)
+
+  static async paymentListPaginated (userId: string, page: number, pageSize: number, orderDesc: boolean): Promise<Payment[]> {
+    return await getCachedPaymentsForUserWithPagination(userId, page, pageSize, orderDesc)
   }
 }
