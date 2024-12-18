@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { QuoteValues } from 'services/priceService'
-import { getOldestTxForUser } from 'services/transactionService'
+import { getOldestPositiveTxForUser } from 'services/transactionService'
 
 // USERID:dashboard
 const getDashboardSummaryKey = (userId: string): string => {
@@ -41,7 +41,7 @@ const getChartData = function (n: number, periodString: string, dataArray: numbe
 }
 
 const getNumberOfMonths = async function (userId: string): Promise<number> {
-  const oldestTx = await getOldestTxForUser(userId)
+  const oldestTx = await getOldestPositiveTxForUser(userId)
   if (oldestTx === null) return 0
   const oldestDate = moment(oldestTx.timestamp * 1000)
   const today = moment()

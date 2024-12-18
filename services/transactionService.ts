@@ -576,7 +576,7 @@ export const getTransactionValueInCurrency = (transaction: TransactionWithAddres
 
   return result[currency]
 }
-export async function getOldestTxForUser (userId: string): Promise<Transaction | null> {
+export async function getOldestPositiveTxForUser (userId: string): Promise<Transaction | null> {
   return await prisma.transaction.findFirst({
     where: {
       address: {
@@ -585,6 +585,9 @@ export async function getOldestTxForUser (userId: string): Promise<Transaction |
             userId
           }
         }
+      },
+      amount: {
+        gt: 0
       }
     },
     orderBy: { timestamp: 'asc' }
