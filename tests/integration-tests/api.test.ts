@@ -75,7 +75,6 @@ describe('POST /api/paybutton/', () => {
   it('Create a paybutton with two addresses', async () => {
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     const responseData = res._getJSONData()
-    console.log('WIP', responseData)
     expect(res.statusCode).toBe(200)
     expect(responseData.providerUserId).toBe('test-u-id')
     expect(responseData.name).toBe('test-paybutton')
