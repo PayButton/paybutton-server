@@ -16,7 +16,7 @@ import {
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
-import { fetchAddressBySubstring, fetchAddressesArray, fetchAllAddressesForNetworkId, getLatestTxTimestampForAddress, setSyncing, updateLastSynced } from './addressService'
+import { fetchAddressBySubstring, fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, updateLastSynced } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
@@ -259,7 +259,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
     const address = await fetchAddressBySubstring(addressString)
     const pageSize = FETCH_N
     let page = 0
-    const latestTimestamp = await getLatestTxTimestampForAddress(address.id) ?? 0
+    const earliestUnconfirmedTxTimestamp = await getEarliestUnconfirmedTxTimestampForAddress(address.id)
+    const latestTimestamp = earliestUnconfirmedTxTimestamp ?? await getLatestConfirmedTxTimestampForAddress(address.id) ?? 0
 
     if (address.syncing) { return }
     await setSyncing(addressString, true)

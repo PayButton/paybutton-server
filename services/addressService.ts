@@ -240,8 +240,23 @@ export async function generateAddressPaymentInfo (addressString: string): Promis
   }
   return info
 }
+export async function getEarliestUnconfirmedTxTimestampForAddress (addressId: string): Promise<number | undefined> {
+  const tx = await prisma.transaction.findFirst({
+    where: {
+      addressId,
+      confirmed: false
+    },
+    orderBy: {
+      timestamp: 'asc'
+    },
+    select: {
+      timestamp: true
+    }
+  })
+  return tx?.timestamp
+}
 
-export async function getLatestTxTimestampForAddress (addressId: string): Promise<number | undefined> {
+export async function getLatestConfirmedTxTimestampForAddress (addressId: string): Promise<number | undefined> {
   const tx = await prisma.transaction.findFirst({
     where: {
       addressId,
