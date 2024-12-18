@@ -174,7 +174,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
     })
   )
   // Send async request to sync created addresses transactions
-  void syncAndSubscribeAddresses(createdAddresses)
+  await syncAndSubscribeAddresses(createdAddresses)
   return await prisma.$transaction(async (prisma) => {
     // Creates or updates the `addressesOnUserProfile` objects
     await updateAddressUserConnectors({
