@@ -45,7 +45,7 @@ const getNumberOfMonths = async function (userId: string): Promise<number> {
   if (oldestTx === null) return 0
   const oldestDate = moment(oldestTx.timestamp * 1000)
   const today = moment()
-  const floatDiff = today.diff(oldestDate, 'months', true)
+  const floatDiff = today.diff(oldestDate.startOf('month'), 'months', true)
   return Math.ceil(floatDiff)
 }
 
