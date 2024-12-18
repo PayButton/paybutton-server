@@ -16,7 +16,7 @@
     "pretest": "dotenv -e .env.test -- prisma migrate reset --force",
     "prisma": "dotenv -e .env -c -- prisma",
     "docker": "./scripts/docker-exec-shortcuts.sh",
-    "ci:integration:test": "yarn pretest && dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js tests/integration-tests --forceExit",
+    "ci:integration:test": "yarn pretest && dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js tests/integration-tests --forceExit --runInBand",
     "tarDebug": "tar cf debug.tar logs/ paybutton-config.json .env*"
   },
   "dependencies": {
