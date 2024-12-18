@@ -426,21 +426,16 @@ export class ChronikBlockchainClient implements BlockchainClient {
     const pageSize = 200
     let blockTxsPage = (await this.chronik.blockTxs(blockHash, page, pageSize)).txs
     let blockTxsToSync: Tx_InNode[] = []
-    console.log('first page has', blockTxsPage.length)
     while (blockTxsPage.length > 0 && blockTxsToSync.length !== this.confirmedTxsHashesFromLastBlock.length) {
       const thisBlockTxsToSync = blockTxsPage.filter(tx => this.confirmedTxsHashesFromLastBlock.includes(tx.txid))
       blockTxsToSync = [...blockTxsToSync, ...thisBlockTxsToSync]
       page += 1
       blockTxsPage = (await this.chronik.blockTxs(blockHash, page, pageSize)).txs
-      console.log(page + 1, ' page has', blockTxsPage.length)
     }
-    console.log('got', blockTxsToSync.length, 'txs in blockTxsToSync')
     for (const transaction of blockTxsToSync) {
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
       for (const addressWithTransaction of addressesWithTransactions) {
-        console.log('hmm will confirm', addressWithTransaction.transaction.hash)
         const { tx } = await createTransaction(addressWithTransaction.transaction)
-        console.log('did confirm?', { tx: tx?.hash, conf: tx?.confirmed })
         if (tx !== undefined) {
           this.broadcastIncomingTx(addressWithTransaction.address.address, tx)
         }
