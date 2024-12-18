@@ -46,7 +46,7 @@ const getNumberOfMonths = async function (userId: string): Promise<number> {
   const oldestDate = moment(oldestTx.timestamp * 1000)
   const today = moment()
   const floatDiff = today.diff(oldestDate, 'months', true)
-  return Math.ceil(floatDiff) + 1
+  return Math.ceil(floatDiff)
 }
 
 export const getButtonPaymentData = (n: number, periodString: string, paymentList: Payment[]): PaymentDataByButton => {
@@ -115,12 +115,18 @@ const generateDashboardDataFromStream = async function (
   const buttonDataAccumulators = createButtonDataAccumulators()
 
   const today = moment().startOf('day')
+  const thisYear = today.year()
   const monthStart = moment().startOf('month')
   const thresholds = createThresholds(today, monthStart, nMonthsTotal)
 
   // Process all payments
   for await (const payment of paymentStream) {
-    const paymentTime = moment(payment.timestamp * 1000)
+    const paymentTime = moment(payment.timestamp * 1000) // WIP use TZ here
+    const paymentYear = paymentTime.year()
+    const paymentMonth = paymentTime.month()
+    const paymentWeekDay = paymentTime.day()
+    const paymentYearDay = paymentTime.dayOfYear()
+    const yearModBase = paymentTime.isLeapYear() ? 366 : 365
 
     // Process button data and assign to relevant periods
     payment.buttonDisplayDataList.forEach((button) => {
@@ -131,11 +137,19 @@ const generateDashboardDataFromStream = async function (
     const periods = ['thirtyDays', 'sevenDays', 'year', 'all'] as const
     for (const period of periods) {
       if (paymentTime.isSameOrAfter(thresholds[period])) {
-        const index =
-          period === 'thirtyDays' || period === 'sevenDays'
-            ? today.diff(paymentTime, 'days')
-            : monthStart.diff(paymentTime, 'months')
-        if (index < revenueAccumulators[period].length) {
+        let index = -1
+
+        if (period === 'sevenDays') {
+          index = (today.day() - paymentWeekDay) % 7
+        } else if (period === 'thirtyDays') {
+          index = (today.dayOfYear() - paymentYearDay) % yearModBase
+        } else if (period === 'year') {
+          index = (today.month() - paymentMonth) % 12
+        } else if (period === 'all') {
+          index = (thisYear - paymentYear) * 12 + (today.month() - paymentMonth) % 12
+        }
+
+        if (index >= 0 && index < revenueAccumulators[period].length) {
           revenueAccumulators[period][index] = sumQuoteValues(revenueAccumulators[period][index], payment.values)
           paymentCounters[period][index] += 1
         }
@@ -258,10 +272,10 @@ interface PeriodThresholds {
 
 function createThresholds (today: moment.Moment, monthStart: moment.Moment, nMonthsTotal: number): PeriodThresholds {
   return {
-    thirtyDays: today.clone().subtract(30, 'days'),
-    sevenDays: today.clone().subtract(7, 'days'),
-    year: monthStart.clone().subtract(12, 'months'),
-    all: monthStart.clone().subtract(nMonthsTotal, 'months')
+    thirtyDays: today.clone().subtract(29, 'days'),
+    sevenDays: today.clone().subtract(6, 'days'),
+    year: monthStart.clone().subtract(11, 'months'),
+    all: monthStart.clone().subtract(nMonthsTotal - 1, 'months')
   }
 }
 
