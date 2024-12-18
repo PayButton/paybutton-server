@@ -525,6 +525,7 @@ export const mockedUserProfile: UserProfile = {
   isAdmin: false,
   lastSentVerificationEmailAt: null,
   preferredCurrencyId: 1,
+  preferredTimezone: '',
   emailCredits: 15
 }
 
@@ -537,6 +538,7 @@ export const mockedUserProfileWithPublicKey: UserProfile = {
   isAdmin: false,
   lastSentVerificationEmailAt: null,
   preferredCurrencyId: 1,
+  preferredTimezone: '',
   emailCredits: 15
 }
 

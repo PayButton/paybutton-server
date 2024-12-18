@@ -3,8 +3,6 @@ import SessionNode from 'supertokens-node/recipe/session'
 import { appInfo } from './appInfo'
 import { TypeInput } from 'supertokens-node/types'
 import * as walletService from 'services/walletService'
-import * as userService from 'services/userService'
-import moment from 'moment-timezone'
 
 import EmailVerification from 'supertokens-node/recipe/emailverification'
 import Dashboard from 'supertokens-node/recipe/dashboard'
@@ -74,7 +72,6 @@ export const backendConfig = (): TypeInput => {
                   if (response.createdNewUser) {
                     // post sign up logic goes here
                     void walletService.createDefaultWalletForUser(response.user.id)
-                    void userService.updatePreferredTimezone(response.user.id, moment.tz.guess())
                   } else {
                     // post sign in logic goes here
                   }
