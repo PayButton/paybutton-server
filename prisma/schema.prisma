@@ -167,6 +167,8 @@ model UserProfile {
   wallets   WalletsOnUserProfile[]
   addresses AddressesOnUserProfiles[]
   preferredCurrencyId Int @default(1)
+  preferredTimezone String    @db.VarChar(255)@default("")
+
   organizationId String?
   organization Organization?     @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
