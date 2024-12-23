@@ -42,6 +42,7 @@ export interface ButtonDisplayData {
   isXec?: boolean
   isBch?: boolean
   lastPayment?: number
+  providerUserId?: string
 }
 
 export interface Payment {

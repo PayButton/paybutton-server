@@ -39,19 +39,21 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   return {
     props: {
-      user
+      user,
+      userId
     }
   }
 }
 
 interface PaybuttonsProps {
   user: UserWithSupertokens
+  userId: string
 }
 
-export default function Payments ({ user }: PaybuttonsProps): React.ReactElement {
+export default function Payments ({ user, userId }: PaybuttonsProps): React.ReactElement {
   function fetchData (): Function {
     return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
-      const paymentsResponse = await fetch(`/api/payments?page=${page}&pageSize=${pageSize}&orderDesc=${String(orderDesc)}`)
+      const paymentsResponse = await fetch(`/api/payments?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`)
       const paymentsCountResponse = await fetch('/api/payments/count')
       const totalCount = await paymentsCountResponse.json()
       const payments = await paymentsResponse.json()
@@ -81,7 +83,7 @@ export default function Payments ({ user }: PaybuttonsProps): React.ReactElement
       },
       {
         Header: () => (<div style={{ textAlign: 'center' }}>Network</div>),
-        accessor: 'networkId',
+        accessor: 'address.networkId',
         Cell: (cellProps) => {
           return (
             <div className='table-icon-ctn'>
@@ -97,12 +99,17 @@ export default function Payments ({ user }: PaybuttonsProps): React.ReactElement
         accessor: 'buttonDisplayDataList',
         Cell: (cellProps) => {
           return (
-            <div className='payments-btn-cell'> {cellProps.cell.value.map((buttonDisplayData: ButtonDisplayData) =>
-              <div style={{ textAlign: 'center' }} className="table-button" key={buttonDisplayData.id}>
-              <Link href={`/button/${buttonDisplayData.id}`}>{buttonDisplayData.name}</Link>
-              </div>
-            )}
-             </div>
+            <div className='payments-btn-cell'>
+              {cellProps.cell.value.map((buttonDisplayData: ButtonDisplayData) =>
+                buttonDisplayData.providerUserId === userId
+                  ? (
+                  <div style={{ textAlign: 'center' }} className="table-button" key={buttonDisplayData.id}>
+                    <Link href={`/button/${buttonDisplayData.id}`}>{buttonDisplayData.name}</Link>
+                  </div>
+                    )
+                  : null
+              )}
+            </div>
           )
         }
       },

@@ -10,6 +10,8 @@ import _ from 'lodash'
 import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
+import { generatePaymentFromTx } from 'redis/paymentCache'
+import { Payment } from 'redis/types'
 
 export async function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
@@ -76,7 +78,6 @@ const resolveOpReturn = (opReturn: string): OpReturnData | null => {
     return null
   }
 }
-
 const includePrices = {
   prices: {
     include: {
@@ -122,6 +123,23 @@ const transactionsWithPaybuttonsAndPrices = Prisma.validator<Prisma.TransactionD
 )
 
 export type TransactionsWithPaybuttonsAndPrices = Prisma.TransactionGetPayload<typeof transactionsWithPaybuttonsAndPrices>
+
+export const transactionWithAddressAndPricesAndButtons = Prisma.validator<Prisma.TransactionDefaultArgs>()({
+  include: {
+    address: {
+      include: {
+        paybuttons: {
+          include: {
+            paybutton: true // Include full Paybutton data
+          }
+        }
+      }
+    },
+    prices: true // Include related price data
+  }
+})
+
+export type TransactionWithAddressAndPricesAndButtons = Prisma.TransactionGetPayload<typeof transactionWithAddressAndPricesAndButtons>
 
 export async function fetchTransactionsByAddressList (
   addressIdList: string[],
@@ -208,7 +226,6 @@ export async function fetchPaginatedAddressTransactions (addressString: string, 
       timestamp: orderDescString
     }
   }
-
   const parsedAddress = parseAddress(addressString)
   await addressExists(parsedAddress, true)
   const txs = await prisma.transaction.findMany({
@@ -594,4 +611,204 @@ export async function getOldestPositiveTxForUser (userId: string): Promise<Trans
     },
     orderBy: { timestamp: 'asc' }
   })
+}
+
+export async function getPaymentsByUserIdOrderedByButtonName (
+  userId: string,
+  page: number,
+  pageSize: number,
+  orderDesc = true
+): Promise<Payment[]> {
+  const offset = page * pageSize
+
+  let transactions: any = []
+  // code is repeated because prisma does not allow to inject SQL keywords
+  if (orderDesc) {
+    transactions = await prisma.$queryRaw`
+      SELECT 
+        t.*, 
+        p.id AS paybuttonId, 
+        p.name AS paybuttonName, 
+        p.providerUserId AS paybuttonProviderUserId,
+        a.networkId as newtworkId,
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'priceId', pb.id,
+            'priceValue', pb.value,
+            'quoteId', pb.quoteId
+          )
+        ) AS prices
+      FROM \`Transaction\` t
+      INNER JOIN \`Address\` a ON t.\`addressId\` = a.\`id\`
+      INNER JOIN \`AddressesOnButtons\` ab ON a.\`id\` = ab.\`addressId\`
+      INNER JOIN \`Paybutton\` p ON ab.\`paybuttonId\` = p.\`id\`
+      LEFT JOIN \`PricesOnTransactions\` pt ON t.\`id\` = pt.\`transactionId\`
+      LEFT JOIN \`Price\` pb ON pt.\`priceId\` = pb.\`id\`
+      WHERE EXISTS (
+        SELECT 1
+        FROM \`AddressesOnUserProfiles\` au
+        WHERE au.\`addressId\` = a.\`id\`
+          AND au.\`userId\` = ${userId}
+      )
+      AND p.\`providerUserId\` = ${userId}
+      GROUP BY t.id, p.id
+      ORDER BY p.\`name\` ASC
+      LIMIT ${pageSize}
+      OFFSET ${offset};
+    `
+  } else {
+    transactions = await prisma.$queryRaw`
+      SELECT 
+        t.*, 
+        p.id AS paybuttonId, 
+        p.name AS paybuttonName, 
+        p.providerUserId AS paybuttonProviderUserId,
+        a.networkId as newtworkId,
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'priceId', pb.id,
+            'priceValue', pb.value,
+            'quoteId', pb.quoteId
+          )
+        ) AS prices
+      FROM \`Transaction\` t
+      INNER JOIN \`Address\` a ON t.\`addressId\` = a.\`id\`
+      INNER JOIN \`AddressesOnButtons\` ab ON a.\`id\` = ab.\`addressId\`
+      INNER JOIN \`Paybutton\` p ON ab.\`paybuttonId\` = p.\`id\`
+      LEFT JOIN \`PricesOnTransactions\` pt ON t.\`id\` = pt.\`transactionId\`
+      LEFT JOIN \`Price\` pb ON pt.\`priceId\` = pb.\`id\`
+      WHERE t.\`amount\` > 0
+      AND EXISTS (
+        SELECT 1
+        FROM \`AddressesOnUserProfiles\` au
+        WHERE au.\`addressId\` = a.\`id\`
+          AND au.\`userId\` = ${userId}
+      )
+      AND p.\`providerUserId\` = ${userId}
+      GROUP BY t.id, p.id
+      ORDER BY p.\`name\` DESC
+      LIMIT ${pageSize}
+      OFFSET ${offset};
+    `
+  }
+
+  const payments: Payment[] = []
+
+  transactions.forEach((tx: any) => {
+    const ret: QuoteValues = {
+      usd: new Prisma.Decimal(0),
+      cad: new Prisma.Decimal(0)
+    }
+    for (const p of JSON.parse(tx.prices)) {
+      if (p.quoteId === USD_QUOTE_ID) {
+        ret.usd = ret.usd.plus(p.priceValue * tx.amount)
+      }
+      if (p.quoteId === CAD_QUOTE_ID) {
+        ret.cad = ret.cad.plus(p.priceValue * tx.amount)
+      }
+    }
+    const buttonDisplayDataList: Array<{ name: string, id: string, providerUserId: string}> = []
+    buttonDisplayDataList.push({
+      name: tx.paybuttonName,
+      id: tx.paybuttonName,
+      providerUserId: tx.paybuttonProviderUserId
+    })
+    payments.push({
+      timestamp: tx.timestamp,
+      values: ret,
+      networkId: tx.networkId,
+      hash: tx.hash,
+      buttonDisplayDataList
+    })
+  })
+
+  return payments
+}
+
+export async function fetchAllPaymentsByUserIdWithPagination (
+  userId: string,
+  page: number,
+  pageSize: number,
+  orderBy?: string,
+  orderDesc = true
+): Promise<Payment[]> {
+  const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
+
+  let orderByQuery
+  if (orderBy !== undefined && orderBy !== '') {
+    if (orderBy.includes('.')) {
+      const [relation, property] = orderBy.split('.')
+      orderByQuery = {
+        [relation]: {
+          [property]: orderDescString
+        }
+      }
+    } else {
+      if (orderBy === 'values') {
+        orderByQuery = {
+          amount: orderDescString
+        }
+      } else {
+        orderByQuery = {
+          [orderBy]: orderDescString
+        }
+      }
+    }
+  } else {
+    // Default orderBy
+    orderByQuery = {
+      timestamp: orderDescString
+    }
+  }
+
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      address: {
+        userProfiles: {
+          some: {
+            userId
+          }
+        }
+      },
+      amount: {
+        gt: 0
+      }
+    },
+    include: includePaybuttonsAndPrices,
+    orderBy: orderByQuery,
+    skip: page * Number(pageSize),
+    take: Number(pageSize)
+  })
+
+  const transformedData: Payment[] = []
+  for (let index = 0; index < transactions.length; index++) {
+    const tx = transactions[index]
+    if (Number(tx.amount) > 0) {
+      const payment = await generatePaymentFromTx(tx)
+      transformedData.push(payment)
+    }
+  }
+  return transformedData
+}
+
+export async function fetchAllPaymentsByUserId (
+  userId: string,
+  page: number,
+  pageSize: number,
+  orderBy?: string,
+  orderDesc = true
+): Promise<Payment[]> {
+  if (orderBy === 'buttonDisplayDataList') {
+    return await getPaymentsByUserIdOrderedByButtonName(
+      userId, page, pageSize, orderDesc
+    )
+  } else {
+    return await fetchAllPaymentsByUserIdWithPagination(
+      userId,
+      page,
+      pageSize,
+      orderBy,
+      orderDesc
+    )
+  }
 }

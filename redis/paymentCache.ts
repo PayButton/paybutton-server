@@ -131,7 +131,8 @@ export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPri
       (conn) => {
         return {
           name: conn.paybutton.name,
-          id: conn.paybutton.id
+          id: conn.paybutton.id,
+          providerUserId: conn.paybutton.providerUserId
         }
       }
     )
