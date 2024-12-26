@@ -83,7 +83,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       },
       {
         Header: () => (<div style={{ textAlign: 'center' }}>Network</div>),
-        accessor: 'address.networkId',
+        accessor: 'networkId',
         Cell: (cellProps) => {
           return (
             <div className='table-icon-ctn'>

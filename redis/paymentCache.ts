@@ -67,7 +67,6 @@ export const getCachedPaymentsForUserWithPagination = async (
       currentIndex++
 
       if (currentIndex >= endIndex) {
-        console.log('break')
         break
       }
     }

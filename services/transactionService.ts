@@ -710,16 +710,18 @@ export async function getPaymentsByUserIdOrderedByButtonName (
     const buttonDisplayDataList: Array<{ name: string, id: string, providerUserId: string}> = []
     buttonDisplayDataList.push({
       name: tx.paybuttonName,
-      id: tx.paybuttonName,
+      id: tx.paybuttonId,
       providerUserId: tx.paybuttonProviderUserId
     })
-    payments.push({
-      timestamp: tx.timestamp,
-      values: ret,
-      networkId: tx.networkId,
-      hash: tx.hash,
-      buttonDisplayDataList
-    })
+    if (tx.amount > 0) {
+      payments.push({
+        timestamp: tx.timestamp,
+        values: ret,
+        networkId: tx.networkId,
+        hash: tx.hash,
+        buttonDisplayDataList
+      })
+    }
   })
 
   return payments
@@ -736,22 +738,19 @@ export async function fetchAllPaymentsByUserIdWithPagination (
 
   let orderByQuery
   if (orderBy !== undefined && orderBy !== '') {
-    if (orderBy.includes('.')) {
-      const [relation, property] = orderBy.split('.')
+    if (orderBy === 'values') {
       orderByQuery = {
-        [relation]: {
-          [property]: orderDescString
+        amount: orderDescString
+      }
+    } else if (orderBy === 'networkId') {
+      orderByQuery = {
+        address: {
+          networkId: orderDescString
         }
       }
     } else {
-      if (orderBy === 'values') {
-        orderByQuery = {
-          amount: orderDescString
-        }
-      } else {
-        orderByQuery = {
-          [orderBy]: orderDescString
-        }
+      orderByQuery = {
+        [orderBy]: orderDescString
       }
     }
   } else {
