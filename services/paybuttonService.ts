@@ -6,7 +6,6 @@ import { getObjectValueForNetworkSlug } from 'utils/index'
 import { connectAddressToUser, disconnectAddressFromUser, fetchAddressWallet } from 'services/addressesOnUserProfileService'
 import { fetchUserDefaultWalletForNetwork } from './walletService'
 import { CacheSet } from 'redis/index'
-import { syncAndSubscribeAddresses } from './transactionService'
 export interface UpdatePaybuttonInput {
   paybuttonId: string
   name?: string
@@ -178,8 +177,6 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Cr
       }
     })
   )
-  // Send async request to sync created addresses transactions
-  await syncAndSubscribeAddresses(createdAddresses)
   return await prisma.$transaction(async (prisma) => {
     // Creates or updates the `addressesOnUserProfile` objects
     await updateAddressUserConnectors({
