@@ -18,6 +18,7 @@ interface IProps {
 
 export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps): ReactElement {
   const { register, handleSubmit, reset, setValue } = useForm<PaybuttonPOSTParameters>()
+  const [disableSubmit, setDisableSubmit] = useState(false)
   const [modal, setModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState(false)
   const [error, setError] = useState('')
@@ -38,6 +39,7 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
   }, [modal])
 
   async function onSubmit (params: PaybuttonPATCHParameters): Promise<void> {
+    setDisableSubmit(true)
     if (params.name === '' || params.name === undefined) {
       params.name = paybutton.name
     }
@@ -46,6 +48,8 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
       refreshPaybutton()
     } catch (err: any) {
       setError(err.response.data.message)
+    } finally {
+      setDisableSubmit(false)
     }
   }
 
@@ -86,10 +90,10 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
                 <textarea {...register('description')} id='description' name='description' placeholder='More information about your button (optional)' value={description} onChange={(e) => { setValue('description', e.target.value); setDescription(e.target.value) }}/>
                 <div className={style.btn_row2}>
                   {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
-                  <button type='button' onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
+                  <button disabled={disableSubmit} type='button' onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
                   <div>
-                    <button type="submit" className='button_main'>Submit</button>
-                    <button onClick={() => { setModal(false); reset() }} className='button_outline'>Cancel</button>
+                    <button disabled={disableSubmit} type="submit" className='button_main'>{ disableSubmit ? '...' : 'Submit' } </button>
+                    <button disabled={disableSubmit} onClick={() => { setModal(false); reset() }} className='button_outline'>Cancel</button>
                   </div>
                 </div>
               </form>
@@ -109,8 +113,8 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
                   {(deleteError === undefined || deleteError === '') ? null : <div className={style.error_message}>{deleteError}</div>}
                   <div>
 
-                    <button onClick={() => { void onDelete(paybutton.id) }} className={style.delete_confirm_btn}>Yes, Delete This Button</button>
-                    <button onClick={() => { setDeleteModal(false); reset(); setModal(true) }} className={style.cancel_btn}>Cancel</button>
+                    <button disabled={disableSubmit} onClick={() => { void onDelete(paybutton.id) }} className={style.delete_confirm_btn}>Yes, Delete This Button</button>
+                    <button disabled={disableSubmit} onClick={() => { setDeleteModal(false); reset(); setModal(true) }} className={style.cancel_btn}>Cancel</button>
                   </div>
                 </div>
             </div>

@@ -2,6 +2,7 @@ import * as paybuttonService from 'services/paybuttonService'
 import { parseError, parsePaybuttonPATCHRequest } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { setSession } from 'utils/setSession'
+import config from 'config'
 
 export default async (
   req: any,
@@ -55,8 +56,17 @@ export default async (
         userId
       }
       const updatePaybuttonInput = parsePaybuttonPATCHRequest(params, paybuttonId)
-      const paybutton = await paybuttonService.updatePaybutton(updatePaybuttonInput)
-      res.status(200).json(paybutton)
+      const updatedPaybuttonObj = await paybuttonService.updatePaybutton(updatePaybuttonInput)
+      void fetch(`${config.apiDomain}/api/addresses/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          addresses: updatedPaybuttonObj.createdAddresses
+        })
+      })
+      res.status(200).json(updatedPaybuttonObj.paybutton)
     } catch (err: any) {
       const parsedError = parseError(err)
       switch (parsedError.message) {
