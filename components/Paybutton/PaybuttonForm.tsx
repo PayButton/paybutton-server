@@ -16,9 +16,11 @@ interface IProps {
 export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<PaybuttonPOSTParameters>()
   const [modal, setModal] = useState(false)
+  const [disableSubmit, setDisableSubmit] = useState(false)
 
   useEffect(() => {
     setModal(false)
+    setDisableSubmit(false)
     reset()
   }, [paybuttons])
 
@@ -42,7 +44,7 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
           <div className={style.form_ctn_inner}>
             <h4>Create Button</h4>
             <div className={style.form_ctn}>
-              <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
+              <form onSubmit={(e) => { void handleSubmit(onSubmit)(e); setDisableSubmit(true) }} method='post'>
                 <label htmlFor='name'>Name*</label>
                 <input {...register('name')} type='text' id='name' name='name' placeholder="The unique name of your button" required />
                 <label htmlFor='wallet'>Wallet*</label>
@@ -69,7 +71,7 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
                 <textarea {...register('description')} id='description' name='description' placeholder="More information about your button (optional)"/>
                 <div className={style.btn_row}>
                   {error !== '' && <div className={style.error_message}>{error}</div>}
-                  <button type='submit' className='button_main'>Submit</button>
+                  <button disabled={disableSubmit} type='submit' className='button_main'>Submit</button>
                   <button onClick={() => { setModal(false); reset() }} className='button_outline'>Cancel</button>
                 </div>
               </form>
