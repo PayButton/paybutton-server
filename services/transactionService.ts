@@ -11,7 +11,7 @@ import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTx } from 'redis/paymentCache'
-import { Payment } from 'redis/types'
+import { ButtonDisplayData, Payment } from 'redis/types'
 
 export async function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
@@ -707,7 +707,7 @@ export async function getPaymentsByUserIdOrderedByButtonName (
         ret.cad = ret.cad.plus(p.priceValue * tx.amount)
       }
     }
-    const buttonDisplayDataList: Array<{ name: string, id: string, providerUserId: string}> = []
+    const buttonDisplayDataList: ButtonDisplayData[] = []
     buttonDisplayDataList.push({
       name: tx.paybuttonName,
       id: tx.paybuttonId,
@@ -716,7 +716,10 @@ export async function getPaymentsByUserIdOrderedByButtonName (
     if (tx.amount > 0) {
       payments.push({
         timestamp: tx.timestamp,
-        values: ret,
+        values: {
+          values: ret,
+          amount: tx.amount
+        },
         networkId: tx.networkId,
         hash: tx.hash,
         buttonDisplayDataList

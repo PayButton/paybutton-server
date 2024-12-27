@@ -140,7 +140,10 @@ export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPri
   }
   return {
     timestamp: tx.timestamp,
-    values,
+    values: {
+      values,
+      amount: tx.amount
+    },
     networkId: tx.address.networkId,
     hash: tx.hash,
     buttonDisplayDataList
@@ -165,7 +168,7 @@ export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: 
     paymentCount
   }
 
-  paymentList = paymentList.filter((p) => p.values.usd > new Prisma.Decimal(0))
+  paymentList = paymentList.filter((p) => p.values.values.usd > new Prisma.Decimal(0))
   const groupedPayments = getPaymentsByWeek(address.address, paymentList)
   return {
     groupedPayments,
@@ -249,7 +252,7 @@ export const cacheManyTxs = async (txs: TransactionsWithPaybuttonsAndPrices[]): 
   const zero = new Prisma.Decimal(0)
   for (const tx of txs.filter(tx => tx.amount > zero)) {
     const payment = await generatePaymentFromTx(tx)
-    if (payment.values.usd !== new Prisma.Decimal(0)) {
+    if (payment.values.values.usd !== new Prisma.Decimal(0)) {
       const paymentsGroupedByKey = getPaymentsByWeek(tx.address.address, [payment])
       void await cacheGroupedPaymentsAppend(paymentsGroupedByKey)
     }
