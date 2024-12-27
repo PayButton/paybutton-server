@@ -1,5 +1,6 @@
 import config from 'config'
-import IORedis from 'ioredis'
+import IORedis, { ScanStream } from 'ioredis'
+import { ScanStreamOptions } from 'ioredis/built/types'
 
 class RedisMocked {
   async get (_: string): Promise<null> {
@@ -14,6 +15,19 @@ class RedisMocked {
 
   async keys (key: string): Promise<string[]> {
     return []
+  }
+
+  scanStream (opt: ScanStreamOptions): ScanStream {
+    return new ScanStream({
+      ...opt,
+      command: '',
+      redis: {}
+    })
+  }
+
+  pipeline (commands?: unknown[][]): any {
+    return {
+    }
   }
 
   async on (key: string, fn: Function): Promise<void> {

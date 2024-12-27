@@ -1,7 +1,7 @@
 import prisma from 'prisma/clientInstance'
 import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
-import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
+import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists, setSyncing } from 'services/addressService'
 import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
@@ -11,7 +11,7 @@ import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
 
-export async function getTransactionValue (transaction: TransactionWithPrices): Promise<QuoteValues> {
+export async function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
@@ -90,17 +90,38 @@ const includeAddressAndPrices = {
   ...includePrices
 }
 
-const transactionWithPrices = Prisma.validator<Prisma.TransactionArgs>()(
+const transactionWithPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
   { include: includePrices }
 )
 
 export type TransactionWithPrices = Prisma.TransactionGetPayload<typeof transactionWithPrices>
 
-const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionArgs>()(
+const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
   { include: includeAddressAndPrices }
 )
 
 export type TransactionWithAddressAndPrices = Prisma.TransactionGetPayload<typeof transactionWithAddressAndPrices>
+
+const includePaybuttonsAndPrices = {
+  address: {
+    include: {
+      paybuttons: {
+        include: {
+          paybutton: true
+        }
+      }
+    }
+  },
+  ...includePrices
+}
+
+const transactionsWithPaybuttonsAndPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
+  {
+    include: includePaybuttonsAndPrices
+  }
+)
+
+export type TransactionsWithPaybuttonsAndPrices = Prisma.TransactionGetPayload<typeof transactionsWithPaybuttonsAndPrices>
 
 export async function fetchTransactionsByAddressList (
   addressIdList: string[],
@@ -131,6 +152,35 @@ export async function fetchTxCountByAddressString (addressString: string): Promi
         address: addressString
       }
     }
+  })
+}
+
+export async function fetchTransactionWithPaybuttonsAndPrices (txId: string): Promise<TransactionsWithPaybuttonsAndPrices> {
+  return await prisma.transaction.findUniqueOrThrow({
+    where: {
+      id: txId
+    },
+    include: includePaybuttonsAndPrices
+  })
+}
+
+export async function fetchTransactionsWithPaybuttonsAndPricesForIdList (txIdList: string[]): Promise<TransactionsWithPaybuttonsAndPrices[]> {
+  return await prisma.transaction.findMany({
+    where: {
+      id: {
+        in: txIdList
+      }
+    },
+    include: includePaybuttonsAndPrices
+  })
+}
+
+export async function fetchTransactionsWithPaybuttonsAndPricesForAddress (addressId: string): Promise<TransactionsWithPaybuttonsAndPrices[]> {
+  return await prisma.transaction.findMany({
+    where: {
+      addressId
+    },
+    include: includePaybuttonsAndPrices
   })
 }
 
@@ -258,10 +308,10 @@ export async function createTransaction (
   })
   const created = createdTx.createdAt.getTime() === createdTx.updatedAt.getTime()
   void await connectTransactionToPrices(createdTx, prisma)
-  const txWithPrices = await fetchTransactionById(createdTx.id)
-  void await CacheSet.txCreation(txWithPrices)
+  const txWithPaybuttonsAndPrices = await fetchTransactionWithPaybuttonsAndPrices(createdTx.id)
+  void await CacheSet.txCreation(txWithPaybuttonsAndPrices)
   return {
-    tx: txWithPrices,
+    tx: txWithPaybuttonsAndPrices,
     created
   }
 }
@@ -360,16 +410,9 @@ export async function createManyTransactions (
     .filter(txD => txD.isCreated)
     .map(txD => txD.tx)
   void await connectTransactionsListToPrices(insertedTransactions)
-  const txsWithPrices = await prisma.transaction.findMany({
-    where: {
-      id: {
-        in: insertedTransactions.map(tx => tx.id)
-      }
-    },
-    include: includeAddressAndPrices
-  })
-  void await CacheSet.txsCreation(txsWithPrices)
-  return txsWithPrices
+  const txsWithPaybuttonsAndPrices = await fetchTransactionsWithPaybuttonsAndPricesForIdList(insertedTransactions.map(tx => tx.id))
+  void await CacheSet.txsCreation(txsWithPaybuttonsAndPrices)
+  return txsWithPaybuttonsAndPrices
 }
 
 interface SyncAndSubscriptionReturn {
@@ -402,6 +445,8 @@ export async function syncAddresses (addresses: Address[]): Promise<SyncAndSubsc
       successfulAddressesWithCount[addr.address] = count
     } catch (err: any) {
       failedAddressesWithErrors[addr.address] = err.stack
+    } finally {
+      await setSyncing(addr.address, false)
     }
   }
   return {
@@ -532,4 +577,21 @@ export const getTransactionValueInCurrency = (transaction: TransactionWithAddres
   }
 
   return result[currency]
+}
+export async function getOldestPositiveTxForUser (userId: string): Promise<Transaction | null> {
+  return await prisma.transaction.findFirst({
+    where: {
+      address: {
+        userProfiles: {
+          some: {
+            userId
+          }
+        }
+      },
+      amount: {
+        gt: 0
+      }
+    },
+    orderBy: { timestamp: 'asc' }
+  })
 }

@@ -1,10 +1,11 @@
 import { redis } from './clientInstance'
-import { getCachedWeekKeysForUser, getPaymentsForWeekKey, getPaymentStream } from 'redis/paymentCache'
+import { getPaymentStream } from 'redis/paymentCache'
 import { ChartData, DashboardData, Payment, ButtonData, PaymentDataByButton, ChartColor, PeriodData, ButtonDisplayData } from './types'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
 import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { QuoteValues } from 'services/priceService'
+import { getOldestPositiveTxForUser } from 'services/transactionService'
 
 // USERID:dashboard
 const getDashboardSummaryKey = (userId: string): string => {
@@ -39,28 +40,13 @@ const getChartData = function (n: number, periodString: string, dataArray: numbe
   }
 }
 
-function getOldestDateKey (keys: string[]): string {
-  const keyDatePairs = keys.map(k => [k, k.split(':').slice(-2).map(Number)] as [string, [number, number]])
-  keyDatePairs.sort((a, b) => {
-    const [aYear, aWeek] = a[1]
-    const [bYear, bWeek] = b[1]
-
-    // compare year first, then week
-    return (aYear !== bYear ? aYear - bYear : aWeek - bWeek)
-  })
-  return keyDatePairs[0][0]
-}
-
 const getNumberOfMonths = async function (userId: string): Promise<number> {
-  const weekKeys = await getCachedWeekKeysForUser(userId)
-  if (weekKeys.length === 0) return 0
-  const oldestKey = getOldestDateKey(weekKeys)
-  const oldestPayments = await getPaymentsForWeekKey(oldestKey)
-  const oldestTimestamp = Math.min(...oldestPayments.map(p => p.timestamp))
-  const oldestDate = moment(oldestTimestamp * 1000)
+  const oldestTx = await getOldestPositiveTxForUser(userId)
+  if (oldestTx === null) return 0
+  const oldestDate = moment(oldestTx.timestamp * 1000)
   const today = moment()
-  const floatDiff = today.diff(oldestDate, 'months', true)
-  return Math.ceil(floatDiff) + 1
+  const floatDiff = today.diff(oldestDate.startOf('month'), 'months', true)
+  return Math.ceil(floatDiff)
 }
 
 export const getButtonPaymentData = (n: number, periodString: string, paymentList: Payment[]): PaymentDataByButton => {
@@ -124,18 +110,23 @@ const generateDashboardDataFromStream = async function (
   nMonthsTotal: number,
   borderColor: ChartColor
 ): Promise<DashboardData> {
-  // Initialize accumulators for periods
   const revenueAccumulators = createRevenueAccumulators(nMonthsTotal)
   const paymentCounters = createPaymentCounters(nMonthsTotal)
   const buttonDataAccumulators = createButtonDataAccumulators()
 
   const today = moment().startOf('day')
+  const thisYear = today.year()
   const monthStart = moment().startOf('month')
   const thresholds = createThresholds(today, monthStart, nMonthsTotal)
 
   // Process all payments
   for await (const payment of paymentStream) {
-    const paymentTime = moment(payment.timestamp * 1000)
+    const paymentTime = moment(payment.timestamp * 1000) // WIP use TZ here
+    const paymentYear = paymentTime.year()
+    const paymentMonth = paymentTime.month()
+    const paymentWeekDay = paymentTime.day()
+    const paymentYearDay = paymentTime.dayOfYear()
+    const yearModBase = paymentTime.isLeapYear() ? 366 : 365
 
     // Process button data and assign to relevant periods
     payment.buttonDisplayDataList.forEach((button) => {
@@ -144,18 +135,26 @@ const generateDashboardDataFromStream = async function (
 
     // Accumulate period data
     const periods = ['thirtyDays', 'sevenDays', 'year', 'all'] as const
-    periods.forEach((period) => {
+    for (const period of periods) {
       if (paymentTime.isSameOrAfter(thresholds[period])) {
-        const index =
-          period === 'thirtyDays' || period === 'sevenDays'
-            ? today.diff(paymentTime, 'days')
-            : monthStart.diff(paymentTime, 'months')
-        if (index < revenueAccumulators[period].length) {
+        let index = -1
+
+        if (period === 'sevenDays') {
+          index = (today.day() - paymentWeekDay) % 7
+        } else if (period === 'thirtyDays') {
+          index = (today.dayOfYear() - paymentYearDay) % yearModBase
+        } else if (period === 'year') {
+          index = (today.month() - paymentMonth) % 12
+        } else if (period === 'all') {
+          index = (thisYear - paymentYear) * 12 + (today.month() - paymentMonth) % 12
+        }
+
+        if (index >= 0 && index < revenueAccumulators[period].length) {
           revenueAccumulators[period][index] = sumQuoteValues(revenueAccumulators[period][index], payment.values)
           paymentCounters[period][index] += 1
         }
       }
-    })
+    }
   }
 
   reverseAccumulators(revenueAccumulators, paymentCounters)
@@ -273,10 +272,10 @@ interface PeriodThresholds {
 
 function createThresholds (today: moment.Moment, monthStart: moment.Moment, nMonthsTotal: number): PeriodThresholds {
   return {
-    thirtyDays: today.clone().subtract(30, 'days'),
-    sevenDays: today.clone().subtract(7, 'days'),
-    year: monthStart.clone().subtract(12, 'months'),
-    all: monthStart.clone().subtract(nMonthsTotal, 'months')
+    thirtyDays: today.clone().subtract(29, 'days'),
+    sevenDays: today.clone().subtract(6, 'days'),
+    year: monthStart.clone().subtract(11, 'months'),
+    all: monthStart.clone().subtract(nMonthsTotal - 1, 'months')
   }
 }
 
@@ -348,6 +347,7 @@ function createPeriodData (
 export const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
   const dashboardData = await getCachedDashboardData(userId)
   if (dashboardData === null) {
+    console.log('[CACHE]: Recreating dashboard for user', userId)
     const nMonthsTotal = await getNumberOfMonths(userId)
     const paymentStream = getPaymentStream(userId)
 
@@ -356,7 +356,7 @@ export const getUserDashboardData = async function (userId: string): Promise<Das
       nMonthsTotal,
       { revenue: '#66fe91', payments: '#669cfe' }
     )
-    await cacheDashboardData(userId, dashboardData) // WIP SET THIS NULL ON UPDATE BUTTONS & WS
+    await cacheDashboardData(userId, dashboardData)
     return dashboardData
   }
   return dashboardData

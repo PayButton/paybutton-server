@@ -8,6 +8,7 @@ import xecaddr from 'xecaddrjs'
 import { CreatePaybuttonTriggerInput, PostDataParameters } from 'services/triggerService'
 import crypto from 'crypto'
 import { getUserPrivateKey } from '../services/userService'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 
 /* The functions exported here should validate the data structure / syntax of an
  * input by throwing an error in case something is different from the expected.
@@ -61,7 +62,7 @@ export const parseButtonData = function (buttonDataString: string | undefined): 
 }
 
 export const parseError = function (error: Error): Error {
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+  if (error instanceof PrismaClientKnownRequestError) {
     switch (error.code) {
       case 'P2002':
         if (error.message.includes('Paybutton_name_providerUserId_unique_constraint')) {
@@ -73,19 +74,11 @@ export const parseError = function (error: Error): Error {
         }
         break
       case 'P2025':
-        if (
-          error.message.includes('prisma.paybutton.delete') ||
-          error.message.includes('prisma.paybutton.update') ||
-          error.message.includes('No Paybutton found')
-        ) {
+        if (error.meta?.modelName === 'Paybutton') {
           return new Error(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
-        } else if (
-          error.message.includes('prisma.address.update')
-        ) {
+        } else if (error.meta?.modelName === 'Address') {
           return new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
-        } else if (
-          error.message.includes('prisma.transaction.delete')
-        ) {
+        } else if (error.meta?.modelName === 'Transaction') {
           return new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
         }
         break

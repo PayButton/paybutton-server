@@ -6,6 +6,7 @@ import { getObjectValueForNetworkSlug } from 'utils/index'
 import { connectAddressToUser, disconnectAddressFromUser, fetchAddressWallet } from 'services/addressesOnUserProfileService'
 import { fetchUserDefaultWalletForNetwork } from './walletService'
 import { CacheSet } from 'redis/index'
+import { syncAndSubscribeAddresses } from './transactionService'
 export interface UpdatePaybuttonInput {
   paybuttonId: string
   name?: string
@@ -38,13 +39,13 @@ const includeAddresses = {
   }
 }
 
-const paybuttonWithAddresses = Prisma.validator<Prisma.PaybuttonArgs>()(
+const paybuttonWithAddresses = Prisma.validator<Prisma.PaybuttonDefaultArgs>()(
   { include: includeAddresses }
 )
 
 export type PaybuttonWithAddresses = Prisma.PaybuttonGetPayload<typeof paybuttonWithAddresses>
 
-const paybuttonWithTriggers = Prisma.validator<Prisma.PaybuttonArgs>()(
+const paybuttonWithTriggers = Prisma.validator<Prisma.PaybuttonDefaultArgs>()(
   { include: { triggers: true } }
 )
 
@@ -177,6 +178,8 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Cr
       }
     })
   )
+  // Send async request to sync created addresses transactions
+  await syncAndSubscribeAddresses(createdAddresses)
   return await prisma.$transaction(async (prisma) => {
     // Creates or updates the `addressesOnUserProfile` objects
     await updateAddressUserConnectors({
