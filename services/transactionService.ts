@@ -2,7 +2,7 @@ import prisma from 'prisma/clientInstance'
 import { Address, Prisma, Transaction } from '@prisma/client'
 import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists, setSyncing } from 'services/addressService'
-import { QuoteValues, fetchPricesForNetworkAndTimestamp } from 'services/priceService'
+import { AllPrices, QuoteValues, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
@@ -307,19 +307,19 @@ export async function createTransaction (
     }
   })
   const created = createdTx.createdAt.getTime() === createdTx.updatedAt.getTime()
-  void await connectTransactionToPrices(createdTx, prisma)
+  const networkId = await getTransactionNetworkId(createdTx)
+  const ts = flattenTimestamp(createdTx.timestamp)
+  const allPrices = await fetchPricesForNetworkAndTimestamp(Number(networkId), ts, prisma)
+  await connectTransactionToPrices(createdTx, prisma, allPrices)
   const txWithPaybuttonsAndPrices = await fetchTransactionWithPaybuttonsAndPrices(createdTx.id)
-  void await CacheSet.txCreation(txWithPaybuttonsAndPrices)
+  await CacheSet.txCreation(txWithPaybuttonsAndPrices)
   return {
     tx: txWithPaybuttonsAndPrices,
     created
   }
 }
 
-export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient, disconnectBefore = true): Promise<void> {
-  const networkId = await getTransactionNetworkId(tx)
-  const allPrices = await fetchPricesForNetworkAndTimestamp(networkId, tx.timestamp, prisma)
-
+export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient, allPrices: AllPrices, disconnectBefore = true): Promise<void> {
   if (disconnectBefore) {
     void await prisma.pricesOnTransactions.deleteMany({
       where: {
@@ -356,6 +356,25 @@ export async function connectTransactionToPrices (tx: Transaction, prisma: Prism
 }
 
 export async function connectTransactionsListToPrices (txList: Transaction[]): Promise<void> {
+  const networkIdToUniqueTimestamp: Record<number, number[]> = {}
+  await Promise.all(txList.map(async tx => {
+    const networkId = await getTransactionNetworkId(tx)
+    if (networkIdToUniqueTimestamp[networkId] === undefined) {
+      networkIdToUniqueTimestamp[networkId] = []
+    }
+    networkIdToUniqueTimestamp[networkId].push(
+      flattenTimestamp(tx.timestamp)
+    )
+  }))
+
+  const timestampToPrice: Record<number, AllPrices> = {}
+  for (const networkId of Object.keys(networkIdToUniqueTimestamp)) {
+    for (const timestamp of networkIdToUniqueTimestamp[Number(networkId)]) {
+      const allPrices = await fetchPricesForNetworkAndTimestamp(Number(networkId), timestamp, prisma)
+      timestampToPrice[timestamp] = allPrices
+    }
+  }
+
   await prisma.$transaction(async (prisma) => {
     void await prisma.pricesOnTransactions.deleteMany({
       where: {
@@ -364,9 +383,11 @@ export async function connectTransactionsListToPrices (txList: Transaction[]): P
         }
       }
     })
-    await Promise.all(txList.map(async tx =>
-      await connectTransactionToPrices(tx, prisma, false)
-    ))
+    await Promise.all(txList.map(async tx => {
+      const ts = flattenTimestamp(tx.timestamp)
+      const allPrices = timestampToPrice[ts]
+      await connectTransactionToPrices(tx, prisma, allPrices, false)
+    }))
   })
 }
 
