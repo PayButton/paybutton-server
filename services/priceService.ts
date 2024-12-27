@@ -6,7 +6,7 @@ import { HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, P
 import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
 import moment from 'moment'
 
-function flattenTimestamp (timestamp: number): number {
+export function flattenTimestamp (timestamp: number): number {
   const date = moment((timestamp * 1000))
   const dateStart = date.startOf('day')
   return dateStart.unix()
@@ -18,7 +18,7 @@ interface IResponseData {
   Price_in_USD: string
 }
 
-interface AllPrices {
+export interface AllPrices {
   cad: Price
   usd: Price
 }
@@ -67,6 +67,7 @@ export async function upsertPricesForNetworkId (responseData: IResponseData, net
     })
   } catch (error) {
     console.error(`Problem inserting current price for ${networkId} at timestamp ${timestamp} using data`, responseData, `:\n${error as string}`)
+    throw error
   }
 }
 
@@ -236,13 +237,13 @@ export interface SyncTransactionPricesInput {
 }
 
 export async function fetchPricesForNetworkAndTimestamp (networkId: number, timestamp: number, prisma: Prisma.TransactionClient, attempt: number = 1): Promise<AllPrices> {
-  timestamp = flattenTimestamp(timestamp)
+  const flattenedTimestamp = flattenTimestamp(timestamp)
   const cadPrice = await prisma.price.findUnique({
     where: {
       Price_timestamp_quoteId_networkId_unique_constraint: {
         quoteId: CAD_QUOTE_ID,
         networkId,
-        timestamp
+        timestamp: flattenedTimestamp
       }
     }
   })
@@ -251,16 +252,16 @@ export async function fetchPricesForNetworkAndTimestamp (networkId: number, time
       Price_timestamp_quoteId_networkId_unique_constraint: {
         quoteId: USD_QUOTE_ID,
         networkId,
-        timestamp
+        timestamp: flattenedTimestamp
       }
     }
   })
   if (cadPrice === null || usdPrice === null) {
-    await renewPricesForTimestamp(timestamp)
+    await renewPricesForTimestamp(flattenedTimestamp)
     if (attempt < PRICE_API_MAX_RETRIES) {
-      return await fetchPricesForNetworkAndTimestamp(networkId, timestamp, prisma, attempt + 1)
+      return await fetchPricesForNetworkAndTimestamp(networkId, flattenedTimestamp, prisma, attempt + 1)
     }
-    throw new Error(RESPONSE_MESSAGES.NO_PRICES_FOUND_404(networkId, timestamp).message)
+    throw new Error(RESPONSE_MESSAGES.NO_PRICES_FOUND_404(networkId, flattenedTimestamp).message)
   }
   return {
     cad: cadPrice,
