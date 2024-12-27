@@ -126,3 +126,12 @@ export async function updatePreferredCurrency (id: string, preferredCurrencyId: 
     }
   })
 }
+
+export async function updatePreferredTimezone (id: string, preferredTimezone: string): Promise<void> {
+  await prisma.userProfile.update({
+    where: { id },
+    data: {
+      preferredTimezone
+    }
+  })
+}
