@@ -124,23 +124,6 @@ const transactionsWithPaybuttonsAndPrices = Prisma.validator<Prisma.TransactionD
 
 export type TransactionsWithPaybuttonsAndPrices = Prisma.TransactionGetPayload<typeof transactionsWithPaybuttonsAndPrices>
 
-export const transactionWithAddressAndPricesAndButtons = Prisma.validator<Prisma.TransactionDefaultArgs>()({
-  include: {
-    address: {
-      include: {
-        paybuttons: {
-          include: {
-            paybutton: true // Include full Paybutton data
-          }
-        }
-      }
-    },
-    prices: true // Include related price data
-  }
-})
-
-export type TransactionWithAddressAndPricesAndButtons = Prisma.TransactionGetPayload<typeof transactionWithAddressAndPricesAndButtons>
-
 export async function fetchTransactionsByAddressList (
   addressIdList: string[],
   networkIdsListFilter?: number[]
@@ -738,7 +721,11 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   orderDesc = true
 ): Promise<Payment[]> {
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
-
+  if (orderBy === 'buttonDisplayDataList') {
+    return await getPaymentsByUserIdOrderedByButtonName(
+      userId, page, pageSize, orderDesc
+    )
+  }
   let orderByQuery
   if (orderBy !== undefined && orderBy !== '') {
     if (orderBy === 'values') {
@@ -791,26 +778,4 @@ export async function fetchAllPaymentsByUserIdWithPagination (
     }
   }
   return transformedData
-}
-
-export async function fetchAllPaymentsByUserId (
-  userId: string,
-  page: number,
-  pageSize: number,
-  orderBy?: string,
-  orderDesc = true
-): Promise<Payment[]> {
-  if (orderBy === 'buttonDisplayDataList') {
-    return await getPaymentsByUserIdOrderedByButtonName(
-      userId, page, pageSize, orderDesc
-    )
-  } else {
-    return await fetchAllPaymentsByUserIdWithPagination(
-      userId,
-      page,
-      pageSize,
-      orderBy,
-      orderDesc
-    )
-  }
 }

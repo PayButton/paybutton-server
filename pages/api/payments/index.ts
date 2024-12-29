@@ -1,4 +1,4 @@
-import { fetchAllPaymentsByUserId } from 'services/transactionService'
+import { fetchAllPaymentsByUserIdWithPagination } from 'services/transactionService'
 import { setSession } from 'utils/setSession'
 
 export default async (req: any, res: any): Promise<void> => {
@@ -10,7 +10,7 @@ export default async (req: any, res: any): Promise<void> => {
     const orderDesc: boolean = !!(req.query.orderDesc === '' || req.query.orderDesc === undefined || req.query.orderDesc === 'true')
     const orderBy = (req.query.orderBy === '' || req.query.orderBy === undefined) ? undefined : req.query.orderBy as string
 
-    const resJSON = await fetchAllPaymentsByUserId(userId, page, pageSize, orderBy, orderDesc)
+    const resJSON = await fetchAllPaymentsByUserIdWithPagination(userId, page, pageSize, orderBy, orderDesc)
     res.status(200).json(resJSON)
   }
 }
