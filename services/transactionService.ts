@@ -613,7 +613,7 @@ export async function getPaymentsByUserIdOrderedByButtonName (
         p.id AS paybuttonId, 
         p.name AS paybuttonName, 
         p.providerUserId AS paybuttonProviderUserId,
-        a.networkId as newtworkId,
+        a.networkId as networkId,
         JSON_ARRAYAGG(
           JSON_OBJECT(
             'priceId', pb.id,
@@ -646,7 +646,7 @@ export async function getPaymentsByUserIdOrderedByButtonName (
         p.id AS paybuttonId, 
         p.name AS paybuttonName, 
         p.providerUserId AS paybuttonProviderUserId,
-        a.networkId as newtworkId,
+        a.networkId as networkId,
         JSON_ARRAYAGG(
           JSON_OBJECT(
             'priceId', pb.id,
