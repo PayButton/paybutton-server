@@ -9,6 +9,7 @@ import { CreatePaybuttonTriggerInput, PostDataParameters } from 'services/trigge
 import crypto from 'crypto'
 import { getUserPrivateKey } from '../services/userService'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+import moment from 'moment-timezone'
 
 /* The functions exported here should validate the data structure / syntax of an
  * input by throwing an error in case something is different from the expected.
@@ -492,6 +493,10 @@ export interface UpdatePreferredCurrencyPUTParameters {
   currencyId?: string | number
 }
 
+export interface UpdateUserTimezonePUTParameters {
+  timezone: string
+}
+
 export const parseJoinOrganizationPOSTRequest = function (params: JoinOrganizationPOSTParameters): JoinOrganizationInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.token === '' || params.token === undefined) throw new Error(RESPONSE_MESSAGES.INVITATION_TOKEN_NOT_PROVIDED_400.message)
@@ -529,4 +534,14 @@ export const parseUpdatePUTRequest = function (params: UpdatePreferredCurrencyPU
   return {
     currencyId: Number(params.currencyId)
   }
+}
+
+export const parseUpdateUserTimezonePUTRequest = function (params: UpdateUserTimezonePUTParameters): UpdateUserTimezonePUTParameters {
+  if (params.timezone === '' ||
+    params.timezone === undefined ||
+    !moment.tz.names().includes(params.timezone)) {
+    throw new Error(RESPONSE_MESSAGES.INVALID_TIMEZONE_FORM_400.message)
+  }
+
+  return { timezone: params.timezone }
 }
