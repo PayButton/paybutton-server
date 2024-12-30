@@ -15,6 +15,7 @@ import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL } from 'consta
 import moment from 'moment'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
+import { UserProfile } from '@prisma/client'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -40,7 +41,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   return {
     props: {
       user,
-      userId
+      userId,
+      userProfile: user.userProfile
     }
   }
 }
@@ -48,9 +50,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 interface PaybuttonsProps {
   user: UserWithSupertokens
   userId: string
+  userProfile: UserProfile
 }
 
-export default function Payments ({ user, userId }: PaybuttonsProps): React.ReactElement {
+export default function Payments ({ user, userId, userProfile }: PaybuttonsProps): React.ReactElement {
+  const timezone = userProfile?.preferredTimezone === '' ? moment.tz.guess() : userProfile?.preferredTimezone
+
   function fetchData (): Function {
     return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
       const paymentsResponse = await fetch(`/api/payments?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`)
@@ -70,7 +75,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         Header: 'Date',
         accessor: 'timestamp',
         Cell: (cellProps) => {
-          return <div className='table-date'>{moment(cellProps.cell.value * 1000).format('lll')}</div>
+          return <div className='table-date'>{moment(cellProps.cell.value * 1000).tz(timezone).format('lll')}</div>
         }
       },
       {
