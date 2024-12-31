@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
-import TableContainer from '../../components/TableContainer/TableContainer'
+import TableContainerGetter from '../../components/TableContainer/TableContainerGetter'
 import { ButtonDisplayData } from 'redis/types'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -39,26 +39,30 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   return {
     props: {
-      user
+      user,
+      userId
     }
   }
 }
 
 interface PaybuttonsProps {
   user: UserWithSupertokens
+  userId: string
 }
 
-export default function Payments ({ user }: PaybuttonsProps): React.ReactElement {
-  const [data, setData] = useState([])
-
-  useEffect(() => {
-    const fetchData = async (): Promise<void> => {
-      const response = await fetch('api/payments')
-      const payments = await response.json()
-      setData(payments)
+export default function Payments ({ user, userId }: PaybuttonsProps): React.ReactElement {
+  function fetchData (): Function {
+    return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
+      const paymentsResponse = await fetch(`/api/payments?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`)
+      const paymentsCountResponse = await fetch('/api/payments/count')
+      const totalCount = await paymentsCountResponse.json()
+      const payments = await paymentsResponse.json()
+      return {
+        data: payments,
+        totalCount
+      }
     }
-    fetchData().catch(console.error)
-  }, [])
+  }
 
   const columns = useMemo(
     () => [
@@ -74,7 +78,7 @@ export default function Payments ({ user }: PaybuttonsProps): React.ReactElement
         accessor: 'values',
         sortType: compareNumericString,
         Cell: (cellProps) => {
-          return <div style={{ textAlign: 'right', fontWeight: '600' }}>${formatQuoteValue(cellProps.cell.value, user.userProfile.preferredCurrencyId)}</div>
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}> {cellProps.cell.value.amount} (${formatQuoteValue(cellProps.cell.value.values, user.userProfile.preferredCurrencyId)})</div>
         }
       },
       {
@@ -95,12 +99,17 @@ export default function Payments ({ user }: PaybuttonsProps): React.ReactElement
         accessor: 'buttonDisplayDataList',
         Cell: (cellProps) => {
           return (
-            <div className='payments-btn-cell'> {cellProps.cell.value.map((buttonDisplayData: ButtonDisplayData) =>
-              <div style={{ textAlign: 'center' }} className="table-button" key={buttonDisplayData.id}>
-              <Link href={`/button/${buttonDisplayData.id}`}>{buttonDisplayData.name}</Link>
-              </div>
-            )}
-             </div>
+            <div className='payments-btn-cell'>
+              {cellProps.cell.value.map((buttonDisplayData: ButtonDisplayData) =>
+                buttonDisplayData.providerUserId === userId
+                  ? (
+                  <div style={{ textAlign: 'center' }} className="table-button" key={buttonDisplayData.id}>
+                    <Link href={`/button/${buttonDisplayData.id}`}>{buttonDisplayData.name}</Link>
+                  </div>
+                    )
+                  : null
+              )}
+            </div>
           )
         }
       },
@@ -125,8 +134,13 @@ export default function Payments ({ user }: PaybuttonsProps): React.ReactElement
 
   return (
     <>
-      <TopBar title="Payments" user={user.stUser?.email} />
-      {data.length === 0 ? <div className='no-payments'>No Payments to show yet</div> : <TableContainer columns={columns} data={data} />}
+      <TopBar title="Payments" user={user?.stUser?.email} />
+      <TableContainerGetter
+        columns={columns}
+        dataGetter={fetchData()}
+        tableRefreshCount={1}
+        emptyMessage='No Payments to show yet'
+        />
     </>
   )
 }
