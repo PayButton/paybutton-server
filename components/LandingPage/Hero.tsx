@@ -15,8 +15,7 @@ export default function Hero(): JSX.Element {
               The easiest way to accept <span>eCash</span> online
             </h1>
             <p>
-              Simply add a few lines of code to start accepting eCash on your
-              website
+              Start accepting XEC or BCH on your website with only a few lines of code
             </p>
             <div className={style.button_ctn}>
               <Link href="/signup" className='button_main'>
