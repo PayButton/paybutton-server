@@ -85,6 +85,7 @@ export const getButtonPaymentData = (n: number, periodString: string, paymentLis
   }
   return buttonPaymentData
 }
+
 export const sumQuoteValues = function (a: QuoteValues, b: QuoteValues): QuoteValues {
   return {
     usd: (new Prisma.Decimal(a.usd)).plus(new Prisma.Decimal(b.usd)),
