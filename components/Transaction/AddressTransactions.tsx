@@ -8,7 +8,7 @@ import CheckIcon from 'assets/check-icon.png'
 import XIcon from 'assets/x-icon.png'
 import TableContainerGetter from '../../components/TableContainer/TableContainerGetter'
 import { compareNumericString } from 'utils/index'
-import moment from 'moment'
+import moment from 'moment-timezone'
 import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL } from 'constants/index'
 
 interface IProps {
@@ -16,11 +16,16 @@ interface IProps {
     [address: string]: boolean
   }
   tableRefreshCount: number
+  timezone: string
 }
 
 function getGetterForAddress (addressString: string): Function {
   return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
-    const ok = await fetch(`/api/address/transactions/${addressString}?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`)
+    const ok = await fetch(`/api/address/transactions/${addressString}?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`, {
+      headers: {
+        Timezone: moment.tz.guess()
+      }
+    })
     const ok2 = await fetch(`/api/address/transactions/count/${addressString}`)
     return {
       data: await ok.json(),
@@ -29,7 +34,7 @@ function getGetterForAddress (addressString: string): Function {
   }
 }
 
-export default ({ addressSyncing, tableRefreshCount }: IProps): JSX.Element => {
+export default ({ addressSyncing, tableRefreshCount, timezone = moment.tz.guess() }: IProps): JSX.Element => {
   const columns = useMemo(
     () => [
       {
@@ -43,7 +48,7 @@ export default ({ addressSyncing, tableRefreshCount }: IProps): JSX.Element => {
         Header: 'Date',
         accessor: 'timestamp',
         Cell: (cellProps) => {
-          return <div className='table-date'>{moment(cellProps.cell.value * 1000).format('lll')}</div>
+          return <div className='table-date'>{moment(cellProps.cell.value * 1000).tz(timezone).format('lll')}</div>
         }
       },
       {

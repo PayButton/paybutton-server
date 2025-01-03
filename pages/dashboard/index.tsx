@@ -12,6 +12,7 @@ import { DashboardData, PeriodData } from 'redis/types'
 import { loadStateFromCookie, saveStateToCookie } from 'utils/cookies'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
+import moment from 'moment-timezone'
 const Chart = dynamic(async () => await import('components/Chart'), {
   ssr: false
 })
@@ -94,7 +95,11 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
-      const res = await fetch('api/dashboard')
+      const res = await fetch('api/dashboard', {
+        headers: {
+          Timezone: moment.tz.guess()
+        }
+      })
       const json = await res.json()
       setDashboardData(json)
     }

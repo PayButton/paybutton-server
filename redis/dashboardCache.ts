@@ -85,6 +85,7 @@ export const getButtonPaymentData = (n: number, periodString: string, paymentLis
   }
   return buttonPaymentData
 }
+
 export const sumQuoteValues = function (a: QuoteValues, b: QuoteValues): QuoteValues {
   return {
     usd: (new Prisma.Decimal(a.usd)).plus(new Prisma.Decimal(b.usd)),
@@ -108,7 +109,8 @@ export const sumPaymentsValue = function (paymentList: Payment[]): QuoteValues {
 const generateDashboardDataFromStream = async function (
   paymentStream: AsyncGenerator<Payment>,
   nMonthsTotal: number,
-  borderColor: ChartColor
+  borderColor: ChartColor,
+  timezone: string
 ): Promise<DashboardData> {
   const revenueAccumulators = createRevenueAccumulators(nMonthsTotal)
   const paymentCounters = createPaymentCounters(nMonthsTotal)
@@ -121,7 +123,7 @@ const generateDashboardDataFromStream = async function (
 
   // Process all payments
   for await (const payment of paymentStream) {
-    const paymentTime = moment(payment.timestamp * 1000) // WIP use TZ here
+    const paymentTime = moment.tz(payment.timestamp * 1000, timezone)
     const paymentYear = paymentTime.year()
     const paymentMonth = paymentTime.month()
     const paymentWeekDay = paymentTime.day()
@@ -344,7 +346,7 @@ function createPeriodData (
   }
 }
 
-export const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
+export const getUserDashboardData = async function (userId: string, timezone: string): Promise<DashboardData> {
   const dashboardData = await getCachedDashboardData(userId)
   if (dashboardData === null) {
     console.log('[CACHE]: Recreating dashboard for user', userId)
@@ -354,7 +356,8 @@ export const getUserDashboardData = async function (userId: string): Promise<Das
     const dashboardData = await generateDashboardDataFromStream(
       paymentStream,
       nMonthsTotal,
-      { revenue: '#66fe91', payments: '#669cfe' }
+      { revenue: '#66fe91', payments: '#669cfe' },
+      timezone
     )
     await cacheDashboardData(userId, dashboardData)
     return dashboardData

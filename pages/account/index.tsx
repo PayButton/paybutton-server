@@ -15,6 +15,8 @@ import { fetchOrganizationForUser, fetchOrganizationMembers } from 'services/org
 import { Organization, UserProfile } from '@prisma/client'
 import { removeDateFields, removeUnserializableFields } from 'utils/index'
 import TopBar from 'components/TopBar'
+import TimezoneSelector from 'components/Timezone Selector'
+import moment from 'moment-timezone'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   supertokensNode.init(SuperTokensConfig.backendConfig())
@@ -72,6 +74,11 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
   const [publicKeyInfo, setPublicKeyInfo] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
   const [orgMembers, setOrgMembers] = useState(orgMembersProps)
+  const [timezone, setTimezone] = useState(userProfile?.preferredTimezone !== '' ? userProfile?.preferredTimezone : moment.tz.guess())
+
+  const handleTimezoneChange = (selectedOption: any): void => {
+    setTimezone(selectedOption)
+  }
 
   const toggleChangePassword = (): void => {
     setChangePassword(!changePassword)
@@ -103,6 +110,13 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
         <div className={style.label}>Currency</div>
         <div className={style.account_card}>
           <ChangeFiatCurrency preferredCurrencyId={userProfile.preferredCurrencyId}/>
+        </div>
+        <div className={style.label}>Update timezone</div>
+        <div className={style.account_card}>
+          <TimezoneSelector
+            value={timezone}
+            onChange={handleTimezoneChange}
+          />
         </div>
         {changePassword && (
           <>

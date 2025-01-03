@@ -1,0 +1,16 @@
+.timezone_selector {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 15px 0;
+    padding: 10px;
+    border: 1px solid var(--secondary-bg-color);
+    border-radius: 5px;
+    background-color: var(--secondary-bg-color);
+}
+
+.select_timezone {
+    background-color: var(--secondary-bg-color) !important;
+    color: black;
+    font-family: 'Poppins', sans-serif;
+}
