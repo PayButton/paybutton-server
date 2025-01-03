@@ -352,6 +352,7 @@ export default function ButtonGenerator (): JSX.Element {
                   button.widget
                     ? (
                 <PayButtonWidget
+                  key={`widget-${JSON.stringify(button)}`}
                   to={button.to}
                   amount={parseFloat(button.amount)}
                   currency={button.currency}
@@ -384,6 +385,7 @@ export default function ButtonGenerator (): JSX.Element {
                       )
                     : (
                 <PayButton
+                  key={`button-${JSON.stringify(button)}`}
                   to={button.to}
                   amount={button.amount}
                   currency={button.currency}
