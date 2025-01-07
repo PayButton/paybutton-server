@@ -5,7 +5,7 @@ import { fetchAllUserAddresses, AddressPaymentInfo } from 'services/addressServi
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
-import moment from 'moment'
+import moment from 'moment-timezone'
 import { CacheSet } from 'redis/index'
 import { ButtonDisplayData, Payment } from './types'
 import { getUserDashboardData } from './dashboardCache'
@@ -140,8 +140,8 @@ export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[
   return allPayments
 }
 
-export const getCachedPaymentsCountForUser = async (userId: string): Promise<number> => {
-  const dashboardData = await getUserDashboardData(userId)
+export const getCachedPaymentsCountForUser = async (userId: string, timezone: string): Promise<number> => {
+  const dashboardData = await getUserDashboardData(userId, timezone)
 
   return dashboardData.total.payments
 }

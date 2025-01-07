@@ -12,7 +12,7 @@ import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import { formatQuoteValue, compareNumericString, removeUnserializableFields } from 'utils/index'
 import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL } from 'constants/index'
-import moment from 'moment'
+import moment from 'moment-timezone'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
 
@@ -51,10 +51,16 @@ interface PaybuttonsProps {
 }
 
 export default function Payments ({ user, userId }: PaybuttonsProps): React.ReactElement {
+  const timezone = user?.userProfile.preferredTimezone === '' ? moment.tz.guess() : user?.userProfile?.preferredTimezone
+
   function fetchData (): Function {
     return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
       const paymentsResponse = await fetch(`/api/payments?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`)
-      const paymentsCountResponse = await fetch('/api/payments/count')
+      const paymentsCountResponse = await fetch('/api/payments/count', {
+        headers: {
+          Timezone: timezone
+        }
+      })
       const totalCount = await paymentsCountResponse.json()
       const payments = await paymentsResponse.json()
       return {
@@ -70,7 +76,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         Header: 'Date',
         accessor: 'timestamp',
         Cell: (cellProps) => {
-          return <div className='table-date'>{moment(cellProps.cell.value * 1000).format('lll')}</div>
+          return <div className='table-date'>{moment(cellProps.cell.value * 1000).tz(timezone).format('lll')}</div>
         }
       },
       {

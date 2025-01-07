@@ -16,6 +16,7 @@ import PaybuttonTrigger from 'components/Paybutton/PaybuttonTrigger'
 import { UserProfile } from '@prisma/client'
 import { fetchUserProfileFromId } from 'services/userService'
 import { removeUnserializableFields } from 'utils'
+import moment from 'moment-timezone'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   supertokensNode.init(SuperTokensConfig.backendConfig())
@@ -56,7 +57,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   const [paybuttonNetworks, setPaybuttonNetworks] = useState<number[]>([])
   const [selectedCurrency, setSelectedCurrency] = useState<string>('')
   const userProfile = props.userProfile
-
+  const timezone = userProfile?.preferredTimezone === '' ? moment.tz.guess() : userProfile.preferredTimezone
   const router = useRouter()
 
   const updateIsSyncing = (addressStringList: string[]): void => {
@@ -196,7 +197,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
           </div>
         </div>
 
-        <AddressTransactions addressSyncing={isSyncing} tableRefreshCount={tableRefreshCount}/>
+        <AddressTransactions addressSyncing={isSyncing} tableRefreshCount={tableRefreshCount} timezone={timezone}/>
         <PaybuttonTrigger emailCredits={userProfile.emailCredits} paybuttonId={paybutton.id}/>
       </>
     )
