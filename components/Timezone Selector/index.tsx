@@ -11,9 +11,12 @@ interface TimezoneSelectorProps {
 
 const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({ value }) => {
   const [selectedTimezone, setSelectedTimezone] = useState(value !== '' ? value : '')
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   const handleChange = (selectedOption: any): void => {
     const updateTimezone = async (): Promise<void> => {
+      const oldTimezone = selectedTimezone
       try {
         const res = await fetch('/api/user/timezone', {
           method: 'PUT',
@@ -24,9 +27,18 @@ const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({ value }) => {
         })
         if (res.status === 200) {
           setSelectedTimezone(selectedOption.value)
+          setError('')
+          setSuccess('Timezone updated successfully.')
         }
       } catch (err: any) {
-        console.log(err.response.data.message)
+        setSuccess('')
+        setError('Failed to update timezone.')
+        setSelectedTimezone(oldTimezone)
+      } finally {
+        setTimeout(() => {
+          setSuccess('')
+          setError('')
+        }, 3000)
       }
     }
 
@@ -42,6 +54,8 @@ const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({ value }) => {
         className={style.select_timezone}
         displayValue="UTC"
       />
+      {error !== '' && <span className={style.error_message}> {error} </span>}
+      {success !== '' && <span className={style.success_message}> {success} </span>}
     </div>
   )
 }
