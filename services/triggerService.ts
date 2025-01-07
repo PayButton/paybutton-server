@@ -244,6 +244,7 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
   } = tx
 
   const addressTriggers = await fetchTriggersForAddress(address)
+  console.log(`[TRIGGER]: Will execute ${addressTriggers.length} triggers for tx ${hash} and address ${address}`)
 
   // Send post requests
   const posterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
