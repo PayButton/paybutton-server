@@ -29,6 +29,10 @@ const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({ value }) => {
           setSelectedTimezone(selectedOption.value)
           setError('')
           setSuccess('Timezone updated successfully.')
+        } else {
+          setSuccess('')
+          setError('Failed to update timezone.')
+          setSelectedTimezone(oldTimezone)
         }
       } catch (err: any) {
         setSuccess('')
