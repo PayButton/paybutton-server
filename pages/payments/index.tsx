@@ -59,7 +59,11 @@ export default function Payments ({ user, userId, userProfile }: PaybuttonsProps
   function fetchData (): Function {
     return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
       const paymentsResponse = await fetch(`/api/payments?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`)
-      const paymentsCountResponse = await fetch('/api/payments/count')
+      const paymentsCountResponse = await fetch('/api/payments/count', {
+        headers: {
+          Timezone: timezone
+        }
+      })
       const totalCount = await paymentsCountResponse.json()
       const payments = await paymentsResponse.json()
       return {

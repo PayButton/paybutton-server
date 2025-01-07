@@ -126,9 +126,9 @@ export class CacheGet {
     })
   }
 
-  static async paymentsCount (userId: string): Promise<number> {
+  static async paymentsCount (userId: string, timezone: string): Promise<number> {
     return await this.executeCall(userId, 'paymentsCount', async () => {
-      return await getCachedPaymentsCountForUser(userId)
+      return await getCachedPaymentsCountForUser(userId, timezone)
     })
   }
 }

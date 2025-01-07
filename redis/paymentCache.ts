@@ -140,8 +140,8 @@ export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[
   return allPayments
 }
 
-export const getCachedPaymentsCountForUser = async (userId: string): Promise<number> => {
-  const dashboardData = await getUserDashboardData(userId, moment.tz.guess())
+export const getCachedPaymentsCountForUser = async (userId: string, timezone: string): Promise<number> => {
+  const dashboardData = await getUserDashboardData(userId, timezone)
 
   return dashboardData.total.payments
 }
