@@ -385,12 +385,8 @@ export class ChronikBlockchainClient implements BlockchainClient {
           const { created, tx } = await createTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
             const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx)
-            if (created) { // only execute trigger for unconfirmed tx arriving
-              try {
-                await executeAddressTriggers(broadcastTxData, tx.address.networkId)
-              } catch (err: any) {
-                console.error(RESPONSE_MESSAGES.COULD_NOT_EXECUTE_TRIGGER_500.message, err.stack)
-              }
+            if (created) { // only execute trigger for newly added txs
+              await executeAddressTriggers(broadcastTxData, tx.address.networkId)
             }
           }
         }
@@ -435,9 +431,12 @@ export class ChronikBlockchainClient implements BlockchainClient {
     for (const transaction of blockTxsToSync) {
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
       for (const addressWithTransaction of addressesWithTransactions) {
-        const { tx } = await createTransaction(addressWithTransaction.transaction)
+        const { created, tx } = await createTransaction(addressWithTransaction.transaction)
         if (tx !== undefined) {
-          this.broadcastIncomingTx(addressWithTransaction.address.address, tx)
+          const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx)
+          if (created) { // only execute trigger for newly added txs
+            await executeAddressTriggers(broadcastTxData, tx.address.networkId)
+          }
         }
       }
     }
