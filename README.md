@@ -25,6 +25,51 @@ https://paybutton.org
 - App will be available at http://localhost:3000.
 - Local changes on source code should trigger a reload immediately.
 
+### Yarn docker commands
+When developing, there are some commands are meant to be run inside the docker container. To make this process easier, many of them can be run in the host machine with `yarn docker [command]`. Running `yarn docker` will show all of them:
+
+```
+Available commands:
+  shortcut, command name      [container_name]    command description
+ --- 
+  nr, nextrestart             [paybutton-dev]     restart the nextJS server
+  nl, nextlogs                [paybutton-dev]     see the logs for the nextJS server
+  db, database                [paybutton-db]      enter the mariadb command-line using the main db
+  dbr, databaseroot           [paybutton-db]      enter the mariadb command-line as root
+  dbd, databasedump           [paybutton-db]      dump all db tables as root
+  dbs, databaseshell          [paybutton-db]      enter the shell of the mariadb container
+  dbt, databasetest           [paybutton-db]      enter the mariadb command-line using the test db
+  dbu, databaseuser           [paybutton-db]      enter the mariadb command-line using the users db
+  t, test                     [paybutton-dev]     run tests
+  tf, testfull                [paybutton-dev]     run tests, show full output
+  tw, testwatch               [paybutton-dev]     run tests watching it
+  tc, testcoverage            [paybutton-dev]     test coverage
+  ns, nodeshell               [paybutton-dev]     enter the node container
+  rns, rootnodeshell          [paybutton-dev]     enter the node container as root
+  y, yarn                     [paybutton-dev]     run `yarn` on the node container
+  ya, yarnadd                 [paybutton-dev]     run `yarn add ARGS` on the node container
+  yad, yarnadddev             [paybutton-dev]     run `yarn add -D ARGS` on the node container
+  yr, yarnremove              [paybutton-dev]     run `yarn remove ARGS` on the node container
+  m, migrate                  [paybutton-dev]     run migrations
+  mm, makemigration           [paybutton-dev]     create a migration with name ARGS
+  mr, migratereset            [paybutton-dev]     recreate the database
+  pd, prismadb                [paybutton-dev]     run `prisma db ARGS`
+  pg, prismagenerate          [paybutton-dev]     run `prisma generate` to generate client from scheme
+  c, cache                    [paybutton-cache]   enter the redis command-line interface
+  cs, cacheshell              [paybutton-dev]     enter the redis container
+  cr, cachereset              [paybutton-dev]     clear the whole redis cache
+  cmr, cachemainreset         [paybutton-dev]     clear the main redis cache
+  cbr, cachebullmqreset       [paybutton-dev]     clear the bullMQ redis database
+  jl, jobslogs                [paybutton-dev]     watch jobs logs
+  js, jobsstop                [paybutton-dev]     stop jobs
+  jr, jobsrestart             [paybutton-dev]     restart jobs
+  sl, serverlogs              [paybutton-dev]     watch WS server logs
+  ss, serverstop              [paybutton-dev]     stop WS server
+  sr, serverrestart           [paybutton-dev]     restart WS server
+```
+
+**WARN**: Notice this means that many commands are not supposed to work by running then purely on the host machine. For example, `yarn test` runs the `test` script, but this won't work properly when executed from the host machine, so the proper way to execute tests are to run them with `yarn docker test` (or manually entering the `paybutton-dev` container and running `yarn test` there, which is exactly what `yarn docker test` does).
+
 
 ### Optional configuration
 
