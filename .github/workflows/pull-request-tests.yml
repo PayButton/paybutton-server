@@ -1,11 +1,11 @@
-name: Integration Test
+name: Pull Request Tests
 on:
   pull_request:
     branches:
       - master
 jobs:
   test:
-    name: Integration Tests
+    name: Run Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
