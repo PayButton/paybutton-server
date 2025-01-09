@@ -178,6 +178,22 @@ default: 3000
 ```
 > How long a POST request triggered from a button payment will wait for an answer to be marked as successful.
 
+#### smtpHost
+```
+type: string
+default: N/A
+```
+> Host name for the server from which payment trigger emails will be sent. Not setting this up will result in email triggers not working.
+
+
+#### smtpPort
+```
+type: number
+default: N/A
+```
+> Port for the SMTP server from which payment trigger emails will be sent. Not setting this up will result in email triggers not working.
+
+
 #### sideshiftAffiliateId
 ```
 type: string
