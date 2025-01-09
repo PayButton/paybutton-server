@@ -13,6 +13,7 @@ import dashboardEndpoint from 'pages/api/dashboard/index'
 import paymentsEndpoint from 'pages/api/payments/index'
 import currentPriceEndpoint from 'pages/api/price/[networkSlug]'
 import currentPriceForQuoteEndpoint from 'pages/api/price/[networkSlug]/[quoteSlug]'
+import syncAddressesEndpoint from 'pages/api/addresses/sync'
 import { WalletWithAddressesWithPaybuttons, fetchWalletById, createDefaultWalletForUser } from 'services/walletService'
 import {
   exampleAddresses,
@@ -47,10 +48,14 @@ jest.mock('../../utils/setSession', () => {
 
 beforeAll(async () => {
   await setUpUsers()
+  jest.spyOn(console, 'log').mockImplementation(() => {})
+  jest.spyOn(console, 'warn').mockImplementation(() => {})
+  jest.spyOn(console, 'error').mockImplementation(() => {})
 })
 
 afterAll(async () => {
   await clearPaybuttonsAndAddresses()
+  jest.restoreAllMocks()
 })
 
 describe('POST /api/paybutton/', () => {
@@ -225,8 +230,8 @@ describe('PATCH /api/paybutton/', () => {
     await createDefaultWalletForUser(userB)
     for (let i = 0; i < 4; i++) {
       const userId = i === 3 ? userB : userA
-      const paybutton = await createPaybuttonForUser(userId)
-      createdPaybuttons.push(paybutton)
+      const createdPaybuttonObj = await createPaybuttonForUser(userId)
+      createdPaybuttons.push(createdPaybuttonObj.paybutton)
     }
   })
   const baseRequestOptions: RequestOptions = {
@@ -515,16 +520,16 @@ describe('POST /api/wallets/', () => {
     await clearWallets()
     let lastAddress = ''
     for (let i = 0; i < 4; i++) {
-      let button
+      let createdPaybuttonObj
       if (i === 2) {
-        button = await createPaybuttonForUser('test-u-id', [lastAddress])
+        createdPaybuttonObj = await createPaybuttonForUser('test-u-id', [lastAddress])
       } else if (i === 3) {
-        button = await createPaybuttonForUser('test-other-u-id')
+        createdPaybuttonObj = await createPaybuttonForUser('test-other-u-id')
       } else {
-        button = await createPaybuttonForUser('test-u-id')
+        createdPaybuttonObj = await createPaybuttonForUser('test-u-id')
       }
-      addressIdList.push(button.addresses.map((conn) => conn.address.id)[0])
-      lastAddress = button.addresses.map((conn) => conn.address.address)[0]
+      addressIdList.push(createdPaybuttonObj.paybutton.addresses.map((conn) => conn.address.id)[0])
+      lastAddress = createdPaybuttonObj.paybutton.addresses.map((conn) => conn.address.address)[0]
     }
   })
   const baseRequestOptions: RequestOptions = {
@@ -647,8 +652,8 @@ describe('GET /api/wallets/', () => {
     await clearWallets()
     for (let i = 0; i < 4; i++) {
       const userId = i === 3 ? userB : userA
-      const pb = await createPaybuttonForUser(userId)
-      await createWalletForUser(userId, [pb.addresses[0].address.id])
+      const createdPaybuttonObj = await createPaybuttonForUser(userId)
+      await createWalletForUser(userId, [createdPaybuttonObj.paybutton.addresses[0].address.id])
     }
   })
   const baseRequestOptions: RequestOptions = {
@@ -743,8 +748,8 @@ describe('GET /api/wallet/[id]', () => {
     await clearWallets()
     createdWalletsIds = []
     for (let i = 0; i < 4; i++) {
-      const pb = await createPaybuttonForUser('test-u-id')
-      const wallet = await createWalletForUser('test-u-id', [pb.addresses[0].address.id])
+      const createdPaybuttonObj = await createPaybuttonForUser('test-u-id')
+      const wallet = await createWalletForUser('test-u-id', [createdPaybuttonObj.paybutton.addresses[0].address.id])
       createdWalletsIds.push(wallet.id)
     }
   })
@@ -801,8 +806,8 @@ describe('PATCH /api/wallet/[id]', () => {
     await clearWallets()
     createdWallets = []
     for (let i = 0; i < 4; i++) {
-      const pb = await createPaybuttonForUser('test-u-id')
-      const wallet = await createWalletForUser('test-u-id', pb.addresses.map(conn => conn.address.id))
+      const createdPaybuttonObj = await createPaybuttonForUser('test-u-id')
+      const wallet = await createWalletForUser('test-u-id', createdPaybuttonObj.paybutton.addresses.map(conn => conn.address.id))
       createdWallets.push(wallet)
     }
   })
@@ -925,11 +930,11 @@ describe('PATCH /api/wallet/[id]', () => {
       await createPaybuttonForUser('test-u-id')
     ])
     let newAddresses: any[] = []
-    newPaybuttons.map(pb => {
-      const { addresses, ...rest } = pb
+    newPaybuttons.map(createdPaybuttonObj => {
+      const { addresses, ...rest } = createdPaybuttonObj.paybutton
       addresses.forEach(address => {
         newAddresses = [...newAddresses,
-          { ...address.address, paybuttons: [{ address: pb }] }
+          { ...address.address, paybuttons: [{ address: createdPaybuttonObj.paybutton }] }
         ]
       })
       return rest
@@ -1000,22 +1005,22 @@ describe('DELETE /api/wallet/[id]', () => {
     await clearWallets()
     createdWallets = []
     for (let i = 0; i < 4; i++) {
-      const pb = await createPaybuttonForUser('test-u-id')
+      const createdPaybuttonObj = await createPaybuttonForUser('test-u-id')
       if (i === 2) {
-        const wallet = await createWalletForUser('test-u-id', pb.addresses.map(conn => conn.address.id), false, true)
+        const wallet = await createWalletForUser('test-u-id', createdPaybuttonObj.paybutton.addresses.map(conn => conn.address.id), false, true)
         createdWallets.push(wallet)
         defaultBCHWallet = wallet
       } else if (i === 3) {
-        const wallet = await createWalletForUser('test-u-id', pb.addresses.map(conn => conn.address.id), true, false)
+        const wallet = await createWalletForUser('test-u-id', createdPaybuttonObj.paybutton.addresses.map(conn => conn.address.id), true, false)
         createdWallets.push(wallet)
         defaultXECWallet = wallet
       } else {
-        const wallet = await createWalletForUser('test-u-id', pb.addresses.map(conn => conn.address.id))
+        const wallet = await createWalletForUser('test-u-id', createdPaybuttonObj.paybutton.addresses.map(conn => conn.address.id))
         createdWallets.push(wallet)
       }
     }
-    const pb = await createPaybuttonForUser('test-u-id2')
-    const wallet = await createWalletForUser('test-u-id2', pb.addresses.map(conn => conn.address.id))
+    const createdPaybuttonObj = await createPaybuttonForUser('test-u-id2')
+    const wallet = await createWalletForUser('test-u-id2', createdPaybuttonObj.paybutton.addresses.map(conn => conn.address.id))
     createdWallets.push(wallet)
   })
   beforeEach(async () => {
@@ -1075,8 +1080,8 @@ describe('GET /api/paybutton/[id]', () => {
     createdPaybuttonsIds = []
     for (let i = 0; i < 4; i++) {
       const userId = i === 3 ? userB : userA
-      const paybutton = await createPaybuttonForUser(userId)
-      createdPaybuttonsIds.push(paybutton.id)
+      const createdPaybuttonObj = await createPaybuttonForUser(userId)
+      createdPaybuttonsIds.push(createdPaybuttonObj.paybutton.id)
     }
   })
 
@@ -1139,8 +1144,8 @@ describe('DELETE /api/paybutton/[id]', () => {
     createdPaybuttonsIds = []
     for (let i = 0; i < 4; i++) {
       const userId = i === 3 ? userB : userA
-      const paybutton = await createPaybuttonForUser(userId)
-      createdPaybuttonsIds.push(paybutton.id)
+      const createdPaybuttonObj = await createPaybuttonForUser(userId)
+      createdPaybuttonsIds.push(createdPaybuttonObj.paybutton.id)
     }
   })
 
@@ -1459,5 +1464,24 @@ describe('GET /api/prices/current/[networkSlug]/[quoteSlug]', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     expect(responseData).toEqual('133')
+  })
+})
+
+describe('POST /api/addresses/sync', () => {
+  const baseRequestOptions: RequestOptions = {
+    method: 'POST' as RequestMethod,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: {
+      addresses: []
+    }
+  }
+
+  it('Should return HTTP 400 if no addresses', async () => {
+    const res = await testEndpoint(baseRequestOptions, syncAddressesEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(400)
+    expect(responseData).toStrictEqual(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400)
   })
 })
