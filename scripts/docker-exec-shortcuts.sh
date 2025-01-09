@@ -58,6 +58,9 @@ case "$command" in
         eval "$base_command_db" mariadb -h "$MAIN_DB_HOST" -u "$SUPERTOKENS_DB_USER" -p"$SUPERTOKENS_DB_PASSWORD" -D supertokens "$@"
         ;;
     "test" | "t")
+        eval "$base_command_node" yarn test --silent --verbose=false "$@"
+        ;;
+    "testfull" | "tf")
         eval "$base_command_node" yarn test "$@"
         ;;
     "testwatch" | "tw")
@@ -150,6 +153,7 @@ case "$command" in
         echo "  dbt, databasetest           [$db_container_name]      enter the mariadb command-line using the test db"
         echo "  dbu, databaseuser           [$db_container_name]      enter the mariadb command-line using the users db"
         echo "  t, test                     [$node_container_name]     run tests"
+        echo "  tf, testfull                [$node_container_name]     run tests, show full output"
         echo "  tw, testwatch               [$node_container_name]     run tests watching it"
         echo "  tc, testcoverage            [$node_container_name]     test coverage"
         echo "  ns, nodeshell               [$node_container_name]     enter the node container"

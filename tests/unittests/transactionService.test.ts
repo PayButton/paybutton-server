@@ -1,11 +1,11 @@
 import prisma from 'prisma/clientInstance'
 import * as transactionService from 'services/transactionService'
 import { prismaMock } from 'prisma/mockedClient'
-import { mockedBCHAddress, mockedUSDPriceOnTransaction, mockedCADPriceOnTransaction, mockedTransaction, mockedUserProfile, mockedAddressIdList, mockedAddressesOnButtons, mockedTransactionList } from '../mockedObjects'
+import { mockedBCHAddress, mockedUSDPriceOnTransaction, mockedCADPriceOnTransaction, mockedTransaction, mockedUserProfile, mockedAddressIdList, mockedTransactionList } from '../mockedObjects'
 import { CacheSet } from 'redis/index'
 import { Prisma } from '@prisma/client'
 import * as addressService from 'services/addressService'
-import { RESPONSE_MESSAGES }  from 'constants/index'
+import { RESPONSE_MESSAGES } from 'constants/index'
 
 const includePrices = {
   prices: {
@@ -24,6 +24,9 @@ describe('Create services', () => {
   it('Return created transaction', async () => {
     prismaMock.transaction.upsert.mockResolvedValue(mockedTransaction)
     prisma.transaction.upsert = prismaMock.transaction.upsert
+
+    prismaMock.transaction.findUniqueOrThrow.mockResolvedValue(mockedTransaction)
+    prisma.transaction.findUniqueOrThrow = prismaMock.transaction.findUniqueOrThrow
 
     prismaMock.transaction.findUnique.mockResolvedValue(mockedTransaction)
     prisma.transaction.findUnique = prismaMock.transaction.findUnique
@@ -115,7 +118,7 @@ describe('Fetch transactions by paybuttonId', () => {
     prismaMock.transaction.findMany.mockResolvedValue(mockedTransactionList)
     prisma.transaction.findMany = prismaMock.transaction.findMany
     prisma.addressesOnButtons.findMany = prismaMock.addressesOnButtons.findMany
-    
+
     jest.spyOn(addressService, 'fetchAddressesByPaybuttonId').mockImplementation(async (_: string) => {
       return mockedAddressIdList
     })
@@ -124,7 +127,15 @@ describe('Fetch transactions by paybuttonId', () => {
       where: {
         addressId: {
           in: mockedAddressIdList
+        },
+        address: {
+          networkId: {
+            in: [1, 2]
+          }
         }
+      },
+      orderBy: {
+        timestamp: 'asc'
       },
       include: includeAddressAndPrices
     }
@@ -147,4 +158,3 @@ describe('Fetch transactions by paybuttonId', () => {
     }
   })
 })
-
