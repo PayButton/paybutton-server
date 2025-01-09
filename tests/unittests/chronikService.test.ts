@@ -1,6 +1,16 @@
 import { EMPTY_OP_RETURN } from 'utils/validators'
 import { getNullDataScriptData } from '../../services/chronikService'
 
+jest.mock('../../services/chronikService', () => {
+  return {
+    ...jest.requireActual('../../services/chronikService'),
+    ChronikBlockchainClient: jest.fn(() => ({
+      getSubscribedAddresses: jest.fn(),
+      subscribeInitialAddresses: jest.fn()
+    }))
+  }
+})
+
 describe('getNullDataScriptData tests', () => {
   it('Null for empty OP_RETURN', async () => {
     const script = '6a' + ''
@@ -69,7 +79,7 @@ describe('getNullDataScriptData tests', () => {
         key: 'value',
         some: 'other'
       },
-      rawMessage: "key=value some=other"
+      rawMessage: 'key=value some=other'
     })
   })
   it('Dict with array', async () => {
@@ -81,7 +91,7 @@ describe('getNullDataScriptData tests', () => {
         key: 'value',
         some: ['value1', 'value2']
       },
-      rawMessage: "key=value some=value1|value2"
+      rawMessage: 'key=value some=value1|value2'
     })
   })
   it('Non-ASCII data', async () => {
@@ -93,7 +103,7 @@ describe('getNullDataScriptData tests', () => {
     expect(data).toStrictEqual({
       paymentId: '',
       message: '😂👍©ĸðМжЪы% ŋæPßđĸł„»“æ}¹↓£³→²',
-      rawMessage: "😂👍©ĸðМжЪы% ŋæPßđĸł„»“æ}¹↓£³→²",
+      rawMessage: '😂👍©ĸðМжЪы% ŋæPßđĸł„»“æ}¹↓£³→²'
     })
   })
   it('Non-ASCII data with paymentId', async () => {
@@ -123,7 +133,7 @@ describe('getNullDataScriptData tests', () => {
     expect(data).toStrictEqual({
       paymentId: '',
       message: 'PQRSTUVW',
-      rawMessage: 'PQRSTUVW',
+      rawMessage: 'PQRSTUVW'
     })
   })
   it('Ignore incomplete paymentId', async () => {
@@ -132,7 +142,7 @@ describe('getNullDataScriptData tests', () => {
     expect(data).toStrictEqual({
       paymentId: '',
       message: 'PQRSTUVW',
-      rawMessage: 'PQRSTUVW',
+      rawMessage: 'PQRSTUVW'
     })
   })
 })
