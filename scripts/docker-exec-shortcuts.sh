@@ -141,6 +141,7 @@ case "$command" in
         eval "$base_command_cache" ash -l
         ;;
     *)
+        # When adding new commands, be sure to add them to this help message below and also update it in the README.
         echo Available commands:
         echo "  shortcut, command name      [container_name]    command description"
         echo " --- "
