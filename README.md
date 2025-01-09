@@ -68,7 +68,9 @@ Available commands:
   sr, serverrestart           [paybutton-dev]     restart WS server
 ```
 
-**WARN**: Notice this means that many commands are not supposed to work by running then purely on the host machine. For example, `yarn test` runs the `test` script, but this won't work properly when executed from the host machine, so the proper way to execute tests are to run them with `yarn docker test` (or manually entering the `paybutton-dev` container and running `yarn test` there, which is exactly what `yarn docker test` does).
+**WARNING**: Notice this means that many commands are **not supposed** to work by running then purely on the host machine.
+
+For example, `yarn test` runs the `test` script, but this won't work properly when executed from the host machine, so the proper way to execute tests are to run them with `yarn docker test` (or manually entering the `paybutton-dev` container and running `yarn test` there, which is exactly what `yarn docker test` does).
 
 
 ### Optional configuration
