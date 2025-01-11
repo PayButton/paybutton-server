@@ -381,10 +381,12 @@ export class ChronikBlockchainClient implements BlockchainClient {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transaction = await this.chronik.tx(msg.txid)
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+        const inputAddresses = transaction.inputs.map(inp => outputScriptToAddress(this.networkSlug, inp.outputScript))
+
         for (const addressWithTransaction of addressesWithTransactions) {
           const { created, tx } = await createTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
-            const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx)
+            const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses)
             if (created) { // only execute trigger for unconfirmed tx arriving
               try {
                 await executeAddressTriggers(broadcastTxData, tx.address.networkId)
@@ -406,11 +408,11 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
-  private broadcastIncomingTx (addressString: string, createdTx: TransactionWithAddressAndPrices): BroadcastTxData {
+  private broadcastIncomingTx (addressString: string, createdTx: TransactionWithAddressAndPrices, inputAddresses: Array<string | undefined>): BroadcastTxData {
     const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
     broadcastTxData.address = addressString
     broadcastTxData.messageType = 'NewTx'
-    const newSimplifiedTransaction = getSimplifiedTrasaction(createdTx)
+    const newSimplifiedTransaction = getSimplifiedTrasaction(createdTx, inputAddresses)
     broadcastTxData.txs = [newSimplifiedTransaction]
     try { // emit broadcast for both unconfirmed and confirmed txs
       this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
@@ -434,10 +436,12 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
     for (const transaction of blockTxsToSync) {
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+      const inputAddresses = transaction.inputs.map(inp => outputScriptToAddress(this.networkSlug, inp.outputScript))
+
       for (const addressWithTransaction of addressesWithTransactions) {
         const { tx } = await createTransaction(addressWithTransaction.transaction)
         if (tx !== undefined) {
-          this.broadcastIncomingTx(addressWithTransaction.address.address, tx)
+          this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses)
         }
       }
     }
