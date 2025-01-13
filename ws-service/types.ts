@@ -17,6 +17,7 @@ export interface SimplifiedTransaction {
   timestamp: number
   address: string
   rawMessage: string
+  inputAddresses?: Array<string | undefined>
 }
 
 export interface CreateQuoteAndShiftData {
