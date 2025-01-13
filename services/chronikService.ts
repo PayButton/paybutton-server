@@ -356,6 +356,24 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
+  private getInputAddresses (transaction: Tx_InNode): string[] {
+    const addressValueMap = new Map<string, number>()
+
+    transaction.inputs.forEach((inp) => {
+      const address = outputScriptToAddress(this.networkSlug, inp.outputScript)
+      if (address !== undefined && address !== '') {
+        const currentValue = addressValueMap.get(address) ?? 0
+        addressValueMap.set(address, currentValue + inp.value)
+      }
+    })
+
+    const sortedInputAddresses = Array.from(addressValueMap.entries())
+      .sort(([, valueA], [, valueB]) => valueB - valueA)
+      .map(([address]) => address)
+
+    return sortedInputAddresses
+  }
+
   private async processWsMessage (msg: WsMsgClient): Promise<void> {
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
@@ -381,8 +399,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transaction = await this.chronik.tx(msg.txid)
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-        const inputAddresses = transaction.inputs.map(inp => outputScriptToAddress(this.networkSlug, inp.outputScript))
-
+        const inputAddresses = this.getInputAddresses(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
           const { created, tx } = await createTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
