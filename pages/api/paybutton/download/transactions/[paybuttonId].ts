@@ -1,4 +1,4 @@
-import moment from 'moment'
+import moment from 'moment-timezone'
 import {
   PRICE_API_DATE_FORMAT,
   RESPONSE_MESSAGES,
@@ -47,11 +47,10 @@ function isNetworkValid (slug: NetworkTickersType): boolean {
   return Object.values(NETWORK_TICKERS).includes(slug)
 }
 
-const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType): TransactionFileData => {
+const getPaybuttonTransactionsFileData = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType, timezone: string): TransactionFileData => {
   const { amount, hash, address, timestamp } = transaction
   const value = getTransactionValueInCurrency(transaction, currency)
-  const date = moment(timestamp * 1000)
-
+  const date = moment.tz(timestamp * 1000, timezone)
   const rate = value / amount.toNumber()
 
   return {
@@ -106,6 +105,7 @@ const downloadPaybuttonTransactionsFile = async (
   res: NextApiResponse,
   paybutton: PaybuttonWithAddresses,
   currency: SupportedQuotesType,
+  timezone: string,
   networkTicker?: NetworkTickersType): Promise<void> => {
   let networkIdArray = Object.values(NETWORK_IDS)
   if (networkTicker !== undefined) {
@@ -117,7 +117,7 @@ const downloadPaybuttonTransactionsFile = async (
   const sortedTransactions = await sortTransactionsByNetworkId(transactions)
 
   const mappedTransactionsData = sortedTransactions.map(tx => {
-    const data = getPaybuttonTransactionsFileData(tx, currency)
+    const data = getPaybuttonTransactionsFileData(tx, currency, timezone)
     return formatPaybuttonTransactionsFileData(data)
   })
   const headers = Object.keys(PAYBUTTON_TRANSACTIONS_FILE_HEADERS)
@@ -160,9 +160,12 @@ export default async (req: any, res: any): Promise<void> => {
     if (paybutton.providerUserId !== userId) {
       throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
     }
+    const userReqTimezone = req.headers.timezone as string
+    const userPreferredTimezone = user?.preferredTimezone
+    const timezone = userPreferredTimezone !== '' ? userPreferredTimezone : userReqTimezone
 
     res.setHeader('Content-Type', 'text/csv')
-    await downloadPaybuttonTransactionsFile(res, paybutton, quoteSlug, networkTicker)
+    await downloadPaybuttonTransactionsFile(res, paybutton, quoteSlug, timezone, networkTicker)
   } catch (error: any) {
     switch (error.message) {
       case RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400.message:

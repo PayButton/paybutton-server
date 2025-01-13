@@ -124,7 +124,11 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
       if (!isCurrencyEmptyOrUndefined(currency)) {
         url += `&network=${currency}`
       }
-      const response = await fetch(url)
+      const response = await fetch(url, {
+        headers: {
+          Timezone: moment.tz.guess()
+        }
+      })
 
       if (!response.ok) {
         throw new Error('Failed to download CSV')
