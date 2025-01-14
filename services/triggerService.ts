@@ -241,7 +241,8 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
       timestamp,
       paymentId,
       message,
-      rawMessage
+      rawMessage,
+      inputAddresses
     } = tx
 
     const addressTriggers = await fetchTriggersForAddress(address)
@@ -264,7 +265,8 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
               message,
               rawMessage
             }
-          : EMPTY_OP_RETURN
+          : EMPTY_OP_RETURN,
+        inputAddresses
       }
       await postDataForTrigger(trigger, postDataParameters)
     }))
@@ -393,6 +395,7 @@ export interface PostDataParameters {
   buttonName: string
   address: string
   opReturn: OpReturnData
+  inputAddresses?: Array<string | undefined>
 }
 
 async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParameters: PostDataParameters): Promise<void> {

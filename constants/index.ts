@@ -232,7 +232,8 @@ export const TRIGGER_POST_VARIABLES = [
   '<opReturn>',
   '<signature>',
   '<timestamp>',
-  '<txId>'
+  '<txId>',
+  '<inputAddresses>'
 ]
 
 export const PAYBUTTON_TRANSACTIONS_FILE_HEADERS = {
