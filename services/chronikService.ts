@@ -1,21 +1,21 @@
 import { BlockInfo_InNode, ChronikClientNode, ScriptType_InNode, ScriptUtxo_InNode, Tx_InNode, WsConfig_InNode, WsEndpoint_InNode, WsMsgClient, WsSubScriptClient } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { AddressWithTransaction, BlockchainClient, BlockchainInfo, BlockInfo, NodeJsGlobalChronik, TransactionDetails, Networks } from './blockchainService'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, NETWORK_SLUGS_FROM_IDS, SOCKET_MESSAGES } from 'constants/index'
+import { AddressWithTransaction, BlockchainInfo, BlockInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn } from 'types/chronikTypes'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType } from 'constants/index'
+import { productionAddresses } from 'prisma/seeds/addresses'
 import {
   TransactionWithAddressAndPrices,
   createManyTransactions,
   deleteTransactions,
   fetchUnconfirmedTransactions,
   createTransaction,
-  syncAddresses,
   getSimplifiedTransactions,
   getSimplifiedTrasaction
 } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
-import { groupAddressesByNetwork, satoshisToUnit } from 'utils'
+import { getAddressPrefix, satoshisToUnit } from 'utils/index'
 import { fetchAddressBySubstring, fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, updateLastSynced } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
@@ -24,13 +24,10 @@ import io, { Socket } from 'socket.io-client'
 import moment from 'moment'
 import { OpReturnData, parseError, parseOpReturnData } from 'utils/validators'
 import { executeAddressTriggers } from './triggerService'
+import { appendTxsToFile } from 'prisma/seeds/transactions'
+import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
 
 const decoder = new TextDecoder()
-
-interface ProcessedMessages {
-  confirmed: KeyValueT<number>
-  unconfirmed: KeyValueT<number>
-}
 
 export function getNullDataScriptData (outputScript: string): OpReturnData | null {
   if (outputScript.length < 2 || outputScript.length % 2 !== 0) {
@@ -107,7 +104,7 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
   return ret
 }
 
-export class ChronikBlockchainClient implements BlockchainClient {
+export class ChronikBlockchainClient {
   chronik: ChronikClientNode
   networkId: number
   networkSlug: string
@@ -316,7 +313,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     return utxos.reduce((acc, utxo) => acc + utxo.value, 0)
   }
 
-  async getTransactionDetails (hash: string, _networkSlug: string): Promise<TransactionDetails> {
+  async getTransactionDetails (hash: string): Promise<TransactionDetails> {
     const tx = await this.chronik.tx(hash)
 
     const details: TransactionDetails = {
@@ -466,34 +463,73 @@ export class ChronikBlockchainClient implements BlockchainClient {
   }
 
   public async subscribeAddresses (addresses: Address[]): Promise<void> {
+    const subscribedAddresses = this.getSubscribedAddresses()
+    addresses = addresses
+      .filter(addr => (
+        addr.networkId === this.networkId &&
+      !subscribedAddresses.includes(addr.address))
+      )
     if (addresses.length === 0) return
 
-    const addressesAlreadySubscribed = addresses.filter(address => Object.keys(this.getSubscribedAddresses()).includes(address.address))
-    addressesAlreadySubscribed.forEach(address => {
-      console.warn(`${this.CHRONIK_MSG_PREFIX}: address already subscribed: ${address.address}`)
+    addresses.forEach(address => {
+      console.log(`${this.CHRONIK_MSG_PREFIX}: subscribing `, address.address)
+      this.chronikWSEndpoint.subscribeToAddress(address.address)
     })
-    if (addressesAlreadySubscribed.length === addresses.length) return
-    addresses = addresses.filter(address => !addressesAlreadySubscribed.includes(address))
+  }
 
-    const addressesByNetwork: KeyValueT<Address[]> = groupAddressesByNetwork([NETWORK_SLUGS_FROM_IDS[this.networkId]], addresses)
+  public async syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
+    const failedAddressesWithErrors: KeyValueT<string> = {}
+    const successfulAddressesWithCount: KeyValueT<number> = {}
+    let txsToSave: Prisma.TransactionCreateManyInput[] = []
 
-    for (const [, networkAddresses] of Object.entries(addressesByNetwork)) {
-      networkAddresses.forEach(address => {
-        console.log(`${this.CHRONIK_MSG_PREFIX}: subscribing `, address.address)
-        this.chronikWSEndpoint.subscribeToAddress(address.address)
-      })
+    const productionAddressesIds = productionAddresses.filter(addr => addr.networkId === this.networkId).map(addr => addr.id)
+    addresses = addresses.filter(addr => addr.networkId === this.networkId)
+    console.log(`[CHRONIK] Syncing ${addresses.length} addresses for ${this.networkSlug}...`)
+    for (const addr of addresses) {
+      try {
+        const generator = this.syncTransactionsForAddress(addr.address)
+        let count = 0
+        while (true) {
+          const result = await generator.next()
+          if (result.done === true) break
+          if (productionAddressesIds.includes(addr.id)) {
+            const txs = result.value
+            count += txs.length
+            txsToSave = txsToSave.concat(txs)
+            if (txsToSave.length !== 0) {
+              await appendTxsToFile(txsToSave)
+            }
+          }
+        }
+        successfulAddressesWithCount[addr.address] = count
+      } catch (err: any) {
+        failedAddressesWithErrors[addr.address] = err.stack
+      } finally {
+        await setSyncing(addr.address, false)
+      }
+    }
+    const failedAddresses = Object.keys(failedAddressesWithErrors)
+    console.log(`[CHRONIK] Finished syncing ${addresses.length} addresses for ${this.networkSlug} with ${failedAddresses.length} errors.`)
+    if (failedAddresses.length > 0) {
+      console.log(`[CHRONIK] Failed addresses were:\n- ${failedAddresses.join('\n- ')}`)
+    }
+    return {
+      failedAddressesWithErrors,
+      successfulAddressesWithCount
     }
   }
 
   public async syncMissedTransactions (): Promise<void> {
     const addresses = await fetchAllAddressesForNetworkId(this.networkId)
     try {
-      const { failedAddressesWithErrors, successfulAddressesWithCount } = await syncAddresses(addresses)
+      const { failedAddressesWithErrors, successfulAddressesWithCount } = await this.syncAddresses(addresses)
       Object.keys(failedAddressesWithErrors).forEach((addr) => {
         console.error(`${this.CHRONIK_MSG_PREFIX}: When syncing missing addresses for address ${addr} encountered error: ${failedAddressesWithErrors[addr]}`)
       })
       Object.keys(successfulAddressesWithCount).forEach((addr) => {
-        console.log(`${this.CHRONIK_MSG_PREFIX}: Successful synced ${successfulAddressesWithCount[addr]} txs for ${addr}`)
+        if (successfulAddressesWithCount[addr] > 0) {
+          console.log(`${this.CHRONIK_MSG_PREFIX}: Successful synced ${successfulAddressesWithCount[addr]} missed txs for ${addr}.`)
+        }
       })
     } catch (err: any) {
       console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR: (skipping anyway) initial missing transactions sync failed: ${err.message as string} ${err.stack as string}`)
@@ -507,6 +543,12 @@ export class ChronikBlockchainClient implements BlockchainClient {
     } catch (err: any) {
       console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR: (skipping anyway) initial chronik subscription failed: ${err.message as string} ${err.stack as string}`)
     }
+  }
+
+  public async getLastBlockTimestamp (): Promise<number> {
+    const blockchainInfo = await this.getBlockchainInfo(this.networkSlug)
+    const lastBlockInfo = await this.getBlockInfo(this.networkSlug, blockchainInfo.height)
+    return lastBlockInfo.timestamp
   }
 }
 
@@ -572,19 +614,132 @@ export function outputScriptToAddress (networkSlug: string, outputScript: string
   return fromHash160(networkSlug, addressType, hash160)
 }
 
-export interface SubbedAddressesLog {
-  [k: string]: string[]
-}
+export class MultiBlockchainClient {
+  private static instance: MultiBlockchainClient | undefined
+  availableNetworks: Record<string, number>
+  clients: Record<MainNetworkSlugsType, ChronikBlockchainClient>
+  private constructor () {
+    this.availableNetworks = NETWORK_IDS_FROM_SLUGS
+    this.clients = {
+      ecash: this.instantiateChronikClient('ecash'),
+      bitcoincash: this.instantiateChronikClient('bitcoincash')
+    }
+  }
 
-export function getAllSubscribedAddresses (): SubbedAddressesLog {
-  const chronikClients = (global as unknown as NodeJsGlobalChronik).chronik
-  if (chronikClients === undefined) {
-    throw new Error('No chronik client instantiated to see subscribed addresses')
+  public static getInstance (): MultiBlockchainClient {
+    if (MultiBlockchainClient.instance === undefined) {
+      MultiBlockchainClient.instance = new MultiBlockchainClient()
+    }
+    return MultiBlockchainClient.instance
   }
-  const ret = {} as any
-  // chronik?.ecash?.chronikWSEndpoint.subs
-  for (const key of Object.keys(chronikClients)) {
-    ret[key] = chronikClients[key as Networks]?.getSubscribedAddresses()
+
+  private instantiateChronikClient (networkSlug: string): ChronikBlockchainClient {
+    console.log(`[CHRONIK — ${networkSlug}] Instantiating client...`)
+    const newClient = new ChronikBlockchainClient(networkSlug)
+    // Subscribe addresses & Sync lost transactions on DB upon client initialization
+    if (
+      process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD &&
+        process.env.NODE_ENV !== 'test' &&
+        process.env.JOBS_ENV === undefined
+    ) {
+      console.log(`[CHRONIK — ${networkSlug}] Subscribing addresses in database...`)
+      void newClient.subscribeInitialAddresses()
+      console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
+      void newClient.syncMissedTransactions()
+    }
+    return newClient
   }
-  return ret
+
+  public getAllSubscribedAddresses (): SubbedAddressesLog {
+    const ret = {} as any
+    // chronik?.ecash?.chronikWSEndpoint.subs
+    for (const key of Object.keys(this.clients)) {
+      ret[key] = this.clients[key as MainNetworkSlugsType]?.getSubscribedAddresses()
+    }
+    return ret
+  }
+
+  public async subscribeAddresses (addresses: Address[]): Promise<void> {
+    await Promise.all(
+      Object.keys(this.clients).map(async networkSlug => {
+        const addressesOfNetwork = addresses.filter(address => address.networkId === NETWORK_IDS[NETWORK_TICKERS[networkSlug]])
+        const client = this.clients[networkSlug as MainNetworkSlugsType]
+        await client.subscribeAddresses(addressesOfNetwork)
+      })
+    )
+  }
+
+  public async syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
+    let failedAddressesWithErrors: KeyValueT<string> = {}
+    let successfulAddressesWithCount: KeyValueT<number> = {}
+
+    for (const networkSlug of Object.keys(this.clients)) {
+      const ret = await this.clients[networkSlug as MainNetworkSlugsType].syncAddresses(addresses)
+      failedAddressesWithErrors = { ...failedAddressesWithErrors, ...ret.failedAddressesWithErrors }
+      successfulAddressesWithCount = { ...successfulAddressesWithCount, ...ret.successfulAddressesWithCount }
+    }
+    return {
+      failedAddressesWithErrors,
+      successfulAddressesWithCount
+    }
+  }
+
+  public async getTransactionDetails (hash: string, networkSlug: string): Promise<TransactionDetails> {
+    return await this.clients[networkSlug as MainNetworkSlugsType].getTransactionDetails(hash)
+  }
+
+  public async getLastBlockTimestamp (networkSlug: string): Promise<number> {
+    return await this.clients[networkSlug as MainNetworkSlugsType].getLastBlockTimestamp()
+  }
+
+  public async getBalance (address: string): Promise<number> {
+    const networkSlug = getAddressPrefix(address)
+    return await this.clients[networkSlug as MainNetworkSlugsType].getBalance(address)
+  }
+
+  public async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
+    await this.subscribeAddresses(addresses)
+    return await this.syncAddresses(addresses)
+  }
+  /* WIPTHIS THIS IS PROBABLY USELESS DELETE
+  public async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
+    const failedAddressesWithErrors: KeyValueT<string> = {}
+    const successfulAddressesWithCount: KeyValueT<number> = {}
+    let txsToSave: Prisma.TransactionCreateManyInput[] = []
+
+    const productionAddressesIds = productionAddresses.map(addr => addr.id)
+    await Promise.all(
+      addresses.map(async (addr) => {
+        try {
+          await this.subscribeAddresses([addr])
+          const prefix = getAddressPrefix(addr.address)
+          const generator = BLOCKCHAIN_CLIENTS[prefix].syncTransactionsForAddress(addr.address)
+          let count = 0
+          while (true) {
+            const result = await generator.next()
+            if (result.done === true) break
+            if (productionAddressesIds.includes(addr.id)) {
+              const txs = result.value
+              count += txs.length
+              txsToSave = txsToSave.concat(txs)
+              if (txsToSave.length !== 0) {
+                await appendTxsToFile(txsToSave)
+              }
+            }
+          }
+          successfulAddressesWithCount[addr.address] = count
+        } catch (err: any) {
+          failedAddressesWithErrors[addr.address] = err.stack
+        }
+      })
+    )
+    if (txsToSave.length !== 0) {
+      await appendTxsToFile(txsToSave)
+    }
+    return {
+      failedAddressesWithErrors,
+      successfulAddressesWithCount
+    }
+  }
+  */
 }

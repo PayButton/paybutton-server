@@ -2,11 +2,10 @@ import * as addressService from 'services/addressService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES, NETWORK_IDS_FROM_SLUGS, BLOCKED_ADDRESSES } from 'constants/index'
-import { getObjectValueForNetworkSlug } from 'utils/index'
 import { connectAddressToUser, disconnectAddressFromUser, fetchAddressWallet } from 'services/addressesOnUserProfileService'
 import { fetchUserDefaultWalletForNetwork } from './walletService'
-import { syncAndSubscribeAddresses } from './transactionService'
 import { CacheSet } from 'redis/index'
+import { MultiBlockchainClient } from './chronikService'
 export interface UpdatePaybuttonInput {
   paybuttonId: string
   name?: string
@@ -57,7 +56,7 @@ async function getAddressObjectsToCreateOrConnect (prefixedAddressList: string[]
       prefixedAddressList.map(
         async (addressWithPrefix) => {
           const prefix = addressWithPrefix.split(':')[0].toLowerCase()
-          const networkId = getObjectValueForNetworkSlug(prefix, NETWORK_IDS_FROM_SLUGS)
+          const networkId = NETWORK_IDS_FROM_SLUGS[prefix]
           return {
             address: addressWithPrefix.toLowerCase(),
             networkId: Number(networkId)
@@ -174,7 +173,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
     })
   )
   // Send async request to sync created addresses transactions
-  await syncAndSubscribeAddresses(createdAddresses)
+  await MultiBlockchainClient.getInstance().syncAndSubscribeAddresses(createdAddresses)
   return await prisma.$transaction(async (prisma) => {
     // Creates or updates the `addressesOnUserProfile` objects
     await updateAddressUserConnectors({
@@ -394,10 +393,8 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
 
   // Send async request to sync created addresses transactions for addresses
   // that are new (did not exist in any other buttons)
-  void syncAndSubscribeAddresses(
-    paybuttonNewAddresses
-      .filter(a => !addressesThatAlreadyExistedStringList.includes(a.address))
-  )
+  const createdAddresses = paybuttonNewAddresses.filter(a => !addressesThatAlreadyExistedStringList.includes(a.address))
+  void MultiBlockchainClient.getInstance().syncAndSubscribeAddresses(createdAddresses)
 
   return paybutton
 }

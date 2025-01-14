@@ -1,11 +1,8 @@
 import prisma from 'prisma/clientInstance'
-import { Address, Prisma, Transaction } from '@prisma/client'
-import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
-import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists, setSyncing } from 'services/addressService'
+import { Prisma, Transaction } from '@prisma/client'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS } from 'constants/index'
+import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
 import { AllPrices, QuoteValues, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS } from 'constants/index'
-import { productionAddresses } from 'prisma/seeds/addresses'
-import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
 import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
@@ -434,85 +431,6 @@ export async function createManyTransactions (
   const txsWithPaybuttonsAndPrices = await fetchTransactionsWithPaybuttonsAndPricesForIdList(insertedTransactions.map(tx => tx.id))
   void await CacheSet.txsCreation(txsWithPaybuttonsAndPrices)
   return txsWithPaybuttonsAndPrices
-}
-
-interface SyncAndSubscriptionReturn {
-  failedAddressesWithErrors: KeyValueT<string>
-  successfulAddressesWithCount: KeyValueT<number>
-}
-
-export async function syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
-  const failedAddressesWithErrors: KeyValueT<string> = {}
-  const successfulAddressesWithCount: KeyValueT<number> = {}
-  let txsToSave: Prisma.TransactionCreateManyInput[] = []
-
-  const productionAddressesIds = productionAddresses.map(addr => addr.id)
-  for (const addr of addresses) {
-    try {
-      const generator = syncTransactionsForAddress(addr.address)
-      let count = 0
-      while (true) {
-        const result = await generator.next()
-        if (result.done === true) break
-        if (productionAddressesIds.includes(addr.id)) {
-          const txs = result.value
-          count += txs.length
-          txsToSave = txsToSave.concat(txs)
-          if (txsToSave.length !== 0) {
-            await appendTxsToFile(txsToSave)
-          }
-        }
-      }
-      successfulAddressesWithCount[addr.address] = count
-    } catch (err: any) {
-      failedAddressesWithErrors[addr.address] = err.stack
-    } finally {
-      await setSyncing(addr.address, false)
-    }
-  }
-  return {
-    failedAddressesWithErrors,
-    successfulAddressesWithCount
-  }
-}
-
-export const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<SyncAndSubscriptionReturn> => {
-  const failedAddressesWithErrors: KeyValueT<string> = {}
-  const successfulAddressesWithCount: KeyValueT<number> = {}
-  let txsToSave: Prisma.TransactionCreateManyInput[] = []
-
-  const productionAddressesIds = productionAddresses.map(addr => addr.id)
-  await Promise.all(
-    addresses.map(async (addr) => {
-      try {
-        await subscribeAddresses([addr])
-        const generator = syncTransactionsForAddress(addr.address)
-        let count = 0
-        while (true) {
-          const result = await generator.next()
-          if (result.done === true) break
-          if (productionAddressesIds.includes(addr.id)) {
-            const txs = result.value
-            count += txs.length
-            txsToSave = txsToSave.concat(txs)
-            if (txsToSave.length !== 0) {
-              await appendTxsToFile(txsToSave)
-            }
-          }
-        }
-        successfulAddressesWithCount[addr.address] = count
-      } catch (err: any) {
-        failedAddressesWithErrors[addr.address] = err.stack
-      }
-    })
-  )
-  if (txsToSave.length !== 0) {
-    await appendTxsToFile(txsToSave)
-  }
-  return {
-    failedAddressesWithErrors,
-    successfulAddressesWithCount
-  }
 }
 
 export async function fetchUnconfirmedTransactions (hash: string): Promise<TransactionWithAddressAndPrices[]> {

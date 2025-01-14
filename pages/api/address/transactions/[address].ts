@@ -1,10 +1,11 @@
 import { NextApiResponse, NextApiRequest } from 'next'
 import { parseAddress } from 'utils/validators'
 import { DEFAULT_TX_PAGE_SIZE, RESPONSE_MESSAGES, TX_PAGE_SIZE_LIMIT } from 'constants/index'
-import { fetchPaginatedAddressTransactions, syncAndSubscribeAddresses } from 'services/transactionService'
+import { fetchPaginatedAddressTransactions } from 'services/transactionService'
 import { upsertAddress } from 'services/addressService'
 import Cors from 'cors'
 import { runMiddleware } from 'utils/index'
+import { MultiBlockchainClient } from 'services/chronikService'
 
 const { ADDRESS_NOT_PROVIDED_400, INVALID_ADDRESS_400, NO_ADDRESS_FOUND_404, STARTED_SYNC_200 } = RESPONSE_MESSAGES
 const cors = Cors({
@@ -43,7 +44,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
           case NO_ADDRESS_FOUND_404.message: {
             if (serverOnly) throw new Error(NO_ADDRESS_FOUND_404.message)
             const addressObject = await upsertAddress(address)
-            await syncAndSubscribeAddresses([addressObject])
+            await MultiBlockchainClient.getInstance().syncAndSubscribeAddresses([addressObject])
             res.status(STARTED_SYNC_200.statusCode).json(STARTED_SYNC_200)
             break
           }

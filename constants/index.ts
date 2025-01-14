@@ -181,6 +181,7 @@ export const NETWORK_TICKERS: KeyValueT<string> = {
 }
 
 export type NetworkTickersType = 'XEC' | 'BCH'
+export type MainNetworkSlugsType = 'ecash' | 'bitcoincash'
 export type NetworkSlugsType = 'ecash' | 'bitcoincash' | 'ectest' | 'bchtest'
 
 export const NETWORK_TICKERS_FROM_ID: KeyValueT<string> = {
