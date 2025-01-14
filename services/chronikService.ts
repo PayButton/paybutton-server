@@ -356,7 +356,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
-  private getInputAddresses (transaction: Tx_InNode): string[] {
+  private getSortedInputAddresses (transaction: Tx_InNode): string[] {
     const addressValueMap = new Map<string, number>()
 
     transaction.inputs.forEach((inp) => {
@@ -399,7 +399,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transaction = await this.chronik.tx(msg.txid)
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-        const inputAddresses = this.getInputAddresses(transaction)
+        const inputAddresses = this.getSortedInputAddresses(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
           const { created, tx } = await createTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
@@ -421,7 +421,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
   }
 
-  private broadcastIncomingTx (addressString: string, createdTx: TransactionWithAddressAndPrices, inputAddresses: Array<string | undefined>): BroadcastTxData {
+  private broadcastIncomingTx (addressString: string, createdTx: TransactionWithAddressAndPrices, inputAddresses: string[]): BroadcastTxData {
     const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
     broadcastTxData.address = addressString
     broadcastTxData.messageType = 'NewTx'
@@ -449,7 +449,7 @@ export class ChronikBlockchainClient implements BlockchainClient {
     }
     for (const transaction of blockTxsToSync) {
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-      const inputAddresses = transaction.inputs.map(inp => outputScriptToAddress(this.networkSlug, inp.outputScript))
+      const inputAddresses = this.getSortedInputAddresses(transaction)
 
       for (const addressWithTransaction of addressesWithTransactions) {
         const { created, tx } = await createTransaction(addressWithTransaction.transaction)
