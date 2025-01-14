@@ -231,28 +231,50 @@ interface EmailTriggerLog {
 }
 
 export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, networkId: number): Promise<void> {
-  const address = broadcastTxData.address
-  const tx = broadcastTxData.txs[0]
-  const currency = NETWORK_TICKERS_FROM_ID[networkId]
-  const {
-    amount,
-    hash,
-    timestamp,
-    paymentId,
-    message,
-    rawMessage
-  } = tx
+  try {
+    const address = broadcastTxData.address
+    const tx = broadcastTxData.txs[0]
+    const currency = NETWORK_TICKERS_FROM_ID[networkId]
+    const {
+      amount,
+      hash,
+      timestamp,
+      paymentId,
+      message,
+      rawMessage
+    } = tx
 
-  const addressTriggers = await fetchTriggersForAddress(address)
+    const addressTriggers = await fetchTriggersForAddress(address)
+    if (addressTriggers.length === 0) return
+    console.log(`[TRIGGER ${currency}]: Will execute ${addressTriggers.length} triggers for tx ${hash} and address ${address}`)
 
-  // Send post requests
-  const posterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
-  await Promise.all(posterTriggers.map(async (trigger) => {
-    const postDataParameters: PostDataParameters = {
+    // Send post requests
+    const posterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
+    await Promise.all(posterTriggers.map(async (trigger) => {
+      const postDataParameters: PostDataParameters = {
+        amount,
+        currency,
+        txId: hash,
+        buttonName: trigger.paybutton.name,
+        address,
+        timestamp,
+        opReturn: paymentId !== '' || message !== ''
+          ? {
+              paymentId,
+              message,
+              rawMessage
+            }
+          : EMPTY_OP_RETURN
+      }
+      await postDataForTrigger(trigger, postDataParameters)
+    }))
+
+    // Send emails
+    const emailTriggers = addressTriggers.filter(t => t.isEmailTrigger)
+    const sendEmailParameters: Partial<SendEmailParameters> = {
       amount,
       currency,
       txId: hash,
-      buttonName: trigger.paybutton.name,
       address,
       timestamp,
       opReturn: paymentId !== '' || message !== ''
@@ -263,29 +285,13 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
           }
         : EMPTY_OP_RETURN
     }
-    await postDataForTrigger(trigger, postDataParameters)
-  }))
-
-  // Send emails
-  const emailTriggers = addressTriggers.filter(t => t.isEmailTrigger)
-  const sendEmailParameters: Partial<SendEmailParameters> = {
-    amount,
-    currency,
-    txId: hash,
-    address,
-    timestamp,
-    opReturn: paymentId !== '' || message !== ''
-      ? {
-          paymentId,
-          message,
-          rawMessage
-        }
-      : EMPTY_OP_RETURN
+    await Promise.all(emailTriggers.map(async (trigger) => {
+      sendEmailParameters.buttonName = trigger.paybutton.name
+      await sendEmailForTrigger(trigger, sendEmailParameters as SendEmailParameters)
+    }))
+  } catch (err: any) {
+    console.error(RESPONSE_MESSAGES.COULD_NOT_EXECUTE_TRIGGER_500.message, err.stack)
   }
-  await Promise.all(emailTriggers.map(async (trigger) => {
-    sendEmailParameters.buttonName = trigger.paybutton.name
-    await sendEmailForTrigger(trigger, sendEmailParameters as SendEmailParameters)
-  }))
 }
 
 async function fetchUserFromTriggerId (triggerId: string): Promise<UserProfile> {
