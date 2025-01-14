@@ -44,7 +44,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
           case NO_ADDRESS_FOUND_404.message: {
             if (serverOnly) throw new Error(NO_ADDRESS_FOUND_404.message)
             const addressObject = await upsertAddress(address)
-            await MultiBlockchainClient.getInstance().syncAndSubscribeAddresses([addressObject])
+            await MultiBlockchainClient.syncAndSubscribeAddresses([addressObject])
             res.status(STARTED_SYNC_200.statusCode).json(STARTED_SYNC_200)
             break
           }

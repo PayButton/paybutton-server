@@ -615,66 +615,56 @@ export function outputScriptToAddress (networkSlug: string, outputScript: string
 }
 
 export class MultiBlockchainClient {
-  private static instance: MultiBlockchainClient | undefined
-  availableNetworks: Record<string, number>
-  clients: Record<MainNetworkSlugsType, ChronikBlockchainClient>
-  private constructor () {
-    this.availableNetworks = NETWORK_IDS_FROM_SLUGS
-    this.clients = {
-      ecash: this.instantiateChronikClient('ecash'),
-      bitcoincash: this.instantiateChronikClient('bitcoincash')
-    }
+  private static readonly clients: Record<MainNetworkSlugsType, ChronikBlockchainClient> = {
+    ecash: MultiBlockchainClient.instantiateChronikClient('ecash'),
+    bitcoincash: MultiBlockchainClient.instantiateChronikClient('bitcoincash')
   }
 
-  public static getInstance (): MultiBlockchainClient {
-    if (MultiBlockchainClient.instance === undefined) {
-      MultiBlockchainClient.instance = new MultiBlockchainClient()
-    }
-    return MultiBlockchainClient.instance
-  }
-
-  private instantiateChronikClient (networkSlug: string): ChronikBlockchainClient {
+  private static instantiateChronikClient (networkSlug: string): ChronikBlockchainClient {
     console.log(`[CHRONIK — ${networkSlug}] Instantiating client...`)
     const newClient = new ChronikBlockchainClient(networkSlug)
+
     // Subscribe addresses & Sync lost transactions on DB upon client initialization
     if (
       process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD &&
-        process.env.NODE_ENV !== 'test' &&
-        process.env.JOBS_ENV === undefined
+      process.env.NODE_ENV !== 'test' &&
+      process.env.JOBS_ENV === undefined
     ) {
       console.log(`[CHRONIK — ${networkSlug}] Subscribing addresses in database...`)
       void newClient.subscribeInitialAddresses()
       console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
       void newClient.syncMissedTransactions()
     }
+
     return newClient
   }
 
-  public getAllSubscribedAddresses (): SubbedAddressesLog {
+  public static getAllSubscribedAddresses (): SubbedAddressesLog {
     const ret = {} as any
-    // chronik?.ecash?.chronikWSEndpoint.subs
-    for (const key of Object.keys(this.clients)) {
-      ret[key] = this.clients[key as MainNetworkSlugsType]?.getSubscribedAddresses()
+    for (const key of Object.keys(MultiBlockchainClient.clients)) {
+      ret[key] = MultiBlockchainClient.clients[key as MainNetworkSlugsType]?.getSubscribedAddresses()
     }
     return ret
   }
 
-  public async subscribeAddresses (addresses: Address[]): Promise<void> {
+  public static async subscribeAddresses (addresses: Address[]): Promise<void> {
     await Promise.all(
-      Object.keys(this.clients).map(async networkSlug => {
-        const addressesOfNetwork = addresses.filter(address => address.networkId === NETWORK_IDS[NETWORK_TICKERS[networkSlug]])
-        const client = this.clients[networkSlug as MainNetworkSlugsType]
+      Object.keys(MultiBlockchainClient.clients).map(async (networkSlug) => {
+        const addressesOfNetwork = addresses.filter(
+          (address) => address.networkId === NETWORK_IDS[NETWORK_TICKERS[networkSlug]]
+        )
+        const client = MultiBlockchainClient.clients[networkSlug as MainNetworkSlugsType]
         await client.subscribeAddresses(addressesOfNetwork)
       })
     )
   }
 
-  public async syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
+  public static async syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
     let failedAddressesWithErrors: KeyValueT<string> = {}
     let successfulAddressesWithCount: KeyValueT<number> = {}
 
-    for (const networkSlug of Object.keys(this.clients)) {
-      const ret = await this.clients[networkSlug as MainNetworkSlugsType].syncAddresses(addresses)
+    for (const networkSlug of Object.keys(MultiBlockchainClient.clients)) {
+      const ret = await MultiBlockchainClient.clients[networkSlug as MainNetworkSlugsType].syncAddresses(addresses)
       failedAddressesWithErrors = { ...failedAddressesWithErrors, ...ret.failedAddressesWithErrors }
       successfulAddressesWithCount = { ...successfulAddressesWithCount, ...ret.successfulAddressesWithCount }
     }
@@ -684,24 +674,26 @@ export class MultiBlockchainClient {
     }
   }
 
-  public async getTransactionDetails (hash: string, networkSlug: string): Promise<TransactionDetails> {
-    return await this.clients[networkSlug as MainNetworkSlugsType].getTransactionDetails(hash)
+  public static async getTransactionDetails (hash: string, networkSlug: string): Promise<TransactionDetails> {
+    return await MultiBlockchainClient.clients[networkSlug as MainNetworkSlugsType].getTransactionDetails(hash)
   }
 
-  public async getLastBlockTimestamp (networkSlug: string): Promise<number> {
-    return await this.clients[networkSlug as MainNetworkSlugsType].getLastBlockTimestamp()
+  public static async getLastBlockTimestamp (networkSlug: string): Promise<number> {
+    return await MultiBlockchainClient.clients[networkSlug as MainNetworkSlugsType].getLastBlockTimestamp()
   }
 
-  public async getBalance (address: string): Promise<number> {
+  public static async getBalance (address: string): Promise<number> {
     const networkSlug = getAddressPrefix(address)
-    return await this.clients[networkSlug as MainNetworkSlugsType].getBalance(address)
+    return await MultiBlockchainClient.clients[networkSlug as MainNetworkSlugsType].getBalance(address)
   }
 
-  public async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
-    await this.subscribeAddresses(addresses)
-    return await this.syncAddresses(addresses)
+  public static async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
+    await MultiBlockchainClient.subscribeAddresses(addresses)
+    return await MultiBlockchainClient.syncAddresses(addresses)
   }
-  /* WIPTHIS THIS IS PROBABLY USELESS DELETE
+}
+
+/* WIPTHIS THIS IS PROBABLY USELESS DELETE
   public async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
     const failedAddressesWithErrors: KeyValueT<string> = {}
     const successfulAddressesWithCount: KeyValueT<number> = {}
@@ -741,5 +733,4 @@ export class MultiBlockchainClient {
       successfulAddressesWithCount
     }
   }
-  */
-}
+*/

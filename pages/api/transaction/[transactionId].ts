@@ -10,8 +10,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       if (transactionId === '' || transactionId === undefined) {
         throw new Error(RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.message)
       }
-      const blockchainInstance = MultiBlockchainClient.getInstance()
-      const response = await blockchainInstance.getTransactionDetails(transactionId, networkSlug)
+      const response = await MultiBlockchainClient.getTransactionDetails(transactionId, networkSlug)
       res.status(200).json(response)
     } catch (err: any) {
       switch (err.message) {

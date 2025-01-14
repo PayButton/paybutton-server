@@ -173,7 +173,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
     })
   )
   // Send async request to sync created addresses transactions
-  await MultiBlockchainClient.getInstance().syncAndSubscribeAddresses(createdAddresses)
+  await MultiBlockchainClient.syncAndSubscribeAddresses(createdAddresses)
   return await prisma.$transaction(async (prisma) => {
     // Creates or updates the `addressesOnUserProfile` objects
     await updateAddressUserConnectors({
@@ -394,7 +394,7 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
   // Send async request to sync created addresses transactions for addresses
   // that are new (did not exist in any other buttons)
   const createdAddresses = paybuttonNewAddresses.filter(a => !addressesThatAlreadyExistedStringList.includes(a.address))
-  void MultiBlockchainClient.getInstance().syncAndSubscribeAddresses(createdAddresses)
+  void MultiBlockchainClient.syncAndSubscribeAddresses(createdAddresses)
 
   return paybutton
 }

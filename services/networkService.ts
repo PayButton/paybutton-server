@@ -34,7 +34,7 @@ async function isConnected (networkSlug: string): Promise<ConnectionInfo> {
   try {
     return {
       connected: true,
-      lastBlockTimestamp: await MultiBlockchainClient.getInstance().getLastBlockTimestamp(networkSlug),
+      lastBlockTimestamp: await MultiBlockchainClient.getLastBlockTimestamp(networkSlug),
       maintenance: config.networksUnderMaintenance[networkSlug]
     }
   } catch (e: any) {
