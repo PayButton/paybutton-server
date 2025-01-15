@@ -5,7 +5,7 @@ import Cors from 'cors'
 import { runMiddleware, satoshisToUnit } from 'utils/index'
 import xecaddr from 'xecaddrjs'
 import { Prisma } from '@prisma/client'
-import { MultiBlockchainClient } from 'services/chronikService'
+import { multiBlockchainClient } from 'services/chronikService'
 
 const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
 const cors = Cors({
@@ -17,7 +17,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
   if (req.method === 'GET') {
     try {
       const address = parseAddress(req.query.address as string)
-      const response = await MultiBlockchainClient.getBalance(address)
+      const response = await multiBlockchainClient.getBalance(address)
       const balance = await satoshisToUnit(new Prisma.Decimal(response), xecaddr.detectAddressFormat(address))
       res.status(200).send(balance)
     } catch (err: any) {

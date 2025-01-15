@@ -11,7 +11,8 @@ import {
   fetchUnconfirmedTransactions,
   createTransaction,
   getSimplifiedTransactions,
-  getSimplifiedTrasaction
+  getSimplifiedTrasaction,
+  connectAllTransactionsToPrices
 } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
@@ -26,6 +27,7 @@ import { OpReturnData, parseError, parseOpReturnData } from 'utils/validators'
 import { executeAddressTriggers } from './triggerService'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
+import { syncPastDaysNewerPrices } from './priceService'
 
 const decoder = new TextDecoder()
 
@@ -127,7 +129,7 @@ export class ChronikBlockchainClient {
     void this.chronikWSEndpoint.waitForOpen()
     this.chronikWSEndpoint.subscribeToBlocks()
     this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
-    this.CHRONIK_MSG_PREFIX = `[CHRONIK ${networkSlug}]`
+    this.CHRONIK_MSG_PREFIX = `[CHRONIK — ${networkSlug}]`
     this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
       query: {
         key: process.env.WS_AUTH_KEY
@@ -484,7 +486,13 @@ export class ChronikBlockchainClient {
 
     const productionAddressesIds = productionAddresses.filter(addr => addr.networkId === this.networkId).map(addr => addr.id)
     addresses = addresses.filter(addr => addr.networkId === this.networkId)
-    console.log(`[CHRONIK] Syncing ${addresses.length} addresses for ${this.networkSlug}...`)
+    if (addresses.length === 0) {
+      return {
+        failedAddressesWithErrors,
+        successfulAddressesWithCount
+      }
+    }
+    console.log(`${this.CHRONIK_MSG_PREFIX} Syncing ${addresses.length} addresses...`)
     for (const addr of addresses) {
       try {
         const generator = this.syncTransactionsForAddress(addr.address)
@@ -509,9 +517,9 @@ export class ChronikBlockchainClient {
       }
     }
     const failedAddresses = Object.keys(failedAddressesWithErrors)
-    console.log(`[CHRONIK] Finished syncing ${addresses.length} addresses for ${this.networkSlug} with ${failedAddresses.length} errors.`)
+    console.log(`${this.CHRONIK_MSG_PREFIX} Finished syncing ${addresses.length} addresses with ${failedAddresses.length} errors.`)
     if (failedAddresses.length > 0) {
-      console.log(`[CHRONIK] Failed addresses were:\n- ${failedAddresses.join('\n- ')}`)
+      console.log(`${this.CHRONIK_MSG_PREFIX} Failed addresses were:\n- ${failedAddresses.join('\n- ')}`)
     }
     return {
       failedAddressesWithErrors,
@@ -614,13 +622,24 @@ export function outputScriptToAddress (networkSlug: string, outputScript: string
   return fromHash160(networkSlug, addressType, hash160)
 }
 
-export class MultiBlockchainClient {
-  private static readonly clients: Record<MainNetworkSlugsType, ChronikBlockchainClient> = {
-    ecash: MultiBlockchainClient.instantiateChronikClient('ecash'),
-    bitcoincash: MultiBlockchainClient.instantiateChronikClient('bitcoincash')
+class MultiBlockchainClient {
+  private clients!: Record<MainNetworkSlugsType, ChronikBlockchainClient>
+
+  constructor () {
+    console.log('Initializing MultiBlockchainClient...')
+    void (async () => {
+      await syncPastDaysNewerPrices()
+      const asyncOperations: Array<Promise<void>> = []
+      this.clients = {
+        ecash: this.instantiateChronikClient('ecash', asyncOperations),
+        bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
+      }
+      await Promise.all(asyncOperations)
+      await connectAllTransactionsToPrices()
+    })()
   }
 
-  private static instantiateChronikClient (networkSlug: string): ChronikBlockchainClient {
+  private instantiateChronikClient (networkSlug: string, asyncOperations: Array<Promise<void>>): ChronikBlockchainClient {
     console.log(`[CHRONIK — ${networkSlug}] Instantiating client...`)
     const newClient = new ChronikBlockchainClient(networkSlug)
 
@@ -631,40 +650,40 @@ export class MultiBlockchainClient {
       process.env.JOBS_ENV === undefined
     ) {
       console.log(`[CHRONIK — ${networkSlug}] Subscribing addresses in database...`)
-      void newClient.subscribeInitialAddresses()
+      asyncOperations.push(newClient.subscribeInitialAddresses())
       console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
-      void newClient.syncMissedTransactions()
+      asyncOperations.push(newClient.syncMissedTransactions())
     }
 
     return newClient
   }
 
-  public static getAllSubscribedAddresses (): SubbedAddressesLog {
+  public getAllSubscribedAddresses (): SubbedAddressesLog {
     const ret = {} as any
-    for (const key of Object.keys(MultiBlockchainClient.clients)) {
-      ret[key] = MultiBlockchainClient.clients[key as MainNetworkSlugsType]?.getSubscribedAddresses()
+    for (const key of Object.keys(this.clients)) {
+      ret[key] = this.clients[key as MainNetworkSlugsType]?.getSubscribedAddresses()
     }
     return ret
   }
 
-  public static async subscribeAddresses (addresses: Address[]): Promise<void> {
+  public async subscribeAddresses (addresses: Address[]): Promise<void> {
     await Promise.all(
-      Object.keys(MultiBlockchainClient.clients).map(async (networkSlug) => {
+      Object.keys(this.clients).map(async (networkSlug) => {
         const addressesOfNetwork = addresses.filter(
           (address) => address.networkId === NETWORK_IDS[NETWORK_TICKERS[networkSlug]]
         )
-        const client = MultiBlockchainClient.clients[networkSlug as MainNetworkSlugsType]
+        const client = this.clients[networkSlug as MainNetworkSlugsType]
         await client.subscribeAddresses(addressesOfNetwork)
       })
     )
   }
 
-  public static async syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
+  public async syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
     let failedAddressesWithErrors: KeyValueT<string> = {}
     let successfulAddressesWithCount: KeyValueT<number> = {}
 
-    for (const networkSlug of Object.keys(MultiBlockchainClient.clients)) {
-      const ret = await MultiBlockchainClient.clients[networkSlug as MainNetworkSlugsType].syncAddresses(addresses)
+    for (const networkSlug of Object.keys(this.clients)) {
+      const ret = await this.clients[networkSlug as MainNetworkSlugsType].syncAddresses(addresses)
       failedAddressesWithErrors = { ...failedAddressesWithErrors, ...ret.failedAddressesWithErrors }
       successfulAddressesWithCount = { ...successfulAddressesWithCount, ...ret.successfulAddressesWithCount }
     }
@@ -674,22 +693,22 @@ export class MultiBlockchainClient {
     }
   }
 
-  public static async getTransactionDetails (hash: string, networkSlug: string): Promise<TransactionDetails> {
-    return await MultiBlockchainClient.clients[networkSlug as MainNetworkSlugsType].getTransactionDetails(hash)
+  public async getTransactionDetails (hash: string, networkSlug: string): Promise<TransactionDetails> {
+    return await this.clients[networkSlug as MainNetworkSlugsType].getTransactionDetails(hash)
   }
 
-  public static async getLastBlockTimestamp (networkSlug: string): Promise<number> {
-    return await MultiBlockchainClient.clients[networkSlug as MainNetworkSlugsType].getLastBlockTimestamp()
+  public async getLastBlockTimestamp (networkSlug: string): Promise<number> {
+    return await this.clients[networkSlug as MainNetworkSlugsType].getLastBlockTimestamp()
   }
 
-  public static async getBalance (address: string): Promise<number> {
+  public async getBalance (address: string): Promise<number> {
     const networkSlug = getAddressPrefix(address)
-    return await MultiBlockchainClient.clients[networkSlug as MainNetworkSlugsType].getBalance(address)
+    return await this.clients[networkSlug as MainNetworkSlugsType].getBalance(address)
   }
 
-  public static async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
-    await MultiBlockchainClient.subscribeAddresses(addresses)
-    return await MultiBlockchainClient.syncAddresses(addresses)
+  public async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
+    await this.subscribeAddresses(addresses)
+    return await this.syncAddresses(addresses)
   }
 }
 
@@ -734,3 +753,14 @@ export class MultiBlockchainClient {
     }
   }
 */
+
+export interface NodeJsGlobalMultiBlockchainClient extends NodeJS.Global {
+  multiBlockchainClient?: MultiBlockchainClient
+}
+declare const global: NodeJsGlobalMultiBlockchainClient
+
+if (global.multiBlockchainClient === undefined) {
+  global.multiBlockchainClient = new MultiBlockchainClient()
+}
+
+export const multiBlockchainClient: MultiBlockchainClient = global.multiBlockchainClient

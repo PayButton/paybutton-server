@@ -5,7 +5,7 @@ import { RESPONSE_MESSAGES, NETWORK_IDS_FROM_SLUGS, BLOCKED_ADDRESSES } from 'co
 import { connectAddressToUser, disconnectAddressFromUser, fetchAddressWallet } from 'services/addressesOnUserProfileService'
 import { fetchUserDefaultWalletForNetwork } from './walletService'
 import { CacheSet } from 'redis/index'
-import { MultiBlockchainClient } from './chronikService'
+import { multiBlockchainClient } from './chronikService'
 export interface UpdatePaybuttonInput {
   paybuttonId: string
   name?: string
@@ -173,7 +173,7 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
     })
   )
   // Send async request to sync created addresses transactions
-  await MultiBlockchainClient.syncAndSubscribeAddresses(createdAddresses)
+  await multiBlockchainClient.syncAndSubscribeAddresses(createdAddresses)
   return await prisma.$transaction(async (prisma) => {
     // Creates or updates the `addressesOnUserProfile` objects
     await updateAddressUserConnectors({
@@ -394,7 +394,7 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
   // Send async request to sync created addresses transactions for addresses
   // that are new (did not exist in any other buttons)
   const createdAddresses = paybuttonNewAddresses.filter(a => !addressesThatAlreadyExistedStringList.includes(a.address))
-  void MultiBlockchainClient.syncAndSubscribeAddresses(createdAddresses)
+  void multiBlockchainClient.syncAndSubscribeAddresses(createdAddresses)
 
   return paybutton
 }

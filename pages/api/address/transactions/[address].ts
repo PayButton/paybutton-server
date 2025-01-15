@@ -5,7 +5,7 @@ import { fetchPaginatedAddressTransactions } from 'services/transactionService'
 import { upsertAddress } from 'services/addressService'
 import Cors from 'cors'
 import { runMiddleware } from 'utils/index'
-import { MultiBlockchainClient } from 'services/chronikService'
+import { multiBlockchainClient } from 'services/chronikService'
 
 const { ADDRESS_NOT_PROVIDED_400, INVALID_ADDRESS_400, NO_ADDRESS_FOUND_404, STARTED_SYNC_200 } = RESPONSE_MESSAGES
 const cors = Cors({
@@ -44,7 +44,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
           case NO_ADDRESS_FOUND_404.message: {
             if (serverOnly) throw new Error(NO_ADDRESS_FOUND_404.message)
             const addressObject = await upsertAddress(address)
-            await MultiBlockchainClient.syncAndSubscribeAddresses([addressObject])
+            await multiBlockchainClient.syncAndSubscribeAddresses([addressObject])
             res.status(STARTED_SYNC_200.statusCode).json(STARTED_SYNC_200)
             break
           }
