@@ -44,7 +44,7 @@ export function getSimplifiedTransactions (transactionsToPersist: TransactionWit
   return simplifiedTransactions
 }
 
-export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices): SimplifiedTransaction {
+export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices, inputAddresses?: string[]): SimplifiedTransaction {
   const {
     hash,
     amount,
@@ -64,7 +64,8 @@ export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices): S
     address: address.address,
     timestamp,
     message: parsedOpReturn?.message ?? '',
-    rawMessage: parsedOpReturn?.rawMessage ?? ''
+    rawMessage: parsedOpReturn?.rawMessage ?? '',
+    inputAddresses: inputAddresses ?? []
   }
 
   return simplifiedTransaction
