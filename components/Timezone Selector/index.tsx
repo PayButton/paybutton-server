@@ -49,6 +49,16 @@ const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({ value }) => {
     void updateTimezone()
   }
 
+  const customStyles = {
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isFocused === true ? '#669cfe' : '',
+      ':hover': {
+        backgroundColor: '#669cfe'
+      }
+    })
+  }
+
   return (
     <>
       <Select
@@ -57,6 +67,7 @@ const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({ value }) => {
         disabled={false}
         className={style.select_timezone}
         displayValue="UTC"
+        styles={customStyles}
       />
       {error !== '' && <span className={style.error_message}>{error}</span>}
       {success !== '' && <span className={style.success_message}>{success}</span>}
