@@ -50,7 +50,7 @@ const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({ value }) => {
   }
 
   return (
-    <div className={style.timezone_selector}>
+    <>
       <Select
         value={selectedTimezone}
         onChange={handleChange}
@@ -58,9 +58,9 @@ const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({ value }) => {
         className={style.select_timezone}
         displayValue="UTC"
       />
-      {error !== '' && <span className={style.error_message}> {error} </span>}
-      {success !== '' && <span className={style.success_message}> {success} </span>}
-    </div>
+      {error !== '' && <span className={style.error_message}>{error}</span>}
+      {success !== '' && <span className={style.success_message}>{success}</span>}
+    </>
   )
 }
 

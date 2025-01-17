@@ -105,42 +105,71 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
     return (
       <div className={style.account_ctn}>
         <TopBar title="Account" user={user.stUser?.email} />
-        <div className={style.label}>Email</div>
-        <div className={style.account_card}>{user.stUser?.email}</div>
-        <div className={style.label}>Currency</div>
         <div className={style.account_card}>
-          <ChangeFiatCurrency preferredCurrencyId={userProfile.preferredCurrencyId}/>
-        </div>
-        <div className={style.label}>Update timezone</div>
-        <div className={style.account_card}>
-          <TimezoneSelector
-            value={timezone}
-            onChange={handleTimezoneChange}
-          />
-        </div>
-        {changePassword && (
-          <>
-            <div className={style.label}>Update Password</div>
-            <ChangePassword toggleChangePassword={toggleChangePassword} />
-          </>
-        )}
-
-        <div
-          onClick={() => setChangePassword(!changePassword)}
-          className={`${style.updatebtn} button_outline`}
-        >
-          {!changePassword ? 'Update Password' : 'Cancel'}
-        </div>
-        <div className={style.label} style={{ marginTop: '50px' }}>Public key <span className={style.public_key_info_btn} onClick={() => togglePublicKeyInfo()}>What is this?</span></div>
-        <div className={style.public_key_card_ctn}>
-          <div className={style.public_key_card}>
-            {userPublicKey}
-            {isCopied && <div className={style.copied_confirmation}>Copied!</div>}
+          <div className={style.account_row}>
+            <div className={style.label}>Email</div>
+            <div className={style.value}>{user.stUser?.email}</div>
           </div>
-          <div className={style.copy_btn} onClick={() => { void handleCopyClick() } }><Image src={CopyIcon} alt="copy" /></div>
-        </div>
-        <div>
-          {publicKeyInfo && (
+
+          <div className={style.account_row}>
+            <div className={style.label}>{changePassword ? 'Update ' : ''}Password</div>
+            {changePassword
+              ? null
+              : <div className={style.value}>••••••••</div>}
+            <div
+              onClick={() => setChangePassword(!changePassword)}
+              className={style.change_pw_btn}
+            >
+              {changePassword ? 'Cancel' : 'Update'}
+            </div>
+            {changePassword && <ChangePassword toggleChangePassword={toggleChangePassword} /> }
+          </div>
+
+          <div className={style.account_row}>
+            <div className={style.label}>Currency</div>
+            <div className={style.value}>
+              <ChangeFiatCurrency
+                preferredCurrencyId={userProfile.preferredCurrencyId}
+              />
+            </div>
+          </div>
+
+          <div className={style.account_row}>
+            <div className={style.label}>Timezone</div>
+            <TimezoneSelector
+              value={timezone}
+              onChange={handleTimezoneChange}
+            />
+          </div>
+
+          <div className={style.account_row}>
+            <div className={style.label}>
+              Public Key{' '}
+              <div
+                onClick={() => togglePublicKeyInfo()}
+                className={style.whats_this_btn}
+              >
+                {publicKeyInfo ? 'Close' : 'What is this?'}
+              </div>
+            </div>
+            <div className={style.pk_ctn}>
+              <div className={style.pk_card}>
+                {userPublicKey}
+                {isCopied && (
+                  <div className={style.copied_confirmation}>Copied!</div>
+                )}
+              </div>
+              <div
+                className={style.pk_copy}
+                onClick={() => {
+                  void handleCopyClick()
+                }}
+              >
+                <Image src={CopyIcon} alt="copy" width={20} height={20} />
+              </div>
+            </div>
+
+            {publicKeyInfo && (
             <div className={style.public_key_info_ctn}>
               This can be used to verify the authenticity of a message received from a paybutton trigger.
               <br/>
@@ -154,14 +183,11 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
               <br/>
               Check if the payload's signature came from the private key paired to this public key using your preferred method.
             </div>
-          )}
-          {publicKeyInfo &&
-            <div
-              onClick={() => togglePublicKeyInfo()}
-              className={`${style.updatebtn} button_outline`}
-            >Close</div>
-          }
+            )}
+
+          </div>
         </div>
+
         <div>
           <h3 className={style.config_title}>Organization</h3>
           <ViewOrganization user={user} orgMembers={orgMembers} setOrgMembers={setOrgMembers} organization={organization}/>

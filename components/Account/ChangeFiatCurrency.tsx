@@ -40,13 +40,15 @@ export default function ChangeFiatCurrency ({ preferredCurrencyId }: IProps): Re
     }
   }
 
-  return (<>
-    <div className={style.changeCurrency_ctn}>
+  return (
+    <>
       <select
-        id='currency'
+        id="currency"
         required
         value={currency}
-        onChange={(e) => { void onChangeCurrency(e.target.value) }}
+        onChange={(e) => {
+          void onChangeCurrency(e.target.value)
+        }}
       >
         {SUPPORTED_QUOTES.map((currency: SupportedQuotesType) => (
           <option key={currency} value={currency}>
@@ -54,8 +56,10 @@ export default function ChangeFiatCurrency ({ preferredCurrencyId }: IProps): Re
           </option>
         ))}
       </select>
-    </div>
-    {error !== '' && <span className={style.error_message}> {error} </span>}
-    {success !== '' && <span className={style.success_message}> {success} </span>}
-    </>)
+      {error !== '' && <span className={style.error_message}>{error}</span>}
+      {success !== '' && (
+        <span className={style.success_message}>{success}</span>
+      )}
+    </>
+  )
 }
