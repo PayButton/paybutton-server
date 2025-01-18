@@ -24,7 +24,7 @@ export interface PaymentFileData {
   rate: number
   transactionId: string
   currency: string
-  address: string
+  address?: string
 }
 
 export interface FormattedPaymentFileData {
@@ -33,7 +33,7 @@ export interface FormattedPaymentFileData {
   value: string
   rate: string
   transactionId: string
-  address: string
+  address?: string
 }
 
 export function isCurrencyValid (currency: SupportedQuotesType): boolean {

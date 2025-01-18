@@ -15,6 +15,7 @@ import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL } from 'consta
 import moment from 'moment-timezone'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
+import { UserProfile } from '@prisma/client'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -138,9 +139,52 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
     []
   )
 
+  const downloadCSV = async (userId: string, userProfile: UserProfile): Promise<void> => {
+    try {
+      const preferredCurrencyId = userProfile?.preferredCurrencyId ?? ''
+      const url = `/api/payments/download/?currency=${preferredCurrencyId}`
+      const response = await fetch(url, {
+        headers: {
+          Timezone: moment.tz.guess()
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to download CSV')
+      }
+
+      const fileName = `${userId}-all-payments`
+
+      const blob = await response.blob()
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = `${fileName}.csv`
+
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    } catch (error) {
+      console.error('An error occurred while downloading the CSV:', error)
+    }
+  }
+
+  const handleExport = (): void => {
+    void downloadCSV(userId, user?.userProfile)
+  }
+
   return (
     <>
       <TopBar title="Payments" user={user?.stUser?.email} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'right' }}>
+          <div
+            onClick={handleExport}
+            className="button_outline button_small"
+            style={{ marginBottom: '0', cursor: 'pointer' }}
+          >
+            Export as CSV
+          </div>
+      </div>
       <TableContainerGetter
         columns={columns}
         dataGetter={fetchData()}

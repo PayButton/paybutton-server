@@ -56,7 +56,7 @@ export interface Payment {
   networkId: number
   hash: string
   buttonDisplayDataList: ButtonDisplayData[]
-  address: string
+  address?: string
 }
 
 export interface ButtonData {
