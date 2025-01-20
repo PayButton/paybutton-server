@@ -355,6 +355,24 @@ export class ChronikBlockchainClient {
     }
   }
 
+  private getSortedInputAddresses (transaction: Tx_InNode): string[] {
+    const addressValueMap = new Map<string, number>()
+
+    transaction.inputs.forEach((inp) => {
+      const address = outputScriptToAddress(this.networkSlug, inp.outputScript)
+      if (address !== undefined && address !== '') {
+        const currentValue = addressValueMap.get(address) ?? 0
+        addressValueMap.set(address, currentValue + inp.value)
+      }
+    })
+
+    const sortedInputAddresses = Array.from(addressValueMap.entries())
+      .sort(([, valueA], [, valueB]) => valueB - valueA)
+      .map(([address]) => address)
+
+    return sortedInputAddresses
+  }
+
   private async processWsMessage (msg: WsMsgClient): Promise<void> {
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
@@ -380,10 +398,11 @@ export class ChronikBlockchainClient {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transaction = await this.chronik.tx(msg.txid)
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+        const inputAddresses = this.getSortedInputAddresses(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
           const { created, tx } = await createTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
-            const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx)
+            const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses)
             if (created) { // only execute trigger for newly added txs
               await executeAddressTriggers(broadcastTxData, tx.address.networkId)
             }
@@ -401,11 +420,11 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private broadcastIncomingTx (addressString: string, createdTx: TransactionWithAddressAndPrices): BroadcastTxData {
+  private broadcastIncomingTx (addressString: string, createdTx: TransactionWithAddressAndPrices, inputAddresses: string[]): BroadcastTxData {
     const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
     broadcastTxData.address = addressString
     broadcastTxData.messageType = 'NewTx'
-    const newSimplifiedTransaction = getSimplifiedTrasaction(createdTx)
+    const newSimplifiedTransaction = getSimplifiedTrasaction(createdTx, inputAddresses)
     broadcastTxData.txs = [newSimplifiedTransaction]
     try { // emit broadcast for both unconfirmed and confirmed txs
       this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
@@ -429,10 +448,12 @@ export class ChronikBlockchainClient {
     }
     for (const transaction of blockTxsToSync) {
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+      const inputAddresses = this.getSortedInputAddresses(transaction)
+
       for (const addressWithTransaction of addressesWithTransactions) {
         const { created, tx } = await createTransaction(addressWithTransaction.transaction)
         if (tx !== undefined) {
-          const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx)
+          const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses)
           if (created) { // only execute trigger for newly added txs
             await executeAddressTriggers(broadcastTxData, tx.address.networkId)
           }

@@ -4,7 +4,7 @@ import { ChangePasswordPOSTParameters } from 'utils/validators'
 import style from './account.module.css'
 
 interface IProps {
-  toggleChangePassword: () => void;
+  toggleChangePassword: () => void
 }
 
 export default function ChangePassword ({ toggleChangePassword }: IProps): ReactElement {
@@ -91,9 +91,11 @@ export default function ChangePassword ({ toggleChangePassword }: IProps): React
         <label htmlFor='newPasswordConfirmed'>Confirm new password</label>
         <input {...register('newPasswordConfirmed')} type='password' id='newPasswordConfirmed' name='newPasswordConfirmed' required />
         <div>
-          <div className={style.error_message}>
-            {error !== '' ? <span>{error}</span> : <span></span>}
+        {error !== ''
+          ? <div className={style.error_message}>
+            {error}
           </div>
+          : null}
           <button disabled={disabled} className='button_main' type='submit'>Submit</button>
         </div>
       </form>

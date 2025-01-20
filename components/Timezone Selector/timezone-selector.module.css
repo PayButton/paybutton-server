@@ -1,40 +1,35 @@
-.timezone_selector {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin: 15px 0;
-    padding: 10px;
-    border: 1px solid var(--secondary-bg-color);
-    border-radius: 5px;
-    background-color: var(--secondary-bg-color);
-}
 
 .select_timezone {
-    background-color: var(--secondary-bg-color) !important;
-    color: black;
-    font-family: 'Poppins', sans-serif;
+    margin-top: 10px;
 }
 
-.success_message {
-    color: green;
-    font-size: 16px;
+.select_timezone > div {
+    background-color: var(--secondary-bg-color) !important;
+    border: 1px solid var(--secondary-text-color) !important;
+}
+
+body[data-theme='dark'] .select_timezone > div {
+    background-color: var(--primary-bg-color) !important;
+    border-color: #585858 !important;
+  }
+
+.select_timezone div {
+    color: var(--primary-text-color) !important;
+}
+
+.success_message,
+.error_message {
+    background-color: #c5e7ba;
+    font-size: 14px;
     width: 100%;
-    height: 100%;
-    background-color: var(--secondary-bg-color);
-    top: 0;
-    left: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    text-align: center;
+    margin-top: 10px;
+    color: rgb(0, 99, 0);
 }
 
 .error_message {
-    color: red;
-    font-size: 14px;
-    top: -20px;
-    left: 0;
-    background-color: rgba(255, 0, 0, 0.1);
-    padding: 1px 10px;
-    border-radius: 5px;
+    color: rgb(172, 0, 0);
+    background-color: #e7bfba;
   }
