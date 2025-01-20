@@ -7,7 +7,10 @@ import {
   SupportedQuotesType,
   SUPPORTED_QUOTES_FROM_ID,
   PAYBUTTON_TRANSACTIONS_FILE_HEADERS,
-  DECIMALS
+  DECIMALS,
+  NETWORK_TICKERS,
+  NetworkTickersType,
+  NETWORK_IDS
 } from 'constants/index'
 import { fetchAllPaymentsByUserId } from 'services/transactionService'
 import { streamToCSV } from 'utils/files'
@@ -16,6 +19,7 @@ import { NextApiResponse } from 'next'
 import { fetchUserProfileFromId } from 'services/userService'
 import { Prisma } from '@prisma/client'
 import { Payment } from 'redis/types'
+import { getNetworkIdFromSlug } from 'services/networkService'
 
 export interface PaymentFileData {
   amount: Prisma.Decimal
@@ -100,8 +104,15 @@ const downloadPaymentsFileByUserId = async (
   userId: string,
   res: NextApiResponse,
   currency: SupportedQuotesType,
-  timezone: string): Promise<void> => {
-  const payments = await fetchAllPaymentsByUserId(userId)
+  timezone: string,
+  networkTicker?: NetworkTickersType): Promise<void> => {
+  let networkIdArray = Object.values(NETWORK_IDS)
+  if (networkTicker !== undefined) {
+    const slug = Object.keys(NETWORK_TICKERS).find(key => NETWORK_TICKERS[key] === networkTicker)
+    const networkId = getNetworkIdFromSlug(slug ?? NETWORK_TICKERS.ecash)
+    networkIdArray = [networkId]
+  }
+  const payments = await fetchAllPaymentsByUserId(userId, networkIdArray)
   const sortedPayments = await sortPaymentsByNetworkId(payments)
   const mappedPaymentsData = sortedPayments.map(payment => {
     const data = getPaymentsFileData(payment, currency, timezone)
@@ -117,6 +128,9 @@ const downloadPaymentsFileByUserId = async (
     res,
     humanReadableHeaders
   )
+}
+function isNetworkValid (slug: NetworkTickersType): boolean {
+  return Object.values(NETWORK_TICKERS).includes(slug)
 }
 
 export default async (req: any, res: any): Promise<void> => {
@@ -140,9 +154,11 @@ export default async (req: any, res: any): Promise<void> => {
     const userReqTimezone = req.headers.timezone as string
     const userPreferredTimezone = user?.preferredTimezone
     const timezone = userPreferredTimezone !== '' ? userPreferredTimezone : userReqTimezone
+    const networkTickerReq = req.query.network as string
 
+    const networkTicker = (networkTickerReq !== '' && isNetworkValid(networkTickerReq as NetworkTickersType)) ? networkTickerReq.toUpperCase() as NetworkTickersType : undefined
     res.setHeader('Content-Type', 'text/csv')
-    await downloadPaymentsFileByUserId(userId, res, quoteSlug, timezone)
+    await downloadPaymentsFileByUserId(userId, res, quoteSlug, timezone, networkTicker)
   } catch (error: any) {
     switch (error.message) {
       case RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.message:

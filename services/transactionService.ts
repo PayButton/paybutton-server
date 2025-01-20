@@ -803,7 +803,8 @@ export async function fetchAllPaymentsByUserIdWithPagination (
 }
 
 export async function fetchAllPaymentsByUserId (
-  userId: string
+  userId: string,
+  networkIds?: number[]
 ): Promise<Payment[]> {
   const transactions = await prisma.transaction.findMany({
     where: {
@@ -812,6 +813,9 @@ export async function fetchAllPaymentsByUserId (
           some: {
             userId
           }
+        },
+        networkId: {
+          in: networkIds ?? Object.values(NETWORK_IDS)
         }
       },
       amount: {

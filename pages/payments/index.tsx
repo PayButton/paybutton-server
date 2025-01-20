@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
@@ -11,7 +11,7 @@ import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import { formatQuoteValue, compareNumericString, removeUnserializableFields } from 'utils/index'
-import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL } from 'constants/index'
+import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL, NETWORK_TICKERS_FROM_ID } from 'constants/index'
 import moment from 'moment-timezone'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
@@ -53,6 +53,30 @@ interface PaybuttonsProps {
 
 export default function Payments ({ user, userId }: PaybuttonsProps): React.ReactElement {
   const timezone = user?.userProfile.preferredTimezone === '' ? moment.tz.guess() : user?.userProfile?.preferredTimezone
+  const [selectedCurrencyCSV, setSelectedCurrencyCSV] = useState<string>('')
+  const [paybuttonNetworks, setPaybuttonNetworks] = useState<number[]>([])
+
+  const fetchPaybuttons = async (): Promise<any> => {
+    const res = await fetch(`/api/paybuttons?userId=${user?.userProfile.id}`, {
+      method: 'GET'
+    })
+    if (res.status === 200) {
+      return await res.json()
+    }
+  }
+  const getDataAndSetUpCurrencyCSV = async (): Promise<void> => {
+    const paybuttons = await fetchPaybuttons()
+    const networkIds: number[] = []
+    paybuttons.forEach((p: { addresses: any[] }) => {
+      return p.addresses.forEach((c: { address: { networkId: number } }) => networkIds.push(c.address.networkId))
+    })
+
+    setPaybuttonNetworks(networkIds)
+  }
+
+  useEffect(() => {
+    void getDataAndSetUpCurrencyCSV()
+  }, [])
 
   function fetchData (): Function {
     return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
@@ -139,10 +163,16 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
     []
   )
 
-  const downloadCSV = async (userId: string, userProfile: UserProfile): Promise<void> => {
+  const downloadCSV = async (userId: string, userProfile: UserProfile, currency: string): Promise<void> => {
     try {
       const preferredCurrencyId = userProfile?.preferredCurrencyId ?? ''
-      const url = `/api/payments/download/?currency=${preferredCurrencyId}`
+      let url = `/api/payments/download/?currency=${preferredCurrencyId}`
+      const isCurrencyEmptyOrUndefined = (value: string): boolean => (value === '' || value === undefined)
+
+      if (!isCurrencyEmptyOrUndefined(currency)) {
+        url += `&network=${currency}`
+      }
+
       const response = await fetch(url, {
         headers: {
           Timezone: moment.tz.guess()
@@ -166,24 +196,51 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       link.remove()
     } catch (error) {
       console.error('An error occurred while downloading the CSV:', error)
+    } finally {
+      setSelectedCurrencyCSV('')
     }
   }
 
-  const handleExport = (): void => {
-    void downloadCSV(userId, user?.userProfile)
+  const handleExport = (event: React.ChangeEvent<HTMLSelectElement>): void => {
+    const currencyParam = event.target.value !== 'all' ? event.target.value : ''
+    setSelectedCurrencyCSV(currencyParam)
+    void downloadCSV(userId, user?.userProfile, currencyParam)
   }
 
   return (
     <>
       <TopBar title="Payments" user={user?.stUser?.email} />
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'right' }}>
-          <div
-            onClick={handleExport}
-            className="button_outline button_small"
-            style={{ marginBottom: '0', cursor: 'pointer' }}
-          >
-            Export as CSV
-          </div>
+      {new Set(paybuttonNetworks).size > 1
+        ? (
+              <select
+                id='export-btn'
+                value={selectedCurrencyCSV}
+                onChange={handleExport}
+                className="button_outline button_small"
+                style={{ marginBottom: '0', cursor: 'pointer' }}
+              >
+                <option value='' disabled> Export as CSV</option>
+                <option key="all" value="all">
+                  All Currencies
+                </option>
+                {Object.entries(NETWORK_TICKERS_FROM_ID)
+                  .filter(([id]) => paybuttonNetworks.includes(Number(id)))
+                  .map(([id, ticker]) => (
+                    <option key={id} value={ticker}>
+                      {ticker.toUpperCase()}
+                    </option>
+                  ))}
+              </select>
+          )
+        : (
+              <div
+                onClick={handleExport}
+                className="button_outline button_small"
+                style={{ marginBottom: '0', cursor: 'pointer' }}
+              >
+                Export as CSV
+              </div>)}
       </div>
       <TableContainerGetter
         columns={columns}
