@@ -395,7 +395,7 @@ export interface PostDataParameters {
   buttonName: string
   address: string
   opReturn: OpReturnData
-  inputAddresses?: Array<string | undefined>
+  inputAddresses?: string[]
 }
 
 async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParameters: PostDataParameters): Promise<void> {

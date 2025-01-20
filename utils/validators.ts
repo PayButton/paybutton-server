@@ -316,7 +316,7 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
       address: '',
       timestamp: 0,
       opReturn: EMPTY_OP_RETURN,
-      inputAddresses: ['']
+      inputAddresses: []
     }
     const parsed = parseTriggerPostData({
       userId: params.userId,
