@@ -183,8 +183,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         throw new Error('Failed to download CSV')
       }
 
-      const fileName = `${userId}-all-payments`
-
+      const fileName = `${isCurrencyEmptyOrUndefined(currency) ? 'all' : `${currency.toLowerCase()}`}-transactions`
       const blob = await response.blob()
       const downloadUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
