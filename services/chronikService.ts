@@ -496,6 +496,8 @@ export class ChronikBlockchainClient {
 
     addresses.forEach(address => {
       console.log(`${this.CHRONIK_MSG_PREFIX}: subscribing `, address.address)
+      console.log('WIP', this.chronikWSEndpoint, address.address)
+      console.log('WIP2', this.chronikWSEndpoint.subscribeToAddress)
       this.chronikWSEndpoint.subscribeToAddress(address.address)
     })
   }
