@@ -7,7 +7,7 @@ import style from './paybutton.module.css'
 import Plus from 'assets/plus.png'
 
 interface IProps {
-  onSubmit: Function
+  onSubmit: (data: PaybuttonPOSTParameters) => Promise<void>
   paybuttons: []
   wallets: WalletWithAddressesWithPaybuttons[]
   error: String
@@ -16,6 +16,7 @@ interface IProps {
 export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }: IProps): ReactElement {
   const { register, handleSubmit, reset } = useForm<PaybuttonPOSTParameters>()
   const [modal, setModal] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     setModal(false)
@@ -28,6 +29,16 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
       label: wallet.name
     }
   })
+
+  const handleFormSubmit = async (data: PaybuttonPOSTParameters): Promise<void> => {
+    setLoading(true)
+    try {
+      await onSubmit(data)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <>
       <div className={style.create_button_ctn}>
@@ -42,7 +53,13 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
           <div className={style.form_ctn_inner}>
             <h4>Create Button</h4>
             <div className={style.form_ctn}>
-              <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
+            <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  void handleSubmit(handleFormSubmit)()
+                }}
+                method="post"
+              >
                 <label htmlFor='name'>Name*</label>
                 <input {...register('name')} type='text' id='name' name='name' placeholder="The unique name of your button" required />
                 <label htmlFor='wallet'>Wallet*</label>
@@ -69,7 +86,7 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
                 <textarea {...register('description')} id='description' name='description' placeholder="More information about your button (optional)"/>
                 <div className={style.btn_row}>
                   {error !== '' && <div className={style.error_message}>{error}</div>}
-                  <button type='submit' className='button_main'>Submit</button>
+                  <button type='submit' className='button_main' disabled={loading}>{loading ? 'Loading...' : 'Submit'}</button>
                   <button onClick={() => { setModal(false); reset() }} className='button_outline'>Cancel</button>
                 </div>
               </form>

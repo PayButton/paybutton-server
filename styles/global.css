@@ -388,6 +388,14 @@ body[data-theme='dark'] .button_main {
   color: #231f20 !important;
 }
 
+.button_outline:disabled {
+  background-color: var(--secondary-bg-color) !important;
+  color: var(--primary-text-color) !important;
+  border: none !important;
+  opacity: 0.6;
+  cursor: not-allowed !important;
+}
+
 body[data-theme='dark'] .button_outline:hover {
   border-color: #000;
 }
