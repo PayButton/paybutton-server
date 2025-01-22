@@ -43,6 +43,10 @@ export interface ProcessedMessages {
   unconfirmed: KeyValueT<number>
 }
 
+export interface SubscriptionReturn {
+  failedAddressesWithErrors: KeyValueT<string>
+}
+
 export interface SyncAndSubscriptionReturn {
   failedAddressesWithErrors: KeyValueT<string>
   successfulAddressesWithCount: KeyValueT<number>

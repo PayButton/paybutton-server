@@ -1,7 +1,7 @@
 import { BlockInfo_InNode, ChronikClientNode, ScriptType_InNode, ScriptUtxo_InNode, Tx_InNode, WsConfig_InNode, WsEndpoint_InNode, WsMsgClient, WsSubScriptClient } from 'chronik-client'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
-import { AddressWithTransaction, BlockchainInfo, BlockInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn } from 'types/chronikTypes'
+import { AddressWithTransaction, BlockchainInfo, BlockInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn } from 'types/chronikTypes'
 import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import {
@@ -485,21 +485,26 @@ export class ChronikBlockchainClient {
     )
   }
 
-  public async subscribeAddresses (addresses: Address[]): Promise<void> {
+  public async subscribeAddresses (addresses: Address[]): Promise<SubscriptionReturn> {
+    const failedAddressesWithErrors: KeyValueT<string> = {}
     const subscribedAddresses = this.getSubscribedAddresses()
     addresses = addresses
       .filter(addr => (
         addr.networkId === this.networkId &&
       !subscribedAddresses.includes(addr.address))
       )
-    if (addresses.length === 0) return
+    if (addresses.length === 0) return { failedAddressesWithErrors }
 
     addresses.forEach(address => {
-      console.log(`${this.CHRONIK_MSG_PREFIX}: subscribing `, address.address)
-      console.log('WIP', this.chronikWSEndpoint, address.address)
-      console.log('WIP2', this.chronikWSEndpoint.subscribeToAddress)
-      this.chronikWSEndpoint.subscribeToAddress(address.address)
+      try {
+        this.chronikWSEndpoint.subscribeToAddress(address.address)
+      } catch (err: any) {
+        failedAddressesWithErrors[address.address] = err.stack
+      }
     })
+    return {
+      failedAddressesWithErrors
+    }
   }
 
   public async syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
@@ -701,15 +706,20 @@ class MultiBlockchainClient {
   }
 
   public async subscribeAddresses (addresses: Address[]): Promise<void> {
+    let failedAddressesWithErrors: KeyValueT<string> = {}
     await Promise.all(
       Object.keys(this.clients).map(async (networkSlug) => {
         const addressesOfNetwork = addresses.filter(
           (address) => address.networkId === NETWORK_IDS[NETWORK_TICKERS[networkSlug]]
         )
         const client = this.clients[networkSlug as MainNetworkSlugsType]
-        await client.subscribeAddresses(addressesOfNetwork)
+        const thisNetworkRes = await client.subscribeAddresses(addressesOfNetwork)
+        failedAddressesWithErrors = { ...failedAddressesWithErrors, ...thisNetworkRes.failedAddressesWithErrors }
       })
     )
+    Object.keys(failedAddressesWithErrors).forEach((addr) => {
+      console.error(`[CHRONIK]: When syncing missing addresses for address ${addr} encountered error: ${failedAddressesWithErrors[addr]}`)
+    })
   }
 
   public async syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
