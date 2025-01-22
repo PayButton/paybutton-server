@@ -756,48 +756,6 @@ class MultiBlockchainClient {
   }
 }
 
-/* WIPTHIS THIS IS PROBABLY USELESS DELETE
-  public async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
-    const failedAddressesWithErrors: KeyValueT<string> = {}
-    const successfulAddressesWithCount: KeyValueT<number> = {}
-    let txsToSave: Prisma.TransactionCreateManyInput[] = []
-
-    const productionAddressesIds = productionAddresses.map(addr => addr.id)
-    await Promise.all(
-      addresses.map(async (addr) => {
-        try {
-          await this.subscribeAddresses([addr])
-          const prefix = getAddressPrefix(addr.address)
-          const generator = BLOCKCHAIN_CLIENTS[prefix].syncTransactionsForAddress(addr.address)
-          let count = 0
-          while (true) {
-            const result = await generator.next()
-            if (result.done === true) break
-            if (productionAddressesIds.includes(addr.id)) {
-              const txs = result.value
-              count += txs.length
-              txsToSave = txsToSave.concat(txs)
-              if (txsToSave.length !== 0) {
-                await appendTxsToFile(txsToSave)
-              }
-            }
-          }
-          successfulAddressesWithCount[addr.address] = count
-        } catch (err: any) {
-          failedAddressesWithErrors[addr.address] = err.stack
-        }
-      })
-    )
-    if (txsToSave.length !== 0) {
-      await appendTxsToFile(txsToSave)
-    }
-    return {
-      failedAddressesWithErrors,
-      successfulAddressesWithCount
-    }
-  }
-*/
-
 export interface NodeJsGlobalMultiBlockchainClient extends NodeJS.Global {
   multiBlockchainClient?: MultiBlockchainClient
 }
