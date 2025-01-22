@@ -5,6 +5,7 @@ import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import Image from 'next/image'
 import style from './paybutton.module.css'
 import Plus from 'assets/plus.png'
+import LoadingSpinner from './LoadingSpinner'
 
 interface IProps {
   onSubmit: (data: PaybuttonPOSTParameters) => Promise<void>
@@ -86,8 +87,8 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
                 <textarea {...register('description')} id='description' name='description' placeholder="More information about your button (optional)"/>
                 <div className={style.btn_row}>
                   {error !== '' && <div className={style.error_message}>{error}</div>}
-                  <button type='submit' className='button_main' disabled={loading}>{loading ? 'Loading...' : 'Submit'}</button>
-                  <button onClick={() => { setModal(false); reset() }} className='button_outline'>Cancel</button>
+                  <button type='submit' className='button_main loading_btn' disabled={loading}>Submit{loading && <LoadingSpinner />}</button>
+                  <button onClick={() => { setModal(false); reset() }} className='button_outline' disabled={loading}>Cancel</button>
                 </div>
               </form>
             </div>

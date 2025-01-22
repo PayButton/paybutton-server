@@ -396,6 +396,15 @@ body[data-theme='dark'] .button_main {
   cursor: not-allowed !important;
 }
 
+.loading_btn {
+  position: relative;
+}
+
+.loading_btn:disabled,
+.loading_btn:disabled:hover {
+  color: transparent !important;
+}
+
 body[data-theme='dark'] .button_outline:hover {
   border-color: #000;
 }
