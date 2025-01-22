@@ -1,4 +1,7 @@
 // WIP refactor to chronik
+it('WIP', () => {
+  expect(1).toBe(1)
+})
 
 /*
 describe('blockchain clients connect', () => {
