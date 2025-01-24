@@ -54,7 +54,7 @@ interface PaybuttonsProps {
 export default function Payments ({ user, userId }: PaybuttonsProps): React.ReactElement {
   const timezone = user?.userProfile.preferredTimezone === '' ? moment.tz.guess() : user?.userProfile?.preferredTimezone
   const [selectedCurrencyCSV, setSelectedCurrencyCSV] = useState<string>('')
-  const [paybuttonNetworks, setPaybuttonNetworks] = useState<number[]>([])
+  const [paybuttonNetworks, setPaybuttonNetworks] = useState<Set<number>>(new Set())
 
   const fetchPaybuttons = async (): Promise<any> => {
     const res = await fetch(`/api/paybuttons?userId=${user?.userProfile.id}`, {
@@ -66,9 +66,10 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
   }
   const getDataAndSetUpCurrencyCSV = async (): Promise<void> => {
     const paybuttons = await fetchPaybuttons()
-    const networkIds: number[] = []
+    const networkIds: Set<number> = new Set()
+
     paybuttons.forEach((p: { addresses: any[] }) => {
-      return p.addresses.forEach((c: { address: { networkId: number } }) => networkIds.push(c.address.networkId))
+      return p.addresses.forEach((c: { address: { networkId: number } }) => networkIds.add(c.address.networkId))
     })
 
     setPaybuttonNetworks(networkIds)
@@ -210,7 +211,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
     <>
       <TopBar title="Payments" user={user?.stUser?.email} />
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'right' }}>
-      {new Set(paybuttonNetworks).size > 1
+      {paybuttonNetworks.size > 1
         ? (
               <select
                 id='export-btn'
@@ -224,7 +225,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
                   All Currencies
                 </option>
                 {Object.entries(NETWORK_TICKERS_FROM_ID)
-                  .filter(([id]) => paybuttonNetworks.includes(Number(id)))
+                  .filter(([id]) => paybuttonNetworks.has(Number(id)))
                   .map(([id, ticker]) => (
                     <option key={id} value={ticker}>
                       {ticker.toUpperCase()}

@@ -1,50 +1,23 @@
 import moment from 'moment-timezone'
 import {
-  PRICE_API_DATE_FORMAT,
   RESPONSE_MESSAGES,
   DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER,
-  SUPPORTED_QUOTES,
   SupportedQuotesType,
   SUPPORTED_QUOTES_FROM_ID,
   PAYBUTTON_TRANSACTIONS_FILE_HEADERS,
-  DECIMALS,
   NETWORK_TICKERS,
   NetworkTickersType,
   NETWORK_IDS
 } from 'constants/index'
 import { fetchAllPaymentsByUserId } from 'services/transactionService'
-import { streamToCSV } from 'utils/files'
+import { TransactionFileData, formatNumberHeaders, formatPaybuttonTransactionsFileData, isNetworkValid, streamToCSV } from 'utils/files'
 import { setSession } from 'utils/setSession'
 import { NextApiResponse } from 'next'
 import { fetchUserProfileFromId } from 'services/userService'
-import { Prisma } from '@prisma/client'
 import { Payment } from 'redis/types'
 import { getNetworkIdFromSlug } from 'services/networkService'
 
-export interface PaymentFileData {
-  amount: Prisma.Decimal
-  date: moment.Moment
-  value: number
-  rate: number
-  transactionId: string
-  currency: string
-  address?: string
-}
-
-export interface FormattedPaymentFileData {
-  amount: string
-  date: string
-  value: string
-  rate: string
-  transactionId: string
-  address?: string
-}
-
-export function isCurrencyValid (currency: SupportedQuotesType): boolean {
-  return SUPPORTED_QUOTES.includes(currency)
-}
-
-const getPaymentsFileData = (payment: Payment, currency: SupportedQuotesType, timezone: string): PaymentFileData => {
+const getPaymentsFileData = (payment: Payment, currency: SupportedQuotesType, timezone: string): TransactionFileData => {
   const { values, hash, timestamp, address } = payment
   const amount = values.amount
   const value = Number(values.values[currency])
@@ -60,28 +33,6 @@ const getPaymentsFileData = (payment: Payment, currency: SupportedQuotesType, ti
     currency,
     address
   }
-}
-
-const formatPaymentsFileData = (data: PaymentFileData): FormattedPaymentFileData => {
-  const {
-    amount,
-    date,
-    value,
-    rate,
-    currency
-  } = data
-
-  return {
-    ...data,
-    amount: amount.toFixed(DECIMALS[currency]),
-    date: date.format(PRICE_API_DATE_FORMAT),
-    value: value.toFixed(2),
-    rate: rate.toFixed(14)
-  }
-}
-
-const formatNumberHeaders = (headers: string[], currency: string): string[] => {
-  return headers.map(h => h === PAYBUTTON_TRANSACTIONS_FILE_HEADERS.value ? h + ` (${currency.toUpperCase()})` : h)
 }
 
 const sortPaymentsByNetworkId = (payments: Payment[]): Payment[] => {
@@ -116,7 +67,7 @@ const downloadPaymentsFileByUserId = async (
   const sortedPayments = await sortPaymentsByNetworkId(payments)
   const mappedPaymentsData = sortedPayments.map(payment => {
     const data = getPaymentsFileData(payment, currency, timezone)
-    return formatPaymentsFileData(data)
+    return formatPaybuttonTransactionsFileData(data)
   })
   const headers = Object.keys(PAYBUTTON_TRANSACTIONS_FILE_HEADERS)
   const humanReadableHeaders = formatNumberHeaders(Object.values(PAYBUTTON_TRANSACTIONS_FILE_HEADERS), currency)
@@ -128,9 +79,6 @@ const downloadPaymentsFileByUserId = async (
     res,
     humanReadableHeaders
   )
-}
-function isNetworkValid (slug: NetworkTickersType): boolean {
-  return Object.values(NETWORK_TICKERS).includes(slug)
 }
 
 export default async (req: any, res: any): Promise<void> => {
