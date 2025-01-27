@@ -87,7 +87,8 @@ export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPri
     },
     networkId: tx.address.networkId,
     hash: tx.hash,
-    buttonDisplayDataList
+    buttonDisplayDataList,
+    address: tx.address.address
   }
 }
 

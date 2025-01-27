@@ -1,6 +1,56 @@
-import { MAX_RECORDS_PER_FILE, RESPONSE_MESSAGES } from '../constants/index'
+import { Prisma } from '@prisma/client'
+import { DECIMALS, MAX_RECORDS_PER_FILE, NETWORK_TICKERS, NetworkTickersType, PAYBUTTON_TRANSACTIONS_FILE_HEADERS, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, SUPPORTED_QUOTES, SupportedQuotesType } from '../constants/index'
 import { NextApiResponse } from 'next'
 import { Transform } from 'stream'
+
+export interface TransactionFileData {
+  amount: Prisma.Decimal
+  date: moment.Moment
+  value: number
+  rate: number
+  transactionId: string
+  currency: string
+  address?: string
+}
+
+export interface FormattedTransactionFileData {
+  amount: string
+  date: string
+  value: string
+  rate: string
+  transactionId: string
+  address?: string
+}
+
+export function isCurrencyValid (currency: SupportedQuotesType): boolean {
+  return SUPPORTED_QUOTES.includes(currency)
+}
+
+export function isNetworkValid (slug: NetworkTickersType): boolean {
+  return Object.values(NETWORK_TICKERS).includes(slug)
+}
+
+export const formatNumberHeaders = (headers: string[], currency: string): string[] => {
+  return headers.map(h => h === PAYBUTTON_TRANSACTIONS_FILE_HEADERS.value ? h + ` (${currency.toUpperCase()})` : h)
+}
+
+export const formatPaybuttonTransactionsFileData = (data: TransactionFileData): FormattedTransactionFileData => {
+  const {
+    amount,
+    date,
+    value,
+    rate,
+    currency
+  } = data
+
+  return {
+    ...data,
+    amount: amount.toFixed(DECIMALS[currency]),
+    date: date.format(PRICE_API_DATE_FORMAT),
+    value: value.toFixed(2),
+    rate: rate.toFixed(14)
+  }
+}
 
 export function valuesToCsvLine (values: string[], delimiter: string): string {
   return values.join(delimiter) + '\n'

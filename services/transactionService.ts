@@ -801,3 +801,37 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   }
   return transformedData
 }
+
+export async function fetchAllPaymentsByUserId (
+  userId: string,
+  networkIds?: number[]
+): Promise<Payment[]> {
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      address: {
+        userProfiles: {
+          some: {
+            userId
+          }
+        },
+        networkId: {
+          in: networkIds ?? Object.values(NETWORK_IDS)
+        }
+      },
+      amount: {
+        gt: 0
+      }
+    },
+    include: includePaybuttonsAndPrices
+  })
+
+  const transformedData: Payment[] = []
+  for (let index = 0; index < transactions.length; index++) {
+    const tx = transactions[index]
+    if (Number(tx.amount) > 0) {
+      const payment = await generatePaymentFromTx(tx)
+      transformedData.push(payment)
+    }
+  }
+  return transformedData
+}
