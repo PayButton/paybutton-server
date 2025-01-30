@@ -1,7 +1,7 @@
 export const generatorFormFields = [
   {
     name: 'To',
-    placeholder: 'Your Address',
+    placeholder: 'Your Address (XEC or BCH)',
     key: 'to',
     className: 'col_lg',
     type: 'input',
