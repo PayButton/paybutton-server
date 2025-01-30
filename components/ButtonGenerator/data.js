@@ -54,7 +54,7 @@ export const generatorFormFields = [
   },
   {
     name: 'Hover Text',
-    placeholder: 'Send XEC',
+    placeholder: 'Send payment',
     key: 'hoverText',
     className: 'col_lg',
     type: 'input',
