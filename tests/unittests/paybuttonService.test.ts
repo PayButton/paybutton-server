@@ -1,7 +1,7 @@
 import prisma from 'prisma/clientInstance'
 import * as paybuttonService from 'services/paybuttonService'
 import { prismaMock } from 'prisma/mockedClient'
-import { mockedPaybutton, mockedPaybuttonList, mockedNetwork, mockedWalletsOnUserProfile } from '../mockedObjects'
+import { mockedPaybutton, mockedPaybuttonList, mockedNetwork, mockedWalletsOnUserProfile, mockedXECAddress } from '../mockedObjects'
 
 describe('Fetch services', () => {
   it('Should fetch paybutton by id', async () => {
@@ -27,6 +27,8 @@ describe('Create services', () => {
     prisma.paybutton.create = prismaMock.paybutton.create
     prismaMock.address.findMany.mockResolvedValue([])
     prisma.address.findMany = prismaMock.address.findMany
+    prismaMock.address.update.mockResolvedValue(mockedXECAddress)
+    prisma.address.update = prismaMock.address.update
     prismaMock.addressesOnUserProfiles.upsert.mockResolvedValue(mockedWalletsOnUserProfile)
     prisma.addressesOnUserProfiles.upsert = prismaMock.addressesOnUserProfiles.upsert
 

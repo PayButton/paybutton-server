@@ -1,6 +1,6 @@
 import xecaddr from 'xecaddrjs'
-import { Address, Prisma, UserProfile } from '@prisma/client'
-import { RESPONSE_MESSAGES, NETWORK_SLUGS, KeyValueT, NetworkSlugsType, USD_QUOTE_ID } from '../constants/index'
+import { Prisma, UserProfile } from '@prisma/client'
+import { RESPONSE_MESSAGES, NETWORK_SLUGS, NetworkSlugsType, USD_QUOTE_ID } from '../constants/index'
 import * as bitcoinjs from 'bitcoinjs-lib'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { URL } from 'url'
@@ -131,34 +131,6 @@ export async function fileExists (fsModule: any, filePath: string): Promise<bool
 
 export function isEmpty (value: string): boolean {
   return value === '' || value === null || value === undefined
-}
-
-export function getObjectValueForAddress<T> (addressString: string, objects: KeyValueT<T>): T {
-  const prefix = getAddressPrefix(addressString)
-  if (!Object.keys(objects).includes(prefix)) { throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message) }
-  return objects[prefix]
-}
-
-export function getObjectValueForNetworkSlug<T> (networkSlug: string, objects: KeyValueT<T>): T {
-  if (!Object.keys(NETWORK_SLUGS).includes(networkSlug)) { throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message) }
-  return objects[networkSlug]
-}
-
-export const groupAddressesByNetwork = (availableNetworks: string[], addresses: Address[]): KeyValueT<Address[]> => {
-  const addressesByNetwork: KeyValueT<Address[]> = {}
-
-  // initializes empty array for each network
-  availableNetworks.forEach(networkSlug => {
-    addressesByNetwork[networkSlug] = []
-  })
-
-  // inserts in each array those addresses that belong to each network
-  addresses.forEach(address => {
-    const prefix = getAddressPrefix(address.address)
-    if (!Object.keys(addressesByNetwork).includes(prefix)) { throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message) }
-    addressesByNetwork[prefix].push(address)
-  })
-  return addressesByNetwork
 }
 
 export async function runMiddleware (
