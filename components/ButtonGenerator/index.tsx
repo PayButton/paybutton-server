@@ -43,7 +43,7 @@ interface ButtonState {
 export const initialButtonState: ButtonState = {
   to: '',
   amount: '',
-  currency: 'XEC',
+  currency: '',
   text: '',
   hoverText: '',
   successText: '',
@@ -63,7 +63,7 @@ export const initialButtonState: ButtonState = {
     }
   },
   validAddress: '',
-  currencies: ['XEC', 'USD', 'CAD'],
+  currencies: ['', 'USD', 'CAD'],
   goalAmount: '',
   onSuccess: '',
   onTransaction: '',
@@ -155,17 +155,6 @@ export default function ButtonGenerator (): JSX.Element {
       ...prevButton,
       [name]: value,
       validAddress: isValidAddress(value),
-      currency: (!['XEC', 'BCH'].includes(
-        prevButton.currency
-      ))
-        ? prevButton.currency
-        : isValidAddress(value) === 'bitcoincash'
-          ? 'BCH'
-          : 'XEC',
-      currencies: [
-        isValidAddress(value) === 'bitcoincash' ? 'BCH' : 'XEC',
-        ...prevButton.currencies.slice(1) // Keep the rest of the array unchanged
-      ],
       theme: {
         ...prevButton.theme, // Keep the existing theme values
         palette: {
