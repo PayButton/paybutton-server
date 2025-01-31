@@ -1,0 +1,183 @@
+.paybutton_list_ctn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.paybutton_card,
+.paybutton_nocard {
+  background-color: var(--secondary-bg-color);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--secondary-bg-color);
+  transition: all ease-in-out 100ms;
+  position: relative;
+  word-break: break-all;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.paybutton_card:hover {
+  border-color: var(--secondary-text-color);
+}
+
+.paybutton_card_no_hover {
+  border-color: var(--secondary-bg-color) !important;
+  margin-top: 25px;
+}
+
+.paybutton_card label {
+  font-size: 12px;
+  color: var(--secondary-text-color);
+  margin-bottom: 2px;
+}
+
+.label_margin {
+  margin-top: 26px;
+}
+
+.paybutton_card h3 {
+  margin: 0;
+  font-size: 30px;
+  margin-right: 10px;
+  padding-right: 10px;
+  border-right: 1px solid var(--primary-text-color);
+}
+
+.paybutton_card a {
+  color: var(--accent-color);
+  text-decoration: underline;
+}
+
+.arrow {
+  position: absolute;
+  right: 0;
+  top: calc(50% - 13px);
+  opacity: 0;
+  transition: all ease-in-out 100ms;
+}
+
+.paybutton_card:hover .arrow {
+  opacity: 1;
+  right: 30px;
+}
+
+body[data-theme='dark'] .arrow {
+  filter: invert(1);
+}
+
+.name_ctn {
+  display: flex;
+  align-items: center;
+}
+
+.name_ctn img {
+  margin-right: 5px;
+}
+
+.address_ctn {
+  display: flex;
+  margin-bottom: 4px;
+}
+
+.address {
+  background-color: var(--primary-bg-color);
+  padding: 4px 10px;
+  border-radius: 5px 0 0 5px;
+  width: 100%;
+  max-width: 400px;
+  font-size: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.copy_btn {
+  width: 40px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  background-color: var(--primary-bg-color);
+  border-radius: 0 5px 5px 0;
+  justify-content: center;
+  transition: all ease-in-out 200ms;
+  flex-shrink: 0;
+  margin-left: 3px;
+  cursor: pointer;
+  transition: all ease-in-out 200ms;
+}
+
+.copy_btn:hover {
+  background-color: var(--accent-color);
+}
+
+.copy_btn img {
+  border-radius: 0;
+}
+
+body[data-theme='dark'] .copy_btn img {
+  filter: invert(1);
+}
+
+.copied {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: var(--accent-color);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.edit_button {
+  display: flex;
+  align-items: center;
+  background-color: var(--primary-bg-color);
+  padding: 4px 10px;
+  border-radius: 5px;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  cursor: pointer;
+  transition: all ease-in-out 200ms;
+}
+
+.edit_button:hover {
+  background-color: var(--accent-color);
+}
+
+.edit_button img {
+  margin-left: 10px;
+  border-radius: 0;
+  transition: all ease-in-out 200ms;
+}
+
+body[data-theme='dark'] .edit_button img {
+  filter: invert(1);
+}
+
+body[data-theme='dark'] .edit_button:hover img,
+body[data-theme='dark'] .edit_button:hover {
+  color: var(--primary-bg-color);
+  filter: none;
+}
+
+@media (max-width: 960px) {
+  .edit_button {
+    position: relative;
+    top: unset;
+    right: unset;
+    margin-top: 20px;
+    padding: 6px 10px;
+  }
+
+  .arrow {
+    display: none;
+  }
+}
+
+

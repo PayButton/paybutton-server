@@ -166,7 +166,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
     return (
       <>
         <div className='back_btn' onClick={() => router.back()}>Back</div>
-        <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton}/>
+        <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton} listView={false}/>
         <div style={{ display: 'flex', alignItems: 'center', alignContent: 'center', justifyContent: 'space-between' }}>
           <h4>Transactions</h4>
 
