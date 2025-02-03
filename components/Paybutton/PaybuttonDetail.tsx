@@ -10,12 +10,12 @@ import Image from 'next/image'
 import CopyIcon from '../../assets/copy-black.png'
 import Arrow from 'assets/right-arrow.png'
 
-export const checkNetwork = (paybutton: PaybuttonWithAddresses, ID: number): boolean =>
-  paybutton.addresses.some(addr => addr.address.networkId === ID)
+export const paybuttonHasAddressOnNetwork = (paybutton: PaybuttonWithAddresses, networkId: number): boolean =>
+  paybutton.addresses.some(addr => addr.address.networkId === networkId)
 
 interface IProps {
   paybutton: PaybuttonWithAddresses
-  refreshPaybutton?: Function
+  refreshPaybutton: Function
   listView: boolean
 }
 export default ({ paybutton, refreshPaybutton, listView }: IProps): JSX.Element => {
@@ -46,10 +46,10 @@ export default ({ paybutton, refreshPaybutton, listView }: IProps): JSX.Element 
         <label>Button Name</label>
         <div className={style.name_ctn}>
           <h3>{paybutton.name}</h3>
-          {checkNetwork(paybutton, XEC_NETWORK_ID) && (
+          {paybuttonHasAddressOnNetwork(paybutton, XEC_NETWORK_ID) && (
             <Image src={XECIcon} alt="XEC" width={25} height={25} />
           )}
-          {checkNetwork(paybutton, BCH_NETWORK_ID) && (
+          {paybuttonHasAddressOnNetwork(paybutton, BCH_NETWORK_ID) && (
             <Image src={BCHIcon} alt="BCH" width={25} height={25} />
           )}
         </div>
@@ -81,7 +81,7 @@ export default ({ paybutton, refreshPaybutton, listView }: IProps): JSX.Element 
           </div>
         ))}
 
-        {paybutton.url !== undefined && paybutton.url !== null && paybutton.url !== '' && (
+        {paybutton.url !== '' && (
           <>
             <label className={style.label_margin}>Website</label>
             <a
@@ -94,7 +94,7 @@ export default ({ paybutton, refreshPaybutton, listView }: IProps): JSX.Element 
             </a>
           </>
         )}
-        {paybutton.description !== undefined && paybutton.description !== null && paybutton.description !== '' && (
+        {paybutton.description !== '' && (
           <>
             <label className={style.label_margin}>Description:</label>
             <div>{paybutton.description}</div>

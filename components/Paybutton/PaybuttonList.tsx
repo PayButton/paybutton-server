@@ -3,12 +3,6 @@ import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import style from './paybutton.module.css'
 import PaybuttonDetail from './PaybuttonDetail'
 
-export const checkNetwork = (paybutton: any, ID: number): boolean => {
-  if ((paybutton.addresses as []).some((addr: any) => addr.address.networkId === ID)) {
-    return true
-  } return false
-}
-
 interface IProps { paybuttons: PaybuttonWithAddresses[] }
 export default ({ paybuttons }: IProps): FunctionComponent<IProps> => {
   return (
@@ -19,7 +13,7 @@ export default ({ paybuttons }: IProps): FunctionComponent<IProps> => {
       </div>
     )}
     {paybuttons.map((paybutton) => (
-      <PaybuttonDetail paybutton={paybutton} listView={true} />
+      <PaybuttonDetail paybutton={paybutton} listView={true} refreshPaybutton={() => {}} />
     ))}
   </div>
   )

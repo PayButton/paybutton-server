@@ -13,7 +13,7 @@ import config from 'config'
 
 interface IProps {
   paybutton: PaybuttonWithAddresses
-  refreshPaybutton: Function | undefined
+  refreshPaybutton: Function
 }
 
 export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps): ReactElement {

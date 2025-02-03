@@ -17,6 +17,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  cursor: pointer;
 }
 
 .paybutton_card:hover {
@@ -26,12 +27,18 @@
 .paybutton_card_no_hover {
   border-color: var(--secondary-bg-color) !important;
   margin-top: 25px;
+  cursor: default;
 }
 
 .paybutton_card label {
   font-size: 12px;
   color: var(--secondary-text-color);
   margin-bottom: 2px;
+  cursor: pointer;
+}
+
+.paybutton_card_no_hover label {
+  cursor: default;
 }
 
 .label_margin {
