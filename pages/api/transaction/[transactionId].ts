@@ -1,5 +1,5 @@
 import { NextApiResponse, NextApiRequest } from 'next/types'
-import { getTransactionDetails } from 'services/blockchainService'
+import { multiBlockchainClient } from 'services/chronikService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
@@ -10,7 +10,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       if (transactionId === '' || transactionId === undefined) {
         throw new Error(RESPONSE_MESSAGES.TRANSACTION_ID_NOT_PROVIDED_400.message)
       }
-      const response = await getTransactionDetails(transactionId, networkSlug)
+      const response = await multiBlockchainClient.getTransactionDetails(transactionId, networkSlug)
       res.status(200).json(response)
     } catch (err: any) {
       switch (err.message) {
