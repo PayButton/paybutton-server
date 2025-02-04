@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import style from '../../../../../../../styles/landing.module.css'
+import style from '/styles/landing.module.css'
 import button from 'assets/button-pointer.png'
 import Wave from 'assets/wave.svg'
 import Blocks from 'assets/blocks.png'
