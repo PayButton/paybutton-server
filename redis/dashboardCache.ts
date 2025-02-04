@@ -142,13 +142,13 @@ const generateDashboardDataFromStream = async function (
         let index = -1
 
         if (period === 'sevenDays') {
-          index = (today.day() - paymentWeekDay) % 7
+          index = ((today.day() - paymentWeekDay) + 7) % 7
         } else if (period === 'thirtyDays') {
-          index = (today.dayOfYear() - paymentYearDay) % yearModBase
+          index = ((today.dayOfYear() - paymentYearDay) + yearModBase) % yearModBase
         } else if (period === 'year') {
-          index = (today.month() - paymentMonth) % 12
+          index = ((today.month() - paymentMonth) + 12) % 12
         } else if (period === 'all') {
-          index = (thisYear - paymentYear) * 12 + (today.month() - paymentMonth) % 12
+          index = ((thisYear - paymentYear) * 12 + (today.month() - paymentMonth) + 12) % 12
         }
 
         if (index >= 0 && index < revenueAccumulators[period].length) {

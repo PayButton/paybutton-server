@@ -82,11 +82,15 @@ export default function CodeBlock ({ button }): JSX.Element {
   }
 
   const propertiesToSkip = ['to', 'currencies', 'validAddress', 'bchtheme', 'widget']
-
+  const currenciesToSkip = ['XEC', 'BCH']
   const generateReactProps = (button: any): string => {
     let result = ''
     for (const [key, value] of Object.entries(button)) {
-      if (propertiesToSkip.includes(key) || JSON.stringify(initialButtonState[key]) === JSON.stringify(value) || JSON.stringify(initialButtonState.bchtheme) === JSON.stringify(value) || (key === 'randomSatoshis' && button.amount <= 0)) {
+      if (propertiesToSkip.includes(key) || 
+        JSON.stringify(initialButtonState[key]) === JSON.stringify(value) || 
+        JSON.stringify(initialButtonState.bchtheme) === JSON.stringify(value) ||
+        (key === 'randomSatoshis' && button.amount <= 0) ||
+        currenciesToSkip.includes(value as string)) {
         continue
       } else result += `    ${key}={${key}}\n`
     }
@@ -96,7 +100,10 @@ export default function CodeBlock ({ button }): JSX.Element {
   const generateCode = (button: any, codeType: string): string => {
     let result = ''
     for (const [key, value] of Object.entries(button)) {
-      if (propertiesToSkip.includes(key) || JSON.stringify(initialButtonState[key]) === JSON.stringify(value) || JSON.stringify(initialButtonState.bchtheme) === JSON.stringify(value)) {
+      if (propertiesToSkip.includes(key) || 
+        JSON.stringify(initialButtonState[key]) === JSON.stringify(value) || 
+        JSON.stringify(initialButtonState.bchtheme) === JSON.stringify(value) || 
+        currenciesToSkip.includes(value as string)) {
         continue
       } else result += `  ${makeCodeString(key, value, codeType)}\n`
     }

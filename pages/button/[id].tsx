@@ -17,6 +17,7 @@ import { UserProfile } from '@prisma/client'
 import { fetchUserProfileFromId } from 'services/userService'
 import { removeUnserializableFields } from 'utils'
 import moment from 'moment-timezone'
+import LoadingSpinner from 'components/Paybutton/LoadingSpinner'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   supertokensNode.init(SuperTokensConfig.backendConfig())
@@ -59,6 +60,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   const userProfile = props.userProfile
   const timezone = userProfile?.preferredTimezone === '' ? moment.tz.guess() : userProfile.preferredTimezone
   const router = useRouter()
+  const [loading, setLoading] = useState(false)
 
   const updateIsSyncing = (addressStringList: string[]): void => {
     const newIsSyncing = { ...isSyncing }
@@ -118,6 +120,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
 
   const downloadCSV = async (paybutton: { id: string, name: string }, currency: string): Promise<void> => {
     try {
+      setLoading(true)
       const preferredCurrencyId = userProfile?.preferredCurrencyId ?? ''
       let url = `/api/paybutton/download/transactions/${paybutton.id}?currency=${preferredCurrencyId}`
       const isCurrencyEmptyOrUndefined = (value: string): boolean => (value === '' || value === undefined)
@@ -148,6 +151,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
     } catch (error) {
       console.error('An error occurred while downloading the CSV:', error)
     } finally {
+      setLoading(false)
       setSelectedCurrency('')
     }
   }
@@ -162,7 +166,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
     return (
       <>
         <div className='back_btn' onClick={() => router.back()}>Back</div>
-        <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton}/>
+        <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton} listView={false}/>
         <div style={{ display: 'flex', alignItems: 'center', alignContent: 'center', justifyContent: 'space-between' }}>
           <h4>Transactions</h4>
 
@@ -173,30 +177,32 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
                 id='export-btn'
                 value={selectedCurrency}
                 onChange={handleExport}
+                disabled={loading}
                 className="button_outline button_small"
                 style={{ marginBottom: '0', cursor: 'pointer' }}
               >
-                <option value='' disabled> Export as CSV</option>
+                <option value='' disabled>{loading ? 'Downloading...' : 'Export as CSV'}</option>
                 <option key="all" value="all">
-                  All Currencies
+                  {loading ? 'Downloading...' : 'All Currencies'}
                 </option>
                 {Object.entries(NETWORK_TICKERS_FROM_ID)
                   .filter(([id]) => paybuttonNetworks.includes(Number(id)))
                   .map(([id, ticker]) => (
                     <option key={id} value={ticker}>
-                      {ticker.toUpperCase()}
+                      {loading ? 'Downloading...' : ticker.toUpperCase()}
                     </option>
                   ))}
               </select>
                 )
               : (
-              <div
+              <button
                 onClick={handleExport}
-                className="button_outline button_small"
+                disabled={loading}
+                className="button_outline button_small loading_btn"
                 style={{ marginBottom: '0', cursor: 'pointer' }}
               >
-                Export as CSV
-              </div>
+                Export as CSV{loading && <LoadingSpinner />}
+              </button>
                 )}
           </div>
         </div>
