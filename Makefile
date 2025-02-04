@@ -51,13 +51,12 @@ lint-master:
 github-test-unit:
 	$(create_test_paybutton_json)
 	$(touch_local_env)
-	MASTER_SECRET_KEY="test" WS_AUTH_KEY="test" PRICE_API_TOKEN="foo" DATABASE_URL="mysql://paybutton-user-test:paybutton-password@db:3306/paybutton-test" npx ts-node -O '{"module":"commonjs"}' node_modules/jest/bin/jest.js tests/unittests --forceExit
+	MASTER_SECRET_KEY="test" WS_AUTH_KEY="test" PRICE_API_TOKEN="foo" npx ts-node -O '{"module":"commonjs"}' node_modules/jest/bin/jest.js tests/unittests --forceExit
 
 # WARNING: this shouldn't be run on local machine, only on github. It will replace your config file
 github-test-integration:
 	sleep 15
 	$(create_test_paybutton_json)
 	$(touch_local_env)
-	#sed -i "s/db/localhost/g" .env.test
-	#sed -i "s/paybutton-cache/localhost/g" .env.test
+	sed -i "s/MAIN_DB_HOST=paybutton-db/MAIN_DB_HOST=localhost/g" .env.test
 	yarn ci:integration:test

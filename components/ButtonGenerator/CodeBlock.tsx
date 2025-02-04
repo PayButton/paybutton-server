@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import style from './button-generator.module.css'
-import CopyIcon from '/assets/copy.png'
+import CopyIcon from '../../../../../../../assets/copy.png'
 import Prism from 'prismjs'
 import 'prismjs/themes/prism-okaidia.css'
 import 'prismjs/components/prism-jsx.min'
@@ -82,11 +82,15 @@ export default function CodeBlock ({ button }): JSX.Element {
   }
 
   const propertiesToSkip = ['to', 'currencies', 'validAddress', 'bchtheme', 'widget']
-
+  const currenciesToSkip = ['XEC', 'BCH']
   const generateReactProps = (button: any): string => {
     let result = ''
     for (const [key, value] of Object.entries(button)) {
-      if (propertiesToSkip.includes(key) || JSON.stringify(initialButtonState[key]) === JSON.stringify(value) || JSON.stringify(initialButtonState.bchtheme) === JSON.stringify(value) || (key === 'randomSatoshis' && button.amount <= 0)) {
+      if (propertiesToSkip.includes(key) ||
+        JSON.stringify(initialButtonState[key]) === JSON.stringify(value) ||
+        JSON.stringify(initialButtonState.bchtheme) === JSON.stringify(value) ||
+        (key === 'randomSatoshis' && button.amount <= 0) ||
+        currenciesToSkip.includes(value as string)) {
         continue
       } else result += `    ${key}={${key}}\n`
     }
@@ -96,7 +100,10 @@ export default function CodeBlock ({ button }): JSX.Element {
   const generateCode = (button: any, codeType: string): string => {
     let result = ''
     for (const [key, value] of Object.entries(button)) {
-      if (propertiesToSkip.includes(key) || JSON.stringify(initialButtonState[key]) === JSON.stringify(value) || JSON.stringify(initialButtonState.bchtheme) === JSON.stringify(value)) {
+      if (propertiesToSkip.includes(key) ||
+        JSON.stringify(initialButtonState[key]) === JSON.stringify(value) ||
+        JSON.stringify(initialButtonState.bchtheme) === JSON.stringify(value) ||
+        currenciesToSkip.includes(value as string)) {
         continue
       } else result += `  ${makeCodeString(key, value, codeType)}\n`
     }
@@ -157,7 +164,7 @@ ${generateReactProps(button)}  />
             </div>
           ))}
         </div>
-        <div className={style.copybutton} onClick={handleCopyClick}>
+        <div className={style.copybutton} onClick={() => { void handleCopyClick() }}>
           <Image src={CopyIcon} alt="copy" />
           {isCopied ? 'Copied!' : 'Copy'}
         </div>
@@ -176,5 +183,5 @@ ${generateReactProps(button)}  />
               )}
       </pre>
     </>
-  );
+  )
 }

@@ -2,7 +2,6 @@ import * as addressService from 'services/addressService'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma/clientInstance'
 import { RESPONSE_MESSAGES, NETWORK_IDS_FROM_SLUGS, BLOCKED_ADDRESSES } from 'constants/index'
-import { getObjectValueForNetworkSlug } from 'utils/index'
 import { connectAddressToUser, disconnectAddressFromUser, fetchAddressWallet } from 'services/addressesOnUserProfileService'
 import { fetchUserDefaultWalletForNetwork } from './walletService'
 import { CacheSet } from 'redis/index'
@@ -56,7 +55,7 @@ async function getAddressObjectsToCreateOrConnect (prefixedAddressList: string[]
       prefixedAddressList.map(
         async (addressWithPrefix) => {
           const prefix = addressWithPrefix.split(':')[0].toLowerCase()
-          const networkId = getObjectValueForNetworkSlug(prefix, NETWORK_IDS_FROM_SLUGS)
+          const networkId = NETWORK_IDS_FROM_SLUGS[prefix]
           return {
             address: addressWithPrefix.toLowerCase(),
             networkId: Number(networkId)

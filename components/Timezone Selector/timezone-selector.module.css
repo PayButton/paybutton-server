@@ -1,0 +1,35 @@
+
+.select_timezone {
+    margin-top: 10px;
+}
+
+.select_timezone > div {
+    background-color: var(--secondary-bg-color) !important;
+    border: 1px solid var(--secondary-text-color) !important;
+}
+
+body[data-theme='dark'] .select_timezone > div {
+    background-color: var(--primary-bg-color) !important;
+    border-color: #585858 !important;
+  }
+
+.select_timezone div {
+    color: var(--primary-text-color) !important;
+}
+
+.success_message,
+.error_message {
+    background-color: #c5e7ba;
+    font-size: 14px;
+    width: 100%;
+    padding: 5px 10px;
+    border-radius: 5px;
+    text-align: center;
+    margin-top: 10px;
+    color: rgb(0, 99, 0);
+}
+
+.error_message {
+    color: rgb(172, 0, 0);
+    background-color: #e7bfba;
+  }

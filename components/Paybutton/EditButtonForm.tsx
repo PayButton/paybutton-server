@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { PaybuttonPOSTParameters, PaybuttonPATCHParameters } from 'utils/validators'
 import Image from 'next/image'
 import style from '../Paybutton/paybutton.module.css'
-import s from '../Wallet/wallet.module.css'
+import s from '../Paybutton/paybutton-detail.module.css'
 import EditIcon from 'assets/edit-icon.png'
 import TrashIcon from 'assets/trash-icon.png'
 import axios from 'axios'
@@ -67,7 +67,7 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
   return (
     <>
       <div className={s.edit_button} onClick={() => setModal(true)}>
-        <Image src={EditIcon} alt='edit' />
+        Edit <Image src={EditIcon} alt='edit' width={15} height={15} />
       </div>
 
   {modal

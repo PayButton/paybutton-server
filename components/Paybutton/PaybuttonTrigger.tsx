@@ -116,9 +116,9 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
       } finally {
         setClearModal(undefined)
         setTimeout(() => {
-          setSuccess('');
-          setError('');
-      }, 3000);
+          setSuccess('')
+          setError('')
+        }, 3000)
       }
     }
   }
@@ -153,9 +153,9 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
         setError(err.response.data.message)
       } finally {
         setTimeout(() => {
-          setSuccess('');
-          setError('');
-      }, 3000);
+          setSuccess('')
+          setError('')
+        }, 3000)
       }
     }
   }
@@ -174,7 +174,7 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
               onSubmit={(e) => {
                 void handleSubmitPosterTrigger(
                   getSubmitTriggerHandler('poster')
-                )(e);
+                )(e)
               }}
               method="post"
             >
@@ -212,6 +212,7 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                   <div>&lt;txId&gt;</div>
                   <div>&lt;opReturn&gt;</div>
                   <div>&lt;signature&gt;</div>
+                  <div>&lt;inputAddresses&gt;</div>
                 </div>
               </div>
               {/* Tooltip */}
@@ -219,18 +220,22 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                 <div className={style.tip}>
                   {/* Only triggers if payment &gt; X */}
                 </div>
-                  
+
                 <div className={style.trigger_btn_row}>
 
-                {posterError === undefined || posterError === '' ? null : (
+                {posterError === undefined || posterError === ''
+                  ? null
+                  : (
                     <div className={style.error_message_}>{posterError}</div>
-                  )}
+                    )}
                   {posterSuccessText === undefined ||
-                  posterSuccessText === '' ? null : (
+                  posterSuccessText === ''
+                    ? null
+                    : (
                     <div className={style.success_message_}>
                       {posterSuccessText}
                     </div>
-                  )}
+                      )}
                   {currentPosterTriggerId !== undefined && (
                       <button
                         type="button"
@@ -239,7 +244,7 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                       >
                         Delete
                       </button>
-                    )}
+                  )}
                   <button
                     disabled={disablePosterSubmit}
                     type="submit"
@@ -249,7 +254,7 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                       ? 'Create Send Request'
                       : 'Update Send Request'}
                   </button>
-              
+
                 </div>
               </div>
             </form>
@@ -264,12 +269,11 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
               onSubmit={(e) => {
                 void handleSubmitEmailTrigger(getSubmitTriggerHandler('email'))(
                   e
-                );
+                )
               }}
               method="post"
             >
-             
-                
+
                 <label htmlFor="emails">Email</label>
                 <input
                   {...registerEmailTrigger('emails')}
@@ -278,30 +282,36 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                   name="emails"
                 />
                 <div className={style.email_credits_info}>
-                    {emailCredits < MAX_DAILY_EMAILS ? (
+                    {emailCredits < MAX_DAILY_EMAILS
+                      ? (
                       <span>
                         You have sent <b>{MAX_DAILY_EMAILS - emailCredits}</b>{' '}
                         of a daily maximum of <b>{MAX_DAILY_EMAILS}</b> emails.
                       </span>
-                    ) : (
+                        )
+                      : (
                       <span>
                         You may send up to <b>{MAX_DAILY_EMAILS}</b> emails per
                         day.
                       </span>
-                    )}
+                        )}
                 </div>
-             
+
               <div>
                 <div className={style.trigger_btn_row}>
-                  {emailError === undefined || emailError === '' ? null : (
+                  {emailError === undefined || emailError === ''
+                    ? null
+                    : (
                     <div className={style.error_message_}>{emailError}</div>
-                  )}
+                      )}
                   {emailSuccessText === undefined ||
-                  emailSuccessText === '' ? null : (
+                  emailSuccessText === ''
+                    ? null
+                    : (
                     <div className={style.success_message_}>
                       {emailSuccessText}
                     </div>
-                  )}
+                      )}
                   {currentEmailTriggerId !== undefined && (
                       <button
                         type="button"
@@ -310,7 +320,7 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                       >
                         Delete
                       </button>
-                    )}
+                  )}
                     <button
                       disabled={disableEmailSubmit}
                       type="submit"
@@ -320,14 +330,15 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                         ? 'Create Send Email'
                         : 'Update Send Email'}
                     </button>
-                
+
                 </div>
               </div>
             </form>
           </div>
         </div>
       </div>
-      {clearModal !== undefined ? (
+      {clearModal !== undefined
+        ? (
         <div className={style.form_ctn_outer}>
           <div className={style.form_ctn_inner}>
             <h4>Clear Payment Trigger?</h4>
@@ -343,7 +354,7 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                 <div>
                   <button
                     onClick={() => {
-                      void getDeleteTriggerHandler(clearModal)();
+                      void getDeleteTriggerHandler(clearModal)()
                     }}
                     className={style.delete_confirm_btn}
                   >
@@ -351,7 +362,7 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                   </button>
                   <button
                     onClick={() => {
-                      setClearModal(undefined);
+                      setClearModal(undefined)
                     }}
                     className={style.cancel_btn}
                   >
@@ -362,7 +373,8 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
             </div>
           </div>
         </div>
-      ) : null}
+          )
+        : null}
     </div>
-  );
+  )
 }

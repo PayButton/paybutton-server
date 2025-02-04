@@ -1,9 +1,9 @@
 import { Network, Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES, NETWORK_SLUGS, NETWORK_IDS } from 'constants/index'
 import prisma from 'prisma/clientInstance'
-import { getLastBlockTimestamp } from 'services/blockchainService'
 import { fetchAllUserAddresses } from 'services/addressService'
 import config from 'config'
+import { multiBlockchainClient } from './chronikService'
 
 export function getNetworkIdFromSlug (slug: string): number {
   switch (slug) {
@@ -34,7 +34,7 @@ async function isConnected (networkSlug: string): Promise<ConnectionInfo> {
   try {
     return {
       connected: true,
-      lastBlockTimestamp: await getLastBlockTimestamp(networkSlug),
+      lastBlockTimestamp: await multiBlockchainClient.getLastBlockTimestamp(networkSlug),
       maintenance: config.networksUnderMaintenance[networkSlug]
     }
   } catch (e: any) {

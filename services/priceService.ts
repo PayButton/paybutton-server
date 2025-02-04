@@ -153,6 +153,7 @@ export async function getAllPricesByNetworkTicker (networkTicker: string, attemp
 }
 
 export async function syncPastDaysNewerPrices (): Promise<void> {
+  console.log('[PRICES] Syncing prices...')
   const lastPrice = await prisma.price.findFirst({
     orderBy: [{ timestamp: 'desc' }],
     select: { timestamp: true }
@@ -183,6 +184,7 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
     }
     )
   )
+  console.log('[PRICES] All past prices have been synced.')
 }
 
 export async function syncCurrentPrices (): Promise<void> {

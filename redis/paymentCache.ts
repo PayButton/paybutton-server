@@ -5,7 +5,7 @@ import { fetchAllUserAddresses, AddressPaymentInfo } from 'services/addressServi
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
-import moment from 'moment'
+import moment from 'moment-timezone'
 import { CacheSet } from 'redis/index'
 import { ButtonDisplayData, Payment } from './types'
 import { getUserDashboardData } from './dashboardCache'
@@ -71,7 +71,8 @@ export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPri
       (conn) => {
         return {
           name: conn.paybutton.name,
-          id: conn.paybutton.id
+          id: conn.paybutton.id,
+          providerUserId: conn.paybutton.providerUserId
         }
       }
     )
@@ -80,10 +81,14 @@ export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPri
   }
   return {
     timestamp: tx.timestamp,
-    values,
+    values: {
+      values,
+      amount: tx.amount
+    },
     networkId: tx.address.networkId,
     hash: tx.hash,
-    buttonDisplayDataList
+    buttonDisplayDataList,
+    address: tx.address.address
   }
 }
 
@@ -105,7 +110,7 @@ export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: 
     paymentCount
   }
 
-  paymentList = paymentList.filter((p) => p.values.usd > new Prisma.Decimal(0))
+  paymentList = paymentList.filter((p) => p.values.values.usd > new Prisma.Decimal(0))
   const groupedPayments = getPaymentsByWeek(address.address, paymentList)
   return {
     groupedPayments,
@@ -136,8 +141,8 @@ export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[
   return allPayments
 }
 
-export const getCachedPaymentsCountForUser = async (userId: string): Promise<number> => {
-  const dashboardData = await getUserDashboardData(userId)
+export const getCachedPaymentsCountForUser = async (userId: string, timezone: string): Promise<number> => {
+  const dashboardData = await getUserDashboardData(userId, timezone)
 
   return dashboardData.total.payments
 }
@@ -189,7 +194,7 @@ export const cacheManyTxs = async (txs: TransactionsWithPaybuttonsAndPrices[]): 
   const zero = new Prisma.Decimal(0)
   for (const tx of txs.filter(tx => tx.amount > zero)) {
     const payment = await generatePaymentFromTx(tx)
-    if (payment.values.usd !== new Prisma.Decimal(0)) {
+    if (payment.values.values.usd !== new Prisma.Decimal(0)) {
       const paymentsGroupedByKey = getPaymentsByWeek(tx.address.address, [payment])
       void await cacheGroupedPaymentsAppend(paymentsGroupedByKey)
     }

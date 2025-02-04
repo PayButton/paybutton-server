@@ -1317,7 +1317,12 @@ describe('GET /api/payments', () => {
     headers: {
       'Content-Type': 'application/json'
     },
-    query: {}
+    query: {
+      page: 0,
+      pageSize: 10,
+      orderBy: 'timestamp',
+      orderDesc: false
+    }
   }
 
   it('Should return HTTP 200', async () => {

@@ -69,14 +69,14 @@ export const getButtonPaymentData = (n: number, periodString: string, paymentLis
           },
           total: {
             payments: 1,
-            revenue: p.values
+            revenue: p.values.values
           }
         }
         buttonPaymentData[b.id] = newEntry
         return
       }
       prevObj.total.payments += 1
-      prevObj.total.revenue = sumQuoteValues(prevObj.total.revenue, p.values)
+      prevObj.total.revenue = sumQuoteValues(prevObj.total.revenue, p.values.values)
       prevObj.displayData.isXec = prevObj.displayData.isXec === true || (p.networkId === XEC_NETWORK_ID)
       prevObj.displayData.isBch = prevObj.displayData.isBch === true || (p.networkId === BCH_NETWORK_ID)
       const lastPayment = prevObj.displayData.lastPayment as number
@@ -85,6 +85,7 @@ export const getButtonPaymentData = (n: number, periodString: string, paymentLis
   }
   return buttonPaymentData
 }
+
 export const sumQuoteValues = function (a: QuoteValues, b: QuoteValues): QuoteValues {
   return {
     usd: (new Prisma.Decimal(a.usd)).plus(new Prisma.Decimal(b.usd)),
@@ -99,8 +100,8 @@ export const sumPaymentsValue = function (paymentList: Payment[]): QuoteValues {
   }
 
   for (const p of paymentList) {
-    ret.usd = ret.usd.plus(p.values.usd)
-    ret.cad = ret.cad.plus(p.values.cad)
+    ret.usd = ret.usd.plus(p.values.values.usd)
+    ret.cad = ret.cad.plus(p.values.values.cad)
   }
   return ret
 }
@@ -108,7 +109,8 @@ export const sumPaymentsValue = function (paymentList: Payment[]): QuoteValues {
 const generateDashboardDataFromStream = async function (
   paymentStream: AsyncGenerator<Payment>,
   nMonthsTotal: number,
-  borderColor: ChartColor
+  borderColor: ChartColor,
+  timezone: string
 ): Promise<DashboardData> {
   const revenueAccumulators = createRevenueAccumulators(nMonthsTotal)
   const paymentCounters = createPaymentCounters(nMonthsTotal)
@@ -121,7 +123,7 @@ const generateDashboardDataFromStream = async function (
 
   // Process all payments
   for await (const payment of paymentStream) {
-    const paymentTime = moment(payment.timestamp * 1000) // WIP use TZ here
+    const paymentTime = moment.tz(payment.timestamp * 1000, timezone)
     const paymentYear = paymentTime.year()
     const paymentMonth = paymentTime.month()
     const paymentWeekDay = paymentTime.day()
@@ -140,17 +142,17 @@ const generateDashboardDataFromStream = async function (
         let index = -1
 
         if (period === 'sevenDays') {
-          index = (today.day() - paymentWeekDay) % 7
+          index = ((today.day() - paymentWeekDay) + 7) % 7
         } else if (period === 'thirtyDays') {
-          index = (today.dayOfYear() - paymentYearDay) % yearModBase
+          index = ((today.dayOfYear() - paymentYearDay) + yearModBase) % yearModBase
         } else if (period === 'year') {
-          index = (today.month() - paymentMonth) % 12
+          index = ((today.month() - paymentMonth) + 12) % 12
         } else if (period === 'all') {
-          index = (thisYear - paymentYear) * 12 + (today.month() - paymentMonth) % 12
+          index = ((thisYear - paymentYear) * 12 + (today.month() - paymentMonth) + 12) % 12
         }
 
         if (index >= 0 && index < revenueAccumulators[period].length) {
-          revenueAccumulators[period][index] = sumQuoteValues(revenueAccumulators[period][index], payment.values)
+          revenueAccumulators[period][index] = sumQuoteValues(revenueAccumulators[period][index], payment.values.values)
           paymentCounters[period][index] += 1
         }
       }
@@ -298,13 +300,13 @@ function processButtonData (
             lastPayment: payment.timestamp
           },
           total: {
-            revenue: payment.values,
+            revenue: payment.values.values,
             payments: 1
           }
         }
       } else {
         const buttonData = buttonDataAccumulators[period][button.id]
-        buttonData.total.revenue = sumQuoteValues(buttonData.total.revenue, payment.values)
+        buttonData.total.revenue = sumQuoteValues(buttonData.total.revenue, payment.values.values)
         buttonData.total.payments += 1
         buttonData.displayData.lastPayment = Math.max(
           buttonData.displayData.lastPayment ?? 0,
@@ -344,7 +346,7 @@ function createPeriodData (
   }
 }
 
-export const getUserDashboardData = async function (userId: string): Promise<DashboardData> {
+export const getUserDashboardData = async function (userId: string, timezone: string): Promise<DashboardData> {
   const dashboardData = await getCachedDashboardData(userId)
   if (dashboardData === null) {
     console.log('[CACHE]: Recreating dashboard for user', userId)
@@ -354,7 +356,8 @@ export const getUserDashboardData = async function (userId: string): Promise<Das
     const dashboardData = await generateDashboardDataFromStream(
       paymentStream,
       nMonthsTotal,
-      { revenue: '#66fe91', payments: '#669cfe' }
+      { revenue: '#66fe91', payments: '#669cfe' },
+      timezone
     )
     await cacheDashboardData(userId, dashboardData)
     return dashboardData

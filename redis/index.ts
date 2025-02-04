@@ -108,9 +108,9 @@ export class CacheGet {
     }
   }
 
-  static async dashboardData (userId: string): Promise<DashboardData> {
+  static async dashboardData (userId: string, timezone: string): Promise<DashboardData> {
     return await this.executeCall(userId, 'dashboardData', async () => {
-      return await getUserDashboardData(userId)
+      return await getUserDashboardData(userId, timezone)
     })
   }
 
@@ -126,9 +126,9 @@ export class CacheGet {
     })
   }
 
-  static async paymentsCount (userId: string): Promise<number> {
+  static async paymentsCount (userId: string, timezone: string): Promise<number> {
     return await this.executeCall(userId, 'paymentsCount', async () => {
-      return await getCachedPaymentsCountForUser(userId)
+      return await getCachedPaymentsCountForUser(userId, timezone)
     })
   }
 }

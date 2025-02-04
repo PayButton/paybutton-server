@@ -1,11 +1,11 @@
-name: Integration Test
+name: Pull Request Tests
 on:
   pull_request:
     branches:
       - master
 jobs:
   test:
-    name: Integration Tests
+    name: Run Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -14,6 +14,8 @@ jobs:
           fetch-depth: 0
       - name: Install Dependencies
         run: yarn
+      - name: Run unit tests
+        run: make github-test-unit
       - name: Add local env file
         run: touch .env.local
       - name: Spin up required database containers

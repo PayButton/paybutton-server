@@ -1,3 +1,4 @@
+import { Decimal } from '@prisma/client/runtime/library'
 import { QuoteValues } from 'services/priceService'
 
 export interface ChartColor {
@@ -42,14 +43,20 @@ export interface ButtonDisplayData {
   isXec?: boolean
   isBch?: boolean
   lastPayment?: number
+  providerUserId?: string
+}
+export interface AmountData {
+  values: QuoteValues
+  amount: Decimal
 }
 
 export interface Payment {
   timestamp: number
-  values: QuoteValues
+  values: AmountData
   networkId: number
   hash: string
   buttonDisplayDataList: ButtonDisplayData[]
+  address?: string
 }
 
 export interface ButtonData {

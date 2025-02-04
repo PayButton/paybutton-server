@@ -1,15 +1,14 @@
 import prisma from 'prisma/clientInstance'
-import { Address, Prisma, Transaction } from '@prisma/client'
-import { syncTransactionsForAddress, subscribeAddresses } from 'services/blockchainService'
-import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists, setSyncing } from 'services/addressService'
+import { Prisma, Transaction } from '@prisma/client'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS } from 'constants/index'
+import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
 import { AllPrices, QuoteValues, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, KeyValueT, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS } from 'constants/index'
-import { productionAddresses } from 'prisma/seeds/addresses'
-import { appendTxsToFile } from 'prisma/seeds/transactions'
 import _ from 'lodash'
 import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
+import { generatePaymentFromTx } from 'redis/paymentCache'
+import { ButtonDisplayData, Payment } from 'redis/types'
 
 export async function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices): Promise<QuoteValues> {
   const ret: QuoteValues = {
@@ -42,7 +41,7 @@ export function getSimplifiedTransactions (transactionsToPersist: TransactionWit
   return simplifiedTransactions
 }
 
-export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices): SimplifiedTransaction {
+export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices, inputAddresses?: string[]): SimplifiedTransaction {
   const {
     hash,
     amount,
@@ -62,7 +61,8 @@ export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices): S
     address: address.address,
     timestamp,
     message: parsedOpReturn?.message ?? '',
-    rawMessage: parsedOpReturn?.rawMessage ?? ''
+    rawMessage: parsedOpReturn?.rawMessage ?? '',
+    inputAddresses: inputAddresses ?? []
   }
 
   return simplifiedTransaction
@@ -76,7 +76,6 @@ const resolveOpReturn = (opReturn: string): OpReturnData | null => {
     return null
   }
 }
-
 const includePrices = {
   prices: {
     include: {
@@ -208,7 +207,6 @@ export async function fetchPaginatedAddressTransactions (addressString: string, 
       timestamp: orderDescString
     }
   }
-
   const parsedAddress = parseAddress(addressString)
   await addressExists(parsedAddress, true)
   const txs = await prisma.transaction.findMany({
@@ -391,6 +389,18 @@ export async function connectTransactionsListToPrices (txList: Transaction[]): P
   })
 }
 
+export async function connectAllTransactionsToPrices (): Promise<void> {
+  const noPricesTxs = await fetchAllTransactionsWithNoPrices()
+  const wrongNumberOfPricesTxs = await fetchAllTransactionsWithIrregularPrices()
+  const txs = [
+    ...noPricesTxs,
+    ...wrongNumberOfPricesTxs
+  ]
+  console.log(`[PRICES] Connecting ${noPricesTxs.length} txs with no prices and ${wrongNumberOfPricesTxs.length} with irregular prices...`)
+  void await connectTransactionsListToPrices(txs)
+  console.log('[PRICES] Finished connecting txs to prices.')
+}
+
 interface TxDistinguished {
   tx: Transaction
   isCreated: boolean
@@ -434,85 +444,6 @@ export async function createManyTransactions (
   const txsWithPaybuttonsAndPrices = await fetchTransactionsWithPaybuttonsAndPricesForIdList(insertedTransactions.map(tx => tx.id))
   void await CacheSet.txsCreation(txsWithPaybuttonsAndPrices)
   return txsWithPaybuttonsAndPrices
-}
-
-interface SyncAndSubscriptionReturn {
-  failedAddressesWithErrors: KeyValueT<string>
-  successfulAddressesWithCount: KeyValueT<number>
-}
-
-export async function syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
-  const failedAddressesWithErrors: KeyValueT<string> = {}
-  const successfulAddressesWithCount: KeyValueT<number> = {}
-  let txsToSave: Prisma.TransactionCreateManyInput[] = []
-
-  const productionAddressesIds = productionAddresses.map(addr => addr.id)
-  for (const addr of addresses) {
-    try {
-      const generator = syncTransactionsForAddress(addr.address)
-      let count = 0
-      while (true) {
-        const result = await generator.next()
-        if (result.done === true) break
-        if (productionAddressesIds.includes(addr.id)) {
-          const txs = result.value
-          count += txs.length
-          txsToSave = txsToSave.concat(txs)
-          if (txsToSave.length !== 0) {
-            await appendTxsToFile(txsToSave)
-          }
-        }
-      }
-      successfulAddressesWithCount[addr.address] = count
-    } catch (err: any) {
-      failedAddressesWithErrors[addr.address] = err.stack
-    } finally {
-      await setSyncing(addr.address, false)
-    }
-  }
-  return {
-    failedAddressesWithErrors,
-    successfulAddressesWithCount
-  }
-}
-
-export const syncAndSubscribeAddresses = async (addresses: Address[]): Promise<SyncAndSubscriptionReturn> => {
-  const failedAddressesWithErrors: KeyValueT<string> = {}
-  const successfulAddressesWithCount: KeyValueT<number> = {}
-  let txsToSave: Prisma.TransactionCreateManyInput[] = []
-
-  const productionAddressesIds = productionAddresses.map(addr => addr.id)
-  await Promise.all(
-    addresses.map(async (addr) => {
-      try {
-        await subscribeAddresses([addr])
-        const generator = syncTransactionsForAddress(addr.address)
-        let count = 0
-        while (true) {
-          const result = await generator.next()
-          if (result.done === true) break
-          if (productionAddressesIds.includes(addr.id)) {
-            const txs = result.value
-            count += txs.length
-            txsToSave = txsToSave.concat(txs)
-            if (txsToSave.length !== 0) {
-              await appendTxsToFile(txsToSave)
-            }
-          }
-        }
-        successfulAddressesWithCount[addr.address] = count
-      } catch (err: any) {
-        failedAddressesWithErrors[addr.address] = err.stack
-      }
-    })
-  )
-  if (txsToSave.length !== 0) {
-    await appendTxsToFile(txsToSave)
-  }
-  return {
-    failedAddressesWithErrors,
-    successfulAddressesWithCount
-  }
 }
 
 export async function fetchUnconfirmedTransactions (hash: string): Promise<TransactionWithAddressAndPrices[]> {
@@ -615,4 +546,222 @@ export async function getOldestPositiveTxForUser (userId: string): Promise<Trans
     },
     orderBy: { timestamp: 'asc' }
   })
+}
+
+export async function getPaymentsByUserIdOrderedByButtonName (
+  userId: string,
+  page: number,
+  pageSize: number,
+  orderDesc = true
+): Promise<Payment[]> {
+  const offset = page * pageSize
+
+  let transactions: any = []
+  // code is repeated because prisma does not allow to inject SQL keywords
+  if (orderDesc) {
+    transactions = await prisma.$queryRaw`
+      SELECT 
+        t.*, 
+        p.id AS paybuttonId, 
+        p.name AS paybuttonName, 
+        p.providerUserId AS paybuttonProviderUserId,
+        a.networkId as networkId,
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'priceId', pb.id,
+            'priceValue', pb.value,
+            'quoteId', pb.quoteId
+          )
+        ) AS prices
+      FROM \`Transaction\` t
+      INNER JOIN \`Address\` a ON t.\`addressId\` = a.\`id\`
+      INNER JOIN \`AddressesOnButtons\` ab ON a.\`id\` = ab.\`addressId\`
+      INNER JOIN \`Paybutton\` p ON ab.\`paybuttonId\` = p.\`id\`
+      LEFT JOIN \`PricesOnTransactions\` pt ON t.\`id\` = pt.\`transactionId\`
+      LEFT JOIN \`Price\` pb ON pt.\`priceId\` = pb.\`id\`
+      WHERE EXISTS (
+        SELECT 1
+        FROM \`AddressesOnUserProfiles\` au
+        WHERE au.\`addressId\` = a.\`id\`
+          AND au.\`userId\` = ${userId}
+      )
+      AND p.\`providerUserId\` = ${userId}
+      GROUP BY t.id, p.id
+      ORDER BY p.\`name\` ASC
+      LIMIT ${pageSize}
+      OFFSET ${offset};
+    `
+  } else {
+    transactions = await prisma.$queryRaw`
+      SELECT 
+        t.*, 
+        p.id AS paybuttonId, 
+        p.name AS paybuttonName, 
+        p.providerUserId AS paybuttonProviderUserId,
+        a.networkId as networkId,
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'priceId', pb.id,
+            'priceValue', pb.value,
+            'quoteId', pb.quoteId
+          )
+        ) AS prices
+      FROM \`Transaction\` t
+      INNER JOIN \`Address\` a ON t.\`addressId\` = a.\`id\`
+      INNER JOIN \`AddressesOnButtons\` ab ON a.\`id\` = ab.\`addressId\`
+      INNER JOIN \`Paybutton\` p ON ab.\`paybuttonId\` = p.\`id\`
+      LEFT JOIN \`PricesOnTransactions\` pt ON t.\`id\` = pt.\`transactionId\`
+      LEFT JOIN \`Price\` pb ON pt.\`priceId\` = pb.\`id\`
+      WHERE t.\`amount\` > 0
+      AND EXISTS (
+        SELECT 1
+        FROM \`AddressesOnUserProfiles\` au
+        WHERE au.\`addressId\` = a.\`id\`
+          AND au.\`userId\` = ${userId}
+      )
+      AND p.\`providerUserId\` = ${userId}
+      GROUP BY t.id, p.id
+      ORDER BY p.\`name\` DESC
+      LIMIT ${pageSize}
+      OFFSET ${offset};
+    `
+  }
+
+  const payments: Payment[] = []
+
+  transactions.forEach((tx: any) => {
+    const ret: QuoteValues = {
+      usd: new Prisma.Decimal(0),
+      cad: new Prisma.Decimal(0)
+    }
+    for (const p of JSON.parse(tx.prices)) {
+      if (p.quoteId === USD_QUOTE_ID) {
+        ret.usd = ret.usd.plus(p.priceValue * tx.amount)
+      }
+      if (p.quoteId === CAD_QUOTE_ID) {
+        ret.cad = ret.cad.plus(p.priceValue * tx.amount)
+      }
+    }
+    const buttonDisplayDataList: ButtonDisplayData[] = []
+    buttonDisplayDataList.push({
+      name: tx.paybuttonName,
+      id: tx.paybuttonId,
+      providerUserId: tx.paybuttonProviderUserId
+    })
+    if (tx.amount > 0) {
+      payments.push({
+        timestamp: tx.timestamp,
+        values: {
+          values: ret,
+          amount: tx.amount
+        },
+        networkId: tx.networkId,
+        hash: tx.hash,
+        buttonDisplayDataList
+      })
+    }
+  })
+
+  return payments
+}
+
+export async function fetchAllPaymentsByUserIdWithPagination (
+  userId: string,
+  page: number,
+  pageSize: number,
+  orderBy?: string,
+  orderDesc = true
+): Promise<Payment[]> {
+  const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
+  if (orderBy === 'buttonDisplayDataList') {
+    return await getPaymentsByUserIdOrderedByButtonName(
+      userId, page, pageSize, orderDesc
+    )
+  }
+  let orderByQuery
+  if (orderBy !== undefined && orderBy !== '') {
+    if (orderBy === 'values') {
+      orderByQuery = {
+        amount: orderDescString
+      }
+    } else if (orderBy === 'networkId') {
+      orderByQuery = {
+        address: {
+          networkId: orderDescString
+        }
+      }
+    } else {
+      orderByQuery = {
+        [orderBy]: orderDescString
+      }
+    }
+  } else {
+    // Default orderBy
+    orderByQuery = {
+      timestamp: orderDescString
+    }
+  }
+
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      address: {
+        userProfiles: {
+          some: {
+            userId
+          }
+        }
+      },
+      amount: {
+        gt: 0
+      }
+    },
+    include: includePaybuttonsAndPrices,
+    orderBy: orderByQuery,
+    skip: page * Number(pageSize),
+    take: Number(pageSize)
+  })
+
+  const transformedData: Payment[] = []
+  for (let index = 0; index < transactions.length; index++) {
+    const tx = transactions[index]
+    if (Number(tx.amount) > 0) {
+      const payment = await generatePaymentFromTx(tx)
+      transformedData.push(payment)
+    }
+  }
+  return transformedData
+}
+
+export async function fetchAllPaymentsByUserId (
+  userId: string,
+  networkIds?: number[]
+): Promise<Payment[]> {
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      address: {
+        userProfiles: {
+          some: {
+            userId
+          }
+        },
+        networkId: {
+          in: networkIds ?? Object.values(NETWORK_IDS)
+        }
+      },
+      amount: {
+        gt: 0
+      }
+    },
+    include: includePaybuttonsAndPrices
+  })
+
+  const transformedData: Payment[] = []
+  for (let index = 0; index < transactions.length; index++) {
+    const tx = transactions[index]
+    if (Number(tx.amount) > 0) {
+      const payment = await generatePaymentFromTx(tx)
+      transformedData.push(payment)
+    }
+  }
+  return transformedData
 }
