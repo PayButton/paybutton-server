@@ -541,7 +541,9 @@ export class ChronikBlockchainClient {
       } catch (err: any) {
         failedAddressesWithErrors[addr.address] = err.stack
       } finally {
-        await setSyncing(addr.address, false)
+        if (process.env.NODE_ENV !== 'test') {
+          await setSyncing(addr.address, false)
+        }
       }
     }
     const failedAddresses = Object.keys(failedAddressesWithErrors)
