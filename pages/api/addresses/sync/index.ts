@@ -1,6 +1,6 @@
 import { NextApiResponse, NextApiRequest } from 'next'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import { syncAndSubscribeAddresses } from 'services/transactionService'
+import { multiBlockchainClient } from 'services/chronikService'
 import { fetchAddressesArray } from 'services/addressService'
 import Cors from 'cors'
 import { runMiddleware } from 'utils/index'
@@ -19,7 +19,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       }
       const addresses = req.query.addresses as string[]
       const addressList = await fetchAddressesArray(addresses)
-      await syncAndSubscribeAddresses(addressList)
+      await multiBlockchainClient.syncAndSubscribeAddresses(addressList)
       res.status(STARTED_SYNC_200.statusCode).json(STARTED_SYNC_200)
     } catch (err: any) {
       switch (err.message) {
