@@ -4,7 +4,7 @@ import { NextApiResponse } from 'next'
 import { Transform } from 'stream'
 
 export interface TransactionFileData {
-  amount: Prisma.Decimal
+  amount: Prisma.Decimal | number
   date: moment.Moment
   value: number
   rate: number
@@ -13,13 +13,21 @@ export interface TransactionFileData {
   address?: string
 }
 
-export interface FormattedTransactionFileData {
+export interface FormattedTransactionFileData
+  extends Omit<TransactionFileData, 'amount' | 'date' | 'currency'> {
   amount: string
   date: string
-  value: string
-  rate: string
-  transactionId: string
-  address?: string
+}
+
+export interface PaymentFileData extends TransactionFileData {
+  collapsed: boolean
+  notes: string
+}
+
+export interface FormattedPaymentFileData
+  extends FormattedTransactionFileData {
+  collapsed: boolean
+  notes: string
 }
 
 export function isCurrencyValid (currency: SupportedQuotesType): boolean {
@@ -34,7 +42,7 @@ export const formatNumberHeaders = (headers: string[], currency: string): string
   return headers.map(h => h === PAYBUTTON_TRANSACTIONS_FILE_HEADERS.value ? h + ` (${currency.toUpperCase()})` : h)
 }
 
-export const formatPaybuttonTransactionsFileData = (data: TransactionFileData): FormattedTransactionFileData => {
+export const formatPaybuttonTransactionsFileData = (data: PaymentFileData): FormattedPaymentFileData => {
   const {
     amount,
     date,

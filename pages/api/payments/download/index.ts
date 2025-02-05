@@ -4,35 +4,91 @@ import {
   DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER,
   SupportedQuotesType,
   SUPPORTED_QUOTES_FROM_ID,
-  PAYBUTTON_TRANSACTIONS_FILE_HEADERS,
   NETWORK_TICKERS,
   NetworkTickersType,
-  NETWORK_IDS
+  NETWORK_IDS,
+  PAYBUTTON_PAYMENT_FILE_HEADERS
 } from 'constants/index'
 import { fetchAllPaymentsByUserId } from 'services/transactionService'
-import { TransactionFileData, formatNumberHeaders, formatPaybuttonTransactionsFileData, isNetworkValid, streamToCSV } from 'utils/files'
+import { PaymentFileData, formatNumberHeaders, formatPaybuttonTransactionsFileData, isNetworkValid, streamToCSV } from 'utils/files'
 import { setSession } from 'utils/setSession'
 import { NextApiResponse } from 'next'
 import { fetchUserProfileFromId } from 'services/userService'
 import { Payment } from 'redis/types'
 import { getNetworkIdFromSlug } from 'services/networkService'
 
-const getPaymentsFileData = (payment: Payment, currency: SupportedQuotesType, timezone: string): TransactionFileData => {
-  const { values, hash, timestamp, address } = payment
-  const amount = values.amount
-  const value = Number(values.values[currency])
-  const date = moment.tz(timestamp * 1000, timezone)
-  const rate = value / Number(amount)
+const collapseSmallPayments = (payments: Payment[], currency: SupportedQuotesType, timezone: string): PaymentFileData[] => {
+  const groupedPayments: Record<string, Payment[]> = {}
+  const treatedPayments: PaymentFileData[] = []
 
-  return {
-    amount,
-    date,
-    transactionId: hash,
-    value,
-    rate,
-    currency,
-    address
-  }
+  payments.forEach((payment: Payment) => {
+    const { values, timestamp, hash, address } = payment
+    const amount = values.amount
+    const value = Number(values.values[currency])
+    const rate = value / Number(amount)
+
+    const dateKey = moment.tz(timestamp * 1000, timezone).format('YYYY-MM-DD')
+
+    if (value < 1) {
+      if (groupedPayments[dateKey] === undefined) {
+        console.log({
+          penca: true
+        })
+        groupedPayments[dateKey] = []
+      }
+      groupedPayments[dateKey].push(payment)
+    } else {
+      treatedPayments.push({
+        amount,
+        value,
+        date: moment.tz(timestamp * 1000, timezone),
+        transactionId: hash,
+        rate,
+        currency,
+        address,
+        collapsed: false,
+        notes: ''
+      } as PaymentFileData)
+    }
+  })
+
+  Object.keys(groupedPayments).forEach(dateKey => {
+    const group = groupedPayments[dateKey]
+
+    if (group.length > 1) {
+      const totalAmount = group.reduce((sum, p) => sum + Number(p.values.amount), 0)
+      const totalValue = group.reduce((sum, p) => sum + Number(p.values.values[currency]), 0)
+      const rate = totalValue / totalAmount
+
+      treatedPayments.push({
+        amount: totalAmount,
+        value: totalValue,
+        date: moment.tz(group[0].timestamp * 1000, timezone),
+        transactionId: 'Collapsed',
+        rate,
+        currency,
+        address: '',
+        collapsed: true,
+        notes: group.length.toString()
+      } as PaymentFileData)
+    } else {
+      // If only one payment in the group, add it directly instead of collapsing
+      const payment = group[0]
+      treatedPayments.push({
+        amount: Number(payment.values.amount),
+        value: Number(payment.values.values[currency]),
+        date: moment.tz(payment.timestamp * 1000, timezone),
+        transactionId: payment.hash,
+        rate: Number(payment.values.values[currency]) / Number(payment.values.amount),
+        currency,
+        address: payment.address,
+        collapsed: false,
+        notes: ''
+      } as PaymentFileData)
+    }
+  })
+
+  return treatedPayments
 }
 
 const sortPaymentsByNetworkId = (payments: Payment[]): Payment[] => {
@@ -64,13 +120,12 @@ const downloadPaymentsFileByUserId = async (
     networkIdArray = [networkId]
   }
   const payments = await fetchAllPaymentsByUserId(userId, networkIdArray)
-  const sortedPayments = await sortPaymentsByNetworkId(payments)
-  const mappedPaymentsData = sortedPayments.map(payment => {
-    const data = getPaymentsFileData(payment, currency, timezone)
-    return formatPaybuttonTransactionsFileData(data)
-  })
-  const headers = Object.keys(PAYBUTTON_TRANSACTIONS_FILE_HEADERS)
-  const humanReadableHeaders = formatNumberHeaders(Object.values(PAYBUTTON_TRANSACTIONS_FILE_HEADERS), currency)
+  const sortedPayments = sortPaymentsByNetworkId(payments)
+  const treatedPayments = collapseSmallPayments(sortedPayments, currency, timezone)
+  const mappedPaymentsData = treatedPayments.map(payment => formatPaybuttonTransactionsFileData(payment))
+
+  const headers = Object.keys(PAYBUTTON_PAYMENT_FILE_HEADERS)
+  const humanReadableHeaders = formatNumberHeaders(Object.values(PAYBUTTON_PAYMENT_FILE_HEADERS), currency)
 
   streamToCSV(
     mappedPaymentsData,
