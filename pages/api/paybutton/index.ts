@@ -12,6 +12,7 @@ export default async (req: any, res: any): Promise<void> => {
     try {
       const createPaybuttonInput = parsePaybuttonPOSTRequest(values)
       const createdPaybuttonObj = await paybuttonService.createPaybutton(createPaybuttonInput)
+      console.log('wip will fetch with', fetch, 'and here is', config.apiDomain)
       void fetch(`${config.apiDomain}/api/addresses/sync`, {
         method: 'POST',
         headers: {
