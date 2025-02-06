@@ -14,6 +14,9 @@ stop-prod:
 reset-prod:
 	make stop-prod && make prod
 
+deploy:
+	git pull && make reset-prod
+
 dev:
 	$(git_hook_setup)
 	$(touch_local_env)
