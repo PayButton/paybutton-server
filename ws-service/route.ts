@@ -77,7 +77,13 @@ const broadcastRouteConnection = (socket: Socket): void => {
 
 const altpaymentNs = io.of('/altpayment')
 const altpaymentRouteConnection = async (socket: Socket): Promise<void> => {
-  const userIp = socket.handshake.address
+  const headersAddress = socket.handshake.headers['X-FORWARDED-FOR']
+  const headersAddressLC = socket.handshake.headers['x-forwarded-for']
+  const remoteAddress = socket.request.connection.remoteAddress ?? ''
+  const handshakeAddress = socket.handshake.address
+  const origin = socket.handshake.headers.origin ?? ''
+  const userIp = (headersAddressLC as string).split(',')[0]
+  console.log('wip', { userIp, origin, handshakeAddress, remoteAddress, headersAddress, headersAddressLC })
   const coins = await getSideshiftCoinsInfo(userIp)
   void socket.emit(SOCKET_MESSAGES.SEND_ALTPAYMENT_COINS_INFO, coins)
   void socket.on(SOCKET_MESSAGES.GET_ALTPAYMENT_RATE, async (getPairRateData: GetPairRateData) => {
