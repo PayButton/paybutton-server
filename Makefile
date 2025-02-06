@@ -1,6 +1,6 @@
 git_hook_setup = cp .githooks/pre-commit .git/hooks/pre-commit
 git_diff_to_master = git diff --name-only --diff-filter=ACMRTUXB origin/master > DIFF
-create_test_paybutton_json = echo { \"priceAPIURL\": \"foo\", \"networkBlockchainClients\": { \"ecash\": \"chronik\", \"bitcoincash\": \"chronik\" }, \"networkBlockchainURLs\": { \"ecash\": \"https://xec.paybutton.io\", \"bitcoincash\": \"https://chronik.pay2stay.com/bch\" }, \"wsBaseURL\": \"localhost:5000\", \"apiDomain\": \"localhost:3000\" } > paybutton-config.json
+create_test_paybutton_json = echo { \"priceAPIURL\": \"foo\", \"networkBlockchainClients\": { \"ecash\": \"chronik\", \"bitcoincash\": \"chronik\" }, \"networkBlockchainURLs\": { \"ecash\": \"https://xec.paybutton.io\", \"bitcoincash\": \"https://chronik.pay2stay.com/bch\" }, \"wsBaseURL\": \"http://localhost:5000\", \"apiDomain\": \"http://localhost:3000\" } > paybutton-config.json
 touch_local_env = touch .env.local
 
 prod:
