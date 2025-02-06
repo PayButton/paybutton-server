@@ -109,8 +109,6 @@ describe('POST /api/paybutton/', () => {
       walletId: '80fcbeb5-f6bd-4b3b-aca8-d604a670e978',
       addresses: `ectest:${exampleAddresses.ectest}`
     }
-    jest.spyOn(global, 'fetch').mockResolvedValue(new Response())
-
     const res = await testEndpoint(baseRequestOptions, paybuttonEndpoint)
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
