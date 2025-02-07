@@ -77,21 +77,23 @@ const broadcastRouteConnection = (socket: Socket): void => {
 
 const altpaymentNs = io.of('/altpayment')
 const altpaymentRouteConnection = async (socket: Socket): Promise<void> => {
-  const coins = await getSideshiftCoinsInfo()
+  const headersForwardedAddresses = socket.handshake.headers['x-forwarded-for']
+  const userIp = (headersForwardedAddresses as string).split(',')[0]
+  const coins = await getSideshiftCoinsInfo(userIp)
   void socket.emit(SOCKET_MESSAGES.SEND_ALTPAYMENT_COINS_INFO, coins)
   void socket.on(SOCKET_MESSAGES.GET_ALTPAYMENT_RATE, async (getPairRateData: GetPairRateData) => {
-    const pairRate = await getSideshiftPairRate(getPairRateData)
+    const pairRate = await getSideshiftPairRate(getPairRateData, userIp)
     socket.emit(SOCKET_MESSAGES.SEND_ALTPAYMENT_RATE, pairRate)
   })
   void socket.on(SOCKET_MESSAGES.CREATE_ALTPAYMENT_QUOTE, async (createQuoteData: CreateQuoteAndShiftData) => {
-    const createdQuoteRes = await postSideshiftQuote(createQuoteData)
+    const createdQuoteRes = await postSideshiftQuote(createQuoteData, userIp)
     if ('errorType' in createdQuoteRes) {
       socket.emit(SOCKET_MESSAGES.ERROR_WHEN_CREATING_QUOTE, createdQuoteRes)
     } else {
       const createdShiftRes = await postSideshiftShift({
         quoteId: createdQuoteRes.id,
         settleAddress: createQuoteData.settleAddress
-      })
+      }, userIp)
       if ('errorType' in createdShiftRes) {
         socket.emit(SOCKET_MESSAGES.ERROR_WHEN_CREATING_SHIFT, createdShiftRes)
       } else {

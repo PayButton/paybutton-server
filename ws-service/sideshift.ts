@@ -3,13 +3,18 @@ import config from 'config/index'
 
 export const SIDESHIFT_BASE_URL = 'https://sideshift.ai/api/v2/'
 
-export const getSideshiftPairRate = async (getPairRateData: GetPairRateData): Promise<SideshiftPairRes> => {
-  const res = await fetch(SIDESHIFT_BASE_URL + `pair/${getPairRateData.from}/${getPairRateData.to}`)
+export const getSideshiftPairRate = async (getPairRateData: GetPairRateData, userIp: string): Promise<SideshiftPairRes> => {
+  const res = await fetch(SIDESHIFT_BASE_URL + `pair/${getPairRateData.from}/${getPairRateData.to}`, {
+    method: 'GET',
+    headers: {
+      'x-user-ip': userIp
+    }
+  })
   const data = await res.json()
   return data as SideshiftPairRes
 }
 
-export const postSideshiftQuote = async (createQuoteData: CreateQuoteAndShiftData): Promise<SideshiftQuoteRes | SideshiftError> => {
+export const postSideshiftQuote = async (createQuoteData: CreateQuoteAndShiftData, userIp: string): Promise<SideshiftQuoteRes | SideshiftError> => {
   const requestBody = JSON.stringify({
     ...createQuoteData,
     affiliateId: config.sideshiftAffiliateId
@@ -19,7 +24,8 @@ export const postSideshiftQuote = async (createQuoteData: CreateQuoteAndShiftDat
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-sideshift-secret': process.env.SIDESHIFT_SECRET_KEY as string
+      'x-sideshift-secret': process.env.SIDESHIFT_SECRET_KEY as string,
+      'x-user-ip': userIp
     },
     body: requestBody
   })
@@ -44,7 +50,7 @@ interface CreateShiftData {
   settleAddress: string
 }
 
-export const postSideshiftShift = async (createShiftData: CreateShiftData): Promise<SideshiftShiftRes | SideshiftError> => {
+export const postSideshiftShift = async (createShiftData: CreateShiftData, userIp: string): Promise<SideshiftShiftRes | SideshiftError> => {
   const { quoteId, settleAddress } = createShiftData
   const requestBody = JSON.stringify({
     affiliateId: config.sideshiftAffiliateId,
@@ -56,7 +62,8 @@ export const postSideshiftShift = async (createShiftData: CreateShiftData): Prom
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-sideshift-secret': process.env.SIDESHIFT_SECRET_KEY as string
+      'x-sideshift-secret': process.env.SIDESHIFT_SECRET_KEY as string,
+      'x-user-ip': userIp
     },
     body: requestBody
   })
@@ -76,8 +83,13 @@ export const postSideshiftShift = async (createShiftData: CreateShiftData): Prom
   return shiftResponse
 }
 
-export const getSideshiftCoinsInfo = async (): Promise<SideShiftCoinRes[]> => {
-  const res = await fetch(SIDESHIFT_BASE_URL + 'coins')
+export const getSideshiftCoinsInfo = async (userIp: string): Promise<SideShiftCoinRes[]> => {
+  const res = await fetch(SIDESHIFT_BASE_URL + 'coins', {
+    method: 'GET',
+    headers: {
+      'x-user-ip': userIp
+    }
+  })
   const data = await res.json()
 
   const coins = data as SideShiftCoinRes[]
