@@ -285,16 +285,18 @@ export class ChronikBlockchainClient {
         [...confirmedTransactions, ...unconfirmedTransactions].map(async tx => await this.getTransactionFromChronikTransaction(tx, address))
       )
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
-      const simplifiedTransactions = getSimplifiedTransactions(persistedTransactions)
+      if (persistedTransactions.length > 0) {
+        const simplifiedTransactions = getSimplifiedTransactions(persistedTransactions)
 
-      console.log(`${this.CHRONIK_MSG_PREFIX}: added ${simplifiedTransactions.length} txs to ${addressString}`)
+        console.log(`${this.CHRONIK_MSG_PREFIX}: added ${simplifiedTransactions.length} txs to ${addressString}`)
 
-      const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
-      broadcastTxData.messageType = 'OldTx'
-      broadcastTxData.address = addressString
-      broadcastTxData.txs = simplifiedTransactions
+        const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
+        broadcastTxData.messageType = 'OldTx'
+        broadcastTxData.address = addressString
+        broadcastTxData.txs = simplifiedTransactions
 
-      this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
+        this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
+      }
 
       yield persistedTransactions
 
