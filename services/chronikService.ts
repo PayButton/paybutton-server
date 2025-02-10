@@ -1,4 +1,4 @@
-import { BlockInfo_InNode, ChronikClientNode, ScriptType_InNode, ScriptUtxo_InNode, Tx_InNode, WsConfig_InNode, WsEndpoint_InNode, WsMsgClient, WsSubScriptClient } from 'chronik-client'
+import { BlockInfo_InNode, ChronikClientNode, ScriptType_InNode, ScriptUtxo_InNode, Tx_InNode, WsConfig_InNode, WsEndpoint_InNode, WsMsgClient, WsSubScriptClient } from 'chronik-client-cashtokens'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainInfo, BlockInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn } from 'types/chronikTypes'
@@ -551,7 +551,7 @@ export class ChronikBlockchainClient {
     const failedAddresses = Object.keys(failedAddressesWithErrors)
     console.log(`${this.CHRONIK_MSG_PREFIX} Finished syncing ${addresses.length} addresses with ${failedAddresses.length} errors.`)
     if (failedAddresses.length > 0) {
-      console.log(`${this.CHRONIK_MSG_PREFIX} Failed addresses were:\n- ${failedAddresses.join('\n- ')}`)
+      console.log(`${this.CHRONIK_MSG_PREFIX} Failed addresses were:\n- ${Object.entries(failedAddressesWithErrors).map((kv: [string, string]) => `${kv[0]}: ${kv[1]}`).join('\n- ')}`)
     }
     return {
       failedAddressesWithErrors,
