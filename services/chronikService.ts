@@ -662,16 +662,14 @@ class MultiBlockchainClient {
     void (async () => {
       if (this.isRunningApp()) {
         await syncPastDaysNewerPrices()
-      }
-      const asyncOperations: Array<Promise<void>> = []
-      this.clients = {
-        ecash: this.instantiateChronikClient('ecash', asyncOperations),
-        bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
-      }
-      console.log('WIP instantiating clients')
-      await Promise.all(asyncOperations)
-      console.log('WIP instantiated clients')
-      if (this.isRunningApp()) {
+        const asyncOperations: Array<Promise<void>> = []
+        this.clients = {
+          ecash: this.instantiateChronikClient('ecash', asyncOperations),
+          bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
+        }
+        console.log('WIP instantiating clients')
+        await Promise.all(asyncOperations)
+        console.log('WIP instantiated clients')
         console.log('WIP will connect')
         await connectAllTransactionsToPrices()
       }
