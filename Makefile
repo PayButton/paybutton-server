@@ -15,7 +15,7 @@ reset-prod:
 	make stop-prod && make prod
 
 deploy:
-	git pull && make reset-prod
+	git pull && make reset-prod && make logs-dev
 
 dev:
 	$(git_hook_setup)
