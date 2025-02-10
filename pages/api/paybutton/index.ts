@@ -2,7 +2,8 @@ import * as paybuttonService from 'services/paybuttonService'
 import { parseError, parsePaybuttonPOSTRequest } from 'utils/validators'
 import { setSession } from 'utils/setSession'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import config from 'config'
+import { multiBlockchainClient } from 'services/chronikService'
+import { fetchAddressesArray } from 'services/addressService'
 
 export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'POST') {
@@ -12,16 +13,8 @@ export default async (req: any, res: any): Promise<void> => {
     try {
       const createPaybuttonInput = parsePaybuttonPOSTRequest(values)
       const createdPaybuttonObj = await paybuttonService.createPaybutton(createPaybuttonInput)
-      console.log('wip will fetch with', fetch, 'and here is', config.apiDomain)
-      void fetch(`${config.apiDomain}/api/addresses/sync`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          addresses: createdPaybuttonObj.createdAddresses
-        })
-      })
+      const addressList = await fetchAddressesArray(createdPaybuttonObj.createdAddresses)
+      void multiBlockchainClient.syncAndSubscribeAddresses(addressList)
       res.status(200).json(createdPaybuttonObj.paybutton)
     } catch (err: any) {
       const parsedErr = parseError(err)
