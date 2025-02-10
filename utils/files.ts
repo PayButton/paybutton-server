@@ -13,10 +13,13 @@ export interface TransactionFileData {
   address?: string
 }
 
-export interface FormattedTransactionFileData
-  extends Omit<TransactionFileData, 'amount' | 'date' | 'currency'> {
+export interface FormattedTransactionFileData {
   amount: string
   date: string
+  value: string
+  rate: string
+  transactionId: string
+  address?: string
 }
 
 export interface PaymentFileData extends TransactionFileData {
