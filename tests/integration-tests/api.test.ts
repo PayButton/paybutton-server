@@ -13,7 +13,6 @@ import dashboardEndpoint from 'pages/api/dashboard/index'
 import paymentsEndpoint from 'pages/api/payments/index'
 import currentPriceEndpoint from 'pages/api/price/[networkSlug]'
 import currentPriceForQuoteEndpoint from 'pages/api/price/[networkSlug]/[quoteSlug]'
-import syncAddressesEndpoint from 'pages/api/addresses/sync'
 import { WalletWithAddressesWithPaybuttons, fetchWalletById, createDefaultWalletForUser } from 'services/walletService'
 import {
   exampleAddresses,
@@ -1464,24 +1463,5 @@ describe('GET /api/prices/current/[networkSlug]/[quoteSlug]', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     expect(responseData).toEqual('133')
-  })
-})
-
-describe('POST /api/addresses/sync', () => {
-  const baseRequestOptions: RequestOptions = {
-    method: 'POST' as RequestMethod,
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: {
-      addresses: []
-    }
-  }
-
-  it('Should return HTTP 400 if no addresses', async () => {
-    const res = await testEndpoint(baseRequestOptions, syncAddressesEndpoint)
-    const responseData = res._getJSONData()
-    expect(res.statusCode).toBe(400)
-    expect(responseData).toStrictEqual(RESPONSE_MESSAGES.ADDRESSES_NOT_PROVIDED_400)
   })
 })
