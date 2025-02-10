@@ -115,12 +115,14 @@ export class ChronikBlockchainClient {
   wsEndpoint: Socket
   CHRONIK_MSG_PREFIX: string
   lastProcessedMessages: ProcessedMessages
+  initializing: boolean
 
   constructor (networkSlug: string) {
     if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
       throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
     }
 
+    this.initializing = true
     this.networkSlug = networkSlug
     this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
     this.chronik = new ChronikClientNode([config.networkBlockchainURLs[networkSlug]])
@@ -135,6 +137,10 @@ export class ChronikBlockchainClient {
         key: process.env.WS_AUTH_KEY
       }
     })
+  }
+
+  public setInitialized (): void {
+    this.initializing = false
   }
 
   private clearOldMessages (): void {
@@ -396,6 +402,9 @@ export class ChronikBlockchainClient {
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
         if (this.isAlreadyBeingProcessed(msg.txid, false)) {
           return
+        }
+        while (this.initializing) {
+          await new Promise(resolve => setTimeout(resolve, 1000)) // wait for 1 second
         }
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transaction = await this.chronik.tx(msg.txid)
@@ -696,6 +705,7 @@ class MultiBlockchainClient {
       console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
       await newClient.syncMissedTransactions()
     }
+    newClient.setInitialized()
     console.log(`[CHRONIK — ${networkSlug}] Finished instantiating client.`)
 
     return newClient
