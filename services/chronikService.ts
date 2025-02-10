@@ -551,7 +551,7 @@ export class ChronikBlockchainClient {
     const failedAddresses = Object.keys(failedAddressesWithErrors)
     console.log(`${this.CHRONIK_MSG_PREFIX} Finished syncing ${addresses.length} addresses with ${failedAddresses.length} errors.`)
     if (failedAddresses.length > 0) {
-      console.log(`${this.CHRONIK_MSG_PREFIX} Failed addresses were:\n- ${failedAddresses.join('\n- ')}`)
+      console.log(`${this.CHRONIK_MSG_PREFIX} Failed addresses were:\n- ${Object.entries(failedAddressesWithErrors).map((kv: [string, string]) => `${kv[0]}: ${kv[1]}`).join('\n- ')}`)
     }
     return {
       failedAddressesWithErrors,
