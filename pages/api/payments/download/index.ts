@@ -18,26 +18,46 @@ import { Payment } from 'redis/types'
 import { getNetworkIdFromSlug } from 'services/networkService'
 
 const collapseSmallPayments = (payments: Payment[], currency: SupportedQuotesType, timezone: string): PaymentFileData[] => {
-  const groupedPayments: Record<string, Payment[]> = {}
   const treatedPayments: PaymentFileData[] = []
+  let tempGroup: Payment[] = []
 
-  payments.forEach((payment: Payment) => {
+  payments.forEach((payment: Payment, index: number) => {
     const { values, timestamp, hash, address } = payment
     const amount = values.amount
     const value = Number(values.values[currency])
     const rate = value / Number(amount)
-
     const dateKey = moment.tz(timestamp * 1000, timezone).format('YYYY-MM-DD')
 
+    const nextPayment = payments[index + 1]
+    const nextDateKey = (nextPayment !== undefined) ? moment.tz(nextPayment.timestamp * 1000, timezone).format('YYYY-MM-DD') : null
+
     if (value < 1) {
-      if (groupedPayments[dateKey] === undefined) {
-        console.log({
-          penca: true
-        })
-        groupedPayments[dateKey] = []
-      }
-      groupedPayments[dateKey].push(payment)
+      tempGroup.push(payment)
     } else {
+      if (tempGroup.length > 0) {
+        const totalAmount = tempGroup.reduce((sum, p) => sum + Number(p.values.amount), 0)
+        const totalValue = tempGroup.reduce((sum, p) => sum + Number(p.values.values[currency]), 0)
+        const rate = totalValue / totalAmount
+        const buttonName = tempGroup[0].buttonDisplayDataList[0].name
+        const notes = `${buttonName} - ${tempGroup.length.toString()} transactions`
+
+        treatedPayments.push({
+          amount: totalAmount,
+          value: totalValue,
+          date: moment.tz(tempGroup[0].timestamp * 1000, timezone),
+          transactionId: 'Collapsed',
+          rate,
+          currency,
+          address: '',
+          collapsed: true,
+          notes
+        } as PaymentFileData)
+
+        tempGroup = []
+      }
+
+      const notes = ''
+
       treatedPayments.push({
         amount,
         value,
@@ -47,44 +67,31 @@ const collapseSmallPayments = (payments: Payment[], currency: SupportedQuotesTyp
         currency,
         address,
         collapsed: false,
-        notes: ''
+        notes
       } as PaymentFileData)
     }
-  })
 
-  Object.keys(groupedPayments).forEach(dateKey => {
-    const group = groupedPayments[dateKey]
-
-    if (group.length > 1) {
-      const totalAmount = group.reduce((sum, p) => sum + Number(p.values.amount), 0)
-      const totalValue = group.reduce((sum, p) => sum + Number(p.values.values[currency]), 0)
+    // If it's the last small payment in sequence or the next payment is from another day, collapse it
+    if (tempGroup.length > 1 && ((nextPayment === undefined) || nextDateKey !== dateKey)) {
+      const totalAmount = tempGroup.reduce((sum, p) => sum + Number(p.values.amount), 0)
+      const totalValue = tempGroup.reduce((sum, p) => sum + Number(p.values.values[currency]), 0)
       const rate = totalValue / totalAmount
+      const buttonName = tempGroup[0].buttonDisplayDataList[0].name
+      const notes = `${buttonName} - ${tempGroup.length.toString()} transactions`
 
       treatedPayments.push({
         amount: totalAmount,
         value: totalValue,
-        date: moment.tz(group[0].timestamp * 1000, timezone),
+        date: moment.tz(tempGroup[0].timestamp * 1000, timezone),
         transactionId: 'Collapsed',
         rate,
         currency,
         address: '',
         collapsed: true,
-        notes: group.length.toString()
+        notes
       } as PaymentFileData)
-    } else {
-      // If only one payment in the group, add it directly instead of collapsing
-      const payment = group[0]
-      treatedPayments.push({
-        amount: Number(payment.values.amount),
-        value: Number(payment.values.values[currency]),
-        date: moment.tz(payment.timestamp * 1000, timezone),
-        transactionId: payment.hash,
-        rate: Number(payment.values.values[currency]) / Number(payment.values.amount),
-        currency,
-        address: payment.address,
-        collapsed: false,
-        notes: ''
-      } as PaymentFileData)
+
+      tempGroup = []
     }
   })
 
@@ -120,6 +127,7 @@ const downloadPaymentsFileByUserId = async (
     networkIdArray = [networkId]
   }
   const payments = await fetchAllPaymentsByUserId(userId, networkIdArray)
+
   const sortedPayments = sortPaymentsByNetworkId(payments)
   const treatedPayments = collapseSmallPayments(sortedPayments, currency, timezone)
   const mappedPaymentsData = treatedPayments.map(payment => formatPaybuttonTransactionsFileData(payment))
