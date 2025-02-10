@@ -384,6 +384,9 @@ export class ChronikBlockchainClient {
   private async processWsMessage (msg: WsMsgClient): Promise<void> {
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
+    while (this.initializing) {
+      await new Promise(resolve => setTimeout(resolve, 1000)) // wait for 1 second
+    }
     if (msg.type === 'Tx') {
       if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
@@ -402,9 +405,6 @@ export class ChronikBlockchainClient {
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
         if (this.isAlreadyBeingProcessed(msg.txid, false)) {
           return
-        }
-        while (this.initializing) {
-          await new Promise(resolve => setTimeout(resolve, 1000)) // wait for 1 second
         }
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transaction = await this.chronik.tx(msg.txid)
