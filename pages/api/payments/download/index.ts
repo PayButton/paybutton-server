@@ -7,7 +7,8 @@ import {
   NETWORK_TICKERS,
   NetworkTickersType,
   NETWORK_IDS,
-  PAYBUTTON_PAYMENT_FILE_HEADERS
+  PAYBUTTON_PAYMENT_FILE_HEADERS,
+  DEFAULT_COLLAPSE_THRESHOLD_FILE_USD
 } from 'constants/index'
 import { fetchAllPaymentsByUserId } from 'services/transactionService'
 import { PaymentFileData, formatNumberHeaders, formatPaybuttonTransactionsFileData, isNetworkValid, streamToCSV } from 'utils/files'
@@ -31,7 +32,7 @@ const collapseSmallPayments = (payments: Payment[], currency: SupportedQuotesTyp
     const nextPayment = payments[index + 1]
     const nextDateKey = (nextPayment !== undefined) ? moment.tz(nextPayment.timestamp * 1000, timezone).format('YYYY-MM-DD') : null
 
-    if (value < 1) {
+    if (value < DEFAULT_COLLAPSE_THRESHOLD_FILE_USD) {
       tempGroup.push(payment)
     } else {
       if (tempGroup.length > 0) {
