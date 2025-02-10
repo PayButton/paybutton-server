@@ -35,7 +35,7 @@
     "bitcoinjs-lib": "^6.0.2",
     "bs58": "^5.0.0",
     "chart.js": "^3.8.0",
-    "chronik-client": "^0.28.1",
+    "chronik-client-cashtokens": "^0.28.2-alpha",
     "cors": "^2.8.5",
     "cross-env": "^7.0.2",
     "dotenv-cli": "^5.1.0",
@@ -95,7 +95,7 @@
     "typescript": "^5.7.2"
   },
   "resolutions": {
-    "chronik-client/ecashaddrjs": "^1.5.8"
+    "chronik-client-cashtokens/ecashaddrjs": "^1.5.8"
   },
   "lint-staged": {
     "*.ts?(x)": [
