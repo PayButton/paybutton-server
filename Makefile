@@ -15,7 +15,7 @@ reset-prod:
 	make stop-prod && make prod
 
 deploy:
-	git pull && make reset-prod
+	git pull && make reset-prod && make logs-dev
 
 dev:
 	$(git_hook_setup)
@@ -27,6 +27,15 @@ stop-dev:
 
 reset-dev:
 	make stop-dev && make dev
+
+reset-dev-keep-db:
+	docker container restart paybutton-dev
+
+dev-from-dump:
+	make stop-dev
+	$(git_hook_setup)
+	$(touch_local_env)
+	docker compose -f docker-compose-from-dump.yml --env-file .env --env-file .env.local --env-file .env.from-dump up --build -d
 
 logs-dev:
 	docker logs -f paybutton-dev

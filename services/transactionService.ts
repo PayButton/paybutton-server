@@ -174,13 +174,25 @@ export async function fetchTransactionsWithPaybuttonsAndPricesForIdList (txIdLis
   })
 }
 
-export async function fetchTransactionsWithPaybuttonsAndPricesForAddress (addressId: string): Promise<TransactionsWithPaybuttonsAndPrices[]> {
-  return await prisma.transaction.findMany({
-    where: {
-      addressId
-    },
-    include: includePaybuttonsAndPrices
-  })
+export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (addressId: string, pageSize = 5000): AsyncGenerator<TransactionsWithPaybuttonsAndPrices[]> {
+  let page = 0
+
+  while (true) {
+    const txs = await prisma.transaction.findMany({
+      where: {
+        addressId
+      },
+      include: includePaybuttonsAndPrices,
+      orderBy: {
+        timestamp: 'asc'
+      },
+      skip: page * pageSize,
+      take: pageSize
+    })
+    if (txs.length === 0) break
+    yield txs
+    page++
+  }
 }
 
 export async function fetchPaginatedAddressTransactions (addressString: string, page: number, pageSize: number, orderBy?: string, orderDesc = true): Promise<TransactionWithAddressAndPrices[]> {
@@ -478,17 +490,15 @@ export async function fetchAllTransactionsWithNoPrices (): Promise<Transaction[]
 }
 
 export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transaction[]> {
-  const txs = await prisma.transaction.findMany({
-    where: {
-      prices: {
-        some: {}
-      }
-    },
-    include: {
-      prices: true
-    }
-  })
-  return txs.filter(t => t.prices.length !== 2)
+  return await prisma.$queryRaw<Transaction[]>`
+  SELECT t.*
+  FROM Transaction t
+  WHERE (
+    SELECT COUNT(*)
+    FROM PricesOnTransactions pot
+    WHERE pot.transactionId = t.id
+  ) = 1;
+`
 }
 
 export async function fetchTransactionsByPaybuttonId (paybuttonId: string, networkIds?: number[]): Promise<TransactionWithAddressAndPrices[]> {
