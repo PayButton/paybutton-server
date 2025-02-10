@@ -668,8 +668,11 @@ class MultiBlockchainClient {
         ecash: this.instantiateChronikClient('ecash', asyncOperations),
         bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
       }
+      console.log('WIP instantiating clients')
       await Promise.all(asyncOperations)
+      console.log('WIP instantiated clients')
       if (this.isRunningApp()) {
+        console.log('WIP will connect')
         await connectAllTransactionsToPrices()
       }
     })()
