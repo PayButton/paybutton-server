@@ -18,12 +18,7 @@ jobs:
         run: make github-test-unit
       - name: Add local env file
         run: touch .env.local
-      - name: Spin up containers
-        run: docker compose up --build -d paybutton db users-service cache
-      - name: WIP Show dev logs before
-        run: ls
+      - name: Spin up required database containers
+        run: docker compose up --build -d db users-service cache
       - name: Run integration tests
         run: make github-test-integration
-      - name: Show dev logs
-        if: always()
-        run: make logs-dev
