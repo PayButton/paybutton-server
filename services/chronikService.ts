@@ -697,6 +697,7 @@ class MultiBlockchainClient {
       console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
       asyncOperations.push(newClient.syncMissedTransactions())
     }
+    console.log(`[CHRONIK — ${networkSlug}] Finished instantiating client.`)
 
     return newClient
   }
