@@ -682,9 +682,10 @@ class MultiBlockchainClient {
       if (this.isRunningApp()) {
         await syncPastDaysNewerPrices()
         await connectAllTransactionsToPrices()
+        const asyncOperations: Array<Promise<void>> = []
         this.clients = {
-          ecash: await this.instantiateChronikClient('ecash'),
-          bitcoincash: await this.instantiateChronikClient('bitcoincash')
+          ecash: this.instantiateChronikClient('ecash', asyncOperations),
+          bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
         }
         await connectAllTransactionsToPrices()
         this.clients.ecash.setInitialized()
@@ -704,18 +705,22 @@ class MultiBlockchainClient {
     return false
   }
 
-  private async instantiateChronikClient (networkSlug: string): Promise<ChronikBlockchainClient> {
+  private instantiateChronikClient (networkSlug: string, asyncOperations: Array<Promise<void>>): ChronikBlockchainClient {
     console.log(`[CHRONIK — ${networkSlug}] Instantiating client...`)
     const newClient = new ChronikBlockchainClient(networkSlug)
 
     // Subscribe addresses & Sync lost transactions on DB upon client initialization
     if (this.isRunningApp()) {
-      console.log(`[CHRONIK — ${networkSlug}] Subscribing addresses in database...`)
-      await newClient.subscribeInitialAddresses()
-      console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
-      await newClient.syncMissedTransactions()
+      asyncOperations.push(
+        (async () => {
+          console.log(`[CHRONIK — ${networkSlug}] Subscribing addresses in database...`)
+          await newClient.subscribeInitialAddresses()
+          console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
+          await newClient.syncMissedTransactions()
+          console.log(`[CHRONIK — ${networkSlug}] Finished instantiating client.`)
+        })()
+      )
     }
-    console.log(`[CHRONIK — ${networkSlug}] Finished instantiating client.`)
 
     return newClient
   }
