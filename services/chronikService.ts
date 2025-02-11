@@ -116,6 +116,7 @@ export class ChronikBlockchainClient {
   CHRONIK_MSG_PREFIX: string
   lastProcessedMessages: ProcessedMessages
   initializing: boolean
+  processingMessage: boolean
 
   constructor (networkSlug: string) {
     if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
@@ -123,6 +124,7 @@ export class ChronikBlockchainClient {
     }
 
     this.initializing = true
+    this.processingMessage = false
     this.networkSlug = networkSlug
     this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
     this.chronik = new ChronikClientNode([config.networkBlockchainURLs[networkSlug]])
@@ -387,47 +389,55 @@ export class ChronikBlockchainClient {
     while (this.initializing) {
       await new Promise(resolve => setTimeout(resolve, 1000)) // wait for 1 second
     }
-    if (msg.type === 'Tx') {
-      if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
-        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
-        const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
-        try {
-          await deleteTransactions(transactionsToDelete)
-        } catch (err: any) {
-          const parsedError = parseError(err)
-          if (parsedError.message !== RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message) {
-            throw err
+    while (this.processingMessage) {
+      await new Promise(resolve => setTimeout(resolve, 1000)) // wait for 1 second
+    }
+    this.processingMessage = true
+    try {
+      if (msg.type === 'Tx') {
+        if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
+          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
+          const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
+          try {
+            await deleteTransactions(transactionsToDelete)
+          } catch (err: any) {
+            const parsedError = parseError(err)
+            if (parsedError.message !== RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message) {
+              throw err
+            }
           }
-        }
-      } else if (msg.msgType === 'TX_CONFIRMED') {
-        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
-        this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
-      } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
-        if (this.isAlreadyBeingProcessed(msg.txid, false)) {
-          return
-        }
-        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
-        const transaction = await this.chronik.tx(msg.txid)
-        const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-        const inputAddresses = this.getSortedInputAddresses(transaction)
-        for (const addressWithTransaction of addressesWithTransactions) {
-          const { created, tx } = await createTransaction(addressWithTransaction.transaction)
-          if (tx !== undefined) {
-            const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses)
-            if (created) { // only execute trigger for newly added txs
-              await executeAddressTriggers(broadcastTxData, tx.address.networkId)
+        } else if (msg.msgType === 'TX_CONFIRMED') {
+          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
+          this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
+        } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
+          if (this.isAlreadyBeingProcessed(msg.txid, false)) {
+            return
+          }
+          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
+          const transaction = await this.chronik.tx(msg.txid)
+          const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+          const inputAddresses = this.getSortedInputAddresses(transaction)
+          for (const addressWithTransaction of addressesWithTransactions) {
+            const { created, tx } = await createTransaction(addressWithTransaction.transaction)
+            if (tx !== undefined) {
+              const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses)
+              if (created) { // only execute trigger for newly added txs
+                await executeAddressTriggers(broadcastTxData, tx.address.networkId)
+              }
             }
           }
         }
+      } else if (msg.type === 'Block') {
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.msgType} Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
+        if (msg.msgType === 'BLK_FINALIZED') {
+          await this.syncBlockTransactions(msg.blockHash)
+          this.confirmedTxsHashesFromLastBlock = []
+        }
+      } else if (msg.type === 'Error') {
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.type}] ${JSON.stringify(msg.msg)}`)
       }
-    } else if (msg.type === 'Block') {
-      console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.msgType} Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
-      if (msg.msgType === 'BLK_FINALIZED') {
-        await this.syncBlockTransactions(msg.blockHash)
-        this.confirmedTxsHashesFromLastBlock = []
-      }
-    } else if (msg.type === 'Error') {
-      console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.type}] ${JSON.stringify(msg.msg)}`)
+    } finally {
+      this.processingMessage = false
     }
   }
 
