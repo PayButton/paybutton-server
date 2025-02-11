@@ -2,7 +2,7 @@ import { BlockInfo_InNode, ChronikClientNode, ScriptType_InNode, ScriptUtxo_InNo
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainInfo, BlockInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn } from 'types/chronikTypes'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType } from 'constants/index'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MESSAGES_TO_PROCESS_AT_A_TIME } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import {
   TransactionWithAddressAndPrices,
@@ -116,7 +116,7 @@ export class ChronikBlockchainClient {
   CHRONIK_MSG_PREFIX: string
   lastProcessedMessages: ProcessedMessages
   initializing: boolean
-  processingMessage: boolean
+  messagesBeingProcessed: number
 
   constructor (networkSlug: string) {
     if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
@@ -124,7 +124,7 @@ export class ChronikBlockchainClient {
     }
 
     this.initializing = true
-    this.processingMessage = false
+    this.messagesBeingProcessed = 0
     this.networkSlug = networkSlug
     this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
     this.chronik = new ChronikClientNode([config.networkBlockchainURLs[networkSlug]])
@@ -389,10 +389,10 @@ export class ChronikBlockchainClient {
     while (this.initializing) {
       await new Promise(resolve => setTimeout(resolve, 1000)) // wait for 1 second
     }
-    while (this.processingMessage) {
+    while (this.messagesBeingProcessed > MAX_MESSAGES_TO_PROCESS_AT_A_TIME) {
       await new Promise(resolve => setTimeout(resolve, 1000)) // wait for 1 second
     }
-    this.processingMessage = true
+    this.messagesBeingProcessed += 1
     try {
       if (msg.type === 'Tx') {
         if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
@@ -437,7 +437,7 @@ export class ChronikBlockchainClient {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.type}] ${JSON.stringify(msg.msg)}`)
       }
     } finally {
-      this.processingMessage = false
+      this.messagesBeingProcessed -= 1
     }
   }
 
