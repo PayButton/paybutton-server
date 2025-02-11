@@ -89,10 +89,13 @@ export const connectAllTransactionsToPricesWorker = async (queueName: string): P
       console.log(`job ${job.id as string}: connecting prices to transactions...`)
       const noPricesTxs = await transactionService.fetchAllTransactionsWithNoPrices()
       console.log('got', noPricesTxs.length, 'txs with no prices')
+      const wrongNumberOfPricesTxs = await transactionService.fetchAllTransactionsWithIrregularPrices()
+      console.log('got', wrongNumberOfPricesTxs.length, 'txs with wrong n of prices')
       const txs = [
-        ...noPricesTxs
+        ...noPricesTxs,
+        ...wrongNumberOfPricesTxs
       ]
-      console.log(`found ${noPricesTxs.length} with no prices and  txs with wrong number of prices`)
+      console.log(`found ${noPricesTxs.length} with no prices and ${wrongNumberOfPricesTxs.length} txs with wrong number of prices`)
       void await transactionService.connectTransactionsListToPrices(txs)
     },
     {
