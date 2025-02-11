@@ -387,10 +387,10 @@ export class ChronikBlockchainClient {
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
     while (this.initializing) {
-      await new Promise(resolve => setTimeout(resolve, 1000)) // wait for 1 second
+      await new Promise(resolve => setTimeout(resolve, 1000))
     }
     while (this.messagesBeingProcessed > MAX_MESSAGES_TO_PROCESS_AT_A_TIME) {
-      await new Promise(resolve => setTimeout(resolve, 1000)) // wait for 1 second
+      await new Promise(resolve => setTimeout(resolve, 1000))
     }
     this.messagesBeingProcessed += 1
     try {
