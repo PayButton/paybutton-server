@@ -490,17 +490,15 @@ export async function fetchAllTransactionsWithNoPrices (): Promise<Transaction[]
 }
 
 export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transaction[]> {
-  const txs = await prisma.transaction.findMany({
-    where: {
-      prices: {
-        some: {}
-      }
-    },
-    include: {
-      prices: true
-    }
-  })
-  return txs.filter(t => t.prices.length !== 2)
+  return await prisma.$queryRaw<Transaction[]>`
+  SELECT t.*
+  FROM Transaction t
+  WHERE (
+    SELECT COUNT(*)
+    FROM PricesOnTransactions pot
+    WHERE pot.transactionId = t.id
+  ) = 1;
+`
 }
 
 export async function fetchTransactionsByPaybuttonId (paybuttonId: string, networkIds?: number[]): Promise<TransactionWithAddressAndPrices[]> {
