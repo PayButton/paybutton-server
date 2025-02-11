@@ -689,6 +689,8 @@ class MultiBlockchainClient {
         console.log('WIP instantiated clients')
         console.log('WIP will connect')
         await connectAllTransactionsToPrices()
+        this.clients.ecash.setInitialized()
+        this.clients.bitcoincash.setInitialized()
       }
     })()
   }
@@ -715,7 +717,6 @@ class MultiBlockchainClient {
       console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
       await newClient.syncMissedTransactions()
     }
-    newClient.setInitialized()
     console.log(`[CHRONIK — ${networkSlug}] Finished instantiating client.`)
 
     return newClient
