@@ -112,7 +112,7 @@ export function streamToCSV (
   }
 }
 
-export const collapseSmallPayments = (payments: Payment[], currency: SupportedQuotesType, timezone: string): PaymentFileData[] => {
+export const collapseSmallPayments = (payments: Payment[], currency: SupportedQuotesType, timezone: string, collapseThreshold: number = DEFAULT_CSV_COLLAPSE_THRESHOLD): PaymentFileData[] => {
   const treatedPayments: PaymentFileData[] = []
   let tempGroup: Payment[] = []
 
@@ -127,7 +127,7 @@ export const collapseSmallPayments = (payments: Payment[], currency: SupportedQu
     const nextPayment = payments[index + 1]
     const nextDateKey = (nextPayment !== undefined) ? moment.tz(nextPayment.timestamp * 1000, timezone).format('YYYY-MM-DD') : null
 
-    if (value < DEFAULT_CSV_COLLAPSE_THRESHOLD) {
+    if (value < collapseThreshold) {
       tempGroup.push(payment)
     } else {
       if (tempGroup.length > 0) {
