@@ -1,6 +1,6 @@
 import { redis } from 'redis/clientInstance'
 import { Address, Prisma } from '@prisma/client'
-import { fetchTransactionsWithPaybuttonsAndPricesForAddress, getTransactionValue, TransactionsWithPaybuttonsAndPrices, TransactionWithAddressAndPrices } from 'services/transactionService'
+import { generateTransactionsWithPaybuttonsAndPricesForAddress, getTransactionValue, TransactionsWithPaybuttonsAndPrices, TransactionWithAddressAndPrices } from 'services/transactionService'
 import { fetchAllUserAddresses, AddressPaymentInfo } from 'services/addressService'
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
@@ -96,13 +96,15 @@ export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: 
   let paymentList: Payment[] = []
   let balance = new Prisma.Decimal(0)
   let paymentCount = 0
-  const txsWithPaybuttons = await fetchTransactionsWithPaybuttonsAndPricesForAddress(address.id)
-  for (const tx of txsWithPaybuttons) {
-    balance = balance.plus(tx.amount)
-    if (tx.amount.gt(0)) {
-      const payment = await generatePaymentFromTx(tx)
-      paymentList.push(payment)
-      paymentCount++
+  const txsWithPaybuttonsGenerator = generateTransactionsWithPaybuttonsAndPricesForAddress(address.id)
+  for await (const batch of txsWithPaybuttonsGenerator) {
+    for (const tx of batch) {
+      balance = balance.plus(tx.amount)
+      if (tx.amount.gt(0)) {
+        const payment = await generatePaymentFromTx(tx)
+        paymentList.push(payment)
+        paymentCount++
+      }
     }
   }
   const info: AddressPaymentInfo = {

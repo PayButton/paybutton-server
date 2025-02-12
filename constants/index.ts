@@ -261,3 +261,5 @@ export const MAX_DAILY_EMAILS = 100 // If changed, update the DB default accordi
 
 export const XEC_TX_EXPLORER_URL = 'https://explorer.e.cash/tx/'
 export const BCH_TX_EXPLORER_URL = 'https://blockchair.com/bitcoin-cash/transaction/'
+
+export const MAX_MESSAGES_TO_PROCESS_AT_A_TIME = 2

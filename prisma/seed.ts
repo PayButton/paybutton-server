@@ -27,6 +27,8 @@ export async function ignoreConflicts (callback: Function): Promise<void> {
 async function main (): Promise<void> {
   // don't seed in prod
   if (process.env.NODE_ENV === 'production' || process.env.ENVIRONMENT === 'production') return
+  // don't seed if skipped on env var
+  if (process.env.IGNORE_SEEDING === 'true') return
 
   // create networks
   if (await prisma.network.count() === 0) {

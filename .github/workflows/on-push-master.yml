@@ -17,6 +17,6 @@ jobs:
       - name: Run unit tests
         run: make github-test-unit
       - name: Spin up required database containers
-        run: docker-compose up -d db users-service
+        run: docker compose up -d db users-service
       - name: Run integration tests
         run: make github-test-integration
