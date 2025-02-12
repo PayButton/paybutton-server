@@ -250,13 +250,12 @@ export const PAYBUTTON_TRANSACTIONS_FILE_HEADERS = { ...BASE_FILE_HEADERS }
 
 export const PAYBUTTON_PAYMENT_FILE_HEADERS = {
   ...BASE_FILE_HEADERS,
-  collapsed: 'Collapsed',
   notes: 'Notes'
 }
 
 export const DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER = ','
 export const MAX_RECORDS_PER_FILE = 10000
-export const DEFAULT_COLLAPSE_THRESHOLD_FILE_USD = 1
+export const DEFAULT_CSV_COLLAPSE_THRESHOLD = 1
 
 export const DECIMALS: Record<string, number> = {
   BCH: 8,
