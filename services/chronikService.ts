@@ -691,6 +691,13 @@ class MultiBlockchainClient {
         await connectAllTransactionsToPrices()
         this.clients.ecash.setInitialized()
         this.clients.bitcoincash.setInitialized()
+      } else if (process.env.NODE_ENV === 'test') {
+        const asyncOperations: Array<Promise<void>> = []
+        this.clients = {
+          ecash: this.instantiateChronikClient('ecash', asyncOperations),
+          bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
+        }
+        await Promise.all(asyncOperations)
       }
     })()
   }
