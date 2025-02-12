@@ -1,7 +1,14 @@
 import { Transform } from "stream";
 import { NextApiResponse } from "next";
-import { valuesToCsvLine, getDataFromValues, streamToCSV, getTransform } from "utils/files";
-import { RESPONSE_MESSAGES } from "constants/index";
+import { valuesToCsvLine, getDataFromValues, streamToCSV, getTransform, collapseSmallPayments } from "utils/files";
+import { RESPONSE_MESSAGES, SupportedQuotesType } from "constants/index";
+import { Payment } from "redis/types";
+import { Prisma } from "@prisma/client";
+import { Decimal } from "@prisma/client/runtime/library";
+
+const timezone = 'America/Sao_Paulo';
+const currencyUsd = 'usd' as SupportedQuotesType;
+const currencyCad = 'cad' as SupportedQuotesType;
 
 const mockedJson = jest.fn();
 const delimiter = ','
@@ -161,3 +168,159 @@ describe("streamToCSV", () => {
         expect(() => streamToCSV(values, headers, delimiter, res)).toThrow(RESPONSE_MESSAGES.COULD_NOT_DOWNLOAD_FILE_500.message);
     });
 });
+
+describe('collapseSmallPayments', () => {
+  const mockedPayments: Payment[] = [
+    {
+      timestamp: 1738950932,
+      values: { 
+        values: { usd: new Prisma.Decimal(1.01475), cad: new Prisma.Decimal(1.45099) },
+        amount: new Decimal(41000) 
+      },
+      networkId: 1,
+      hash: '2ea05bde5db7c1176b7047fa2e9cef9aa55608e4b1376ad7e237977a6ad9fc17',
+      buttonDisplayDataList: [
+        {
+          name: 'LIssa',
+          id: '3be87ec3-e7bf-11ef-a39b-0242ac140003',
+          providerUserId: 'dev2-uid'
+        }
+      ],
+      address: 'ecash:qzlefwhd6x7ucasvvnytu6j9n9ez2atqmc25qvk2p3'
+    },
+    {
+      timestamp: 1738950932,
+      values: { values: { 
+        usd: new Prisma.Decimal(0.00037125), 
+        cad: new Prisma.Decimal(0.00053085) }, 
+        amount: new Decimal(15) },
+      networkId: 1,
+      hash: '2352d43b67b14cc60fb72a4beb4563a8cec4eef4c4d2a59910032307b4e3115f',
+      buttonDisplayDataList: [
+        {
+          name: 'LIssa',
+          id: '3be87ec3-e7bf-11ef-a39b-0242ac140003',
+          providerUserId: 'dev2-uid'
+        }
+      ],
+      address: 'ecash:qzlefwhd6x7ucasvvnytu6j9n9ez2atqmc25qvk2p3'
+    },
+    {
+      timestamp: 1738950932,
+      values: {
+        values: { 
+          usd: new Prisma.Decimal(0.0002475), 
+          cad: new Prisma.Decimal(0.0003539) 
+        }, 
+          amount: new Decimal(10) 
+        },
+      networkId: 1,
+      hash: 'fdc16a5457a4735282b94a817dcbede2b1972e4c6c596cfb22af2a3125bcfc96',
+      buttonDisplayDataList: [
+        {
+          name: 'LIssa',
+          id: '3be87ec3-e7bf-11ef-a39b-0242ac140003',
+          providerUserId: 'dev2-uid'
+        }
+      ],
+      address: 'ecash:qzlefwhd6x7ucasvvnytu6j9n9ez2atqmc25qvk2p3'
+    },
+    {
+      timestamp: 1738950932,
+      values: { values: 
+        { 
+        usd: new Prisma.Decimal(0.000396), 
+        cad: new Prisma.Decimal(0.00056624) 
+        }, 
+        amount: new Decimal(16) },
+      networkId: 1,
+      hash: 'cc8ace1c4bb2a0dfa864ddc874127cabbf54a68abc85648567f6eed0fe1a3a19',
+      buttonDisplayDataList: [
+        {
+          name: 'LIssa',
+          id: '3be87ec3-e7bf-11ef-a39b-0242ac140003',
+          providerUserId: 'dev2-uid'
+        }
+      ],
+      address: 'ecash:qzlefwhd6x7ucasvvnytu6j9n9ez2atqmc25qvk2p3'
+    },
+    {
+      timestamp: 1738950932,
+      values: { values: { 
+        usd: new Prisma.Decimal(1.00314918), 
+        cad: new Prisma.Decimal(1.4344019992) 
+      }, 
+      amount: new Decimal(40531.28) },
+      networkId: 1,
+      hash: 'a9aa890850a9453bb7f39998984d5a70d4c045349b66f4b789904131e62a66d0',
+      buttonDisplayDataList: [
+        {
+          name: 'LIssa',
+          id: '3be87ec3-e7bf-11ef-a39b-0242ac140003',
+          providerUserId: 'dev2-uid'
+        }
+      ],
+      address: 'ecash:qzlefwhd6x7ucasvvnytu6j9n9ez2atqmc25qvk2p3'
+    }
+  ];
+  const mockedSmallerThen1UsdPayments = [mockedPayments[1], mockedPayments[2], mockedPayments[3]];
+
+
+  it('should collapse small payments correctly', () => {
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone);
+
+    expect(result).toHaveLength(3);
+  });
+
+  it('should collapse small payments threshold 2 USD', () => {
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 2);
+
+    expect(result).toHaveLength(1);
+  });
+
+  it('should collapse small payments and concatenate txIds', () => {
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone);
+    const collapsedPayment = result[1]
+
+    expect(collapsedPayment.transactionId).toBe(mockedSmallerThen1UsdPayments.map(p => p.hash).join(';'));
+  });
+
+  it('amount should be the sum of colapsed tx amounts', () => {
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone);
+    const sumOfSmallPaymentsAmount = Number(mockedSmallerThen1UsdPayments.reduce((sum, payment) => sum.plus(payment.values.amount), new Decimal(0)));
+
+    const collapsedPayment = result[1];
+
+    expect(collapsedPayment.amount).toBe(sumOfSmallPaymentsAmount);
+  });
+
+  it('value should be the sum of colapsed tx values - USD', () => {
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone);
+    const sumOfSmallPaymentsAmount = Number(mockedSmallerThen1UsdPayments.reduce((sum, payment) => sum.plus(payment.values.values[currencyUsd]), new Decimal(0)));
+
+    const collapsedPayment = result[1];
+
+    expect(collapsedPayment.value).toBe(sumOfSmallPaymentsAmount);
+  });
+
+  it('value should be the sum of colapsed tx values - CAD', () => {
+    const result = collapseSmallPayments(mockedPayments, currencyCad, timezone);
+    const sumOfSmallPaymentsAmount = Number(mockedSmallerThen1UsdPayments.reduce((sum, payment) => sum.plus(payment.values.values[currencyCad]), new Decimal(0)));
+
+    const collapsedPayment = result[1];
+
+    expect(collapsedPayment.value).toBe(sumOfSmallPaymentsAmount);
+  });
+
+  it('rate should be the sum of colapsed total tx amounts divided by total tx values - USD', () => {
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone);
+    const sumOfSmallPaymentAmounts = Number(mockedSmallerThen1UsdPayments.reduce((sum, payment) => sum.plus(payment.values.amount), new Decimal(0)));
+    const sumOfSmallPaymentValues = Number(mockedSmallerThen1UsdPayments.reduce((sum, payment) => sum.plus(payment.values.values[currencyUsd]), new Decimal(0)));
+    const rate = sumOfSmallPaymentValues/sumOfSmallPaymentAmounts
+    
+    const collapsedPayment = result[1];
+
+    expect(collapsedPayment.rate).toBe(rate);
+  });
+});
+  
