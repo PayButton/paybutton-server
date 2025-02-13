@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import React, { ReactElement, useEffect, useState } from 'react'
 import style from './auth.module.css'
 import { SignUpPasswordPOSTParameters } from 'utils/validators'
-import { submitNewPassword } from 'supertokens-web-js/recipe/thirdpartyemailpassword'
+import { submitNewPassword } from 'supertokens-web-js/recipe/emailpassword'
 
 export default function ResetPassword (): ReactElement {
   const { register, handleSubmit, watch } = useForm<any>()
@@ -68,7 +68,7 @@ export default function ResetPassword (): ReactElement {
 
   return (
     <>
-      <form onSubmit={handleSubmit(onSubmit)} method='post'>
+      <form onSubmit={() => { void handleSubmit(onSubmit) }} method='post'>
         <label htmlFor='password'>Password</label>
         <input {...register('password')} type='password' id='password' name='password' required />
 

@@ -66,7 +66,7 @@
     "socket.io": "^4.4.1",
     "socket.io-client": "^4.7.1",
     "supertokens-node": "^21.1.0",
-    "supertokens-web-js": "^0.7.2",
+    "supertokens-web-js": "^0.14.0",
     "xecaddrjs": "^0.0.1"
   },
   "devDependencies": {
