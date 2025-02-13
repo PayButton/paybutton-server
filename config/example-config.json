@@ -12,8 +12,9 @@
     "bitcoincash": "chronik"
   },
   "networkBlockchainURLs": {
-    "ecash": "https://chronik.fabien.cash",
-    "bitcoincash": "https://chronik.pay2stay.com/bch"
+    "ecash": "https://xec.paybutton.io",
+    "bitcoincash": "https://bch.paybutton.io"
+
   },
   "networksUnderMaintenance": {
     "bitcoincash": true

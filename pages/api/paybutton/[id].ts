@@ -2,6 +2,8 @@ import * as paybuttonService from 'services/paybuttonService'
 import { parseError, parsePaybuttonPATCHRequest } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { setSession } from 'utils/setSession'
+import { fetchAddressesArray } from 'services/addressService'
+import { multiBlockchainClient } from 'services/chronikService'
 
 export default async (
   req: any,
@@ -55,8 +57,10 @@ export default async (
         userId
       }
       const updatePaybuttonInput = parsePaybuttonPATCHRequest(params, paybuttonId)
-      const paybutton = await paybuttonService.updatePaybutton(updatePaybuttonInput)
-      res.status(200).json(paybutton)
+      const updatedPaybuttonObj = await paybuttonService.updatePaybutton(updatePaybuttonInput)
+      const addressList = await fetchAddressesArray(updatedPaybuttonObj.createdAddresses)
+      void multiBlockchainClient.syncAndSubscribeAddresses(addressList)
+      res.status(200).json(updatedPaybuttonObj.paybutton)
     } catch (err: any) {
       const parsedError = parseError(err)
       switch (parsedError.message) {

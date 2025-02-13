@@ -264,13 +264,13 @@ export class ChronikBlockchainClient {
 
   public async * syncTransactionsForAddress (addressString: string, fully = false): AsyncGenerator<TransactionWithAddressAndPrices[]> {
     const address = await fetchAddressBySubstring(addressString)
+    if (address.syncing) { return }
+    await setSyncing(addressString, true)
     const pageSize = FETCH_N
     let page = 0
     const earliestUnconfirmedTxTimestamp = await getEarliestUnconfirmedTxTimestampForAddress(address.id)
     const latestTimestamp = earliestUnconfirmedTxTimestamp ?? await getLatestConfirmedTxTimestampForAddress(address.id) ?? 0
 
-    if (address.syncing) { return }
-    await setSyncing(addressString, true)
     while (true) {
       let transactions = await this.getPaginatedTxs(addressString, page, pageSize)
 
@@ -516,13 +516,15 @@ export class ChronikBlockchainClient {
       )
     if (addresses.length === 0) return { failedAddressesWithErrors }
 
-    addresses.forEach(address => {
-      try {
-        this.chronikWSEndpoint.subscribeToAddress(address.address)
-      } catch (err: any) {
-        failedAddressesWithErrors[address.address] = err.stack
-      }
-    })
+    await Promise.all(
+      addresses.map(async (address) => {
+        try {
+          this.chronikWSEndpoint.subscribeToAddress(address.address)
+        } catch (err: any) {
+          failedAddressesWithErrors[address.address] = err.stack
+        }
+      })
+    )
     return {
       failedAddressesWithErrors
     }

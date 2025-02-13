@@ -2,6 +2,8 @@ import * as paybuttonService from 'services/paybuttonService'
 import { parseError, parsePaybuttonPOSTRequest } from 'utils/validators'
 import { setSession } from 'utils/setSession'
 import { RESPONSE_MESSAGES } from 'constants/index'
+import { multiBlockchainClient } from 'services/chronikService'
+import { fetchAddressesArray } from 'services/addressService'
 
 export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'POST') {
@@ -10,8 +12,10 @@ export default async (req: any, res: any): Promise<void> => {
     values.userId = req.session.userId
     try {
       const createPaybuttonInput = parsePaybuttonPOSTRequest(values)
-      const paybutton = await paybuttonService.createPaybutton(createPaybuttonInput)
-      res.status(200).json(paybutton)
+      const createdPaybuttonObj = await paybuttonService.createPaybutton(createPaybuttonInput)
+      const addressList = await fetchAddressesArray(createdPaybuttonObj.createdAddresses)
+      void multiBlockchainClient.syncAndSubscribeAddresses(addressList)
+      res.status(200).json(createdPaybuttonObj.paybutton)
     } catch (err: any) {
       const parsedErr = parseError(err)
       switch (parsedErr.message) {

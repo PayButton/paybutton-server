@@ -5,7 +5,6 @@ import { RESPONSE_MESSAGES, NETWORK_IDS_FROM_SLUGS, BLOCKED_ADDRESSES } from 'co
 import { connectAddressToUser, disconnectAddressFromUser, fetchAddressWallet } from 'services/addressesOnUserProfileService'
 import { fetchUserDefaultWalletForNetwork } from './walletService'
 import { CacheSet } from 'redis/index'
-import { multiBlockchainClient } from './chronikService'
 export interface UpdatePaybuttonInput {
   paybuttonId: string
   name?: string
@@ -148,7 +147,12 @@ async function updateAddressUserConnectors ({
   )
 }
 
-export async function createPaybutton (values: CreatePaybuttonInput): Promise<PaybuttonWithAddresses> {
+export interface CreatePaybuttonReturn {
+  paybutton: PaybuttonWithAddresses
+  createdAddresses: string[]
+}
+
+export async function createPaybutton (values: CreatePaybuttonInput): Promise<CreatePaybuttonReturn> {
   // Creates or updates the `Address` objects
   // This has to be done before, or the connection
   // on relation tables to these addresses will fail
@@ -172,8 +176,6 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
       }
     })
   )
-  // Send async request to sync created addresses transactions
-  await multiBlockchainClient.syncAndSubscribeAddresses(createdAddresses)
   return await prisma.$transaction(async (prisma) => {
     // Creates or updates the `addressesOnUserProfile` objects
     await updateAddressUserConnectors({
@@ -212,7 +214,10 @@ export async function createPaybutton (values: CreatePaybuttonInput): Promise<Pa
       paybutton: pb,
       userId: values.userId
     })
-    return pb
+    return {
+      paybutton: pb,
+      createdAddresses: createdAddresses.map(addrObj => addrObj.address)
+    }
   })
 }
 
@@ -290,8 +295,12 @@ export async function fetchPaybuttonArrayByUserId (userId: string): Promise<Payb
     include: includeAddresses
   })
 }
+interface UpdatePaybuttonReturn {
+  paybutton: PaybuttonWithAddresses
+  createdAddresses: string[]
+}
 
-export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<PaybuttonWithAddresses> {
+export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<UpdatePaybuttonReturn> {
   const updateData: Prisma.PaybuttonUpdateInput = {}
   // Keep name, url and description if none was sent
   if (params.name !== undefined && params.name !== '') {
@@ -390,11 +399,10 @@ export async function updatePaybutton (params: UpdatePaybuttonInput): Promise<Pa
     paybutton,
     userId: params.userId
   })
-
-  // Send async request to sync created addresses transactions for addresses
-  // that are new (did not exist in any other buttons)
-  const createdAddresses = paybuttonNewAddresses.filter(a => !addressesThatAlreadyExistedStringList.includes(a.address))
-  void multiBlockchainClient.syncAndSubscribeAddresses(createdAddresses)
-
-  return paybutton
+  return {
+    paybutton,
+    createdAddresses: paybuttonNewAddresses
+      .filter(a => !addressesThatAlreadyExistedStringList.includes(a.address))
+      .map(addrObj => addrObj.address)
+  }
 }

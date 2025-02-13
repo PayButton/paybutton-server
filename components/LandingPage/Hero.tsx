@@ -1,11 +1,11 @@
-import Link from 'next/link';
-import Image from 'next/image';
-import style from '/styles/landing.module.css';
-import button from 'assets/button-pointer.png';
-import Wave from 'assets/wave.svg';
-import Blocks from 'assets/blocks.png';
+import Link from 'next/link'
+import Image from 'next/image'
+import style from '/styles/landing.module.css'
+import button from 'assets/button-pointer.png'
+import Wave from 'assets/wave.svg'
+import Blocks from 'assets/blocks.png'
 
-export default function Hero(): JSX.Element {
+export default function Hero (): JSX.Element {
   return (
     <div className={style.hero_ctn}>
       <div className={style.container}>
@@ -33,5 +33,5 @@ export default function Hero(): JSX.Element {
         <Image src={Blocks} alt="paybutton" />
       </div>
     </div>
-  );
+  )
 }

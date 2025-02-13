@@ -164,7 +164,7 @@ ${generateReactProps(button)}  />
             </div>
           ))}
         </div>
-        <div className={style.copybutton} onClick={handleCopyClick}>
+        <div className={style.copybutton} onClick={() => { void handleCopyClick() }}>
           <Image src={CopyIcon} alt="copy" />
           {isCopied ? 'Copied!' : 'Copy'}
         </div>
