@@ -118,6 +118,7 @@ const generateDashboardDataFromStream = async function (
 
   const today = moment().startOf('day')
   const thisYear = today.year()
+  const thisMonth = today.month()
   const monthStart = moment().startOf('month')
   const thresholds = createThresholds(today, monthStart, nMonthsTotal)
 
@@ -145,10 +146,8 @@ const generateDashboardDataFromStream = async function (
           index = ((today.day() - paymentWeekDay) + 7) % 7
         } else if (period === 'thirtyDays') {
           index = ((today.dayOfYear() - paymentYearDay) + yearModBase) % yearModBase
-        } else if (period === 'year') {
-          index = ((today.month() - paymentMonth) + 12) % 12
-        } else if (period === 'all') {
-          index = ((thisYear - paymentYear) * 12 + (today.month() - paymentMonth) + 12) % 12
+        } else if (period === 'year' || period === 'all') {
+          index = (thisMonth - paymentMonth) + 12 * (thisYear - paymentYear)
         }
 
         if (index >= 0 && index < revenueAccumulators[period].length) {
