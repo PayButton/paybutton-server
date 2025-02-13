@@ -18,7 +18,7 @@ services:
     container_name: paybutton-users-service
     depends_on:
       - cache
-    image: registry.supertokens.io/supertokens/supertokens-mysql:6.0
+    image: registry.supertokens.io/supertokens/supertokens-mysql
     restart: always
     ports:
       - 3567:3567

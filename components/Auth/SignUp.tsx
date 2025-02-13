@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form'
 import React, { ReactElement, useEffect, useState } from 'react'
 import style from './auth.module.css'
-import { emailPasswordSignUp } from 'supertokens-web-js/recipe/thirdpartyemailpassword'
+import { signUp } from 'supertokens-web-js/recipe/emailpassword'
 import { SignUpPasswordPOSTParameters } from 'utils/validators'
 
 export default function SignUp (): ReactElement {
@@ -14,7 +14,7 @@ export default function SignUp (): ReactElement {
     const email = values.email
     const password = values.password
     try {
-      const response = await emailPasswordSignUp({
+      const response = await signUp({
         formFields: [{
           id: 'email',
           value: email
@@ -79,7 +79,7 @@ export default function SignUp (): ReactElement {
   return (
     <>
       <h2>Sign Up</h2>
-      <form onSubmit={handleSubmit(onSubmit)} method='post'>
+      <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
         <label htmlFor='email'>Email</label>
         <input {...register('email')} type='email' id='email' name='email' required />
 

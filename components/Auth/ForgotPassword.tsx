@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form'
 import React, { ReactElement, useState } from 'react'
 import style from './auth.module.css'
-import { sendPasswordResetEmail } from 'supertokens-web-js/recipe/thirdpartyemailpassword'
+import { sendPasswordResetEmail } from 'supertokens-web-js/recipe/emailpassword'
 
 export default function SignUp (): ReactElement {
   const { register, handleSubmit, reset } = useForm<any>()
