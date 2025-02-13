@@ -125,7 +125,7 @@ export type TransactionsWithPaybuttonsAndPrices = Prisma.TransactionGetPayload<t
 export async function fetchTransactionsByAddressList (
   addressIdList: string[],
   networkIdsListFilter?: number[]
-): Promise<TransactionWithAddressAndPrices[]> {
+): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   return await prisma.transaction.findMany({
     where: {
       addressId: {
@@ -137,7 +137,7 @@ export async function fetchTransactionsByAddressList (
         }
       }
     },
-    include: includeAddressAndPrices,
+    include: includePaybuttonsAndPrices,
     orderBy: {
       timestamp: 'asc'
     }
@@ -501,7 +501,7 @@ export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transa
 `
 }
 
-export async function fetchTransactionsByPaybuttonId (paybuttonId: string, networkIds?: number[]): Promise<TransactionWithAddressAndPrices[]> {
+export async function fetchTransactionsByPaybuttonId (paybuttonId: string, networkIds?: number[]): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
   const transactions = await fetchTransactionsByAddressList(addressIdList, networkIds)
 
