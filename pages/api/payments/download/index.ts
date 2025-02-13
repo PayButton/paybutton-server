@@ -1,11 +1,15 @@
 import {
   RESPONSE_MESSAGES,
   SUPPORTED_QUOTES_FROM_ID,
-  NetworkTickersType
+  NetworkTickersType,
+  NETWORK_IDS,
+  NETWORK_TICKERS
 } from 'constants/index'
-import { downloadPaymentsFileByUserId, isNetworkValid } from 'utils/files'
+import { downloadTxsFile, isNetworkValid } from 'utils/files'
 import { setSession } from 'utils/setSession'
 import { fetchUserProfileFromId } from 'services/userService'
+import { getNetworkIdFromSlug } from 'services/networkService'
+import { fetchAllPaymentsByUserId } from 'services/transactionService'
 
 export default async (req: any, res: any): Promise<void> => {
   try {
@@ -32,7 +36,15 @@ export default async (req: any, res: any): Promise<void> => {
 
     const networkTicker = (networkTickerReq !== '' && isNetworkValid(networkTickerReq as NetworkTickersType)) ? networkTickerReq.toUpperCase() as NetworkTickersType : undefined
     res.setHeader('Content-Type', 'text/csv')
-    await downloadPaymentsFileByUserId(userId, res, quoteSlug, timezone, networkTicker)
+    let networkIdArray = Object.values(NETWORK_IDS)
+    if (networkTicker !== undefined) {
+      const slug = Object.keys(NETWORK_TICKERS).find(key => NETWORK_TICKERS[key] === networkTicker)
+      const networkId = getNetworkIdFromSlug(slug ?? NETWORK_TICKERS.ecash)
+      networkIdArray = [networkId]
+    };
+    const transactions = await fetchAllPaymentsByUserId(userId, networkIdArray)
+
+    await downloadTxsFile(res, quoteSlug, timezone, transactions, networkTicker)
   } catch (error: any) {
     switch (error.message) {
       case RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.message:
