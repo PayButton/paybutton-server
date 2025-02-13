@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
@@ -30,7 +29,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
   if (session === undefined) return
   const userId = session?.getUserId()
-  const user = await ThirdPartyEmailPasswordNode.getUserById(userId)
+  const user = await supertokensNode.getUser(userId)
   const isAdmin = await isUserAdmin(userId)
   return {
     props: {
@@ -44,7 +43,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 interface IProps {
   userId: string
   isAdmin: boolean
-  user: ThirdPartyEmailPasswordNode.User | undefined
+  user: supertokensNode.User | undefined
 }
 
 export default function Admin ({ user, isAdmin }: IProps): JSX.Element {

@@ -1,5 +1,5 @@
 import { UserProfile } from '@prisma/client'
-import supertokens from 'supertokens-node/recipe/thirdpartyemailpassword'
+import supertokensNode from 'supertokens-node'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import prisma from 'prisma/clientInstance'
 import crypto from 'crypto'
@@ -23,21 +23,33 @@ export interface UserWithSupertokens {
 
 export async function fetchUserWithSupertokens (userId: string): Promise<UserWithSupertokens> {
   const userProfile = await fetchUserProfileFromId(userId)
+  const stUser = await supertokensNode.getUser(userProfile.id)
   return {
     userProfile,
-    stUser: await supertokens.getUserById(userProfile.id)
+    stUser: stUser === undefined
+      ? undefined
+      : {
+          ...stUser,
+          email: stUser?.emails[0]
+        }
   }
 }
 
 export async function fetchAllUsersWithSupertokens (): Promise<UserWithSupertokens[]> {
   const ret: UserWithSupertokens[] = []
   const userProfiles = await fetchAllUsers()
-  await Promise.all(userProfiles.map(async (userProfile) =>
+  await Promise.all(userProfiles.map(async (userProfile) => {
+    const stUser = await supertokensNode.getUser(userProfile.id)
     ret.push({
       userProfile,
-      stUser: await supertokens.getUserById(userProfile.id)
+      stUser: stUser === undefined
+        ? undefined
+        : {
+            ...stUser,
+            email: stUser?.emails[0]
+          }
     })
-  ))
+  }))
   return ret
 }
 

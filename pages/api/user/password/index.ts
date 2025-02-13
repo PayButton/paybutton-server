@@ -1,6 +1,7 @@
 import { setSession } from 'utils/setSession'
 import { parseChangePasswordPOSTRequest } from 'utils/validators'
-import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword'
+import EmailPassword from 'supertokens-node/recipe/emailpassword'
+import supertokensNode from 'supertokens-node'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 export default async (
@@ -14,20 +15,20 @@ export default async (
     const oldPassword = values.oldPassword
     const newPassword = values.newPassword
     const userId = session.getUserId()
-    const userInfo = await ThirdPartyEmailPasswordNode.getUserById(userId)
+    const userInfo = await supertokensNode.getUser(userId)
     if (userInfo === undefined) {
       throw new Error(RESPONSE_MESSAGES.INVALID_PASSWORD_FORM_400.message)
     }
 
     // call signin to check that input password is correct
-    const isPasswordValid = await ThirdPartyEmailPasswordNode.emailPasswordSignIn('public', userInfo.email, oldPassword)
+    const isPasswordValid = await EmailPassword.signIn('public', userInfo.emails[0], oldPassword)
     if (isPasswordValid.status === 'WRONG_CREDENTIALS_ERROR') {
       res.status(400).json(RESPONSE_MESSAGES.WRONG_PASSWORD_400)
       return
     }
 
-    const response = await ThirdPartyEmailPasswordNode.updateEmailOrPassword({
-      userId,
+    const response = await EmailPassword.updateEmailOrPassword({
+      recipeUserId: userInfo.loginMethods[0].recipeUserId,
       password: newPassword
     })
 
