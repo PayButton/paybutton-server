@@ -49,7 +49,7 @@ export default function SignIn (): ReactElement {
   return (
     <>
       <h2>Sign In</h2>
-      <form onSubmit={() => { void handleSubmit(onSubmit) }} method='post'>
+      <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
         <label htmlFor='email'>Email</label>
         <input {...register('email')} type='email' id='email' name='email' required />
 

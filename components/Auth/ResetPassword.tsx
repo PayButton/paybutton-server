@@ -68,7 +68,7 @@ export default function ResetPassword (): ReactElement {
 
   return (
     <>
-      <form onSubmit={() => { void handleSubmit(onSubmit) }} method='post'>
+      <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
         <label htmlFor='password'>Password</label>
         <input {...register('password')} type='password' id='password' name='password' required />
 
