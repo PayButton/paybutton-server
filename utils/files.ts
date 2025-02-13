@@ -15,7 +15,7 @@ import {
 import { NextApiResponse } from 'next'
 import { Transform } from 'stream'
 import moment from 'moment-timezone'
-import { TransactionsWithPaybuttonsAndPrices, getTransactionValue } from 'services/transactionService'
+import { TransactionsWithPaybuttonsAndPrices, getTransactionValue, getTransactionValueInCurrency } from 'services/transactionService'
 
 export interface TransactionFileData {
   amount: Prisma.Decimal | number
@@ -25,6 +25,7 @@ export interface TransactionFileData {
   transactionId: string
   currency: string
   address?: string
+  notes: string
 }
 
 export interface FormattedTransactionFileData {
@@ -34,15 +35,8 @@ export interface FormattedTransactionFileData {
   rate: string
   transactionId: string
   address?: string
-}
-
-export interface PaymentFileData extends TransactionFileData {
   notes: string
-}
 
-export interface FormattedPaymentFileData
-  extends FormattedTransactionFileData {
-  notes: string
 }
 
 export function isCurrencyValid (currency: SupportedQuotesType): boolean {
@@ -57,7 +51,7 @@ export const formatNumberHeaders = (headers: string[], currency: string): string
   return headers.map(h => h === PAYBUTTON_TRANSACTIONS_FILE_HEADERS.value ? h + ` (${currency.toUpperCase()})` : h)
 }
 
-export const formatPaybuttonTransactionsFileData = (data: PaymentFileData): FormattedPaymentFileData => {
+export const formatPaybuttonTransactionsFileData = (data: TransactionFileData): FormattedTransactionFileData => {
   const {
     amount,
     date,
@@ -126,8 +120,8 @@ export const collapseSmallPayments = (
   payments: TransactionsWithPaybuttonsAndPrices[],
   currency: SupportedQuotesType,
   timezone: string,
-  collapseThreshold: number = DEFAULT_CSV_COLLAPSE_THRESHOLD): PaymentFileData[] => {
-  const treatedPayments: PaymentFileData[] = []
+  collapseThreshold: number): TransactionFileData[] => {
+  const treatedPayments: TransactionFileData[] = []
   let tempGroup: TransactionsWithPaybuttonsAndPrices[] = []
 
   payments.forEach((tx: TransactionsWithPaybuttonsAndPrices, index: number) => {
@@ -159,7 +153,7 @@ export const collapseSmallPayments = (
           currency,
           address: '',
           notes
-        } as PaymentFileData)
+        } as TransactionFileData)
 
         tempGroup = []
       }
@@ -175,13 +169,13 @@ export const collapseSmallPayments = (
         currency,
         address: address.address,
         notes
-      } as PaymentFileData)
+      } as TransactionFileData)
     }
 
     // If it's the last small payment in sequence or the next payment is from another day, collapse it
     if (tempGroup.length > 1 && ((nextPayment === undefined) || nextDateKey !== dateKey)) {
-      const totalAmount = tempGroup.reduce((sum, p) => sum + Number(p.values.amount), 0)
-      const totalValue = tempGroup.reduce((sum, p) => sum + Number(p.values.values[currency]), 0)
+      const totalAmount = tempGroup.reduce((sum, p) => sum + Number(p.amount), 0)
+      const totalValue = tempGroup.reduce((sum, p) => sum + Number(getTransactionValue(p)[currency]), 0)
       const rate = totalValue / totalAmount
       const buttonName = tempGroup[0].address.paybuttons[0].paybutton.name
       const notes = `${buttonName} - ${tempGroup.length.toString()} transactions`
@@ -195,7 +189,7 @@ export const collapseSmallPayments = (
         currency,
         address: '',
         notes
-      } as PaymentFileData)
+      } as TransactionFileData)
 
       tempGroup = []
     }
@@ -220,13 +214,41 @@ const sortPaymentsByNetworkId = (payments: TransactionsWithPaybuttonsAndPrices[]
   )
 }
 
+const getPaybuttonTransactionsFileData = (transactions: TransactionsWithPaybuttonsAndPrices[], currency: SupportedQuotesType, timezone: string): TransactionFileData[] => {
+  const paymentsFileData: TransactionFileData[] = []
+  transactions.forEach(element => {
+    const { amount, hash, address, timestamp } = element
+    const value = getTransactionValueInCurrency(element, currency)
+    const date = moment.tz(timestamp * 1000, timezone)
+    const rate = value / amount.toNumber()
+    paymentsFileData.push({
+      amount,
+      date,
+      transactionId: hash,
+      value,
+      rate,
+      currency,
+      address: address.address,
+      notes: ''
+    })
+  })
+  return paymentsFileData
+}
+
 export const downloadTxsFile = async (
   res: NextApiResponse,
   currency: SupportedQuotesType,
   timezone: string,
-  transactions: TransactionsWithPaybuttonsAndPrices[]): Promise<void> => {
+  transactions: TransactionsWithPaybuttonsAndPrices[],
+  collapseTransactions: boolean = false,
+  collapseThreshold: number = DEFAULT_CSV_COLLAPSE_THRESHOLD): Promise<void> => {
   const sortedPayments = sortPaymentsByNetworkId(transactions)
-  const treatedPayments = collapseSmallPayments(sortedPayments, currency, timezone)
+  let treatedPayments: TransactionFileData[] = []
+  if (collapseTransactions) {
+    treatedPayments = collapseSmallPayments(sortedPayments, currency, timezone, collapseThreshold)
+  } else {
+    treatedPayments = getPaybuttonTransactionsFileData(transactions, currency, timezone)
+  }
   const mappedPaymentsData = treatedPayments.map(payment => formatPaybuttonTransactionsFileData(payment))
 
   const headers = Object.keys(PAYBUTTON_PAYMENT_FILE_HEADERS)
