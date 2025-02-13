@@ -428,9 +428,11 @@ export class ChronikBlockchainClient {
           }
         }
       } else if (msg.type === 'Block') {
-        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.msgType} Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
         if (msg.msgType === 'BLK_FINALIZED') {
+          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Syncing ${this.confirmedTxsHashesFromLastBlock.length} txs on the block...`)
           await this.syncBlockTransactions(msg.blockHash)
+          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Syncing done.`)
           this.confirmedTxsHashesFromLastBlock = []
         }
       } else if (msg.type === 'Error') {
@@ -456,7 +458,6 @@ export class ChronikBlockchainClient {
   }
 
   private async syncBlockTransactions (blockHash: string): Promise<void> {
-    console.log('syncing block txs, expects', this.confirmedTxsHashesFromLastBlock.length, 'txs to be synced')
     let page = 0
     const pageSize = 200
     let blockTxsPage = (await this.chronik.blockTxs(blockHash, page, pageSize)).txs
