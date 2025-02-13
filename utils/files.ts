@@ -240,7 +240,7 @@ export const downloadTxsFile = async (
   currency: SupportedQuotesType,
   timezone: string,
   transactions: TransactionsWithPaybuttonsAndPrices[],
-  collapseTransactions: boolean = false,
+  collapseTransactions: boolean = true,
   collapseThreshold: number = DEFAULT_CSV_COLLAPSE_THRESHOLD): Promise<void> => {
   const sortedPayments = sortPaymentsByNetworkId(transactions)
   let treatedPayments: TransactionFileData[] = []
