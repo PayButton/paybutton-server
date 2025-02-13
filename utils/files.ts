@@ -151,7 +151,7 @@ export const collapseSmallPayments = (
           transactionId: tempGroup.map(p => p.hash).join(';'),
           rate,
           currency,
-          address: '',
+          address: tempGroup.map(p => p.address.address).join(';'),
           notes
         } as TransactionFileData)
 
@@ -187,7 +187,7 @@ export const collapseSmallPayments = (
         transactionId: tempGroup.map(p => p.hash).join(';'),
         rate,
         currency,
-        address: '',
+        address: tempGroup.map(p => p.address.address).join(';'),
         notes
       } as TransactionFileData)
 
