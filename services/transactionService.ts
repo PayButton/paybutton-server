@@ -10,7 +10,7 @@ import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTx } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
 
-export async function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices): Promise<QuoteValues> {
+export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices): QuoteValues {
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
@@ -540,6 +540,7 @@ export const getTransactionValueInCurrency = (transaction: TransactionWithAddres
 
   return result[currency]
 }
+
 export async function getOldestPositiveTxForUser (userId: string): Promise<Transaction | null> {
   return await prisma.transaction.findFirst({
     where: {
@@ -745,7 +746,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
 export async function fetchAllPaymentsByUserId (
   userId: string,
   networkIds?: number[]
-): Promise<Payment[]> {
+): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   const transactions = await prisma.transaction.findMany({
     where: {
       address: {
@@ -765,13 +766,5 @@ export async function fetchAllPaymentsByUserId (
     include: includePaybuttonsAndPrices
   })
 
-  const transformedData: Payment[] = []
-  for (let index = 0; index < transactions.length; index++) {
-    const tx = transactions[index]
-    if (Number(tx.amount) > 0) {
-      const payment = await generatePaymentFromTx(tx)
-      transformedData.push(payment)
-    }
-  }
-  return transformedData
+  return transactions
 }
