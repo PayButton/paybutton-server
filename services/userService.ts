@@ -29,7 +29,8 @@ export async function fetchUserWithSupertokens (userId: string): Promise<UserWit
     stUser: stUser === undefined
       ? undefined
       : {
-          ...stUser,
+          id: stUser.id,
+          timeJoined: stUser.timeJoined,
           email: stUser?.emails[0]
         }
   }
@@ -45,7 +46,8 @@ export async function fetchAllUsersWithSupertokens (): Promise<UserWithSupertoke
       stUser: stUser === undefined
         ? undefined
         : {
-            ...stUser,
+            id: stUser.id,
+            timeJoined: stUser.timeJoined,
             email: stUser?.emails[0]
           }
     })
