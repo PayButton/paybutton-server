@@ -15,8 +15,16 @@ const includePrices = {
   }
 }
 
-const includeAddressAndPrices = {
-  address: true,
+const includePaybuttonsAndPrices = {
+  address: {
+    include: {
+      paybuttons: {
+        include: {
+          paybutton: true
+        }
+      }
+    }
+  },
   ...includePrices
 }
 
@@ -137,7 +145,7 @@ describe('Fetch transactions by paybuttonId', () => {
       orderBy: {
         timestamp: 'asc'
       },
-      include: includeAddressAndPrices
+      include: includePaybuttonsAndPrices
     }
 
     const result = await transactionService.fetchTransactionsByPaybuttonId('mock')
