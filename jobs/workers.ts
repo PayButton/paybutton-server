@@ -8,9 +8,7 @@ export const syncCurrentPricesWorker = async (queueName: string): Promise<void> 
   const worker = new Worker(
     queueName,
     async (job) => {
-      const syncType = job.data.syncType
-      console.log(`job ${job.id as string}: syncing ${syncType as string} prices...`)
-
+      console.log(`job ${job.id as string}: syncing current prices...`)
       await priceService.syncCurrentPrices()
     },
     {
