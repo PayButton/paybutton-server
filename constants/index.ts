@@ -237,23 +237,19 @@ export const TRIGGER_POST_VARIABLES = [
   '<inputAddresses>'
 ]
 
-const BASE_FILE_HEADERS = {
+export const PAYBUTTON_TRANSACTIONS_FILE_HEADERS = {
   date: 'Date',
   amount: 'Amount',
   value: 'Value',
   rate: 'Rate',
   transactionId: 'Transaction Id',
-  address: 'Address'
-}
-
-export const PAYBUTTON_TRANSACTIONS_FILE_HEADERS = { ...BASE_FILE_HEADERS }
-
-export const PAYBUTTON_PAYMENT_FILE_HEADERS = {
-  ...BASE_FILE_HEADERS,
+  address: 'Address',
   notes: 'Notes'
 }
 
-export const DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER = ','
+export const DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER = ';'
+export const DEFAULT_MULTI_VALUES_FILE_DELIMITER = ','
+
 export const MAX_RECORDS_PER_FILE = 10000
 export const DEFAULT_CSV_COLLAPSE_THRESHOLD = 1
 

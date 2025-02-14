@@ -2,11 +2,11 @@ import { Prisma } from '@prisma/client'
 import {
   DECIMALS,
   DEFAULT_CSV_COLLAPSE_THRESHOLD,
+  DEFAULT_MULTI_VALUES_FILE_DELIMITER,
   DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER,
   MAX_RECORDS_PER_FILE,
   NETWORK_TICKERS,
   NetworkTickersType,
-  PAYBUTTON_PAYMENT_FILE_HEADERS,
   PAYBUTTON_TRANSACTIONS_FILE_HEADERS,
   PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES,
   SUPPORTED_QUOTES,
@@ -148,10 +148,10 @@ export const collapseSmallPayments = (
           amount: totalAmount,
           value: totalValue,
           date: moment.tz(tempGroup[0].timestamp * 1000, timezone),
-          transactionId: tempGroup.map(p => p.hash).join(';'),
+          transactionId: tempGroup.map(p => p.hash).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
           rate,
           currency,
-          address: tempGroup.map(p => p.address.address).join(';'),
+          address: tempGroup.map(p => p.address.address).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
           notes
         } as TransactionFileData)
 
@@ -184,10 +184,10 @@ export const collapseSmallPayments = (
         amount: totalAmount,
         value: totalValue,
         date: moment.tz(tempGroup[0].timestamp * 1000, timezone),
-        transactionId: tempGroup.map(p => p.hash).join(';'),
+        transactionId: tempGroup.map(p => p.hash).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
         rate,
         currency,
-        address: tempGroup.map(p => p.address.address).join(';'),
+        address: tempGroup.map(p => p.address.address).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
         notes
       } as TransactionFileData)
 
@@ -251,8 +251,8 @@ export const downloadTxsFile = async (
   }
   const mappedPaymentsData = treatedPayments.map(payment => formatPaybuttonTransactionsFileData(payment))
 
-  const headers = Object.keys(PAYBUTTON_PAYMENT_FILE_HEADERS)
-  const humanReadableHeaders = formatNumberHeaders(Object.values(PAYBUTTON_PAYMENT_FILE_HEADERS), currency)
+  const headers = Object.keys(PAYBUTTON_TRANSACTIONS_FILE_HEADERS)
+  const humanReadableHeaders = formatNumberHeaders(Object.values(PAYBUTTON_TRANSACTIONS_FILE_HEADERS), currency)
 
   streamToCSV(
     mappedPaymentsData,
