@@ -2,7 +2,7 @@ import { BlockInfo_InNode, ChronikClientNode, ScriptType_InNode, ScriptUtxo_InNo
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainInfo, BlockInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn } from 'types/chronikTypes'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MESSAGES_TO_PROCESS_AT_A_TIME } from 'constants/index'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import {
   TransactionWithAddressAndPrices,
@@ -116,7 +116,7 @@ export class ChronikBlockchainClient {
   CHRONIK_MSG_PREFIX: string
   lastProcessedMessages: ProcessedMessages
   initializing: boolean
-  messagesBeingProcessed: number
+  mempoolTxsBeingProcessed: number
 
   constructor (networkSlug: string) {
     if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
@@ -124,7 +124,7 @@ export class ChronikBlockchainClient {
     }
 
     this.initializing = true
-    this.messagesBeingProcessed = 0
+    this.mempoolTxsBeingProcessed = 0
     this.networkSlug = networkSlug
     this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
     this.chronik = new ChronikClientNode([config.networkBlockchainURLs[networkSlug]])
@@ -387,59 +387,56 @@ export class ChronikBlockchainClient {
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
     while (this.initializing) {
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, 500))
     }
-    while (this.messagesBeingProcessed > MAX_MESSAGES_TO_PROCESS_AT_A_TIME) {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-    }
-    this.messagesBeingProcessed += 1
-    try {
-      if (msg.type === 'Tx') {
-        if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
-          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
-          const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
-          try {
-            await deleteTransactions(transactionsToDelete)
-          } catch (err: any) {
-            const parsedError = parseError(err)
-            if (parsedError.message !== RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message) {
-              throw err
-            }
+    if (msg.type === 'Tx') {
+      if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
+        const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
+        try {
+          await deleteTransactions(transactionsToDelete)
+        } catch (err: any) {
+          const parsedError = parseError(err)
+          if (parsedError.message !== RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message) {
+            throw err
           }
-        } else if (msg.msgType === 'TX_CONFIRMED') {
-          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
-          this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
-        } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
-          if (this.isAlreadyBeingProcessed(msg.txid, false)) {
-            return
-          }
-          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
-          const transaction = await this.chronik.tx(msg.txid)
-          const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-          const inputAddresses = this.getSortedInputAddresses(transaction)
-          for (const addressWithTransaction of addressesWithTransactions) {
-            const { created, tx } = await createTransaction(addressWithTransaction.transaction)
-            if (tx !== undefined) {
-              const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses)
-              if (created) { // only execute trigger for newly added txs
-                await executeAddressTriggers(broadcastTxData, tx.address.networkId)
-              }
+        }
+      } else if (msg.msgType === 'TX_CONFIRMED') {
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
+        this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
+      } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
+        if (this.isAlreadyBeingProcessed(msg.txid, false)) {
+          return
+        }
+        while (this.mempoolTxsBeingProcessed > MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+        this.mempoolTxsBeingProcessed += 1
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
+        const transaction = await this.chronik.tx(msg.txid)
+        const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+        const inputAddresses = this.getSortedInputAddresses(transaction)
+        for (const addressWithTransaction of addressesWithTransactions) {
+          const { created, tx } = await createTransaction(addressWithTransaction.transaction)
+          if (tx !== undefined) {
+            const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses)
+            if (created) { // only execute trigger for newly added txs
+              await executeAddressTriggers(broadcastTxData, tx.address.networkId)
             }
           }
         }
-      } else if (msg.type === 'Block') {
-        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
-        if (msg.msgType === 'BLK_FINALIZED') {
-          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Syncing ${this.confirmedTxsHashesFromLastBlock.length} txs on the block...`)
-          await this.syncBlockTransactions(msg.blockHash)
-          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Syncing done.`)
-          this.confirmedTxsHashesFromLastBlock = []
-        }
-      } else if (msg.type === 'Error') {
-        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.type}] ${JSON.stringify(msg.msg)}`)
+        this.mempoolTxsBeingProcessed -= 1
       }
-    } finally {
-      this.messagesBeingProcessed -= 1
+    } else if (msg.type === 'Block') {
+      console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
+      if (msg.msgType === 'BLK_FINALIZED') {
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Syncing ${this.confirmedTxsHashesFromLastBlock.length} txs on the block...`)
+        await this.syncBlockTransactions(msg.blockHash)
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Syncing done.`)
+        this.confirmedTxsHashesFromLastBlock = []
+      }
+    } else if (msg.type === 'Error') {
+      console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.type}] ${JSON.stringify(msg.msg)}`)
     }
   }
 
