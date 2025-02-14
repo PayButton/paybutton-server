@@ -263,4 +263,5 @@ export const XEC_TX_EXPLORER_URL = 'https://explorer.e.cash/tx/'
 export const BCH_TX_EXPLORER_URL = 'https://blockchair.com/bitcoin-cash/transaction/'
 
 export const MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME = 3
+export const CHRONIK_INITIALIZATION_DELAY = 500
 export const MEMPOOL_PROCESS_DELAY = 100
