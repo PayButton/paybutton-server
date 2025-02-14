@@ -209,7 +209,7 @@ describe('collapseSmallPayments', () => {
     const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 1);
     const collapsedPayment = result[1]
 
-    expect(collapsedPayment.transactionId).toBe(mockedSmallerThen1UsdPayments.map(p => p.hash).join(';'));
+    expect(collapsedPayment.transactionId).toBe(mockedSmallerThen1UsdPayments.map(p => p.hash).join(','));
   });
 
   it('amount should be the sum of colapsed tx amounts', () => {
