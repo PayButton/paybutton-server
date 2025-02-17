@@ -23,7 +23,8 @@ const TableContainer = ({ columns, data, opts, ssr }: IProps): JSX.Element => {
     nextPage,
     previousPage,
     setPageSize,
-    state: { pageIndex, pageSize }
+    state: { pageIndex, pageSize, sortBy },
+    setSortBy
   } = useTable(
     {
       columns,
@@ -52,10 +53,16 @@ const TableContainer = ({ columns, data, opts, ssr }: IProps): JSX.Element => {
           {headerGroups.map((headerGroup: any) => (
             <tr {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map((column: any) => (
-                <th {...column.getHeaderProps(column.getSortByToggleProps())}>
-                  {column.render('Header')}
-                  {generateSortingIndicator(column)}
-                </th>
+                <th {...column.getHeaderProps({
+                  onClick: () => {
+                    const isDesc = sortBy[0]?.id === column.id ? !sortBy[0]?.desc : true;
+                    setSortBy([{ id: column.id, desc: isDesc }]);
+                  }
+                })}
+              >
+                {column.render('Header')}
+                {generateSortingIndicator(column)}
+              </th>
               ))}
             </tr>
           ))}
