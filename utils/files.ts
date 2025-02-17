@@ -151,7 +151,7 @@ export const collapseSmallPayments = (
           transactionId: tempGroup.map(p => p.hash).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
           rate,
           currency,
-          address: tempGroup.map(p => p.address.address).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
+          address: Array.from(new Set(tempGroup.map(p => p.address.address))).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
           notes
         } as TransactionFileData)
 
@@ -187,7 +187,7 @@ export const collapseSmallPayments = (
         transactionId: tempGroup.map(p => p.hash).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
         rate,
         currency,
-        address: tempGroup.map(p => p.address.address).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
+        address: Array.from(new Set(tempGroup.map(p => p.address.address))).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
         notes
       } as TransactionFileData)
 
