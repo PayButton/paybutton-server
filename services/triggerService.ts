@@ -231,6 +231,9 @@ interface EmailTriggerLog {
 }
 
 export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, networkId: number): Promise<void> {
+  if (process.env.DONT_EXECUTE_TRIGGERS === 'true') {
+    return
+  }
   try {
     const address = broadcastTxData.address
     const tx = broadcastTxData.txs[0]
