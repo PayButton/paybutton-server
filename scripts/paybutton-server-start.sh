@@ -10,7 +10,13 @@ done
 echo Connected to the db.
 
 yarn || exit 1
-rm logs/*
+# Clear logs
+
+logtime=$(date +%Y-%m-%d@%H:%M)
+mv logs/next.log logs/history/next_"$logtime".log
+mv logs/jobs.log logs/history/jobs_"$logtime".log
+mv logs/ws-server.log logs/history/ws-server_"$logtime".log
+
 if [ "$ENVIRONMENT" = "production" ]; then
     yarn prisma migrate deploy || exit 1
     pm2 start yarn --time --interpreter ash --name jobs --output logs/jobs.log --error logs/jobs.log -- initJobs || exit 1
