@@ -12,7 +12,7 @@ import { GetServerSideProps } from 'next'
 const DynamicButtonGenerator = dynamic(
   async () => await import('components/ButtonGenerator/index'),
   {
-    ssr: false
+    ssr: true
   }
 )
 

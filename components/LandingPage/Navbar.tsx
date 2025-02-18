@@ -43,7 +43,7 @@ export default function Navbar ({ userId }: IProps): JSX.Element {
           style={mobileMenu ? { left: '0' } : { left: '-200px' }}
         >
           <ThemeToggle landingpage />
-          <Link href="#button-generator" onClick={() => setMobileMenu(false)}>Button Generator</Link>
+          <a href="#button-generator" onClick={() => setMobileMenu(false)}>Button Generator</a>
           <Link
             href="https://github.com/paybutton"
             target="_blank"
