@@ -457,13 +457,13 @@ export class ChronikBlockchainClient {
   private async syncBlockTransactions (blockHash: string): Promise<void> {
     let page = 0
     const pageSize = 200
-    let blockTxsPage = (await this.chronik.blockTxs(blockHash, page, pageSize)).txs
+    let blockPageTxs = (await this.chronik.blockTxs(blockHash, page, pageSize)).txs
     let blockTxsToSync: Tx_InNode[] = []
-    while (blockTxsPage.length > 0 && blockTxsToSync.length !== this.confirmedTxsHashesFromLastBlock.length) {
-      const thisBlockTxsToSync = blockTxsPage.filter(tx => this.confirmedTxsHashesFromLastBlock.includes(tx.txid))
+    while (blockPageTxs.length > 0 && blockTxsToSync.length !== this.confirmedTxsHashesFromLastBlock.length) {
+      const thisBlockTxsToSync = blockPageTxs.filter(tx => this.confirmedTxsHashesFromLastBlock.includes(tx.txid))
       blockTxsToSync = [...blockTxsToSync, ...thisBlockTxsToSync]
       page += 1
-      blockTxsPage = (await this.chronik.blockTxs(blockHash, page, pageSize)).txs
+      blockPageTxs = (await this.chronik.blockTxs(blockHash, page, pageSize)).txs
     }
     for (const transaction of blockTxsToSync) {
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
