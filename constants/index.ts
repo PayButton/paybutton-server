@@ -248,10 +248,9 @@ export const PAYBUTTON_TRANSACTIONS_FILE_HEADERS = {
 }
 
 export const DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER = ','
-export const DEFAULT_MULTI_VALUES_FILE_DELIMITER = ' & '
-
 export const MAX_RECORDS_PER_FILE = 10000
 export const DEFAULT_CSV_COLLAPSE_THRESHOLD = 1
+export const DEFAULT_MULTI_VALUES_LINE_LABEL = 'Multiple'
 
 export const DECIMALS: Record<string, number> = {
   BCH: 8,

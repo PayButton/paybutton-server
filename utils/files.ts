@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client'
 import {
   DECIMALS,
   DEFAULT_CSV_COLLAPSE_THRESHOLD,
-  DEFAULT_MULTI_VALUES_FILE_DELIMITER,
+  DEFAULT_MULTI_VALUES_LINE_LABEL,
   DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER,
   MAX_RECORDS_PER_FILE,
   NETWORK_TICKERS,
@@ -148,10 +148,10 @@ export const collapseSmallPayments = (
           amount: totalAmount,
           value: totalValue,
           date: moment.tz(tempGroup[0].timestamp * 1000, timezone),
-          transactionId: 'Multiple',
+          transactionId: DEFAULT_MULTI_VALUES_LINE_LABEL,
           rate,
           currency,
-          address: Array.from(new Set(tempGroup.map(p => p.address.address))).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
+          address: DEFAULT_MULTI_VALUES_LINE_LABEL,
           notes
         } as TransactionFileData)
 
@@ -184,10 +184,10 @@ export const collapseSmallPayments = (
         amount: totalAmount,
         value: totalValue,
         date: moment.tz(tempGroup[0].timestamp * 1000, timezone),
-        transactionId: tempGroup.map(p => p.hash).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
+        transactionId: DEFAULT_MULTI_VALUES_LINE_LABEL,
         rate,
         currency,
-        address: Array.from(new Set(tempGroup.map(p => p.address.address))).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
+        address: DEFAULT_MULTI_VALUES_LINE_LABEL,
         notes
       } as TransactionFileData)
 
