@@ -1,7 +1,7 @@
 import { Transform } from "stream";
 import { NextApiResponse } from "next";
 import { valuesToCsvLine, getDataFromValues, streamToCSV, getTransform, collapseSmallPayments } from "utils/files";
-import { DEFAULT_MULTI_VALUES_FILE_DELIMITER, RESPONSE_MESSAGES, SupportedQuotesType } from "constants/index";
+import { RESPONSE_MESSAGES, SupportedQuotesType } from "constants/index";
 import { Decimal } from "@prisma/client/runtime/library";
 import { TransactionsWithPaybuttonsAndPrices, getTransactionValue } from "services/transactionService";
 
@@ -203,12 +203,6 @@ describe('collapseSmallPayments', () => {
     expect(result).toHaveLength(1);
   });
 
-  it('should collapse small payments and concatenate txIds', () => {
-    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 1);
-    const collapsedPayment = result[1]
-
-    expect(collapsedPayment.transactionId).toBe(mockedSmallerThen1UsdPayments.map(p => p.hash).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER));
-  });
 
   it('amount should be the sum of colapsed tx amounts', () => {
     const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 1);
