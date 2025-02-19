@@ -148,7 +148,7 @@ export const collapseSmallPayments = (
           amount: totalAmount,
           value: totalValue,
           date: moment.tz(tempGroup[0].timestamp * 1000, timezone),
-          transactionId: tempGroup.map(p => p.hash).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
+          transactionId: 'Multiple',
           rate,
           currency,
           address: Array.from(new Set(tempGroup.map(p => p.address.address))).join(DEFAULT_MULTI_VALUES_FILE_DELIMITER),
