@@ -5,6 +5,7 @@ import style from '../Transaction/transaction.module.css'
 import moment from 'moment'
 import { compareNumericString } from 'utils/index'
 import { formatQuoteValue } from 'utils'
+import { SUPPORTED_QUOTES_FROM_ID } from 'constants/index'
 
 interface IProps {
   buttons: PaymentDataByButton
@@ -13,6 +14,7 @@ interface IProps {
 }
 
 export default ({ buttons, totalString, currencyId }: IProps): JSX.Element => {
+  const totalRevenueAcessor = 'total.revenue.' + SUPPORTED_QUOTES_FROM_ID[currencyId]
   const columns = useMemo(
     () => [
       {
@@ -34,7 +36,7 @@ export default ({ buttons, totalString, currencyId }: IProps): JSX.Element => {
       },
       {
         Header: () => (<div style={{ textAlign: 'right' }}>{totalString} Revenue</div>),
-        accessor: 'total.revenue',
+        accessor: totalRevenueAcessor,
         id: 'revenue',
         sortType: compareNumericString,
         Cell: (cellProps) => {
