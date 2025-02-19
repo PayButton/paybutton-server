@@ -108,7 +108,7 @@ const addressWithTransactionNetworkUserProfile = Prisma.validator<Prisma.Address
 )
 export type AddressWithTransactionNetworkUserProfile = Prisma.AddressGetPayload<typeof addressWithTransactionNetworkUserProfile>
 
-export async function fetchAddressBySubstring (substring: string): Promise<AddressWithTransactionsAndNetwork> {
+export async function fetchAddressBySubstring (substring: string, includeTransactions = false): Promise<AddressWithTransactionsAndNetwork> {
   const results = await prisma.address.findMany({
     where: {
       address: {
@@ -117,7 +117,7 @@ export async function fetchAddressBySubstring (substring: string): Promise<Addre
     },
     include: {
       network: true,
-      transactions: true
+      transactions: includeTransactions
     }
   })
   if (results.length === 0) throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
