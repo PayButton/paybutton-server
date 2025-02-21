@@ -123,77 +123,82 @@ export const collapseSmallPayments = (
   collapseThreshold: number): TransactionFileData[] => {
   const treatedPayments: TransactionFileData[] = []
   let tempGroup: TransactionsWithPaybuttonsAndPrices[] = []
+  let totalPaymentsTreated = 0
+  const pushTempGroup = (): void => {
+    const totalAmount = tempGroup.reduce((sum, p) => sum + Number(p.amount), 0)
+    const totalValue = tempGroup.reduce((sum, p) => sum + Number(getTransactionValue(p)[currency]), 0)
+    const rate = totalValue / totalAmount
+    const buttonName = tempGroup[0].address.paybuttons[0].paybutton.name
+    const notes = `${buttonName} - ${tempGroup.length.toString()} transactions`
 
-  payments.forEach((tx: TransactionsWithPaybuttonsAndPrices, index: number) => {
+    totalPaymentsTreated += tempGroup.length
+
+    treatedPayments.push({
+      amount: totalAmount,
+      value: totalValue,
+      date: moment.tz(tempGroup[0].timestamp * 1000, timezone),
+      transactionId: DEFAULT_MULTI_VALUES_LINE_LABEL,
+      rate,
+      currency,
+      address: DEFAULT_MULTI_VALUES_LINE_LABEL,
+      notes
+    } as TransactionFileData)
+
+    tempGroup = []
+  }
+  const pushTx = (tx: TransactionsWithPaybuttonsAndPrices): void => {
     const { timestamp, hash, address, amount } = tx
     const values = getTransactionValue(tx)
     const value = Number(values[currency])
     const rate = value / Number(amount)
-    const dateKey = moment.tz(timestamp * 1000, timezone).format('YYYY-MM-DD')
 
+    const notes = ''
+
+    treatedPayments.push({
+      amount,
+      value,
+      date: moment.tz(timestamp * 1000, timezone),
+      transactionId: hash,
+      rate,
+      currency,
+      address: address.address,
+      notes
+    } as TransactionFileData)
+    totalPaymentsTreated += 1
+  }
+
+  payments.forEach((tx: TransactionsWithPaybuttonsAndPrices, index: number) => {
+    const { timestamp } = tx
+    const values = getTransactionValue(tx)
+    const value = Number(values[currency])
+    const dateKey = moment.tz(timestamp * 1000, timezone).format('YYYY-MM-DD')
     const nextPayment = payments[index + 1]
     const nextDateKey = (nextPayment !== undefined) ? moment.tz(nextPayment.timestamp * 1000, timezone).format('YYYY-MM-DD') : null
 
-    if (value < collapseThreshold) {
+    if ((value < collapseThreshold)) {
       tempGroup.push(tx)
     } else {
-      if (tempGroup.length > 0) {
-        const totalAmount = tempGroup.reduce((sum, p) => sum + Number(p.amount), 0)
-        const totalValue = tempGroup.reduce((sum, p) => sum + Number(getTransactionValue(p)[currency]), 0)
-        const rate = totalValue / totalAmount
-        const buttonName = tempGroup[0].address.paybuttons[0].paybutton.name
-        const notes = `${buttonName} - ${tempGroup.length.toString()} transactions`
-
-        treatedPayments.push({
-          amount: totalAmount,
-          value: totalValue,
-          date: moment.tz(tempGroup[0].timestamp * 1000, timezone),
-          transactionId: DEFAULT_MULTI_VALUES_LINE_LABEL,
-          rate,
-          currency,
-          address: DEFAULT_MULTI_VALUES_LINE_LABEL,
-          notes
-        } as TransactionFileData)
-
+      if (tempGroup.length > 1) {
+        pushTempGroup()
+      } else if (tempGroup.length === 1) {
+        pushTx(tempGroup[0])
         tempGroup = []
       }
-
-      const notes = ''
-
-      treatedPayments.push({
-        amount,
-        value,
-        date: moment.tz(timestamp * 1000, timezone),
-        transactionId: hash,
-        rate,
-        currency,
-        address: address.address,
-        notes
-      } as TransactionFileData)
+      pushTx(tx)
     }
 
     // If it's the last small payment in sequence or the next payment is from another day, collapse it
     if (tempGroup.length > 1 && ((nextPayment === undefined) || nextDateKey !== dateKey)) {
-      const totalAmount = tempGroup.reduce((sum, p) => sum + Number(p.amount), 0)
-      const totalValue = tempGroup.reduce((sum, p) => sum + Number(getTransactionValue(p)[currency]), 0)
-      const rate = totalValue / totalAmount
-      const buttonName = tempGroup[0].address.paybuttons[0].paybutton.name
-      const notes = `${buttonName} - ${tempGroup.length.toString()} transactions`
-
-      treatedPayments.push({
-        amount: totalAmount,
-        value: totalValue,
-        date: moment.tz(tempGroup[0].timestamp * 1000, timezone),
-        transactionId: DEFAULT_MULTI_VALUES_LINE_LABEL,
-        rate,
-        currency,
-        address: DEFAULT_MULTI_VALUES_LINE_LABEL,
-        notes
-      } as TransactionFileData)
-
+      pushTempGroup()
+    } else if ((tempGroup.length === 1) && nextDateKey !== dateKey) {
+      pushTx(tempGroup[0])
       tempGroup = []
     }
   })
+
+  if (totalPaymentsTreated !== payments.length) {
+    throw new Error('Error to collapse payments')
+  }
 
   return treatedPayments
 }
