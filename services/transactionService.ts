@@ -763,7 +763,10 @@ export async function fetchAllPaymentsByUserId (
         gt: 0
       }
     },
-    include: includePaybuttonsAndPrices
+    include: includePaybuttonsAndPrices,
+    orderBy: {
+      timestamp: 'asc'
+    }
   })
 
   return transactions
