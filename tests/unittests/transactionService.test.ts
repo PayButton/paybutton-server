@@ -15,8 +15,16 @@ const includePrices = {
   }
 }
 
-const includeAddressAndPrices = {
-  address: true,
+const includePaybuttonsAndPrices = {
+  address: {
+    include: {
+      paybuttons: {
+        include: {
+          paybutton: true
+        }
+      }
+    }
+  },
   ...includePrices
 }
 
@@ -81,8 +89,8 @@ describe('Create services', () => {
 })
 
 describe('Amount transactioned', () => {
-  it('Negative transaction', async () => {
-    const amount = await transactionService.getTransactionValue(
+  it('Negative transaction', () => {
+    const amount = transactionService.getTransactionValue(
       {
         ...mockedTransaction,
         prices: [
@@ -106,8 +114,8 @@ describe('Amount transactioned', () => {
     expect(amount.usd.toString()).toBe('-8.62495448')
     expect(amount.cad.toString()).toBe('-12.93743172')
   })
-  it('Positive transaction', async () => {
-    const amount = await transactionService.getTransactionValue(mockedTransaction)
+  it('Positive transaction', () => {
+    const amount = transactionService.getTransactionValue(mockedTransaction)
     expect(amount.usd.toString()).toBe('0.0000758564746516')
     expect(amount.cad.toString()).toBe('0.000075899599424')
   })
@@ -137,7 +145,7 @@ describe('Fetch transactions by paybuttonId', () => {
       orderBy: {
         timestamp: 'asc'
       },
-      include: includeAddressAndPrices
+      include: includePaybuttonsAndPrices
     }
 
     const result = await transactionService.fetchTransactionsByPaybuttonId('mock')

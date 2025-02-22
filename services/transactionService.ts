@@ -10,7 +10,7 @@ import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTx } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
 
-export async function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices): Promise<QuoteValues> {
+export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices): QuoteValues {
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
@@ -125,7 +125,7 @@ export type TransactionsWithPaybuttonsAndPrices = Prisma.TransactionGetPayload<t
 export async function fetchTransactionsByAddressList (
   addressIdList: string[],
   networkIdsListFilter?: number[]
-): Promise<TransactionWithAddressAndPrices[]> {
+): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   return await prisma.transaction.findMany({
     where: {
       addressId: {
@@ -137,7 +137,7 @@ export async function fetchTransactionsByAddressList (
         }
       }
     },
-    include: includeAddressAndPrices,
+    include: includePaybuttonsAndPrices,
     orderBy: {
       timestamp: 'asc'
     }
@@ -501,7 +501,7 @@ export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transa
 `
 }
 
-export async function fetchTransactionsByPaybuttonId (paybuttonId: string, networkIds?: number[]): Promise<TransactionWithAddressAndPrices[]> {
+export async function fetchTransactionsByPaybuttonId (paybuttonId: string, networkIds?: number[]): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
   const transactions = await fetchTransactionsByAddressList(addressIdList, networkIds)
 
@@ -540,6 +540,7 @@ export const getTransactionValueInCurrency = (transaction: TransactionWithAddres
 
   return result[currency]
 }
+
 export async function getOldestPositiveTxForUser (userId: string): Promise<Transaction | null> {
   return await prisma.transaction.findFirst({
     where: {
@@ -745,7 +746,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
 export async function fetchAllPaymentsByUserId (
   userId: string,
   networkIds?: number[]
-): Promise<Payment[]> {
+): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   const transactions = await prisma.transaction.findMany({
     where: {
       address: {
@@ -762,16 +763,11 @@ export async function fetchAllPaymentsByUserId (
         gt: 0
       }
     },
-    include: includePaybuttonsAndPrices
+    include: includePaybuttonsAndPrices,
+    orderBy: {
+      timestamp: 'asc'
+    }
   })
 
-  const transformedData: Payment[] = []
-  for (let index = 0; index < transactions.length; index++) {
-    const tx = transactions[index]
-    if (Number(tx.amount) > 0) {
-      const payment = await generatePaymentFromTx(tx)
-      transformedData.push(payment)
-    }
-  }
-  return transformedData
+  return transactions
 }
