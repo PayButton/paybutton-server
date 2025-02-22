@@ -6,6 +6,7 @@ import {
   DEFAULT_PAYBUTTON_CSV_FILE_DELIMITER,
   MAX_RECORDS_PER_FILE,
   NETWORK_TICKERS,
+  NETWORK_TICKERS_FROM_ID,
   NetworkTickersType,
   PAYBUTTON_TRANSACTIONS_FILE_HEADERS,
   PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES,
@@ -26,6 +27,7 @@ export interface TransactionFileData {
   currency: string
   address?: string
   notes: string
+  newtworkId: number
 }
 
 export interface FormattedTransactionFileData {
@@ -57,14 +59,15 @@ export const formatPaybuttonTransactionsFileData = (data: TransactionFileData): 
     date,
     value,
     rate,
-    currency
+    newtworkId
   } = data
+  const networkTicker = NETWORK_TICKERS_FROM_ID[newtworkId]
 
   return {
     ...data,
-    amount: amount.toFixed(DECIMALS[currency]),
+    amount: amount.toFixed(DECIMALS[networkTicker]),
     date: date.format(PRICE_API_DATE_FORMAT),
-    value: value.toFixed(2),
+    value: value.toFixed(DECIMALS[networkTicker]),
     rate: rate.toFixed(14)
   }
 }
@@ -141,6 +144,7 @@ export const collapseSmallPayments = (
       rate,
       currency,
       address: DEFAULT_MULTI_VALUES_LINE_LABEL,
+      newtworkId: tempGroup[0].address.networkId,
       notes
     } as TransactionFileData)
 
@@ -162,7 +166,8 @@ export const collapseSmallPayments = (
       rate,
       currency,
       address: address.address,
-      notes
+      notes,
+      newtworkId: address.networkId
     } as TransactionFileData)
     totalPaymentsTreated += 1
   }
@@ -234,7 +239,8 @@ const getPaybuttonTransactionsFileData = (transactions: TransactionsWithPaybutto
       rate,
       currency,
       address: address.address,
-      notes: ''
+      notes: '',
+      newtworkId: address.networkId
     })
   })
   return paymentsFileData
