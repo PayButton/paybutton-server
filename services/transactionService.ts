@@ -775,3 +775,15 @@ export async function fetchAllPaymentsByUserId (
   }
   return transformedData
 }
+
+export async function fetchTxCountByPaybuttonId (paybuttonId: string): Promise<number> {
+  const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
+
+  return await prisma.transaction.count({
+    where: {
+      addressId: {
+        in: addressIdList
+      }
+    }
+  })
+}
