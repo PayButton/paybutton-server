@@ -239,7 +239,8 @@ const getPaybuttonTransactionsFileData = (transactions: TransactionsWithPaybutto
       rate,
       currency,
       address: address.address,
-      notes: ''
+      notes: '',
+      newtworkId: address.networkId
     })
   })
   return paymentsFileData
