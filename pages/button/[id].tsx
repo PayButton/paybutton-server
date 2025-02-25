@@ -58,7 +58,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   const [paybuttonNetworks, setPaybuttonNetworks] = useState<number[]>([])
   const [selectedCurrency, setSelectedCurrency] = useState<string>('')
   const userProfile = props.userProfile
-  const timezone = userProfile?.preferredTimezone === '' ? moment.tz.guess() : userProfile.preferredTimezone
+  const timezone = userProfile?.preferredTimezone === '' ? moment.tz.guess() : userProfile?.preferredTimezone
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 

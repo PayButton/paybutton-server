@@ -123,11 +123,20 @@ export const collapseSmallPayments = (
   payments: TransactionsWithPaybuttonsAndPrices[],
   currency: SupportedQuotesType,
   timezone: string,
-  collapseThreshold: number): TransactionFileData[] => {
+  collapseThreshold: number
+): TransactionFileData[] => {
   const treatedPayments: TransactionFileData[] = []
-  let tempGroup: TransactionsWithPaybuttonsAndPrices[] = []
+  const tempGroups: Record<string, TransactionsWithPaybuttonsAndPrices[]> = {}
   let totalPaymentsTreated = 0
-  const pushTempGroup = (): void => {
+
+  const pushTempGroup = (groupKey: string): void => {
+    const tempGroup = tempGroups[groupKey]
+    if (tempGroup === undefined || tempGroup.length === 0) return
+    if (tempGroup.length === 1) {
+      pushTx(tempGroup[0])
+      tempGroups[groupKey] = []
+      return
+    }
     const totalAmount = tempGroup.reduce((sum, p) => sum + Number(p.amount), 0)
     const totalValue = tempGroup.reduce((sum, p) => sum + Number(getTransactionValue(p)[currency]), 0)
     const rate = totalValue / totalAmount
@@ -148,15 +157,14 @@ export const collapseSmallPayments = (
       notes
     } as TransactionFileData)
 
-    tempGroup = []
+    tempGroups[groupKey] = []
   }
+
   const pushTx = (tx: TransactionsWithPaybuttonsAndPrices): void => {
     const { timestamp, hash, address, amount } = tx
     const values = getTransactionValue(tx)
     const value = Number(values[currency])
     const rate = value / Number(amount)
-
-    const notes = ''
 
     treatedPayments.push({
       amount,
@@ -166,7 +174,7 @@ export const collapseSmallPayments = (
       rate,
       currency,
       address: address.address,
-      notes,
+      notes: '',
       newtworkId: address.networkId
     } as TransactionFileData)
     totalPaymentsTreated += 1
@@ -177,29 +185,28 @@ export const collapseSmallPayments = (
     const values = getTransactionValue(tx)
     const value = Number(values[currency])
     const dateKey = moment.tz(timestamp * 1000, timezone).format('YYYY-MM-DD')
-    const nextPayment = payments[index + 1]
-    const nextDateKey = (nextPayment !== undefined) ? moment.tz(nextPayment.timestamp * 1000, timezone).format('YYYY-MM-DD') : null
+    const dateKeyUTC = moment.utc(timestamp * 1000).format('YYYY-MM-DD')
+    const groupKey = `${dateKey}_${dateKeyUTC}`
 
-    if ((value < collapseThreshold)) {
-      tempGroup.push(tx)
+    const nextPayment = payments[index + 1]
+    const nextDateKey = nextPayment === undefined ? null : moment.tz(nextPayment.timestamp * 1000, timezone).format('YYYY-MM-DD')
+    const nextDateKeyUTC = nextPayment === undefined ? null : moment.utc(nextPayment.timestamp * 1000).format('YYYY-MM-DD')
+    const nextGroupKey = nextDateKey === null || nextDateKeyUTC === null ? null : `${nextDateKey}_${nextDateKeyUTC}`
+
+    if (value < collapseThreshold) {
+      if (tempGroups[groupKey] === undefined) tempGroups[groupKey] = []
+      tempGroups[groupKey].push(tx)
     } else {
-      if (tempGroup.length > 1) {
-        pushTempGroup()
-      } else if (tempGroup.length === 1) {
-        pushTx(tempGroup[0])
-        tempGroup = []
-      }
+      Object.keys(tempGroups).forEach(pushTempGroup)
       pushTx(tx)
     }
 
-    // If it's the last small payment in sequence or the next payment is from another day, collapse it
-    if (tempGroup.length > 1 && ((nextPayment === undefined) || nextDateKey !== dateKey)) {
-      pushTempGroup()
-    } else if ((tempGroup.length === 1) && nextDateKey !== dateKey) {
-      pushTx(tempGroup[0])
-      tempGroup = []
+    if (nextGroupKey !== groupKey) {
+      pushTempGroup(groupKey)
     }
   })
+
+  Object.keys(tempGroups).forEach(pushTempGroup)
 
   if (totalPaymentsTreated !== payments.length) {
     throw new Error('Error to collapse payments')
