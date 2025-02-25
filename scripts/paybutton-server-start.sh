@@ -13,9 +13,9 @@ yarn || exit 1
 # Clear logs
 
 logtime=$(date +%Y-%m-%d@%H:%M)
-mv logs/next.log logs/history/next_"$logtime".log
-mv logs/jobs.log logs/history/jobs_"$logtime".log
-mv logs/ws-server.log logs/history/ws-server_"$logtime".log
+[ -e logs/next.log ] && mv logs/next.log logs/history/next_"$logtime".log
+[ -e logs/jobs.log ] && mv logs/jobs.log logs/history/jobs_"$logtime".log
+[ -e logs/ws-server.log ] && mv logs/ws-server.log logs/history/ws-server_"$logtime".log
 
 if [ "$ENVIRONMENT" = "production" ]; then
     yarn prisma migrate deploy || exit 1
