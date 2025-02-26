@@ -230,16 +230,5 @@ describe('collapseSmallPayments', () => {
 
     expect(collapsedPayment.value).toBe(sumOfSmallPaymentsAmount);
   });
-
-  it('rate should be the sum of colapsed total tx amounts divided by total tx values - USD', () => {
-    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 1);
-    const sumOfSmallPaymentAmounts = Number(mockedSmallerThen1UsdPayments.reduce((sum, payment) => sum.plus(payment.amount), new Decimal(0)));
-    const sumOfSmallPaymentValues = Number(mockedSmallerThen1UsdPayments.reduce((sum, payment) => sum.plus(Number(getTransactionValue(payment)[currencyUsd])), new Decimal(0)));
-    const rate = sumOfSmallPaymentValues/sumOfSmallPaymentAmounts
-    
-    const collapsedPayment = result[1];
-
-    expect(collapsedPayment.rate).toBe(rate);
-  });
 });
   

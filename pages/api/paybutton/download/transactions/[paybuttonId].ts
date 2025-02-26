@@ -1,9 +1,9 @@
 import {
   RESPONSE_MESSAGES,
   NetworkTickersType,
-  NETWORK_TICKERS,
   NETWORK_IDS,
-  SUPPORTED_QUOTES_FROM_ID
+  SUPPORTED_QUOTES_FROM_ID,
+  NETWORK_SLUGS_FROM_IDS
 } from 'constants/index'
 import { fetchTransactionsByPaybuttonId } from 'services/transactionService'
 import { fetchPaybuttonById } from 'services/paybuttonService'
@@ -45,10 +45,13 @@ export default async (req: any, res: any): Promise<void> => {
     const timezone = userPreferredTimezone !== '' ? userPreferredTimezone : userReqTimezone
     let networkIdArray = Object.values(NETWORK_IDS)
     if (networkTicker !== undefined) {
-      const slug = Object.keys(NETWORK_TICKERS).find(key => NETWORK_TICKERS[key] === networkTicker)
-      const networkId = getNetworkIdFromSlug(slug ?? NETWORK_TICKERS.ecash)
+      const slug =  NETWORK_SLUGS_FROM_IDS[NETWORK_IDS[networkTicker]]
+      if (slug === undefined) {
+        throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
+      }
+      const networkId = getNetworkIdFromSlug(slug)
       networkIdArray = [networkId]
-    }
+    };
     const transactions = await fetchTransactionsByPaybuttonId(paybutton.id, networkIdArray)
     res.setHeader('Content-Type', 'text/csv')
     await downloadTxsFile(res, quoteSlug, timezone, transactions)
