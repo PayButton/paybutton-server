@@ -139,16 +139,16 @@ export const collapseSmallPayments = (
     }
     const totalAmount = tempTxGroup.reduce((sum, p) => sum + Number(p.amount), 0)
     const totalValue = tempTxGroup.reduce((sum, p) => sum + Number(getTransactionValue(p)[currency]), 0)
-    const uniquePrices = new Set();
+    const uniquePrices = new Set()
     tempTxGroup
-      .forEach(tx =>{
+      .forEach(tx => {
         const price = tx.prices.find(p => p.price.quoteId === QUOTE_IDS[currency.toUpperCase()])!.price.value
         uniquePrices.add(Number(price))
       })
     if (uniquePrices.size !== 1) {
-      throw new Error(RESPONSE_MESSAGES.INVALID_PRICES_FOR_TX_ON_CSV_CREATION_500(uniquePrices.size).message)
+      throw new Error(RESPONSE_MESSAGES.INVALID_PRICES_AMOUNT_FOR_TX_ON_CSV_CREATION_500(uniquePrices.size).message)
     }
-    const rate = uniquePrices.values().next().value;
+    const rate = uniquePrices.values().next().value
     const buttonName = tempTxGroup[0].address.paybuttons[0].paybutton.name
     const notes = `${buttonName} - ${tempTxGroup.length.toString()} transactions`
 
@@ -173,7 +173,7 @@ export const collapseSmallPayments = (
     const { timestamp, hash, address, amount } = tx
     const values = getTransactionValue(tx)
     const value = Number(values[currency])
-    const rate = tx.prices.find(p => p.price.quoteId = QUOTE_IDS[currency.toUpperCase()])!.price.value
+    const rate = tx.prices.find(p => p.price.quoteId === QUOTE_IDS[currency.toUpperCase()])!.price.value
 
     treatedPayments.push({
       amount,
@@ -246,7 +246,7 @@ const getPaybuttonTransactionsFileData = (transactions: TransactionsWithPaybutto
     const { amount, hash, address, timestamp } = tx
     const value = getTransactionValueInCurrency(tx, currency)
     const date = moment.tz(timestamp * 1000, timezone)
-    const rate = tx.prices.find(p => p.price.quoteId = QUOTE_IDS[currency.toUpperCase()])!.price.value
+    const rate = tx.prices.find(p => p.price.quoteId === QUOTE_IDS[currency.toUpperCase()])!.price.value
     paymentsFileData.push({
       amount,
       date,
