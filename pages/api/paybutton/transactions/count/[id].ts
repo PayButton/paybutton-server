@@ -2,6 +2,7 @@ import { fetchTxCountByPaybuttonId } from 'services/transactionService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { fetchPaybuttonById } from 'services/paybuttonService'
 import { setSession } from 'utils/setSession'
+import { parseError } from 'utils/validators'
 
 export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'GET') {
@@ -16,7 +17,11 @@ export default async (req: any, res: any): Promise<void> => {
       const count = await fetchTxCountByPaybuttonId(paybuttonId)
       res.status(200).send(count)
     } catch (err: any) {
-      switch (err.message) {
+      const parsedError = parseError(err)
+      switch (parsedError.message) {
+        case RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message:
+          res.status(404).json(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404)
+          break
         case RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message:
           res.status(400).json(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400)
           break
