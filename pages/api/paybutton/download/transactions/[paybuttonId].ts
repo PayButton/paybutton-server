@@ -3,13 +3,12 @@ import {
   NetworkTickersType,
   NETWORK_IDS,
   SUPPORTED_QUOTES_FROM_ID,
-  NETWORK_SLUGS_FROM_IDS
+  NETWORK_TICKERS
 } from 'constants/index'
 import { fetchTransactionsByPaybuttonId } from 'services/transactionService'
 import { fetchPaybuttonById } from 'services/paybuttonService'
 import { isNetworkValid, downloadTxsFile } from 'utils/files'
 import { setSession } from 'utils/setSession'
-import { getNetworkIdFromSlug } from 'services/networkService'
 import { fetchUserProfileFromId } from 'services/userService'
 
 export default async (req: any, res: any): Promise<void> => {
@@ -26,9 +25,9 @@ export default async (req: any, res: any): Promise<void> => {
     const userId = req.session.userId
     const user = await fetchUserProfileFromId(userId)
     const paybuttonId = req.query.paybuttonId as string
-    const networkTickerReq = req.query.network as string
+    const networkTickerReq = (req.query.network as string).toUpperCase()
 
-    const networkTicker = (networkTickerReq !== '' && isNetworkValid(networkTickerReq as NetworkTickersType)) ? networkTickerReq.toUpperCase() as NetworkTickersType : undefined
+    const networkTicker = (networkTickerReq !== '' && isNetworkValid(networkTickerReq as NetworkTickersType)) ? networkTickerReq as NetworkTickersType : undefined
     let quoteId: number
     if (req.query.currency === undefined || req.query.currency === '' || Number.isNaN(req.query.currency)) {
       quoteId = user.preferredCurrencyId
@@ -45,11 +44,10 @@ export default async (req: any, res: any): Promise<void> => {
     const timezone = userPreferredTimezone !== '' ? userPreferredTimezone : userReqTimezone
     let networkIdArray = Object.values(NETWORK_IDS)
     if (networkTicker !== undefined) {
-      const slug =  NETWORK_SLUGS_FROM_IDS[NETWORK_IDS[networkTicker]]
-      if (slug === undefined) {
-        throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
+      if (!Object.values(NETWORK_TICKERS).includes(networkTicker)) {
+        throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_TICKER_400.message)
       }
-      const networkId = getNetworkIdFromSlug(slug)
+      const networkId = NETWORK_IDS[networkTicker]
       networkIdArray = [networkId]
     };
     const transactions = await fetchTransactionsByPaybuttonId(paybutton.id, networkIdArray)
