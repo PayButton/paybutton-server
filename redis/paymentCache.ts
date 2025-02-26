@@ -64,7 +64,7 @@ interface GroupedPaymentsAndInfoObject {
 }
 
 export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPrices): Promise<Payment> => {
-  const values = (await getTransactionValue(tx))
+  const values = getTransactionValue(tx)
   let buttonDisplayDataList: Array<{ name: string, id: string}> = []
   if (tx.address.paybuttons !== undefined) {
     buttonDisplayDataList = tx.address.paybuttons.map(

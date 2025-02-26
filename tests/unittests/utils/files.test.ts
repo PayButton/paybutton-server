@@ -1,7 +1,13 @@
 import { Transform } from "stream";
 import { NextApiResponse } from "next";
-import { valuesToCsvLine, getDataFromValues, streamToCSV, getTransform } from "utils/files";
-import { RESPONSE_MESSAGES } from "constants/index";
+import { valuesToCsvLine, getDataFromValues, streamToCSV, getTransform, collapseSmallPayments } from "utils/files";
+import { RESPONSE_MESSAGES, SupportedQuotesType } from "constants/index";
+import { Decimal } from "@prisma/client/runtime/library";
+import { TransactionsWithPaybuttonsAndPrices, getTransactionValue } from "services/transactionService";
+
+const timezone = 'America/Sao_Paulo';
+const currencyUsd = 'usd' as SupportedQuotesType;
+const currencyCad = 'cad' as SupportedQuotesType;
 
 const mockedJson = jest.fn();
 const delimiter = ','
@@ -161,3 +167,68 @@ describe("streamToCSV", () => {
         expect(() => streamToCSV(values, headers, delimiter, res)).toThrow(RESPONSE_MESSAGES.COULD_NOT_DOWNLOAD_FILE_500.message);
     });
 });
+
+describe('collapseSmallPayments', () => {
+  const mockedAmounts = [41000, 15, 10, 16, 40531.28]
+  const mockedPayments: TransactionsWithPaybuttonsAndPrices[] = [];
+  for (let index = 0; index < mockedAmounts.length; index++) {
+    const amount = mockedAmounts[index];
+    mockedPayments.push({
+      hash: '123'+amount,
+      amount: new Decimal(amount),
+      timestamp: 1738950932,
+      address: {
+        address: 'ecash:qrmm7edwuj4jf7tnvygjyztyy0a0qxvl7quss2vxek',
+        networkId: 1,
+        paybuttons: [{paybutton: { name: 'Test Coin', providerUserId: 'dev2-uid',}}],
+      },
+      prices: [
+        { price: { value: new Decimal(0.00002475), quoteId: 1} },
+        { price: { value: new Decimal(0.00003539), quoteId: 2} }
+      ]
+    } as TransactionsWithPaybuttonsAndPrices,)
+  }
+  const mockedSmallerThen1UsdPayments = [mockedPayments[1], mockedPayments[2], mockedPayments[3]] ;
+
+
+  it('should collapse small payments correctly', () => {
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 1);
+
+    expect(result).toHaveLength(3);
+  });
+
+  it('should collapse small payments threshold 2 USD', () => {
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 2);
+
+    expect(result).toHaveLength(1);
+  });
+
+
+  it('amount should be the sum of colapsed tx amounts', () => {
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 1);
+    const sumOfSmallPaymentsAmount = Number(mockedSmallerThen1UsdPayments.reduce((sum, payment) => sum.plus(payment.amount), new Decimal(0)));
+
+    const collapsedPayment = result[1];
+
+    expect(collapsedPayment.amount).toBe(sumOfSmallPaymentsAmount);
+  });
+
+  it('value should be the sum of colapsed tx values - USD', () => {
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 1);
+    const sumOfSmallPaymentsAmount = Number(mockedSmallerThen1UsdPayments.reduce((sum, payment) => sum.plus(Number(getTransactionValue(payment)[currencyUsd])), new Decimal(0)));
+
+    const collapsedPayment = result[1];
+
+    expect(collapsedPayment.value).toBe(sumOfSmallPaymentsAmount);
+  });
+
+  it('value should be the sum of colapsed tx values - CAD', () => {
+    const result = collapseSmallPayments(mockedPayments, currencyCad, timezone, 1);
+    const sumOfSmallPaymentsAmount = Number(mockedSmallerThen1UsdPayments.reduce((sum, payment) => sum.plus(Number(getTransactionValue(payment)[currencyCad])), new Decimal(0)));
+
+    const collapsedPayment = result[1];
+
+    expect(collapsedPayment.value).toBe(sumOfSmallPaymentsAmount);
+  });
+});
+  
