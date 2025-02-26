@@ -105,7 +105,7 @@ model Quote {
 
 model Price {
   id           Int                    @id @default(autoincrement())
-  value        Decimal                @db.Decimal(36, 8)
+  value        Decimal                @db.Decimal(36, 14)
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
   timestamp    Int

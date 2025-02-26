@@ -8,7 +8,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { promisify } from 'util'
 
-interface PriceFileData extends KeyValueT<string> {
+export interface PriceFileData extends KeyValueT<string> {
   ticker: string
   date: string
   priceInCAD: string
@@ -60,7 +60,7 @@ export async function createPricesFile (): Promise<void> {
   console.log(`\n\nstart: ${start.format('HH:mm:ss')}\nfinish: ${finish.format('HH:mm:ss')}\nduration: ${(finish.diff(start) / 1000).toFixed(2)} seconds`)
 }
 
-async function getPricesFromFile (): Promise<PriceFileData[]> {
+export async function getPricesFromFile (): Promise<PriceFileData[]> {
   if (await fileExists(fs, PATH_PRICE_CSV_FILE)) {
     const csvContent = await readCsv(fs, PATH_PRICE_CSV_FILE)
     const res: PriceFileData[] = []
