@@ -2,6 +2,7 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 import { fetchTransactionsByPaybuttonId } from 'services/transactionService'
 import * as paybuttonService from 'services/paybuttonService'
 import { setSession } from 'utils/setSession'
+import { parseError } from 'utils/validators'
 
 export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'GET') {
@@ -19,14 +20,15 @@ export default async (req: any, res: any): Promise<void> => {
 
       res.status(200).json({ transactions })
     } catch (err: any) {
-      if (err.message === RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message) {
+      const parsedError = parseError(err)
+      if (parsedError.message === RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message) {
         res.status(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.statusCode)
           .json(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404)
-      } else if (err.message === RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message) {
+      } else if (parsedError.message === RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message) {
         res.status(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.statusCode)
           .json(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400)
       } else {
-        res.status(500).json({ statusCode: 500, message: err.message })
+        res.status(500).json({ statusCode: 500, message: parsedError.message })
       }
     }
   } else {

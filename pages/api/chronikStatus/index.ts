@@ -1,4 +1,4 @@
-import { getAllSubscribedAddresses } from 'services/chronikService'
+import { multiBlockchainClient } from 'services/chronikService'
 import { fetchUserProfileFromId } from 'services/userService'
 import { setSession } from 'utils/setSession'
 
@@ -11,7 +11,7 @@ export default async (req: any, res: any): Promise<void> => {
       if (user.isAdmin !== true) {
         throw new Error('unauthorised')
       }
-      res.status(200).json(getAllSubscribedAddresses())
+      res.status(200).json(multiBlockchainClient.getAllSubscribedAddresses())
     } catch (err: any) {
       switch (err.message) {
         default:
