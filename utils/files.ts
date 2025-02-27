@@ -139,19 +139,29 @@ export const collapseSmallPayments = (
     }
     const totalAmount = tempTxGroup.reduce((sum, p) => sum + Number(p.amount), 0)
     const totalValue = tempTxGroup.reduce((sum, p) => sum + Number(getTransactionValue(p)[currency]), 0)
-    const uniquePrices = new Set()
+    const uniquePrices: Set<number> = new Set()
+    const quoteId = QUOTE_IDS[currency.toUpperCase()]
     tempTxGroup
       .forEach(tx => {
-        const price = tx.prices.find(p => p.price.quoteId === QUOTE_IDS[currency.toUpperCase()])!.price.value
+        const price = tx.prices.find(p => p.price.quoteId === quoteId)!.price.value
         uniquePrices.add(Number(price))
       })
     if (uniquePrices.size !== 1) {
+      if (uniquePrices.size > 1) {
+        const nonUniquePrices = [...uniquePrices]
+        const txsForPrice: Record<number, string[]> = {}
+        nonUniquePrices.forEach(nonUniquePrice => {
+          txsForPrice[nonUniquePrice] = tempTxGroup.filter(tx => nonUniquePrice === tx.prices.find(p => p.price.quoteId === quoteId)!.price.value.toNumber()).map(tx => tx.id)
+        })
+        console.error('ERROR DETAIL:', { txsForPrice })
+      }
+
       throw new Error(
         RESPONSE_MESSAGES
           .INVALID_PRICES_AMOUNT_FOR_TX_ON_CSV_CREATION_500(uniquePrices.size, groupKey, tempTxGroup.length, [...uniquePrices].join(',')).message
       )
     }
-    const rate = uniquePrices.values().next().value
+    const rate = new Prisma.Decimal(uniquePrices.values().next().value as number)
     const buttonName = tempTxGroup[0].address.paybuttons[0].paybutton.name
     const notes = `${buttonName} - ${tempTxGroup.length.toString()} transactions`
 
