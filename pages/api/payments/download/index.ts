@@ -31,9 +31,9 @@ export default async (req: any, res: any): Promise<void> => {
     const userReqTimezone = req.headers.timezone as string
     const userPreferredTimezone = user?.preferredTimezone
     const timezone = userPreferredTimezone !== '' ? userPreferredTimezone : userReqTimezone
-    const networkTickerReq = (req.query.network as string).toUpperCase()
+    const networkTickerReq = req.query.network as string
 
-    const networkTicker = (networkTickerReq !== '' && isNetworkValid(networkTickerReq as NetworkTickersType)) ? networkTickerReq as NetworkTickersType : undefined
+    const networkTicker = (networkTickerReq !== '' && isNetworkValid(networkTickerReq as NetworkTickersType)) ? networkTickerReq.toUpperCase() as NetworkTickersType : undefined
     res.setHeader('Content-Type', 'text/csv')
     let networkIdArray = Object.values(NETWORK_IDS)
     if (networkTicker !== undefined) {
