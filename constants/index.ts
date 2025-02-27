@@ -47,7 +47,12 @@ export const RESPONSE_MESSAGES = {
   FAILED_TO_FETCH_PRICE_FROM_API_500: (day: string, ticker: string) => { return { statusCode: 500, message: `Failed to fetch ${ticker} price for day ${day}` } },
   MISSING_WS_AUTH_KEY_400: { statusCode: 400, message: 'Missing WS_AUTH_KEY environment variable' },
   MISSING_PRICE_FOR_TRANSACTION_400: { statusCode: 400, message: 'Missing price for transaction.' },
-  INVALID_PRICES_AMOUNT_FOR_TX_ON_CSV_CREATION_500: (pricesLenght: number) => { return { statusCode: 500, message: `Wrong number of prices for transactions group in CSV creation. Expected 1, got ${pricesLenght}.` } },
+  INVALID_PRICES_AMOUNT_FOR_TX_ON_CSV_CREATION_500: (pricesLenght: number, groupKey: string, tempTxGroupLength: number, uniquePricesIds: string) => {
+    return {
+      statusCode: 500,
+      message: `Error processing ${groupKey} batch, Got wrong number of prices for transactions group (${tempTxGroupLength}) in CSV creation. Expected 1, got ${pricesLenght}. Prices Ids ${uniquePricesIds}`
+    }
+  },
   INVALID_PRICE_STATE_400: { statusCode: 400, message: 'Missing expected quote price for transaction.' },
   COULD_NOT_GET_BLOCK_INFO_500: { statusCode: 500, message: "Couldn't get block info." },
   NETWORK_SLUG_NOT_PROVIDED_400: { statusCode: 400, message: "'networkSlug' not provided." },
