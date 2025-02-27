@@ -149,7 +149,7 @@ export const collapseSmallPayments = (
       throw new Error(
         RESPONSE_MESSAGES
           .INVALID_PRICES_AMOUNT_FOR_TX_ON_CSV_CREATION_500(uniquePrices.size, groupKey, tempTxGroup.length, [...uniquePrices].join(',')).message
-          .message)
+      )
     }
     const rate = uniquePrices.values().next().value
     const buttonName = tempTxGroup[0].address.paybuttons[0].paybutton.name
