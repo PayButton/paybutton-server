@@ -25,9 +25,9 @@ export default async (req: any, res: any): Promise<void> => {
     const userId = req.session.userId
     const user = await fetchUserProfileFromId(userId)
     const paybuttonId = req.query.paybuttonId as string
-    const networkTickerReq = (req.query.network as string).toUpperCase()
+    const networkTickerReq = req.query.network as string
 
-    const networkTicker = (networkTickerReq !== '' && isNetworkValid(networkTickerReq as NetworkTickersType)) ? networkTickerReq as NetworkTickersType : undefined
+    const networkTicker = (networkTickerReq !== '' && isNetworkValid(networkTickerReq as NetworkTickersType)) ? networkTickerReq.toUpperCase() as NetworkTickersType : undefined
     let quoteId: number
     if (req.query.currency === undefined || req.query.currency === '' || Number.isNaN(req.query.currency)) {
       quoteId = user.preferredCurrencyId

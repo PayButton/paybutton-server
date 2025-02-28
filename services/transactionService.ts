@@ -295,7 +295,7 @@ interface CreateTransactionResult {
   created: boolean
 }
 
-export async function createTransaction (
+export async function upsertTransaction (
   transactionData: Prisma.TransactionUncheckedCreateInput
 ): Promise<CreateTransactionResult> {
   if (transactionData.amount === new Prisma.Decimal(0)) { // out transactions
