@@ -7,7 +7,7 @@ import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/valida
 import moment from 'moment'
 
 export function flattenTimestamp (timestamp: number): number {
-  const date = moment((timestamp * 1000))
+  const date = moment.utc((timestamp * 1000))
   const dateStart = date.startOf('day')
   return dateStart.unix()
 }
