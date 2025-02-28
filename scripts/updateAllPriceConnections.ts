@@ -3,6 +3,7 @@ import prisma from 'prisma/clientInstance'
 import { connectTransactionsListToPrices } from 'services/transactionService'
 import { Transaction } from '@prisma/client'
 import moment from 'moment'
+import { exit } from 'process'
 
 async function misconnectTxs (txsIds: string[]): Promise<void> {
   if (process.env.ENVIRONMENT === 'production') {
@@ -11,6 +12,7 @@ async function misconnectTxs (txsIds: string[]): Promise<void> {
   if (txsIds.length === 0) {
     return
   }
+  console.log('Misconnecting', txsIds.length, 'for testing purposes')
   for (const txId of txsIds) {
     const tx = await prisma.transaction.findUniqueOrThrow({
       where: {
@@ -31,6 +33,7 @@ async function misconnectTxs (txsIds: string[]): Promise<void> {
       }
     })
   }
+  console.log('Finished misconnecting txs')
 }
 
 async function fixMisconnectedTxs (): Promise<void> {
@@ -82,6 +85,7 @@ async function fixMisconnectedTxs (): Promise<void> {
     })
     if (txsToFix.length !== 0) {
       console.log(`[${viewedCount}/${total}] Fixing ${txsToFix.length} txs...`)
+      console.log('Tx ids:\n', txsToFix.map(t => t.id).join('\n'))
       await connectTransactionsListToPrices(txsToFix)
       console.log(`[${viewedCount}/${total}] Finished fixing ${txsToFix.length} txs.`)
     }
@@ -89,6 +93,7 @@ async function fixMisconnectedTxs (): Promise<void> {
     page++
   }
   console.log('FINISHED')
+  exit()
 }
 
 async function run (): Promise<void> {
