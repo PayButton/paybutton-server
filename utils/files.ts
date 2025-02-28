@@ -153,7 +153,7 @@ export const collapseSmallPayments = (
         nonUniquePrices.forEach(nonUniquePrice => {
           txsForPrice[nonUniquePrice] = tempTxGroup.filter(tx => nonUniquePrice === tx.prices.find(p => p.price.quoteId === quoteId)!.price.value.toNumber()).map(tx => tx.id)
         })
-        console.error('ERROR DETAIL:', { txsForPrice })
+        console.error('ERROR WHEN TRYING TO COLLAPSE TXS INTO DIFFERENT PRICES:', { txsForPrice })
       }
 
       throw new Error(
