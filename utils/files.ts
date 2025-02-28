@@ -153,12 +153,14 @@ export const collapseSmallPayments = (
         nonUniquePrices.forEach(nonUniquePrice => {
           txsForPrice[nonUniquePrice] = tempTxGroup.filter(tx => nonUniquePrice === tx.prices.find(p => p.price.quoteId === quoteId)!.price.value.toNumber()).map(tx => tx.id)
         })
-        console.error('ERROR WHEN TRYING TO COLLAPSE TXS INTO DIFFERENT PRICES:', { txsForPrice })
+        console.error('ERROR WHEN TRYING TO COLLAPSE TXS INTO DIFFERENT PRICES:', { txsForPrice, nonUniquePrices })
+      } else {
+        console.error('ERROR WHEN TRYING TO COLLAPSE TXS INTO DIFFERENT PRICES, NO PRICES FOR GROUP KEY', { groupKey })
       }
 
       throw new Error(
         RESPONSE_MESSAGES
-          .INVALID_PRICES_AMOUNT_FOR_TX_ON_CSV_CREATION_500(uniquePrices.size, groupKey, tempTxGroup.length, [...uniquePrices].join(',')).message
+          .INVALID_PRICES_AMOUNT_FOR_TX_ON_CSV_CREATION_500(tempTxGroup.length).message
       )
     }
     const rate = new Prisma.Decimal(uniquePrices.values().next().value as number)
