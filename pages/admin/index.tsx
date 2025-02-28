@@ -5,12 +5,13 @@ import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import Page from 'components/Page'
 import style from './admin.module.css'
-import { isUserAdmin, UserWithSupertokens } from 'services/userService'
+import { fetchUserWithSupertokens, isUserAdmin, UserWithSupertokens } from 'services/userService'
 import { useRouter } from 'next/router'
 import RegisteredUsers from 'components/Admin/RegisteredUsers'
 import TableContainer from '../../components/TableContainer/TableContainer'
 import EyeIcon from 'assets/eye-icon.png'
 import Image from 'next/image'
+import { removeUnserializableFields } from 'utils'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -29,7 +30,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
   if (session === undefined) return
   const userId = session?.getUserId()
-  const user = await supertokensNode.getUser(userId)
+  const user = await fetchUserWithSupertokens(userId)
+  removeUnserializableFields(user.userProfile)
+
   const isAdmin = await isUserAdmin(userId)
   return {
     props: {
@@ -61,8 +64,8 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
   useEffect(() => {
     void (async () => {
       const ok = await (await fetch('chronikStatus')).json()
-      const subscribedEcashAddresses = ok.ecash.map((value: string) => ({ address: value }))
-      const subscribedBitcoincashAddresses = ok.bitcoincash.map((value: string) => ({ address: value }))
+      const subscribedEcashAddresses = ok.ecash?.map((value: string) => ({ address: value }))
+      const subscribedBitcoincashAddresses = ok.bitcoincash?.map((value: string) => ({ address: value }))
       setEcashSubscribedAddresses(subscribedEcashAddresses)
       setBitcoincashSubscribedAddresses(subscribedBitcoincashAddresses)
       const ok2 = await (await fetch('/api/users')).json()
@@ -99,9 +102,9 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
       <h2>Admin Dashboard</h2>
       <div className={style.admin_ctn}>
         <h3> eCash</h3>
-      <TableContainer columns={columns} data={ecashSubscribedAddresses} ssr/>
+      <TableContainer columns={columns} data={ecashSubscribedAddresses ?? []} ssr/>
         <h3> Bitcoin Cash</h3>
-      <TableContainer columns={columns} data={bitcoincashSubscribedAddresses} ssr/>
+      <TableContainer columns={columns} data={bitcoincashSubscribedAddresses ?? []} ssr/>
         <a
           target="_blank"
           rel="noopener noreferrer"

@@ -295,7 +295,7 @@ interface CreateTransactionResult {
   created: boolean
 }
 
-export async function createTransaction (
+export async function upsertTransaction (
   transactionData: Prisma.TransactionUncheckedCreateInput
 ): Promise<CreateTransactionResult> {
   if (transactionData.amount === new Prisma.Decimal(0)) { // out transactions
@@ -770,4 +770,16 @@ export async function fetchAllPaymentsByUserId (
   })
 
   return transactions
+}
+
+export async function fetchTxCountByPaybuttonId (paybuttonId: string): Promise<number> {
+  const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
+
+  return await prisma.transaction.count({
+    where: {
+      addressId: {
+        in: addressIdList
+      }
+    }
+  })
 }

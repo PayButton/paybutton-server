@@ -9,7 +9,7 @@ import {
   createManyTransactions,
   deleteTransactions,
   fetchUnconfirmedTransactions,
-  createTransaction,
+  upsertTransaction,
   getSimplifiedTransactions,
   getSimplifiedTrasaction,
   connectAllTransactionsToPrices
@@ -417,7 +417,7 @@ export class ChronikBlockchainClient {
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
         const inputAddresses = this.getSortedInputAddresses(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
-          const { created, tx } = await createTransaction(addressWithTransaction.transaction)
+          const { created, tx } = await upsertTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
             const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses)
             if (created) { // only execute trigger for newly added txs
@@ -470,7 +470,7 @@ export class ChronikBlockchainClient {
       const inputAddresses = this.getSortedInputAddresses(transaction)
 
       for (const addressWithTransaction of addressesWithTransactions) {
-        const { created, tx } = await createTransaction(addressWithTransaction.transaction)
+        const { created, tx } = await upsertTransaction(addressWithTransaction.transaction)
         if (tx !== undefined) {
           const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses)
           if (created) { // only execute trigger for newly added txs

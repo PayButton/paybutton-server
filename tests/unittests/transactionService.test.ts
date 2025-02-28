@@ -71,7 +71,7 @@ describe('Create services', () => {
       ...mockedTransaction,
       addressId: mockedBCHAddress.id
     }
-    const result = await transactionService.createTransaction(
+    const result = await transactionService.upsertTransaction(
       argsTransaction
     )
     expect(result).toEqual({

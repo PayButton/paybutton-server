@@ -3,12 +3,11 @@ import {
   SUPPORTED_QUOTES_FROM_ID,
   NetworkTickersType,
   NETWORK_IDS,
-  NETWORK_SLUGS_FROM_IDS
+  NETWORK_TICKERS
 } from 'constants/index'
 import { downloadTxsFile, isNetworkValid } from 'utils/files'
 import { setSession } from 'utils/setSession'
 import { fetchUserProfileFromId } from 'services/userService'
-import { getNetworkIdFromSlug } from 'services/networkService'
 import { fetchAllPaymentsByUserId } from 'services/transactionService'
 
 export default async (req: any, res: any): Promise<void> => {
@@ -38,11 +37,10 @@ export default async (req: any, res: any): Promise<void> => {
     res.setHeader('Content-Type', 'text/csv')
     let networkIdArray = Object.values(NETWORK_IDS)
     if (networkTicker !== undefined) {
-      const slug =  NETWORK_SLUGS_FROM_IDS[NETWORK_IDS[networkTicker]]
-      if (slug === undefined) {
-        throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_SLUG_400.message)
+      if (!Object.values(NETWORK_TICKERS).includes(networkTicker)) {
+        throw new Error(RESPONSE_MESSAGES.INVALID_NETWORK_TICKER_400.message)
       }
-      const networkId = getNetworkIdFromSlug(slug)
+      const networkId = NETWORK_IDS[networkTicker]
       networkIdArray = [networkId]
     };
     const transactions = await fetchAllPaymentsByUserId(userId, networkIdArray)
