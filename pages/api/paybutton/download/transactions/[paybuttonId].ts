@@ -52,7 +52,7 @@ export default async (req: any, res: any): Promise<void> => {
     };
     const transactions = await fetchTransactionsByPaybuttonId(paybutton.id, networkIdArray)
     res.setHeader('Content-Type', 'text/csv')
-    await downloadTxsFile(res, quoteSlug, timezone, transactions)
+    await downloadTxsFile(res, quoteSlug, timezone, transactions, userId)
   } catch (error: any) {
     switch (error.message) {
       case RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400.message:

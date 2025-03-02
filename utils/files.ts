@@ -123,7 +123,8 @@ export const collapseSmallPayments = (
   payments: TransactionsWithPaybuttonsAndPrices[],
   currency: SupportedQuotesType,
   timezone: string,
-  collapseThreshold: number
+  collapseThreshold: number,
+  userId: string
 ): TransactionFileData[] => {
   const treatedPayments: TransactionFileData[] = []
   const tempTxGroups: Record<string, TransactionsWithPaybuttonsAndPrices[]> = {}
@@ -133,7 +134,7 @@ export const collapseSmallPayments = (
     const tempTxGroup = tempTxGroups[groupKey]
     if (tempTxGroup === undefined || tempTxGroup.length === 0) return
     if (tempTxGroup.length === 1) {
-      pushTx(tempTxGroup[0])
+      pushTx(tempTxGroup[0], groupKey)
       tempTxGroups[groupKey] = []
       return
     }
@@ -164,7 +165,7 @@ export const collapseSmallPayments = (
       )
     }
     const rate = new Prisma.Decimal(uniquePrices.values().next().value as number)
-    const buttonName = tempTxGroup[0].address.paybuttons[0].paybutton.name
+    const buttonName = groupKey.split('_')[2]
     const notes = `${buttonName} - ${tempTxGroup.length.toString()} transactions`
 
     totalPaymentsTreated += tempTxGroup.length
@@ -184,11 +185,12 @@ export const collapseSmallPayments = (
     tempTxGroups[groupKey] = []
   }
 
-  const pushTx = (tx: TransactionsWithPaybuttonsAndPrices): void => {
+  const pushTx = (tx: TransactionsWithPaybuttonsAndPrices, groupKey: string): void => {
     const { timestamp, hash, address, amount } = tx
     const values = getTransactionValue(tx)
     const value = Number(values[currency])
     const rate = tx.prices.find(p => p.price.quoteId === QUOTE_IDS[currency.toUpperCase()])!.price.value
+    const buttonName = groupKey.split('_')[2]
 
     treatedPayments.push({
       amount,
@@ -198,7 +200,7 @@ export const collapseSmallPayments = (
       rate,
       currency,
       address: address.address,
-      notes: '',
+      notes: buttonName,
       newtworkId: address.networkId
     } as TransactionFileData)
     totalPaymentsTreated += 1
@@ -210,19 +212,35 @@ export const collapseSmallPayments = (
     const value = Number(values[currency])
     const dateKey = moment.tz(timestamp * 1000, timezone).format('YYYY-MM-DD')
     const dateKeyUTC = moment.utc(timestamp * 1000).format('YYYY-MM-DD')
-    const groupKey = `${dateKey}_${dateKeyUTC}`
+    const uniqueButtonName = new Set(
+      tx.address.paybuttons
+        .filter(pb => pb.paybutton.providerUserId === userId)
+        .map(pb => pb.paybutton.name)
+    )
+    if (uniqueButtonName.size > 1) {
+      console.error('ERROR WHEN GENERATING CSV, A TX BELONGS TO MORE THEN ONE BUTTON:', { tx, buttons: tx.address.paybuttons.filter(pb => pb.paybutton.providerUserId === userId) })
+    }
 
+    const groupKey = `${dateKey}_${dateKeyUTC}_${uniqueButtonName.values().next().value as string}`
+    // console.log('groupKey', groupKey)
     const nextPayment = payments[index + 1]
     const nextDateKey = nextPayment === undefined ? null : moment.tz(nextPayment.timestamp * 1000, timezone).format('YYYY-MM-DD')
     const nextDateKeyUTC = nextPayment === undefined ? null : moment.utc(nextPayment.timestamp * 1000).format('YYYY-MM-DD')
-    const nextGroupKey = nextDateKey === null || nextDateKeyUTC === null ? null : `${nextDateKey}_${nextDateKeyUTC}`
+    const nextUniqueButtonName = nextPayment === undefined
+      ? null
+      : new Set(
+        nextPayment.address.paybuttons
+          .filter(pb => pb.paybutton.providerUserId === userId)
+          .map(pb => pb.paybutton.name)
+      )
 
+    const nextGroupKey = nextDateKey === null || nextDateKeyUTC === null || nextUniqueButtonName === null ? null : `${nextDateKey}_${nextDateKeyUTC}_${nextUniqueButtonName.values().next().value as string}`
     if (value < collapseThreshold) {
       if (tempTxGroups[groupKey] === undefined) tempTxGroups[groupKey] = []
       tempTxGroups[groupKey].push(tx)
     } else {
       Object.keys(tempTxGroups).forEach(pushTempGroup)
-      pushTx(tx)
+      pushTx(tx, groupKey)
     }
 
     if (nextGroupKey !== groupKey) {
@@ -282,12 +300,13 @@ export const downloadTxsFile = async (
   currency: SupportedQuotesType,
   timezone: string,
   transactions: TransactionsWithPaybuttonsAndPrices[],
+  userId: string,
   collapseTransactions: boolean = true,
   collapseThreshold: number = DEFAULT_CSV_COLLAPSE_THRESHOLD): Promise<void> => {
   const sortedPayments = sortPaymentsByNetworkId(transactions)
   let treatedPayments: TransactionFileData[] = []
   if (collapseTransactions) {
-    treatedPayments = collapseSmallPayments(sortedPayments, currency, timezone, collapseThreshold)
+    treatedPayments = collapseSmallPayments(sortedPayments, currency, timezone, collapseThreshold, userId)
   } else {
     treatedPayments = getPaybuttonTransactionsFileData(transactions, currency, timezone)
   }
