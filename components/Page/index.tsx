@@ -3,6 +3,7 @@ import Layout from 'components/Layout'
 import { UserProfile } from '@prisma/client'
 import { NO_LAYOUT_ROUTES } from 'constants/index'
 import { useRouter } from 'next/router'
+import useAutoFocusFirstInput from 'hooks/useAutoFocusFirstInput'
 
 interface PageProps {
   children: React.ReactNode
@@ -20,6 +21,7 @@ const Page = ({
 }: PageProps): JSX.Element => {
   const router = useRouter()
   const currentRoute = router.pathname
+  useAutoFocusFirstInput()
 
   return <>
     {(loggedUser === undefined || NO_LAYOUT_ROUTES.includes(currentRoute) || currentRoute.includes('/organization/join/'))
