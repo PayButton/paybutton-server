@@ -17,7 +17,7 @@ import { UserProfile } from '@prisma/client'
 import { fetchUserProfileFromId } from 'services/userService'
 import { removeUnserializableFields } from 'utils'
 import moment from 'moment-timezone'
-import LoadingSpinner from 'components/Paybutton/LoadingSpinner'
+import Button from 'components/Button'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   supertokensNode.init(SuperTokensConfig.backendConfig())
@@ -51,7 +51,7 @@ interface PaybuttonProps {
   userProfile: UserProfile
 }
 
-export default function Button (props: PaybuttonProps): React.ReactElement {
+export default function PayButton (props: PaybuttonProps): React.ReactElement {
   const [paybutton, setPaybutton] = useState<PaybuttonWithAddresses | undefined>(undefined)
   const [isSyncing, setIsSyncing] = useState<KeyValueT<boolean>>({})
   const [tableRefreshCount, setTableRefreshCount] = useState<number>(0)
@@ -165,7 +165,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
   if (paybutton != null) {
     return (
       <>
-        <div className='back_btn' onClick={() => router.back()}>Back</div>
+        <Button variant='small' onClick={() => router.back()}>Back</Button>
         <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton} listView={false}/>
         <div style={{ display: 'flex', alignItems: 'center', alignContent: 'center', justifyContent: 'space-between' }}>
           <h4>Transactions</h4>
@@ -178,8 +178,7 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
                 value={selectedCurrency}
                 onChange={handleExport}
                 disabled={loading}
-                className="button_outline button_small"
-                style={{ marginBottom: '0', cursor: 'pointer' }}
+                className="select_button"
               >
                 <option value='' disabled>{loading ? 'Downloading...' : 'Export as CSV'}</option>
                 <option key="all" value="all">
@@ -195,14 +194,14 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
               </select>
                 )
               : (
-              <button
+              <Button
                 onClick={handleExport}
                 disabled={loading}
-                className="button_outline button_small loading_btn"
-                style={{ marginBottom: '0', cursor: 'pointer' }}
+                loading={loading}
+                variant='small'
               >
-                Export as CSV{loading && <LoadingSpinner />}
-              </button>
+                Export as CSV
+              </Button>
                 )}
           </div>
         </div>

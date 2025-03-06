@@ -10,6 +10,7 @@ import TrashIcon from 'assets/trash-icon.png'
 import axios from 'axios'
 import Router from 'next/router'
 import config from 'config'
+import Button from 'components/Button'
 
 interface IProps {
   paybutton: PaybuttonWithAddresses
@@ -92,8 +93,8 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
                   {(error === undefined || error === '') ? null : <div className={style.error_message}>{error}</div>}
                   <button disabled={disableSubmit} type='button' onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style.delete_btn}>Delete Button<div> <Image src={TrashIcon} alt='delete' /></div></button>
                   <div>
-                    <button disabled={disableSubmit} type="submit" className='button_main'>{ disableSubmit ? '...' : 'Submit' } </button>
-                    <button disabled={disableSubmit} onClick={() => { setModal(false); reset() }} className='button_outline'>Cancel</button>
+                    <Button disabled={disableSubmit} variant='outlined' onClick={() => { setModal(false); reset() }}>Cancel</Button>
+                    <Button disabled={disableSubmit} type="submit" className='ml' loading={disableSubmit}>Submit</Button>
                   </div>
                 </div>
               </form>
@@ -112,9 +113,8 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
                 <div className={style.btn_row}>
                   {(deleteError === undefined || deleteError === '') ? null : <div className={style.error_message}>{deleteError}</div>}
                   <div>
-
-                    <button disabled={disableSubmit} onClick={() => { void onDelete(paybutton.id) }} className={style.delete_confirm_btn}>Yes, Delete This Button</button>
-                    <button disabled={disableSubmit} onClick={() => { setDeleteModal(false); reset(); setModal(true) }} className={style.cancel_btn}>Cancel</button>
+                    <Button disabled={disableSubmit} onClick={() => { setDeleteModal(false); reset(); setModal(true) }} variant='outlined'>Cancel</Button>
+                    <Button variant='delete' className='ml' disabled={disableSubmit} onClick={() => { void onDelete(paybutton.id) }}>Yes, Delete This Button</Button>
                   </div>
                 </div>
             </div>
