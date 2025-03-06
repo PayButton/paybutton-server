@@ -124,7 +124,8 @@ export const collapseSmallPayments = (
   currency: SupportedQuotesType,
   timezone: string,
   collapseThreshold: number,
-  userId: string
+  userId: string,
+  paybuttonId?: string
 ): TransactionFileData[] => {
   const treatedPayments: TransactionFileData[] = []
   const tempTxGroups: Record<string, TransactionsWithPaybuttonsAndPrices[]> = {}
@@ -165,8 +166,8 @@ export const collapseSmallPayments = (
       )
     }
     const rate = new Prisma.Decimal(uniquePrices.values().next().value as number)
-    const buttonName = groupKey.split('_')[2]
-    const notes = `${buttonName} - ${tempTxGroup.length.toString()} transactions`
+    const buttonNames = groupKey.split('_').slice(2).join(' ; ')
+    const notes = `${buttonNames} - ${tempTxGroup.length.toString()} transactions`
 
     totalPaymentsTreated += tempTxGroup.length
 
@@ -190,7 +191,7 @@ export const collapseSmallPayments = (
     const values = getTransactionValue(tx)
     const value = Number(values[currency])
     const rate = tx.prices.find(p => p.price.quoteId === QUOTE_IDS[currency.toUpperCase()])!.price.value
-    const buttonName = groupKey.split('_')[2]
+    const buttonNames = groupKey.split('_').slice(2).join(' ; ')
 
     treatedPayments.push({
       amount,
@@ -200,7 +201,7 @@ export const collapseSmallPayments = (
       rate,
       currency,
       address: address.address,
-      notes: buttonName,
+      notes: buttonNames,
       newtworkId: address.networkId
     } as TransactionFileData)
     totalPaymentsTreated += 1
@@ -212,29 +213,49 @@ export const collapseSmallPayments = (
     const value = Number(values[currency])
     const dateKey = moment.tz(timestamp * 1000, timezone).format('YYYY-MM-DD')
     const dateKeyUTC = moment.utc(timestamp * 1000).format('YYYY-MM-DD')
-    const uniqueButtonName = new Set(
+    const uniqueButtonNames = new Set(
       tx.address.paybuttons
         .filter(pb => pb.paybutton.providerUserId === userId)
         .map(pb => pb.paybutton.name)
     )
-    if (uniqueButtonName.size > 1) {
-      console.error('ERROR WHEN GENERATING CSV, A TX BELONGS TO MORE THEN ONE BUTTON:', { tx, buttons: tx.address.paybuttons.filter(pb => pb.paybutton.providerUserId === userId) })
+    let buttonNamesKey: string | undefined = ''
+    if (uniqueButtonNames.size > 1) {
+      if (paybuttonId !== undefined) {
+        buttonNamesKey = tx.address.paybuttons.find(pb => pb.paybutton.id === paybuttonId)?.paybutton.name ?? ''
+      } else {
+        buttonNamesKey = [...uniqueButtonNames].join('_')
+      }
+    } else {
+      buttonNamesKey = uniqueButtonNames.values().next().value ?? ''
     }
 
-    const groupKey = `${dateKey}_${dateKeyUTC}_${uniqueButtonName.values().next().value as string}`
-    // console.log('groupKey', groupKey)
+    const groupKey = `${dateKey}_${dateKeyUTC}_${buttonNamesKey}`
+    let nextGroupKey: string | null = ''
+
     const nextPayment = payments[index + 1]
-    const nextDateKey = nextPayment === undefined ? null : moment.tz(nextPayment.timestamp * 1000, timezone).format('YYYY-MM-DD')
-    const nextDateKeyUTC = nextPayment === undefined ? null : moment.utc(nextPayment.timestamp * 1000).format('YYYY-MM-DD')
-    const nextUniqueButtonName = nextPayment === undefined
-      ? null
-      : new Set(
+    if (nextPayment !== undefined) {
+      const nextDateKey = moment.tz(nextPayment.timestamp * 1000, timezone).format('YYYY-MM-DD')
+      const nextDateKeyUTC = moment.utc(nextPayment.timestamp * 1000).format('YYYY-MM-DD')
+      const nextUniqueButtonName = new Set(
         nextPayment.address.paybuttons
           .filter(pb => pb.paybutton.providerUserId === userId)
           .map(pb => pb.paybutton.name)
       )
+      let nextButtonName: string | undefined = ''
+      if (nextUniqueButtonName.size > 1) {
+        if (paybuttonId !== undefined) {
+          nextButtonName = nextPayment.address.paybuttons.find(pb => pb.paybutton.id === paybuttonId)?.paybutton.name ?? ''
+        } else {
+          nextButtonName = [...nextUniqueButtonName].join('_')
+        }
+      } else {
+        nextButtonName = uniqueButtonNames.values().next().value ?? ''
+      }
+      nextGroupKey = `${nextDateKey}_${nextDateKeyUTC}_${nextButtonName}`
+    } else {
+      nextGroupKey = null
+    }
 
-    const nextGroupKey = nextDateKey === null || nextDateKeyUTC === null || nextUniqueButtonName === null ? null : `${nextDateKey}_${nextDateKeyUTC}_${nextUniqueButtonName.values().next().value as string}`
     if (value < collapseThreshold) {
       if (tempTxGroups[groupKey] === undefined) tempTxGroups[groupKey] = []
       tempTxGroups[groupKey].push(tx)
@@ -301,14 +322,16 @@ export const downloadTxsFile = async (
   timezone: string,
   transactions: TransactionsWithPaybuttonsAndPrices[],
   userId: string,
+  paybuttonId?: string,
   collapseTransactions: boolean = true,
-  collapseThreshold: number = DEFAULT_CSV_COLLAPSE_THRESHOLD): Promise<void> => {
+  collapseThreshold: number = DEFAULT_CSV_COLLAPSE_THRESHOLD
+): Promise<void> => {
   const sortedPayments = sortPaymentsByNetworkId(transactions)
   let treatedPayments: TransactionFileData[] = []
   if (collapseTransactions) {
-    treatedPayments = collapseSmallPayments(sortedPayments, currency, timezone, collapseThreshold, userId)
+    treatedPayments = collapseSmallPayments(sortedPayments, currency, timezone, collapseThreshold, userId, paybuttonId)
   } else {
-    treatedPayments = getPaybuttonTransactionsFileData(transactions, currency, timezone)
+    treatedPayments = getPaybuttonTransactionsFileData(sortedPayments, currency, timezone)
   }
   const mappedPaymentsData = treatedPayments.map(payment => formatPaybuttonTransactionsFileData(payment))
 
