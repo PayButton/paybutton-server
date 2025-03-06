@@ -17,6 +17,6 @@ body[data-theme='dark'] {
   --secondary-text-color: #cacaca;
   --accent-color: #669cfe;
   --hover-accent-color: #417ded;
-  --border-color: #000000;
+  --border-color: #8e8e8e;
   --chart-line-color: #87858635;
 }

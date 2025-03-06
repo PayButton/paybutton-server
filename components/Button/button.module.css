@@ -30,10 +30,16 @@
   background-color: var(--secondary-bg-color);
 }
 
+body[data-theme='dark'] .default {
+  color: var(--primary-bg-color);
+  border-color: var(--primary-bg-color);
+}
+
 .delete {
   background-color: var(--primary-bg-color);
   color: rgb(219, 37, 37);
   font-weight: 700;
+  border-color: rgb(219, 37, 37);
 }
 
 .delete:hover {
@@ -50,8 +56,26 @@
   background-color: var(--secondary-bg-color);
 }
 
+.xs {
+  padding: 4px 10px;
+  background-color: var(--secondary-bg-color);
+}
+
 .ml {
   margin-left: 10px;
+}
+
+.small_delete {
+  margin-top: 10px;
+  background-color: var(--primary-bg-color);
+  color: rgb(219, 37, 37);
+  font-weight: 700;
+  border-color: rgb(219, 37, 37);
+}
+
+.small_delete:hover {
+  background-color: rgb(219, 37, 37);
+  color: var(--primary-text-color);
 }
 
 /**************************** Loading Spinner  *************************/

@@ -14,7 +14,7 @@ interface ButtonProps {
   disabled?: boolean
   type?: 'button' | 'submit' | 'reset'
   onClick?: MouseEventHandler<HTMLButtonElement>
-  variant?: 'default' | 'outlined' | 'delete' | 'small'
+  variant?: 'default' | 'outlined' | 'delete' | 'small' | 'xs'
   className?: string
   loading?: boolean
 }

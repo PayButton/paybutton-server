@@ -1,6 +1,7 @@
 import { Organization } from '@prisma/client'
 import { UserWithSupertokens } from 'services/userService'
 import style from './organization.module.css'
+import Button from 'components/Button'
 
 interface IProps {
   user: UserWithSupertokens
@@ -32,12 +33,12 @@ const LeaveOrganization = ({ setError, setOrg, org, setOrgEdit }: IProps): JSX.E
     <div className={style.confirm_delete_ctn} style={{ marginTop: '40px' }}>
       <p>Are you sure you want to leave your organization?<br />This action cannot be undone.</p>
       <div className={style.confirm_delete_btn_ctn}>
-      <button className={style.delete_btn} onClick={() => { void onLeave() }}>
-          Yes, Leave Organization
-        </button>
-        <button className={style.cancel_btn} onClick={() => setOrgEdit('')}>
+        <Button variant='xs' onClick={() => setOrgEdit('')}>
           Cancel
-        </button>
+        </Button>
+        <Button variant='xs' className='small_delete' onClick={() => { void onLeave() }}>
+          Yes, Leave Organization
+        </Button>
         </div>
       </div>
   </>

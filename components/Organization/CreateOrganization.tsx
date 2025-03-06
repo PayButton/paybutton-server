@@ -54,7 +54,7 @@ const CreateOrganization = ({ user, setError, setOrg, setOrgMembers }: IProps): 
       required
       className={style.text_input}
     />
-      <Button className='ml' onClick={() => (false)}>Create</Button>
+      <Button className='ml' type='submit'>Create</Button>
     </div>
   </form>
 }

@@ -41,6 +41,7 @@ body[data-theme="dark"] .org_ctn input {
   display: flex;
   margin-top: 10px;
   justify-content: space-between;
+  align-items: center;
 }
 
 .sub_header {
@@ -128,10 +129,7 @@ body[data-theme="dark"] .cancel_btn:hover {
 .confirm_delete_btn_ctn {
   display: flex;
   flex-direction: column;
-}
-
-.confirm_delete_btn_ctn button {
-  height: 30px;
+  margin-left: 10px;
 }
 
 .leave_btn_ctn {

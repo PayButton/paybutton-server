@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { UserWithSupertokens } from 'services/userService'
 import style from './organization.module.css'
+import Button from 'components/Button'
 
 interface IProps {
   user: UserWithSupertokens
@@ -54,9 +55,9 @@ const UpdateOrganization = ({ user, setError, setOrg, setOrgEdit }: IProps): JSX
         required
         className={style.text_input}
       />
-        <button className={style.add_btn} onClick={() => (false)}>
+        <Button className='ml' type='submit'>
           Update
-        </button>
+        </Button>
       </div>
       <button className={style.cancel_btn} onClick={() => setOrgEdit('')}>
           Cancel
