@@ -165,7 +165,7 @@ export default function PayButton (props: PaybuttonProps): React.ReactElement {
   if (paybutton != null) {
     return (
       <>
-        <div className='back_btn' onClick={() => router.back()}>Back</div>
+        <Button variant='small' onClick={() => router.back()}>Back</Button>
         <PaybuttonDetail paybutton={paybutton} refreshPaybutton={refreshPaybutton} listView={false}/>
         <div style={{ display: 'flex', alignItems: 'center', alignContent: 'center', justifyContent: 'space-between' }}>
           <h4>Transactions</h4>
@@ -178,8 +178,7 @@ export default function PayButton (props: PaybuttonProps): React.ReactElement {
                 value={selectedCurrency}
                 onChange={handleExport}
                 disabled={loading}
-                className="button_outline button_small"
-                style={{ marginBottom: '0', cursor: 'pointer' }}
+                className="select_button"
               >
                 <option value='' disabled>{loading ? 'Downloading...' : 'Export as CSV'}</option>
                 <option key="all" value="all">

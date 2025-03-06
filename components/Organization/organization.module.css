@@ -29,12 +29,6 @@ body[data-theme="dark"] .org_ctn input {
   margin: 0;
 }
 
-.create_input_ctn button {
-  width: 120px;
-  margin: 0;
-  margin-left: 10px;
-}
-
 .error_message {
   width: 100%;
   background-color: rgb(250, 165, 165);

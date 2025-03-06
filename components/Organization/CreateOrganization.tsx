@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { UserWithSupertokens } from 'services/userService'
 import style from './organization.module.css'
+import Button from 'components/Button'
 
 interface IProps {
   user: UserWithSupertokens
@@ -53,9 +54,7 @@ const CreateOrganization = ({ user, setError, setOrg, setOrgMembers }: IProps): 
       required
       className={style.text_input}
     />
-      <button className={style.add_btn} onClick={() => (false)}>
-        Create
-      </button>
+      <Button className='ml' onClick={() => (false)}>Create</Button>
     </div>
   </form>
 }

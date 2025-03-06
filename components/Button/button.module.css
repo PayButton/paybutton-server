@@ -9,6 +9,7 @@
   font-weight: 500;
   font-family: 'Poppins', sans-serif;
   position: relative;
+  margin: 0;
 }
 
 .button:hover {
@@ -41,12 +42,12 @@
 }
 
 .loading {
-    color: transparent !important;
+  color: transparent !important;
 }
 
 .small {
-    padding: 4px 20px;
-    background-color: var(--secondary-bg-color);
+  padding: 4px 26px;
+  background-color: var(--secondary-bg-color);
 }
 
 .ml {
