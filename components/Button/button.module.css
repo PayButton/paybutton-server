@@ -1,0 +1,85 @@
+.button {
+  background: var(--accent-color);
+  color: var(--primary-text-color);
+  border-radius: 6px;
+  padding: 8px 40px;
+  transition: all ease-in-out 200ms;
+  font-size: 16px;
+  border: 1px solid var(--border-color);
+  font-weight: 500;
+  font-family: 'Poppins', sans-serif;
+  position: relative;
+}
+
+.button:hover {
+  background: var(--hover-accent-color);
+}
+
+.button:disabled {
+  background-color: #c0c0c0;
+  color: #5f5e5e;
+  border-color: #c0c0c0;
+}
+
+.button:disabled:hover {
+  background-color: #c0c0c0;
+}
+
+.outlined {
+  background-color: var(--secondary-bg-color);
+}
+
+.delete {
+  background-color: var(--primary-bg-color);
+  color: rgb(219, 37, 37);
+  font-weight: 700;
+}
+
+.delete:hover {
+  background-color: rgb(219, 37, 37);
+  color: var(--primary-text-color);
+}
+
+.loading {
+    color: transparent !important;
+}
+
+.small {
+    padding: 4px 20px;
+    background-color: var(--secondary-bg-color);
+}
+
+.ml {
+  margin-left: 10px;
+}
+
+/**************************** Loading Spinner  *************************/
+
+.loading_spinner_ctn {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  z-index: 5;
+}
+
+.loading_spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--primary-text-color);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

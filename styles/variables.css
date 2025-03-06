@@ -5,6 +5,8 @@ body[data-theme='light'] {
   --primary-text-color: #231f20;
   --secondary-text-color: #7f7f7f;
   --accent-color: #669cfe;
+  --hover-accent-color: #417ded;
+  --border-color: #231f20;
   --chart-line-color: #231f201f;
 }
 
@@ -14,5 +16,7 @@ body[data-theme='dark'] {
   --primary-text-color: #ffffff;
   --secondary-text-color: #cacaca;
   --accent-color: #669cfe;
+  --hover-accent-color: #417ded;
+  --border-color: #000000;
   --chart-line-color: #87858635;
 }

@@ -17,7 +17,7 @@ import { UserProfile } from '@prisma/client'
 import { fetchUserProfileFromId } from 'services/userService'
 import { removeUnserializableFields } from 'utils'
 import moment from 'moment-timezone'
-import LoadingSpinner from 'components/Paybutton/LoadingSpinner'
+import Button from 'components/Button'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   supertokensNode.init(SuperTokensConfig.backendConfig())
@@ -51,7 +51,7 @@ interface PaybuttonProps {
   userProfile: UserProfile
 }
 
-export default function Button (props: PaybuttonProps): React.ReactElement {
+export default function PayButton (props: PaybuttonProps): React.ReactElement {
   const [paybutton, setPaybutton] = useState<PaybuttonWithAddresses | undefined>(undefined)
   const [isSyncing, setIsSyncing] = useState<KeyValueT<boolean>>({})
   const [tableRefreshCount, setTableRefreshCount] = useState<number>(0)
@@ -195,14 +195,14 @@ export default function Button (props: PaybuttonProps): React.ReactElement {
               </select>
                 )
               : (
-              <button
+              <Button
                 onClick={handleExport}
                 disabled={loading}
-                className="button_outline button_small loading_btn"
-                style={{ marginBottom: '0', cursor: 'pointer' }}
+                loading={loading}
+                variant='small'
               >
-                Export as CSV{loading && <LoadingSpinner />}
-              </button>
+                Export as CSV
+              </Button>
                 )}
           </div>
         </div>
