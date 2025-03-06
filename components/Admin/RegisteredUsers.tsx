@@ -33,16 +33,16 @@ export default function RegisteredUsers({ users }: IProps): JSX.Element {
       Header: 'Admin',
       accessor: 'isAdmin',
       Cell: ({ cell }: any) => (
-        cell.value === undefined ?  'No' : <span className={style.admin}>Yes</span>
+        cell.value === true ? <span className={style.admin}>Yes</span> : 'No'
       )
     }
   ]
-
+  console.log({users})
   const data = users.map(user => ({
     id: (user.stUser?.id === undefined || user.stUser?.id === '') ? user.userProfile?.id : user.stUser?.id,
     registered: user.stUser ? moment(user.stUser.timeJoined).fromNow() : 'NO ST USER FOUND',
     email: (user.stUser?.email === undefined || user.stUser?.email === '') ? user.userProfile?.id : user.stUser?.email,
-    isAdmin: user.userProfile?.isAdmin === true
+    isAdmin: user.userProfile?.isAdmin
   }))
 
   return <TableContainer columns={columns} data={data} ssr />
