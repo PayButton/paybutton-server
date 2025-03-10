@@ -78,6 +78,10 @@ body[data-theme='dark'] .default {
   color: var(--primary-text-color);
 }
 
+.lg {
+  padding: 15px 40px;
+}
+
 /**************************** Loading Spinner  *************************/
 
 .loading_spinner_ctn {

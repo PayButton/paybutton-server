@@ -3,6 +3,7 @@ import React, { ReactElement, useEffect, useState } from 'react'
 import style from './auth.module.css'
 import { SignUpPasswordPOSTParameters } from 'utils/validators'
 import { submitNewPassword } from 'supertokens-web-js/recipe/emailpassword'
+import Button from 'components/Button'
 
 export default function ResetPassword (): ReactElement {
   const { register, handleSubmit, watch } = useForm<any>()
@@ -78,7 +79,7 @@ export default function ResetPassword (): ReactElement {
           <div className={style.error_message}>
             {error !== '' ? <span>{error}</span> : <span></span>}
           </div>
-          <button disabled={disabled} className='button_main' type='submit'>Submit</button>
+          <Button type='submit' disabled={disabled} loading={disabled} className='lg'>Submit</Button>
         </div>
       </form>
     </>

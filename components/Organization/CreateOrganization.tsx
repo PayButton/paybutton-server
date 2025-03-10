@@ -8,6 +8,8 @@ interface IProps {
   setError: Function
   setOrg: Function
   setOrgMembers: Function
+  setLoading: Function
+  loading: boolean
 }
 
 interface CreateOrganizationForm {
@@ -15,11 +17,12 @@ interface CreateOrganizationForm {
   userId: string
 }
 
-const CreateOrganization = ({ user, setError, setOrg, setOrgMembers }: IProps): JSX.Element => {
+const CreateOrganization = ({ user, setError, setOrg, setOrgMembers, loading, setLoading }: IProps): JSX.Element => {
   const { register, handleSubmit } = useForm<CreateOrganizationForm>({
   })
 
   const onSubmit = async (params: any): Promise<void> => {
+    setLoading(true)
     const res = await fetch('/api/organization', {
       method: 'POST',
       headers: {
@@ -34,9 +37,11 @@ const CreateOrganization = ({ user, setError, setOrg, setOrgMembers }: IProps): 
       const data = await res.json()
       setOrg(data.organization)
       setOrgMembers([user.userProfile])
+      setLoading(false)
     } else {
       const json = await res.json()
       setError(json.message)
+      setLoading(false)
     }
   }
 
@@ -54,7 +59,7 @@ const CreateOrganization = ({ user, setError, setOrg, setOrgMembers }: IProps): 
       required
       className={style.text_input}
     />
-      <Button className='ml' type='submit'>Create</Button>
+      <Button className='ml' type='submit' loading={loading}>Create</Button>
     </div>
   </form>
 }

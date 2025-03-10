@@ -20,6 +20,7 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
   const [org, setOrg] = useState(organization)
   const [error, setError] = useState('')
   const [orgEdit, setOrgEdit] = useState('')
+  const [loading, setLoading] = useState(false)
 
   return (
     <div className={style.org_ctn}>
@@ -123,7 +124,7 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
             <br />
             Or create your own:
             </p>
-            <CreateOrganization user={user} setError={setError} setOrg={setOrg} setOrgMembers={setOrgMembers}/>
+            <CreateOrganization user={user} setError={setError} setOrg={setOrg} setOrgMembers={setOrgMembers} loading={loading} setLoading={setLoading} />
           </>
             )}
       {error !== '' && <div className={style.error_message}>{error}</div>}
