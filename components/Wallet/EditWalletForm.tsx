@@ -10,6 +10,7 @@ import { WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import { AddressWithPaybuttons } from 'services/addressService'
 import axios from 'axios'
 import { UserNetworksInfo } from 'services/networkService'
+import Button from 'components/Button'
 
 interface IProps {
   wallet: WalletWithAddressesWithPaybuttons
@@ -149,8 +150,8 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                       <button onClick={() => { setModal(false); reset(); setDeleteModal(true) }} className={style_pb.delete_btn}>Delete Wallet<div> <Image src={TrashIcon} alt='delete' /></div></button>
                         )}
                     <div>
-                      <button type='submit' className='button_main'>Submit</button>
-                      <button onClick={() => { setModal(false); reset() }} className='button_outline'>Cancel</button>
+                      <Button onClick={() => { setModal(false); reset() }} variant='outlined'>Cancel</Button>
+                      <Button type='submit' className='ml'>Submit</Button>
                     </div>
                   </div>
                 </form>
@@ -167,9 +168,8 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                 <label htmlFor='name'>Are you sure you want to delete {wallet.name}?<br />This action cannot be undone.</label>
                 <div className={style_pb.btn_row}>
                   <div>
-
-                    <button onClick={() => { void onDelete(wallet.id) }} className={style_pb.delete_confirm_btn}>Yes, Delete This Wallet</button>
-                    <button onClick={() => { setDeleteModal(false); reset(); setModal(true) }} className={style_pb.cancel_btn}>Cancel</button>
+                    <Button onClick={() => { setDeleteModal(false); reset(); setModal(true) }} variant='outlined'>Cancel</Button>
+                    <Button onClick={() => { void onDelete(wallet.id) }} className='ml' variant='delete'>Yes, Delete This Wallet</Button>
                   </div>
                 </div>
               </div>

@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form'
 import React, { ReactElement, useState } from 'react'
 import style from './auth.module.css'
 import { signIn } from 'supertokens-web-js/recipe/emailpassword'
+import Button from 'components/Button'
 
 export default function SignIn (): ReactElement {
   const { register, handleSubmit, reset } = useForm<any>()
@@ -60,7 +61,7 @@ export default function SignIn (): ReactElement {
           <div className={style.error_message}>
             {error !== '' ? <span>{error}</span> : <span></span>}
           </div>
-          <button disabled={disabled} className="button_main" type='submit'>Submit</button>
+          <Button type='submit' disabled={disabled} loading={disabled} className='lg'>Submit</Button>
         </div>
       </form>
       <div className={style.signup_ctn}>

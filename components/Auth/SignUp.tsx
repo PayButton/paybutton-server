@@ -3,13 +3,16 @@ import React, { ReactElement, useEffect, useState } from 'react'
 import style from './auth.module.css'
 import { signUp } from 'supertokens-web-js/recipe/emailpassword'
 import { SignUpPasswordPOSTParameters } from 'utils/validators'
+import Button from 'components/Button'
 
 export default function SignUp (): ReactElement {
   const { register, handleSubmit, watch, reset } = useForm<any>()
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const [disabled, setDisabled] = useState(true)
   const onSubmit = async (values: any): Promise<void> => {
     setDisabled(true)
+    setLoading(true)
 
     const email = values.email
     const password = values.password
@@ -45,6 +48,7 @@ export default function SignUp (): ReactElement {
       }
     }
     setDisabled(false)
+    setLoading(false)
   }
 
   const noEmptyValues = (value: SignUpPasswordPOSTParameters): boolean => {
@@ -92,7 +96,7 @@ export default function SignUp (): ReactElement {
           <div className={style.error_message}>
             {error !== '' ? <span>{error}</span> : <span></span>}
           </div>
-          <button disabled={disabled} type='submit' className='button_main'>Submit</button>
+          <Button type='submit' disabled={disabled} loading={loading} className='lg'>Submit</Button>
         </div>
       </form>
       <div className={style.signup_ctn}>

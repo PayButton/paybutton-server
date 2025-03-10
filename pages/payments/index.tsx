@@ -16,6 +16,7 @@ import moment from 'moment-timezone'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
 import { UserProfile } from '@prisma/client'
+import Button from 'components/Button'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -55,6 +56,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
   const timezone = user?.userProfile.preferredTimezone === '' ? moment.tz.guess() : user?.userProfile?.preferredTimezone
   const [selectedCurrencyCSV, setSelectedCurrencyCSV] = useState<string>('')
   const [paybuttonNetworks, setPaybuttonNetworks] = useState<Set<number>>(new Set())
+  const [loading, setLoading] = useState(false)
 
   const fetchPaybuttons = async (): Promise<any> => {
     const res = await fetch(`/api/paybuttons?userId=${user?.userProfile.id}`, {
@@ -166,6 +168,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
 
   const downloadCSV = async (userId: string, userProfile: UserProfile, currency: string): Promise<void> => {
     try {
+      setLoading(true)
       const preferredCurrencyId = userProfile?.preferredCurrencyId ?? ''
       let url = `/api/payments/download/?currency=${preferredCurrencyId}`
       const isCurrencyEmptyOrUndefined = (value: string): boolean => (value === '' || value === undefined)
@@ -197,6 +200,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
     } catch (error) {
       console.error('An error occurred while downloading the CSV:', error)
     } finally {
+      setLoading(false)
       setSelectedCurrencyCSV('')
     }
   }
@@ -217,30 +221,30 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
                 id='export-btn'
                 value={selectedCurrencyCSV}
                 onChange={handleExport}
-                className="button_outline button_small"
-                style={{ marginBottom: '0', cursor: 'pointer' }}
+                className="select_button"
               >
-                <option value='' disabled> Export as CSV</option>
+                <option value='' disabled>{loading ? 'Downloading...' : 'Export as CSV'}</option>
                 <option key="all" value="all">
-                  All Currencies
+                  {loading ? 'Downloading...' : 'All Currencies'}
                 </option>
                 {Object.entries(NETWORK_TICKERS_FROM_ID)
                   .filter(([id]) => paybuttonNetworks.has(Number(id)))
                   .map(([id, ticker]) => (
                     <option key={id} value={ticker}>
-                      {ticker.toUpperCase()}
+                      {loading ? 'Downloading...' : ticker.toUpperCase()}
                     </option>
                   ))}
               </select>
           )
         : (
-              <div
+              <Button
                 onClick={handleExport}
-                className="button_outline button_small"
-                style={{ marginBottom: '0', cursor: 'pointer' }}
+                variant='small'
+                disabled={loading}
+                loading={loading}
               >
                 Export as CSV
-              </div>)}
+              </Button>)}
       </div>
       <TableContainerGetter
         columns={columns}

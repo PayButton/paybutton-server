@@ -8,6 +8,7 @@ import style_pb from 'components/Paybutton/paybutton.module.css'
 import Plus from 'assets/plus.png'
 import axios from 'axios'
 import { UserNetworksInfo } from 'services/networkService'
+import Button from 'components/Button'
 
 interface IProps {
   userAddresses: AddressWithPaybuttons[]
@@ -128,8 +129,8 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId, 
                   </div>
                   <div className={style_pb.btn_row}>
                     {error !== '' && <div className={style_pb.error_message}>{error}</div>}
-                    <button type='submit' className='button_main'>Submit</button>
-                    <button onClick={() => { setModal(false); reset() }} className='button_outline'>Cancel</button>
+                    <Button onClick={() => { setModal(false); reset() }} variant='outlined'>Cancel</Button>
+                    <Button type='submit' className='ml'>Submit</Button>
                   </div>
                 </form>
               </div>
