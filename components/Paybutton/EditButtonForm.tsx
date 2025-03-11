@@ -78,7 +78,7 @@ export default function EditButtonForm ({ paybutton, refreshPaybutton }: IProps)
             <div className={style.form_ctn}>
               <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
                 <label htmlFor='name'>Name*</label>
-                <input {...register('name')} type='text' id='name' name='name' placeholder={paybutton.name} value={name} onChange={(e) => { setValue('name', e.target.value); setName(e.target.value) }} />
+                <input {...register('name')} type='text' id='name' name='name' placeholder={paybutton.name} value={name} onChange={(e) => { setValue('name', e.target.value); setName(e.target.value) }} autoFocus/>
                 <label className={style.labelMargin} htmlFor='addresses'>
                   Addresses*
                 </label>

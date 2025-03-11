@@ -83,7 +83,7 @@ export default function ChangePassword ({ toggleChangePassword }: IProps): React
       {success !== '' && <div className={style.success_message}>{success}</div> }
       <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} method='post'>
         <label htmlFor='oldPassword'>Old password</label>
-        <input {...register('oldPassword')} type='password' id='oldPassword' name='oldPassword' required />
+        <input {...register('oldPassword')} type='password' id='oldPassword' name='oldPassword' required autoFocus/>
 
         <label htmlFor='newPassword'>New password</label>
         <input {...register('newPassword')} type='password' id='newPassword' name='newPassword' required />

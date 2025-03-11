@@ -83,6 +83,7 @@ export default function WalletForm ({ userAddresses, refreshWalletList, userId, 
                     type='text'
                     id='name'
                     name='name'
+                    autoFocus
                   />
 
                   <h4>Select Buttons</h4>
