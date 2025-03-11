@@ -7,6 +7,7 @@ import style from './organization.module.css'
 import InviteLink from './InviteLink'
 import LeaveOrganization from './LeaveOrganization'
 import { Organization, UserProfile } from '@prisma/client'
+import Button from 'components/Button'
 
 interface IProps {
   user: UserWithSupertokens
@@ -19,6 +20,7 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
   const [org, setOrg] = useState(organization)
   const [error, setError] = useState('')
   const [orgEdit, setOrgEdit] = useState('')
+  const [loading, setLoading] = useState(false)
 
   return (
     <div className={style.org_ctn}>
@@ -50,21 +52,22 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
             <>
               <div className={style.row_ctn}>
                 <div>Organization Name</div>
-                <div
-                  className={style.edit_btn}
+                <Button
+                  variant='xs'
                   onClick={() => setOrgEdit('name')}
                 >
                   Edit Name
-                </div>
+                </Button>
               </div>
               <div className={style.row_ctn}>
                 <div>Delete Organization</div>
-                <div
-                  className={style.delete_btn}
+                <Button
+                  variant='xs'
+                  className='small_delete'
                   onClick={() => setOrgEdit('delete')}
                 >
                   Delete Organization
-                </div>
+                </Button>
               </div>
             </>
                )
@@ -102,12 +105,11 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
            {orgEdit === ''
              ? (
             <div className={style.leave_btn_ctn}>
-                <div
-                  className={style.delete_btn}
+                <Button variant='xs' className='small_delete'
                   onClick={() => setOrgEdit('leave')}
                 >
                   Leave Organization
-                </div>
+                </Button>
             </div>
                )
              : (
@@ -122,7 +124,7 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
             <br />
             Or create your own:
             </p>
-            <CreateOrganization user={user} setError={setError} setOrg={setOrg} setOrgMembers={setOrgMembers}/>
+            <CreateOrganization user={user} setError={setError} setOrg={setOrg} setOrgMembers={setOrgMembers} loading={loading} setLoading={setLoading} />
           </>
             )}
       {error !== '' && <div className={style.error_message}>{error}</div>}
