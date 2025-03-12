@@ -94,6 +94,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                     id='name'
                     name='name'
                     placeholder={wallet.name}
+                    autoFocus
                   />
                   <h4>Addresses</h4>
                   <div className={style.buttonlist_ctn}>

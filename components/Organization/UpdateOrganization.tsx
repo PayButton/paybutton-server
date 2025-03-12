@@ -54,6 +54,7 @@ const UpdateOrganization = ({ user, setError, setOrg, setOrgEdit }: IProps): JSX
         placeholder="Enter the new name for your organization."
         required
         className={style.text_input}
+        autoFocus
       />
         <Button className='ml' type='submit'>
           Update

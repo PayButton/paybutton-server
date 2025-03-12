@@ -62,7 +62,7 @@ export default function PaybuttonForm ({ onSubmit, paybuttons, wallets, error }:
                 method="post"
               >
                 <label htmlFor='name'>Name*</label>
-                <input {...register('name')} type='text' id='name' name='name' placeholder="The unique name of your button" required />
+                <input {...register('name')} type='text' id='name' name='name' placeholder="The unique name of your button" required autoFocus/>
                 <label htmlFor='wallet'>Wallet*</label>
                 <select {...register('walletId')} required>
                   {walletOptions.map((w) =>
