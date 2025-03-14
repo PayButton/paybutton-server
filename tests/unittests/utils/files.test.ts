@@ -192,20 +192,20 @@ describe('collapseSmallPayments', () => {
 
 
   it('should collapse small payments correctly', () => {
-    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 1);
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 1, 'dev2-uid');
 
     expect(result).toHaveLength(3);
   });
 
   it('should collapse small payments threshold 2 USD', () => {
-    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 2);
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 2, 'dev2-uid');
 
     expect(result).toHaveLength(1);
   });
 
 
   it('amount should be the sum of colapsed tx amounts', () => {
-    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 1);
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 1, 'dev2-uid');
     const sumOfSmallPaymentsAmount = Number(mockedSmallerThen1UsdPayments.reduce((sum, payment) => sum.plus(payment.amount), new Decimal(0)));
 
     const collapsedPayment = result[1];
@@ -214,7 +214,7 @@ describe('collapseSmallPayments', () => {
   });
 
   it('value should be the sum of colapsed tx values - USD', () => {
-    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 1);
+    const result = collapseSmallPayments(mockedPayments, currencyUsd, timezone, 1, 'dev2-uid');
     const sumOfSmallPaymentsAmount = Number(mockedSmallerThen1UsdPayments.reduce((sum, payment) => sum.plus(Number(getTransactionValue(payment)[currencyUsd])), new Decimal(0)));
 
     const collapsedPayment = result[1];
@@ -223,7 +223,7 @@ describe('collapseSmallPayments', () => {
   });
 
   it('value should be the sum of colapsed tx values - CAD', () => {
-    const result = collapseSmallPayments(mockedPayments, currencyCad, timezone, 1);
+    const result = collapseSmallPayments(mockedPayments, currencyCad, timezone, 1, 'dev2-uid');
     const sumOfSmallPaymentsAmount = Number(mockedSmallerThen1UsdPayments.reduce((sum, payment) => sum.plus(Number(getTransactionValue(payment)[currencyCad])), new Decimal(0)));
 
     const collapsedPayment = result[1];
