@@ -197,10 +197,10 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                   id="postData"
                   name="postData"
                   placeholder={`{
-  "myButtonName": <buttonName>,
-  "txId": <txId>,
-  "...
-}`}
+                    "myButtonName": <buttonName>,
+                    "txId": <txId>,
+                    "...
+                  }`}
                 ></textarea>
                 <p>Available variables:</p>
                 <div className={style.variables_list}>
@@ -213,6 +213,8 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                   <div>&lt;opReturn&gt;</div>
                   <div>&lt;signature&gt;</div>
                   <div>&lt;inputAddresses&gt;</div>
+                  <div>&lt;value&gt;</div>
+
                 </div>
               </div>
               {/* Tooltip */}
