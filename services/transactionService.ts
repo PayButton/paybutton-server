@@ -10,7 +10,7 @@ import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTx } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
 
-export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices): QuoteValues {
+export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
@@ -62,7 +62,8 @@ export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices, in
     timestamp,
     message: parsedOpReturn?.message ?? '',
     rawMessage: parsedOpReturn?.rawMessage ?? '',
-    inputAddresses: inputAddresses ?? []
+    inputAddresses: inputAddresses ?? [],
+    prices: tx.prices
   }
 
   return simplifiedTransaction
