@@ -83,7 +83,8 @@ export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPri
     timestamp: tx.timestamp,
     values: {
       values,
-      amount: tx.amount
+      amount: tx.amount,
+      networkId: tx.address.networkId
     },
     networkId: tx.address.networkId,
     hash: tx.hash,
