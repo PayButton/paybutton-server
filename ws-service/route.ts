@@ -2,7 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import { BroadcastTxData, CreateQuoteAndShiftData, GetPairRateData } from './types'
 import { createServer } from 'http'
-import { Server, Socket } from 'socket.io'
+import { DisconnectReason, Server, Socket } from 'socket.io'
 import { RESPONSE_MESSAGES, SOCKET_MESSAGES } from '../constants/index'
 import { createSideshiftShift } from 'services/sideshiftService'
 import { getSideshiftCoinsInfo, getSideshiftPairRate, postSideshiftQuote, postSideshiftShift } from './sideshift'
@@ -20,30 +20,57 @@ const io = new Server(httpServer, {
   }
 })
 
+interface AddressInfo {
+  clientIP: string
+  timestamp: number
+  socketId: string
+}
+
 // Configure namespaces
+let connectedAddressesInfo: Record<string, AddressInfo[]> = {}
 const addressesNs = io.of('/addresses')
 const addressRouteConnection = (socket: Socket): void => {
-  let addresses: string[] = []
+  let addressList: string[] = []
   if (typeof socket.handshake.query.addresses === 'string') {
-    addresses = socket.handshake.query.addresses.split(',')
+    addressList = socket.handshake.query.addresses.split(',')
   } else if (Array.isArray(socket.handshake.query.addresses)) {
-    addresses = socket.handshake.query.addresses
+    addressList = socket.handshake.query.addresses
   }
-  if (addresses.length === 0) {
+  if (addressList.length === 0) {
     socket.disconnect(true)
     return
   }
-  for (const addr of addresses) {
-    void socket.join(addr)
-  }
-  void socket.on('disconnect', () => {
-    const countA = io.of('/addresses').sockets.size
-    console.log('disc:', addresses)
-    console.log('  total:', countA)
+  void socket.on('disconnect', (reason: DisconnectReason, description: any) => {
+    const totalConnected = io.of('/addresses').sockets.size
+    for (const addr of addressList) {
+      const infoArray = connectedAddressesInfo[addr]
+      if (infoArray !== undefined) {
+        connectedAddressesInfo[addr] = infoArray.filter(i => i.socketId !== socket.id)
+        if (connectedAddressesInfo[addr].length === 0) {
+          const { [addr]: _, ...remaining } = connectedAddressesInfo
+          connectedAddressesInfo = remaining
+        }
+      }
+    }
+    console.log(`${socket.id} disconnected.`, { reason, description })
+    console.log(connectedAddressesInfo)
+    console.log('Total connected: ', totalConnected)
   })
-  const countA = io.of('/addresses').sockets.size
-  console.log('conn:', addresses)
-  console.log('  total:', countA)
+  const totalConnected = io.of('/addresses').sockets.size
+  for (const addr of addressList) {
+    void socket.join(addr)
+    if (connectedAddressesInfo[addr] === undefined) {
+      connectedAddressesInfo[addr] = []
+    }
+    connectedAddressesInfo[addr].push({
+      socketId: socket.id,
+      clientIP: socket.handshake.address,
+      timestamp: socket.handshake.issued
+    })
+  }
+  console.log(`${socket.id} conected.'`)
+  console.log(connectedAddressesInfo)
+  console.log('Total connected: ', totalConnected)
 }
 
 const broadcastTxs = async (broadcastTxData: BroadcastTxData): Promise<void> => {
@@ -110,3 +137,17 @@ altpaymentNs.on('connection', altpaymentRouteConnection)
 httpServer.listen(5000, () => {
   console.log('WS service listening')
 })
+
+const shutdown = (): void => {
+  console.log('Shutting down gracefully...')
+  io.close(() => {
+    console.log('WebSocket server closed.')
+    httpServer.close(() => {
+      console.log('HTTP server closed.')
+      process.exit(0)
+    })
+  })
+}
+
+process.on('SIGINT', shutdown)
+process.on('SIGTERM', shutdown)
