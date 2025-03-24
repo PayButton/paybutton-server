@@ -49,6 +49,7 @@ export interface ButtonDisplayData {
 export interface AmountData {
   values: QuoteValues
   amount: Decimal
+  networkId?: number
 }
 
 export interface Payment {

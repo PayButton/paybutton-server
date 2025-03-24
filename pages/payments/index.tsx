@@ -11,7 +11,7 @@ import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import { formatQuoteValue, compareNumericString, removeUnserializableFields } from 'utils/index'
-import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL, NETWORK_TICKERS_FROM_ID } from 'constants/index'
+import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL, NETWORK_TICKERS_FROM_ID, DECIMALS } from 'constants/index'
 import moment from 'moment-timezone'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
@@ -147,7 +147,8 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         accessor: 'values',
         sortType: compareNumericString,
         Cell: (cellProps) => {
-          return <div style={{ textAlign: 'right', fontWeight: '600' }}> {cellProps.cell.value.amount} (${formatQuoteValue(cellProps.cell.value.values, user.userProfile.preferredCurrencyId)})</div>
+          const networkTicker = NETWORK_TICKERS_FROM_ID[cellProps.cell.row.values.networkId]
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}> {Number(cellProps.cell.value.amount).toFixed(DECIMALS[networkTicker])}(${formatQuoteValue(cellProps.cell.value.values, user.userProfile.preferredCurrencyId)})</div>
         }
       },
       {
