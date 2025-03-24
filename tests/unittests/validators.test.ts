@@ -414,7 +414,7 @@ describe('Signature payload', () => {
       paymentId: '123paymentId',
       rawMessage: 'my custom opReturn data'
     },
-    value: { usd: '0.0002189581274', cad: '0.000315814255' }
+    value: '0.0002189581274'
   }
   it('Gets payload for single variable', () => {
     const postData = '{"myVar": 3, "amount": <amount>}'
@@ -459,7 +459,7 @@ describe('Signature payload', () => {
         paymentId: '',
         rawMessage: ''
       },
-      value: { usd: '0.0002189581274', cad: '0.000315814255' }
+      value: '0.0002189581274'
     }
     const postData = '{"id": <txId>, "coin": <currency>, "myVar": 3, "OP_RETURN": <opReturn>, "name": <buttonName>, "amount": <amount>, "ts": <timestamp>}'
     const result = v.exportedForTesting.getSignaturePayload(postData, params)
@@ -485,7 +485,7 @@ describe('Sign post data', () => {
       paymentId: '123paymentId',
       rawMessage: 'my custom opReturn data'
     },
-    value: { usd: '0.0002189581274', cad: '0.000315814255' }
+    value: '0.0002189581274'
   }
   it('Sign full payload', () => {
     const postData = '{"id": <txId>, "coin": <currency>, "myVar": 3, "OP_RETURN": <opReturn>, "to": <address>, "name": <buttonName>, "amount": <amount>, "ts": <timestamp>}'

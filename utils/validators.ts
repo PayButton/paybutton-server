@@ -319,10 +319,7 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
       timestamp: 0,
       opReturn: EMPTY_OP_RETURN,
       inputAddresses: [],
-      value: {
-        usd: '',
-        cad: ''
-      }
+      value: ''
     }
     const parsed = parseTriggerPostData({
       userId: params.userId,
