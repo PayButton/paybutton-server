@@ -20,14 +20,16 @@ const io = new Server(httpServer, {
   }
 })
 
-interface AddressInfo {
+interface ConnectionInfo {
   clientIP: string
   timestamp: number
   socketId: string
-  namespace: string
+  totalConnectedInNamespace: number
+  addressList?: string[]
+  reason?: string
+  description?: string
 }
 
-let connectedAddressesInfo: Record<string, AddressInfo[]> = {}
 interface HandleConnectionArgs {
   namespace: string
   socket: Socket
@@ -35,68 +37,23 @@ interface HandleConnectionArgs {
 }
 
 function handleConnection ({ namespace, socket, addressList }: HandleConnectionArgs): void {
-  if (namespace === 'addresses' && addressList !== undefined) {
-    for (const addr of addressList) {
-      void socket.join(addr)
-      if (connectedAddressesInfo[addr] === undefined) {
-        connectedAddressesInfo[addr] = []
-      }
-      connectedAddressesInfo[addr].push({
-        socketId: socket.id,
-        clientIP: socket.handshake.address,
-        timestamp: socket.handshake.issued,
-        namespace: 'addresses'
-      })
-    }
-  } else {
-    if (connectedAddressesInfo[namespace] === undefined) {
-      connectedAddressesInfo[namespace] = []
-    }
-    connectedAddressesInfo[namespace].push({
-      socketId: socket.id,
-      clientIP: socket.handshake.address,
-      timestamp: socket.handshake.issued,
-      namespace: 'broadcast'
-    })
+  console.log(`/${namespace} — ${socket.id} CONNECTED`)
+  const totalConnectedInNamespace = io.of(`/${namespace}`).sockets.size
+  const info: ConnectionInfo = {
+    socketId: socket.id,
+    clientIP: socket.handshake.address,
+    timestamp: socket.handshake.issued,
+    totalConnectedInNamespace
   }
-  const totalConnected = io.of(`/${namespace}`).sockets.size
-  console.log(`/${namespace} — ----------------------------BEGIN---------------------------`)
-  console.log(`/${namespace} — ${socket.id} connected.`)
-  console.log(`/${namespace} — Connected addresses:`)
-  console.log(connectedAddressesInfo)
-  console.log(`/${namespace} — Total connected: `, totalConnected)
-  console.log(`/${namespace} — -----------------------------END----------------------------`)
+  if (addressList !== undefined) info.addressList = addressList
+  console.log(`/${namespace} —`, info)
   void socket.on('disconnect', (reason: DisconnectReason, description: any) => {
-    const totalConnected = io.of(namespace).sockets.size
-    if (namespace === 'addresses' && addressList !== undefined) {
-      for (const addr of addressList) {
-        const infoArray = connectedAddressesInfo[addr]
-        if (infoArray !== undefined) {
-          connectedAddressesInfo[addr] = infoArray.filter(i => i.socketId !== socket.id)
-          if (connectedAddressesInfo[addr].length === 0) {
-            const { [addr]: _, ...remaining } = connectedAddressesInfo
-            connectedAddressesInfo = remaining
-          }
-        }
-      }
-    } else {
-      const infoArray = connectedAddressesInfo[namespace]
-      if (infoArray !== undefined) {
-        connectedAddressesInfo[namespace] = infoArray.filter(i => i.socketId !== socket.id)
-        if (connectedAddressesInfo[namespace].length === 0) {
-          const { [namespace]: _, ...remaining } = connectedAddressesInfo
-          connectedAddressesInfo = remaining
-        }
-      }
-    }
-    console.log(`/${namespace} — ----------------------------BEGIN---------------------------`)
-    console.log(`/${namespace} — ${socket.id} disconnected.`)
-    console.log(`/${namespace} — Reason & Description:`)
-    console.log({ reason, description })
-    console.log(`/${namespace} — Connected addresses:`)
-    console.log(connectedAddressesInfo)
-    console.log(`/${namespace} — Total connected: `, totalConnected)
-    console.log(`/${namespace} — -----------------------------END----------------------------`)
+    console.log(`/${namespace} — ${socket.id} DISCONNECTED`)
+    const totalConnectedInNamespace = io.of(`/${namespace}`).sockets.size
+    info.reason = reason
+    info.totalConnectedInNamespace = totalConnectedInNamespace
+    info.description = description
+    console.log(`/${namespace} —`, info)
   })
 }
 
