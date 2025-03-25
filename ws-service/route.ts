@@ -24,10 +24,82 @@ interface AddressInfo {
   clientIP: string
   timestamp: number
   socketId: string
+  namespace: string
 }
 
-// Configure namespaces
 let connectedAddressesInfo: Record<string, AddressInfo[]> = {}
+interface HandleConnectionArgs {
+  namespace: string
+  socket: Socket
+  addressList?: string[]
+}
+
+function handleConnection ({ namespace, socket, addressList }: HandleConnectionArgs): void {
+  if (namespace === 'addresses' && addressList !== undefined) {
+    for (const addr of addressList) {
+      void socket.join(addr)
+      if (connectedAddressesInfo[addr] === undefined) {
+        connectedAddressesInfo[addr] = []
+      }
+      connectedAddressesInfo[addr].push({
+        socketId: socket.id,
+        clientIP: socket.handshake.address,
+        timestamp: socket.handshake.issued,
+        namespace: 'addresses'
+      })
+    }
+  } else {
+    if (connectedAddressesInfo[namespace] === undefined) {
+      connectedAddressesInfo[namespace] = []
+    }
+    connectedAddressesInfo[namespace].push({
+      socketId: socket.id,
+      clientIP: socket.handshake.address,
+      timestamp: socket.handshake.issued,
+      namespace: 'broadcast'
+    })
+  }
+  const totalConnected = io.of(`/${namespace}`).sockets.size
+  console.log(`/${namespace} — ----------------------------BEGIN---------------------------`)
+  console.log(`/${namespace} — ${socket.id} connected.`)
+  console.log(`/${namespace} — Connected addresses:`)
+  console.log(connectedAddressesInfo)
+  console.log(`/${namespace} — Total connected: `, totalConnected)
+  console.log(`/${namespace} — -----------------------------END----------------------------`)
+  void socket.on('disconnect', (reason: DisconnectReason, description: any) => {
+    const totalConnected = io.of(namespace).sockets.size
+    if (namespace === 'addresses' && addressList !== undefined) {
+      for (const addr of addressList) {
+        const infoArray = connectedAddressesInfo[addr]
+        if (infoArray !== undefined) {
+          connectedAddressesInfo[addr] = infoArray.filter(i => i.socketId !== socket.id)
+          if (connectedAddressesInfo[addr].length === 0) {
+            const { [addr]: _, ...remaining } = connectedAddressesInfo
+            connectedAddressesInfo = remaining
+          }
+        }
+      }
+    } else {
+      const infoArray = connectedAddressesInfo[namespace]
+      if (infoArray !== undefined) {
+        connectedAddressesInfo[namespace] = infoArray.filter(i => i.socketId !== socket.id)
+        if (connectedAddressesInfo[namespace].length === 0) {
+          const { [namespace]: _, ...remaining } = connectedAddressesInfo
+          connectedAddressesInfo = remaining
+        }
+      }
+    }
+    console.log(`/${namespace} — ----------------------------BEGIN---------------------------`)
+    console.log(`/${namespace} — ${socket.id} disconnected.`)
+    console.log(`/${namespace} — Reason & Description:`)
+    console.log({ reason, description })
+    console.log(`/${namespace} — Connected addresses:`)
+    console.log(connectedAddressesInfo)
+    console.log(`/${namespace} — Total connected: `, totalConnected)
+    console.log(`/${namespace} — -----------------------------END----------------------------`)
+  })
+}
+
 const addressesNs = io.of('/addresses')
 const addressRouteConnection = (socket: Socket): void => {
   let addressList: string[] = []
@@ -40,37 +112,11 @@ const addressRouteConnection = (socket: Socket): void => {
     socket.disconnect(true)
     return
   }
-  void socket.on('disconnect', (reason: DisconnectReason, description: any) => {
-    const totalConnected = io.of('/addresses').sockets.size
-    for (const addr of addressList) {
-      const infoArray = connectedAddressesInfo[addr]
-      if (infoArray !== undefined) {
-        connectedAddressesInfo[addr] = infoArray.filter(i => i.socketId !== socket.id)
-        if (connectedAddressesInfo[addr].length === 0) {
-          const { [addr]: _, ...remaining } = connectedAddressesInfo
-          connectedAddressesInfo = remaining
-        }
-      }
-    }
-    console.log(`${socket.id} disconnected.`, { reason, description })
-    console.log(connectedAddressesInfo)
-    console.log('Total connected: ', totalConnected)
+  handleConnection({
+    namespace: 'addresses',
+    socket,
+    addressList
   })
-  const totalConnected = io.of('/addresses').sockets.size
-  for (const addr of addressList) {
-    void socket.join(addr)
-    if (connectedAddressesInfo[addr] === undefined) {
-      connectedAddressesInfo[addr] = []
-    }
-    connectedAddressesInfo[addr].push({
-      socketId: socket.id,
-      clientIP: socket.handshake.address,
-      timestamp: socket.handshake.issued
-    })
-  }
-  console.log(`${socket.id} conected.'`)
-  console.log(connectedAddressesInfo)
-  console.log('Total connected: ', totalConnected)
 }
 
 const broadcastTxs = async (broadcastTxData: BroadcastTxData): Promise<void> => {
@@ -99,13 +145,27 @@ const broadcastRouteConnection = (socket: Socket): void => {
     socket.disconnect(true)
     return
   }
+  handleConnection({
+    namespace: 'broadcast',
+    socket
+  })
   void socket.on(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxs)
 }
 
 const altpaymentNs = io.of('/altpayment')
 const altpaymentRouteConnection = async (socket: Socket): Promise<void> => {
-  const headersForwardedAddresses = socket.handshake.headers['x-forwarded-for']
-  const userIp = (headersForwardedAddresses as string).split(',')[0]
+  handleConnection({
+    namespace: 'altpayment',
+    socket
+  })
+  const headersForwardedAddresses = socket.handshake.headers['x-forwarded-for'] as string
+  const userIp = headersForwardedAddresses === undefined ? '' : headersForwardedAddresses.split(',')[0]
+  if (userIp === '') {
+    throw new Error('Local IP not defined.')
+    // userIp = (await (await fetch("<PUBLIC_IP_PROVIDER>", { headers: { 'Accept': 'application/json' } })).json())[<PUBLIC_IP_PROVIDER_IP_KEY>]
+  }
+  const userIpAlt = socket.handshake.address
+  console.log('WIP, userIps', { userIp, userIpAlt })
   const coins = await getSideshiftCoinsInfo(userIp)
   void socket.emit(SOCKET_MESSAGES.SEND_ALTPAYMENT_COINS_INFO, coins)
   void socket.on(SOCKET_MESSAGES.GET_ALTPAYMENT_RATE, async (getPairRateData: GetPairRateData) => {
