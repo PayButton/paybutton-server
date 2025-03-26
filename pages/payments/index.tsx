@@ -61,7 +61,8 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
   const [loading, setLoading] = useState(false)
   const [buttons, setButtons] = useState<any[]>([])
   const [selectedButtonIds, setSelectedButtonIds] = useState<any[]>([])
-  const [showFilters, setShowFilters] = useState(false)
+  const [showFilters, setShowFilters] = useState<boolean>(false)
+  const [tableLoading, setTableLoading] = useState<boolean>(true)
 
   const fetchPaybuttons = async (): Promise<any> => {
     const res = await fetch(`/api/paybuttons?userId=${user?.userProfile.id}`, {
@@ -93,22 +94,30 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
     orderBy: string,
     orderDesc: boolean
   ): Promise<{ data: [], totalCount: number }> => {
-    // Build the URL including the filter if any buttons are selected
-    let url = `/api/payments?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`
-    if (selectedButtonIds.length > 0) {
-      url += `&buttonIds=${selectedButtonIds.join(',')}`
+    setTableLoading(true)
+    try {
+      // Build the URL including the filter if any buttons are selected
+      let url = `/api/payments?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`
+      if (selectedButtonIds.length > 0) {
+        url += `&buttonIds=${selectedButtonIds.join(',')}`
+      }
+
+      const paymentsResponse = await fetch(url)
+      const paymentsCountResponse = await fetch(
+        `/api/payments/count${selectedButtonIds.length > 0 ? `?buttonIds=${selectedButtonIds.join(',')}` : ''}`,
+        { headers: { Timezone: timezone } }
+      )
+
+      const totalCount = await paymentsCountResponse.json()
+      const payments = await paymentsResponse.json()
+
+      return { data: payments, totalCount }
+    } catch (error) {
+      console.error('Error fetching payments:', error)
+      throw error
+    } finally {
+      setLoading(false)
     }
-
-    const paymentsResponse = await fetch(url)
-    const paymentsCountResponse = await fetch(
-      `/api/payments/count${selectedButtonIds.length > 0 ? `?buttonIds=${selectedButtonIds.join(',')}` : ''}`,
-      { headers: { Timezone: timezone } }
-    )
-
-    const totalCount = await paymentsCountResponse.json()
-    const payments = await paymentsResponse.json()
-
-    return { data: payments, totalCount }
   }
 
   const columns = useMemo(
@@ -317,7 +326,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
           await loadData(page, pageSize, orderBy, orderDesc)
         }
         tableRefreshCount={1}
-        emptyMessage='No Payments to show yet'
+        emptyMessage={tableLoading ? 'Loading...' : 'No Payments to show yet'}
         />
     </>
   )
