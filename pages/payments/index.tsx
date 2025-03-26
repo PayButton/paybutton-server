@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
@@ -17,6 +17,7 @@ import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
 import { UserProfile } from '@prisma/client'
 import Button from 'components/Button'
+import { PaybuttonWithAddresses } from 'services/paybuttonService'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -57,6 +58,8 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
   const [selectedCurrencyCSV, setSelectedCurrencyCSV] = useState<string>('')
   const [paybuttonNetworks, setPaybuttonNetworks] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(false)
+  const [paybuttons, setPaybuttons] = useState<PaybuttonWithAddresses[]>()
+  const [selectedButton, setSelectedButton] = useState<string>('all')
 
   const fetchPaybuttons = async (): Promise<any> => {
     const res = await fetch(`/api/paybuttons?userId=${user?.userProfile.id}`, {
@@ -74,6 +77,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       return p.addresses.forEach((c: { address: { networkId: number } }) => networkIds.add(c.address.networkId))
     })
 
+    setPaybuttons(paybuttons)
     setPaybuttonNetworks(networkIds)
   }
 
@@ -81,22 +85,28 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
     void getDataAndSetUpCurrencyCSV()
   }, [])
 
-  function fetchData (): Function {
-    return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
-      const paymentsResponse = await fetch(`/api/payments?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`)
-      const paymentsCountResponse = await fetch('/api/payments/count', {
-        headers: {
-          Timezone: timezone
+  const fetchData = useCallback(
+    (selectedButton: string): Function => {
+      return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
+        const buttonFilter = selectedButton !== 'all' ? `&paybuttonId=${selectedButton}` : ''
+        const buttonFilterCount = selectedButton !== 'all' ? `?paybuttonId=${selectedButton}` : ''
+
+        const paymentsResponse = await fetch(`/api/payments?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}${buttonFilter}`)
+        const paymentsCountResponse = await fetch(`/api/payments/count${buttonFilterCount}`, {
+          headers: {
+            Timezone: timezone
+          }
+        })
+        const totalCount = await paymentsCountResponse.json()
+        const payments = await paymentsResponse.json()
+        return {
+          data: payments,
+          totalCount
         }
-      })
-      const totalCount = await paymentsCountResponse.json()
-      const payments = await paymentsResponse.json()
-      return {
-        data: payments,
-        totalCount
       }
-    }
-  }
+    },
+    [selectedButton, timezone]
+  )
 
   const columns = useMemo(
     () => [
@@ -215,6 +225,18 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
     <>
       <TopBar title="Payments" user={user?.stUser?.email} />
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'right' }}>
+
+      <select
+        id="button-filter"
+        value={selectedButton}
+        onChange={(e) => setSelectedButton(e.target.value)}
+        className="select_button"
+      >
+        <option value="all">All Buttons</option>
+        {paybuttons?.map((button) => (
+          <option key={button.id} value={button.id}>{button.name}</option>
+        ))}
+      </select>
       {paybuttonNetworks.size > 1
         ? (
               <select
@@ -247,8 +269,9 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
               </Button>)}
       </div>
       <TableContainerGetter
+        key={selectedButton}
         columns={columns}
-        dataGetter={fetchData()}
+        dataGetter={fetchData(selectedButton)}
         tableRefreshCount={1}
         emptyMessage='No Payments to show yet'
         />
