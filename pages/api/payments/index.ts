@@ -10,7 +10,19 @@ export default async (req: any, res: any): Promise<void> => {
     const orderDesc: boolean = !!(req.query.orderDesc === '' || req.query.orderDesc === undefined || req.query.orderDesc === 'true')
     const orderBy = (req.query.orderBy === '' || req.query.orderBy === undefined) ? undefined : req.query.orderBy as string
 
-    const resJSON = await fetchAllPaymentsByUserIdWithPagination(userId, page, pageSize, orderBy, orderDesc)
+    let buttonIds: string[] | undefined
+    if (typeof req.query.buttonIds === 'string' && req.query.buttonIds !== '') {
+      buttonIds = (req.query.buttonIds as string).split(',')
+    }
+
+    const resJSON = await fetchAllPaymentsByUserIdWithPagination(
+      userId,
+      page,
+      pageSize,
+      orderBy,
+      orderDesc,
+      buttonIds
+    )
     res.status(200).json(resJSON)
   }
 }

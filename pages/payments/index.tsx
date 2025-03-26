@@ -17,6 +17,8 @@ import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
 import { UserProfile } from '@prisma/client'
 import Button from 'components/Button'
+import style from './payments.module.css'
+import SettingsIcon from '../../assets/settings-slider-icon.png'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -57,6 +59,9 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
   const [selectedCurrencyCSV, setSelectedCurrencyCSV] = useState<string>('')
   const [paybuttonNetworks, setPaybuttonNetworks] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(false)
+  const [buttons, setButtons] = useState<any[]>([])
+  const [selectedButtonIds, setSelectedButtonIds] = useState<any[]>([])
+  const [showFilters, setShowFilters] = useState(false)
 
   const fetchPaybuttons = async (): Promise<any> => {
     const res = await fetch(`/api/paybuttons?userId=${user?.userProfile.id}`, {
@@ -69,6 +74,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
   const getDataAndSetUpCurrencyCSV = async (): Promise<void> => {
     const paybuttons = await fetchPaybuttons()
     const networkIds: Set<number> = new Set()
+    setButtons(paybuttons)
 
     paybuttons.forEach((p: { addresses: any[] }) => {
       return p.addresses.forEach((c: { address: { networkId: number } }) => networkIds.add(c.address.networkId))
@@ -81,21 +87,28 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
     void getDataAndSetUpCurrencyCSV()
   }, [])
 
-  function fetchData (): Function {
-    return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
-      const paymentsResponse = await fetch(`/api/payments?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`)
-      const paymentsCountResponse = await fetch('/api/payments/count', {
-        headers: {
-          Timezone: timezone
-        }
-      })
-      const totalCount = await paymentsCountResponse.json()
-      const payments = await paymentsResponse.json()
-      return {
-        data: payments,
-        totalCount
-      }
+  const loadData = async (
+    page: number,
+    pageSize: number,
+    orderBy: string,
+    orderDesc: boolean
+  ): Promise<{ data: [], totalCount: number }> => {
+    // Build the URL including the filter if any buttons are selected
+    let url = `/api/payments?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`
+    if (selectedButtonIds.length > 0) {
+      url += `&buttonIds=${selectedButtonIds.join(',')}`
     }
+
+    const paymentsResponse = await fetch(url)
+    const paymentsCountResponse = await fetch(
+      `/api/payments/count${selectedButtonIds.length > 0 ? `?buttonIds=${selectedButtonIds.join(',')}` : ''}`,
+      { headers: { Timezone: timezone } }
+    )
+
+    const totalCount = await paymentsCountResponse.json()
+    const payments = await paymentsResponse.json()
+
+    return { data: payments, totalCount }
   }
 
   const columns = useMemo(
@@ -213,8 +226,24 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
 
   return (
     <>
-      <TopBar title="Payments" user={user?.stUser?.email} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'right' }}>
+     <TopBar title="Payments" user={user?.stUser?.email} />
+      <div className={style.filters_export_ctn}>
+        <div className={style.filter_btns}>
+          <div
+            onClick={() => setShowFilters(!showFilters)}
+            className={style.show_filters_button}
+          >
+            <Image src={SettingsIcon} alt="filters" width={15} />Filters
+          </div>
+          {selectedButtonIds.length > 0 &&
+          <div
+          onClick={() => setSelectedButtonIds([])}
+          className={style.show_filters_button}
+        >
+          Clear
+        </div>
+          }
+        </div>
       {paybuttonNetworks.size > 1
         ? (
               <select
@@ -246,9 +275,47 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
                 Export as CSV
               </Button>)}
       </div>
+      {showFilters && (
+            <div className={style.showfilters_ctn}>
+              <span>Filter by PayButton</span>
+              <div className={style.filters_ctn}>
+                {buttons.map((button) => (
+                  <div
+                    key={button.id}
+                    onClick={() => {
+                      setSelectedButtonIds(prev =>
+                        prev.includes(button.id)
+                          ? prev.filter(id => id !== button.id)
+                          : [...prev, button.id]
+                      )
+                    }}
+                    className={`${style.filter_button} ${selectedButtonIds.includes(button.id) ? style.active : ''}`}
+                  >
+                    {button.name}
+                  </div>
+                ))}
+              </div>
+              <span className={style.wallet_label}>Filter by Wallet</span>
+              <div className={style.filters_ctn}>
+                {buttons.map((button) => (
+                  <div
+                    key={button.id}
+                    className={style.filter_button}
+                    // onClick={() => setSelectedButtonId(button.id)}
+                    // className={selectedButtonId === button.id ? "active" : ""}
+                  >
+                    {button.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+      )}
       <TableContainerGetter
+        key={selectedButtonIds.join('-')}
         columns={columns}
-        dataGetter={fetchData()}
+        dataGetter={async (page, pageSize, orderBy, orderDesc) =>
+          await loadData(page, pageSize, orderBy, orderDesc)
+        }
         tableRefreshCount={1}
         emptyMessage='No Payments to show yet'
         />
