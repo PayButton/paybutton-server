@@ -9,8 +9,8 @@ export default async (req: any, res: any): Promise<void> => {
     const pageSize = req.query.pageSize as number
     const orderDesc: boolean = !!(req.query.orderDesc === '' || req.query.orderDesc === undefined || req.query.orderDesc === 'true')
     const orderBy = (req.query.orderBy === '' || req.query.orderBy === undefined) ? undefined : req.query.orderBy as string
-
-    const resJSON = await fetchAllPaymentsByUserIdWithPagination(userId, page, pageSize, orderBy, orderDesc)
+    const paybuttonId = (req.query.paybuttonId === '' || req.query.paybuttonId === undefined) ? undefined : req.query.paybuttonId as string
+    const resJSON = await fetchAllPaymentsByUserIdWithPagination(userId, page, pageSize, orderBy, orderDesc, paybuttonId)
     res.status(200).json(resJSON)
   }
 }
