@@ -2,7 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import { BroadcastTxData, CreateQuoteAndShiftData, GetPairRateData } from './types'
 import { createServer } from 'http'
-import { Server, Socket } from 'socket.io'
+import { DisconnectReason, Server, Socket } from 'socket.io'
 import { RESPONSE_MESSAGES, SOCKET_MESSAGES } from '../constants/index'
 import { createSideshiftShift } from 'services/sideshiftService'
 import { getSideshiftCoinsInfo, getSideshiftPairRate, postSideshiftQuote, postSideshiftShift } from './sideshift'
@@ -20,30 +20,60 @@ const io = new Server(httpServer, {
   }
 })
 
-// Configure namespaces
+interface ConnectionInfo {
+  clientIP: string
+  timestamp: number
+  socketId: string
+  totalConnectedInNamespace: number
+  addressList?: string[]
+  reason?: string
+  description?: string
+}
+
+interface HandleConnectionArgs {
+  namespace: string
+  socket: Socket
+  addressList?: string[]
+}
+
+function handleConnection ({ namespace, socket, addressList }: HandleConnectionArgs): void {
+  console.log(`/${namespace} — ${socket.id} CONNECTED`)
+  const totalConnectedInNamespace = io.of(`/${namespace}`).sockets.size
+  const info: ConnectionInfo = {
+    socketId: socket.id,
+    clientIP: socket.handshake.address,
+    timestamp: socket.handshake.issued,
+    totalConnectedInNamespace
+  }
+  if (addressList !== undefined) info.addressList = addressList
+  console.log(`/${namespace} —`, info)
+  void socket.on('disconnect', (reason: DisconnectReason, description: any) => {
+    console.log(`/${namespace} — ${socket.id} DISCONNECTED`)
+    const totalConnectedInNamespace = io.of(`/${namespace}`).sockets.size
+    info.reason = reason
+    info.totalConnectedInNamespace = totalConnectedInNamespace
+    info.description = description
+    console.log(`/${namespace} —`, info)
+  })
+}
+
 const addressesNs = io.of('/addresses')
 const addressRouteConnection = (socket: Socket): void => {
-  let addresses: string[] = []
+  let addressList: string[] = []
   if (typeof socket.handshake.query.addresses === 'string') {
-    addresses = socket.handshake.query.addresses.split(',')
+    addressList = socket.handshake.query.addresses.split(',')
   } else if (Array.isArray(socket.handshake.query.addresses)) {
-    addresses = socket.handshake.query.addresses
+    addressList = socket.handshake.query.addresses
   }
-  if (addresses.length === 0) {
+  if (addressList.length === 0) {
     socket.disconnect(true)
     return
   }
-  for (const addr of addresses) {
-    void socket.join(addr)
-  }
-  void socket.on('disconnect', () => {
-    const countA = io.of('/addresses').sockets.size
-    console.log('disc:', addresses)
-    console.log('  total:', countA)
+  handleConnection({
+    namespace: 'addresses',
+    socket,
+    addressList
   })
-  const countA = io.of('/addresses').sockets.size
-  console.log('conn:', addresses)
-  console.log('  total:', countA)
 }
 
 const broadcastTxs = async (broadcastTxData: BroadcastTxData): Promise<void> => {
@@ -72,13 +102,27 @@ const broadcastRouteConnection = (socket: Socket): void => {
     socket.disconnect(true)
     return
   }
+  handleConnection({
+    namespace: 'broadcast',
+    socket
+  })
   void socket.on(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxs)
 }
 
 const altpaymentNs = io.of('/altpayment')
 const altpaymentRouteConnection = async (socket: Socket): Promise<void> => {
-  const headersForwardedAddresses = socket.handshake.headers['x-forwarded-for']
-  const userIp = (headersForwardedAddresses as string).split(',')[0]
+  handleConnection({
+    namespace: 'altpayment',
+    socket
+  })
+  const headersForwardedAddresses = socket.handshake.headers['x-forwarded-for'] as string
+  const userIp = headersForwardedAddresses === undefined ? '' : headersForwardedAddresses.split(',')[0]
+  if (userIp === '') {
+    throw new Error('Local IP not defined.')
+    // userIp = (await (await fetch("<PUBLIC_IP_PROVIDER>", { headers: { 'Accept': 'application/json' } })).json())[<PUBLIC_IP_PROVIDER_IP_KEY>]
+  }
+  const userIpAlt = socket.handshake.address
+  console.log('WIP, userIps', { userIp, userIpAlt })
   const coins = await getSideshiftCoinsInfo(userIp)
   void socket.emit(SOCKET_MESSAGES.SEND_ALTPAYMENT_COINS_INFO, coins)
   void socket.on(SOCKET_MESSAGES.GET_ALTPAYMENT_RATE, async (getPairRateData: GetPairRateData) => {
@@ -110,3 +154,17 @@ altpaymentNs.on('connection', altpaymentRouteConnection)
 httpServer.listen(5000, () => {
   console.log('WS service listening')
 })
+
+const shutdown = (): void => {
+  console.log('Shutting down gracefully...')
+  io.close(() => {
+    console.log('WebSocket server closed.')
+    httpServer.close(() => {
+      console.log('HTTP server closed.')
+      process.exit(0)
+    })
+  })
+}
+
+process.on('SIGINT', shutdown)
+process.on('SIGTERM', shutdown)
