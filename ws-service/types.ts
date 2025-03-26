@@ -20,12 +20,7 @@ export interface SimplifiedTransaction {
   inputAddresses: string[]
   prices: Array<{
     price: {
-      id: number
-      timestamp: number
-      createdAt: Date
-      updatedAt: Date
       value: Prisma.Decimal
-      networkId: number
       quoteId: number
     }
   }>

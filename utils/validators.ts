@@ -273,7 +273,7 @@ export function parseTriggerPostData ({ userId, postData, postDataParameters }: 
       .replace('<opReturn>', opReturn)
       .replace('<signature>', `${JSON.stringify(signature, undefined, 2)}`)
       .replace('<inputAddresses>', `${JSON.stringify(postDataParameters.inputAddresses, undefined, 2)}`)
-      .replace('<value>', `${JSON.stringify(postDataParameters.value)}`)
+      .replace('<value>', `"${postDataParameters.value}"`)
 
     const parsedResultingData = JSON.parse(resultingData)
     return parsedResultingData
