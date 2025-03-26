@@ -1,7 +1,7 @@
 import prisma from 'prisma/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS } from 'constants/index'
-import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
+import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists, fetchAddressesByPaybuttonIds } from 'services/addressService'
 import { AllPrices, QuoteValues, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
 import _ from 'lodash'
 import { CacheSet } from 'redis/index'
@@ -563,7 +563,8 @@ export async function getPaymentsByUserIdOrderedByButtonName (
   userId: string,
   page: number,
   pageSize: number,
-  orderDesc = true
+  orderDesc = true,
+  paybuttonId?: string
 ): Promise<Payment[]> {
   const offset = page * pageSize
 
@@ -596,7 +597,11 @@ export async function getPaymentsByUserIdOrderedByButtonName (
         WHERE au.\`addressId\` = a.\`id\`
           AND au.\`userId\` = ${userId}
       )
+      AND t.\`amount\` > 0
       AND p.\`providerUserId\` = ${userId}
+      AND (
+        ${paybuttonId ?? null} IS NULL OR paybuttonId = ${paybuttonId}
+      )
       GROUP BY t.id, p.id
       ORDER BY p.\`name\` ASC
       LIMIT ${pageSize}
@@ -631,6 +636,9 @@ export async function getPaymentsByUserIdOrderedByButtonName (
           AND au.\`userId\` = ${userId}
       )
       AND p.\`providerUserId\` = ${userId}
+      AND (
+        ${paybuttonId !== undefined ? paybuttonId : null} IS NULL OR paybuttonId = ${paybuttonId}
+      )
       GROUP BY t.id, p.id
       ORDER BY p.\`name\` DESC
       LIMIT ${pageSize}
@@ -681,12 +689,13 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   page: number,
   pageSize: number,
   orderBy?: string,
-  orderDesc = true
+  orderDesc = true,
+  paybuttonId?: string
 ): Promise<Payment[]> {
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
   if (orderBy === 'buttonDisplayDataList') {
     return await getPaymentsByUserIdOrderedByButtonName(
-      userId, page, pageSize, orderDesc
+      userId, page, pageSize, orderDesc, paybuttonId
     )
   }
   let orderByQuery
@@ -712,8 +721,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
       timestamp: orderDescString
     }
   }
-
-  const transactions = await prisma.transaction.findMany({
+  const query = {
     where: {
       address: {
         userProfiles: {
@@ -724,13 +732,24 @@ export async function fetchAllPaymentsByUserIdWithPagination (
       },
       amount: {
         gt: 0
-      }
+      },
+      addressId: {}
     },
     include: includePaybuttonsAndPrices,
     orderBy: orderByQuery,
     skip: page * Number(pageSize),
     take: Number(pageSize)
-  })
+  }
+
+  let addressIdList = []
+  if (paybuttonId !== undefined) {
+    addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
+    query.where.addressId = {
+      in: addressIdList
+    }
+  }
+
+  const transactions = await prisma.transaction.findMany(query)
 
   const transformedData: Payment[] = []
   for (let index = 0; index < transactions.length; index++) {
@@ -782,4 +801,43 @@ export async function fetchTxCountByPaybuttonId (paybuttonId: string): Promise<n
       }
     }
   })
+}
+
+export async function fetchPaymentsCountByUserId (userId: string, paybuttonIds?: string[]): Promise<number> {
+  if (paybuttonIds !== undefined) {
+    const addressIdList = await fetchAddressesByPaybuttonIds(paybuttonIds)
+
+    return await prisma.transaction.count({
+      where: {
+        address: {
+          userProfiles: {
+            some: {
+              userId
+            }
+          }
+        },
+        addressId: {
+          in: addressIdList
+        },
+        amount: {
+          gt: 0
+        }
+      }
+    })
+  } else {
+    return await prisma.transaction.count({
+      where: {
+        address: {
+          userProfiles: {
+            some: {
+              userId
+            }
+          }
+        },
+        amount: {
+          gt: 0
+        }
+      }
+    })
+  }
 }
