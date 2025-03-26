@@ -144,11 +144,21 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       },
       {
         Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
+        accessor: 'amount',
+        sortType: compareNumericString,
+        Cell: (cellProps) => {
+          const networkTicker = NETWORK_TICKERS_FROM_ID[cellProps.cell.value.networkId]
+          const amount = Number(cellProps.cell.value.amount).toFixed(DECIMALS[networkTicker])
+          const formattedAmount = Number(amount).toLocaleString()
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}>{formattedAmount} </div>
+        }
+      },
+      {
+        Header: () => (<div style={{ textAlign: 'right' }}>Value</div>),
         accessor: 'values',
         sortType: compareNumericString,
         Cell: (cellProps) => {
-          const networkTicker = NETWORK_TICKERS_FROM_ID[cellProps.cell.row.values.networkId]
-          return <div style={{ textAlign: 'right', fontWeight: '600' }}> {Number(cellProps.cell.value.amount).toFixed(DECIMALS[networkTicker])}(${formatQuoteValue(cellProps.cell.value.values, user.userProfile.preferredCurrencyId)})</div>
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}> ${formatQuoteValue(cellProps.cell.value.values, user.userProfile.preferredCurrencyId)}</div>
         }
       },
       {

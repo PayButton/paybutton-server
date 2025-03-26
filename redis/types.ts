@@ -51,9 +51,15 @@ export interface AmountData {
   networkId?: number
 }
 
+export interface Amount {
+  amount: Decimal
+  networkId?: number
+}
+
 export interface Payment {
   timestamp: number
   values: AmountData
+  amount?: Amount
   networkId: number
   hash: string
   buttonDisplayDataList: ButtonDisplayData[]
