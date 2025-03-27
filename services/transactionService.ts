@@ -681,14 +681,17 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   page: number,
   pageSize: number,
   orderBy?: string,
-  orderDesc = true
+  orderDesc = true,
+  buttonIds?: string[]
 ): Promise<Payment[]> {
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
+
   if (orderBy === 'buttonDisplayDataList') {
     return await getPaymentsByUserIdOrderedByButtonName(
       userId, page, pageSize, orderDesc
     )
   }
+
   let orderByQuery
   if (orderBy !== undefined && orderBy !== '') {
     if (orderBy === 'values') {
@@ -713,19 +716,32 @@ export async function fetchAllPaymentsByUserIdWithPagination (
     }
   }
 
-  const transactions = await prisma.transaction.findMany({
-    where: {
-      address: {
-        userProfiles: {
-          some: {
-            userId
-          }
-        }
-      },
-      amount: {
-        gt: 0
+  // Build the base where clause
+  const whereClause: any = {
+    // Filter transactions whose Address is linked to the current user
+    address: {
+      userProfiles: {
+        some: { userId }
       }
     },
+    amount: {
+      gt: 0
+    }
+  }
+
+  // If buttonIds is provided, add a nested filter on address.paybuttons
+  if ((buttonIds != null) && buttonIds.length > 0) {
+    whereClause.address.paybuttons = {
+      some: {
+        paybutton: {
+          id: { in: buttonIds }
+        }
+      }
+    }
+  }
+
+  const transactions = await prisma.transaction.findMany({
+    where: whereClause,
     include: includePaybuttonsAndPrices,
     orderBy: orderByQuery,
     skip: page * Number(pageSize),
