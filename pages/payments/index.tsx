@@ -304,19 +304,6 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
                   </div>
                 ))}
               </div>
-              <span className={style.wallet_label}>Filter by Wallet</span>
-              <div className={style.filters_ctn}>
-                {buttons.map((button) => (
-                  <div
-                    key={button.id}
-                    className={style.filter_button}
-                    // onClick={() => setSelectedButtonId(button.id)}
-                    // className={selectedButtonId === button.id ? "active" : ""}
-                  >
-                    {button.name}
-                  </div>
-                ))}
-              </div>
             </div>
       )}
       <TableContainerGetter
