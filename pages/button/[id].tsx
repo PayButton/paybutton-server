@@ -96,7 +96,8 @@ export default function PayButton (props: PaybuttonProps): React.ReactElement {
 
   const setUpSocket = async (addresses: string[]): Promise<void> => {
     const socket = io(`${config.wsBaseURL}/addresses`, {
-      query: { addresses }
+      query: { addresses },
+      transports: ['websocket']
     })
 
     socket.on(SOCKET_MESSAGES.INCOMING_TXS, (broadcastedData: BroadcastTxData) => {
