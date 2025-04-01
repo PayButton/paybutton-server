@@ -63,6 +63,11 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
   const [selectedButtonIds, setSelectedButtonIds] = useState<any[]>([])
   const [showFilters, setShowFilters] = useState<boolean>(false)
   const [tableLoading, setTableLoading] = useState<boolean>(true)
+  const [refreshCount, setRefreshCount] = useState(0)
+
+  useEffect(() => {
+    setRefreshCount(prev => prev + 1)
+  }, [selectedButtonIds])
 
   const fetchPaybuttons = async (): Promise<any> => {
     const res = await fetch(`/api/paybuttons?userId=${user?.userProfile.id}`, {
@@ -310,12 +315,11 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
             </div>
       )}
       <TableContainerGetter
-        key={selectedButtonIds.join('-')}
         columns={columns}
         dataGetter={async (page, pageSize, orderBy, orderDesc) =>
           await loadData(page, pageSize, orderBy, orderDesc)
         }
-        tableRefreshCount={1}
+        tableRefreshCount={refreshCount}
         emptyMessage={tableLoading ? 'Loading...' : 'No Payments to show yet'}
         />
     </>
