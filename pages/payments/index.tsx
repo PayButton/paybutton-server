@@ -193,6 +193,9 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       setLoading(true)
       const preferredCurrencyId = userProfile?.preferredCurrencyId ?? ''
       let url = `/api/payments/download/?currency=${preferredCurrencyId}`
+      if (selectedButtonIds.length > 0) {
+        url += `&buttonIds=${selectedButtonIds.join(',')}`
+      }
       const isCurrencyEmptyOrUndefined = (value: string): boolean => (value === '' || value === undefined)
 
       if (!isCurrencyEmptyOrUndefined(currency)) {
