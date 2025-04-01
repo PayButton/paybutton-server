@@ -679,15 +679,12 @@ export async function fetchAllPaymentsByUserIdWithPagination (
       }
     }
   } else {
-    // Default orderBy
     orderByQuery = {
       timestamp: orderDescString
     }
   }
 
-  // Build the base where clause
-  const whereClause: any = {
-    // Filter transactions whose Address is linked to the current user
+  const where: Prisma.TransactionWhereInput = {
     address: {
       userProfiles: {
         some: { userId }
@@ -698,9 +695,8 @@ export async function fetchAllPaymentsByUserIdWithPagination (
     }
   }
 
-  // If buttonIds is provided, add a nested filter on address.paybuttons
-  if ((buttonIds != null) && buttonIds.length > 0) {
-    whereClause.address.paybuttons = {
+  if ((buttonIds !== undefined) && buttonIds.length > 0) {
+    where.address!.paybuttons = {
       some: {
         paybutton: {
           id: { in: buttonIds }
@@ -710,7 +706,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   }
 
   const transactions = await prisma.transaction.findMany({
-    where: whereClause,
+    where,
     include: includePaybuttonsAndPrices,
     orderBy: orderByQuery,
     skip: page * Number(pageSize),
@@ -733,7 +729,7 @@ export async function fetchAllPaymentsByUserId (
   networkIds?: number[],
   buttonIds?: string[]
 ): Promise<TransactionsWithPaybuttonsAndPrices[]> {
-  const whereClause: any = {
+  const where: Prisma.TransactionWhereInput = {
     address: {
       userProfiles: {
         some: { userId }
@@ -747,8 +743,8 @@ export async function fetchAllPaymentsByUserId (
     }
   }
 
-  if (Array.isArray(buttonIds) && buttonIds.length > 0) {
-    whereClause.address.paybuttons = {
+  if (buttonIds !== undefined && buttonIds.length > 0) {
+    where.address!.paybuttons = {
       some: {
         paybutton: {
           id: { in: buttonIds }
@@ -758,7 +754,7 @@ export async function fetchAllPaymentsByUserId (
   }
 
   return await prisma.transaction.findMany({
-    where: whereClause,
+    where,
     include: includePaybuttonsAndPrices,
     orderBy: {
       timestamp: 'asc'
@@ -782,19 +778,19 @@ export const getFilteredTransactionCount = async (
   userId: string,
   buttonIds: string[]
 ): Promise<number> => {
-  const whereClause: any = {
-    address: {
-      userProfiles: {
-        some: { userId }
-      },
-      paybuttons: {
-        some: {
-          paybutton: { id: { in: buttonIds } }
+  return await prisma.transaction.count({
+    where: {
+      address: {
+        userProfiles: {
+          some: { userId }
+        },
+        paybuttons: {
+          some: {
+            paybutton: { id: { in: buttonIds } }
+          }
         }
-      }
-    },
-    amount: { gt: 0 }
-  }
-
-  return await prisma.transaction.count({ where: whereClause })
+      },
+      amount: { gt: 0 }
+    }
+  })
 }

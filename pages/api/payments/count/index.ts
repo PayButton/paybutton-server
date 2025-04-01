@@ -17,7 +17,7 @@ export default async (req: any, res: any): Promise<void> => {
       buttonIds = (req.query.buttonIds as string).split(',')
     }
 
-    if ((buttonIds != null) && buttonIds.length > 0) {
+    if ((buttonIds !== undefined) && buttonIds.length > 0) {
       const totalCount = await getFilteredTransactionCount(userId, buttonIds)
       res.status(200).json(totalCount)
     } else {
