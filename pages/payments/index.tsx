@@ -248,7 +248,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         <div className={style.filter_btns}>
           <div
             onClick={() => setShowFilters(!showFilters)}
-            className={style.show_filters_button}
+            className={`${style.show_filters_button} ${selectedButtonIds.length > 0 ? style.active : ''}`}
           >
             <Image src={SettingsIcon} alt="filters" width={15} />Filters
           </div>
