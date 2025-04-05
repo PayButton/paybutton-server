@@ -18,6 +18,12 @@ export interface SimplifiedTransaction {
   address: string
   rawMessage: string
   inputAddresses: string[]
+  prices: Array<{
+    price: {
+      value: Prisma.Decimal
+      quoteId: number
+    }
+  }>
 }
 
 export interface CreateQuoteAndShiftData {
