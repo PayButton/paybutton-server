@@ -294,7 +294,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       </div>
       {showFilters && (
             <div className={style.showfilters_ctn}>
-              <span>Filter by PayButton</span>
+              <span>Filter by button</span>
               <div className={style.filters_ctn}>
                 {buttons.map((button) => (
                   <div
