@@ -113,6 +113,10 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         { headers: { Timezone: timezone } }
       )
 
+      if (!paymentsResponse.ok || !paymentsCountResponse.ok) {
+        throw new Error('Failed to fetch payments or count')
+      }
+
       const totalCount = await paymentsCountResponse.json()
       const payments = await paymentsResponse.json()
 
