@@ -46,6 +46,11 @@ function handleConnection ({ namespace, socket, addressList }: HandleConnectionA
     totalConnectedInNamespace
   }
   if (addressList !== undefined) info.addressList = addressList
+  if (info.addressList?.length !== 0) {
+    info.addressList?.forEach(address => {
+      void socket.join(address)
+    })
+  }
   console.log(`/${namespace} —`, info)
   void socket.on('disconnect', (reason: DisconnectReason, description: any) => {
     console.log(`/${namespace} — ${socket.id} DISCONNECTED`)
