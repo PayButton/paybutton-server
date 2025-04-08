@@ -46,6 +46,11 @@ function handleConnection ({ namespace, socket, addressList }: HandleConnectionA
     totalConnectedInNamespace
   }
   if (addressList !== undefined) info.addressList = addressList
+  if (info.addressList?.length !== 0) {
+    info.addressList?.forEach(address => {
+      void socket.join(address)
+    })
+  }
   console.log(`/${namespace} —`, info)
   void socket.on('disconnect', (reason: DisconnectReason, description: any) => {
     console.log(`/${namespace} — ${socket.id} DISCONNECTED`)
@@ -118,7 +123,8 @@ const altpaymentRouteConnection = async (socket: Socket): Promise<void> => {
   const headersForwardedAddresses = socket.handshake.headers['x-forwarded-for'] as string
   const userIp = headersForwardedAddresses === undefined ? '' : headersForwardedAddresses.split(',')[0]
   if (userIp === '') {
-    throw new Error('Local IP not defined.')
+    console.error('Local IP not defined.')
+    return
     // userIp = (await (await fetch("<PUBLIC_IP_PROVIDER>", { headers: { 'Accept': 'application/json' } })).json())[<PUBLIC_IP_PROVIDER_IP_KEY>]
   }
   const userIpAlt = socket.handshake.address
