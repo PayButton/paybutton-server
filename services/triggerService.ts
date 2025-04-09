@@ -300,32 +300,24 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
 }
 
 async function fetchUserFromTriggerId (triggerId: string): Promise<UserProfile> {
-  const result = await prisma.paybuttonTrigger.findUniqueOrThrow({
-    where: { id: triggerId },
-    select: {
-      paybutton: {
-        select: {
-          addresses: {
-            select: {
-              address: {
-                select: {
-                  userProfiles: {
-                    select: {
-                      userProfile: true
-                    }
-                  }
-                }
-              }
-            }
-          }
+  const pb = await prisma.paybutton.findFirstOrThrow({
+    where: {
+      triggers: {
+        some: {
+          id: triggerId
         }
       }
+    },
+    select: {
+      providerUserId: true
     }
   })
 
-  // Since there may be multiple user profiles linked, extract the first one if needed
-  const userProfile = result.paybutton.addresses[0].address.userProfiles[0].userProfile
-  return userProfile
+  return await prisma.userProfile.findUniqueOrThrow({
+    where: {
+      id: pb.providerUserId
+    }
+  })
 }
 
 async function decrementUserCreditCount (userId: string): Promise<void> {
