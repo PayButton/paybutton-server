@@ -114,6 +114,10 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       )
 
       if (!paymentsResponse.ok || !paymentsCountResponse.ok) {
+        console.log('paymentsResponse status', paymentsResponse.status)
+        console.log('paymentsResponse status text', paymentsResponse.statusText)
+        console.log('paymentsResponse body', paymentsResponse.body)
+        console.log('paymentsResponse json', await paymentsResponse.json())
         throw new Error('Failed to fetch payments or count')
       }
 
