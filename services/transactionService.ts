@@ -144,6 +144,56 @@ export async function fetchTransactionsByAddressList (
   })
 }
 
+export async function fetchTransactionsByAddressListWithPagination (
+  addressIdList: string[],
+  page: number,
+  pageSize: number,
+  orderBy?: string,
+  orderDesc = true,
+  networkIdsListFilter?: number[],
+): Promise<TransactionsWithPaybuttonsAndPrices[]> {
+
+  const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
+
+  let orderByQuery
+  if (orderBy !== undefined && orderBy !== '') {
+    if (orderBy.includes('.')) {
+      const [relation, property] = orderBy.split('.')
+      orderByQuery = {
+        [relation]: {
+          [property]: orderDescString
+        }
+      }
+    } else {
+      orderByQuery = {
+        [orderBy]: orderDescString
+      }
+    }
+  } else {
+    // Default orderBy
+    orderByQuery = {
+      timestamp: orderDescString
+    }
+  }
+
+  return await prisma.transaction.findMany({
+    where: {
+      addressId: {
+        in: addressIdList
+      },
+      address: {
+        networkId: {
+          in: networkIdsListFilter ?? Object.values(NETWORK_IDS)
+        }
+      }
+    },
+    include: includePaybuttonsAndPrices,
+    orderBy: orderByQuery,
+    skip: page * pageSize,
+    take: pageSize,
+  })
+}
+
 export async function fetchTxCountByAddressString (addressString: string): Promise<number> {
   return await prisma.transaction.count({
     where: {
@@ -504,6 +554,29 @@ export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transa
 export async function fetchTransactionsByPaybuttonId (paybuttonId: string, networkIds?: number[]): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
   const transactions = await fetchTransactionsByAddressList(addressIdList, networkIds)
+
+  if (transactions.length === 0) {
+    throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
+  }
+
+  return transactions
+}
+
+export async function fetchTransactionsByPaybuttonIdWithPagination (
+  paybuttonId: string,
+  page: number,
+  pageSize: number,
+  orderDesc: boolean,
+  orderBy?: string,
+  networkIds?: number[]): Promise<TransactionsWithPaybuttonsAndPrices[]> {
+  const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
+  const transactions = await fetchTransactionsByAddressListWithPagination(
+    addressIdList,
+    page,
+    pageSize,
+    orderBy,
+    orderDesc,
+    networkIds);
 
   if (transactions.length === 0) {
     throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
