@@ -35,9 +35,11 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
   const [pageCount, setPageCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const emptyMessageDisplay = emptyMessage ?? DEFAULT_EMPTY_TABLE_MESSAGE
+  const [hiddenColumns, setHiddenColumns] = useState({})
 
   const triggerSort = (column: any): void => {
-    if (column.disableSortBy === true) return
+    if (column.disableSortBy === true || hiddenColumns[column.id]) return
+
     const id = column.id
     if (sortColumn === id) {
       setSortDesc(!sortDesc)
@@ -46,6 +48,10 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
       setSortColumn(id)
     }
     gotoPage(0)
+  }
+  
+  const toggleColumn = (id: any): void => {
+    setHiddenColumns((prev) => ({ ...prev, [id]: !prev[id]}))
   }
 
   const {
@@ -84,16 +90,6 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
     })()
   }, [pageSize, pageIndex, sortColumn, sortDesc, tableRefreshCount])
 
-  const generateSortingIndicator = (column: any): JSX.Element | null => {
-    if (sortColumn === column.id) {
-      if (sortDesc) {
-        return <div className='table-sort-arrow-down' />
-      } else {
-        return <div className='table-sort-arrow-up' />
-      }
-    }
-    return null
-  }
 
   const onChangeInSelect = (event: any): void => {
     const pageSize = Number(event.target.value)
@@ -110,8 +106,14 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
             <tr {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map((column: any) => (
                 <th {...column.getHeaderProps()} style={column.disableSortBy === true ? null : { cursor: 'pointer' }} onClick={() => { triggerSort(column) }}>
+                  <div style={{display: 'flex', }}>
                   {column.render('Header')}
-                  {generateSortingIndicator(column)}
+                  {column.shrinkable && (
+                    <span onClick={() => toggleColumn(column.id)} style={{ marginRight: 8, cursor: 'pointer' }}>
+                      {hiddenColumns[column.id] ? <div style= {{marginRight: '20px'}} className='table-arrow-right' /> : <div style= {{marginRight: '20px'}} className='table-sort-arrow-down' />}
+                    </span>
+                  )}
+                  </div>
                 </th>
               ))}
             </tr>
@@ -125,9 +127,9 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
                 prepareRow(row)
                 return (
                 <tr {...row.getRowProps()}>
-                  {row.cells.map((cell: any) => {
-                    return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
-                  })}
+                  {row.cells.map((cell: any) =>
+                      hiddenColumns[cell.column.id] ? null : <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                  )}
                 </tr>
                 )
               })
