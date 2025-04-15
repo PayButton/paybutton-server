@@ -225,7 +225,18 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         throw new Error('Failed to download CSV')
       }
 
-      const fileName = `${isCurrencyEmptyOrUndefined(currency) ? 'all' : `${currency.toLowerCase()}`}-transactions`
+      const selectedButtonNames = buttons
+        .filter(btn => selectedButtonIds.includes(btn.id))
+        .map(btn => btn.name.replace(/\s+/g, '-'))
+        .join('_')
+
+      const buttonSuffix = selectedButtonIds.length > 0
+        ? `-${selectedButtonNames !== '' ? selectedButtonNames : 'filtered'}`
+        : ''
+      const currencyLabel = isCurrencyEmptyOrUndefined(currency) ? 'all' : currency.toLowerCase()
+      const timestamp = moment().format('YYYY-MM-DD_HH-mm-ss')
+
+      const fileName = `${currencyLabel}-transactions${buttonSuffix}-${timestamp}`
       const blob = await response.blob()
       const downloadUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
