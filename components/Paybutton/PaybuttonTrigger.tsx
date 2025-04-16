@@ -213,6 +213,8 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                   <div>&lt;opReturn&gt;</div>
                   <div>&lt;signature&gt;</div>
                   <div>&lt;inputAddresses&gt;</div>
+                  <div>&lt;value&gt;</div>
+
                 </div>
               </div>
               {/* Tooltip */}
