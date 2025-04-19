@@ -128,8 +128,8 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
     <>
       <TopBar title="Dashboard" user={user.stUser?.email} />
       <div className={style.number_ctn}>
-        <NumberBlock value={'$'.concat(formatQuoteValue(dashboardData.total.revenue, user.userProfile.preferredCurrencyId)) } text='Revenue (lifetime)' />
-        <NumberBlock value={formatQuoteValue(dashboardData.total.payments)} text='Payments (lifetime)' />
+        <NumberBlock value={'$'.concat(formatQuoteValue(activePeriod.totalRevenue, user.userProfile.preferredCurrencyId)) } text='Revenue' />
+        <NumberBlock value={activePeriod.totalPayments} text='Payments' />
         <NumberBlock value={dashboardData.total.buttons} text='Buttons' />
       </div>
       <div className={style.btn_ctn}>
