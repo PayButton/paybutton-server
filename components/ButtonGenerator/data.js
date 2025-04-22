@@ -90,6 +90,16 @@ export const generatorFormFields = [
     helpText: 'The text displayed upon successful payment'
   },
   {
+    name: 'Contribution Offset',
+    placeholder: 'Contribution Offset',
+    key: 'contributionOffset',
+    className: 'col_lg',
+    type: 'input',
+    onChange: 'handleChange',
+    helpText: 'Adjusts the total contributions displayed, simulating prior contributions or subtracting from the total.',
+    advanced: true
+  },
+  {
     name: 'Widget',
     key: 'widget',
     className: 'col_sm_center',
@@ -179,5 +189,14 @@ export const generatorFormFields = [
     default: false,
     helpText: 'Removes the random ID generated for the payment that is used to prevent the onSuccess callback to be triggered by a person who has the payment screen open at the same time as another',
     advanced: true
+  },
+  {
+    name: 'Disable Altpayment',
+    key: 'disableAltpayment',
+    className: 'col_sm_center',
+    type: 'boolean',
+    default: false,
+    helpText: 'Disables altpayment logic',
+    advanced: true  
   },
 ]
