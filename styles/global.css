@@ -233,11 +233,12 @@ button:enabled:hover {
 }
 
 .table-eye-ctn {
-  text-align: right;
+  text-align: center;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
 }
+
 
 .table-eye {
   width: 20px;

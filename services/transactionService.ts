@@ -762,6 +762,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
       userId, page, pageSize, orderDesc
     )
   }
+  // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
   let orderByQuery
   if (orderBy !== undefined && orderBy !== '') {
     if (orderBy === 'values') {

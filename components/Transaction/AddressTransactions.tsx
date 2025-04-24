@@ -82,22 +82,24 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
         }
       },
       {
-        Header: 'TX',
+        Header: () => (<div style={{ textAlign: 'center' }}>TX</div>),
         accessor: 'hash',
         disableSortBy: true,
         Cell: (cellProps) => {
           const url = cellProps.cell.row.values['address.networkId'] === 1 ? XEC_TX_EXPLORER_URL : BCH_TX_EXPLORER_URL
           return (
-            <a href={url.concat(cellProps.cell.value)} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
-              <div className="table-eye">
-                <Image src={EyeIcon} alt='View on explorer' />
-              </div>
-            </a>
+            <div className="table-eye-ctn">
+              <a href={url.concat(cellProps.cell.value)} target="_blank" rel="noopener noreferrer">
+                <div className="table-eye">
+                  <Image src={EyeIcon} alt='View on explorer' />
+                </div>
+              </a>
+            </div>         
           )
         }
       },
       {
-        Header: () => (<div>Address</div>),
+        Header: () => (<div style={{marginRight: '1px'}}>Address</div>),
         accessor: 'address.address',
         shrinkable: true,
         Cell: (cellProps) => {

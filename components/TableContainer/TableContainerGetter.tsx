@@ -106,11 +106,11 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
             <tr {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map((column: any) => (
                 <th {...column.getHeaderProps()} style={column.disableSortBy === true ? null : { cursor: 'pointer' }} onClick={() => { triggerSort(column) }}>
-                  <div style={{display: 'flex', }}>
+                  <div>
                   {column.render('Header')}
                   {column.shrinkable && (
-                    <span onClick={() => toggleColumn(column.id)} style={{ marginRight: 8, cursor: 'pointer' }}>
-                      {hiddenColumns[column.id] ? <div style= {{marginRight: '20px'}} className='table-arrow-right' /> : <div style= {{marginRight: '20px'}} className='table-sort-arrow-down' />}
+                    <span onClick={() => toggleColumn(column.id)} style={{ cursor: 'pointer' }}>
+                      {hiddenColumns[column.id] ? <div style= {{marginRight: '5px'}} className='table-arrow-right' /> : <div style= {{marginRight: '5px'}} className='table-sort-arrow-down' />}
                     </span>
                   )}
                   </div>
@@ -128,7 +128,7 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
                 return (
                 <tr {...row.getRowProps()}>
                   {row.cells.map((cell: any) =>
-                      hiddenColumns[cell.column.id] ? null : <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                      hiddenColumns[cell.column.id] ? <td> </td> : <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
                   )}
                 </tr>
                 )
