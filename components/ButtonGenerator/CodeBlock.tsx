@@ -55,7 +55,13 @@ export default function CodeBlock ({ button }): JSX.Element {
         return camelToKebabCase(key) + `="${value as string}"`
       }
     } else if (codeType === 'js') {
-      if (key === 'amount' || key === 'goalAmount' || key === 'onSuccess' || key === 'onTransaction' || typeof value === 'boolean') {
+      if (key === 'amount' ||
+      key === 'goalAmount' ||
+      key === 'onSuccess' ||
+      key === 'onTransaction' ||
+      key === 'onClose' ||
+      key === 'onOpen' ||
+       typeof value === 'boolean') {
         if (key === 'randomSatoshis' && button.amount <= 0) {
           return ''
         } else return `  ${key}: ${value as string}`
@@ -67,7 +73,13 @@ export default function CodeBlock ({ button }): JSX.Element {
         return `  ${key}: '${value as string}'`
       }
     } else {
-      if (key === 'amount' || key === 'goalAmount' || key === 'onSuccess' || key === 'onTransaction' || typeof value === 'boolean') {
+      if (key === 'amount' ||
+          key === 'goalAmount' ||
+          key === 'onSuccess' ||
+          key === 'onTransaction' ||
+          key === 'onClose' ||
+          key === 'onOpen' ||
+          typeof value === 'boolean') {
         if (key === 'randomSatoshis' && button.amount <= 0) {
           return ''
         } else return `const ${key} = ${value as string}`

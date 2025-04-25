@@ -199,4 +199,54 @@ export const generatorFormFields = [
     helpText: 'Disables altpayment logic',
     advanced: true  
   },
+  {
+    name: 'On-close',
+    placeholder: 'Callback function',
+    key: 'onClose',
+    className: 'col_lg',
+    type: 'input',
+    onChange: 'handleChange',
+    helpText: 'Callback function that runs when the button dialog closes',
+    advanced: true
+  },
+  {
+    name: 'Auto close',
+    key: 'autoClose',
+    className: 'col_sm_center',
+    type: 'boolean',
+    default: false,
+    helpText: 'Enables auto-close of the button dialog after a successful payment',
+    advanced: true  
+  },
+  {
+    name: 'On-open',
+    placeholder: 'Callback function',
+    key: 'onOpen',
+    className: 'col_lg',
+    type: 'input',
+    onChange: 'handleChange',
+    helpText: 'Callback function that runs when the button dialog opens',
+    advanced: true
+  },
+  {
+    name: 'Ws base url',
+    placeholder: 'Your websocket server',
+    key: 'wsBaseUrl',
+    className: 'col_lg',
+    type: 'input',
+    onChange: 'handleChange',
+    helpText: 'Link to the websocket server that will be used',
+    advanced: true
+  },
+  {
+    name: 'Api base url',
+    placeholder: 'Your api server',
+    key: 'apiBaseUrl',
+    className: 'col_lg',
+    type: 'input',
+    onChange: 'handleChange',
+    helpText: 'Link to the api server that will be used',
+    advanced: true
+  },
+  
 ]
