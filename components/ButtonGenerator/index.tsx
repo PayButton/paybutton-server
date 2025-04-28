@@ -36,6 +36,8 @@ interface ButtonState {
   editable: boolean
   widget: boolean
   disablePaymentId: boolean
+  contributionOffset: number
+  disableAltpayment: boolean
   opReturn: string
   [key: string]: any
 }
@@ -74,7 +76,14 @@ export const initialButtonState: ButtonState = {
   editable: false,
   widget: false,
   disablePaymentId: false,
-  opReturn: ''
+  opReturn: '',
+  contributionOffset: 0,
+  disableAltpayment: false,
+  autoClose: true,
+  onOpen: '',
+  onClose: '',
+  wsBaseURL: '',
+  apiBaseURL: '',
 }
 
 export default function ButtonGenerator (): JSX.Element {
@@ -379,6 +388,8 @@ export default function ButtonGenerator (): JSX.Element {
                   randomSatoshis={button.randomSatoshis}
                   hideToasts={button.hideToasts}
                   disableEnforceFocus={button.disableEnforceFocus}
+                  contributionOffset={button.contributionOffset}
+                  disableAltpayment={button.disableAltpayment}
                   disabled={button.disabled}
                   editable={button.editable}
                 />
@@ -412,8 +423,15 @@ export default function ButtonGenerator (): JSX.Element {
                   randomSatoshis={button.randomSatoshis}
                   hideToasts={button.hideToasts}
                   disableEnforceFocus={button.disableEnforceFocus}
+                  contributionOffset={button.contributionOffset}
+                  disableAltpayment={button.disableAltpayment}
                   disabled={button.disabled}
                   editable={button.editable}
+                  autoClose={button.autoClose}
+                  onOpen={button.onOpen}
+                  onClose={button.onClose}
+                  wsBaseURL={button.wsBaseURL}
+                  apiBaseURL={button.apiBaseURL}
                 />
                       )
                 )
