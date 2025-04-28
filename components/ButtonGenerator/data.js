@@ -214,7 +214,7 @@ export const generatorFormFields = [
     key: 'autoClose',
     className: 'col_sm_center',
     type: 'boolean',
-    default: false,
+    default: true,
     helpText: 'Enables auto-close of the button dialog after a successful payment',
     advanced: true  
   },

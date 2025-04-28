@@ -78,7 +78,12 @@ export const initialButtonState: ButtonState = {
   disablePaymentId: false,
   opReturn: '',
   contributionOffset: 0,
-  disableAltpayment: false
+  disableAltpayment: false,
+  autoClose: true,
+  onOpen: '',
+  onClose: '',
+  wsBaseURL: '',
+  apiBaseURL: '',
 }
 
 export default function ButtonGenerator (): JSX.Element {
@@ -422,6 +427,11 @@ export default function ButtonGenerator (): JSX.Element {
                   disableAltpayment={button.disableAltpayment}
                   disabled={button.disabled}
                   editable={button.editable}
+                  autoClose={button.autoClose}
+                  onOpen={button.onOpen}
+                  onClose={button.onClose}
+                  wsBaseURL={button.wsBaseURL}
+                  apiBaseURL={button.apiBaseURL}
                 />
                       )
                 )
