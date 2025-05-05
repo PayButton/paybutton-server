@@ -90,6 +90,16 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
     })()
   }, [pageSize, pageIndex, sortColumn, sortDesc, tableRefreshCount])
 
+  const generateSortingIndicator = (column: any): JSX.Element | null => {
+    if (sortColumn === column.id) {
+      if (sortDesc) {
+        return <div className='table-sort-arrow-down' />
+      } else {
+        return <div className='table-sort-arrow-up' />
+      }
+    }
+    return null
+  }
 
   const onChangeInSelect = (event: any): void => {
     const pageSize = Number(event.target.value)
@@ -113,6 +123,7 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
                       {hiddenColumns[column.id] ? <div style= {{marginRight: '5px'}} className='table-arrow-right' /> : <div style= {{marginRight: '5px'}} className='table-sort-arrow-down' />}
                     </span>
                   )}
+                  {!column.shrinkable && generateSortingIndicator(column)}
                   </div>
                 </th>
               ))}
