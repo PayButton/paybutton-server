@@ -154,7 +154,8 @@ export async function fetchTransactionsByAddressListWithPagination (
 ): Promise<TransactionsWithPaybuttonsAndPrices[]> {
 
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
-
+  
+  // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
   let orderByQuery
   if (orderBy !== undefined && orderBy !== '') {
     if (orderBy.includes('.')) {
