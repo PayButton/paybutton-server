@@ -43,7 +43,12 @@ export default async (req: any, res: any): Promise<void> => {
       const networkId = NETWORK_IDS[networkTicker]
       networkIdArray = [networkId]
     };
-    const transactions = await fetchAllPaymentsByUserId(userId, networkIdArray)
+    let buttonIds: string[] | undefined
+    if (typeof req.query.buttonIds === 'string' && req.query.buttonIds !== '') {
+      buttonIds = req.query.buttonIds.split(',')
+    }
+    const transactions = await fetchAllPaymentsByUserId(userId, networkIdArray, buttonIds)
+
     await downloadTxsFile(res, quoteSlug, timezone, transactions, userId)
   } catch (error: any) {
     switch (error.message) {
