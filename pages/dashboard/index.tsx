@@ -13,6 +13,9 @@ import { loadStateFromCookie, saveStateToCookie } from 'utils/cookies'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
 import moment from 'moment-timezone'
+import SettingsIcon from '../../assets/settings-slider-icon.png'
+import Image from 'next/image'
+
 const Chart = dynamic(async () => await import('components/Chart'), {
   ssr: false
 })
@@ -70,6 +73,9 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
   const [activePeriod, setActivePeriod] = useState<PeriodData>()
   const [activePeriodString, setActivePeriodString] = useState<PeriodString>('1M')
   const [totalString, setTotalString] = useState<string>()
+  const [selectedButtonIds, setSelectedButtonIds] = useState<any[]>([])
+  const [showFilters, setShowFilters] = useState<boolean>(false)
+  const [buttons, setButtons] = useState<any[]>([])
 
   const setPeriodFromString = (data?: DashboardData, periodString?: PeriodString): void => {
     if (data === undefined) return
@@ -92,10 +98,30 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
     }
     saveStateToCookie(COOKIE_NAMES.DASHBOARD_FILTER, periodString)
   }
+  const getDataAndSetUpButtons = async (): Promise<void> => {
+    const paybuttons = await fetchPaybuttons()
+    setButtons(paybuttons)
+  }
+  const fetchPaybuttons = async (): Promise<any> => {
+    const res = await fetch(`/api/paybuttons?userId=${user?.userProfile.id}`, {
+      method: 'GET'
+    })
+    if (res.status === 200) {
+      return await res.json()
+    }
+  }
+
+  useEffect(() => {
+    void getDataAndSetUpButtons()
+  }, [])
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
-      const res = await fetch('api/dashboard', {
+      let url = 'api/dashboard'
+      if (selectedButtonIds.length > 0) {
+        url += `?buttonIds=${selectedButtonIds.join(',')}`
+      }
+      const res = await fetch(url, {
         headers: {
           Timezone: moment.tz.guess()
         }
@@ -108,7 +134,7 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
     if (savedActivePeriodString !== undefined) {
       setActivePeriodString(savedActivePeriodString)
     }
-  }, [])
+  }, [selectedButtonIds])
 
   useEffect(() => {
     setPeriodFromString(dashboardData, activePeriodString)
@@ -127,6 +153,44 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
   return (
     <>
       <TopBar title="Dashboard" user={user.stUser?.email} />
+      <div className={style.filter_btns}>
+          <div
+            onClick={() => setShowFilters(!showFilters)}
+            className={style.show_filters_button}
+          >
+            <Image src={SettingsIcon} alt="filters" width={15} />Filters
+          </div>
+          {selectedButtonIds.length > 0 &&
+          <div
+          onClick={() => setSelectedButtonIds([])}
+          className={style.show_filters_button}
+          >
+            Clear
+          </div>
+          }
+      </div>
+      {showFilters && (
+            <div className={style.showfilters_ctn}>
+              <span>Filter by PayButton</span>
+              <div className={style.filters_ctn}>
+                {buttons.map((button) => (
+                  <div
+                    key={button.id}
+                    onClick={() => {
+                      setSelectedButtonIds(prev =>
+                        prev.includes(button.id)
+                          ? prev.filter(id => id !== button.id)
+                          : [...prev, button.id]
+                      )
+                    }}
+                    className={`${style.filter_button} ${selectedButtonIds.includes(button.id) ? style.active : ''}`}
+                  >
+                    {button.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+      )}
       <div className={style.number_ctn}>
         <NumberBlock value={'$'.concat(formatQuoteValue(dashboardData.total.revenue, user.userProfile.preferredCurrencyId)) } text='Revenue (lifetime)' />
         <NumberBlock value={formatQuoteValue(dashboardData.total.payments)} text='Payments (lifetime)' />

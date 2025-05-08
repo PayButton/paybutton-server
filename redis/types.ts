@@ -35,6 +35,7 @@ export interface DashboardData {
     payments: number
     buttons: number
   }
+  filtered: boolean
 }
 
 export interface ButtonDisplayData {
