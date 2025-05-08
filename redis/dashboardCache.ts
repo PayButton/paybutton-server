@@ -110,7 +110,8 @@ const generateDashboardDataFromStream = async function (
   paymentStream: AsyncGenerator<Payment>,
   nMonthsTotal: number,
   borderColor: ChartColor,
-  timezone: string
+  timezone: string,
+  paybuttonIds?: string[]
 ): Promise<DashboardData> {
   const revenueAccumulators = createRevenueAccumulators(nMonthsTotal)
   const paymentCounters = createPaymentCounters(nMonthsTotal)
@@ -133,7 +134,13 @@ const generateDashboardDataFromStream = async function (
 
     // Process button data and assign to relevant periods
     payment.buttonDisplayDataList.forEach((button) => {
-      processButtonData(button, payment, paymentTime, buttonDataAccumulators, thresholds)
+      if (paybuttonIds !== undefined && paybuttonIds.length > 0) {
+        if (paybuttonIds.includes(button.id)) {
+          processButtonData(button, payment, paymentTime, buttonDataAccumulators, thresholds)
+        }
+      } else {
+        processButtonData(button, payment, paymentTime, buttonDataAccumulators, thresholds)
+      }
     })
 
     // Accumulate period data
@@ -151,8 +158,16 @@ const generateDashboardDataFromStream = async function (
         }
 
         if (index >= 0 && index < revenueAccumulators[period].length) {
-          revenueAccumulators[period][index] = sumQuoteValues(revenueAccumulators[period][index], payment.values.values)
-          paymentCounters[period][index] += 1
+          if (paybuttonIds !== undefined && paybuttonIds.length > 0) {
+            const paymentButtonIds = payment.buttonDisplayDataList.map(b => b.id)
+            if (paymentButtonIds.some(item => paybuttonIds.includes(item))) {
+              revenueAccumulators[period][index] = sumQuoteValues(revenueAccumulators[period][index], payment.values.values)
+              paymentCounters[period][index] += 1
+            }
+          } else {
+            revenueAccumulators[period][index] = sumQuoteValues(revenueAccumulators[period][index], payment.values.values)
+            paymentCounters[period][index] += 1
+          }
         }
       }
     }
@@ -212,7 +227,8 @@ const generateDashboardDataFromStream = async function (
       revenue: all.totalRevenue,
       payments: all.totalPayments,
       buttons: Object.keys(buttonDataAccumulators.all).length
-    }
+    },
+    filtered: paybuttonIds !== undefined && paybuttonIds.length > 0
   }
 }
 
@@ -345,8 +361,12 @@ function createPeriodData (
   }
 }
 
-export const getUserDashboardData = async function (userId: string, timezone: string): Promise<DashboardData> {
-  const dashboardData = await getCachedDashboardData(userId)
+export const getUserDashboardData = async function (userId: string, timezone: string, paybuttonIds?: string[]): Promise<DashboardData> {
+  let dashboardData = await getCachedDashboardData(userId)
+  if ((paybuttonIds !== undefined && paybuttonIds.length > 0) ||
+    dashboardData?.filtered === true) {
+    dashboardData = null
+  }
   if (dashboardData === null) {
     console.log('[CACHE]: Recreating dashboard for user', userId)
     const nMonthsTotal = await getNumberOfMonths(userId)
@@ -356,7 +376,8 @@ export const getUserDashboardData = async function (userId: string, timezone: st
       paymentStream,
       nMonthsTotal,
       { revenue: '#66fe91', payments: '#669cfe' },
-      timezone
+      timezone,
+      paybuttonIds
     )
     await cacheDashboardData(userId, dashboardData)
     return dashboardData
