@@ -1,5 +1,5 @@
-import { RESPONSE_MESSAGES } from 'constants/index'
-import { fetchTransactionsByPaybuttonId } from 'services/transactionService'
+import { RESPONSE_MESSAGES, TX_PAGE_SIZE_LIMIT } from 'constants/index'
+import { fetchTransactionsByPaybuttonIdWithPagination } from 'services/transactionService'
 import * as paybuttonService from 'services/paybuttonService'
 import { setSession } from 'utils/setSession'
 import { parseError } from 'utils/validators'
@@ -9,6 +9,17 @@ export default async (req: any, res: any): Promise<void> => {
     await setSession(req, res)
     const userId = req.session.userId
     const paybuttonId = req.query.id as string
+    const page = (req.query.page === '' || req.query.page === undefined) ? 0 : Number(req.query.page)
+    const pageSize = (req.query.pageSize === '' || req.query.pageSize === undefined) ? DEFAULT_TX_PAGE_SIZE : Number(req.query.pageSize)
+    const orderBy = (req.query.orderBy === '' || req.query.orderBy === undefined) ? undefined : req.query.orderBy as string
+    const orderDesc: boolean = !!(req.query.orderDesc === '' || req.query.orderDesc === undefined || req.query.orderDesc === 'true')
+
+    if (isNaN(page) || isNaN(pageSize)) {
+      throw new Error(RESPONSE_MESSAGES.PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400.message)
+    }
+    if (pageSize > TX_PAGE_SIZE_LIMIT) {
+      throw new Error(RESPONSE_MESSAGES.PAGE_SIZE_LIMIT_EXCEEDED_400.message)
+    }
 
     try {
       const paybutton = await paybuttonService.fetchPaybuttonById(paybuttonId)
@@ -16,7 +27,7 @@ export default async (req: any, res: any): Promise<void> => {
         throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
       }
 
-      const transactions = await fetchTransactionsByPaybuttonId(paybuttonId)
+      const transactions = await fetchTransactionsByPaybuttonIdWithPagination(paybuttonId, page, pageSize, orderDesc, orderBy)
 
       res.status(200).json({ transactions })
     } catch (err: any) {

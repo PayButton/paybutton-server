@@ -1,5 +1,5 @@
-import AddressTransactions from './AddressTransactions'
+import PaybuttonTransactions from './PaybuttonTransactions'
 
 export {
-  AddressTransactions
+  PaybuttonTransactions
 }

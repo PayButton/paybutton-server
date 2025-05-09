@@ -161,6 +161,20 @@ button:enabled:hover {
   background: #f4f4f4;
 }
 
+.table-arrow-right {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 4px 5px 4px 0;
+  border-color: transparent var(--primary-text-color) transparent transparent;
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  opacity: 0.5;
+}
+
 .table-sort-arrow-down,
 .table-sort-arrow-up {
   width: 0;
@@ -219,11 +233,12 @@ button:enabled:hover {
 }
 
 .table-eye-ctn {
-  text-align: right;
+  text-align: center;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
 }
+
 
 .table-eye {
   width: 20px;
