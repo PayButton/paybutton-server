@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Page from 'components/Page'
 import { PaybuttonDetail } from 'components/Paybutton'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
-import { AddressTransactions } from 'components/Transaction'
+import { PaybuttonTransactions } from 'components/Transaction'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
@@ -207,7 +207,7 @@ export default function PayButton (props: PaybuttonProps): React.ReactElement {
           </div>
         </div>
 
-        <AddressTransactions addressSyncing={isSyncing} paybuttonId={paybutton.id} tableRefreshCount={tableRefreshCount} timezone={timezone}/>
+        <PaybuttonTransactions addressSyncing={isSyncing} paybuttonId={paybutton.id} tableRefreshCount={tableRefreshCount} timezone={timezone}/>
         <PaybuttonTrigger emailCredits={userProfile.emailCredits} paybuttonId={paybutton.id}/>
       </>
     )

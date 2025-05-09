@@ -5,7 +5,7 @@ import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import CheckIcon from 'assets/check-icon.png'
 import XIcon from 'assets/x-icon.png'
-import TableContainerGetter from '../../components/TableContainer/TableContainerGetter'
+import TableContainerGetter from '../TableContainer/TableContainerGetter'
 import { compareNumericString } from 'utils/index'
 import moment from 'moment-timezone'
 import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL } from 'constants/index'
@@ -27,8 +27,8 @@ function fetchTransactionsByPaybuttonId (paybuttonId: string): Function {
       }
     })
     const responseCount = await fetch(`/api/paybutton/transactions/count/${paybuttonId}`)
-    const transactions = await response.json();
-    const count = await responseCount.json();
+    const transactions = await response.json()
+    const count = await responseCount.json()
     return {
       data: transactions.transactions,
       totalCount: count
@@ -94,12 +94,12 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
                   <Image src={EyeIcon} alt='View on explorer' />
                 </div>
               </a>
-            </div>         
+            </div>
           )
         }
       },
       {
-        Header: () => (<div style={{marginRight: '1px'}}>Address</div>),
+        Header: () => (<div style={{ marginRight: '1px' }}>Address</div>),
         accessor: 'address.address',
         shrinkable: true,
         Cell: (cellProps) => {
@@ -109,7 +109,7 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
             </div>
           )
         }
-      },
+      }
     ],
     []
   )
