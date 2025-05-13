@@ -141,8 +141,9 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
       <div className={style.chart_outer_ctn}>
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
-            <h5>Revenue</h5>
-            <h5>{totalString}: ${formatQuoteValue(activePeriod.totalRevenue, user.userProfile.preferredCurrencyId)}</h5>
+            <div>
+              <h5>Revenue</h5>
+            </div>
           </div>
           <div className={style.chart_ctn}>
             <Chart chartData={activePeriod.revenue} currencyId={user.userProfile.preferredCurrencyId} />
@@ -150,8 +151,9 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
         </div>
         <div className={style.chart_inner_ctn}>
           <div className={style.chart_title_ctn}>
-            <h5>Payments</h5>
-            <h5>{totalString}: {formatQuoteValue(activePeriod.totalPayments)}</h5>
+            <div>
+              <h5>Payments</h5>
+            </div>
           </div>
           <div className={style.chart_ctn}>
             <Chart chartData={activePeriod.payments} />
