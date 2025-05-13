@@ -550,3 +550,24 @@ export const parseUpdateUserTimezonePUTRequest = function (params: UpdateUserTim
 
   return { timezone: params.timezone }
 }
+
+export interface CreateinvoicePOSTParameters {
+  userId: string
+  transactionId: string
+  amount: number
+  description: string
+  recipientName: string
+  recipientAddress: string
+  customerName: string
+  customerAddress: string
+}
+
+export const parseCreateInvoicePOSTRequest = function (params: CreateinvoicePOSTParameters): CreateinvoicePOSTParameters {
+  let description = params.description
+  if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
+  if (description === undefined) description = ''
+  return {
+    ...params,
+    description
+  }
+}
