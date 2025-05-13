@@ -1,5 +1,7 @@
 import prisma from 'prisma/clientInstance'
 import { Invoice } from '@prisma/client'
+import { RESPONSE_MESSAGES } from 'constants/index'
+
 interface CreateInvoiceParams {
   userId: string
   transactionId: string
@@ -34,4 +36,26 @@ export async function createInvoice (params: CreateInvoiceParams): Promise<Invoi
       ...params
     }
   })
+}
+
+export async function getInvoices (userId: string): Promise<Invoice[]> {
+  return await prisma.invoice.findMany({
+    where: {
+      userId
+    }
+  })
+}
+
+export async function getInvoiceByTransactionId (transactionId: string, userId: string): Promise<Invoice | null> {
+  const invoice = await prisma.invoice.findFirst({
+    where: {
+      transactionId,
+      userId
+    }
+  })
+  if (invoice === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_INVOICE_FOUND_404.message)
+  }
+
+  return invoice
 }
