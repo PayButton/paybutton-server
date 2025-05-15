@@ -81,6 +81,10 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
   )
 
   useEffect(() => {
+    gotoPage(0)
+  }, [tableRefreshCount])
+
+  useEffect(() => {
     void (async () => {
       setLoading(true)
       const d = await dataGetter(pageIndex, pageSize, sortColumn, sortDesc)

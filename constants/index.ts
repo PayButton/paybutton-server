@@ -241,7 +241,8 @@ export const TRIGGER_POST_VARIABLES = [
   '<signature>',
   '<timestamp>',
   '<txId>',
-  '<inputAddresses>'
+  '<inputAddresses>',
+  '<value>'
 ]
 
 export const PAYBUTTON_TRANSACTIONS_FILE_HEADERS = {

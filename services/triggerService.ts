@@ -1,12 +1,13 @@
 import { PaybuttonTrigger, Prisma, UserProfile } from '@prisma/client'
 import axios from 'axios'
-import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID } from 'constants/index'
+import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID, SUPPORTED_QUOTES_FROM_ID } from 'constants/index'
 import prisma from 'prisma/clientInstance'
 import { EMPTY_OP_RETURN, OpReturnData, parseTriggerPostData } from 'utils/validators'
 import { BroadcastTxData } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
 import config from 'config'
 import { MAIL_FROM, MAIL_HTML_REPLACER, MAIL_SUBJECT, getMailerTransporter, SendEmailParameters } from 'constants/mail'
+import { getTransactionValue } from './transactionService'
 
 const triggerWithPaybutton = Prisma.validator<Prisma.PaybuttonTriggerDefaultArgs>()({
   include: { paybutton: true }
@@ -247,7 +248,7 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
       rawMessage,
       inputAddresses
     } = tx
-
+    const values = getTransactionValue(tx)
     const addressTriggers = await fetchTriggersForAddress(address)
     if (addressTriggers.length === 0) return
     console.log(`[TRIGGER ${currency}]: Will execute ${addressTriggers.length} triggers for tx ${hash} and address ${address}`)
@@ -255,6 +256,8 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
     // Send post requests
     const posterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
     await Promise.all(posterTriggers.map(async (trigger) => {
+      const userProfile = await fetchUserFromTriggerId(trigger.id)
+      const quoteSlug = SUPPORTED_QUOTES_FROM_ID[userProfile.preferredCurrencyId]
       const postDataParameters: PostDataParameters = {
         amount,
         currency,
@@ -269,8 +272,10 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
               rawMessage
             }
           : EMPTY_OP_RETURN,
-        inputAddresses
+        inputAddresses,
+        value: values[quoteSlug].toString()
       }
+
       await postDataForTrigger(trigger, postDataParameters)
     }))
 
@@ -391,6 +396,7 @@ export interface PostDataParameters {
   address: string
   opReturn: OpReturnData
   inputAddresses?: string[]
+  value: string
 }
 
 async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParameters: PostDataParameters): Promise<void> {

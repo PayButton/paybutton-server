@@ -10,7 +10,7 @@ import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTx } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
 
-export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices): QuoteValues {
+export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
@@ -62,7 +62,8 @@ export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices, in
     timestamp,
     message: parsedOpReturn?.message ?? '',
     rawMessage: parsedOpReturn?.rawMessage ?? '',
-    inputAddresses: inputAddresses ?? []
+    inputAddresses: inputAddresses ?? [],
+    prices: tx.prices
   }
 
   return simplifiedTransaction
@@ -637,80 +638,49 @@ export async function getPaymentsByUserIdOrderedByButtonName (
   userId: string,
   page: number,
   pageSize: number,
-  orderDesc = true
+  orderDesc = true,
+  buttonIds?: string[]
 ): Promise<Payment[]> {
   const offset = page * pageSize
+  const order = orderDesc ? Prisma.sql`DESC` : Prisma.sql`ASC`
+  const buttonFilter = Array.isArray(buttonIds) && buttonIds.length > 0
+    ? Prisma.sql`AND p.id IN (${Prisma.join(buttonIds)})`
+    : Prisma.empty
 
-  let transactions: any = []
-  // code is repeated because prisma does not allow to inject SQL keywords
-  if (orderDesc) {
-    transactions = await prisma.$queryRaw`
-      SELECT 
-        t.*, 
-        p.id AS paybuttonId, 
-        p.name AS paybuttonName, 
-        p.providerUserId AS paybuttonProviderUserId,
-        a.networkId as networkId,
-        JSON_ARRAYAGG(
-          JSON_OBJECT(
-            'priceId', pb.id,
-            'priceValue', pb.value,
-            'quoteId', pb.quoteId
-          )
-        ) AS prices
-      FROM \`Transaction\` t
-      INNER JOIN \`Address\` a ON t.\`addressId\` = a.\`id\`
-      INNER JOIN \`AddressesOnButtons\` ab ON a.\`id\` = ab.\`addressId\`
-      INNER JOIN \`Paybutton\` p ON ab.\`paybuttonId\` = p.\`id\`
-      LEFT JOIN \`PricesOnTransactions\` pt ON t.\`id\` = pt.\`transactionId\`
-      LEFT JOIN \`Price\` pb ON pt.\`priceId\` = pb.\`id\`
-      WHERE EXISTS (
-        SELECT 1
-        FROM \`AddressesOnUserProfiles\` au
-        WHERE au.\`addressId\` = a.\`id\`
-          AND au.\`userId\` = ${userId}
-      )
-      AND p.\`providerUserId\` = ${userId}
-      GROUP BY t.id, p.id
-      ORDER BY p.\`name\` ASC
-      LIMIT ${pageSize}
-      OFFSET ${offset};
-    `
-  } else {
-    transactions = await prisma.$queryRaw`
-      SELECT 
-        t.*, 
-        p.id AS paybuttonId, 
-        p.name AS paybuttonName, 
-        p.providerUserId AS paybuttonProviderUserId,
-        a.networkId as networkId,
-        JSON_ARRAYAGG(
-          JSON_OBJECT(
-            'priceId', pb.id,
-            'priceValue', pb.value,
-            'quoteId', pb.quoteId
-          )
-        ) AS prices
-      FROM \`Transaction\` t
-      INNER JOIN \`Address\` a ON t.\`addressId\` = a.\`id\`
-      INNER JOIN \`AddressesOnButtons\` ab ON a.\`id\` = ab.\`addressId\`
-      INNER JOIN \`Paybutton\` p ON ab.\`paybuttonId\` = p.\`id\`
-      LEFT JOIN \`PricesOnTransactions\` pt ON t.\`id\` = pt.\`transactionId\`
-      LEFT JOIN \`Price\` pb ON pt.\`priceId\` = pb.\`id\`
-      WHERE t.\`amount\` > 0
-      AND EXISTS (
-        SELECT 1
-        FROM \`AddressesOnUserProfiles\` au
-        WHERE au.\`addressId\` = a.\`id\`
-          AND au.\`userId\` = ${userId}
-      )
-      AND p.\`providerUserId\` = ${userId}
-      GROUP BY t.id, p.id
-      ORDER BY p.\`name\` DESC
-      LIMIT ${pageSize}
-      OFFSET ${offset};
-    `
-  }
+  const transactions: any = await prisma.$queryRaw`
+    SELECT 
+      t.*, 
+      p.id AS paybuttonId, 
+      p.name AS paybuttonName, 
+      p.providerUserId AS paybuttonProviderUserId,
+      a.networkId as networkId,
+      JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'priceId', pb.id,
+          'priceValue', pb.value,
+          'quoteId', pb.quoteId
+        )
+      ) AS prices
+    FROM \`Transaction\` t
+    INNER JOIN \`Address\` a ON t.\`addressId\` = a.\`id\`
+    INNER JOIN \`AddressesOnButtons\` ab ON a.\`id\` = ab.\`addressId\`
+    INNER JOIN \`Paybutton\` p ON ab.\`paybuttonId\` = p.\`id\`
+    LEFT JOIN \`PricesOnTransactions\` pt ON t.\`id\` = pt.\`transactionId\`
+    LEFT JOIN \`Price\` pb ON pt.\`priceId\` = pb.\`id\`
+    WHERE t.\`amount\` > 0
+    AND EXISTS (
+      SELECT 1
+      FROM \`AddressesOnUserProfiles\` au
+      WHERE au.\`addressId\` = a.\`id\`
+        AND au.\`userId\` = ${userId}
+    )
+    AND p.\`providerUserId\` = ${userId}
+    ${buttonFilter}
+    GROUP BY t.id, p.id
+    ORDER BY p.\`name\` ${order}
+    LIMIT ${pageSize}
+    OFFSET ${offset};
+  `
 
   const payments: Payment[] = []
 
@@ -755,12 +725,14 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   page: number,
   pageSize: number,
   orderBy?: string,
-  orderDesc = true
+  orderDesc = true,
+  buttonIds?: string[]
 ): Promise<Payment[]> {
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
+
   if (orderBy === 'buttonDisplayDataList') {
     return await getPaymentsByUserIdOrderedByButtonName(
-      userId, page, pageSize, orderDesc
+      userId, page, pageSize, orderDesc, buttonIds
     )
   }
   // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
@@ -782,25 +754,34 @@ export async function fetchAllPaymentsByUserIdWithPagination (
       }
     }
   } else {
-    // Default orderBy
     orderByQuery = {
       timestamp: orderDescString
     }
   }
 
-  const transactions = await prisma.transaction.findMany({
-    where: {
-      address: {
-        userProfiles: {
-          some: {
-            userId
-          }
-        }
-      },
-      amount: {
-        gt: 0
+  const where: Prisma.TransactionWhereInput = {
+    address: {
+      userProfiles: {
+        some: { userId }
       }
     },
+    amount: {
+      gt: 0
+    }
+  }
+
+  if ((buttonIds !== undefined) && buttonIds.length > 0) {
+    where.address!.paybuttons = {
+      some: {
+        paybutton: {
+          id: { in: buttonIds }
+        }
+      }
+    }
+  }
+
+  const transactions = await prisma.transaction.findMany({
+    where,
     include: includePaybuttonsAndPrices,
     orderBy: orderByQuery,
     skip: page * Number(pageSize),
@@ -820,31 +801,40 @@ export async function fetchAllPaymentsByUserIdWithPagination (
 
 export async function fetchAllPaymentsByUserId (
   userId: string,
-  networkIds?: number[]
+  networkIds?: number[],
+  buttonIds?: string[]
 ): Promise<TransactionsWithPaybuttonsAndPrices[]> {
-  const transactions = await prisma.transaction.findMany({
-    where: {
-      address: {
-        userProfiles: {
-          some: {
-            userId
-          }
-        },
-        networkId: {
-          in: networkIds ?? Object.values(NETWORK_IDS)
-        }
+  const where: Prisma.TransactionWhereInput = {
+    address: {
+      userProfiles: {
+        some: { userId }
       },
-      amount: {
-        gt: 0
+      networkId: {
+        in: networkIds ?? Object.values(NETWORK_IDS)
       }
     },
+    amount: {
+      gt: 0
+    }
+  }
+
+  if (buttonIds !== undefined && buttonIds.length > 0) {
+    where.address!.paybuttons = {
+      some: {
+        paybutton: {
+          id: { in: buttonIds }
+        }
+      }
+    }
+  }
+
+  return await prisma.transaction.findMany({
+    where,
     include: includePaybuttonsAndPrices,
     orderBy: {
       timestamp: 'asc'
     }
   })
-
-  return transactions
 }
 
 export async function fetchTxCountByPaybuttonId (paybuttonId: string): Promise<number> {
@@ -855,6 +845,27 @@ export async function fetchTxCountByPaybuttonId (paybuttonId: string): Promise<n
       addressId: {
         in: addressIdList
       }
+    }
+  })
+}
+
+export const getFilteredTransactionCount = async (
+  userId: string,
+  buttonIds: string[]
+): Promise<number> => {
+  return await prisma.transaction.count({
+    where: {
+      address: {
+        userProfiles: {
+          some: { userId }
+        },
+        paybuttons: {
+          some: {
+            paybutton: { id: { in: buttonIds } }
+          }
+        }
+      },
+      amount: { gt: 0 }
     }
   })
 }
