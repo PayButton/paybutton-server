@@ -108,9 +108,9 @@ export class CacheGet {
     }
   }
 
-  static async dashboardData (userId: string, timezone: string): Promise<DashboardData> {
+  static async dashboardData (userId: string, timezone: string, buttonIds?: string[]): Promise<DashboardData> {
     return await this.executeCall(userId, 'dashboardData', async () => {
-      return await getUserDashboardData(userId, timezone)
+      return await getUserDashboardData(userId, timezone, buttonIds)
     })
   }
 

@@ -10,8 +10,11 @@ export default async (req: any, res: any): Promise<void> => {
     const userProfile = await fetchUserProfileFromId(userId)
     const userPreferredTimezone = userProfile?.preferredTimezone
     const timezone = userPreferredTimezone !== '' ? userPreferredTimezone : userReqTimezone
-
-    const resJSON = await CacheGet.dashboardData(userId, timezone)
+    let buttonIds: string[] | undefined
+    if (typeof req.query.buttonIds === 'string' && req.query.buttonIds !== '') {
+      buttonIds = (req.query.buttonIds as string).split(',')
+    }
+    const resJSON = await CacheGet.dashboardData(userId, timezone, buttonIds)
     res.status(200).json(resJSON)
   }
 }

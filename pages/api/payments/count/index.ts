@@ -21,8 +21,8 @@ export default async (req: any, res: any): Promise<void> => {
       const totalCount = await getFilteredTransactionCount(userId, buttonIds)
       res.status(200).json(totalCount)
     } else {
-      const resJSON = await CacheGet.paymentsCount(userId, timezone)
-      res.status(200).json(resJSON)
+      const totalCount = await CacheGet.paymentsCount(userId, timezone)
+      res.status(200).json(totalCount)
     }
   } else {
     res.status(405).json({ error: 'Method not allowed' })
