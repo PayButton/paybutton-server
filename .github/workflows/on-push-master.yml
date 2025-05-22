@@ -16,7 +16,9 @@ jobs:
         run: yarn
       - name: Run unit tests
         run: make github-test-unit
+      - name: Add local env file
+        run: touch .env.local
       - name: Spin up required database containers
-        run: docker compose up -d db users-service
+        run: docker compose up --build -d db users-service cache
       - name: Run integration tests
         run: make github-test-integration

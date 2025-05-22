@@ -46,8 +46,8 @@ export default function Footer ({ userId }): JSX.Element {
           </div>
         </div>
         <div className={style.copyright}>
-          {copyrightSymbol}
-          {currentYear} PayButton.org. All Rights Reserved.
+          {copyrightSymbol} 
+          {currentYear} Blockchain Ventures Corp. All Rights Reserved.
         </div>
       </div>
     </div>

@@ -26,10 +26,12 @@ export default function SignIn (): ReactElement {
       if (response.status === 'FIELD_ERROR') {
         response.formFields.forEach(formField => {
           setError(formField.error)
+          setDisabled(false)
         })
       } else if (response.status === 'WRONG_CREDENTIALS_ERROR') {
         setError('Incorrect email or password.')
         reset({ password: '' })
+        setDisabled(false)
       } else {
         // sign in successful. The session tokens are automatically handled by
         // the frontend SDK.
@@ -44,8 +46,8 @@ export default function SignIn (): ReactElement {
         setError('Something went wrong.')
         reset({ password: '' })
       }
+      setDisabled(false)
     }
-    setDisabled(false)
   }
   return (
     <>

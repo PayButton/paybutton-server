@@ -10,7 +10,7 @@ import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTx } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
 
-export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices): QuoteValues {
+export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
   const ret: QuoteValues = {
     usd: new Prisma.Decimal(0),
     cad: new Prisma.Decimal(0)
@@ -62,7 +62,8 @@ export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices, in
     timestamp,
     message: parsedOpReturn?.message ?? '',
     rawMessage: parsedOpReturn?.rawMessage ?? '',
-    inputAddresses: inputAddresses ?? []
+    inputAddresses: inputAddresses ?? [],
+    prices: tx.prices
   }
 
   return simplifiedTransaction
@@ -141,6 +142,57 @@ export async function fetchTransactionsByAddressList (
     orderBy: {
       timestamp: 'asc'
     }
+  })
+}
+
+export async function fetchTransactionsByAddressListWithPagination (
+  addressIdList: string[],
+  page: number,
+  pageSize: number,
+  orderBy?: string,
+  orderDesc = true,
+  networkIdsListFilter?: number[],
+): Promise<TransactionsWithPaybuttonsAndPrices[]> {
+
+  const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
+  
+  // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
+  let orderByQuery
+  if (orderBy !== undefined && orderBy !== '') {
+    if (orderBy.includes('.')) {
+      const [relation, property] = orderBy.split('.')
+      orderByQuery = {
+        [relation]: {
+          [property]: orderDescString
+        }
+      }
+    } else {
+      orderByQuery = {
+        [orderBy]: orderDescString
+      }
+    }
+  } else {
+    // Default orderBy
+    orderByQuery = {
+      timestamp: orderDescString
+    }
+  }
+
+  return await prisma.transaction.findMany({
+    where: {
+      addressId: {
+        in: addressIdList
+      },
+      address: {
+        networkId: {
+          in: networkIdsListFilter ?? Object.values(NETWORK_IDS)
+        }
+      }
+    },
+    include: includePaybuttonsAndPrices,
+    orderBy: orderByQuery,
+    skip: page * pageSize,
+    take: pageSize,
   })
 }
 
@@ -512,6 +564,29 @@ export async function fetchTransactionsByPaybuttonId (paybuttonId: string, netwo
   return transactions
 }
 
+export async function fetchTransactionsByPaybuttonIdWithPagination (
+  paybuttonId: string,
+  page: number,
+  pageSize: number,
+  orderDesc: boolean,
+  orderBy?: string,
+  networkIds?: number[]): Promise<TransactionsWithPaybuttonsAndPrices[]> {
+  const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
+  const transactions = await fetchTransactionsByAddressListWithPagination(
+    addressIdList,
+    page,
+    pageSize,
+    orderBy,
+    orderDesc,
+    networkIds);
+
+  if (transactions.length === 0) {
+    throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
+  }
+
+  return transactions
+}
+
 export const getTransactionValueInCurrency = (transaction: TransactionWithAddressAndPrices, currency: SupportedQuotesType): number => {
   const {
     prices,
@@ -660,7 +735,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
       userId, page, pageSize, orderDesc, buttonIds
     )
   }
-
+  // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
   let orderByQuery
   if (orderBy !== undefined && orderBy !== '') {
     if (orderBy === 'values') {

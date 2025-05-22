@@ -1,12 +1,11 @@
 import React, { useMemo } from 'react'
-import style from './transaction.module.css'
 import Image from 'next/image'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import CheckIcon from 'assets/check-icon.png'
 import XIcon from 'assets/x-icon.png'
-import TableContainerGetter from '../../components/TableContainer/TableContainerGetter'
+import TableContainerGetter from '../TableContainer/TableContainerGetter'
 import { compareNumericString } from 'utils/index'
 import moment from 'moment-timezone'
 import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL } from 'constants/index'
@@ -15,26 +14,29 @@ interface IProps {
   addressSyncing: {
     [address: string]: boolean
   }
+  paybuttonId: string
   tableRefreshCount: number
   timezone: string
 }
 
-function getGetterForAddress (addressString: string): Function {
+function fetchTransactionsByPaybuttonId (paybuttonId: string): Function {
   return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
-    const ok = await fetch(`/api/address/transactions/${addressString}?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`, {
+    const response = await fetch(`/api/paybutton/transactions/${paybuttonId}?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`, {
       headers: {
         Timezone: moment.tz.guess()
       }
     })
-    const ok2 = await fetch(`/api/address/transactions/count/${addressString}`)
+    const responseCount = await fetch(`/api/paybutton/transactions/count/${paybuttonId}`)
+    const transactions = await response.json()
+    const count = await responseCount.json()
     return {
-      data: await ok.json(),
-      totalCount: await ok2.json()
+      data: transactions.transactions,
+      totalCount: count
     }
   }
 }
 
-export default ({ addressSyncing, tableRefreshCount, timezone = moment.tz.guess() }: IProps): JSX.Element => {
+export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = moment.tz.guess() }: IProps): JSX.Element => {
   const columns = useMemo(
     () => [
       {
@@ -80,17 +82,31 @@ export default ({ addressSyncing, tableRefreshCount, timezone = moment.tz.guess(
         }
       },
       {
-        Header: 'TX',
+        Header: () => (<div style={{ textAlign: 'center' }}>TX</div>),
         accessor: 'hash',
         disableSortBy: true,
         Cell: (cellProps) => {
           const url = cellProps.cell.row.values['address.networkId'] === 1 ? XEC_TX_EXPLORER_URL : BCH_TX_EXPLORER_URL
           return (
-            <a href={url.concat(cellProps.cell.value)} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
-              <div className="table-eye">
-                <Image src={EyeIcon} alt='View on explorer' />
-              </div>
-            </a>
+            <div className="table-eye-ctn">
+              <a href={url.concat(cellProps.cell.value)} target="_blank" rel="noopener noreferrer">
+                <div className="table-eye">
+                  <Image src={EyeIcon} alt='View on explorer' />
+                </div>
+              </a>
+            </div>
+          )
+        }
+      },
+      {
+        Header: () => (<div style={{ marginRight: '1px' }}>Address</div>),
+        accessor: 'address.address',
+        shrinkable: true,
+        Cell: (cellProps) => {
+          return (
+            <div>
+              {cellProps.cell.value}
+            </div>
           )
         }
       }
@@ -99,19 +115,7 @@ export default ({ addressSyncing, tableRefreshCount, timezone = moment.tz.guess(
   )
   return (
     <>
-      {Object.keys(addressSyncing).map(transactionAddress => (
-        <div key={transactionAddress} className='address-transactions-ctn'>
-          <div className={style.tablelabel}>
-            <div>{transactionAddress}</div>
-            <a href={transactionAddress.slice(0, 5) === 'ecash' ? `https://explorer.e.cash/address/${transactionAddress}` : `https://blockchair.com/bitcoin-cash/address/${transactionAddress}`} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
-              <div className="table-eye">
-                <Image src={EyeIcon} alt='View on explorer' />
-              </div>
-            </a>
-          </div>
-          <TableContainerGetter columns={columns} dataGetter={getGetterForAddress(transactionAddress)} tableRefreshCount={tableRefreshCount} emptyMessage={'No transactions.'}/>
-        </div>
-      ))}
+      <TableContainerGetter columns={columns} dataGetter={fetchTransactionsByPaybuttonId(paybuttonId)} tableRefreshCount={tableRefreshCount} emptyMessage={'No transactions.'}/>
     </>
   )
 }

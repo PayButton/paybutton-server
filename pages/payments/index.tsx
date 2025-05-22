@@ -113,6 +113,14 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         { headers: { Timezone: timezone } }
       )
 
+      if (!paymentsResponse.ok || !paymentsCountResponse.ok) {
+        console.log('paymentsResponse status', paymentsResponse.status)
+        console.log('paymentsResponse status text', paymentsResponse.statusText)
+        console.log('paymentsResponse body', paymentsResponse.body)
+        console.log('paymentsResponse json', await paymentsResponse.json())
+        throw new Error('Failed to fetch payments or count')
+      }
+
       const totalCount = await paymentsCountResponse.json()
       const payments = await paymentsResponse.json()
 
@@ -217,7 +225,18 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         throw new Error('Failed to download CSV')
       }
 
-      const fileName = `${isCurrencyEmptyOrUndefined(currency) ? 'all' : `${currency.toLowerCase()}`}-transactions`
+      const selectedButtonNames = buttons
+        .filter(btn => selectedButtonIds.includes(btn.id))
+        .map(btn => btn.name.replace(/\s+/g, '-'))
+        .join('_')
+
+      const buttonSuffix = selectedButtonIds.length > 0
+        ? `-${selectedButtonNames !== '' ? selectedButtonNames : 'filtered'}`
+        : ''
+      const currencyLabel = isCurrencyEmptyOrUndefined(currency) ? 'all' : currency.toLowerCase()
+      const timestamp = moment().format('YYYY-MM-DD_HH-mm-ss')
+
+      const fileName = `${currencyLabel}-transactions${buttonSuffix}-${timestamp}`
       const blob = await response.blob()
       const downloadUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -248,7 +267,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         <div className={style.filter_btns}>
           <div
             onClick={() => setShowFilters(!showFilters)}
-            className={style.show_filters_button}
+            className={`${style.show_filters_button} ${selectedButtonIds.length > 0 ? style.active : ''}`}
           >
             <Image src={SettingsIcon} alt="filters" width={15} />Filters
           </div>
@@ -294,7 +313,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       </div>
       {showFilters && (
             <div className={style.showfilters_ctn}>
-              <span>Filter by PayButton</span>
+              <span>Filter by button</span>
               <div className={style.filters_ctn}>
                 {buttons.map((button) => (
                   <div
