@@ -114,6 +114,10 @@ const includePaybuttonsAndPrices = {
   },
   ...includePrices
 }
+const includePaybuttonsAndPricesAndInvoices = {
+  ...includePaybuttonsAndPrices,
+  invoices: true
+}
 
 const transactionsWithPaybuttonsAndPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
   {
@@ -151,11 +155,10 @@ export async function fetchTransactionsByAddressListWithPagination (
   pageSize: number,
   orderBy?: string,
   orderDesc = true,
-  networkIdsListFilter?: number[],
+  networkIdsListFilter?: number[]
 ): Promise<TransactionsWithPaybuttonsAndPrices[]> {
-
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
-  
+
   // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
   let orderByQuery
   if (orderBy !== undefined && orderBy !== '') {
@@ -189,10 +192,10 @@ export async function fetchTransactionsByAddressListWithPagination (
         }
       }
     },
-    include: includePaybuttonsAndPrices,
+    include: includePaybuttonsAndPricesAndInvoices,
     orderBy: orderByQuery,
     skip: page * pageSize,
-    take: pageSize,
+    take: pageSize
   })
 }
 
@@ -578,7 +581,7 @@ export async function fetchTransactionsByPaybuttonIdWithPagination (
     pageSize,
     orderBy,
     orderDesc,
-    networkIds);
+    networkIds)
 
   if (transactions.length === 0) {
     throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
