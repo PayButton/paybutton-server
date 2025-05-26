@@ -114,6 +114,10 @@ const includePaybuttonsAndPrices = {
   },
   ...includePrices
 }
+const includePaybuttonsAndPricesAndInvoices = {
+  ...includePaybuttonsAndPrices,
+  invoices: true
+}
 
 const transactionsWithPaybuttonsAndPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
   {
@@ -188,7 +192,7 @@ export async function fetchTransactionsByAddressListWithPagination (
         }
       }
     },
-    include: includePaybuttonsAndPrices,
+    include: includePaybuttonsAndPricesAndInvoices,
     orderBy: orderByQuery,
     skip: page * pageSize,
     take: pageSize
