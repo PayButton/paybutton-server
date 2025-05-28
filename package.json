@@ -37,7 +37,7 @@
     "bitcoinjs-lib": "^6.0.2",
     "bs58": "^5.0.0",
     "chart.js": "^3.8.0",
-    "chronik-client-cashtokens": "^0.28.2-alpha",
+    "chronik-client-cashtokens": "^3.1.1-rc0",
     "cors": "^2.8.5",
     "cross-env": "^7.0.2",
     "dotenv-cli": "^5.1.0",
