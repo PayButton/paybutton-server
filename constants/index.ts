@@ -146,6 +146,9 @@ export const FETCH_N_TIMEOUT = 120000
 // When fetching some address transactions, delay (in ms) between each fetch.
 export const FETCH_DELAY = 100
 
+// Delay to check if latency test has finished, when the app starts.
+export const LATENCY_TEST_CHECK_DELAY = 200
+
 // Wait time (in ms) to see if there are new unsynced addresses
 export const SYNC_NEW_ADDRESSES_DELAY = 10000
 

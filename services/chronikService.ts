@@ -2,7 +2,7 @@ import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptType, ScriptUtxo, T
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY } from 'constants/index'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import {
   TransactionWithAddressAndPrices,
@@ -118,7 +118,10 @@ export class ChronikBlockchainClient {
   initializing!: boolean
   mempoolTxsBeingProcessed!: number
 
+  private latencyTestFinished: boolean
+
   constructor (networkSlug: string) {
+    this.latencyTestFinished = false
     void (async () => {
       if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
         throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
@@ -132,6 +135,7 @@ export class ChronikBlockchainClient {
         ConnectionStrategy.ClosestFirst,
         config.networkBlockchainURLs[networkSlug]
       )
+      this.latencyTestFinished = true
       this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
       this.confirmedTxsHashesFromLastBlock = []
       void this.chronikWSEndpoint.waitForOpen()
@@ -144,6 +148,15 @@ export class ChronikBlockchainClient {
         }
       })
     })()
+  }
+
+  public async waitForLatencyTest (): Promise<void> {
+    while (true) {
+      if (this.latencyTestFinished) {
+        return
+      }
+      await new Promise(resolve => setTimeout(resolve, LATENCY_TEST_CHECK_DELAY))
+    }
   }
 
   public setInitialized (): void {
@@ -726,6 +739,7 @@ class MultiBlockchainClient {
     if (this.isRunningApp()) {
       asyncOperations.push(
         (async () => {
+          await newClient.waitForLatencyTest()
           console.log(`[CHRONIK — ${networkSlug}] Subscribing addresses in database...`)
           await newClient.subscribeInitialAddresses()
           console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
