@@ -1,4 +1,4 @@
-import { BlockInfo, ChronikClient, ScriptType, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client-cashtokens'
+import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptType, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client-cashtokens'
 import { encode, decode } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
@@ -107,38 +107,43 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
 }
 
 export class ChronikBlockchainClient {
-  chronik: ChronikClient
-  networkId: number
-  networkSlug: string
-  chronikWSEndpoint: WsEndpoint
-  confirmedTxsHashesFromLastBlock: string[]
-  wsEndpoint: Socket
-  CHRONIK_MSG_PREFIX: string
-  lastProcessedMessages: ProcessedMessages
-  initializing: boolean
-  mempoolTxsBeingProcessed: number
+  chronik!: ChronikClient
+  networkId!: number
+  networkSlug!: string
+  chronikWSEndpoint!: WsEndpoint
+  confirmedTxsHashesFromLastBlock!: string[]
+  wsEndpoint!: Socket
+  CHRONIK_MSG_PREFIX!: string
+  lastProcessedMessages!: ProcessedMessages
+  initializing!: boolean
+  mempoolTxsBeingProcessed!: number
 
   constructor (networkSlug: string) {
-    if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
-      throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
-    }
-
-    this.initializing = true
-    this.mempoolTxsBeingProcessed = 0
-    this.networkSlug = networkSlug
-    this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
-    this.chronik = new ChronikClient([config.networkBlockchainURLs[networkSlug]])
-    this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
-    this.confirmedTxsHashesFromLastBlock = []
-    void this.chronikWSEndpoint.waitForOpen()
-    this.chronikWSEndpoint.subscribeToBlocks()
-    this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
-    this.CHRONIK_MSG_PREFIX = `[CHRONIK — ${networkSlug}]`
-    this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
-      query: {
-        key: process.env.WS_AUTH_KEY
+    void (async () => {
+      if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
+        throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
       }
-    })
+
+      this.initializing = true
+      this.mempoolTxsBeingProcessed = 0
+      this.networkSlug = networkSlug
+      this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
+      this.chronik = await ChronikClient.useStrategy(
+        ConnectionStrategy.ClosestFirst,
+        config.networkBlockchainURLs[networkSlug]
+      )
+      this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
+      this.confirmedTxsHashesFromLastBlock = []
+      void this.chronikWSEndpoint.waitForOpen()
+      this.chronikWSEndpoint.subscribeToBlocks()
+      this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
+      this.CHRONIK_MSG_PREFIX = `[CHRONIK — ${networkSlug}]`
+      this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
+        query: {
+          key: process.env.WS_AUTH_KEY
+        }
+      })
+    })()
   }
 
   public setInitialized (): void {
