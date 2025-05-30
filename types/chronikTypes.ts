@@ -2,7 +2,7 @@ import { Address, Prisma } from '@prisma/client'
 import { KeyValueT } from 'constants/index'
 
 interface InputOutput {
-  value: Prisma.Decimal
+  value: bigint
   address?: string
 }
 
@@ -18,7 +18,7 @@ export interface BlockchainInfo {
   hash: Uint8Array | string
 }
 
-export interface BlockInfo extends BlockchainInfo {
+export interface SimpleBlockInfo extends BlockchainInfo {
   timestamp: number
 }
 
