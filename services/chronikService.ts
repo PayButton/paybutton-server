@@ -1,5 +1,5 @@
 import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptType, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client-cashtokens'
-import { encode, decode } from 'ecashaddrjs'
+import { encodeCashAddress, decodeCashAddress } from 'ecashaddrjs'
 import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
 import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY } from 'constants/index'
@@ -639,7 +639,7 @@ export function fromHash160 (networkSlug: string, type: string, hash160: string)
     hash160Uint8Array[i] = buffer[i]
   }
 
-  return encode(
+  return encodeCashAddress(
     networkSlug,
     type.toUpperCase(),
     hash160Uint8Array
@@ -648,7 +648,7 @@ export function fromHash160 (networkSlug: string, type: string, hash160: string)
 
 export function toHash160 (address: string): {type: ScriptType, hash160: string} {
   try {
-    const { type, hash } = decode(address)
+    const { type, hash } = decodeCashAddress(address)
     const legacyAdress = bs58.encode(hash)
     const addrHash160 = Buffer.from(bs58.decode(legacyAdress)).toString(
       'hex'

@@ -4,7 +4,7 @@ import style from '../../styles/landing.module.css'
 import { PayButton, Widget as PayButtonWidget } from '@paybutton/react'
 import { ChromePicker } from 'react-color'
 import CodeBlock from './CodeBlock'
-import { decode } from 'ecashaddrjs'
+import { decodeCashAddress } from 'ecashaddrjs'
 import { generatorFormFields } from './data.js'
 import {
   PRIMARY_XEC_COLOR,
@@ -83,7 +83,7 @@ export const initialButtonState: ButtonState = {
   onOpen: '',
   onClose: '',
   wsBaseURL: '',
-  apiBaseURL: '',
+  apiBaseURL: ''
 }
 
 export default function ButtonGenerator (): JSX.Element {
@@ -93,7 +93,7 @@ export default function ButtonGenerator (): JSX.Element {
 
   const isValidAddress = (address: string): string => {
     try {
-      return decode(address).prefix
+      return decodeCashAddress(address).prefix
     } catch (err) {
       return 'not valid'
     }

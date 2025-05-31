@@ -1,4 +1,4 @@
 declare module 'ecashaddrjs' {
-  export function decode (address: string): { prefix: string, type: string, hash: Uint8Array }
-  export function encode (prefix: string, type: string, hash: Uint8Array): string
+  export function decodeCashAddress (address: string): { prefix: string, type: string, hash: Uint8Array }
+  export function encodeCashAddress (prefix: string, type: string, hash: Uint8Array): string
 }
