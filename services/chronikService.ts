@@ -1,6 +1,5 @@
-import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptType, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client-cashtokens'
+import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client-cashtokens'
 import { encodeCashAddress, decodeCashAddress } from 'ecashaddrjs'
-import bs58 from 'bs58'
 import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
 import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
@@ -28,6 +27,7 @@ import { executeAddressTriggers } from './triggerService'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
 import { syncPastDaysNewerPrices } from './priceService'
+import { AddressType } from 'ecashaddrjs/dist/types'
 
 const decoder = new TextDecoder()
 
@@ -182,7 +182,7 @@ export class ChronikBlockchainClient {
   }
 
   public getSubscribedAddresses (): string[] {
-    const ret = this.chronikWSEndpoint.subs.scripts.map((script: WsSubScriptClient) => fromHash160(this.networkSlug, script.scriptType, script.payload))
+    const ret = this.chronikWSEndpoint.subs.scripts.map((script: WsSubScriptClient) => fromHash160(this.networkSlug, script.scriptType as AddressType, script.payload))
     return [...new Set(ret)]
   }
 
@@ -629,7 +629,7 @@ export class ChronikBlockchainClient {
   }
 }
 
-export function fromHash160 (networkSlug: string, type: string, hash160: string): string {
+export function fromHash160 (networkSlug: string, type: AddressType, hash160: string): string {
   const buffer = Buffer.from(hash160, 'hex')
 
   // Because ecashaddrjs only accepts Uint8Array as input type, convert
@@ -641,19 +641,15 @@ export function fromHash160 (networkSlug: string, type: string, hash160: string)
 
   return encodeCashAddress(
     networkSlug,
-    type.toUpperCase(),
+    type,
     hash160Uint8Array
   )
 }
 
-export function toHash160 (address: string): {type: ScriptType, hash160: string} {
+export function toHash160 (address: string): {type: AddressType, hash160: string} {
   try {
     const { type, hash } = decodeCashAddress(address)
-    const legacyAdress = bs58.encode(hash)
-    const addrHash160 = Buffer.from(bs58.decode(legacyAdress)).toString(
-      'hex'
-    )
-    return { type: type.toLowerCase() as ScriptType, hash160: addrHash160 }
+    return { type, hash160: hash }
   } catch (err) {
     console.log('[CHRONIK]: Error converting address to hash160')
     throw err
@@ -669,14 +665,14 @@ export function outputScriptToAddress (networkSlug: string, outputScript: string
   let hash160
   switch (typeTestSlice) {
     case '76a9':
-      addressType = 'P2PKH'
+      addressType = 'p2pkh'
       hash160 = outputScript.substring(
         outputScript.indexOf('76a914') + '76a914'.length,
         outputScript.lastIndexOf('88ac')
       )
       break
     case 'a914':
-      addressType = 'P2SH'
+      addressType = 'p2sh'
       hash160 = outputScript.substring(
         outputScript.indexOf('a914') + 'a914'.length,
         outputScript.lastIndexOf('87')
@@ -688,7 +684,7 @@ export function outputScriptToAddress (networkSlug: string, outputScript: string
 
   if (hash160.length !== 40) return undefined
 
-  return fromHash160(networkSlug, addressType, hash160)
+  return fromHash160(networkSlug, addressType as AddressType, hash160)
 }
 
 class MultiBlockchainClient {
