@@ -689,9 +689,11 @@ export function outputScriptToAddress (networkSlug: string, outputScript: string
 
 class MultiBlockchainClient {
   private clients!: Record<MainNetworkSlugsType, ChronikBlockchainClient>
+  public initializing: boolean
 
   constructor () {
     console.log('Initializing MultiBlockchainClient...')
+    this.initializing = true
     void (async () => {
       if (this.isRunningApp()) {
         await syncPastDaysNewerPrices()
@@ -713,7 +715,14 @@ class MultiBlockchainClient {
         }
         await Promise.all(asyncOperations)
       }
+      this.initializing = false
     })()
+  }
+
+  public async waitForStart (): Promise<void> {
+    while (this.initializing) {
+      await new Promise(resolve => setTimeout(resolve, LATENCY_TEST_CHECK_DELAY))
+    }
   }
 
   private isRunningApp (): boolean {
@@ -741,6 +750,12 @@ class MultiBlockchainClient {
           console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
           await newClient.syncMissedTransactions()
           console.log(`[CHRONIK — ${networkSlug}] Finished instantiating client.`)
+        })()
+      )
+    } else if (process.env.NODE_ENV === 'test') {
+      asyncOperations.push(
+        (async () => {
+          await newClient.waitForLatencyTest()
         })()
       )
     }
