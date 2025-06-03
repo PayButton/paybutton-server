@@ -42,10 +42,10 @@ export default function SubscribedAddresses (): JSX.Element {
   )
 
   return <>
-    <h2>Subscribed Addresses</h2>
-        <h3> eCash</h3>
+    <h3>Subscribed Addresses</h3>
+        <h4> eCash</h4>
       <TableContainer columns={columns} data={ecashSubscribedAddresses ?? []} ssr/>
-        <h3> Bitcoin Cash</h3>
+        <h4> Bitcoin Cash</h4>
       <TableContainer columns={columns} data={bitcoincashSubscribedAddresses ?? []} ssr/>
   </>
 }

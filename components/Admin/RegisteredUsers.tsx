@@ -47,7 +47,7 @@ export default function RegisteredUsers ({ users }: IProps): JSX.Element {
   }))
 
   return <>
-    <h2>Registered Users</h2>
+    <h3>Registered Users</h3>
     <TableContainer columns={columns} data={data} ssr />
   </>
 }
