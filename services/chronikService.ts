@@ -159,6 +159,10 @@ export class ChronikBlockchainClient {
     }
   }
 
+  public getUrls (): string[] {
+    return this.chronik.proxyInterface().getEndpointArray().map(e => e.url)
+  }
+
   public setInitialized (): void {
     this.initializing = false
   }
@@ -722,6 +726,13 @@ class MultiBlockchainClient {
   public async waitForStart (): Promise<void> {
     while (this.initializing) {
       await new Promise(resolve => setTimeout(resolve, LATENCY_TEST_CHECK_DELAY))
+    }
+  }
+
+  public getUrls (): Record<MainNetworkSlugsType, string[]> {
+    return {
+      ecash: this.clients.ecash.getUrls(),
+      bitcoincash: this.clients.bitcoincash.getUrls()
     }
   }
 

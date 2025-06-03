@@ -12,6 +12,8 @@ import TableContainer from '../../components/TableContainer/TableContainer'
 import EyeIcon from 'assets/eye-icon.png'
 import Image from 'next/image'
 import { removeUnserializableFields } from 'utils'
+import { multiBlockchainClient } from 'services/chronikService'
+import { MainNetworkSlugsType } from 'constants/index'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -32,13 +34,15 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const userId = session?.getUserId()
   const user = await fetchUserWithSupertokens(userId)
   removeUnserializableFields(user.userProfile)
+  const chronikUrls = multiBlockchainClient.getUrls()
 
   const isAdmin = await isUserAdmin(userId)
   return {
     props: {
       userId,
       user,
-      isAdmin
+      isAdmin,
+      chronikUrls
     }
   }
 }
@@ -47,6 +51,8 @@ interface IProps {
   userId: string
   isAdmin: boolean
   user: supertokensNode.User | undefined
+  chronikUrls: Record<MainNetworkSlugsType, string[]>
+
 }
 
 export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
