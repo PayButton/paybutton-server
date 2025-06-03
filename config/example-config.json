@@ -24,7 +24,6 @@
       "https://chronik.pay2stay.com/xec2"
     ],
     "bitcoincash": ["https://bch.paybutton.io"]
-
   },
   "networksUnderMaintenance": {
     "bitcoincash": true
