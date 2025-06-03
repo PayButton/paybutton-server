@@ -11,6 +11,8 @@ import RegisteredUsers from 'components/Admin/RegisteredUsers'
 import { removeUnserializableFields } from 'utils'
 import { multiBlockchainClient } from 'services/chronikService'
 import { MainNetworkSlugsType } from 'constants/index'
+import SubscribedAddresses from 'components/Admin/SubscribedAddresses'
+import ChronikURLs from 'components/Admin/ChronikURLs'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -52,7 +54,7 @@ interface IProps {
 
 }
 
-export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
+export default function Admin ({ user, isAdmin, chronikUrls }: IProps): JSX.Element {
   const router = useRouter()
   const [users, setUsers] = useState<UserWithSupertokens[]>([])
 
@@ -71,8 +73,8 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
 
   if (user !== null && isAdmin) {
     return <>
-      <h2>Admin Dashboard</h2>
       <div className={style.admin_ctn}>
+        <h2>Admin Dashboard</h2>
         <a
           target="_blank"
           rel="noopener noreferrer"
@@ -81,9 +83,12 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
         >
           Go to Supertokens Admin Dashboard
         </a>
-        <h4>Registered Users</h4>
-        <RegisteredUsers users={users}/>
       </div>
+      <ChronikURLs chronikUrls={chronikUrls}/>
+      <hr className={style.divisor}/>
+      <SubscribedAddresses/>
+      <hr className={style.divisor}/>
+      <RegisteredUsers users={users}/>
     </>
   } else {
     return <Page/>
