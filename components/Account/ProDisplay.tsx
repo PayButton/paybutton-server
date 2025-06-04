@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import ProPurchase from './ProPurchase'
 
 const ProConfig = (): JSX.Element => {
   const [text, setText] = useState('')
+  const [isPro, setIsPro] = useState<boolean | null>()
 
   useEffect(() => {
     void (async () => {
@@ -14,6 +16,7 @@ const ProConfig = (): JSX.Element => {
           setText('Your PRO has expired.')
         } else {
           const futureDate = new Date(Date.now() + remainingMs)
+          setIsPro(true)
           setText(`You are PRO until ${futureDate.toLocaleDateString()}.`)
         }
       } else {
@@ -22,7 +25,10 @@ const ProConfig = (): JSX.Element => {
     })()
   }, [])
 
-  return <>{text}</>
+  return <div className="WIP">
+    <span>{text}</span>
+    {isPro === false && <ProPurchase/>}
+    </div>
 }
 
 export default ProConfig
