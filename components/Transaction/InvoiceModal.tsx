@@ -1,10 +1,10 @@
 import React, { useState, useEffect, ReactElement } from 'react'
 import style from './transaction.module.css'
 import Button from 'components/Button'
-import { CreateinvoicePOSTParameters } from 'utils/validators'
+import { CreateInvoicePOSTParameters } from 'utils/validators'
 import axios from 'axios'
 
-interface InvoiceData {
+export interface InvoiceData {
   invoiceNumber: string
   amount: number
   recipientName: string
@@ -74,7 +74,7 @@ export default function InvoiceModal ({
   async function handleSubmit (e: React.FormEvent): Promise<void> {
     e.preventDefault()
 
-    const payload: CreateinvoicePOSTParameters = {
+    const payload: CreateInvoicePOSTParameters = {
       ...formData,
       transactionId: transaction?.id
     }
