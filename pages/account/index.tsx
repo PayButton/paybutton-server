@@ -189,7 +189,6 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
         </div>
 
         <div>
-          <h3 className={style.config_title}>Organization</h3>
           <ViewOrganization user={user} orgMembers={orgMembers} setOrgMembers={setOrgMembers} organization={organization}/>
         </div>
       </div>)
