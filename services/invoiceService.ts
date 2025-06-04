@@ -82,19 +82,19 @@ export async function updateInvoice (userId: string, invoiceId: string, params: 
 
 export async function getNewInvoiceNumber (userId: string): Promise<string | undefined> {
   const year = new Date().getFullYear()
+  const defaultPattern = /^\d{4}-\d+$/
 
-  const invoiceWithTheLatestInvoiceNumber = await prisma.invoice.findFirst({
+  const userInvoices = await prisma.invoice.findMany({
     where: {
-      invoiceNumber: {
-        startsWith: `${year}-`
-      },
       userId
     },
     orderBy: {
       invoiceNumber: 'desc'
     }
   })
-  if (invoiceWithTheLatestInvoiceNumber === null) {
+  const invoicesWithOurPattern = userInvoices.filter(invoice => defaultPattern.test(invoice.invoiceNumber))
+
+  if (invoicesWithOurPattern === null) {
     const invoicesCount = await prisma.invoice.count({
       where: {
         userId
@@ -104,8 +104,10 @@ export async function getNewInvoiceNumber (userId: string): Promise<string | und
       return
     }
   }
-  const nextNumber = (invoiceWithTheLatestInvoiceNumber != null) ? parseInt(invoiceWithTheLatestInvoiceNumber.invoiceNumber.split('-')[1]) + 1 : 1
 
-  const invoiceNumber = `${year}-${String(nextNumber)}`
+  const invoiceWithTheLatestInvoiceNumber = invoicesWithOurPattern[0]
+  const nextInvoiceNumber = (invoiceWithTheLatestInvoiceNumber != null) ? parseInt(invoiceWithTheLatestInvoiceNumber.invoiceNumber.split('-')[1]) + 1 : 1
+
+  const invoiceNumber = `${year}-${String(nextInvoiceNumber)}`
   return invoiceNumber
 }
