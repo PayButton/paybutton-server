@@ -29,5 +29,12 @@
     "bitcoincash": true
   },
   "triggerPOSTTimeout": 3000,
-  "sideshiftAffiliateId": "JPk84U3xN"
+  "sideshiftAffiliateId": "JPk84U3xN",
+  "proEnabled": true,
+  "proMonthsCost": {
+      "1": "10",
+      "3": "20",
+      "6": "30",
+      "12": "50"
+  }
 }

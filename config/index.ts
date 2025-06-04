@@ -21,6 +21,8 @@ interface Config {
   sideshiftAffiliateId: string
   smtpHost: string
   smtpPort: number
+  proEnabled: boolean
+  proMonthsCost: Record<string, number>
 }
 
 const readConfig = (): Config => {
