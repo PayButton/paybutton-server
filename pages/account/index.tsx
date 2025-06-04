@@ -17,6 +17,8 @@ import { removeDateFields, removeUnserializableFields } from 'utils/index'
 import TopBar from 'components/TopBar'
 import TimezoneSelector from 'components/Timezone Selector'
 import moment from 'moment-timezone'
+import config from 'config'
+import ProDisplay from 'components/Account/ProDisplay'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   supertokensNode.init(SuperTokensConfig.backendConfig())
@@ -189,6 +191,7 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
         </div>
 
         <div>
+          {config.proEnabled && <ProDisplay/>}
           <ViewOrganization user={user} orgMembers={orgMembers} setOrgMembers={setOrgMembers} organization={organization}/>
         </div>
       </div>)
