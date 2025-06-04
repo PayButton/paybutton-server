@@ -122,8 +122,8 @@ default: false,
 #### networkBlockchainURLs
 ```
 type: {
-   "ecash": "https://chronik.fabien.cash",
-   "bitcoincash": "https://chronik.pay2stay.com/bch"
+   "ecash": ["https://xec.paybutton.org", "https://chronik.fabien.cash"],
+   "bitcoincash": ["https://chronik.pay2stay.com/bch"]
 }
 
 ```

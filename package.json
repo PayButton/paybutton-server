@@ -41,7 +41,7 @@
     "cors": "^2.8.5",
     "cross-env": "^7.0.2",
     "dotenv-cli": "^5.1.0",
-    "ecashaddrjs": "^1.5.8",
+    "ecashaddrjs": "^2.0.0",
     "express": "^4.17.1",
     "graphql": "^16.3.0",
     "helmet": "^4.4.1",
@@ -97,7 +97,7 @@
     "typescript": "^5.7.2"
   },
   "resolutions": {
-    "chronik-client-cashtokens/ecashaddrjs": "^1.5.8"
+    "chronik-client-cashtokens/ecashaddrjs": "^2.0.0"
   },
   "lint-staged": {
     "*.ts?(x)": [

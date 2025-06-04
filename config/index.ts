@@ -15,7 +15,7 @@ interface Config {
   priceAPIURL: string
   redisURL: string
   networkBlockchainClients: KeyValueT<BlockchainClientOptions>
-  networkBlockchainURLs: KeyValueT<string>
+  networkBlockchainURLs: KeyValueT<string[]>
   networksUnderMaintenance: KeyValueT<boolean>
   triggerPOSTTimeout: number
   sideshiftAffiliateId: string
@@ -35,7 +35,7 @@ const readConfig = (): Config => {
   if (
     (
       config.networkBlockchainURLs.ecash === undefined ||
-      config.networkBlockchainURLs.ecash === ''
+      config.networkBlockchainURLs.ecash.length === 0
     ) &&
     !config.networksUnderMaintenance.ecash
   ) {
@@ -43,7 +43,7 @@ const readConfig = (): Config => {
   } else if (
     (
       config.networkBlockchainURLs.bitcoincash === undefined ||
-      config.networkBlockchainURLs.bitcoincash === ''
+      config.networkBlockchainURLs.bitcoincash.length === 0
     ) &&
     !config.networksUnderMaintenance.bitcoincash
   ) {

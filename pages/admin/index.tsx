@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState } from 'react'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
@@ -8,10 +8,11 @@ import style from './admin.module.css'
 import { fetchUserWithSupertokens, isUserAdmin, UserWithSupertokens } from 'services/userService'
 import { useRouter } from 'next/router'
 import RegisteredUsers from 'components/Admin/RegisteredUsers'
-import TableContainer from '../../components/TableContainer/TableContainer'
-import EyeIcon from 'assets/eye-icon.png'
-import Image from 'next/image'
 import { removeUnserializableFields } from 'utils'
+import { multiBlockchainClient } from 'services/chronikService'
+import { MainNetworkSlugsType } from 'constants/index'
+import SubscribedAddresses from 'components/Admin/SubscribedAddresses'
+import ChronikURLs from 'components/Admin/ChronikURLs'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -32,13 +33,15 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const userId = session?.getUserId()
   const user = await fetchUserWithSupertokens(userId)
   removeUnserializableFields(user.userProfile)
+  const chronikUrls = multiBlockchainClient.getUrls()
 
   const isAdmin = await isUserAdmin(userId)
   return {
     props: {
       userId,
       user,
-      isAdmin
+      isAdmin,
+      chronikUrls
     }
   }
 }
@@ -47,12 +50,12 @@ interface IProps {
   userId: string
   isAdmin: boolean
   user: supertokensNode.User | undefined
+  chronikUrls: Record<MainNetworkSlugsType, string[]>
+
 }
 
-export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
+export default function Admin ({ user, isAdmin, chronikUrls }: IProps): JSX.Element {
   const router = useRouter()
-  const [ecashSubscribedAddresses, setEcashSubscribedAddresses] = useState<string[]>([])
-  const [bitcoincashSubscribedAddresses, setBitcoincashSubscribedAddresses] = useState<string[]>([])
   const [users, setUsers] = useState<UserWithSupertokens[]>([])
 
   useEffect(() => {
@@ -63,48 +66,15 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
 
   useEffect(() => {
     void (async () => {
-      const ok = await (await fetch('chronikStatus')).json()
-      const subscribedEcashAddresses = ok.ecash?.map((value: string) => ({ address: value }))
-      const subscribedBitcoincashAddresses = ok.bitcoincash?.map((value: string) => ({ address: value }))
-      setEcashSubscribedAddresses(subscribedEcashAddresses)
-      setBitcoincashSubscribedAddresses(subscribedBitcoincashAddresses)
-      const ok2 = await (await fetch('/api/users')).json()
-      setUsers(ok2)
+      const usersJSON = await (await fetch('/api/users')).json()
+      setUsers(usersJSON)
     })()
   }, [])
 
-  const columns = useMemo(
-    () => [
-      {
-        Header: 'Subscribed addresses',
-        accessor: 'address',
-        Cell: (cellProps: any) => {
-          return <div className="table-date">{cellProps.cell.value}</div>
-        }
-      },
-      {
-        Header: 'View',
-        accessor: 'view',
-        Cell: (cellProps: any) => {
-          return <a href={`https://explorer.e.cash/address/${cellProps.cell.row.values.address as string}`} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">
-          <div className="table-eye">
-            <Image src={EyeIcon} alt='View on explorer' />
-          </div>
-        </a>
-        }
-      }
-    ],
-    []
-  )
-
   if (user !== null && isAdmin) {
     return <>
-      <h2>Admin Dashboard</h2>
       <div className={style.admin_ctn}>
-        <h3> eCash</h3>
-      <TableContainer columns={columns} data={ecashSubscribedAddresses ?? []} ssr/>
-        <h3> Bitcoin Cash</h3>
-      <TableContainer columns={columns} data={bitcoincashSubscribedAddresses ?? []} ssr/>
+        <h2>Admin Dashboard</h2>
         <a
           target="_blank"
           rel="noopener noreferrer"
@@ -113,9 +83,12 @@ export default function Admin ({ user, isAdmin }: IProps): JSX.Element {
         >
           Go to Supertokens Admin Dashboard
         </a>
-        <h4>Registered Users</h4>
-        <RegisteredUsers users={users}/>
       </div>
+      <ChronikURLs chronikUrls={chronikUrls}/>
+      <hr className={style.divisor}/>
+      <SubscribedAddresses/>
+      <hr className={style.divisor}/>
+      <RegisteredUsers users={users}/>
     </>
   } else {
     return <Page/>

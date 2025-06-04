@@ -1,8 +1,7 @@
-import { BlockInfo, ChronikClient, ScriptType, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client-cashtokens'
-import { encode, decode } from 'ecashaddrjs'
-import bs58 from 'bs58'
+import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client-cashtokens'
+import { encodeCashAddress, decodeCashAddress } from 'ecashaddrjs'
 import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY } from 'constants/index'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import {
   TransactionWithAddressAndPrices,
@@ -28,6 +27,7 @@ import { executeAddressTriggers } from './triggerService'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
 import { syncPastDaysNewerPrices } from './priceService'
+import { AddressType } from 'ecashaddrjs/dist/types'
 
 const decoder = new TextDecoder()
 
@@ -107,38 +107,60 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
 }
 
 export class ChronikBlockchainClient {
-  chronik: ChronikClient
-  networkId: number
-  networkSlug: string
-  chronikWSEndpoint: WsEndpoint
-  confirmedTxsHashesFromLastBlock: string[]
-  wsEndpoint: Socket
-  CHRONIK_MSG_PREFIX: string
-  lastProcessedMessages: ProcessedMessages
-  initializing: boolean
-  mempoolTxsBeingProcessed: number
+  chronik!: ChronikClient
+  networkId!: number
+  networkSlug!: string
+  chronikWSEndpoint!: WsEndpoint
+  confirmedTxsHashesFromLastBlock!: string[]
+  wsEndpoint!: Socket
+  CHRONIK_MSG_PREFIX!: string
+  lastProcessedMessages!: ProcessedMessages
+  initializing!: boolean
+  mempoolTxsBeingProcessed!: number
+
+  private latencyTestFinished: boolean
 
   constructor (networkSlug: string) {
-    if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
-      throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
-    }
-
-    this.initializing = true
-    this.mempoolTxsBeingProcessed = 0
-    this.networkSlug = networkSlug
-    this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
-    this.chronik = new ChronikClient([config.networkBlockchainURLs[networkSlug]])
-    this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
-    this.confirmedTxsHashesFromLastBlock = []
-    void this.chronikWSEndpoint.waitForOpen()
-    this.chronikWSEndpoint.subscribeToBlocks()
-    this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
-    this.CHRONIK_MSG_PREFIX = `[CHRONIK — ${networkSlug}]`
-    this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
-      query: {
-        key: process.env.WS_AUTH_KEY
+    this.latencyTestFinished = false
+    void (async () => {
+      if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
+        throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
       }
-    })
+
+      this.initializing = true
+      this.mempoolTxsBeingProcessed = 0
+      this.networkSlug = networkSlug
+      this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
+      this.chronik = await ChronikClient.useStrategy(
+        ConnectionStrategy.ClosestFirst,
+        config.networkBlockchainURLs[networkSlug]
+      )
+      this.latencyTestFinished = true
+      this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
+      this.confirmedTxsHashesFromLastBlock = []
+      void this.chronikWSEndpoint.waitForOpen()
+      this.chronikWSEndpoint.subscribeToBlocks()
+      this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
+      this.CHRONIK_MSG_PREFIX = `[CHRONIK — ${networkSlug}]`
+      this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
+        query: {
+          key: process.env.WS_AUTH_KEY
+        }
+      })
+    })()
+  }
+
+  public async waitForLatencyTest (): Promise<void> {
+    while (true) {
+      if (this.latencyTestFinished) {
+        return
+      }
+      await new Promise(resolve => setTimeout(resolve, LATENCY_TEST_CHECK_DELAY))
+    }
+  }
+
+  public getUrls (): string[] {
+    return this.chronik.proxyInterface().getEndpointArray().map(e => e.url)
   }
 
   public setInitialized (): void {
@@ -164,7 +186,7 @@ export class ChronikBlockchainClient {
   }
 
   public getSubscribedAddresses (): string[] {
-    const ret = this.chronikWSEndpoint.subs.scripts.map((script: WsSubScriptClient) => fromHash160(this.networkSlug, script.scriptType, script.payload))
+    const ret = this.chronikWSEndpoint.subs.scripts.map((script: WsSubScriptClient) => fromHash160(this.networkSlug, script.scriptType as AddressType, script.payload))
     return [...new Set(ret)]
   }
 
@@ -611,7 +633,7 @@ export class ChronikBlockchainClient {
   }
 }
 
-export function fromHash160 (networkSlug: string, type: string, hash160: string): string {
+export function fromHash160 (networkSlug: string, type: AddressType, hash160: string): string {
   const buffer = Buffer.from(hash160, 'hex')
 
   // Because ecashaddrjs only accepts Uint8Array as input type, convert
@@ -621,21 +643,17 @@ export function fromHash160 (networkSlug: string, type: string, hash160: string)
     hash160Uint8Array[i] = buffer[i]
   }
 
-  return encode(
+  return encodeCashAddress(
     networkSlug,
-    type.toUpperCase(),
+    type,
     hash160Uint8Array
   )
 }
 
-export function toHash160 (address: string): {type: ScriptType, hash160: string} {
+export function toHash160 (address: string): {type: AddressType, hash160: string} {
   try {
-    const { type, hash } = decode(address)
-    const legacyAdress = bs58.encode(hash)
-    const addrHash160 = Buffer.from(bs58.decode(legacyAdress)).toString(
-      'hex'
-    )
-    return { type: type.toLowerCase() as ScriptType, hash160: addrHash160 }
+    const { type, hash } = decodeCashAddress(address)
+    return { type, hash160: hash }
   } catch (err) {
     console.log('[CHRONIK]: Error converting address to hash160')
     throw err
@@ -651,14 +669,14 @@ export function outputScriptToAddress (networkSlug: string, outputScript: string
   let hash160
   switch (typeTestSlice) {
     case '76a9':
-      addressType = 'P2PKH'
+      addressType = 'p2pkh'
       hash160 = outputScript.substring(
         outputScript.indexOf('76a914') + '76a914'.length,
         outputScript.lastIndexOf('88ac')
       )
       break
     case 'a914':
-      addressType = 'P2SH'
+      addressType = 'p2sh'
       hash160 = outputScript.substring(
         outputScript.indexOf('a914') + 'a914'.length,
         outputScript.lastIndexOf('87')
@@ -670,14 +688,16 @@ export function outputScriptToAddress (networkSlug: string, outputScript: string
 
   if (hash160.length !== 40) return undefined
 
-  return fromHash160(networkSlug, addressType, hash160)
+  return fromHash160(networkSlug, addressType as AddressType, hash160)
 }
 
 class MultiBlockchainClient {
   private clients!: Record<MainNetworkSlugsType, ChronikBlockchainClient>
+  public initializing: boolean
 
   constructor () {
     console.log('Initializing MultiBlockchainClient...')
+    this.initializing = true
     void (async () => {
       if (this.isRunningApp()) {
         await syncPastDaysNewerPrices()
@@ -699,7 +719,21 @@ class MultiBlockchainClient {
         }
         await Promise.all(asyncOperations)
       }
+      this.initializing = false
     })()
+  }
+
+  public async waitForStart (): Promise<void> {
+    while (this.initializing) {
+      await new Promise(resolve => setTimeout(resolve, LATENCY_TEST_CHECK_DELAY))
+    }
+  }
+
+  public getUrls (): Record<MainNetworkSlugsType, string[]> {
+    return {
+      ecash: this.clients.ecash.getUrls(),
+      bitcoincash: this.clients.bitcoincash.getUrls()
+    }
   }
 
   private isRunningApp (): boolean {
@@ -721,11 +755,18 @@ class MultiBlockchainClient {
     if (this.isRunningApp()) {
       asyncOperations.push(
         (async () => {
+          await newClient.waitForLatencyTest()
           console.log(`[CHRONIK — ${networkSlug}] Subscribing addresses in database...`)
           await newClient.subscribeInitialAddresses()
           console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
           await newClient.syncMissedTransactions()
           console.log(`[CHRONIK — ${networkSlug}] Finished instantiating client.`)
+        })()
+      )
+    } else if (process.env.NODE_ENV === 'test') {
+      asyncOperations.push(
+        (async () => {
+          await newClient.waitForLatencyTest()
         })()
       )
     }
