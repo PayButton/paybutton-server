@@ -1,7 +1,6 @@
 import { setSession } from 'utils/setSession'
-import { parseCreateInvoicePOSTRequest } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import { createInvoice } from 'services/invoiceService'
+import { CreateInvoiceParams, createInvoice } from 'services/invoiceService'
 
 export default async (
   req: any,
@@ -11,11 +10,11 @@ export default async (
   const session = req.session
   if (req.method === 'POST') {
     try {
-      const parsedValues = parseCreateInvoicePOSTRequest({
+      const createInvoiceParams: CreateInvoiceParams = {
         ...req.body,
         userId: session.userId
-      })
-      const invoice = await createInvoice(parsedValues)
+      }
+      const invoice = await createInvoice(createInvoiceParams)
       res.status(200).json({
         invoice
       })

@@ -2,7 +2,7 @@ import prisma from 'prisma/clientInstance'
 import { Invoice } from '@prisma/client'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
-interface CreateInvoiceParams {
+export interface CreateInvoiceParams {
   userId: string
   transactionId: string
   invoiceNumber: string
@@ -23,8 +23,6 @@ interface UpdateInvoiceParams {
 }
 
 export async function createInvoice (params: CreateInvoiceParams): Promise<Invoice> {
-  // const invoiceNumber = await getNewInvoiceNumber(params.userId);
-  console.log('params', params)
   return await prisma.invoice.create({
     data: {
       ...params

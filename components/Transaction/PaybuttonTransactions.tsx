@@ -10,7 +10,7 @@ import TableContainerGetter from '../TableContainer/TableContainerGetter'
 import { compareNumericString } from 'utils/index'
 import moment from 'moment-timezone'
 import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL } from 'constants/index'
-import InvoiceModal from './InvoiceModal'
+import InvoiceModal, { InvoiceData } from './InvoiceModal'
 import style from './transaction.module.css'
 
 interface IProps {
@@ -39,16 +39,6 @@ function fetchTransactionsByPaybuttonId (paybuttonId: string): Function {
   }
 }
 
-interface InvoiceData {
-  invoiceNumber: string
-  amount: number
-  recipientName: string
-  recipientAddress: string
-  description: string
-  customerName: string
-  customerAddress: string
-}
-
 const fetchNextInvoiceNumberByUserId = async (): Promise<string> => {
   const response = await fetch('/api/invoices/invoiceNumber/', {
     headers: {
@@ -62,16 +52,16 @@ const fetchNextInvoiceNumberByUserId = async (): Promise<string> => {
 export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = moment.tz.guess() }: IProps): JSX.Element => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null)
-  const [invoiceDataTransaction, setInvoiceDataTransaction] = useState(null)
+  const [invoiceDataTransaction, setInvoiceDataTransaction] = useState<TransactionWithAddressAndPricesAndInvoices | null >(null)
   const [localRefreshCount, setLocalRefreshCount] = useState(tableRefreshCount)
 
   const [invoiceMode, setInvoiceMode] = useState<'create' | 'edit' | 'view'>('create')
 
-  const onCreateInvoice = async (transaction: any): Promise<void> => {
+  const onCreateInvoice = async (transaction: TransactionWithAddressAndPricesAndInvoices): Promise<void> => {
     const nextInvoiceNumber = await fetchNextInvoiceNumberByUserId()
     const invoiceData = {
       invoiceNumber: nextInvoiceNumber ?? '',
-      amount: transaction.amount,
+      amount: Number(transaction.amount),
       recipientName: '',
       recipientAddress: transaction.address.address,
       description: '',
@@ -84,14 +74,14 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
     setIsModalOpen(true)
   }
 
-  const onEditInvoice = (transaction: any): void => {
-    setInvoiceData(transaction.invoices[0])
+  const onEditInvoice = (invoiceData: InvoiceData): void => {
+    setInvoiceData(invoiceData)
     setInvoiceMode('edit')
     setIsModalOpen(true)
   }
 
-  const onSeeInvoice = (transaction: any): void => {
-    setInvoiceData(transaction.invoices[0])
+  const onSeeInvoice = (invoiceData: InvoiceData): void => {
+    setInvoiceData(invoiceData)
     setInvoiceMode('view')
     setIsModalOpen(true)
   }
@@ -163,6 +153,18 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
         }
       },
       {
+        Header: () => (<div style={{ marginRight: '1px' }}>Address</div>),
+        accessor: 'address.address',
+        shrinkable: true,
+        Cell: (cellProps) => {
+          return (
+            <div>
+              {cellProps.cell.value}
+            </div>
+          )
+        }
+      },
+      {
         Header: () => (<div style={{ textAlign: 'center' }}>Actions</div>),
         id: 'actions',
         Cell: (cellProps) => {
@@ -190,14 +192,14 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
                 : (
                 <>
                   <button
-                    onClick={() => onEditInvoice(cellProps.row.original)}
+                    onClick={() => onEditInvoice(cellProps.row.original.invoices[0])}
                     title="Edit Invoice"
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
                   >
                     <Pencil size={18} />
                   </button>
                   <button
-                    onClick={() => onSeeInvoice(cellProps.row.original)}
+                    onClick={() => onSeeInvoice(cellProps.row.original.invoices[0])}
                     title="See Invoice"
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
                   >
@@ -205,18 +207,6 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
                   </button>
                 </>
                   )}
-            </div>
-          )
-        }
-      },
-      {
-        Header: () => (<div style={{ marginRight: '1px' }}>Address</div>),
-        accessor: 'address.address',
-        shrinkable: true,
-        Cell: (cellProps) => {
-          return (
-            <div>
-              {cellProps.cell.value}
             </div>
           )
         }

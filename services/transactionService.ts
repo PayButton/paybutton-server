@@ -114,10 +114,14 @@ const includePaybuttonsAndPrices = {
   },
   ...includePrices
 }
-const includePaybuttonsAndPricesAndInvoices = {
+export const includePaybuttonsAndPricesAndInvoices = {
   ...includePaybuttonsAndPrices,
   invoices: true
 }
+const transactionWithAddressAndPricesAndInvoices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
+  { include: includePaybuttonsAndPricesAndInvoices }
+)
+export type TransactionWithAddressAndPricesAndInvoices = Prisma.TransactionGetPayload<typeof transactionWithAddressAndPricesAndInvoices>
 
 const transactionsWithPaybuttonsAndPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
   {

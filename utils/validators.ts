@@ -551,7 +551,7 @@ export const parseUpdateUserTimezonePUTRequest = function (params: UpdateUserTim
   return { timezone: params.timezone }
 }
 
-export interface CreateinvoicePOSTParameters {
+export interface CreateInvoicePOSTParameters {
   transactionId: string
   amount: number
   description: string
@@ -559,13 +559,4 @@ export interface CreateinvoicePOSTParameters {
   recipientAddress: string
   customerName: string
   customerAddress: string
-}
-
-export const parseCreateInvoicePOSTRequest = function (params: CreateinvoicePOSTParameters): CreateinvoicePOSTParameters {
-  let description = params.description
-  if (description === undefined) description = ''
-  return {
-    ...params,
-    description
-  }
 }
