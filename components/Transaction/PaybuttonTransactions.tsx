@@ -5,13 +5,17 @@ import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import CheckIcon from 'assets/check-icon.png'
 import XIcon from 'assets/x-icon.png'
-import { Plus, Pencil, FileText } from 'lucide-react'
+import Plus from 'assets/plus.png'
+import Pencil from 'assets/pencil.png'
+import FileText from 'assets/file-text.png'
+
 import TableContainerGetter from '../TableContainer/TableContainerGetter'
 import { compareNumericString } from 'utils/index'
 import moment from 'moment-timezone'
 import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL } from 'constants/index'
 import InvoiceModal, { InvoiceData } from './InvoiceModal'
 import style from './transaction.module.css'
+import { TransactionWithAddressAndPricesAndInvoices } from 'services/transactionService'
 
 interface IProps {
   addressSyncing: {
@@ -184,27 +188,35 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
                     className={style.create_invoice}
                     style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                   >
-                    <Plus size={18} />
+
+                    <Image src={Plus} alt='create invoice' width={14} height={14} />
                   </button>
                   <div className={style.tooltiptext}>New button</div>
                 </div>
                   )
                 : (
                 <>
-                  <button
-                    onClick={() => onEditInvoice(cellProps.row.original.invoices[0])}
-                    title="Edit Invoice"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
-                  >
-                    <Pencil size={18} />
-                  </button>
-                  <button
-                    onClick={() => onSeeInvoice(cellProps.row.original.invoices[0])}
-                    title="See Invoice"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
-                  >
-                    <FileText size={18} />
-                  </button>
+                  <div className={style.edit_invoice_ctn}>
+                    <button
+                      onClick={() => onEditInvoice(cellProps.row.original.invoices[0])}
+                      title="Edit Invoice"
+                      className={style.edit_invoice}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
+                    >
+                      <Image src={Pencil} alt='edit invoice' width={16} height={16} />
+                    </button>
+                  </div>
+                  <div className={style.see_invoice_ctn}>
+                    <button
+                      onClick={() => onSeeInvoice(cellProps.row.original.invoices[0])}
+                      title="See Invoice"
+                      className={style.see_invoice}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
+                    >
+                      <Image src={FileText} alt='see invoice' width={16} height={16} />
+
+                    </button>
+                  </div>
                 </>
                   )}
             </div>

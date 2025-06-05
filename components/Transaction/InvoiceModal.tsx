@@ -5,6 +5,7 @@ import { CreateInvoicePOSTParameters } from 'utils/validators'
 import axios from 'axios'
 
 export interface InvoiceData {
+  id?: string
   invoiceNumber: string
   amount: number
   recipientName: string
@@ -74,6 +75,14 @@ export default function InvoiceModal ({
   async function handleSubmit (e: React.FormEvent): Promise<void> {
     e.preventDefault()
 
+    if (mode === 'edit') {
+      await updateInvoice()
+    } else {
+      await createInvoice()
+    }
+    onClose()
+  }
+  async function createInvoice (): Promise<void> {
     const payload: CreateInvoicePOSTParameters = {
       ...formData,
       transactionId: transaction?.id
@@ -81,12 +90,24 @@ export default function InvoiceModal ({
 
     try {
       await axios.post('/api/invoices', payload)
-      onClose()
     } catch (err: any) {
       console.error('Invoice submission error:', err)
     }
   }
 
+  async function updateInvoice (): Promise<void> {
+    const payload: CreateInvoicePOSTParameters = {
+      ...formData,
+      transactionId: transaction?.id
+    }
+
+    try {
+      await axios.put(`/api/invoices/?invoiceId=${invoiceData?.id ?? ''}`, payload)
+      onClose()
+    } catch (err: any) {
+      console.error('Invoice update error:', err)
+    }
+  }
   const isReadOnly = mode === 'view'
 
   return (
@@ -107,7 +128,6 @@ export default function InvoiceModal ({
                   name="invoiceNumber"
                   value={formData.invoiceNumber}
                   onChange={handleChange}
-                  disabled={isReadOnly}
                   autoFocus
                 />
               </div>
@@ -131,7 +151,6 @@ export default function InvoiceModal ({
               name="recipientName"
               value={formData.recipientName}
               onChange={handleChange}
-              disabled={isReadOnly}
             />
 
             <label htmlFor="recipientAddress">Recipient Address</label>
@@ -141,7 +160,7 @@ export default function InvoiceModal ({
               name="recipientAddress"
               value={formData.recipientAddress}
               onChange={handleChange}
-              disabled={isReadOnly}
+              disabled={true}
             />
 
             <label htmlFor="description">Description</label>
@@ -150,7 +169,6 @@ export default function InvoiceModal ({
               name="description"
               value={formData.description}
               onChange={handleChange}
-              disabled={isReadOnly}
             ></textarea>
 
             <label htmlFor="customerName">Customer Name</label>
