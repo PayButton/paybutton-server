@@ -44,3 +44,18 @@ body[data-theme='dark'] .changepw_ctn input {
   }
 }
 
+.pro_ctn {
+  width: 100%;
+  background-color: #fff;
+  max-width: 700px;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+body[data-theme="dark"] .pro_ctn {
+  background-color: var(--secondary-bg-color);
+}
+
+body[data-theme="dark"] .pro_ctn input {
+  border-color: var(--gray)
+}

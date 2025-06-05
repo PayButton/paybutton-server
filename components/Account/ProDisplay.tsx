@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import ProPurchase from './ProPurchase'
+import style from './account.module.css'
 
 const ProConfig = (): JSX.Element => {
   const [text, setText] = useState('')
@@ -11,8 +12,10 @@ const ProConfig = (): JSX.Element => {
       if (res.status === 200) {
         const remainingMs: number | null = await res.json()
         if (remainingMs === null) {
+          setIsPro(false)
           setText('You are not PRO.')
         } else if (remainingMs <= 0) {
+          setIsPro(false)
           setText('Your PRO has expired.')
         } else {
           const futureDate = new Date(Date.now() + remainingMs)
@@ -25,10 +28,13 @@ const ProConfig = (): JSX.Element => {
     })()
   }, [])
 
-  return <div className="WIP">
-    <span>{text}</span>
-    {isPro === false && <ProPurchase/>}
+  return <>
+    <h3>PayButton Pro</h3>
+    <div className={style.pro_ctn}>
+      <span>{text}</span>
+      {isPro === false && <ProPurchase/>}
     </div>
+  </>
 }
 
 export default ProConfig

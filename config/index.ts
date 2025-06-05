@@ -23,6 +23,7 @@ interface Config {
   smtpPort: number
   proEnabled: boolean
   proMonthsCost: Record<string, number>
+  proPayoutAddress: string
 }
 
 const readConfig = (): Config => {

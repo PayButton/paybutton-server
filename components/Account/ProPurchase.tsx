@@ -1,8 +1,8 @@
-// import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 const ProPurchase = (): JSX.Element => {
   return <div className="WIP">
-    <span>WIP PURCHASE</span>
+    <Link href='/pro'>Buy Pro</Link>
     </div>
 }
 
