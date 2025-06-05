@@ -14,7 +14,7 @@ export interface CreateInvoiceParams {
   customerAddress: string
 }
 
-interface UpdateInvoiceParams {
+export interface UpdateInvoiceParams {
   description: string
   recipientName: string
   recipientAddress: string
@@ -30,7 +30,7 @@ export async function createInvoice (params: CreateInvoiceParams): Promise<Invoi
   })
 }
 
-export async function getInvoices (userId: string): Promise<Invoice[]> {
+export async function getUserInvoices (userId: string): Promise<Invoice[]> {
   return await prisma.invoice.findMany({
     where: {
       userId

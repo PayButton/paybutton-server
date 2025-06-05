@@ -342,3 +342,30 @@ body[data-theme='dark'] .form_ctn select:not([multiple]) {
   padding: 10px;
   border-bottom: 1px solid var(--primary-text-color);
 }
+
+body[data-theme='dark'] .create_invoice img {
+  filter: invert(1);
+}
+
+body[data-theme='dark'] .edit_invoice img {
+  filter: invert(1);
+}
+
+body[data-theme='dark'] .see_invoice img {
+  filter: invert(1);
+}
+
+.create_invoice_ctn:hover .create_invoice {
+  filter: invert(60%) sepia(14%) saturate(5479%) hue-rotate(195deg)
+    brightness(100%) contrast(102%);
+}
+
+.edit_invoice_ctn:hover .edit_invoice{
+  filter: invert(60%) sepia(14%) saturate(5479%) hue-rotate(195deg)
+    brightness(100%) contrast(102%);
+}
+
+.see_invoice_ctn:hover .see_invoice {
+  filter: invert(60%) sepia(14%) saturate(5479%) hue-rotate(195deg)
+    brightness(100%) contrast(102%);
+}
