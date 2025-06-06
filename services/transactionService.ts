@@ -704,10 +704,7 @@ export async function getPaymentsByUserIdOrderedByButtonName (
     })
     if (tx.amount > 0) {
       payments.push({
-        amount: {
-          amount: tx.amount,
-          networkId: tx.networkId
-        },
+        amount: tx.amount,
         timestamp: tx.timestamp,
         values: {
           values: ret,

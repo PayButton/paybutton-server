@@ -147,7 +147,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         accessor: 'amount',
         sortType: compareNumericString,
         Cell: (cellProps) => {
-          const { networkId, amount } = cellProps.cell.row.original.amount
+          const { networkId, amount } = cellProps.cell.row.original
           const networkTicker = NETWORK_TICKERS_FROM_ID[networkId]
           const formattedAmount = Number(amount).toLocaleString(undefined, {
             minimumFractionDigits: DECIMALS[networkTicker],
