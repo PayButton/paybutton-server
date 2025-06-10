@@ -69,14 +69,14 @@ export const getButtonPaymentData = (n: number, periodString: string, paymentLis
           },
           total: {
             payments: 1,
-            revenue: p.values.values
+            revenue: p.values
           }
         }
         buttonPaymentData[b.id] = newEntry
         return
       }
       prevObj.total.payments += 1
-      prevObj.total.revenue = sumQuoteValues(prevObj.total.revenue, p.values.values)
+      prevObj.total.revenue = sumQuoteValues(prevObj.total.revenue, p.values)
       prevObj.displayData.isXec = prevObj.displayData.isXec === true || (p.networkId === XEC_NETWORK_ID)
       prevObj.displayData.isBch = prevObj.displayData.isBch === true || (p.networkId === BCH_NETWORK_ID)
       const lastPayment = prevObj.displayData.lastPayment as number
@@ -100,8 +100,8 @@ export const sumPaymentsValue = function (paymentList: Payment[]): QuoteValues {
   }
 
   for (const p of paymentList) {
-    ret.usd = ret.usd.plus(p.values.values.usd)
-    ret.cad = ret.cad.plus(p.values.values.cad)
+    ret.usd = ret.usd.plus(p.values.usd)
+    ret.cad = ret.cad.plus(p.values.cad)
   }
   return ret
 }
@@ -161,11 +161,11 @@ const generateDashboardDataFromStream = async function (
           if (paybuttonIds !== undefined && paybuttonIds.length > 0) {
             const paymentButtonIds = payment.buttonDisplayDataList.map(b => b.id)
             if (paymentButtonIds.some(item => paybuttonIds.includes(item))) {
-              revenueAccumulators[period][index] = sumQuoteValues(revenueAccumulators[period][index], payment.values.values)
+              revenueAccumulators[period][index] = sumQuoteValues(revenueAccumulators[period][index], payment.values)
               paymentCounters[period][index] += 1
             }
           } else {
-            revenueAccumulators[period][index] = sumQuoteValues(revenueAccumulators[period][index], payment.values.values)
+            revenueAccumulators[period][index] = sumQuoteValues(revenueAccumulators[period][index], payment.values)
             paymentCounters[period][index] += 1
           }
         }
@@ -315,13 +315,13 @@ function processButtonData (
             lastPayment: payment.timestamp
           },
           total: {
-            revenue: payment.values.values,
+            revenue: payment.values,
             payments: 1
           }
         }
       } else {
         const buttonData = buttonDataAccumulators[period][button.id]
-        buttonData.total.revenue = sumQuoteValues(buttonData.total.revenue, payment.values.values)
+        buttonData.total.revenue = sumQuoteValues(buttonData.total.revenue, payment.values)
         buttonData.total.payments += 1
         buttonData.displayData.lastPayment = Math.max(
           buttonData.displayData.lastPayment ?? 0,

@@ -706,10 +706,7 @@ export async function getPaymentsByUserIdOrderedByButtonName (
       payments.push({
         amount: tx.amount,
         timestamp: tx.timestamp,
-        values: {
-          values: ret,
-          amount: tx.amount
-        },
+        values: ret,
         networkId: tx.networkId,
         hash: tx.hash,
         buttonDisplayDataList

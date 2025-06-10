@@ -163,7 +163,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         sortType: compareNumericString,
         disableSortBy: true,
         Cell: (cellProps) => {
-          return <div style={{ textAlign: 'right', fontWeight: '600' }}> ${formatQuoteValue(cellProps.cell.value.values, user.userProfile.preferredCurrencyId)}</div>
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}> ${formatQuoteValue(cellProps.cell.value, user.userProfile.preferredCurrencyId)}</div>
         }
       },
       {
