@@ -94,13 +94,8 @@ export async function getNewInvoiceNumber (userId: string): Promise<string | und
   })
   const invoicesWithOurPattern = userInvoices.filter(invoice => defaultPattern.test(invoice.invoiceNumber))
 
-  if (invoicesWithOurPattern === null) {
-    const invoicesCount = await prisma.invoice.count({
-      where: {
-        userId
-      }
-    })
-    if (invoicesCount > 0) {
+  if (invoicesWithOurPattern === null || invoicesWithOurPattern.length < userInvoices.length) {
+    if (userInvoices.length > 0) {
       return
     }
   }
