@@ -1,8 +1,7 @@
-import { BlockInfo_InNode, ChronikClientNode, ScriptType_InNode, ScriptUtxo_InNode, Tx_InNode, WsConfig_InNode, WsEndpoint_InNode, WsMsgClient, WsSubScriptClient } from 'chronik-client-cashtokens'
-import { encode, decode } from 'ecashaddrjs'
-import bs58 from 'bs58'
-import { AddressWithTransaction, BlockchainInfo, BlockInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn } from 'types/chronikTypes'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY } from 'constants/index'
+import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client-cashtokens'
+import { encodeCashAddress, decodeCashAddress } from 'ecashaddrjs'
+import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, FETCH_DELAY, FETCH_N, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY } from 'constants/index'
 import { productionAddresses } from 'prisma/seeds/addresses'
 import {
   TransactionWithAddressAndPrices,
@@ -28,6 +27,7 @@ import { executeAddressTriggers } from './triggerService'
 import { appendTxsToFile } from 'prisma/seeds/transactions'
 import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
 import { syncPastDaysNewerPrices } from './priceService'
+import { AddressType } from 'ecashaddrjs/dist/types'
 
 const decoder = new TextDecoder()
 
@@ -107,38 +107,60 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
 }
 
 export class ChronikBlockchainClient {
-  chronik: ChronikClientNode
-  networkId: number
-  networkSlug: string
-  chronikWSEndpoint: WsEndpoint_InNode
-  confirmedTxsHashesFromLastBlock: string[]
-  wsEndpoint: Socket
-  CHRONIK_MSG_PREFIX: string
-  lastProcessedMessages: ProcessedMessages
-  initializing: boolean
-  mempoolTxsBeingProcessed: number
+  chronik!: ChronikClient
+  networkId!: number
+  networkSlug!: string
+  chronikWSEndpoint!: WsEndpoint
+  confirmedTxsHashesFromLastBlock!: string[]
+  wsEndpoint!: Socket
+  CHRONIK_MSG_PREFIX!: string
+  lastProcessedMessages!: ProcessedMessages
+  initializing!: boolean
+  mempoolTxsBeingProcessed!: number
+
+  private latencyTestFinished: boolean
 
   constructor (networkSlug: string) {
-    if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
-      throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
-    }
-
-    this.initializing = true
-    this.mempoolTxsBeingProcessed = 0
-    this.networkSlug = networkSlug
-    this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
-    this.chronik = new ChronikClientNode([config.networkBlockchainURLs[networkSlug]])
-    this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
-    this.confirmedTxsHashesFromLastBlock = []
-    void this.chronikWSEndpoint.waitForOpen()
-    this.chronikWSEndpoint.subscribeToBlocks()
-    this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
-    this.CHRONIK_MSG_PREFIX = `[CHRONIK — ${networkSlug}]`
-    this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
-      query: {
-        key: process.env.WS_AUTH_KEY
+    this.latencyTestFinished = false
+    void (async () => {
+      if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
+        throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
       }
-    })
+
+      this.initializing = true
+      this.mempoolTxsBeingProcessed = 0
+      this.networkSlug = networkSlug
+      this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
+      this.chronik = await ChronikClient.useStrategy(
+        ConnectionStrategy.ClosestFirst,
+        config.networkBlockchainURLs[networkSlug]
+      )
+      this.latencyTestFinished = true
+      this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
+      this.confirmedTxsHashesFromLastBlock = []
+      void this.chronikWSEndpoint.waitForOpen()
+      this.chronikWSEndpoint.subscribeToBlocks()
+      this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
+      this.CHRONIK_MSG_PREFIX = `[CHRONIK — ${networkSlug}]`
+      this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
+        query: {
+          key: process.env.WS_AUTH_KEY
+        }
+      })
+    })()
+  }
+
+  public async waitForLatencyTest (): Promise<void> {
+    while (true) {
+      if (this.latencyTestFinished) {
+        return
+      }
+      await new Promise(resolve => setTimeout(resolve, LATENCY_TEST_CHECK_DELAY))
+    }
+  }
+
+  public getUrls (): string[] {
+    return this.chronik.proxyInterface().getEndpointArray().map(e => e.url)
   }
 
   public setInitialized (): void {
@@ -164,7 +186,7 @@ export class ChronikBlockchainClient {
   }
 
   public getSubscribedAddresses (): string[] {
-    const ret = this.chronikWSEndpoint.subs.scripts.map((script: WsSubScriptClient) => fromHash160(this.networkSlug, script.scriptType, script.payload))
+    const ret = this.chronikWSEndpoint.subs.scripts.map((script: WsSubScriptClient) => fromHash160(this.networkSlug, script.scriptType as AddressType, script.payload))
     return [...new Set(ret)]
   }
 
@@ -197,14 +219,14 @@ export class ChronikBlockchainClient {
     return { height: blockchainInfo.tipHeight, hash: blockchainInfo.tipHash }
   }
 
-  async getBlockInfo (networkSlug: string, height: number): Promise<BlockInfo> {
+  async getBlockInfo (networkSlug: string, height: number): Promise<SimpleBlockInfo> {
     this.validateNetwork(networkSlug)
-    const blockInfo: BlockInfo_InNode = (await this.chronik.block(height)).blockInfo
+    const blockInfo: BlockInfo = (await this.chronik.block(height)).blockInfo
     return { hash: blockInfo.hash, height: blockInfo.height, timestamp: blockInfo.timestamp }
   }
 
   private txThesholdFilter (address: Address) {
-    return (t: Tx_InNode, _index: number, _array: Tx_InNode[]): boolean => {
+    return (t: Tx, _index: number, _array: Tx[]): boolean => {
       return (
         t.block === undefined ||
         (t.block?.timestamp >= XEC_TIMESTAMP_THRESHOLD && address.networkId === XEC_NETWORK_ID) ||
@@ -213,16 +235,16 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private async getTransactionAmountAndData (transaction: Tx_InNode, addressString: string): Promise<{amount: Prisma.Decimal, opReturn: string}> {
-    let totalOutput = 0
-    let totalInput = 0
+  private async getTransactionAmountAndData (transaction: Tx, addressString: string): Promise<{amount: Prisma.Decimal, opReturn: string}> {
+    let totalOutput = 0n
+    let totalInput = 0n
     const addressFormat = xecaddr.detectAddressFormat(addressString)
     const script = toHash160(addressString).hash160
     let opReturn = ''
 
     for (const output of transaction.outputs) {
       if (output.outputScript.includes(script)) {
-        totalOutput += output.value
+        totalOutput += output.sats
       }
       if (opReturn === '') {
         const nullScriptData = getNullDataScriptData(output.outputScript)
@@ -235,17 +257,17 @@ export class ChronikBlockchainClient {
     }
     for (const input of transaction.inputs) {
       if (input?.outputScript?.includes(script) === true) {
-        totalInput += input.value
+        totalInput += input.sats
       }
     }
-    const satoshis = new Prisma.Decimal(totalOutput).minus(totalInput)
+    const satoshis = totalOutput - totalInput
     return {
       amount: await satoshisToUnit(satoshis, addressFormat),
       opReturn
     }
   }
 
-  private async getTransactionFromChronikTransaction (transaction: Tx_InNode, address: Address): Promise<Prisma.TransactionUncheckedCreateInput> {
+  private async getTransactionFromChronikTransaction (transaction: Tx, address: Address): Promise<Prisma.TransactionUncheckedCreateInput> {
     const { amount, opReturn } = await this.getTransactionAmountAndData(transaction, address.address)
     return {
       hash: transaction.txid,
@@ -257,7 +279,7 @@ export class ChronikBlockchainClient {
     }
   }
 
-  public async getPaginatedTxs (addressString: string, page: number, pageSize: number): Promise<Tx_InNode[]> {
+  public async getPaginatedTxs (addressString: string, page: number, pageSize: number): Promise<Tx[]> {
     const { type, hash160 } = toHash160(addressString)
     return (await this.chronik.script(type, hash160).history(page, pageSize)).txs
   }
@@ -314,15 +336,15 @@ export class ChronikBlockchainClient {
     await updateLastSynced(addressString)
   }
 
-  private async getUtxos (address: string): Promise<ScriptUtxo_InNode[]> {
+  private async getUtxos (address: string): Promise<ScriptUtxo[]> {
     const { type, hash160 } = toHash160(address)
     const scriptsUtxos = await this.chronik.script(type, hash160).utxos()
     return scriptsUtxos.utxos
   }
 
-  public async getBalance (address: string): Promise<number> {
+  public async getBalance (address: string): Promise<bigint> {
     const utxos = await this.getUtxos(address)
-    return utxos.reduce((acc, utxo) => acc + utxo.value, 0)
+    return utxos.reduce((acc, utxo) => acc + utxo.sats, 0n)
   }
 
   async getTransactionDetails (hash: string): Promise<TransactionDetails> {
@@ -341,20 +363,20 @@ export class ChronikBlockchainClient {
     }
     for (const input of tx.inputs) {
       details.inputs.push({
-        value: new Prisma.Decimal(input.value),
+        value: input.sats,
         address: outputScriptToAddress(this.networkSlug, input.outputScript)
       })
     }
     for (const output of tx.outputs) {
       details.outputs.push({
-        value: new Prisma.Decimal(output.value),
+        value: output.sats,
         address: outputScriptToAddress(this.networkSlug, output.outputScript)
       })
     }
     return details
   }
 
-  private getWsConfig (): WsConfig_InNode {
+  private getWsConfig (): WsConfig {
     return {
       onMessage: (msg: WsMsgClient) => { void this.processWsMessage(msg) },
       onError: (e: ws.ErrorEvent) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik webSocket error, type: ${e.type} | message: ${e.message} | error: ${e.error as string}`) },
@@ -365,19 +387,19 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private getSortedInputAddresses (transaction: Tx_InNode): string[] {
-    const addressValueMap = new Map<string, number>()
+  private getSortedInputAddresses (transaction: Tx): string[] {
+    const addressSatsMap = new Map<string, bigint>()
 
     transaction.inputs.forEach((inp) => {
       const address = outputScriptToAddress(this.networkSlug, inp.outputScript)
       if (address !== undefined && address !== '') {
-        const currentValue = addressValueMap.get(address) ?? 0
-        addressValueMap.set(address, currentValue + inp.value)
+        const currentValue = addressSatsMap.get(address) ?? 0n
+        addressSatsMap.set(address, currentValue + inp.sats)
       }
     })
 
-    const sortedInputAddresses = Array.from(addressValueMap.entries())
-      .sort(([, valueA], [, valueB]) => valueB - valueA)
+    const sortedInputAddresses = Array.from(addressSatsMap.entries())
+      .sort(([, valueA], [, valueB]) => Number(valueB - valueA))
       .map(([address]) => address)
 
     return sortedInputAddresses
@@ -458,7 +480,7 @@ export class ChronikBlockchainClient {
     let page = 0
     const pageSize = 200
     let blockPageTxs = (await this.chronik.blockTxs(blockHash, page, pageSize)).txs
-    let blockTxsToSync: Tx_InNode[] = []
+    let blockTxsToSync: Tx[] = []
     while (blockPageTxs.length > 0 && blockTxsToSync.length !== this.confirmedTxsHashesFromLastBlock.length) {
       const thisBlockTxsToSync = blockPageTxs.filter(tx => this.confirmedTxsHashesFromLastBlock.includes(tx.txid))
       blockTxsToSync = [...blockTxsToSync, ...thisBlockTxsToSync]
@@ -481,13 +503,13 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private getRelatedAddressesForTransaction (transaction: Tx_InNode): string[] {
+  private getRelatedAddressesForTransaction (transaction: Tx): string[] {
     const inputAddresses = transaction.inputs.map(inp => outputScriptToAddress(this.networkSlug, inp.outputScript))
     const outputAddresses = transaction.outputs.map(out => outputScriptToAddress(this.networkSlug, out.outputScript))
     return [...inputAddresses, ...outputAddresses].filter(a => a !== undefined)
   }
 
-  private async getAddressesForTransaction (transaction: Tx_InNode): Promise<AddressWithTransaction[]> {
+  private async getAddressesForTransaction (transaction: Tx): Promise<AddressWithTransaction[]> {
     const relatedAddresses = this.getRelatedAddressesForTransaction(transaction)
     const addressesFromStringArray = await fetchAddressesArray(relatedAddresses)
     const addressesWithTransactions: AddressWithTransaction[] = await Promise.all(addressesFromStringArray.map(
@@ -611,7 +633,7 @@ export class ChronikBlockchainClient {
   }
 }
 
-export function fromHash160 (networkSlug: string, type: string, hash160: string): string {
+export function fromHash160 (networkSlug: string, type: AddressType, hash160: string): string {
   const buffer = Buffer.from(hash160, 'hex')
 
   // Because ecashaddrjs only accepts Uint8Array as input type, convert
@@ -621,21 +643,17 @@ export function fromHash160 (networkSlug: string, type: string, hash160: string)
     hash160Uint8Array[i] = buffer[i]
   }
 
-  return encode(
+  return encodeCashAddress(
     networkSlug,
-    type.toUpperCase(),
+    type,
     hash160Uint8Array
   )
 }
 
-export function toHash160 (address: string): {type: ScriptType_InNode, hash160: string} {
+export function toHash160 (address: string): {type: AddressType, hash160: string} {
   try {
-    const { type, hash } = decode(address)
-    const legacyAdress = bs58.encode(hash)
-    const addrHash160 = Buffer.from(bs58.decode(legacyAdress)).toString(
-      'hex'
-    )
-    return { type: type.toLowerCase() as ScriptType_InNode, hash160: addrHash160 }
+    const { type, hash } = decodeCashAddress(address)
+    return { type, hash160: hash }
   } catch (err) {
     console.log('[CHRONIK]: Error converting address to hash160')
     throw err
@@ -651,14 +669,14 @@ export function outputScriptToAddress (networkSlug: string, outputScript: string
   let hash160
   switch (typeTestSlice) {
     case '76a9':
-      addressType = 'P2PKH'
+      addressType = 'p2pkh'
       hash160 = outputScript.substring(
         outputScript.indexOf('76a914') + '76a914'.length,
         outputScript.lastIndexOf('88ac')
       )
       break
     case 'a914':
-      addressType = 'P2SH'
+      addressType = 'p2sh'
       hash160 = outputScript.substring(
         outputScript.indexOf('a914') + 'a914'.length,
         outputScript.lastIndexOf('87')
@@ -670,14 +688,16 @@ export function outputScriptToAddress (networkSlug: string, outputScript: string
 
   if (hash160.length !== 40) return undefined
 
-  return fromHash160(networkSlug, addressType, hash160)
+  return fromHash160(networkSlug, addressType as AddressType, hash160)
 }
 
 class MultiBlockchainClient {
   private clients!: Record<MainNetworkSlugsType, ChronikBlockchainClient>
+  public initializing: boolean
 
   constructor () {
     console.log('Initializing MultiBlockchainClient...')
+    this.initializing = true
     void (async () => {
       if (this.isRunningApp()) {
         await syncPastDaysNewerPrices()
@@ -699,7 +719,21 @@ class MultiBlockchainClient {
         }
         await Promise.all(asyncOperations)
       }
+      this.initializing = false
     })()
+  }
+
+  public async waitForStart (): Promise<void> {
+    while (this.initializing) {
+      await new Promise(resolve => setTimeout(resolve, LATENCY_TEST_CHECK_DELAY))
+    }
+  }
+
+  public getUrls (): Record<MainNetworkSlugsType, string[]> {
+    return {
+      ecash: this.clients.ecash.getUrls(),
+      bitcoincash: this.clients.bitcoincash.getUrls()
+    }
   }
 
   private isRunningApp (): boolean {
@@ -721,11 +755,18 @@ class MultiBlockchainClient {
     if (this.isRunningApp()) {
       asyncOperations.push(
         (async () => {
+          await newClient.waitForLatencyTest()
           console.log(`[CHRONIK — ${networkSlug}] Subscribing addresses in database...`)
           await newClient.subscribeInitialAddresses()
           console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
           await newClient.syncMissedTransactions()
           console.log(`[CHRONIK — ${networkSlug}] Finished instantiating client.`)
+        })()
+      )
+    } else if (process.env.NODE_ENV === 'test') {
+      asyncOperations.push(
+        (async () => {
+          await newClient.waitForLatencyTest()
         })()
       )
     }
@@ -781,7 +822,7 @@ class MultiBlockchainClient {
     return await this.clients[networkSlug as MainNetworkSlugsType].getLastBlockTimestamp()
   }
 
-  public async getBalance (address: string): Promise<number> {
+  public async getBalance (address: string): Promise<bigint> {
     const networkSlug = getAddressPrefix(address)
     return await this.clients[networkSlug as MainNetworkSlugsType].getBalance(address)
   }

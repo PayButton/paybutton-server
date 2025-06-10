@@ -30,6 +30,7 @@ import {
 
 import { RESPONSE_MESSAGES, NETWORK_SLUGS } from 'constants/index'
 import { Prisma, Transaction } from '@prisma/client'
+import { multiBlockchainClient } from 'services/chronikService'
 const setUpUsers = async (): Promise<void> => {
   await createUserProfile('test-u-id')
   await createUserProfile('test-u-id2')
@@ -46,10 +47,13 @@ jest.mock('../../utils/setSession', () => {
 })
 
 beforeAll(async () => {
-  await setUpUsers()
-  jest.spyOn(console, 'log').mockImplementation(() => {})
-  jest.spyOn(console, 'warn').mockImplementation(() => {})
-  jest.spyOn(console, 'error').mockImplementation(() => {})
+  return await (async () => {
+    await setUpUsers()
+    jest.spyOn(console, 'log').mockImplementation(() => {})
+    jest.spyOn(console, 'warn').mockImplementation(() => {})
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    await multiBlockchainClient.waitForStart()
+  })()
 })
 
 afterAll(async () => {
@@ -1369,7 +1373,8 @@ describe('GET /api/dashboard', () => {
         },
         payments: expect.any(Number),
         buttons: expect.any(Number)
-      }
+      },
+      filtered: expect.any(Boolean)
     }
     )
   })

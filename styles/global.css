@@ -470,3 +470,12 @@ body[data-theme='dark'] .button_outline:hover {
 .export_btn:hover {
   cursor: pointer;
 }
+
+.columns {
+  display: flex;
+}
+
+.paybutton-table-ctn.columns > div {
+  flex: 1;
+}
+
