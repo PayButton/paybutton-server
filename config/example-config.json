@@ -32,10 +32,10 @@
   "sideshiftAffiliateId": "JPk84U3xN",
   "proEnabled": true,
   "proMonthsCost": {
-      "1": "10",
-      "3": "20",
-      "6": "30",
-      "12": "50"
+      "1": 10,
+      "3": 20,
+      "6": 30,
+      "12": 50
   },
   "proPayoutAddress": "ecash:qrf4zh4vgrdal8d8gu905d90w5u2y60djcd2d5h6un"
 }
