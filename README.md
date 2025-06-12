@@ -95,6 +95,13 @@ default: "/api/auth"
 > Base API endpoint for authentication.
 
 
+#### websiteBasePath
+```
+type: string
+default: "/auth",
+```
+> Base API endpoint for authentication through SuperTokens.
+
 #### websiteDomain
 ```
 type: string
@@ -202,6 +209,34 @@ type: string
 default: N/A
 ```
 > Necessary only for paybutton client to interact with sideshift through the server.
+
+#### proEnabled
+```
+type: boolean
+default: true
+```
+> If the PayButton Pro features should be enabled.
+
+#### proMonthsCost
+```
+type: {
+[key: string]: number
+}
+default: {
+"1": 10,
+"3": 20,
+"6": 30,
+"12": 50
+}
+```
+> The pricing model for PayButton Pro subscription — [value] USD for [key] months.
+
+#### proPayoutAddress
+```
+type: string
+default: "ecash:qrf4zh4vgrdal8d8gu905d90w5u2y60djcd2d5h6un"
+```
+> The payout address for PayButton Pro subscriptions.
 
 ---
 
