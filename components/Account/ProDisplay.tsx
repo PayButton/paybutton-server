@@ -33,7 +33,6 @@ const ProConfig = (): JSX.Element => {
   return <>
     <h3>PayButton Pro</h3>
     <div className={style.pro_ctn}>
-      <div className={stylep.account_row}>
       <div className={stylep.label}>
         {text}
         <div
@@ -42,7 +41,6 @@ const ProConfig = (): JSX.Element => {
         >
           {infoModal ? 'Close' : 'What is this?'}
         </div>
-      </div>
       </div>
       {isPro === false && <ProPurchase/>}
       {infoModal && (

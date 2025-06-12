@@ -52,6 +52,8 @@ body[data-theme='dark'] .changepw_ctn input {
   border-radius: 10px;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
 }
 
 body[data-theme="dark"] .pro_ctn {
@@ -60,4 +62,15 @@ body[data-theme="dark"] .pro_ctn {
 
 body[data-theme="dark"] .pro_ctn input {
   border-color: var(--gray)
+}
+
+.upgrade_btn {
+  margin-top: 2rem;
+  width: 100%
+}
+.upgrade_btn a {
+  width: 100%
+}
+.upgrade_btn a button {
+  width: 100%
 }
