@@ -46,14 +46,11 @@ export interface ButtonDisplayData {
   lastPayment?: number
   providerUserId?: string
 }
-export interface AmountData {
-  values: QuoteValues
-  amount: Decimal
-}
 
 export interface Payment {
   timestamp: number
-  values: AmountData
+  values: QuoteValues
+  amount?: Decimal
   networkId: number
   hash: string
   buttonDisplayDataList: ButtonDisplayData[]

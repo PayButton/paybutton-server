@@ -11,7 +11,7 @@ import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import { formatQuoteValue, compareNumericString, removeUnserializableFields } from 'utils/index'
-import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL, NETWORK_TICKERS_FROM_ID } from 'constants/index'
+import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL, NETWORK_TICKERS_FROM_ID, DECIMALS } from 'constants/index'
 import moment from 'moment-timezone'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
@@ -144,10 +144,26 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       },
       {
         Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
-        accessor: 'values',
+        accessor: 'amount',
         sortType: compareNumericString,
         Cell: (cellProps) => {
-          return <div style={{ textAlign: 'right', fontWeight: '600' }}> {cellProps.cell.value.amount} (${formatQuoteValue(cellProps.cell.value.values, user.userProfile.preferredCurrencyId)})</div>
+          const { networkId, amount } = cellProps.cell.row.original
+          const networkTicker = NETWORK_TICKERS_FROM_ID[networkId]
+          const formattedAmount = Number(amount).toLocaleString(undefined, {
+            minimumFractionDigits: DECIMALS[networkTicker],
+            maximumFractionDigits: DECIMALS[networkTicker]
+          })
+
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}>{formattedAmount}</div>
+        }
+      },
+      {
+        Header: () => (<div style={{ textAlign: 'right' }}>Value</div>),
+        accessor: 'values',
+        sortType: compareNumericString,
+        disableSortBy: true,
+        Cell: (cellProps) => {
+          return <div style={{ textAlign: 'right', fontWeight: '600' }}> ${formatQuoteValue(cellProps.cell.value, user.userProfile.preferredCurrencyId)}</div>
         }
       },
       {
