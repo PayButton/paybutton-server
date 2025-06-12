@@ -50,6 +50,8 @@ body[data-theme='dark'] .changepw_ctn input {
   max-width: 700px;
   padding: 20px;
   border-radius: 10px;
+  display: flex;
+  flex-direction: column;
 }
 
 body[data-theme="dark"] .pro_ctn {

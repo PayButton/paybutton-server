@@ -31,7 +31,7 @@ const ProConfig = (): JSX.Element => {
   return <>
     <h3>PayButton Pro</h3>
     <div className={style.pro_ctn}>
-      <span>{text}</span>
+      <p>{text}</p>
       {isPro === false && <ProPurchase/>}
     </div>
   </>
