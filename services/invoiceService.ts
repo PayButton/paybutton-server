@@ -4,7 +4,7 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 
 export interface CreateInvoiceParams {
   userId: string
-  transactionId: string
+  transactionId?: string
   invoiceNumber: string
   amount: number
   description: string
