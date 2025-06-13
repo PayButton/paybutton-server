@@ -3,7 +3,7 @@ CREATE TABLE `Invoice` (
     `id` VARCHAR(191) NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
     `invoiceNumber` VARCHAR(191) NOT NULL,
-    `transactionId` VARCHAR(191) NOT NULL,
+    `transactionId` VARCHAR(191) NULL,
     `amount` DECIMAL(65, 30) NOT NULL,
     `description` VARCHAR(191) NOT NULL,
     `recipientName` VARCHAR(191) NOT NULL,

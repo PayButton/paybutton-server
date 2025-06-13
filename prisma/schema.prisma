@@ -249,8 +249,8 @@ model Invoice {
   id            String      @id @default(uuid())
   userId        String
   invoiceNumber String
-  transactionId String
-  transaction   Transaction @relation(fields: [transactionId], references: [id], onUpdate: Cascade, onDelete: Restrict)
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onUpdate: Cascade, onDelete: Restrict)
   userProfile   UserProfile @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Restrict)
 
   amount           Decimal
