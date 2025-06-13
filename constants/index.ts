@@ -101,7 +101,8 @@ export const RESPONSE_MESSAGES = {
   ORGANIZATION_NAME_NOT_PROVIDED_400: { statusCode: 400, message: "'organizationName' not provided." },
   INVITE_EXPIRED_400: { statusCode: 400, message: 'Invite expired.' },
   INVALID_EMAIL_400: { statusCode: 400, message: 'Invalid email.' },
-  USER_OUT_OF_EMAIL_CREDITS_400: { statusCode: 400, message: 'User out of email credits.' }
+  USER_OUT_OF_EMAIL_CREDITS_400: { statusCode: 400, message: 'User out of email credits.' },
+  NO_INVOICE_FOUND_404: { statusCode: 404, message: 'No invoice found.' }
 }
 
 export const SOCKET_MESSAGES = {

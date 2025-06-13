@@ -74,6 +74,8 @@ model Transaction {
   opReturn String                @db.LongText @default("")
   address   Address                @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   prices    PricesOnTransactions[]
+  invoices    Invoice[]
+
   createdAt DateTime                  @default(now())
   updatedAt DateTime                  @updatedAt
 
@@ -166,6 +168,7 @@ model UserProfile {
   lastSentVerificationEmailAt DateTime?
   wallets   WalletsOnUserProfile[]
   addresses AddressesOnUserProfiles[]
+  invoices Invoice[]
   preferredCurrencyId Int @default(1)
   preferredTimezone String    @db.VarChar(255)@default("")
 
@@ -240,4 +243,26 @@ model OrganizationInvite {
 
   organizationId String
   organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Invoice {
+  id            String      @id @default(uuid())
+  userId        String
+  invoiceNumber String
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onUpdate: Cascade, onDelete: Restrict)
+  userProfile   UserProfile @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Restrict)
+
+  amount           Decimal
+  description      String
+  recipientName    String
+  recipientAddress String
+  customerName     String
+  customerAddress  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([invoiceNumber, userId], map: "Invoice_invoiceNumber_userId_unique_constraint")
+  @@unique([transactionId, userId], map: "Invoice_transactionId_userId_unique_constraint")
 }
