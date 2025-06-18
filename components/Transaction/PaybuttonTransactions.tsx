@@ -58,7 +58,6 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null)
   const [invoiceDataTransaction, setInvoiceDataTransaction] = useState<TransactionWithAddressAndPricesAndInvoices | null >(null)
   const [localRefreshCount, setLocalRefreshCount] = useState(tableRefreshCount)
-
   const [invoiceMode, setInvoiceMode] = useState<'create' | 'edit' | 'view'>('create')
 
   const onCreateInvoice = async (transaction: TransactionWithAddressAndPricesAndInvoices): Promise<void> => {
@@ -79,6 +78,10 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
   }
 
   const onEditInvoice = (invoiceData: InvoiceData): void => {
+    delete invoiceData.transactionHash
+    delete invoiceData.transactionDate
+    delete invoiceData.transactionNetworkId
+
     setInvoiceData(invoiceData)
     setInvoiceMode('edit')
     setIsModalOpen(true)
@@ -172,8 +175,17 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
         Header: () => (<div style={{ textAlign: 'center' }}>Actions</div>),
         id: 'actions',
         Cell: (cellProps) => {
-          const invoices = cellProps.row.original.invoices
-          const hasInvoice = invoices?.length > 0
+          const transaction = cellProps.row.original
+          const hasInvoice = transaction.invoices?.length > 0
+          let invoice = {} as InvoiceData
+          if (hasInvoice) {
+            invoice = {
+              transactionHash: transaction.hash,
+              transactionDate: transaction.timestamp,
+              transactionNetworkId: transaction.address.networkId,
+              ...transaction.invoices[0]
+            }
+          }
 
           return (
             <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -182,7 +194,7 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
                 <div className={style.create_invoice_ctn}>
                   <button
                     onClick={() => {
-                      onCreateInvoice(cellProps.row.original).catch(console.error)
+                      onCreateInvoice(transaction).catch(console.error)
                     }}
                     title="Create Invoice"
                     className={style.create_invoice}
@@ -198,7 +210,7 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
                 <>
                   <div className={style.edit_invoice_ctn}>
                     <button
-                      onClick={() => onEditInvoice(cellProps.row.original.invoices[0])}
+                      onClick={() => onEditInvoice(invoice)}
                       title="Edit Invoice"
                       className={style.edit_invoice}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
@@ -208,7 +220,7 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
                   </div>
                   <div className={style.see_invoice_ctn}>
                     <button
-                      onClick={() => onSeeInvoice(cellProps.row.original.invoices[0])}
+                      onClick={() => onSeeInvoice(invoice)}
                       title="See Invoice"
                       className={style.see_invoice}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}

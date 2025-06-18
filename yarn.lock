@@ -5420,11 +5420,6 @@ lru-cache@^7.14.1:
   resolved "https://registry.npmjs.org/lru-cache/-/lru-cache-7.18.1.tgz"
   integrity sha512-8/HcIENyQnfUTCDizRu9rrDyG6XG/21M4X7/YEGZeD76ZJilFPAUVb/2zysFf7VVO1LEjCDFyHp8pMMvozIrvg==
 
-lucide-react@^0.510.0:
-  version "0.510.0"
-  resolved "https://registry.yarnpkg.com/lucide-react/-/lucide-react-0.510.0.tgz#933b19d893b30ac5cb355e4b91eeefc13088caa3"
-  integrity sha512-p8SQRAMVh7NhsAIETokSqDrc5CHnDLbV29mMnzaXx+Vc/hnqQzwI2r0FMWCcoTXnbw2KEjy48xwpGdEL+ck06Q==
-
 luxon@^3.2.1:
   version "3.2.1"
   resolved "https://registry.npmjs.org/luxon/-/luxon-3.2.1.tgz"
@@ -6267,6 +6262,11 @@ react-timezone-select@^3.2.8:
   dependencies:
     spacetime "^7.6.0"
     timezone-soft "^1.5.2"
+
+react-to-print@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/react-to-print/-/react-to-print-3.1.0.tgz#70f2f3e43314ce9e71bb0a69fad47208e89c1320"
+  integrity sha512-hiJZVmJtaRm9EHoUTG2bordyeRxVSGy9oFVV7fSvzOWwctPp6jbz2R6NFkaokaTYBxC7wTM/fMV5eCXsNpEwsA==
 
 react-transition-group@^4.3.0, react-transition-group@^4.4.0:
   version "4.4.5"
