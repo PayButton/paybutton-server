@@ -1,9 +1,11 @@
-import React, { useState, useEffect, ReactElement } from 'react'
+import React, { useState, useEffect, ReactElement, useRef } from 'react'
 import style from './transaction.module.css'
 import Button from 'components/Button'
 import { CreateInvoicePOSTParameters } from 'utils/validators'
 import axios from 'axios'
 import { Prisma } from '@prisma/client'
+import { useReactToPrint } from 'react-to-print'
+import PrintableReceipt from './Invoice'
 
 export interface InvoiceData {
   id?: string
@@ -14,6 +16,10 @@ export interface InvoiceData {
   description: string
   customerName: string
   customerAddress: string
+  createdAt?: string
+  transactionHash?: string
+  transactionDate?: string
+  transactionNetworkId?: number
 }
 
 interface InvoiceModalProps {
@@ -31,6 +37,9 @@ export default function InvoiceModal ({
   transaction,
   mode
 }: InvoiceModalProps): ReactElement | null {
+  const contentRef = useRef<HTMLDivElement>(null)
+  const handlePrint = useReactToPrint({ contentRef })
+
   const [formData, setFormData] = useState<InvoiceData>({
     invoiceNumber: '',
     amount: Number(transaction?.amount),
@@ -229,10 +238,15 @@ export default function InvoiceModal ({
               </div>
             </div>
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+              <Button type="button" onClick={handlePrint}>Download as PDF</Button>
               <Button type="button" onClick={handleModalClose}>Close</Button>
             </div>
           </div>
                  }
+        </div>
+        <div style={{ display: 'none' }}>
+        {/* <div> */}
+          <PrintableReceipt ref={contentRef} data={invoiceData} />
         </div>
       </div>
     </div>
