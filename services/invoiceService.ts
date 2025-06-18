@@ -95,9 +95,7 @@ export async function getNewInvoiceNumber (userId: string): Promise<string | und
   const invoicesWithOurPattern = userInvoices.filter(invoice => defaultPattern.test(invoice.invoiceNumber))
 
   if (invoicesWithOurPattern === null || invoicesWithOurPattern.length < userInvoices.length) {
-    if (userInvoices.length > 0) {
-      return
-    }
+    return
   }
 
   const invoiceWithTheLatestInvoiceNumber = invoicesWithOurPattern[0]
