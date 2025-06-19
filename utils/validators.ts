@@ -553,7 +553,7 @@ export const parseUpdateUserTimezonePUTRequest = function (params: UpdateUserTim
 
 export interface CreateInvoicePOSTParameters {
   transactionId: string
-  amount: number
+  amount: Prisma.Decimal
   description: string
   recipientName: string
   recipientAddress: string

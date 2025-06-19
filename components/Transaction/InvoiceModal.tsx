@@ -3,10 +3,11 @@ import style from './transaction.module.css'
 import Button from 'components/Button'
 import { CreateInvoicePOSTParameters } from 'utils/validators'
 import axios from 'axios'
+import { Prisma } from '@prisma/client'
 
 export interface InvoiceData {
   id?: string
-  invoiceNumber: string
+  invoiceNumber: Prisma.Decimal
   amount: number
   recipientName: string
   recipientAddress: string
