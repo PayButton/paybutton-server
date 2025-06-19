@@ -587,6 +587,10 @@ export async function fetchTransactionsByPaybuttonIdWithPagination (
     orderDesc,
     networkIds)
 
+  if (transactions.length === 0) {
+    throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
+  }
+
   return transactions
 }
 
@@ -897,4 +901,17 @@ export const getFilteredTransactionCount = async (
       amount: { gt: 0 }
     }
   })
+}
+
+export async function fetchDistinctTransactionYearsByUser (userId: string): Promise<number[]> {
+  const years = await prisma.$queryRaw<Array<{ year: number }>>`
+    SELECT DISTINCT YEAR(FROM_UNIXTIME(t.timestamp)) AS year
+    FROM Transaction t
+    JOIN Address a ON a.id = t.addressId
+    JOIN AddressesOnUserProfiles ap ON ap.addressId = a.id
+    WHERE ap.userId = ${userId}
+    ORDER BY year ASC
+  `
+
+  return years.map(y => y.year)
 }
