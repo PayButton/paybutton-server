@@ -1,3 +1,4 @@
+import { Decimal } from '@prisma/client/runtime/library'
 import prisma from 'prisma/clientInstance'
 import { Invoice } from '@prisma/client'
 import { RESPONSE_MESSAGES } from 'constants/index'
@@ -6,7 +7,7 @@ export interface CreateInvoiceParams {
   userId: string
   transactionId?: string
   invoiceNumber: string
-  amount: number
+  amount: Decimal
   description: string
   recipientName: string
   recipientAddress: string
