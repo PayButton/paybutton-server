@@ -1,14 +1,21 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import Image from 'next/image'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import CheckIcon from 'assets/check-icon.png'
 import XIcon from 'assets/x-icon.png'
+import Plus from 'assets/plus.png'
+import Pencil from 'assets/pencil.png'
+import FileText from 'assets/file-text.png'
+
 import TableContainerGetter from '../TableContainer/TableContainerGetter'
 import { compareNumericString } from 'utils/index'
 import moment from 'moment-timezone'
 import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL } from 'constants/index'
+import InvoiceModal, { InvoiceData } from './InvoiceModal'
+import style from './transaction.module.css'
+import { TransactionWithAddressAndPricesAndInvoices } from 'services/transactionService'
 
 interface IProps {
   addressSyncing: {
@@ -36,7 +43,58 @@ function fetchTransactionsByPaybuttonId (paybuttonId: string): Function {
   }
 }
 
+const fetchNextInvoiceNumberByUserId = async (): Promise<string> => {
+  const response = await fetch('/api/invoices/invoiceNumber/', {
+    headers: {
+      Timezone: moment.tz.guess()
+    }
+  })
+  const result = await response?.json()
+  return result?.invoiceNumber
+}
+
 export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = moment.tz.guess() }: IProps): JSX.Element => {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null)
+  const [invoiceDataTransaction, setInvoiceDataTransaction] = useState<TransactionWithAddressAndPricesAndInvoices | null >(null)
+  const [localRefreshCount, setLocalRefreshCount] = useState(tableRefreshCount)
+
+  const [invoiceMode, setInvoiceMode] = useState<'create' | 'edit' | 'view'>('create')
+
+  const onCreateInvoice = async (transaction: TransactionWithAddressAndPricesAndInvoices): Promise<void> => {
+    const nextInvoiceNumber = await fetchNextInvoiceNumberByUserId()
+    const invoiceData = {
+      invoiceNumber: nextInvoiceNumber ?? '',
+      amount: Number(transaction.amount),
+      recipientName: '',
+      recipientAddress: transaction.address.address,
+      description: '',
+      customerName: '',
+      customerAddress: ''
+    }
+    setInvoiceDataTransaction(transaction)
+    setInvoiceData(invoiceData)
+    setInvoiceMode('create')
+    setIsModalOpen(true)
+  }
+
+  const onEditInvoice = (invoiceData: InvoiceData): void => {
+    setInvoiceData(invoiceData)
+    setInvoiceMode('edit')
+    setIsModalOpen(true)
+  }
+
+  const onSeeInvoice = (invoiceData: InvoiceData): void => {
+    setInvoiceData(invoiceData)
+    setInvoiceMode('view')
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = (): void => {
+    setIsModalOpen(false)
+    setInvoiceData(null)
+    setLocalRefreshCount(prev => prev + 1)
+  }
   const columns = useMemo(
     () => [
       {
@@ -109,13 +167,76 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
             </div>
           )
         }
+      },
+      {
+        Header: () => (<div style={{ textAlign: 'center' }}>Actions</div>),
+        id: 'actions',
+        Cell: (cellProps) => {
+          const invoices = cellProps.row.original.invoices
+          const hasInvoice = invoices?.length > 0
+
+          return (
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              {!hasInvoice
+                ? (
+                <div className={style.create_invoice_ctn}>
+                  <button
+                    onClick={() => {
+                      onCreateInvoice(cellProps.row.original).catch(console.error)
+                    }}
+                    title="Create Invoice"
+                    className={style.create_invoice}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+
+                    <Image src={Plus} alt='create invoice' width={14} height={14} />
+                  </button>
+                  <div className={style.tooltiptext}>New button</div>
+                </div>
+                  )
+                : (
+                <>
+                  <div className={style.edit_invoice_ctn}>
+                    <button
+                      onClick={() => onEditInvoice(cellProps.row.original.invoices[0])}
+                      title="Edit Invoice"
+                      className={style.edit_invoice}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
+                    >
+                      <Image src={Pencil} alt='edit invoice' width={16} height={16} />
+                    </button>
+                  </div>
+                  <div className={style.see_invoice_ctn}>
+                    <button
+                      onClick={() => onSeeInvoice(cellProps.row.original.invoices[0])}
+                      title="See Invoice"
+                      className={style.see_invoice}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
+                    >
+                      <Image src={FileText} alt='see invoice' width={16} height={16} />
+
+                    </button>
+                  </div>
+                </>
+                  )}
+            </div>
+          )
+        }
       }
+
     ],
     []
   )
   return (
     <>
-      <TableContainerGetter columns={columns} dataGetter={fetchTransactionsByPaybuttonId(paybuttonId)} tableRefreshCount={tableRefreshCount} emptyMessage={'No transactions.'}/>
+      <TableContainerGetter columns={columns} dataGetter={fetchTransactionsByPaybuttonId(paybuttonId)} tableRefreshCount={localRefreshCount} emptyMessage={'No transactions.'}/>
+      <InvoiceModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        invoiceData={invoiceData}
+        mode={invoiceMode}
+        transaction={invoiceDataTransaction}
+        />
     </>
   )
 }
