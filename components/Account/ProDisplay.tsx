@@ -2,11 +2,16 @@ import { useEffect, useState } from 'react'
 import ProPurchase from './ProPurchase'
 import style from './account.module.css'
 import stylep from '../../pages/account/account.module.css'
+import config from 'config/index'
 
 const ProConfig = (): JSX.Element => {
   const [text, setText] = useState('')
   const [isPro, setIsPro] = useState<boolean | null>()
   const [infoModal, setInfoModal] = useState(false)
+
+  const showLimit = (configLimit: number | 'Inf'): string => {
+    return configLimit === 'Inf' ? 'Unlimited' : configLimit.toString()
+  }
 
   useEffect(() => {
     void (async () => {
@@ -45,7 +50,29 @@ const ProConfig = (): JSX.Element => {
       {isPro === false && <ProPurchase/>}
       {infoModal && (
         <div className={stylep.public_key_info_ctn}>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec tincidunt risus libero, venenatis commodo nibh commodo eget. Aenean turpis tellus, consectetur vel consequat nec, vehicula quis odio. Sed vitae venenatis orci. Vestibulum a facilisis tellus. Nunc at hendrerit
+          <p>PayButton Pro users get higher limits:</p>
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Standard</th>
+                <th>Pro</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Daily Emails</td>
+                <td>{showLimit(config.proSettings.standardDailyEmailLimit)}</td>
+                <td>{showLimit(config.proSettings.proDailyEmailLimit)}</td>
+              </tr>
+              <tr>
+                <td>Addresses Per Button</td>
+                <td>{showLimit(config.proSettings.standardAddressesPerButtonLimit)}</td>
+                <td>{showLimit(config.proSettings.proAddressesPerButtonLimit)}</td>
+              </tr>
+            </tbody>
+          </table>
+
         </div>
       )}
     </div>
