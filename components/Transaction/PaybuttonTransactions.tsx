@@ -9,7 +9,7 @@ import Plus from 'assets/plus.png'
 import Pencil from 'assets/pencil.png'
 import FileText from 'assets/file-text.png'
 
-import TableContainerGetter from '../TableContainer/TableContainerGetter'
+import TableContainerGetter, { DataGetterReturn } from '../TableContainer/TableContainerGetter'
 import { compareNumericString } from 'utils/index'
 import moment from 'moment-timezone'
 import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL } from 'constants/index'
@@ -26,7 +26,7 @@ interface IProps {
   timezone: string
 }
 
-function fetchTransactionsByPaybuttonId (paybuttonId: string): Function {
+function fetchTransactionsByPaybuttonId (paybuttonId: string): (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => Promise<DataGetterReturn> {
   return async (page: number, pageSize: number, orderBy: string, orderDesc: boolean) => {
     const response = await fetch(`/api/paybutton/transactions/${paybuttonId}?page=${page}&pageSize=${pageSize}&orderBy=${orderBy}&orderDesc=${String(orderDesc)}`, {
       headers: {

@@ -3,7 +3,7 @@ import { useTable, usePagination } from 'react-table'
 import { DEFAULT_EMPTY_TABLE_MESSAGE } from 'constants/index'
 import style from './table-container.module.css'
 
-interface DataGetterReturn {
+export interface DataGetterReturn {
   data: any
   totalCount: number
 }
@@ -35,7 +35,7 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
   const [pageCount, setPageCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const emptyMessageDisplay = emptyMessage ?? DEFAULT_EMPTY_TABLE_MESSAGE
-  const [hiddenColumns, setHiddenColumns] = useState({})
+  const [hiddenColumns, setHiddenColumns] = useState<Record<string, boolean>>({})
 
   const triggerSort = (column: any): void => {
     if (column.disableSortBy === true || hiddenColumns[column.id]) return
@@ -49,9 +49,9 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
     }
     gotoPage(0)
   }
-  
+
   const toggleColumn = (id: any): void => {
-    setHiddenColumns((prev) => ({ ...prev, [id]: !prev[id]}))
+    setHiddenColumns((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
   const {
@@ -122,12 +122,12 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
                 <th {...column.getHeaderProps()} style={column.disableSortBy === true ? null : { cursor: 'pointer' }} onClick={() => { triggerSort(column) }}>
                   <div>
                   {column.render('Header')}
-                  {column.shrinkable && (
+                  {column.shrinkable === true && (
                     <span onClick={() => toggleColumn(column.id)} style={{ cursor: 'pointer' }}>
-                      {hiddenColumns[column.id] ? <div style= {{marginRight: '5px'}} className='table-arrow-right' /> : <div style= {{marginRight: '5px'}} className='table-sort-arrow-down' />}
+                      {hiddenColumns[column.id] ? <div style= {{ marginRight: '5px' }} className='table-arrow-right' /> : <div style= {{ marginRight: '5px' }} className='table-sort-arrow-down' />}
                     </span>
                   )}
-                  {!column.shrinkable && generateSortingIndicator(column)}
+                  {column.shrinkable !== true && generateSortingIndicator(column)}
                   </div>
                 </th>
               ))}
@@ -143,7 +143,7 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
                 return (
                 <tr {...row.getRowProps()}>
                   {row.cells.map((cell: any) =>
-                      hiddenColumns[cell.column.id] ? <td> </td> : <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                    hiddenColumns[cell.column.id] ? <td> </td> : <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
                   )}
                 </tr>
                 )
