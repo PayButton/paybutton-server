@@ -587,10 +587,6 @@ export async function fetchTransactionsByPaybuttonIdWithPagination (
     orderDesc,
     networkIds)
 
-  if (transactions.length === 0) {
-    throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
-  }
-
   return transactions
 }
 
