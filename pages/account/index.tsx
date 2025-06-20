@@ -191,7 +191,7 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
         </div>
 
         <div>
-          {config.proEnabled && <ProDisplay/>}
+          {config.proSettings.enabled && <ProDisplay/>}
           <ViewOrganization user={user} orgMembers={orgMembers} setOrgMembers={setOrgMembers} organization={organization}/>
         </div>
       </div>)
