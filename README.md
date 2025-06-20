@@ -210,14 +210,45 @@ default: N/A
 ```
 > Necessary only for paybutton client to interact with sideshift through the server.
 
-#### proEnabled
+#### proSettings
+  "": {
+```
+type: {
+  enabled: boolean,
+  monthsCost: {
+      [key: string]: number
+  },
+  payoutAddress: string,
+  standardDailyEmailLimit: number | "Inf",
+  proDailyEmailLimit: number | "Inf",
+  standardAddressesPerButtonLimit: number | "Inf",
+  proAddressesPerButtonLimit: number | "Inf"
+}
+default: {
+    "enabled": true,
+    "monthsCost": {
+      "1": 10,
+      "3": 20,
+      "6": 30,
+      "12": 50
+    },
+    "payoutAddress":  "ecash:qrf4zh4vgrdal8d8gu905d90w5u2y60djcd2d5h6un"
+    "standardDailyEmailLimit": 5,
+    "proDailyEmailLimit": 100,
+    "standardAddressesPerButtonLimit": 20,
+    "proAddressesPerButtonLimit": "Inf"
+}
+```
+> General configuration for PayButton Pro. Each parameter is described below.
+
+##### proSettings.enabled
 ```
 type: boolean
 default: true
 ```
-> If the PayButton Pro features should be enabled.
+> If the Pro feature should be enabled or hidden.
 
-#### proMonthsCost
+##### proSettings.monthsCost
 ```
 type: {
 [key: string]: number
@@ -231,12 +262,40 @@ default: {
 ```
 > The pricing model for PayButton Pro subscription — [value] USD for [key] months.
 
-#### proPayoutAddress
+##### proSettings.payoutAddress
 ```
 type: string
 default: "ecash:qrf4zh4vgrdal8d8gu905d90w5u2y60djcd2d5h6un"
 ```
 > The payout address for PayButton Pro subscriptions.
+
+##### proSettings.standardDailyEmailLimit
+```
+type: number | "Inf"
+default: true
+```
+> How many emails can a standard user send daily.
+
+##### proSettings.proDailyEmailLimit
+```
+type: number | "Inf"
+default: true
+```
+> How many emails can a PayButton Pro user send daily.
+
+##### proSettings.standardAddressesPerButtonLimit
+```
+type: number | "Inf"
+default: true
+```
+> How many addresses can a standard Pro user add for a single button.
+
+##### proSettings.proAddressesPerButtonLimit
+```
+type: number | "Inf"
+default: true
+```
+> How many addresses can a PayButton Pro user add for a single button
 
 ---
 
