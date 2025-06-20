@@ -1,6 +1,6 @@
 import { redis } from 'redis/clientInstance'
 import { Address, Prisma } from '@prisma/client'
-import { generateTransactionsWithPaybuttonsAndPricesForAddress, getTransactionValue, TransactionsWithPaybuttonsAndPrices, TransactionWithAddressAndPrices } from 'services/transactionService'
+import { generateTransactionsWithPaybuttonsAndPricesForAddress, getTransactionValue, TransactionsWithPaybuttonsAndPrices, TransactionWithAddressAndPrices, TransactionWithAddressAndPricesAndInvoices } from 'services/transactionService'
 import { fetchAllUserAddresses, AddressPaymentInfo } from 'services/addressService'
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
@@ -63,7 +63,7 @@ interface GroupedPaymentsAndInfoObject {
   info: AddressPaymentInfo
 }
 
-export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPrices): Promise<Payment> => {
+export const generatePaymentFromTx = async (tx: TransactionWithAddressAndPricesAndInvoices): Promise<Payment> => {
   const values = getTransactionValue(tx)
   let buttonDisplayDataList: Array<{ name: string, id: string}> = []
   if (tx.address.paybuttons !== undefined) {
@@ -80,13 +80,15 @@ export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPri
     console.warn('Orphan address:', tx.address.address)
   }
   return {
+    id: tx.id,
     timestamp: tx.timestamp,
     values,
     amount: tx.amount,
     networkId: tx.address.networkId,
     hash: tx.hash,
     buttonDisplayDataList,
-    address: tx.address.address
+    address: tx.address.address,
+    invoices: tx.invoices
   }
 }
 

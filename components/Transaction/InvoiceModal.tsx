@@ -6,21 +6,7 @@ import axios from 'axios'
 import { Prisma } from '@prisma/client'
 import { useReactToPrint } from 'react-to-print'
 import PrintableReceipt from './Invoice'
-
-export interface InvoiceData {
-  id?: string
-  invoiceNumber: Prisma.Decimal
-  amount: number
-  recipientName: string
-  recipientAddress: string
-  description: string
-  customerName: string
-  customerAddress: string
-  createdAt?: string
-  transactionHash?: string
-  transactionDate?: string
-  transactionNetworkId?: number
-}
+import { InvoiceData } from 'redis/types'
 
 interface InvoiceModalProps {
   isOpen: boolean
@@ -42,9 +28,9 @@ export default function InvoiceModal ({
 
   const [formData, setFormData] = useState<InvoiceData>({
     invoiceNumber: '',
-    amount: Number(transaction?.amount),
+    amount: transaction?.amount,
     recipientName: '',
-    recipientAddress: transaction?.address?.address,
+    recipientAddress: transaction?.address,
     description: '',
     customerName: '',
     customerAddress: ''
@@ -53,9 +39,9 @@ export default function InvoiceModal ({
   useEffect(() => {
     setFormData(invoiceData ?? {
       invoiceNumber: '',
-      amount: Number(transaction?.amount),
+      amount: transaction?.amount,
       recipientName: '',
-      recipientAddress: transaction?.address?.address,
+      recipientAddress: transaction?.address,
       description: '',
       customerName: '',
       customerAddress: ''
@@ -72,7 +58,7 @@ export default function InvoiceModal ({
   const handleModalClose = (): void => {
     setFormData({
       invoiceNumber: '',
-      amount: 0,
+      amount: new Prisma.Decimal(0),
       recipientName: '',
       recipientAddress: '',
       description: '',
@@ -147,7 +133,7 @@ export default function InvoiceModal ({
                   type="number"
                   id="amount"
                   name="amount"
-                  value={formData.amount ?? ''}
+                  value={Number(formData.amount) ?? ''}
                   onChange={handleChange}
                   disabled={true}
                 />

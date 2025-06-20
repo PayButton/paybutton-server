@@ -4,7 +4,7 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import TableContainerGetter from '../../components/TableContainer/TableContainerGetter'
-import { ButtonDisplayData } from 'redis/types'
+import { ButtonDisplayData, InvoiceData } from 'redis/types'
 import Image from 'next/image'
 import Link from 'next/link'
 import XECIcon from 'assets/xec-logo.png'
@@ -19,6 +19,11 @@ import { UserProfile } from '@prisma/client'
 import Button from 'components/Button'
 import style from './payments.module.css'
 import SettingsIcon from '../../assets/settings-slider-icon.png'
+import Plus from 'assets/plus.png'
+import Pencil from 'assets/pencil.png'
+import FileText from 'assets/file-text.png'
+import InvoiceModal from 'components/Transaction/InvoiceModal'
+import { TransactionWithAddressAndPricesAndInvoices } from 'services/transactionService'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -64,7 +69,57 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
   const [showFilters, setShowFilters] = useState<boolean>(false)
   const [tableLoading, setTableLoading] = useState<boolean>(true)
   const [refreshCount, setRefreshCount] = useState(0)
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null)
+  const [invoiceDataTransaction, setInvoiceDataTransaction] = useState<TransactionWithAddressAndPricesAndInvoices | null >(null)
+  const [invoiceMode, setInvoiceMode] = useState<'create' | 'edit' | 'view'>('create')
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
+  const fetchNextInvoiceNumberByUserId = async (): Promise<string> => {
+    const response = await fetch('/api/invoices/invoiceNumber/', {
+      headers: {
+        Timezone: moment.tz.guess()
+      }
+    })
+    const result = await response?.json()
+    return result?.invoiceNumber
+  }
+  const handleCloseModal = (): void => {
+    setIsModalOpen(false)
+    setInvoiceData(null)
+    setRefreshCount(prev => prev + 1)
+  }
+  const onCreateInvoice = async (transaction: TransactionWithAddressAndPricesAndInvoices): Promise<void> => {
+    const nextInvoiceNumber = await fetchNextInvoiceNumberByUserId()
+    const invoiceData = {
+      invoiceNumber: nextInvoiceNumber ?? '',
+      amount: transaction.amount,
+      recipientName: '',
+      recipientAddress: transaction.address,
+      description: '',
+      customerName: '',
+      customerAddress: ''
+    }
+    setInvoiceDataTransaction(transaction)
+    setInvoiceData(invoiceData)
+    setInvoiceMode('create')
+    setIsModalOpen(true)
+  }
+
+  const onEditInvoice = (invoiceData: InvoiceData): void => {
+    delete invoiceData.transactionHash
+    delete invoiceData.transactionDate
+    delete invoiceData.transactionNetworkId
+
+    setInvoiceData(invoiceData)
+    setInvoiceMode('edit')
+    setIsModalOpen(true)
+  }
+
+  const onViewInvoice = (invoiceData: InvoiceData): void => {
+    setInvoiceData(invoiceData)
+    setInvoiceMode('view')
+    setIsModalOpen(true)
+  }
   useEffect(() => {
     setRefreshCount(prev => prev + 1)
   }, [selectedButtonIds])
@@ -212,6 +267,70 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
             </a>
           )
         }
+      },
+      {
+        Header: () => (<div style={{ textAlign: 'center' }}>Actions</div>),
+        id: 'actions',
+        Cell: (cellProps) => {
+          const transaction = cellProps.row.original
+          const hasInvoice = transaction.invoices?.filter(i => i !== null).length > 0
+          let invoice = {} as InvoiceData
+          if (hasInvoice) {
+            invoice = {
+              transactionHash: transaction.hash,
+              transactionDate: transaction.timestamp,
+              transactionNetworkId: transaction.networkId,
+              ...transaction.invoices[0]
+            }
+          }
+
+          return (
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              {!hasInvoice
+                ? (
+                <div className={style.create_invoice_ctn}>
+                  <button
+                    onClick={() => {
+                      onCreateInvoice(transaction).catch(console.error)
+                    }}
+                    title="Create Invoice"
+                    className={style.create_invoice}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+
+                    <Image src={Plus} alt='create invoice' width={14} height={14} />
+                  </button>
+                  <div className={style.tooltiptext}>New button</div>
+                </div>
+                  )
+                : (
+                <>
+                  <div className={style.edit_invoice_ctn}>
+                    <button
+                      onClick={() => onEditInvoice(invoice)}
+                      title="Edit Invoice"
+                      className={style.edit_invoice}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
+                    >
+                      <Image src={Pencil} alt='edit invoice' width={16} height={16} />
+                    </button>
+                  </div>
+                  <div className={style.view_invoice_ctn}>
+                    <button
+                      onClick={() => onViewInvoice(invoice)}
+                      title="View Invoice"
+                      className={style.view_invoice}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
+                    >
+                      <Image src={FileText} alt='see invoice' width={16} height={16} />
+
+                    </button>
+                  </div>
+                </>
+                  )}
+            </div>
+          )
+        }
       }
     ],
     []
@@ -356,6 +475,13 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         }
         tableRefreshCount={refreshCount}
         emptyMessage={tableLoading ? 'Loading...' : 'No Payments to show yet'}
+        />
+      <InvoiceModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        invoiceData={invoiceData}
+        mode={invoiceMode}
+        transaction={invoiceDataTransaction}
         />
     </>
   )
