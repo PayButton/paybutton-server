@@ -137,7 +137,7 @@ button:enabled:hover {
 }
 
 .paybutton-table-ctn tr:nth-child(even) {
-  background: none;
+  background-color: var(--primary-bg-color);
 }
 
 .paybutton-table-ctn thead th:first-child,
