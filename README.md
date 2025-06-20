@@ -211,7 +211,6 @@ default: N/A
 > Necessary only for paybutton client to interact with sideshift through the server.
 
 #### proSettings
-  "": {
 ```
 type: {
   enabled: boolean,
@@ -272,30 +271,30 @@ default: "ecash:qrf4zh4vgrdal8d8gu905d90w5u2y60djcd2d5h6un"
 ##### proSettings.standardDailyEmailLimit
 ```
 type: number | "Inf"
-default: true
+default: 5
 ```
 > How many emails can a standard user send daily.
 
 ##### proSettings.proDailyEmailLimit
 ```
 type: number | "Inf"
-default: true
+default: 20
 ```
 > How many emails can a PayButton Pro user send daily.
 
 ##### proSettings.standardAddressesPerButtonLimit
 ```
 type: number | "Inf"
-default: true
+default: 5
 ```
 > How many addresses can a standard Pro user add for a single button.
 
 ##### proSettings.proAddressesPerButtonLimit
 ```
 type: number | "Inf"
-default: true
+default: "Inf"
 ```
-> How many addresses can a PayButton Pro user add for a single button
+> How many addresses can a PayButton Pro user add for a single button.
 
 ---
 
