@@ -53,166 +53,166 @@ body[data-theme='dark'] .account_row select {
 }
 
 /* body[data-theme='dark'] .account_row select {
-  background-color: #434343 !important;
-  border-color: #898EA4 !important;
+background-color: #434343 !important;
+border-color: #898EA4 !important;
 }
 
 body[data-theme='dark'] .pk_card,
 body[data-theme='dark'] .pk_copy {
-  background-color: #434343;
+background-color: #434343;
 } */
 
-.label {
-  width: 100%;
-  position: relative;
-  font-size: 15px;
-}
+  .label {
+    width: 100%;
+    position: relative;
+    font-size: 15px;
+  }
 
-.value {
-  font-weight: 600;
-  width: 100%;
-}
+  .value {
+    font-weight: 600;
+    width: 100%;
+  }
 
-.pk_ctn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 1px;
-  margin-top: 10px;
-}
+  .pk_ctn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    margin-top: 10px;
+  }
 
-.pk_card {
-  flex-grow: 2;
-  background-color: var(--primary-bg-color);
-  padding: 20px;
-  border-radius: 10px 0 0 10px;
-  display: inline-block;
-  font-weight: 600;
-  word-break: break-all;
-  position: relative;
-  font-weight: 400;
-  font-size: 16px;
-}
+  .pk_card {
+    flex-grow: 2;
+    background-color: var(--primary-bg-color);
+    padding: 20px;
+    border-radius: 10px 0 0 10px;
+    display: inline-block;
+    font-weight: 600;
+    word-break: break-all;
+    position: relative;
+    font-weight: 400;
+    font-size: 16px;
+  }
 
-.pk_copy {
-  width: 50px;
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  background-color: var(--primary-bg-color);
-  border-radius: 0 10px 10px 0;
-  justify-content: center;
-  transition: all ease-in-out 200ms;
-  flex-shrink: 0;
-}
+  .pk_copy {
+    width: 50px;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    background-color: var(--primary-bg-color);
+    border-radius: 0 10px 10px 0;
+    justify-content: center;
+    transition: all ease-in-out 200ms;
+    flex-shrink: 0;
+  }
 
-body[data-theme='dark'] .pk_copy img {
-  filter: invert(1);
-}
+  body[data-theme='dark'] .pk_copy img {
+    filter: invert(1);
+  }
 
-.copied_confirmation {
-  width: 100%;
-  background-color: var(--accent-color);
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 10px 0 0 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+  .copied_confirmation {
+    width: 100%;
+    background-color: var(--accent-color);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 10px 0 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-.pk_copy:hover {
-  background-color: var(--accent-color) !important;
-}
+  .pk_copy:hover {
+    background-color: var(--accent-color) !important;
+  }
 
-.updatebtn {
-  font-size: 14px;
-  cursor: pointer;
-  display: inline-block;
-  align-self: flex-start;
-  margin-top: 10px;
-  position: relative;
-  cursor: pointer;
-  padding: 5px 40px;
-  box-shadow: none;
-  font-size: 14px;
-}
+  .updatebtn {
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-block;
+    align-self: flex-start;
+    margin-top: 10px;
+    position: relative;
+    cursor: pointer;
+    padding: 5px 40px;
+    box-shadow: none;
+    font-size: 14px;
+  }
 
-.public_key_info_btn {
-  cursor: pointer;
-  color: var(--accent-color);
-  font-size: 12px;
-  position: absolute;
-  right: 0;
-  user-select: none;
-  top: 3px;
-}
+  .public_key_info_btn {
+    cursor: pointer;
+    color: var(--accent-color);
+    font-size: 12px;
+    position: absolute;
+    right: 0;
+    user-select: none;
+    top: 3px;
+  }
 
-.public_key_info_ctn {
-  width: 100%;
-  margin-top: 10px;
-  font-size: 16px;
-  background-color: var(--primary-bg-color);
-  padding: 20px;
-  border-radius: 10px;
-}
+  .public_key_info_ctn {
+    width: 100%;
+    margin-top: 10px;
+    font-size: 16px;
+    background-color: var(--primary-bg-color);
+    padding: 20px;
+    border-radius: 10px;
+  }
 
-.updatebtn:hover {
-  background-color: var(--accent-color);
-}
+  .updatebtn:hover {
+    background-color: var(--accent-color);
+  }
 
-body[data-theme='dark'] .updatebtn:hover {
-  color: #231f20;
-}
+  body[data-theme='dark'] .updatebtn:hover {
+    color: #231f20;
+  }
 
-body[data-theme='dark'] .copy_btn img {
-  filter: grayscale(1) invert(1);
-}
+  body[data-theme='dark'] .copy_btn img {
+    filter: grayscale(1) invert(1);
+  }
 
-body[data-theme='dark'] .copy_btn:hover img {
-  filter: none;
-}
+  body[data-theme='dark'] .copy_btn:hover img {
+    filter: none;
+  }
 
-.change_pw_btn {
-  position: absolute;
-  right: 0;
-  top: 40px;
-  font-size: 12px;
-  background-color: var(--primary-bg-color);
-  border-radius: 100px;
-  padding: 3px 15px;
-  cursor: pointer;
-  user-select: none;
-}
+  .change_pw_btn {
+    position: absolute;
+    right: 0;
+    top: 40px;
+    font-size: 12px;
+    background-color: var(--primary-bg-color);
+    border-radius: 100px;
+    padding: 3px 15px;
+    cursor: pointer;
+    user-select: none;
+  }
 
-.change_pw_btn:hover {
-  background-color: var(--accent-color);
-}
+  .change_pw_btn:hover {
+    background-color: var(--accent-color);
+  }
 
-.whats_this_btn {
-  font-size: 12px;
-  background-color: var(--primary-bg-color);
-  border-radius: 100px;
-  padding: 3px 15px;
-  cursor: pointer;
-  user-select: none;
-  float: right;
-}
+  .whats_this_btn {
+    font-size: 12px;
+    background-color: var(--primary-bg-color);
+    border-radius: 100px;
+    padding: 3px 15px;
+    cursor: pointer;
+    user-select: none;
+    float: right;
+  }
 
-.whats_this_btn:hover {
-  background-color: var(--accent-color);
-}
+  .whats_this_btn:hover {
+    background-color: var(--accent-color);
+  }
 
-@media (max-width: 960px) {
+  @media (max-width: 960px) {
     .account_card,
     .public_key_card_ctn,
     .public_key_info_ctn,
     .label {
-     max-width: unset;
+      max-width: unset;
     }
 
     .copy_btn {
@@ -225,7 +225,35 @@ body[data-theme='dark'] .copy_btn:hover img {
     }
 
     .updatebtn {
-     width: 100%;
-     text-align: center;
+      width: 100%;
+      text-align: center;
     }
   }
+
+
+.public_key_info_ctn {
+  width: 100%;
+}
+
+.public_key_info_ctn table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin: 0;
+  border-radius: 6px;
+}
+
+.public_key_info_ctn th,
+.public_key_info_ctn td {
+  border: none;
+  width: 100%;
+}
+
+.public_key_info_ctn th {
+  background-color: black;
+  color: white;
+}
+
+.public_key_info_ctn tr:nth-child(even) {
+  background-color: var(--secondary-bg-color);
+}
