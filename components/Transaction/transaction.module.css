@@ -221,6 +221,11 @@ body[data-theme='dark'] .form_ctn select:not([multiple]) {
   box-shadow: none;
 }
 
+.form_ctn input:disabled {
+  background-color: var(--secondary-bg-color) !important;
+  color: var(--primary-text-color);
+}
+
 .form_ctn .delete_btn {
   background-color: unset;
   border: none;

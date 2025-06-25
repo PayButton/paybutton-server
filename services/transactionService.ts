@@ -669,6 +669,7 @@ export async function getPaymentsByUserIdOrderedByButtonName (
           JSON_OBJECT(
             'id', i.id,
             'invoiceNumber', i.invoiceNumber,
+            'userId', i.userId,
             'amount', i.amount,
             'description', i.description,
             'recipientName', i.recipientName,
@@ -724,6 +725,13 @@ export async function getPaymentsByUserIdOrderedByButtonName (
       id: tx.paybuttonId,
       providerUserId: tx.paybuttonProviderUserId
     })
+    let invoices = null
+    if (JSON.parse(tx.invoices).length > 0) {
+      invoices = JSON.parse(tx.invoices).filter((invoice: any) => {
+        return invoice !== null && invoice.userId === userId
+      })
+    }
+
     if (tx.amount > 0) {
       payments.push({
         id: tx.id,
@@ -733,7 +741,7 @@ export async function getPaymentsByUserIdOrderedByButtonName (
         networkId: tx.networkId,
         hash: tx.hash,
         buttonDisplayDataList,
-        invoices: JSON.parse(tx.invoices)
+        invoices
       })
     }
   })
@@ -813,7 +821,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   for (let index = 0; index < transactions.length; index++) {
     const tx = transactions[index]
     if (Number(tx.amount) > 0) {
-      const payment = await generatePaymentFromTx(tx)
+      const payment = await generatePaymentFromTx(tx, userId)
       transformedData.push(payment)
     }
   }

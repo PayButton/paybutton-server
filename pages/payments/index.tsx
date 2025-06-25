@@ -10,12 +10,12 @@ import Link from 'next/link'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
-import { formatQuoteValue, compareNumericString, removeUnserializableFields } from 'utils/index'
+import { formatQuoteValue, compareNumericString, removeUnserializableFields, removeDateFields } from 'utils/index'
 import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL, NETWORK_TICKERS_FROM_ID, DECIMALS } from 'constants/index'
 import moment from 'moment-timezone'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
-import { UserProfile } from '@prisma/client'
+import { Organization, UserProfile } from '@prisma/client'
 import Button from 'components/Button'
 import style from './payments.module.css'
 import SettingsIcon from '../../assets/settings-slider-icon.png'
@@ -24,6 +24,7 @@ import Pencil from 'assets/pencil.png'
 import FileText from 'assets/file-text.png'
 import InvoiceModal from 'components/Transaction/InvoiceModal'
 import { TransactionWithAddressAndPricesAndInvoices } from 'services/transactionService'
+import { fetchOrganizationForUser } from 'services/organizationService'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -44,12 +45,18 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (session === undefined) return
   const userId = session.getUserId()
   const user = await fetchUserWithSupertokens(userId)
-  removeUnserializableFields(user.userProfile)
+  const organization = await fetchOrganizationForUser(userId)
 
+  removeUnserializableFields(user.userProfile)
+  let serializableOrg = null
+  if (organization !== null) {
+    serializableOrg = removeDateFields(organization)
+  }
   return {
     props: {
       user,
-      userId
+      userId,
+      organization: serializableOrg
     }
   }
 }
@@ -57,9 +64,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 interface PaybuttonsProps {
   user: UserWithSupertokens
   userId: string
+  organization: Organization
 }
 
-export default function Payments ({ user, userId }: PaybuttonsProps): React.ReactElement {
+export default function Payments ({ user, userId, organization }: PaybuttonsProps): React.ReactElement {
   const timezone = user?.userProfile.preferredTimezone === '' ? moment.tz.guess() : user?.userProfile?.preferredTimezone
   const [selectedCurrencyCSV, setSelectedCurrencyCSV] = useState<string>('')
   const [paybuttonNetworks, setPaybuttonNetworks] = useState<Set<number>>(new Set())
@@ -96,7 +104,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       recipientName: '',
       recipientAddress: transaction.address,
       description: '',
-      customerName: '',
+      customerName: organization?.name ?? '',
       customerAddress: ''
     }
     setInvoiceDataTransaction(transaction)
@@ -132,6 +140,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       return await res.json()
     }
   }
+
   const getDataAndSetUpCurrencyCSV = async (): Promise<void> => {
     const paybuttons = await fetchPaybuttons()
     const networkIds: Set<number> = new Set()

@@ -1,5 +1,5 @@
 import React from 'react'
-import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL, NETWORK_TICKERS_FROM_ID } from 'constants/index'
+import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL, NETWORK_TICKERS_FROM_ID, XEC_NETWORK_ID } from 'constants/index'
 import moment from 'moment'
 import logoImageSource from 'assets/logo.png'
 import Image from 'next/image'
@@ -27,7 +27,7 @@ const Receipt = React.forwardRef((props, ref) => {
     minute: '2-digit',
     hour12: true
   }).replace(',', '')
-  const url = transactionNetworkId === 1 ? XEC_TX_EXPLORER_URL : BCH_TX_EXPLORER_URL
+  const url = transactionNetworkId === XEC_NETWORK_ID ? XEC_TX_EXPLORER_URL : BCH_TX_EXPLORER_URL
   return (
     <div ref={ref} style={{ padding: 24 }}>
       <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>

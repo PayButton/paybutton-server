@@ -7,6 +7,10 @@ import { Prisma } from '@prisma/client'
 import { useReactToPrint } from 'react-to-print'
 import PrintableReceipt from './Invoice'
 import { InvoiceData } from 'redis/types'
+import XECIcon from 'assets/xec-logo.png'
+import BCHIcon from 'assets/bch-logo.png'
+import { XEC_NETWORK_ID } from 'constants/index'
+import Image from 'next/image'
 
 interface InvoiceModalProps {
   isOpen: boolean
@@ -78,6 +82,7 @@ export default function InvoiceModal ({
     }
     onClose()
   }
+
   async function createInvoice (): Promise<void> {
     const payload: CreateInvoicePOSTParameters = {
       ...formData,
@@ -128,7 +133,12 @@ export default function InvoiceModal ({
                 />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label htmlFor="amount">Amount</label>
+                <div style={{ display: 'flex', gap: '5px' }}>
+                  <label htmlFor="amount">Amount</label>
+                  <div className='table-icon'>
+                  { transaction.networkId === XEC_NETWORK_ID ? <Image src={XECIcon} alt='XEC' /> : <Image src={BCHIcon} alt='BCH' />}
+                  </div>
+                </div>
                 <input
                   type="number"
                   id="amount"
