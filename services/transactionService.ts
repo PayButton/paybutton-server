@@ -7,7 +7,7 @@ import _ from 'lodash'
 import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
-import { generatePaymentFromTx } from 'redis/paymentCache'
+import { generatePaymentFromTxWithInvoices } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
 
 export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
@@ -821,7 +821,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   for (let index = 0; index < transactions.length; index++) {
     const tx = transactions[index]
     if (Number(tx.amount) > 0) {
-      const payment = await generatePaymentFromTx(tx, userId)
+      const payment = await generatePaymentFromTxWithInvoices(tx, userId)
       transformedData.push(payment)
     }
   }

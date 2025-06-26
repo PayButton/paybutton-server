@@ -69,7 +69,35 @@ interface GroupedPaymentsAndInfoObject {
   info: AddressPaymentInfo
 }
 
-export const generatePaymentFromTx = async (tx: TransactionWithAddressAndPricesAndInvoices, userId?: string): Promise<Payment> => {
+export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPrices): Promise<Payment> => {
+  const values = getTransactionValue(tx)
+  let buttonDisplayDataList: Array<{ name: string, id: string}> = []
+  if (tx.address.paybuttons !== undefined) {
+    buttonDisplayDataList = tx.address.paybuttons.map(
+      (conn) => {
+        return {
+          name: conn.paybutton.name,
+          id: conn.paybutton.id,
+          providerUserId: conn.paybutton.providerUserId
+        }
+      }
+    )
+  } else {
+    console.warn('Orphan address:', tx.address.address)
+  }
+  return {
+    id: tx.id,
+    timestamp: tx.timestamp,
+    values,
+    amount: tx.amount,
+    networkId: tx.address.networkId,
+    hash: tx.hash,
+    buttonDisplayDataList,
+    address: tx.address.address
+  }
+}
+
+export const generatePaymentFromTxWithInvoices = async (tx: TransactionWithAddressAndPricesAndInvoices, userId?: string): Promise<Payment> => {
   const values = getTransactionValue(tx)
   let buttonDisplayDataList: Array<{ name: string, id: string}> = []
   if (tx.address.paybuttons !== undefined) {
