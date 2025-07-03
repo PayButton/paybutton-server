@@ -759,7 +759,8 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   pageSize: number,
   orderBy?: string,
   orderDesc = true,
-  buttonIds?: string[]
+  buttonIds?: string[],
+  years?: string[]
 ): Promise<Payment[]> {
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
 
@@ -801,6 +802,20 @@ export async function fetchAllPaymentsByUserIdWithPagination (
     amount: {
       gt: 0
     }
+  }
+  if (years !== undefined && years.length > 0) {
+    const yearFilters = years.map((year) => {
+      const start = new Date(`${year}-01-01T00:00:00Z`).getTime() / 1000
+      const end = new Date(`${Number(year) + 1}-01-01T00:00:00Z`).getTime() / 1000
+      return {
+        timestamp: {
+          gte: Math.floor(start),
+          lt: Math.floor(end)
+        }
+      }
+    })
+
+    where.OR = yearFilters
   }
 
   if ((buttonIds !== undefined) && buttonIds.length > 0) {
@@ -884,32 +899,52 @@ export async function fetchTxCountByPaybuttonId (paybuttonId: string): Promise<n
 
 export const getFilteredTransactionCount = async (
   userId: string,
-  buttonIds: string[]
+  buttonIds?: string[],
+  years?: string[]
 ): Promise<number> => {
-  return await prisma.transaction.count({
-    where: {
-      address: {
-        userProfiles: {
-          some: { userId }
-        },
-        paybuttons: {
-          some: {
-            paybutton: { id: { in: buttonIds } }
-          }
+  const where: Prisma.TransactionWhereInput = {
+    address: {
+      userProfiles: {
+        some: { userId }
+      }
+    },
+    amount: { gt: 0 }
+  }
+  if (buttonIds !== undefined && buttonIds.length > 0) {
+    where.address!.paybuttons = {
+      some: {
+        paybutton: {
+          id: { in: buttonIds }
         }
-      },
-      amount: { gt: 0 }
+      }
     }
-  })
+  }
+  if (years !== undefined && years.length > 0) {
+    const yearFilters = years.map((year) => {
+      const start = new Date(`${year}-01-01T00:00:00Z`).getTime() / 1000
+      const end = new Date(`${Number(year) + 1}-01-01T00:00:00Z`).getTime() / 1000
+      return {
+        timestamp: {
+          gte: Math.floor(start),
+          lt: Math.floor(end)
+        }
+      }
+    })
+
+    where.OR = yearFilters
+  }
+
+  return await prisma.transaction.count({ where })
 }
 
-export async function fetchDistinctTransactionYearsByUser (userId: string): Promise<number[]> {
+export const fetchDistinctPaymentYearsByUser = async (userId: string): Promise<number[]> => {
   const years = await prisma.$queryRaw<Array<{ year: number }>>`
     SELECT DISTINCT YEAR(FROM_UNIXTIME(t.timestamp)) AS year
     FROM Transaction t
     JOIN Address a ON a.id = t.addressId
     JOIN AddressesOnUserProfiles ap ON ap.addressId = a.id
-    WHERE ap.userId = ${userId}
+    WHERE ap.userId = ${userId} AND
+    t.amount > 0
     ORDER BY year ASC
   `
 
