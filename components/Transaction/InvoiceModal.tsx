@@ -1,20 +1,16 @@
-import React, { useState, useEffect, ReactElement } from 'react'
+import React, { useState, useEffect, ReactElement, useRef } from 'react'
 import style from './transaction.module.css'
 import Button from 'components/Button'
 import { CreateInvoicePOSTParameters } from 'utils/validators'
 import axios from 'axios'
 import { Prisma } from '@prisma/client'
-
-export interface InvoiceData {
-  id?: string
-  invoiceNumber: Prisma.Decimal
-  amount: number
-  recipientName: string
-  recipientAddress: string
-  description: string
-  customerName: string
-  customerAddress: string
-}
+import { useReactToPrint } from 'react-to-print'
+import PrintableReceipt from './Invoice'
+import { InvoiceData } from 'redis/types'
+import XECIcon from 'assets/xec-logo.png'
+import BCHIcon from 'assets/bch-logo.png'
+import { XEC_NETWORK_ID } from 'constants/index'
+import Image from 'next/image'
 
 interface InvoiceModalProps {
   isOpen: boolean
@@ -31,11 +27,14 @@ export default function InvoiceModal ({
   transaction,
   mode
 }: InvoiceModalProps): ReactElement | null {
+  const contentRef = useRef<HTMLDivElement>(null)
+  const handlePrint = useReactToPrint({ contentRef })
+
   const [formData, setFormData] = useState<InvoiceData>({
     invoiceNumber: '',
-    amount: Number(transaction?.amount),
+    amount: transaction?.amount,
     recipientName: '',
-    recipientAddress: transaction?.address?.address,
+    recipientAddress: transaction?.address,
     description: '',
     customerName: '',
     customerAddress: ''
@@ -44,9 +43,9 @@ export default function InvoiceModal ({
   useEffect(() => {
     setFormData(invoiceData ?? {
       invoiceNumber: '',
-      amount: Number(transaction?.amount),
+      amount: transaction?.amount,
       recipientName: '',
-      recipientAddress: transaction?.address?.address,
+      recipientAddress: transaction?.address,
       description: '',
       customerName: '',
       customerAddress: ''
@@ -63,7 +62,7 @@ export default function InvoiceModal ({
   const handleModalClose = (): void => {
     setFormData({
       invoiceNumber: '',
-      amount: 0,
+      amount: new Prisma.Decimal(0),
       recipientName: '',
       recipientAddress: '',
       description: '',
@@ -83,6 +82,7 @@ export default function InvoiceModal ({
     }
     onClose()
   }
+
   async function createInvoice (): Promise<void> {
     const payload: CreateInvoicePOSTParameters = {
       ...formData,
@@ -133,12 +133,17 @@ export default function InvoiceModal ({
                 />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label htmlFor="amount">Amount</label>
+                <div style={{ display: 'flex', gap: '5px' }}>
+                  <label htmlFor="amount">Amount</label>
+                  <div className='table-icon'>
+                  { transaction.networkId === XEC_NETWORK_ID ? <Image src={XECIcon} alt='XEC' /> : <Image src={BCHIcon} alt='BCH' />}
+                  </div>
+                </div>
                 <input
                   type="number"
                   id="amount"
                   name="amount"
-                  value={formData.amount ?? ''}
+                  value={Number(formData.amount) ?? ''}
                   onChange={handleChange}
                   disabled={true}
                 />
@@ -229,10 +234,15 @@ export default function InvoiceModal ({
               </div>
             </div>
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+              <Button type="button" onClick={handlePrint}>Download as PDF</Button>
               <Button type="button" onClick={handleModalClose}>Close</Button>
             </div>
           </div>
                  }
+        </div>
+        <div style={{ display: 'none' }}>
+        {/* <div> */}
+          <PrintableReceipt ref={contentRef} data={invoiceData} />
         </div>
       </div>
     </div>

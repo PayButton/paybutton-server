@@ -69,6 +69,7 @@ export async function getInvoiceById (invoiceId: string, userId: string): Promis
 
 export async function updateInvoice (userId: string, invoiceId: string, params: UpdateInvoiceParams): Promise<Invoice> {
   const invoice = await getInvoiceById(invoiceId, userId)
+
   if (invoice === null) {
     throw new Error(RESPONSE_MESSAGES.NO_INVOICE_FOUND_404.message)
   }
