@@ -71,6 +71,9 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
   const timezone = user?.userProfile.preferredTimezone === '' ? moment.tz.guess() : user?.userProfile?.preferredTimezone
   const [selectedCurrencyCSV, setSelectedCurrencyCSV] = useState<string>('')
   const [paybuttonNetworks, setPaybuttonNetworks] = useState<Set<number>>(new Set())
+  const [transactionYears, setTransactionYears] = useState<number[]>([])
+  const [selectedTransactionYears, setSelectedTransactionYears] = useState<number[]>([])
+
   const [loading, setLoading] = useState(false)
   const [buttons, setButtons] = useState<any[]>([])
   const [selectedButtonIds, setSelectedButtonIds] = useState<any[]>([])
@@ -130,7 +133,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
   }
   useEffect(() => {
     setRefreshCount(prev => prev + 1)
-  }, [selectedButtonIds])
+  }, [selectedButtonIds, selectedTransactionYears])
 
   const fetchPaybuttons = async (): Promise<any> => {
     const res = await fetch(`/api/paybuttons?userId=${user?.userProfile.id}`, {
@@ -141,8 +144,21 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
     }
   }
 
+  const fetchTransactionYears = async (): Promise<any> => {
+    const res = await fetch('/api/transaction/years', {
+      method: 'GET'
+    })
+    if (res.status === 200) {
+      const data = await res.json()
+      return data.years
+    } else {
+      console.error('Failed to fetch transaction years:', res.statusText)
+      return []
+    }
+  }
   const getDataAndSetUpCurrencyCSV = async (): Promise<void> => {
     const paybuttons = await fetchPaybuttons()
+    const years = await fetchTransactionYears()
     const networkIds: Set<number> = new Set()
     setButtons(paybuttons)
 
@@ -151,6 +167,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
     })
 
     setPaybuttonNetworks(networkIds)
+    setTransactionYears(years)
   }
 
   useEffect(() => {
@@ -170,10 +187,20 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
       if (selectedButtonIds.length > 0) {
         url += `&buttonIds=${selectedButtonIds.join(',')}`
       }
+      if (selectedTransactionYears.length > 0) {
+        url += `&years=${selectedTransactionYears.join(',')}`
+      }
 
       const paymentsResponse = await fetch(url)
+      let paymentsCountUrl = '/api/payments/count'
+      if (selectedButtonIds.length > 0) {
+        paymentsCountUrl += `?buttonIds=${selectedButtonIds.join(',')}`
+      }
+      if (selectedTransactionYears.length > 0) {
+        paymentsCountUrl += `${selectedButtonIds.length > 0 ? '&' : '?'}years=${selectedTransactionYears.join(',')}`
+      }
       const paymentsCountResponse = await fetch(
-        `/api/payments/count${selectedButtonIds.length > 0 ? `?buttonIds=${selectedButtonIds.join(',')}` : ''}`,
+        paymentsCountUrl,
         { headers: { Timezone: timezone } }
       )
 
@@ -403,7 +430,10 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
     setSelectedCurrencyCSV(currencyParam)
     void downloadCSV(userId, user?.userProfile, currencyParam)
   }
-
+  const handleClearFilters = (): void => {
+    setSelectedButtonIds([])
+    setSelectedTransactionYears([])
+  }
   return (
     <>
      <TopBar title="Payments" user={user?.stUser?.email} />
@@ -415,9 +445,9 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
           >
             <Image src={SettingsIcon} alt="filters" width={15} />Filters
           </div>
-          {selectedButtonIds.length > 0 &&
+          {(selectedButtonIds.length > 0 || selectedTransactionYears.length > 0) &&
           <div
-          onClick={() => setSelectedButtonIds([])}
+          onClick={() => handleClearFilters()}
           className={style.show_filters_button}
         >
           Clear
@@ -456,6 +486,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
               </Button>)}
       </div>
       {showFilters && (
+        <div>
             <div className={style.showfilters_ctn}>
               <span>Filter by button</span>
               <div className={style.filters_ctn}>
@@ -476,6 +507,27 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
                 ))}
               </div>
             </div>
+            <div className={style.showfilters_ctn}>
+            <span>Filter by year</span>
+              <div className={style.filters_ctn}>
+                {transactionYears.map((y) => (
+                  <div
+                    key={y}
+                    onClick={() => {
+                      setSelectedTransactionYears(prev =>
+                        prev.includes(y)
+                          ? prev.filter(year => year !== y)
+                          : [...prev, y]
+                      )
+                    }}
+                    className={`${style.filter_button} ${selectedTransactionYears.includes(y) ? style.active : ''}`}
+                  >
+                    {y}
+                  </div>
+                ))}
+              </div>
+            </div>
+        </div>
       )}
       <TableContainerGetter
         columns={columns}
