@@ -380,6 +380,9 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
       if (selectedButtonIds.length > 0) {
         url += `&buttonIds=${selectedButtonIds.join(',')}`
       }
+      if (selectedTransactionYears.length > 0) {
+        url += `&years=${selectedTransactionYears.join(',')}`
+      }
       const isCurrencyEmptyOrUndefined = (value: string): boolean => (value === '' || value === undefined)
 
       if (!isCurrencyEmptyOrUndefined(currency)) {

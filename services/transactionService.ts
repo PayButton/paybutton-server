@@ -850,7 +850,8 @@ export async function fetchAllPaymentsByUserIdWithPagination (
 export async function fetchAllPaymentsByUserId (
   userId: string,
   networkIds?: number[],
-  buttonIds?: string[]
+  buttonIds?: string[],
+  years?: string[]
 ): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   const where: Prisma.TransactionWhereInput = {
     address: {
@@ -874,6 +875,21 @@ export async function fetchAllPaymentsByUserId (
         }
       }
     }
+  }
+
+  if (years !== undefined && years.length > 0) {
+    const yearFilters = years.map((year) => {
+      const start = new Date(`${year}-01-01T00:00:00Z`).getTime() / 1000
+      const end = new Date(`${Number(year) + 1}-01-01T00:00:00Z`).getTime() / 1000
+      return {
+        timestamp: {
+          gte: Math.floor(start),
+          lt: Math.floor(end)
+        }
+      }
+    })
+
+    where.OR = yearFilters
   }
 
   return await prisma.transaction.findMany({
