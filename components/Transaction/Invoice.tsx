@@ -40,7 +40,7 @@ const Receipt = React.forwardRef((props, ref) => {
           </div>
       </div>
       <p><strong>Generated at:</strong> { formattedDate }</p>
-      <p><strong>Transaction ID:</strong> <a href={url.concat(transactionHash)} target="_blank">{transactionHash}</a></p>
+      <p><strong>Transaction ID:</strong> <a href={url.concat(transactionHash)} target="_blank" rel="noopener noreferrer">{transactionHash}</a></p>
       <p><strong>Transaction Date & Time:</strong> { moment(transactionDate * 1000).tz('utc').format('lll') } </p>
 
       <h4>Senders</h4>

@@ -37,7 +37,8 @@ export default function InvoiceModal ({
     recipientAddress: transaction?.address,
     description: '',
     customerName: '',
-    customerAddress: ''
+    customerAddress: '',
+    userId: transaction?.userId ?? ''
   })
 
   useEffect(() => {
@@ -48,7 +49,8 @@ export default function InvoiceModal ({
       recipientAddress: transaction?.address,
       description: '',
       customerName: '',
-      customerAddress: ''
+      customerAddress: '',
+      userId: transaction?.userId ?? ''
     })
   }, [transaction, mode, invoiceData])
 
@@ -67,7 +69,8 @@ export default function InvoiceModal ({
       recipientAddress: '',
       description: '',
       customerName: '',
-      customerAddress: ''
+      customerAddress: '',
+      userId: transaction?.userId ?? ''
     })
     onClose()
   }

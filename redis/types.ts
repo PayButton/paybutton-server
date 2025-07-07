@@ -61,6 +61,7 @@ export interface InvoiceData {
   transactionHash?: string
   transactionDate?: string
   transactionNetworkId?: number
+  userId?: string
 }
 
 export interface Payment {

@@ -105,7 +105,8 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
       recipientAddress: transaction.address,
       description: '',
       customerName: organization?.name ?? '',
-      customerAddress: ''
+      customerAddress: '',
+      userId: ''
     }
     setInvoiceDataTransaction(transaction)
     setInvoiceData(invoiceData)
@@ -278,11 +279,13 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'center' }}>Actions</div>),
+        Header: () => (<div style={{ textAlign: 'center' }}>Invoice</div>),
         id: 'actions',
+        disableSortBy: true,
         Cell: (cellProps) => {
           const transaction = cellProps.row.original
-          const hasInvoice = transaction.invoices?.filter(i => i !== null).length > 0
+          const invoices = transaction.invoices ?? []
+          const hasInvoice = invoices.filter(i => i !== null).length > 0
           let invoice = {} as InvoiceData
           if (hasInvoice) {
             invoice = {
