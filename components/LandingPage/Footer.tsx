@@ -1,12 +1,12 @@
-import Link from 'next/link';
-import Image from 'next/image';
-import style from '/styles/landing.module.css';
-import logoImageSource from 'assets/logo.png';
+import Link from 'next/link'
+import Image from 'next/image'
+import style from 'styles/landing.module.css'
+import logoImageSource from 'assets/logo.png'
 import LogoutButton from './LogoutButton'
 
 export default function Footer ({ userId }): JSX.Element {
-  const currentYear = new Date().getFullYear();
-  const copyrightSymbol = '\u00A9';
+  const currentYear = new Date().getFullYear()
+  const copyrightSymbol = '\u00A9'
   return (
     <div className={style.footer_ctn}>
       <div className={style.container}>
@@ -31,6 +31,13 @@ export default function Footer ({ userId }): JSX.Element {
             <Link href="https://docs.paybutton.org/#/?id=what-is-paybutton">
               Docs
             </Link>
+            <Link
+              href="https://github.com/PayButton/wordpress-plugin"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              WordPress Plugin
+            </Link>
             {userId === undefined
               ? <>
               <Link href="/signin">Sign In</Link>
@@ -46,10 +53,10 @@ export default function Footer ({ userId }): JSX.Element {
           </div>
         </div>
         <div className={style.copyright}>
-          {copyrightSymbol} 
+          {copyrightSymbol}
           {currentYear} Blockchain Ventures Corp. All Rights Reserved.
         </div>
       </div>
     </div>
-  );
+  )
 }

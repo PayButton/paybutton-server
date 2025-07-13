@@ -14,6 +14,7 @@ import Wallets from 'assets/wallet-icon.png'
 import Networks from 'assets/network-icon.png'
 import Account from 'assets/user-icon.png'
 import Docs from 'assets/docs.png'
+import WordPressIcon from 'assets/blocks.png'
 import Admin from 'assets/admin-icon.png'
 import Logout from 'assets/logout-icon.png'
 import { UserProfile } from '@prisma/client'
@@ -154,6 +155,10 @@ const Sidebar: React.FC = ({ chart, setChart, loggedUser }: IProps) => {
         <a href='https://docs.paybutton.org/#/?id=what-is-paybutton' target="_blank" rel="noreferrer noopener">
           <Image src={Docs} alt='docs' width={20} height={20} />
           <span className={style.tooltiptext}>Docs</span>
+        </a>
+        <a href='https://github.com/PayButton/wordpress-plugin' target="_blank" rel="noreferrer noopener">
+          <Image src={WordPressIcon} alt='wordpress plugin' width={20} height={20} />
+          <span className={style.tooltiptext}>WordPress Plugin</span>
         </a>
       </div>
     </aside>

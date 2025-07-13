@@ -61,6 +61,14 @@ export default function Navbar ({ userId }: IProps): JSX.Element {
             Telegram
           </Link>
           <Link href="https://docs.paybutton.org/#/?id=what-is-paybutton" onClick={() => setMobileMenu(false)}>Docs</Link>
+          <Link
+            href="https://github.com/PayButton/wordpress-plugin"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setMobileMenu(false)}
+          >
+            WordPress Plugin
+          </Link>
           {userId === undefined
             ? <>
             <a href="/signin" onClick={() => setMobileMenu(false)}>Sign In</a>
