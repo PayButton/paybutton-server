@@ -156,7 +156,7 @@ const Sidebar: React.FC = ({ chart, setChart, loggedUser }: IProps) => {
           <Image src={Docs} alt='docs' width={20} height={20} />
           <span className={style.tooltiptext}>Docs</span>
         </a>
-        <a href='https://github.com/PayButton/wordpress-plugin' target="_blank" rel="noreferrer noopener">
+        <a href='https://wordpress.org/plugins/paybutton/' target="_blank" rel="noreferrer noopener">
           <Image src={WordPressIcon} alt='wordpress plugin' width={20} height={20} />
           <span className={style.tooltiptext}>WordPress Plugin</span>
         </a>

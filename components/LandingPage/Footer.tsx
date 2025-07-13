@@ -32,7 +32,7 @@ export default function Footer ({ userId }): JSX.Element {
               Docs
             </Link>
             <Link
-              href="https://github.com/PayButton/wordpress-plugin"
+              href="https://wordpress.org/plugins/paybutton/"
               target="_blank"
               rel="noopener noreferrer"
             >
