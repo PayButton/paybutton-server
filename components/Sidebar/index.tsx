@@ -14,9 +14,10 @@ import Wallets from 'assets/wallet-icon.png'
 import Networks from 'assets/network-icon.png'
 import Account from 'assets/user-icon.png'
 import Docs from 'assets/docs.png'
-import WordPressIcon from 'assets/blocks.png'
+
 import Admin from 'assets/admin-icon.png'
 import Logout from 'assets/logout-icon.png'
+import WordPressIcon from 'assets/button-icon.png'
 import { UserProfile } from '@prisma/client'
 const ThemeToggle = dynamic(async () => await import('./themetoggle'), {
   ssr: false
