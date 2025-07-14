@@ -46,6 +46,13 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
             </div>
             <InviteLink/>
           </div>
+
+          {org.address?.trim() !== '' && (
+            <div className={style.row_ctn}>
+              <div>Address</div>
+              <div><b>{org.address}</b></div>
+            </div>
+          )}
           <div className={style.sub_header}>Manage</div>
            {orgEdit === ''
              ? (
@@ -57,6 +64,15 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
                   onClick={() => setOrgEdit('name')}
                 >
                   Edit Name
+                </Button>
+              </div>
+              <div className={style.row_ctn}>
+                <div>Organization Address</div>
+                <Button
+                  variant='xs'
+                  onClick={() => setOrgEdit('address')}
+                >
+                  Edit Address
                 </Button>
               </div>
               <div className={style.row_ctn}>
@@ -87,6 +103,7 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
               setError={setError}
               setOrg={setOrg}
               setOrgEdit={setOrgEdit}
+              editType={orgEdit as 'name' | 'address'}
             />
                  )}
         </>

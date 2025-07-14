@@ -99,6 +99,7 @@ export const RESPONSE_MESSAGES = {
   INVALID_INVITE_400: { statusCode: 400, message: 'Invalid invite.' },
   INVITATION_TOKEN_NOT_PROVIDED_400: { statusCode: 400, message: "'token' not provided." },
   ORGANIZATION_NAME_NOT_PROVIDED_400: { statusCode: 400, message: "'organizationName' not provided." },
+  ORGANIZATION_MISSING_PARAMS_400: { statusCode: 400, message: 'Missing params to update organization.' },
   INVITE_EXPIRED_400: { statusCode: 400, message: 'Invite expired.' },
   INVALID_EMAIL_400: { statusCode: 400, message: 'Invalid email.' },
   USER_OUT_OF_EMAIL_CREDITS_400: { statusCode: 400, message: 'User out of email credits.' },
