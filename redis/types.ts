@@ -71,3 +71,5 @@ export interface ButtonData {
 export interface PaymentDataByButton {
   [id: string]: ButtonData
 }
+
+export type ClientPaymentStatus = 'PENDING' | 'COMFIRMED' | 'ADDED_TO_MEMPOOL'

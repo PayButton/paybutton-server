@@ -8,7 +8,8 @@ import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTxWithInvoices } from 'redis/paymentCache'
-import { ButtonDisplayData, Payment } from 'redis/types'
+import { ButtonDisplayData, ClientPaymentStatus, Payment } from 'redis/types'
+import { v4 as uuidv4 } from 'uuid'
 
 export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
   const ret: QuoteValues = {
@@ -973,4 +974,20 @@ export const fetchDistinctPaymentYearsByUser = async (userId: string): Promise<n
   `
 
   return years.map(y => y.year)
+}
+
+export const generatePaymentId = async (address: string): Promise<string> => {
+  const rawUUID = uuidv4()
+  const cleanUUID = rawUUID.replace(/-/g, '')
+  const status = 'PENDING' as ClientPaymentStatus
+
+  const clientPayment = await prisma.clientPayment.create({
+    data: {
+      address,
+      paymentId: cleanUUID,
+      status
+    }
+  })
+
+  return clientPayment.paymentId
 }
