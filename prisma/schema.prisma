@@ -266,3 +266,12 @@ model Invoice {
   @@unique([invoiceNumber, userId], map: "Invoice_invoiceNumber_userId_unique_constraint")
   @@unique([transactionId, userId], map: "Invoice_transactionId_userId_unique_constraint")
 }
+
+model ClientPayment {
+  id                   String                 @id @default(dbgenerated("(uuid())"))
+  paymentId            String                 @unique
+  status               String               
+  address              String
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+}
