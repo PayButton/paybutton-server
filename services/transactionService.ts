@@ -1011,3 +1011,19 @@ export const generatePaymentId = async (address: string, amount?: Prisma.Decimal
 
   return clientPayment.paymentId
 }
+
+export const generatePaymentId = async (address: string): Promise<string> => {
+  const rawUUID = uuidv4()
+  const cleanUUID = rawUUID.replace(/-/g, '')
+  const status = 'PENDING' as ClientPaymentStatus
+
+  const clientPayment = await prisma.clientPayment.create({
+    data: {
+      address,
+      paymentId: cleanUUID,
+      status
+    }
+  })
+
+  return clientPayment.paymentId
+}
