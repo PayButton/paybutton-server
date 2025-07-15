@@ -104,6 +104,8 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
               setOrg={setOrg}
               setOrgEdit={setOrgEdit}
               editType={orgEdit as 'name' | 'address'}
+              loading={loading}
+              setLoading={setLoading}
             />
                  )}
         </>

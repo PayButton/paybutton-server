@@ -9,6 +9,8 @@ interface IProps {
   setOrg: Function
   setOrgEdit: Function
   editType: 'name' | 'address'
+  loading: boolean
+  setLoading: Function
 }
 
 interface UpdateOrganizationForm {
@@ -16,10 +18,11 @@ interface UpdateOrganizationForm {
   address?: string
 }
 
-const UpdateOrganization = ({ user, setError, setOrg, setOrgEdit, editType }: IProps): JSX.Element => {
+const UpdateOrganization = ({ user, setError, setOrg, setOrgEdit, editType, loading, setLoading }: IProps): JSX.Element => {
   const { register, handleSubmit, reset } = useForm<UpdateOrganizationForm>({})
 
   const onSubmit = async (params: UpdateOrganizationForm): Promise<void> => {
+    setLoading(true)
     const res = await fetch('/api/organization', {
       method: 'PUT',
       headers: {
@@ -36,6 +39,7 @@ const UpdateOrganization = ({ user, setError, setOrg, setOrgEdit, editType }: IP
       const data = await res.json()
       setOrg(data.organization)
       reset()
+      setLoading(false)
       setOrgEdit('')
     } else {
       const json = await res.json()
@@ -62,7 +66,7 @@ const UpdateOrganization = ({ user, setError, setOrg, setOrgEdit, editType }: IP
           className={style.text_input}
           autoFocus
         />
-        <Button className="ml" type="submit">
+        <Button className="ml" type="submit" loading={loading}>
           Update
         </Button>
       </div>
