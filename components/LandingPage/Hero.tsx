@@ -16,8 +16,7 @@ export default function Hero (): JSX.Element {
             </h1>
             <p>
               Start accepting XEC or BCH on your website with only a few lines
-              of code. No complex setup, no hidden fees, just simple and secure
-              payments.
+              of code
             </p>
             <div className={style.hero_features}>
               <span>⚡ Fast</span>
