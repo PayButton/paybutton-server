@@ -6,17 +6,17 @@ import axios from 'axios'
 import { Prisma } from '@prisma/client'
 import { useReactToPrint } from 'react-to-print'
 import PrintableReceipt from './Invoice'
-import { InvoiceData } from 'redis/types'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import { XEC_NETWORK_ID } from 'constants/index'
 import Image from 'next/image'
+import { InvoiceWithTransaction } from 'services/invoiceService'
 
 interface InvoiceModalProps {
   isOpen: boolean
   onClose: () => void
   transaction: any
-  invoiceData: InvoiceData | null
+  invoiceData: InvoiceWithTransaction | null
   mode: 'create' | 'edit' | 'view'
 }
 
@@ -28,18 +28,35 @@ export default function InvoiceModal ({
   mode
 }: InvoiceModalProps): ReactElement | null {
   const contentRef = useRef<HTMLDivElement>(null)
-  const handlePrint = useReactToPrint({ contentRef })
+  const handlePrint = useReactToPrint({
+    contentRef,
+    onBeforePrint: async () => {
+      return await new Promise<void>((resolve) => {
+        setLoading(true)
+        setTimeout(() => {
+          setLoading(false)
+          resolve()
+        }, 1000)
+      })
+    }
+  })
 
-  const [formData, setFormData] = useState<InvoiceData>({
+  const [formData, setFormData] = useState<InvoiceWithTransaction>({
+    id: '',
     invoiceNumber: '',
-    amount: transaction?.amount,
+    amount: transaction?.amount ?? new Prisma.Decimal(0),
     recipientName: '',
-    recipientAddress: transaction?.address,
+    recipientAddress: transaction?.address ?? '',
     description: '',
     customerName: '',
     customerAddress: '',
-    userId: transaction?.userId ?? ''
+    userId: transaction?.userId ?? '',
+    transaction: transaction ?? null,
+    transactionId: transaction?.id ?? null,
+    createdAt: new Date(),
+    updatedAt: new Date()
   })
+  const [loading, setLoading] = useState<boolean>(false)
 
   useEffect(() => {
     setFormData(invoiceData ?? {
@@ -50,7 +67,12 @@ export default function InvoiceModal ({
       description: '',
       customerName: '',
       customerAddress: '',
-      userId: transaction?.userId ?? ''
+      userId: transaction?.userId ?? '',
+      transaction: transaction ?? null,
+      transactionId: transaction?.id ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      id: ''
     })
   }, [transaction, mode, invoiceData])
 
@@ -70,7 +92,12 @@ export default function InvoiceModal ({
       description: '',
       customerName: '',
       customerAddress: '',
-      userId: transaction?.userId ?? ''
+      userId: transaction?.userId ?? '',
+      transaction: transaction ?? null,
+      transactionId: transaction?.id ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      id: ''
     })
     onClose()
   }
@@ -237,7 +264,7 @@ export default function InvoiceModal ({
               </div>
             </div>
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-              <Button type="button" onClick={handlePrint}>Download as PDF</Button>
+              <Button type="button" onClick={handlePrint} loading={loading}>Download as PDF</Button>
               <Button type="button" onClick={handleModalClose}>Close</Button>
             </div>
           </div>

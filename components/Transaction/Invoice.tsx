@@ -15,9 +15,7 @@ const Receipt = React.forwardRef((props, ref) => {
     customerName,
     customerAddress,
     createdAt,
-    transactionHash,
-    transactionDate,
-    transactionNetworkId
+    transaction
   } = data
   const formattedDate = new Date(createdAt).toLocaleString('en-US', {
     month: 'short',
@@ -27,6 +25,7 @@ const Receipt = React.forwardRef((props, ref) => {
     minute: '2-digit',
     hour12: true
   }).replace(',', '')
+  const transactionNetworkId = transaction.networkId
   const url = transactionNetworkId === XEC_NETWORK_ID ? XEC_TX_EXPLORER_URL : BCH_TX_EXPLORER_URL
   return (
     <div ref={ref} style={{ padding: 24 }}>
@@ -40,8 +39,8 @@ const Receipt = React.forwardRef((props, ref) => {
           </div>
       </div>
       <p><strong>Generated at:</strong> { formattedDate }</p>
-      <p><strong>Transaction ID:</strong> <a href={url.concat(transactionHash)} target="_blank" rel="noopener noreferrer">{transactionHash}</a></p>
-      <p><strong>Transaction Date & Time:</strong> { moment(transactionDate * 1000).tz('utc').format('lll') } </p>
+      <p><strong>Transaction ID:</strong> <a href={url.concat(transaction.hash)} target="_blank" rel="noopener noreferrer">{transaction.hash}</a></p>
+      <p><strong>Transaction Date & Time:</strong> { moment(transaction.timestamp * 1000).tz('utc').format('lll') } </p>
 
       <h4>Senders</h4>
       <p>{ customerName } - { customerAddress }</p>

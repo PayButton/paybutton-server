@@ -1,6 +1,6 @@
 import { Decimal } from '@prisma/client/runtime/library'
 import prisma from 'prisma/clientInstance'
-import { Invoice } from '@prisma/client'
+import { Invoice, Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 export interface CreateInvoiceParams {
@@ -22,6 +22,17 @@ export interface UpdateInvoiceParams {
   customerName: string
   customerAddress: string
 }
+const invoiceWithTransaction = Prisma.validator<Prisma.InvoiceDefaultArgs>()({
+  include: {
+    transaction: {
+      include: {
+        address: true
+      }
+    }
+  }
+})
+
+export type InvoiceWithTransaction = Prisma.InvoiceGetPayload<typeof invoiceWithTransaction>
 
 export async function createInvoice (params: CreateInvoiceParams): Promise<Invoice> {
   return await prisma.invoice.create({
