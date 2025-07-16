@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import style from '../../../../../../styles/landing.module.css'
+import style from 'styles/landing.module.css'
 import WordPressPayButton from 'assets/wordpress-paybutton.png'
 
 export default function WordPressSection (): JSX.Element {

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import style from '../../../../../../styles/landing.module.css'
+import style from 'styles/landing.module.css'
 
 export default function CTASection (): JSX.Element {
   return (

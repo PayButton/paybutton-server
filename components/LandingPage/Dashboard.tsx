@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import style from '../../../../../../styles/landing.module.css'
+import style from 'styles/landing.module.css'
 import DashboardScreen from 'assets/dashboard-light.png'
 import DashboardScreenDark from 'assets/dashboard-dark.png'
 import Wave from 'assets/wave2.svg'

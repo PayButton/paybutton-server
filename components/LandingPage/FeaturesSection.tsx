@@ -1,4 +1,4 @@
-import style from '../../../../../../styles/landing.module.css'
+import style from 'styles/landing.module.css'
 
 export default function FeaturesSection (): JSX.Element {
   return (
