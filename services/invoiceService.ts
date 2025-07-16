@@ -25,8 +25,14 @@ export interface UpdateInvoiceParams {
 const invoiceWithTransaction = Prisma.validator<Prisma.InvoiceDefaultArgs>()({
   include: {
     transaction: {
-      include: {
-        address: true
+      select: {
+        address: {
+          select: {
+            networkId: true
+          }
+        },
+        timestamp: true,
+        hash: true
       }
     }
   }
