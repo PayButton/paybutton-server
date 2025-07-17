@@ -9,11 +9,6 @@ export default function CTASection (): JSX.Element {
           <h2>
             Ready to Start Accepting <span>eCash</span>?
           </h2>
-          <p>
-            Join hundreds of developers and businesses already using PayButton
-            to accept eCash payments. Get started in minutes with our simple
-            setup process.
-          </p>
           <div className={style.cta_buttons}>
             <Link href="/signup" className="button_main button_large">
               Get Started Free
