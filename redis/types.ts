@@ -1,3 +1,4 @@
+import { Invoice } from '@prisma/client'
 import { Decimal } from '@prisma/client/runtime/library'
 import { QuoteValues } from 'services/priceService'
 
@@ -48,6 +49,7 @@ export interface ButtonDisplayData {
 }
 
 export interface Payment {
+  id?: string
   timestamp: number
   values: QuoteValues
   amount?: Decimal
@@ -55,6 +57,7 @@ export interface Payment {
   hash: string
   buttonDisplayDataList: ButtonDisplayData[]
   address?: string
+  invoices?: Invoice[]
 }
 
 export interface ButtonData {

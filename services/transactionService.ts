@@ -7,7 +7,7 @@ import _ from 'lodash'
 import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
-import { generatePaymentFromTx } from 'redis/paymentCache'
+import { generatePaymentFromTxWithInvoices } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
 
 export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
@@ -663,13 +663,32 @@ export async function getPaymentsByUserIdOrderedByButtonName (
           'priceValue', pb.value,
           'quoteId', pb.quoteId
         )
-      ) AS prices
+      ) AS prices,
+      JSON_ARRAYAGG(
+        IF(i.id IS NOT NULL,
+          JSON_OBJECT(
+            'id', i.id,
+            'invoiceNumber', i.invoiceNumber,
+            'userId', i.userId,
+            'amount', i.amount,
+            'description', i.description,
+            'recipientName', i.recipientName,
+            'recipientAddress', i.recipientAddress,
+            'customerName', i.customerName,
+            'customerAddress', i.customerAddress,
+            'createdAt', i.createdAt,
+            'updatedAt', i.updatedAt
+          ),
+          NULL
+        )
+      ) AS invoices
     FROM \`Transaction\` t
     INNER JOIN \`Address\` a ON t.\`addressId\` = a.\`id\`
     INNER JOIN \`AddressesOnButtons\` ab ON a.\`id\` = ab.\`addressId\`
     INNER JOIN \`Paybutton\` p ON ab.\`paybuttonId\` = p.\`id\`
     LEFT JOIN \`PricesOnTransactions\` pt ON t.\`id\` = pt.\`transactionId\`
     LEFT JOIN \`Price\` pb ON pt.\`priceId\` = pb.\`id\`
+    LEFT JOIN \`Invoice\` i ON i.\`transactionId\` = t.\`id\`
     WHERE t.\`amount\` > 0
     AND EXISTS (
       SELECT 1
@@ -706,14 +725,23 @@ export async function getPaymentsByUserIdOrderedByButtonName (
       id: tx.paybuttonId,
       providerUserId: tx.paybuttonProviderUserId
     })
+    let invoices = null
+    if (JSON.parse(tx.invoices).length > 0) {
+      invoices = JSON.parse(tx.invoices).filter((invoice: any) => {
+        return invoice !== null && invoice.userId === userId
+      })
+    }
+
     if (tx.amount > 0) {
       payments.push({
+        id: tx.id,
         amount: tx.amount,
         timestamp: tx.timestamp,
         values: ret,
         networkId: tx.networkId,
         hash: tx.hash,
-        buttonDisplayDataList
+        buttonDisplayDataList,
+        invoices
       })
     }
   })
@@ -783,7 +811,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
 
   const transactions = await prisma.transaction.findMany({
     where,
-    include: includePaybuttonsAndPrices,
+    include: includePaybuttonsAndPricesAndInvoices,
     orderBy: orderByQuery,
     skip: page * Number(pageSize),
     take: Number(pageSize)
@@ -793,7 +821,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   for (let index = 0; index < transactions.length; index++) {
     const tx = transactions[index]
     if (Number(tx.amount) > 0) {
-      const payment = await generatePaymentFromTx(tx)
+      const payment = await generatePaymentFromTxWithInvoices(tx, userId)
       transformedData.push(payment)
     }
   }
