@@ -554,20 +554,23 @@ body[data-theme="dark"] .dashboard_img_dark {
   left: 0;
   right: 0;
   z-index: 1;
-  filter: invert(100%);
+  --wave-fill-color: #e5e4e4;
 }
 
 body[data-theme="dark"] .wave2 {
-  filter: invert(11%) sepia(0%) saturate(1098%) hue-rotate(206deg)
-    brightness(94%) contrast(79%);
+  --wave-fill-color: #1a1a1a;
 }
 
 .whitebackground {
-  background-color: var(--secondary-bg-color);
+  background-color: #e5e4e4;
   height: 200px;
   width: 100%;
   position: absolute;
   bottom: 0;
+}
+
+body[data-theme="dark"] .whitebackground {
+  background-color: #1a1a1a;
 }
 
 /*************************** GETSTARTED **************************/
@@ -882,9 +885,13 @@ body[data-theme="dark"] .feature_card p {
 
 .wordpress_ctn {
   padding: 120px 0;
-  background: var(--secondary-bg-color);
+  background: #e5e4e4;
   position: relative;
   overflow: hidden;
+}
+
+body[data-theme="dark"] .wordpress_ctn {
+  background: #1a1a1a;
 }
 
 .wordpress_content {
