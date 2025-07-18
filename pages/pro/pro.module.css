@@ -1,0 +1,52 @@
+.container {
+  padding: 1rem;
+}
+
+.heading {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.card:hover {
+  border-color: #fff;
+  background-color: #333;
+}
+
+.selected {
+  border-color: #0070f3;
+  background-color: #8888f3;
+  transform: scale(1.05);
+}
+
+.label {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.price {
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.payButtonWrapper {
+  text-align: center;
+}
+
