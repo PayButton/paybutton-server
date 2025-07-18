@@ -56,16 +56,17 @@ const component: FunctionComponent<IProps> = ({ wallet, paymentInfo, userAddress
         {
           isSyncing
             ? <p>Syncing transactions...</p>
-            : paymentInfo.XECBalance > new Prisma.Decimal(0) &&
-            <>
+            : <>
+              { paymentInfo.XECBalance > new Prisma.Decimal(0) &&
               <div className={style.info_item}>
                 <h6>XEC Balance</h6>
-                <h5>{Number(paymentInfo.XECBalance).toLocaleString()} XEC</h5>
+                <h5>{Number(paymentInfo.XECBalance).toLocaleString(navigator.language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} XEC</h5>
               </div>
+              }
               { paymentInfo.BCHBalance > new Prisma.Decimal(0) &&
               <div className={style.info_item}>
                 <h6>BCH Balance</h6>
-                <h5>{Number(paymentInfo.BCHBalance).toLocaleString()} BCH</h5>
+                <h5>{Number(paymentInfo.BCHBalance).toLocaleString(navigator.language, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} BCH</h5>
               </div>
               }
             </>
