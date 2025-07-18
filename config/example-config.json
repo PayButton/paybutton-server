@@ -38,7 +38,7 @@
       "6": 30,
       "12": 50
     },
-    "payoutAddress":  "ecash:qrf4zh4vgrdal8d8gu905d90w5u2y60djcd2d5h6un"
+    "payoutAddress":  "ecash:qrf4zh4vgrdal8d8gu905d90w5u2y60djcd2d5h6un",
     "standardDailyEmailLimit": 5,
     "proDailyEmailLimit": 100,
     "standardAddressesPerButtonLimit": 20,
