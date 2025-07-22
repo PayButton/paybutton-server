@@ -47,7 +47,12 @@ export default async (req: any, res: any): Promise<void> => {
     if (typeof req.query.buttonIds === 'string' && req.query.buttonIds !== '') {
       buttonIds = req.query.buttonIds.split(',')
     }
-    const transactions = await fetchAllPaymentsByUserId(userId, networkIdArray, buttonIds)
+    let years: string[] | undefined
+    if (typeof req.query.years === 'string' && req.query.years !== '') {
+      years = (req.query.years as string).split(',')
+    }
+
+    const transactions = await fetchAllPaymentsByUserId(userId, networkIdArray, buttonIds, years)
 
     await downloadTxsFile(res, quoteSlug, timezone, transactions, userId)
   } catch (error: any) {
