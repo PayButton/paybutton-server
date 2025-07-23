@@ -4,11 +4,12 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 import prisma from 'prisma/clientInstance'
 import { CreateOrganizationInput, UpdateOrganizationInput } from 'utils/validators'
 
-export async function createOrganization ({ creatorId, name }: CreateOrganizationInput): Promise<Organization> {
+export async function createOrganization ({ creatorId, name, address }: CreateOrganizationInput): Promise<Organization> {
   return await prisma.organization.create({
     data: {
       creatorId,
       name,
+      address: address ?? '',
       users: {
         connect: {
           id: creatorId

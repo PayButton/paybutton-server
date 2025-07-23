@@ -467,11 +467,13 @@ export const exportedForTesting = {
 export interface CreateOrganizationPOSTParameters {
   creatorId?: string
   name?: string
+  address?: string
 }
 
 export interface CreateOrganizationInput {
   creatorId: string
   name: string
+  address?: string
 }
 
 export interface UpdateOrganizationPUTParameters {
@@ -515,7 +517,7 @@ export const parseJoinOrganizationPOSTRequest = function (params: JoinOrganizati
 
 export const parseUpdateOrganizationPUTRequest = function (params: UpdateOrganizationPUTParameters): UpdateOrganizationInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
-  if ((params.name === '' || params.name === undefined) && (params.address === '' || params.address === undefined)) throw new Error(RESPONSE_MESSAGES.ORGANIZATION_NAME_NOT_PROVIDED_400.message)
+  if ((params.name === '' || params.name === undefined) && (params.address === '' || params.address === undefined)) throw new Error(RESPONSE_MESSAGES.ORGANIZATION_MISSING_PARAMS_400.message)
   return {
     userId: params.userId,
     name: params.name,
@@ -528,7 +530,8 @@ export const parseCreateOrganizationPOSTRequest = function (params: CreateOrgani
   if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.ORGANIZATION_NAME_NOT_PROVIDED_400.message)
   return {
     creatorId: params.creatorId,
-    name: params.name
+    name: params.name,
+    address: params.address
   }
 }
 
