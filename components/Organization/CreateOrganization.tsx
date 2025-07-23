@@ -15,6 +15,7 @@ interface IProps {
 interface CreateOrganizationForm {
   name: string
   userId: string
+  address: string
 }
 
 const CreateOrganization = ({ user, setError, setOrg, setOrgMembers, loading, setLoading }: IProps): JSX.Element => {
@@ -30,6 +31,7 @@ const CreateOrganization = ({ user, setError, setOrg, setOrgMembers, loading, se
       },
       body: JSON.stringify({
         name: params.name,
+        address: params.address,
         creatorId: user.userProfile.id
       })
     })
@@ -52,13 +54,21 @@ const CreateOrganization = ({ user, setError, setOrg, setOrgMembers, loading, se
     method="post"
   >
     <div className={style.create_input_ctn}>
-    <input
-      {...register('name')}
-      type="text"
-      placeholder="Enter the name for your organization."
-      required
-      className={style.text_input}
-    />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }} >
+        <input
+          {...register('name')}
+          type="text"
+          placeholder="Enter the name for your organization."
+          required
+          className={style.text_input}
+        />
+        <input
+          {...register('address')}
+          type="text"
+          placeholder="Enter the address for your organization."
+          className={style.text_input}
+        />
+      </div>
       <Button className='ml' type='submit' loading={loading}>Create</Button>
     </div>
   </form>

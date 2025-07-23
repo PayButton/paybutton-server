@@ -28,8 +28,8 @@ export default async (
         case RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message:
           res.status(400).json(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400)
           break
-        case RESPONSE_MESSAGES.ORGANIZATION_NAME_NOT_PROVIDED_400.message:
-          res.status(400).json(RESPONSE_MESSAGES.ORGANIZATION_NAME_NOT_PROVIDED_400)
+        case RESPONSE_MESSAGES.ORGANIZATION_MISSING_PARAMS_400.message:
+          res.status(400).json(RESPONSE_MESSAGES.ORGANIZATION_MISSING_PARAMS_400)
           break
         default:
           res.status(500).json({ statusCode: 500, message: err.message })

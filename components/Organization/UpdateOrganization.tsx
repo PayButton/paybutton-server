@@ -8,30 +8,38 @@ interface IProps {
   setError: Function
   setOrg: Function
   setOrgEdit: Function
+  editType: 'name' | 'address'
+  loading: boolean
+  setLoading: Function
 }
 
 interface UpdateOrganizationForm {
-  name: string
+  name?: string
+  address?: string
 }
 
-const UpdateOrganization = ({ user, setError, setOrg, setOrgEdit }: IProps): JSX.Element => {
+const UpdateOrganization = ({ user, setError, setOrg, setOrgEdit, editType, loading, setLoading }: IProps): JSX.Element => {
   const { register, handleSubmit, reset } = useForm<UpdateOrganizationForm>({})
 
-  const onSubmit = async (params: any): Promise<void> => {
+  const onSubmit = async (params: UpdateOrganizationForm): Promise<void> => {
+    setLoading(true)
     const res = await fetch('/api/organization', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        name: params.name,
-        userId: user.userProfile.id
+        userId: user.userProfile.id,
+        ...(editType === 'name' ? { name: params.name } : {}),
+        ...(editType === 'address' ? { address: params.address } : {})
       })
     })
+
     if (res.status === 200) {
       const data = await res.json()
       setOrg(data.organization)
       reset()
+      setLoading(false)
       setOrgEdit('')
     } else {
       const json = await res.json()
@@ -46,22 +54,24 @@ const UpdateOrganization = ({ user, setError, setOrg, setOrgEdit }: IProps): JSX
       }}
       method="post"
     >
-      <label className={style.label}>Change name</label>
+      <label className={style.label}>
+        {editType === 'name' ? 'Change name' : 'Change address'}
+      </label>
       <div className={style.create_input_ctn}>
-      <input
-        {...register('name')}
-        type="text"
-        placeholder="Enter the new name for your organization."
-        required
-        className={style.text_input}
-        autoFocus
-      />
-        <Button className='ml' type='submit'>
+        <input
+          {...register(editType)}
+          type="text"
+          placeholder={`Enter the new ${editType} for your organization.`}
+          required
+          className={style.text_input}
+          autoFocus
+        />
+        <Button className="ml" type="submit" loading={loading}>
           Update
         </Button>
       </div>
       <button className={style.cancel_btn} onClick={() => setOrgEdit('')}>
-          Cancel
+        Cancel
       </button>
     </form>
   )

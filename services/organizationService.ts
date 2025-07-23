@@ -4,11 +4,12 @@ import { RESPONSE_MESSAGES } from 'constants/index'
 import prisma from 'prisma/clientInstance'
 import { CreateOrganizationInput, UpdateOrganizationInput } from 'utils/validators'
 
-export async function createOrganization ({ creatorId, name }: CreateOrganizationInput): Promise<Organization> {
+export async function createOrganization ({ creatorId, name, address }: CreateOrganizationInput): Promise<Organization> {
   return await prisma.organization.create({
     data: {
       creatorId,
       name,
+      address: address ?? '',
       users: {
         connect: {
           id: creatorId
@@ -71,7 +72,7 @@ export async function deleteOrganization (organizationId: string, userId: string
   })
 }
 
-export async function updateOrganization ({ userId, name }: UpdateOrganizationInput): Promise<Organization> {
+export async function updateOrganization ({ userId, name, address }: UpdateOrganizationInput): Promise<Organization> {
   const organization = await prisma.organization.findFirst({
     where: { creatorId: userId }
   })
@@ -82,7 +83,10 @@ export async function updateOrganization ({ userId, name }: UpdateOrganizationIn
 
   return await prisma.organization.update({
     where: { id: organization.id },
-    data: { name }
+    data: {
+      ...(name !== undefined || name === '' ? { name } : {}),
+      ...(address !== undefined || address === '' ? { address } : {})
+    }
   })
 }
 
