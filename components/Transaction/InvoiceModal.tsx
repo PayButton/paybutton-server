@@ -228,7 +228,7 @@ export default function InvoiceModal ({
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
                 <div className="mt-2">
-                    <Button type="button" onClick={handleModalClose}>
+                    <Button type="button" onClick={handleModalClose} variant="outlined">
                     {isReadOnly ? 'Close' : 'Cancel'}
                     </Button>
                 </div>
@@ -263,9 +263,9 @@ export default function InvoiceModal ({
                 <strong>Customer Address:</strong> {formData.customerAddress}
               </div>
             </div>
-            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between' }}>
+              <Button type="button" onClick={handleModalClose} variant="outlined">Cancel</Button>
               <Button type="button" onClick={handlePrint} loading={loading}>Download as PDF</Button>
-              <Button type="button" onClick={handleModalClose}>Close</Button>
             </div>
           </div>
                  }
