@@ -221,6 +221,11 @@ body[data-theme='dark'] .form_ctn select:not([multiple]) {
   box-shadow: none;
 }
 
+.form_ctn input:disabled {
+  background-color: var(--secondary-bg-color) !important;
+  color: var(--primary-text-color);
+}
+
 .form_ctn .delete_btn {
   background-color: unset;
   border: none;
@@ -351,7 +356,7 @@ body[data-theme='dark'] .edit_invoice img {
   filter: invert(1);
 }
 
-body[data-theme='dark'] .see_invoice img {
+body[data-theme='dark'] .view_invoice img {
   filter: invert(1);
 }
 
@@ -365,7 +370,7 @@ body[data-theme='dark'] .see_invoice img {
     brightness(100%) contrast(102%);
 }
 
-.see_invoice_ctn:hover .see_invoice {
+.view_invoice_ctn:hover .view_invoice {
   filter: invert(60%) sepia(14%) saturate(5479%) hue-rotate(195deg)
     brightness(100%) contrast(102%);
 }

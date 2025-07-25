@@ -1,6 +1,7 @@
 import { setSession } from 'utils/setSession'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { CreateInvoiceParams, UpdateInvoiceParams, createInvoice, updateInvoice } from 'services/invoiceService'
+import { Decimal } from '@prisma/client/runtime/library'
 
 export default async (
   req: any,
@@ -11,8 +12,15 @@ export default async (
   if (req.method === 'POST') {
     try {
       const createInvoiceParams: CreateInvoiceParams = {
-        ...req.body,
-        userId: session.userId
+        userId: session.userId,
+        transactionId: req.body.transaction?.id,
+        invoiceNumber: req.body.invoiceNumber,
+        amount: new Decimal(req.body.amount),
+        description: req.body.description,
+        recipientName: req.body.recipientName,
+        recipientAddress: req.body.recipientAddress,
+        customerName: req.body.customerName,
+        customerAddress: req.body.customerAddress
       }
       const invoice = await createInvoice(createInvoiceParams)
       res.status(200).json({
@@ -30,7 +38,11 @@ export default async (
   } else if (req.method === 'PUT') {
     try {
       const updateInvoiceParams: UpdateInvoiceParams = {
-        ...req.body
+        description: req.body.description,
+        recipientName: req.body.recipientName,
+        recipientAddress: req.body.recipientAddress,
+        customerName: req.body.customerName,
+        customerAddress: req.body.customerAddress
       }
       const invoiceId = req.query.invoiceId as string
       const invoice = await updateInvoice(session.userId,
