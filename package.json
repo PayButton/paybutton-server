@@ -15,7 +15,7 @@
     "test": "dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js",
     "pretest": "dotenv -e .env.test -- prisma migrate reset --force",
     "prisma": "dotenv -e .env -c -- prisma",
-    "docker": "./scripts/docker-exec-shortcuts.sh",
+    "docker": "bash ./scripts/docker-exec-shortcuts.sh",
     "ci:integration:test": "yarn pretest && dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js tests/integration-tests --forceExit",
     "tarDebug": "tar cf debug.tar logs/ paybutton-config.json .env*",
     "updateAllPrices": "./scripts/update-all-prices.sh",
