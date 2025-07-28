@@ -336,7 +336,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
 
                     <Image src={Plus} alt='create invoice' width={14} height={14} />
                   </button>
-                  <div className={style.tooltiptext}>New button</div>
+                  <div className={style.tooltiptext}>New Invoice</div>
                 </div>
                   )
                 : (

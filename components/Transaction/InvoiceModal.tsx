@@ -241,7 +241,6 @@ export default function InvoiceModal ({
                  }
         </div>
         <div style={{ display: 'none' }}>
-        {/* <div> */}
           <PrintableReceipt ref={contentRef} data={invoiceData} />
         </div>
       </div>
