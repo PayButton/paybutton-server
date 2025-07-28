@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client'
-import { prismaMock } from 'prisma/mockedClient'
-import prisma from 'prisma/clientInstance'
+import { prismaMock } from '../../prisma/mockedClient'
+import prisma from '../../prisma/clientInstance'
 import axios from 'axios'
 
 // Mock axios for external requests
@@ -8,15 +8,15 @@ jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
 
 // Mock utils/validators to control JSON parsing behavior
-jest.mock('utils/validators', () => {
-  const originalModule = jest.requireActual('utils/validators')
+jest.mock('../../utils/validators', () => {
+  const originalModule = jest.requireActual('../../utils/validators')
   return {
     ...originalModule,
     parseTriggerPostData: jest.fn()
   }
 })
 
-import { parseTriggerPostData } from 'utils/validators'
+import { parseTriggerPostData } from '../../utils/validators'
 const mockedParseTriggerPostData = parseTriggerPostData as jest.MockedFunction<typeof parseTriggerPostData>
 
 describe('Trigger JSON Validation Integration Tests', () => {
