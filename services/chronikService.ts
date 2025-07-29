@@ -284,7 +284,7 @@ export class ChronikBlockchainClient {
     return (await this.chronik.script(type, hash160).history(page, pageSize)).txs
   }
 
-  public async * syncTransactionsForAddress (addressString: string, fully = false): AsyncGenerator<TransactionWithAddressAndPrices[]> {
+  public async * syncTransactionsForAddress (addressString: string, fully = false, runTriggers = false): AsyncGenerator<TransactionWithAddressAndPrices[]> {
     const address = await fetchAddressBySubstring(addressString)
     if (address.syncing) { return }
     await setSyncing(addressString, true)
@@ -326,6 +326,9 @@ export class ChronikBlockchainClient {
         broadcastTxData.txs = simplifiedTransactions
 
         this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
+        if (runTriggers) {
+          await executeAddressTriggers(broadcastTxData, this.networkId)
+        }
       }
 
       yield persistedTransactions
@@ -550,7 +553,7 @@ export class ChronikBlockchainClient {
     }
   }
 
-  public async syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
+  public async syncAddresses (addresses: Address[], runTriggers = false): Promise<SyncAndSubscriptionReturn> {
     const failedAddressesWithErrors: KeyValueT<string> = {}
     const successfulAddressesWithCount: KeyValueT<number> = {}
     let txsToSave: Prisma.TransactionCreateManyInput[] = []
@@ -566,7 +569,7 @@ export class ChronikBlockchainClient {
     console.log(`${this.CHRONIK_MSG_PREFIX} Syncing ${addresses.length} addresses...`)
     for (const addr of addresses) {
       try {
-        const generator = this.syncTransactionsForAddress(addr.address)
+        const generator = this.syncTransactionsForAddress(addr.address, false, runTriggers)
         let count = 0
         while (true) {
           const result = await generator.next()
@@ -603,7 +606,7 @@ export class ChronikBlockchainClient {
   public async syncMissedTransactions (): Promise<void> {
     const addresses = await fetchAllAddressesForNetworkId(this.networkId)
     try {
-      const { failedAddressesWithErrors, successfulAddressesWithCount } = await this.syncAddresses(addresses)
+      const { failedAddressesWithErrors, successfulAddressesWithCount } = await this.syncAddresses(addresses, true)
       Object.keys(failedAddressesWithErrors).forEach((addr) => {
         console.error(`${this.CHRONIK_MSG_PREFIX}: When syncing missing addresses for address ${addr} encountered error: ${failedAddressesWithErrors[addr]}`)
       })
@@ -799,12 +802,12 @@ class MultiBlockchainClient {
     })
   }
 
-  public async syncAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
+  public async syncAddresses (addresses: Address[], runTriggers = false): Promise<SyncAndSubscriptionReturn> {
     let failedAddressesWithErrors: KeyValueT<string> = {}
     let successfulAddressesWithCount: KeyValueT<number> = {}
 
     for (const networkSlug of Object.keys(this.clients)) {
-      const ret = await this.clients[networkSlug as MainNetworkSlugsType].syncAddresses(addresses)
+      const ret = await this.clients[networkSlug as MainNetworkSlugsType].syncAddresses(addresses, runTriggers)
       failedAddressesWithErrors = { ...failedAddressesWithErrors, ...ret.failedAddressesWithErrors }
       successfulAddressesWithCount = { ...successfulAddressesWithCount, ...ret.successfulAddressesWithCount }
     }
