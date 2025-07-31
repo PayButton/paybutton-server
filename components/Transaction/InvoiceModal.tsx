@@ -104,12 +104,13 @@ export default function InvoiceModal ({
 
   async function handleSubmit (e: React.FormEvent): Promise<void> {
     e.preventDefault()
-
+    setLoading(true)
     if (mode === 'edit') {
       await updateInvoice()
     } else {
       await createInvoice()
     }
+    setLoading(false)
     onClose()
   }
 
@@ -234,7 +235,7 @@ export default function InvoiceModal ({
                 </div>
                 {!isReadOnly && (
                 <div className="mt-2">
-                    <Button type="submit">Submit</Button>
+                    <Button type="submit" loading={loading}>Submit</Button>
                 </div>
                 )}
             </div>
