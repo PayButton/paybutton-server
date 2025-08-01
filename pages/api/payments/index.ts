@@ -14,6 +14,10 @@ export default async (req: any, res: any): Promise<void> => {
     if (typeof req.query.buttonIds === 'string' && req.query.buttonIds !== '') {
       buttonIds = (req.query.buttonIds as string).split(',')
     }
+    let years: string[] | undefined
+    if (typeof req.query.years === 'string' && req.query.years !== '') {
+      years = (req.query.years as string).split(',')
+    }
 
     const resJSON = await fetchAllPaymentsByUserIdWithPagination(
       userId,
@@ -21,7 +25,8 @@ export default async (req: any, res: any): Promise<void> => {
       pageSize,
       orderBy,
       orderDesc,
-      buttonIds
+      buttonIds,
+      years
     )
     res.status(200).json(resJSON)
   }
