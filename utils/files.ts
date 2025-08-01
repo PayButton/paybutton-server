@@ -119,20 +119,149 @@ export function streamToCSV (
   }
 }
 
-const getUniquePrices = (tempTxGroup: TransactionsWithPaybuttonsAndPrices[], groupKey: string, currency: SupportedQuotesType): Set<number> => {
-  const uniquePrices: Set<number> = new Set()
-  const quoteId = QUOTE_IDS[currency.toUpperCase()]
-  tempTxGroup
-    .forEach(tx => {
+/**
+ * Helper class to manage transaction groups for payment collapsing
+ */
+class TransactionGroupManager {
+  private tempTxGroups: Record<string, TransactionsWithPaybuttonsAndPrices[]> = {}
+
+  constructor(
+    private currency: SupportedQuotesType,
+    private timezone: string
+  ) {}
+
+  /**
+   * Add a transaction to a group
+   */
+  addToGroup(groupKey: string, tx: TransactionsWithPaybuttonsAndPrices): void {
+    if (this.tempTxGroups[groupKey] === undefined) {
+      this.tempTxGroups[groupKey] = []
+    }
+    this.tempTxGroups[groupKey].push(tx)
+  }
+
+  /**
+   * Process and clear all groups
+   */
+  processAllGroups(treatedPayments: TransactionFileData[]): void {
+    Object.keys(this.tempTxGroups).forEach(key => {
+      this.processGroup(key, treatedPayments)
+    })
+  }
+
+  /**
+   * Process a specific group and add to treated payments
+   */
+  processGroup(groupKey: string, treatedPayments: TransactionFileData[]): void {
+    const tempTxGroup = this.tempTxGroups[groupKey]
+    if (tempTxGroup === undefined || tempTxGroup.length === 0) return
+
+    if (tempTxGroup.length === 1) {
+      this.addSingleTransaction(tempTxGroup[0], groupKey, treatedPayments)
+    } else {
+      this.addCollapsedTransactionGroup(tempTxGroup, groupKey, treatedPayments)
+    }
+
+    this.tempTxGroups[groupKey] = []
+  }
+
+  /**
+   * Add a single transaction to treated payments
+   */
+  private addSingleTransaction(
+    tx: TransactionsWithPaybuttonsAndPrices,
+    groupKey: string,
+    treatedPayments: TransactionFileData[]
+  ): void {
+    const { timestamp, hash, address, amount } = tx
+    const values = getTransactionValue(tx)
+    const value = Number(values[this.currency])
+    const rate = tx.prices.find(p => p.price.quoteId === QUOTE_IDS[this.currency.toUpperCase()])!.price.value
+    const buttonNames = this.extractButtonNamesFromGroupKey(groupKey)
+
+    treatedPayments.push({
+      amount,
+      value,
+      date: moment.tz(timestamp * 1000, this.timezone),
+      transactionId: hash,
+      rate,
+      currency: this.currency,
+      address: address.address,
+      notes: buttonNames,
+      newtworkId: address.networkId
+    } as TransactionFileData)
+  }
+
+  /**
+   * Add a collapsed group of transactions to treated payments
+   */
+  private addCollapsedTransactionGroup(
+    tempTxGroup: TransactionsWithPaybuttonsAndPrices[],
+    groupKey: string,
+    treatedPayments: TransactionFileData[]
+  ): void {
+    const totalAmount = tempTxGroup.reduce((sum, p) => sum + Number(p.amount), 0)
+    const totalValue = tempTxGroup.reduce((sum, p) => sum + Number(getTransactionValue(p)[this.currency]), 0)
+    const uniquePrices = this.getUniquePrices(tempTxGroup, groupKey)
+    const rate = new Prisma.Decimal(uniquePrices.values().next().value as number)
+    const buttonNames = this.extractButtonNamesFromGroupKey(groupKey)
+    const notes = `${buttonNames} - ${tempTxGroup.length.toString()} transactions`
+
+    treatedPayments.push({
+      amount: totalAmount,
+      value: totalValue,
+      date: moment.tz(tempTxGroup[0].timestamp * 1000, this.timezone),
+      transactionId: DEFAULT_MULTI_VALUES_LINE_LABEL,
+      rate,
+      currency: this.currency,
+      address: DEFAULT_MULTI_VALUES_LINE_LABEL,
+      newtworkId: tempTxGroup[0].address.networkId,
+      notes
+    } as TransactionFileData)
+  }
+
+  /**
+   * Extract button names from group key
+   */
+  private extractButtonNamesFromGroupKey(groupKey: string): string {
+    return groupKey.split('_').slice(2).join(';')
+  }
+
+  /**
+   * Validate that all transactions in a group have the same price
+   */
+  private getUniquePrices(tempTxGroup: TransactionsWithPaybuttonsAndPrices[], groupKey: string): Set<number> {
+    const uniquePrices: Set<number> = new Set()
+    const quoteId = QUOTE_IDS[this.currency.toUpperCase()]
+    
+    tempTxGroup.forEach(tx => {
       const price = tx.prices.find(p => p.price.quoteId === quoteId)!.price.value
       uniquePrices.add(Number(price))
     })
-  if (uniquePrices.size !== 1) {
+
+    if (uniquePrices.size !== 1) {
+      this.handlePriceValidationError(tempTxGroup, groupKey, uniquePrices, quoteId)
+    }
+
+    return uniquePrices
+  }
+
+  /**
+   * Handle price validation errors
+   */
+  private handlePriceValidationError(
+    tempTxGroup: TransactionsWithPaybuttonsAndPrices[],
+    groupKey: string,
+    uniquePrices: Set<number>,
+    quoteId: number
+  ): void {
     if (uniquePrices.size > 1) {
       const nonUniquePrices = [...uniquePrices]
       const txsForPrice: Record<number, string[]> = {}
       nonUniquePrices.forEach(nonUniquePrice => {
-        txsForPrice[nonUniquePrice] = tempTxGroup.filter(tx => nonUniquePrice === tx.prices.find(p => p.price.quoteId === quoteId)!.price.value.toNumber()).map(tx => tx.id)
+        txsForPrice[nonUniquePrice] = tempTxGroup
+          .filter(tx => nonUniquePrice === tx.prices.find(p => p.price.quoteId === quoteId)!.price.value.toNumber())
+          .map(tx => tx.id)
       })
       console.error('ERROR WHEN TRYING TO COLLAPSE TXS INTO DIFFERENT PRICES:', { txsForPrice, nonUniquePrices })
     } else {
@@ -140,14 +269,57 @@ const getUniquePrices = (tempTxGroup: TransactionsWithPaybuttonsAndPrices[], gro
     }
 
     throw new Error(
-      RESPONSE_MESSAGES
-        .INVALID_PRICES_AMOUNT_FOR_TX_ON_CSV_CREATION_500(tempTxGroup.length).message
+      RESPONSE_MESSAGES.INVALID_PRICES_AMOUNT_FOR_TX_ON_CSV_CREATION_500(tempTxGroup.length).message
     )
   }
-  return uniquePrices
 }
 
-const collapsePaymentsPushTx = (
+/**
+ * Generate a group key for a transaction based on date and button names
+ */
+const generateGroupKey = (
+  tx: TransactionsWithPaybuttonsAndPrices,
+  timezone: string,
+  userId: string,
+  paybuttonId?: string
+): string => {
+  const { timestamp } = tx
+  const dateKey = moment.tz(timestamp * 1000, timezone).format('YYYY-MM-DD')
+  const dateKeyUTC = moment.utc(timestamp * 1000).format('YYYY-MM-DD')
+  const buttonNamesKey = extractPaybuttonNames(tx, userId, paybuttonId)
+
+  return `${dateKey}_${dateKeyUTC}_${buttonNamesKey}`
+}
+
+/**
+ * Extract paybutton names from a transaction
+ */
+const extractPaybuttonNames = (
+  tx: TransactionsWithPaybuttonsAndPrices,
+  userId: string,
+  paybuttonId?: string
+): string => {
+  const uniqueButtonNames = new Set(
+    tx.address.paybuttons
+      .filter(pb => pb.paybutton.providerUserId === userId)
+      .map(pb => pb.paybutton.name)
+  )
+
+  if (uniqueButtonNames.size > 1) {
+    if (paybuttonId !== undefined) {
+      return tx.address.paybuttons.find(pb => pb.paybutton.id === paybuttonId)?.paybutton.name ?? ''
+    } else {
+      return [...uniqueButtonNames].join('_')
+    }
+  } else {
+    return uniqueButtonNames.values().next().value ?? ''
+  }
+}
+
+/**
+ * Add a single transaction directly to treated payments (for transactions above threshold)
+ */
+const addSingleTransactionToResults = (
   tx: TransactionsWithPaybuttonsAndPrices,
   groupKey: string,
   currency: SupportedQuotesType,
@@ -173,61 +345,6 @@ const collapsePaymentsPushTx = (
   } as TransactionFileData)
 }
 
-const collapsePaymentsPushTempGroup = (
-  groupKey: string,
-  tempTxGroups: Record<string, TransactionsWithPaybuttonsAndPrices[]>,
-  currency: SupportedQuotesType,
-  treatedPayments: TransactionFileData[],
-  timezone: string
-): void => {
-  const tempTxGroup = tempTxGroups[groupKey]
-  if (tempTxGroup === undefined || tempTxGroup.length === 0) return
-  if (tempTxGroup.length === 1) {
-    collapsePaymentsPushTx(tempTxGroup[0], groupKey, currency, treatedPayments, timezone)
-    tempTxGroups[groupKey] = []
-    return
-  }
-  const totalAmount = tempTxGroup.reduce((sum, p) => sum + Number(p.amount), 0)
-  const totalValue = tempTxGroup.reduce((sum, p) => sum + Number(getTransactionValue(p)[currency]), 0)
-  const uniquePrices = getUniquePrices(tempTxGroup, groupKey, currency)
-  const rate = new Prisma.Decimal(uniquePrices.values().next().value as number)
-  const buttonNames = groupKey.split('_').slice(2).join(';')
-  const notes = `${buttonNames} - ${tempTxGroup.length.toString()} transactions`
-
-  treatedPayments.push({
-    amount: totalAmount,
-    value: totalValue,
-    date: moment.tz(tempTxGroup[0].timestamp * 1000, timezone),
-    transactionId: DEFAULT_MULTI_VALUES_LINE_LABEL,
-    rate,
-    currency,
-    address: DEFAULT_MULTI_VALUES_LINE_LABEL,
-    newtworkId: tempTxGroup[0].address.networkId,
-    notes
-  } as TransactionFileData)
-
-  tempTxGroups[groupKey] = []
-}
-
-const getButtonNames = (tx: TransactionsWithPaybuttonsAndPrices, userId: string, paybuttonId?: string): string => {
-  let buttonNamesKey: string = ''
-  const uniqueButtonNames = new Set(
-    tx.address.paybuttons
-      .filter(pb => pb.paybutton.providerUserId === userId)
-      .map(pb => pb.paybutton.name)
-  )
-  if (uniqueButtonNames.size > 1) {
-    if (paybuttonId !== undefined) {
-      buttonNamesKey = tx.address.paybuttons.find(pb => pb.paybutton.id === paybuttonId)?.paybutton.name ?? ''
-    } else {
-      buttonNamesKey = [...uniqueButtonNames].join('_')
-    }
-  } else {
-    buttonNamesKey = uniqueButtonNames.values().next().value ?? ''
-  }
-  return buttonNamesKey
-}
-
 export const collapseSmallPayments = (
   payments: TransactionsWithPaybuttonsAndPrices[],
   currency: SupportedQuotesType,
@@ -237,50 +354,59 @@ export const collapseSmallPayments = (
   paybuttonId?: string
 ): TransactionFileData[] => {
   const treatedPayments: TransactionFileData[] = []
-  const tempTxGroups: Record<string, TransactionsWithPaybuttonsAndPrices[]> = {}
+  const groupManager = new TransactionGroupManager(currency, timezone)
 
   payments.forEach((tx: TransactionsWithPaybuttonsAndPrices, index: number) => {
     const { timestamp } = tx
     const values = getTransactionValue(tx)
     const value = Number(values[currency])
-    const dateKey = moment.tz(timestamp * 1000, timezone).format('YYYY-MM-DD')
-    const dateKeyUTC = moment.utc(timestamp * 1000).format('YYYY-MM-DD')
-    const buttonNamesKey = getButtonNames(tx, userId, paybuttonId)
+    const groupKey = generateGroupKey(tx, timezone, userId, paybuttonId)
 
-    const groupKey = `${dateKey}_${dateKeyUTC}_${buttonNamesKey}`
-
-    let nextGroupKey: string | null = ''
-    const nextPayment = payments[index + 1]
-    if (nextPayment !== undefined) {
-      const nextDateKey = moment.tz(nextPayment.timestamp * 1000, timezone).format('YYYY-MM-DD')
-      const nextDateKeyUTC = moment.utc(nextPayment.timestamp * 1000).format('YYYY-MM-DD')
-      const nextButtonName = getButtonNames(nextPayment, userId, paybuttonId)
-
-      nextGroupKey = `${nextDateKey}_${nextDateKeyUTC}_${nextButtonName}`
-    } else {
-      nextGroupKey = null
-    }
+    // Determine if we need to process groups based on next payment
+    const shouldProcessGroups = shouldProcessGroupsAtCurrentIndex(
+      payments, index, timezone, userId, paybuttonId, groupKey
+    )
 
     if (value < collapseThreshold) {
-      if (tempTxGroups[groupKey] === undefined) tempTxGroups[groupKey] = []
-      tempTxGroups[groupKey].push(tx)
+      // Add small payment to group for potential collapsing
+      groupManager.addToGroup(groupKey, tx)
     } else {
-      Object.keys(tempTxGroups).forEach(key => {
-        collapsePaymentsPushTempGroup(key, tempTxGroups, currency, treatedPayments, timezone)
-      })
-      collapsePaymentsPushTx(tx, groupKey, currency, treatedPayments, timezone)
+      // Process any pending groups before adding large transaction
+      groupManager.processAllGroups(treatedPayments)
+      // Add large transaction directly
+      addSingleTransactionToResults(tx, groupKey, currency, treatedPayments, timezone)
     }
 
-    if (nextGroupKey !== groupKey) {
-      collapsePaymentsPushTempGroup(groupKey, tempTxGroups, currency, treatedPayments, timezone)
+    // Process groups when transitioning to different group key
+    if (shouldProcessGroups) {
+      groupManager.processGroup(groupKey, treatedPayments)
     }
   })
 
-  Object.keys(tempTxGroups).forEach(key => {
-    collapsePaymentsPushTempGroup(key, tempTxGroups, currency, treatedPayments, timezone)
-  })
+  // Process any remaining groups
+  groupManager.processAllGroups(treatedPayments)
 
   return treatedPayments
+}
+
+/**
+ * Determine if groups should be processed at the current index
+ */
+const shouldProcessGroupsAtCurrentIndex = (
+  payments: TransactionsWithPaybuttonsAndPrices[],
+  currentIndex: number,
+  timezone: string,
+  userId: string,
+  paybuttonId: string | undefined,
+  currentGroupKey: string
+): boolean => {
+  const nextPayment = payments[currentIndex + 1]
+  if (nextPayment === undefined) {
+    return false // No next payment, will be handled at the end
+  }
+
+  const nextGroupKey = generateGroupKey(nextPayment, timezone, userId, paybuttonId)
+  return nextGroupKey !== currentGroupKey
 }
 
 const sortPaymentsByNetworkId = (payments: TransactionsWithPaybuttonsAndPrices[]): TransactionsWithPaybuttonsAndPrices[] => {
