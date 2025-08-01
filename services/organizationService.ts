@@ -71,7 +71,7 @@ export async function deleteOrganization (organizationId: string, userId: string
   })
 }
 
-export async function updateOrganization ({ userId, name }: UpdateOrganizationInput): Promise<Organization> {
+export async function updateOrganization ({ userId, name, address }: UpdateOrganizationInput): Promise<Organization> {
   const organization = await prisma.organization.findFirst({
     where: { creatorId: userId }
   })
@@ -82,7 +82,10 @@ export async function updateOrganization ({ userId, name }: UpdateOrganizationIn
 
   return await prisma.organization.update({
     where: { id: organization.id },
-    data: { name }
+    data: {
+      ...(name !== undefined || name === '' ? { name } : {}),
+      ...(address !== undefined || address === '' ? { address } : {})
+    }
   })
 }
 
