@@ -403,12 +403,37 @@ async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParame
   const actionType: TriggerLogActionType = 'PostData'
   let logData!: PostDataTriggerLog | PostDataTriggerLogError
   let isError = false
+  
+  // Validate JSON first before attempting network request
+  let parsedPostDataParameters: any
   try {
-    const parsedPostDataParameters = parseTriggerPostData({
+    parsedPostDataParameters = parseTriggerPostData({
       userId: trigger.paybutton.providerUserId,
       postData: trigger.postData,
       postDataParameters
     })
+  } catch (jsonErr: any) {
+    // JSON validation failed - log error and return early without making network request
+    isError = true
+    logData = {
+      errorName: jsonErr.name || 'JSON_VALIDATION_ERROR',
+      errorMessage: jsonErr.message || 'Invalid JSON in trigger post data',
+      errorStack: jsonErr.stack || '',
+      triggerPostData: trigger.postData,
+      triggerPostURL: trigger.postURL
+    }
+    await prisma.triggerLog.create({
+      data: {
+        triggerId: trigger.id,
+        isError,
+        actionType,
+        data: JSON.stringify(logData)
+      }
+    })
+    return
+  }
+
+  try {
     const response = await axios.post(
       trigger.postURL,
       parsedPostDataParameters,
