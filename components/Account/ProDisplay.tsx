@@ -7,7 +7,6 @@ import config from 'config/index'
 const ProConfig = (): JSX.Element => {
   const [text, setText] = useState('')
   const [isPro, setIsPro] = useState<boolean | null>()
-  const [infoModal, setInfoModal] = useState(false)
 
   const showLimit = (configLimit: number | 'Inf'): string => {
     return configLimit === 'Inf' ? 'Unlimited' : configLimit.toString()
@@ -40,45 +39,36 @@ const ProConfig = (): JSX.Element => {
     <div className={style.pro_ctn}>
       <div className={stylep.label}>
         {text}
-        <div
-          onClick={() => setInfoModal(!infoModal)}
-          className={stylep.whats_this_btn}
-        >
-          {infoModal ? 'Close' : 'What is this?'}
-        </div>
       </div>
       {isPro === false && <ProPurchase/>}
-      {infoModal && (
-        <div className={stylep.public_key_info_ctn}>
-          <table>
-            <thead>
-              <tr>
-                <th></th>
-                <th>Standard</th>
-                <th>Pro</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Outgoing Emails on Payment</td>
-                <td>{showLimit(config.proSettings.standardDailyEmailLimit)} / day</td>
-                <td>{showLimit(config.proSettings.proDailyEmailLimit)} / day</td>
-              </tr>
-              <tr>
-                <td>Addresses Per Button</td>
-                <td>{showLimit(config.proSettings.standardAddressesPerButtonLimit)}</td>
-                <td>{showLimit(config.proSettings.proAddressesPerButtonLimit)}</td>
-              </tr>
-              <tr>
-                <td>Outgoing Server-to-Server Messages On Payment</td>
-                <td>{showLimit(config.proSettings.standardDailyEmailLimit)} / day</td>
-                <td>{showLimit(config.proSettings.proDailyEmailLimit)} / day</td>
-              </tr>
-            </tbody>
-          </table>
-
-        </div>
-      )}
+      <div className={stylep.public_key_info_ctn}>
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Standard</th>
+              <th>Pro</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Outgoing Emails on Payment</td>
+              <td>{showLimit(config.proSettings.standardDailyEmailLimit)} / day</td>
+              <td>{showLimit(config.proSettings.proDailyEmailLimit)} / day</td>
+            </tr>
+            <tr>
+              <td>Addresses Per Button</td>
+              <td>{showLimit(config.proSettings.standardAddressesPerButtonLimit)}</td>
+              <td>{showLimit(config.proSettings.proAddressesPerButtonLimit)}</td>
+            </tr>
+            <tr>
+              <td>Outgoing Server-to-Server Messages On Payment</td>
+              <td>{showLimit(config.proSettings.standardDailyEmailLimit)} / day</td>
+              <td>{showLimit(config.proSettings.proDailyEmailLimit)} / day</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </>
 }
