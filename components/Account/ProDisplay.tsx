@@ -50,7 +50,6 @@ const ProConfig = (): JSX.Element => {
       {isPro === false && <ProPurchase/>}
       {infoModal && (
         <div className={stylep.public_key_info_ctn}>
-          <p>PayButton Pro users get higher limits:</p>
           <table>
             <thead>
               <tr>
@@ -61,14 +60,19 @@ const ProConfig = (): JSX.Element => {
             </thead>
             <tbody>
               <tr>
-                <td>Daily Emails</td>
-                <td>{showLimit(config.proSettings.standardDailyEmailLimit)}</td>
-                <td>{showLimit(config.proSettings.proDailyEmailLimit)}</td>
+                <td>Outgoing Emails on Payment</td>
+                <td>{showLimit(config.proSettings.standardDailyEmailLimit)} / day</td>
+                <td>{showLimit(config.proSettings.proDailyEmailLimit)} / day</td>
               </tr>
               <tr>
                 <td>Addresses Per Button</td>
                 <td>{showLimit(config.proSettings.standardAddressesPerButtonLimit)}</td>
                 <td>{showLimit(config.proSettings.proAddressesPerButtonLimit)}</td>
+              </tr>
+              <tr>
+                <td>Outgoing Server-to-Server Messages On Payment</td>
+                <td>{showLimit(config.proSettings.standardDailyEmailLimit)} / day</td>
+                <td>{showLimit(config.proSettings.proDailyEmailLimit)} / day</td>
               </tr>
             </tbody>
           </table>
