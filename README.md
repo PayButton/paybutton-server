@@ -192,17 +192,7 @@ type: string
 
 #### proSettings
 ```
-type: {
-  enabled: boolean,
-  monthsCost: {
-      [key: string]: number
-  },
-  payoutAddress: string,
-  standardDailyEmailLimit: number | "Inf",
-  proDailyEmailLimit: number | "Inf",
-  standardAddressesPerButtonLimit: number | "Inf",
-  proAddressesPerButtonLimit: number | "Inf"
-}
+type: object
 ```
 > General configuration for PayButton Pro. Each parameter is described below.
 
