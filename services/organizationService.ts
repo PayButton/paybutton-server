@@ -13,7 +13,8 @@ export async function createOrganization ({ creatorId, name }: CreateOrganizatio
         connect: {
           id: creatorId
         }
-      }
+      },
+      address: ''
     }
   })
 }
@@ -80,12 +81,14 @@ export async function updateOrganization ({ userId, name, address }: UpdateOrgan
     throw new Error(RESPONSE_MESSAGES.USER_HAS_NO_ORGANIZATION_400.message)
   }
 
+  const updateData: Partial<Organization> = {}
+
+  if (name !== undefined && name !== '') updateData.name = name
+  if (address !== undefined && address !== '') updateData.address = address
+
   return await prisma.organization.update({
     where: { id: organization.id },
-    data: {
-      ...(name !== undefined || name === '' ? { name } : {}),
-      ...(address !== undefined || address === '' ? { address } : {})
-    }
+    data: updateData
   })
 }
 

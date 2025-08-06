@@ -515,7 +515,7 @@ export const parseJoinOrganizationPOSTRequest = function (params: JoinOrganizati
 
 export const parseUpdateOrganizationPUTRequest = function (params: UpdateOrganizationPUTParameters): UpdateOrganizationInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
-  if ((params.name === '' || params.name === undefined) && (params.address === '' || params.address === undefined)) throw new Error(RESPONSE_MESSAGES.ORGANIZATION_MISSING_PARAMS_400.message)
+  if ((params.name === '' || params.name === undefined) && (params.address === '' || params.address === undefined)) throw new Error(RESPONSE_MESSAGES.MISSING_PARAMS_TO_UPDATE_ORGANIZATION_400.message)
   return {
     userId: params.userId,
     name: params.name,
