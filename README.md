@@ -72,6 +72,34 @@ Available commands:
 
 For example, `yarn test` runs the `test` script, but this won't work properly when executed from the host machine, so the proper way to execute tests are to run them with `yarn docker test` (or manually entering the `paybutton-dev` container and running `yarn test` there, which is exactly what `yarn docker test` does).
 
+### Make commands
+The project includes several Make commands to manage Docker containers and development workflow:
+
+#### Docker management
+- `make dev` - Start development environment with Docker Compose
+- `make stop-dev` - Stop development containers
+- `make reset-dev` - Stop and restart development environment
+- `make reset-dev-keep-db` - Restart only the paybutton-dev container (keeps database)
+- `make dev-from-dump` - Start development environment using database dump
+
+#### Production
+- `make prod` - Start production environment
+- `make stop-prod` - Stop production containers  
+- `make reset-prod` - Stop and restart production environment
+- `make deploy` - Pull latest code and reset production environment
+
+#### Logs
+- `make logs-dev` - Follow logs for the development container
+- `make logs-db` - Follow logs for the database container
+- `make logs-cache` - Follow logs for the Redis cache container
+- `make logs-users` - Follow logs for the users service container
+
+#### Testing and linting
+- `make lint` - Run ESLint on the codebase
+- `make lint-master` - Run ESLint on files changed from master branch
+- `make no-isolated-tests` - Check for isolated tests (describe.only/it.only)
+- `make github-test-unit` - Run unit tests (GitHub CI only)
+- `make github-test-integration` - Run integration tests (GitHub CI only)
 
 ### Optional configuration
 
