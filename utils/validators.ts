@@ -477,11 +477,13 @@ export interface CreateOrganizationInput {
 export interface UpdateOrganizationPUTParameters {
   userId?: string
   name?: string
+  address?: string
 }
 
 export interface UpdateOrganizationInput {
   userId: string
-  name: string
+  name?: string
+  address?: string
 }
 
 export interface JoinOrganizationPOSTParameters {
@@ -513,10 +515,11 @@ export const parseJoinOrganizationPOSTRequest = function (params: JoinOrganizati
 
 export const parseUpdateOrganizationPUTRequest = function (params: UpdateOrganizationPUTParameters): UpdateOrganizationInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
-  if (params.name === '' || params.name === undefined) throw new Error(RESPONSE_MESSAGES.ORGANIZATION_NAME_NOT_PROVIDED_400.message)
+  if ((params.name === '' || params.name === undefined) && (params.address === '' || params.address === undefined)) throw new Error(RESPONSE_MESSAGES.MISSING_PARAMS_TO_UPDATE_ORGANIZATION_400.message)
   return {
     userId: params.userId,
-    name: params.name
+    name: params.name,
+    address: params.address
   }
 }
 
