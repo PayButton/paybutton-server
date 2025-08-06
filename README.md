@@ -75,14 +75,13 @@ For example, `yarn test` runs the `test` script, but this won't work properly wh
 
 ### Optional configuration
 
-PayButton Server is configured with a `paybutton-config.json` file in the root of the repository. An example file can be find at [config/example-config.json](https://github.com/PayButton/paybutton-server/blob/master/config/example-config.json). The values it takes are:
+PayButton Server is configured with a `paybutton-config.json` file in the root of the repository. An example file with the default values can be find at [config/example-config.json](https://github.com/PayButton/paybutton-server/blob/master/config/example-config.json). The values it takes are:
 
 ---
 
 #### **apiDomain**
 ```
 type: string
-default: "http://localhost:3000/api",
 ```
 > Base path for the API.
 
@@ -90,7 +89,6 @@ default: "http://localhost:3000/api",
 #### apiBasePath
 ```
 type: string
-default: "/api/auth"
 ```
 > Base API endpoint for authentication.
 
@@ -98,14 +96,12 @@ default: "/api/auth"
 #### websiteBasePath
 ```
 type: string
-default: "/auth",
 ```
 > Base API endpoint for authentication through SuperTokens.
 
 #### websiteDomain
 ```
 type: string
-default: "http://localhost:3000"
 ```
 > Base path for the website.
 
@@ -113,7 +109,6 @@ default: "http://localhost:3000"
 #### wsBaseURL
 ```
 type: string
-default: "http://localhost:5000"
 ```
 > Base path for the websocket server.
 
@@ -121,7 +116,6 @@ default: "http://localhost:5000"
 #### showTestNetworks
 ```
 type: boolean
-default: false,
 ```
 > If the connection of test networks for eCash and Bitcoin Cash should appear in the Networks tab.
 
@@ -140,14 +134,12 @@ type: {
 #### priceAPIURL
 ```
 type: string
-default: "https://coin.dance/api/"
 ```
 > API to get prices from. Only coin.dance currently supported.
 
 #### redisURL
 ```
 type: string
-default: "redis://paybutton-cache:6379"
 ```
 > URL for the Redis server.
 
@@ -155,10 +147,6 @@ default: "redis://paybutton-cache:6379"
 #### networkBlockchainClients
 ```
 type: {
-    "ecash": "chronik",
-    "bitcoincash": "chronik"
-}
-default: {
     "ecash": "chronik",
     "bitcoincash": "chronik"
 }
@@ -172,10 +160,6 @@ type: {
    "ecash": boolean
    "bitcoincash": boolean
 }
-
-default: {
- "bitcoincash": true
-}
 ```
 > What networks are currently under maintenance.
 
@@ -183,14 +167,12 @@ default: {
 #### triggerPOSTTimeout
 ```
 type: number
-default: 3000
 ```
 > How long a POST request triggered from a button payment will wait for an answer to be marked as successful.
 
 #### smtpHost
 ```
 type: string
-default: N/A
 ```
 > Host name for the server from which payment trigger emails will be sent. Not setting this up will result in email triggers not working.
 
@@ -198,7 +180,6 @@ default: N/A
 #### smtpPort
 ```
 type: number
-default: N/A
 ```
 > Port for the SMTP server from which payment trigger emails will be sent. Not setting this up will result in email triggers not working.
 
@@ -206,7 +187,6 @@ default: N/A
 #### sideshiftAffiliateId
 ```
 type: string
-default: N/A
 ```
 > Necessary only for paybutton client to interact with sideshift through the server.
 
@@ -223,27 +203,12 @@ type: {
   standardAddressesPerButtonLimit: number | "Inf",
   proAddressesPerButtonLimit: number | "Inf"
 }
-default: {
-    "enabled": true,
-    "monthsCost": {
-      "1": 10,
-      "3": 20,
-      "6": 30,
-      "12": 50
-    },
-    "payoutAddress":  "ecash:qrf4zh4vgrdal8d8gu905d90w5u2y60djcd2d5h6un"
-    "standardDailyEmailLimit": 5,
-    "proDailyEmailLimit": 100,
-    "standardAddressesPerButtonLimit": 20,
-    "proAddressesPerButtonLimit": "Inf"
-}
 ```
 > General configuration for PayButton Pro. Each parameter is described below.
 
 ##### proSettings.enabled
 ```
 type: boolean
-default: true
 ```
 > If the Pro feature should be enabled or hidden.
 
@@ -252,47 +217,36 @@ default: true
 type: {
 [key: string]: number
 }
-default: {
-"1": 10,
-"3": 20,
-"6": 30,
-"12": 50
-}
 ```
 > The pricing model for PayButton Pro subscription — [value] USD for [key] months.
 
 ##### proSettings.payoutAddress
 ```
 type: string
-default: "ecash:qrf4zh4vgrdal8d8gu905d90w5u2y60djcd2d5h6un"
 ```
 > The payout address for PayButton Pro subscriptions.
 
 ##### proSettings.standardDailyEmailLimit
 ```
 type: number | "Inf"
-default: 5
 ```
 > How many emails can a standard user send daily.
 
 ##### proSettings.proDailyEmailLimit
 ```
 type: number | "Inf"
-default: 20
 ```
 > How many emails can a PayButton Pro user send daily.
 
 ##### proSettings.standardAddressesPerButtonLimit
 ```
 type: number | "Inf"
-default: 5
 ```
 > How many addresses can a standard Pro user add for a single button.
 
 ##### proSettings.proAddressesPerButtonLimit
 ```
 type: number | "Inf"
-default: "Inf"
 ```
 > How many addresses can a PayButton Pro user add for a single button.
 
