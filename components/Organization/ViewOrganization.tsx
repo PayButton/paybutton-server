@@ -22,7 +22,8 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
   const [orgEdit, setOrgEdit] = useState('')
   const [loading, setLoading] = useState(false)
 
-  return (
+  return <>
+    <h3 className={style.config_title}>Organization</h3>
     <div className={style.org_ctn}>
       {org !== null && org.creatorId === user.userProfile.id
         ? (
@@ -148,7 +149,7 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
             )}
       {error !== '' && <div className={style.error_message}>{error}</div>}
     </div>
-  )
+  </>
 }
 
 export default ViewOrganization

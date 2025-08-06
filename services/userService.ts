@@ -149,3 +149,17 @@ export async function updatePreferredTimezone (id: string, preferredTimezone: st
     }
   })
 }
+
+export async function userRemainingProTime (id: string): Promise<number | null> {
+  const today = new Date()
+  const proUntil = (await prisma.userProfile.findUniqueOrThrow({
+    where: { id },
+    select: {
+      proUntil: true
+    }
+  })).proUntil
+  if (proUntil === null) {
+    return null
+  }
+  return proUntil.getTime() - today.getTime()
+}
