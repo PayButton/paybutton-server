@@ -656,7 +656,16 @@ export function fromHash160 (networkSlug: string, type: AddressType, hash160: st
 export function toHash160 (address: string): {type: AddressType, hash160: string} {
   try {
     const { type, hash } = decodeCashAddress(address)
-    return { type, hash160: hash }
+    // decodeCashAddress can return hash as either string or Uint8Array
+    let hash160: string
+    if (typeof hash === 'string') {
+      // If it's already a hex string, use it directly
+      hash160 = hash
+    } else {
+      // If it's a Uint8Array, convert to hex string
+      hash160 = Buffer.from(hash).toString('hex')
+    }
+    return { type, hash160 }
   } catch (err) {
     console.log('[CHRONIK]: Error converting address to hash160')
     throw err
