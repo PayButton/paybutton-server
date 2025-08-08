@@ -3,6 +3,18 @@ import localConfig from '../paybutton-config.json'
 
 export type BlockchainClientOptions = 'grpc' | 'chronik'
 
+interface ProSettings {
+  enabled: boolean
+  monthsCost: {
+    [key: string]: number
+  }
+  payoutAddress: string
+  standardDailyEmailLimit: number | 'Inf'
+  proDailyEmailLimit: number | 'Inf'
+  standardAddressesPerButtonLimit: number | 'Inf'
+  proAddressesPerButtonLimit: number | 'Inf'
+}
+
 interface Config {
   appName: string
   apiDomain: string
@@ -21,6 +33,7 @@ interface Config {
   sideshiftAffiliateId: string
   smtpHost: string
   smtpPort: number
+  proSettings: ProSettings
 }
 
 const readConfig = (): Config => {

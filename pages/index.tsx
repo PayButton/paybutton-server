@@ -2,6 +2,9 @@ import style from '../styles/landing.module.css'
 import Navbar from 'components/LandingPage/Navbar'
 import Hero from 'components/LandingPage/Hero'
 import Dashboard from 'components/LandingPage/Dashboard'
+import WordPressSection from 'components/LandingPage/WordPressSection'
+import FeaturesSection from 'components/LandingPage/FeaturesSection'
+import CTASection from 'components/LandingPage/CTASection'
 import Footer from 'components/LandingPage/Footer'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
@@ -50,9 +53,12 @@ export default function LandingPage ({ userId }: IProps): JSX.Element {
     <div className={style.landing_ctn}>
       <Navbar userId={userId} />
       <Hero />
+      <FeaturesSection />
       <Dashboard />
+      <WordPressSection />
       <DynamicButtonGenerator />
-      <Footer userId={userId}/>
+      <CTASection />
+      <Footer userId={userId} />
     </div>
   )
 }

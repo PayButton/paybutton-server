@@ -4,7 +4,7 @@ import * as SuperTokensConfig from '../../config/backendConfig'
 import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import TableContainerGetter from '../../components/TableContainer/TableContainerGetter'
-import { ButtonDisplayData, InvoiceData } from 'redis/types'
+import { ButtonDisplayData } from 'redis/types'
 import Image from 'next/image'
 import Link from 'next/link'
 import XECIcon from 'assets/xec-logo.png'
@@ -25,6 +25,7 @@ import FileText from 'assets/file-text.png'
 import InvoiceModal from 'components/Transaction/InvoiceModal'
 import { TransactionWithAddressAndPricesAndInvoices } from 'services/transactionService'
 import { fetchOrganizationForUser } from 'services/organizationService'
+import { InvoiceWithTransaction } from 'services/invoiceService'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -80,7 +81,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
   const [showFilters, setShowFilters] = useState<boolean>(false)
   const [tableLoading, setTableLoading] = useState<boolean>(true)
   const [refreshCount, setRefreshCount] = useState(0)
-  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null)
+  const [invoiceData, setInvoiceData] = useState<InvoiceWithTransaction | null>(null)
   const [invoiceDataTransaction, setInvoiceDataTransaction] = useState<TransactionWithAddressAndPricesAndInvoices | null >(null)
   const [invoiceMode, setInvoiceMode] = useState<'create' | 'edit' | 'view'>('create')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -105,10 +106,16 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
       invoiceNumber: nextInvoiceNumber ?? '',
       amount: transaction.amount,
       recipientName: '',
-      recipientAddress: transaction.address,
+      recipientAddress: transaction.address ?? '',
       description: '',
       customerName: organization?.name ?? '',
-      customerAddress: ''
+      customerAddress: '',
+      userId: '',
+      transaction,
+      transactionId: transaction.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      id: ''
     }
     setInvoiceDataTransaction(transaction)
     setInvoiceData(invoiceData)
@@ -116,17 +123,13 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
     setIsModalOpen(true)
   }
 
-  const onEditInvoice = (invoiceData: InvoiceData): void => {
-    delete invoiceData.transactionHash
-    delete invoiceData.transactionDate
-    delete invoiceData.transactionNetworkId
-
+  const onEditInvoice = (invoiceData: InvoiceWithTransaction): void => {
     setInvoiceData(invoiceData)
     setInvoiceMode('edit')
     setIsModalOpen(true)
   }
 
-  const onViewInvoice = (invoiceData: InvoiceData): void => {
+  const onViewInvoice = (invoiceData: InvoiceWithTransaction): void => {
     setInvoiceData(invoiceData)
     setInvoiceMode('view')
     setIsModalOpen(true)
@@ -305,17 +308,17 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'center' }}>Actions</div>),
+        Header: () => (<div style={{ textAlign: 'center' }}>Invoice</div>),
         id: 'actions',
+        disableSortBy: true,
         Cell: (cellProps) => {
           const transaction = cellProps.row.original
-          const hasInvoice = transaction.invoices?.filter(i => i !== null).length > 0
-          let invoice = {} as InvoiceData
+          const invoices = transaction.invoices ?? []
+          const hasInvoice = invoices.filter(i => i !== null).length > 0
+          let invoice = {} as InvoiceWithTransaction
           if (hasInvoice) {
             invoice = {
-              transactionHash: transaction.hash,
-              transactionDate: transaction.timestamp,
-              transactionNetworkId: transaction.networkId,
+              transaction,
               ...transaction.invoices[0]
             }
           }

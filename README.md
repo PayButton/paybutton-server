@@ -72,17 +72,44 @@ Available commands:
 
 For example, `yarn test` runs the `test` script, but this won't work properly when executed from the host machine, so the proper way to execute tests are to run them with `yarn docker test` (or manually entering the `paybutton-dev` container and running `yarn test` there, which is exactly what `yarn docker test` does).
 
+### Make commands
+The project includes several Make commands to manage Docker containers and development workflow:
+
+#### Docker management
+- `make dev` - Start development environment with Docker Compose
+- `make stop-dev` - Stop development containers
+- `make reset-dev` - Stop and restart development environment
+- `make reset-dev-keep-db` - Restart only the paybutton-dev container (keeps database)
+- `make dev-from-dump` - Start development environment using database dump
+
+#### Production
+- `make prod` - Start production environment
+- `make stop-prod` - Stop production containers  
+- `make reset-prod` - Stop and restart production environment
+- `make deploy` - Pull latest code and reset production environment
+
+#### Logs
+- `make logs-dev` - Follow logs for the development container
+- `make logs-db` - Follow logs for the database container
+- `make logs-cache` - Follow logs for the Redis cache container
+- `make logs-users` - Follow logs for the users service container
+
+#### Testing and linting
+- `make lint` - Run ESLint on the codebase
+- `make lint-master` - Run ESLint on files changed from master branch
+- `make no-isolated-tests` - Check for isolated tests (describe.only/it.only)
+- `make github-test-unit` - Run unit tests (GitHub CI only)
+- `make github-test-integration` - Run integration tests (GitHub CI only)
 
 ### Optional configuration
 
-PayButton Server is configured with a `paybutton-config.json` file in the root of the repository. An example file can be find at [config/example-config.json](https://github.com/PayButton/paybutton-server/blob/master/config/example-config.json). The values it takes are:
+PayButton Server is configured with a `paybutton-config.json` file in the root of the repository. An example file with the default values can be find at [config/example-config.json](https://github.com/PayButton/paybutton-server/blob/master/config/example-config.json). The values it takes are:
 
 ---
 
 #### **apiDomain**
 ```
 type: string
-default: "http://localhost:3000/api",
 ```
 > Base path for the API.
 
@@ -90,15 +117,19 @@ default: "http://localhost:3000/api",
 #### apiBasePath
 ```
 type: string
-default: "/api/auth"
 ```
 > Base API endpoint for authentication.
 
 
+#### websiteBasePath
+```
+type: string
+```
+> Base API endpoint for authentication through SuperTokens.
+
 #### websiteDomain
 ```
 type: string
-default: "http://localhost:3000"
 ```
 > Base path for the website.
 
@@ -106,7 +137,6 @@ default: "http://localhost:3000"
 #### wsBaseURL
 ```
 type: string
-default: "http://localhost:5000"
 ```
 > Base path for the websocket server.
 
@@ -114,7 +144,6 @@ default: "http://localhost:5000"
 #### showTestNetworks
 ```
 type: boolean
-default: false,
 ```
 > If the connection of test networks for eCash and Bitcoin Cash should appear in the Networks tab.
 
@@ -133,14 +162,12 @@ type: {
 #### priceAPIURL
 ```
 type: string
-default: "https://coin.dance/api/"
 ```
 > API to get prices from. Only coin.dance currently supported.
 
 #### redisURL
 ```
 type: string
-default: "redis://paybutton-cache:6379"
 ```
 > URL for the Redis server.
 
@@ -148,10 +175,6 @@ default: "redis://paybutton-cache:6379"
 #### networkBlockchainClients
 ```
 type: {
-    "ecash": "chronik",
-    "bitcoincash": "chronik"
-}
-default: {
     "ecash": "chronik",
     "bitcoincash": "chronik"
 }
@@ -165,10 +188,6 @@ type: {
    "ecash": boolean
    "bitcoincash": boolean
 }
-
-default: {
- "bitcoincash": true
-}
 ```
 > What networks are currently under maintenance.
 
@@ -176,14 +195,12 @@ default: {
 #### triggerPOSTTimeout
 ```
 type: number
-default: 3000
 ```
 > How long a POST request triggered from a button payment will wait for an answer to be marked as successful.
 
 #### smtpHost
 ```
 type: string
-default: N/A
 ```
 > Host name for the server from which payment trigger emails will be sent. Not setting this up will result in email triggers not working.
 
@@ -191,7 +208,6 @@ default: N/A
 #### smtpPort
 ```
 type: number
-default: N/A
 ```
 > Port for the SMTP server from which payment trigger emails will be sent. Not setting this up will result in email triggers not working.
 
@@ -199,9 +215,58 @@ default: N/A
 #### sideshiftAffiliateId
 ```
 type: string
-default: N/A
 ```
 > Necessary only for paybutton client to interact with sideshift through the server.
+
+#### proSettings
+```
+type: object
+```
+> General configuration for PayButton Pro. Each parameter is described below.
+
+##### proSettings.enabled
+```
+type: boolean
+```
+> If the Pro feature should be enabled or hidden.
+
+##### proSettings.monthsCost
+```
+type: {
+[key: string]: number
+}
+```
+> The pricing model for PayButton Pro subscription — [value] USD for [key] months.
+
+##### proSettings.payoutAddress
+```
+type: string
+```
+> The payout address for PayButton Pro subscriptions.
+
+##### proSettings.standardDailyEmailLimit
+```
+type: number | "Inf"
+```
+> How many emails can a standard user send daily.
+
+##### proSettings.proDailyEmailLimit
+```
+type: number | "Inf"
+```
+> How many emails can a PayButton Pro user send daily.
+
+##### proSettings.standardAddressesPerButtonLimit
+```
+type: number | "Inf"
+```
+> How many addresses can a standard Pro user add for a single button.
+
+##### proSettings.proAddressesPerButtonLimit
+```
+type: number | "Inf"
+```
+> How many addresses can a PayButton Pro user add for a single button.
 
 ---
 

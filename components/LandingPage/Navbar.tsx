@@ -42,8 +42,13 @@ export default function Navbar ({ userId }: IProps): JSX.Element {
           className={style.navlink_ctn}
           style={mobileMenu ? { left: '0' } : { left: '-200px' }}
         >
-          <ThemeToggle landingpage />
-          <a href="#button-generator" onClick={() => setMobileMenu(false)}>Button Generator</a>
+          <ThemeToggle chart={false} setChart={() => {}} landingpage={true} />
+          <a href="#button-generator" onClick={() => setMobileMenu(false)}>
+            Button Generator
+          </a>
+          <a href="#wordpress" onClick={() => setMobileMenu(false)}>
+            WordPress
+          </a>
           <Link
             href="https://github.com/paybutton"
             target="_blank"
@@ -60,19 +65,35 @@ export default function Navbar ({ userId }: IProps): JSX.Element {
           >
             Telegram
           </Link>
-          <Link href="https://docs.paybutton.org/#/?id=what-is-paybutton" onClick={() => setMobileMenu(false)}>Docs</Link>
+          <Link
+            href="https://docs.paybutton.org/#/?id=what-is-paybutton"
+            onClick={() => setMobileMenu(false)}
+          >
+            Docs
+          </Link>
           {userId === undefined
-            ? <>
-            <a href="/signin" onClick={() => setMobileMenu(false)}>Sign In</a>
-            <a href="/signup" className="button_outline button_small" onClick={() => setMobileMenu(false)}>
-              Sign up
-            </a>
-          </>
-            : <>
-            <a href="/dashboard" onClick={() => setMobileMenu(false)}>Dashboard</a>
-            <LogoutButton />
-          </>
-          }
+            ? (
+            <>
+              <a href="/signin" onClick={() => setMobileMenu(false)}>
+                Sign In
+              </a>
+              <a
+                href="/signup"
+                className="button_outline button_small"
+                onClick={() => setMobileMenu(false)}
+              >
+                Sign up
+              </a>
+            </>
+              )
+            : (
+            <>
+              <a href="/dashboard" onClick={() => setMobileMenu(false)}>
+                Dashboard
+              </a>
+              <LogoutButton onClick={() => {}} footer={false} />
+            </>
+              )}
         </div>
       </div>
     </div>

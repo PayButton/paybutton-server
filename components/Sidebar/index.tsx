@@ -13,6 +13,7 @@ import ButtonsIcon from 'assets/button-icon.png'
 import Wallets from 'assets/wallet-icon.png'
 import Networks from 'assets/network-icon.png'
 import Account from 'assets/user-icon.png'
+import WordPress from 'assets/wordpress.png'
 import Docs from 'assets/docs.png'
 import Admin from 'assets/admin-icon.png'
 import Logout from 'assets/logout-icon.png'
@@ -154,6 +155,10 @@ const Sidebar: React.FC = ({ chart, setChart, loggedUser }: IProps) => {
         <a href='https://docs.paybutton.org/#/?id=what-is-paybutton' target="_blank" rel="noreferrer noopener">
           <Image src={Docs} alt='docs' width={20} height={20} />
           <span className={style.tooltiptext}>Docs</span>
+        </a>
+        <a href='/#wordpress'>
+          <Image src={WordPress} alt='wordpress' width={20} height={20} />
+          <span className={style.tooltiptext}>WordPress</span>
         </a>
       </div>
     </aside>

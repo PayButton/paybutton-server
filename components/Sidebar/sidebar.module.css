@@ -47,15 +47,19 @@ body[data-theme='dark'] .socialctn .moon {
 }
 
 .socialctn {
-  padding: 0 25px;
+  padding: 0 25px 0 20px;
   display: flex;
   align-items: center;
 }
 
 .socialctn a {
-  margin-right: 15px;
+  margin-right: 10px;
   display: flex;
   align-items: center;
+}
+
+.socialctn a:last-child {
+  margin-right: 0;
 }
 
 .socialctn a:hover img {
