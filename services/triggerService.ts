@@ -413,7 +413,6 @@ async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParame
       postDataParameters
     })
   } catch (jsonErr: any) {
-    // JSON validation failed - log error and return early without making network request
     isError = true
     logData = {
       errorName: jsonErr.name || 'JSON_VALIDATION_ERROR',
