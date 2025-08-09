@@ -119,9 +119,6 @@ export function streamToCSV (
   }
 }
 
-/**
- * Helper class to manage transaction groups for payment collapsing
- */
 class TransactionGroupManager {
   private tempTxGroups: Record<string, TransactionsWithPaybuttonsAndPrices[]> = {}
 
@@ -130,9 +127,6 @@ class TransactionGroupManager {
     private timezone: string
   ) {}
 
-  /**
-   * Add a transaction to a group
-   */
   addToGroup(groupKey: string, tx: TransactionsWithPaybuttonsAndPrices): void {
     if (this.tempTxGroups[groupKey] === undefined) {
       this.tempTxGroups[groupKey] = []
@@ -140,18 +134,12 @@ class TransactionGroupManager {
     this.tempTxGroups[groupKey].push(tx)
   }
 
-  /**
-   * Process and clear all groups
-   */
   processAllGroups(treatedPayments: TransactionFileData[]): void {
     Object.keys(this.tempTxGroups).forEach(key => {
       this.processGroup(key, treatedPayments)
     })
   }
 
-  /**
-   * Process a specific group and add to treated payments
-   */
   processGroup(groupKey: string, treatedPayments: TransactionFileData[]): void {
     const tempTxGroup = this.tempTxGroups[groupKey]
     if (tempTxGroup === undefined || tempTxGroup.length === 0) return
@@ -165,9 +153,6 @@ class TransactionGroupManager {
     this.tempTxGroups[groupKey] = []
   }
 
-  /**
-   * Add a single transaction to treated payments
-   */
   private addSingleTransaction(
     tx: TransactionsWithPaybuttonsAndPrices,
     groupKey: string,
@@ -192,9 +177,6 @@ class TransactionGroupManager {
     } as TransactionFileData)
   }
 
-  /**
-   * Add a collapsed group of transactions to treated payments
-   */
   private addCollapsedTransactionGroup(
     tempTxGroup: TransactionsWithPaybuttonsAndPrices[],
     groupKey: string,
@@ -220,16 +202,10 @@ class TransactionGroupManager {
     } as TransactionFileData)
   }
 
-  /**
-   * Extract button names from group key
-   */
   private extractButtonNamesFromGroupKey(groupKey: string): string {
     return groupKey.split('_').slice(2).join(';')
   }
 
-  /**
-   * Validate that all transactions in a group have the same price
-   */
   private getUniquePrices(tempTxGroup: TransactionsWithPaybuttonsAndPrices[], groupKey: string): Set<number> {
     const uniquePrices: Set<number> = new Set()
     const quoteId = QUOTE_IDS[this.currency.toUpperCase()]
@@ -246,9 +222,6 @@ class TransactionGroupManager {
     return uniquePrices
   }
 
-  /**
-   * Handle price validation errors
-   */
   private handlePriceValidationError(
     tempTxGroup: TransactionsWithPaybuttonsAndPrices[],
     groupKey: string,
@@ -274,9 +247,6 @@ class TransactionGroupManager {
   }
 }
 
-/**
- * Generate a group key for a transaction based on date and button names
- */
 const generateGroupKey = (
   tx: TransactionsWithPaybuttonsAndPrices,
   timezone: string,
@@ -291,9 +261,6 @@ const generateGroupKey = (
   return `${dateKey}_${dateKeyUTC}_${buttonNamesKey}`
 }
 
-/**
- * Extract paybutton names from a transaction
- */
 const extractPaybuttonNames = (
   tx: TransactionsWithPaybuttonsAndPrices,
   userId: string,
@@ -316,9 +283,6 @@ const extractPaybuttonNames = (
   }
 }
 
-/**
- * Add a single transaction directly to treated payments (for transactions above threshold)
- */
 const addSingleTransactionToResults = (
   tx: TransactionsWithPaybuttonsAndPrices,
   groupKey: string,
@@ -362,36 +326,27 @@ export const collapseSmallPayments = (
     const value = Number(values[currency])
     const groupKey = generateGroupKey(tx, timezone, userId, paybuttonId)
 
-    // Determine if we need to process groups based on next payment
     const shouldProcessGroups = shouldProcessGroupsAtCurrentIndex(
       payments, index, timezone, userId, paybuttonId, groupKey
     )
 
     if (value < collapseThreshold) {
-      // Add small payment to group for potential collapsing
       groupManager.addToGroup(groupKey, tx)
     } else {
-      // Process any pending groups before adding large transaction
       groupManager.processAllGroups(treatedPayments)
-      // Add large transaction directly
       addSingleTransactionToResults(tx, groupKey, currency, treatedPayments, timezone)
     }
 
-    // Process groups when transitioning to different group key
     if (shouldProcessGroups) {
       groupManager.processGroup(groupKey, treatedPayments)
     }
   })
 
-  // Process any remaining groups
   groupManager.processAllGroups(treatedPayments)
 
   return treatedPayments
 }
 
-/**
- * Determine if groups should be processed at the current index
- */
 const shouldProcessGroupsAtCurrentIndex = (
   payments: TransactionsWithPaybuttonsAndPrices[],
   currentIndex: number,
