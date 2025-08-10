@@ -259,7 +259,11 @@ export async function fetchPricesForNetworkAndTimestamp (networkId: number, time
     }
   })
   if (cadPrice === null || usdPrice === null) {
-    await renewPricesForTimestamp(flattenedTimestamp)
+    try {
+      await renewPricesForTimestamp(flattenedTimestamp)
+    } catch (err: any) {
+      console.error(`[PRICES] Failed to renew prices for timestamp ${flattenedTimestamp}:`, err?.message ?? err)
+    }
     if (attempt < PRICE_API_MAX_RETRIES) {
       return await fetchPricesForNetworkAndTimestamp(networkId, flattenedTimestamp, prisma, attempt + 1)
     }

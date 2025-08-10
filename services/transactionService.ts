@@ -457,6 +457,8 @@ export async function connectTransactionsListToPrices (txList: Transaction[]): P
       const allPrices = timestampToPrice[ts]
       await connectTransactionToPrices(tx, prisma, allPrices, false)
     }))
+  }, {
+    timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT
   })
 }
 
@@ -468,7 +470,12 @@ export async function connectAllTransactionsToPrices (): Promise<void> {
     ...wrongNumberOfPricesTxs
   ]
   console.log(`[PRICES] Connecting ${noPricesTxs.length} txs with no prices and ${wrongNumberOfPricesTxs.length} with irregular prices...`)
-  void await connectTransactionsListToPrices(txs)
+  try {
+    void await connectTransactionsListToPrices(txs)
+  } catch (err: any) {
+    // Avoid crashing the server if a long transaction times out
+    console.error('[PRICES] Failed to connect transactions to prices:', err?.message ?? err)
+  }
   console.log('[PRICES] Finished connecting txs to prices.')
 }
 

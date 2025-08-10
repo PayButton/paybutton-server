@@ -718,14 +718,22 @@ class MultiBlockchainClient {
     void (async () => {
       if (this.isRunningApp()) {
         await syncPastDaysNewerPrices()
-        await connectAllTransactionsToPrices()
+        try {
+          await connectAllTransactionsToPrices()
+        } catch (err: any) {
+          console.error('[CHRONIK]: Error connecting all transactions to prices during startup:', err?.message ?? err)
+        }
         const asyncOperations: Array<Promise<void>> = []
         this.clients = {
           ecash: this.instantiateChronikClient('ecash', asyncOperations),
           bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
         }
         await Promise.all(asyncOperations)
-        await connectAllTransactionsToPrices()
+        try {
+          await connectAllTransactionsToPrices()
+        } catch (err: any) {
+          console.error('[CHRONIK]: Error connecting all transactions to prices after initialization:', err?.message ?? err)
+        }
         this.clients.ecash.setInitialized()
         this.clients.bitcoincash.setInitialized()
       } else if (process.env.NODE_ENV === 'test') {
@@ -754,8 +762,9 @@ class MultiBlockchainClient {
     }
     const ecashUrls = (() => {
       try {
-        // @ts-expect-error runtime guard; clients may still be undefined during init
-        return this.clients?.ecash?.getUrls?.() ?? (config.networkBlockchainURLs.ecash ?? [])
+        return (this.clients && this.clients.ecash && typeof this.clients.ecash.getUrls === 'function')
+          ? this.clients.ecash.getUrls()
+          : (config.networkBlockchainURLs.ecash ?? [])
       } catch (err: any) {
         console.error('[CHRONIK — ecash]: Error retrieving URLs from client; falling back to configured URLs.', err?.message)
         return config.networkBlockchainURLs.ecash ?? []
@@ -763,8 +772,9 @@ class MultiBlockchainClient {
     })()
     const bitcoincashUrls = (() => {
       try {
-        // @ts-expect-error runtime guard; clients may still be undefined during init
-        return this.clients?.bitcoincash?.getUrls?.() ?? (config.networkBlockchainURLs.bitcoincash ?? [])
+        return (this.clients && this.clients.bitcoincash && typeof this.clients.bitcoincash.getUrls === 'function')
+          ? this.clients.bitcoincash.getUrls()
+          : (config.networkBlockchainURLs.bitcoincash ?? [])
       } catch (err: any) {
         console.error('[CHRONIK — bitcoincash]: Error retrieving URLs from client; falling back to configured URLs.', err?.message)
         return config.networkBlockchainURLs.bitcoincash ?? []
