@@ -67,9 +67,12 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
 
   const paybuttonEmailTriggers = paybutton.triggers.filter(t => t.isEmailTrigger)
   const paybuttonPosterTriggers = paybutton.triggers.filter(t => !t.isEmailTrigger)
+  // When Pro is disabled, do not enforce POST trigger limits (allow multiple POST triggers)
+  const shouldEnforceTypeLimits = isEmailTrigger ? true : (config.proSettings.enabled === true)
 
   if (
     !isUpdate &&
+    shouldEnforceTypeLimits &&
     (
       (isEmailTrigger && paybuttonEmailTriggers.length > 0) ||
       (!isEmailTrigger && paybuttonPosterTriggers.length > 0)
@@ -83,6 +86,7 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
 
   if (
     !isUpdate &&
+    shouldEnforceTypeLimits &&
     (
       (isEmailTrigger && addressEmailTriggers.length > 0) ||
       (!isEmailTrigger && addressPosterTriggers.length > 0)
@@ -350,13 +354,14 @@ async function sendEmailForTrigger (trigger: TriggerWithPaybutton, sendEmailPara
 
   try {
     const user = await fetchUserFromTriggerId(trigger.id)
-    if (user.emailCredits > 0) {
+    const enforceEmailCredits = config.proSettings.enabled === true
+    if (!enforceEmailCredits || user.emailCredits > 0) {
       const response = await getMailerTransporter().sendMail(mailOptions)
       logData = {
         email: trigger.emails,
         responseData: response.response
       }
-      if (response.accepted.includes(trigger.emails)) {
+      if (enforceEmailCredits && response.accepted.includes(trigger.emails)) {
         await decrementUserCreditCount(user.id)
       }
     } else {
