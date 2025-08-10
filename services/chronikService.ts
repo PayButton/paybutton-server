@@ -131,22 +131,30 @@ export class ChronikBlockchainClient {
       this.mempoolTxsBeingProcessed = 0
       this.networkSlug = networkSlug
       this.networkId = NETWORK_IDS_FROM_SLUGS[networkSlug]
-      this.chronik = await ChronikClient.useStrategy(
-        ConnectionStrategy.ClosestFirst,
-        config.networkBlockchainURLs[networkSlug]
-      )
-      this.latencyTestFinished = true
-      this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
-      this.confirmedTxsHashesFromLastBlock = []
-      void this.chronikWSEndpoint.waitForOpen()
-      this.chronikWSEndpoint.subscribeToBlocks()
-      this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
-      this.CHRONIK_MSG_PREFIX = `[CHRONIK — ${networkSlug}]`
-      this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
-        query: {
-          key: process.env.WS_AUTH_KEY
-        }
-      })
+      try {
+        this.chronik = await ChronikClient.useStrategy(
+          ConnectionStrategy.ClosestFirst,
+          config.networkBlockchainURLs[networkSlug]
+        )
+        this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
+        this.confirmedTxsHashesFromLastBlock = []
+        void this.chronikWSEndpoint.waitForOpen()
+        this.chronikWSEndpoint.subscribeToBlocks()
+        this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
+        this.CHRONIK_MSG_PREFIX = `[CHRONIK — ${networkSlug}]`
+        this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
+          query: {
+            key: process.env.WS_AUTH_KEY
+          }
+        })
+      } catch (err: any) {
+        console.error(`[CHRONIK — ${networkSlug}]: Failed to initialize Chronik client. Endpoints: ${(config.networkBlockchainURLs[networkSlug] ?? []).join(', ')}. Error: ${err?.message as string}`)
+        // Ensure we don't deadlock any waiters
+        this.CHRONIK_MSG_PREFIX = `[CHRONIK — ${networkSlug}]`
+      } finally {
+        // Mark latency test as finished so callers don't hang forever even on failure
+        this.latencyTestFinished = true
+      }
     })()
   }
 
@@ -160,7 +168,13 @@ export class ChronikBlockchainClient {
   }
 
   public getUrls (): string[] {
-    return this.chronik.proxyInterface().getEndpointArray().map(e => e.url)
+    try {
+      // May throw if chronik is not initialized
+      return this.chronik.proxyInterface().getEndpointArray().map(e => e.url)
+    } catch (err: any) {
+      console.warn(`${this.CHRONIK_MSG_PREFIX}: Chronik client not initialized; cannot read live endpoint URLs.`)
+      return []
+    }
   }
 
   public setInitialized (): void {
@@ -733,10 +747,30 @@ class MultiBlockchainClient {
   }
 
   public getUrls (): Record<MainNetworkSlugsType, string[]> {
-    return {
-      ecash: this.clients.ecash.getUrls(),
-      bitcoincash: this.clients.bitcoincash.getUrls()
+    // Provide robust behavior even if clients are not fully initialized
+    const notReady = this.clients === undefined
+    if (notReady) {
+      console.warn('[CHRONIK]: MultiBlockchainClient.getUrls called before clients initialized; returning configured URLs.')
     }
+    const ecashUrls = (() => {
+      try {
+        // @ts-expect-error runtime guard; clients may still be undefined during init
+        return this.clients?.ecash?.getUrls?.() ?? (config.networkBlockchainURLs.ecash ?? [])
+      } catch (err: any) {
+        console.error('[CHRONIK — ecash]: Error retrieving URLs from client; falling back to configured URLs.', err?.message)
+        return config.networkBlockchainURLs.ecash ?? []
+      }
+    })()
+    const bitcoincashUrls = (() => {
+      try {
+        // @ts-expect-error runtime guard; clients may still be undefined during init
+        return this.clients?.bitcoincash?.getUrls?.() ?? (config.networkBlockchainURLs.bitcoincash ?? [])
+      } catch (err: any) {
+        console.error('[CHRONIK — bitcoincash]: Error retrieving URLs from client; falling back to configured URLs.', err?.message)
+        return config.networkBlockchainURLs.bitcoincash ?? []
+      }
+    })()
+    return { ecash: ecashUrls, bitcoincash: bitcoincashUrls }
   }
 
   private isRunningApp (): boolean {

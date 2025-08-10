@@ -33,7 +33,18 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const userId = session?.getUserId()
   const user = await fetchUserWithSupertokens(userId)
   removeUnserializableFields(user.userProfile)
-  const chronikUrls = multiBlockchainClient.getUrls()
+  let chronikUrls: Record<MainNetworkSlugsType, string[]>
+  try {
+    chronikUrls = multiBlockchainClient.getUrls()
+  } catch (err: any) {
+    console.error('[ADMIN]: Failed to fetch Chronik URLs from multiBlockchainClient. Falling back to configured URLs. Error:', err?.message)
+    // Lazy import to avoid SSR cycle issues
+    const config = (await import('config')).default
+    chronikUrls = {
+      ecash: config.networkBlockchainURLs.ecash ?? [],
+      bitcoincash: config.networkBlockchainURLs.bitcoincash ?? []
+    }
+  }
 
   const isAdmin = await isUserAdmin(userId)
   return {
