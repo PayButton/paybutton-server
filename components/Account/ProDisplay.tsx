@@ -34,6 +34,7 @@ const ProConfig = (): JSX.Element => {
     })()
   }, [])
 
+  if (!config.proSettings.enabled) return null
   return <>
     <h3>PayButton Pro</h3>
     <div className={style.pro_ctn}>
@@ -53,18 +54,18 @@ const ProConfig = (): JSX.Element => {
           <tbody>
             <tr>
               <td>Outgoing Emails on Payment</td>
-              <td>{showLimit(config.proSettings.standardDailyEmailLimit)} / day</td>
-              <td>{showLimit(config.proSettings.proDailyEmailLimit)} / day</td>
+              <td>{showLimit(config.proSettings.standardDailyEmailLimit!)} / day</td>
+              <td>{showLimit(config.proSettings.proDailyEmailLimit!)} / day</td>
             </tr>
             <tr>
               <td>Addresses Per Button</td>
-              <td>{showLimit(config.proSettings.standardAddressesPerButtonLimit)}</td>
-              <td>{showLimit(config.proSettings.proAddressesPerButtonLimit)}</td>
+              <td>{showLimit(config.proSettings.standardAddressesPerButtonLimit!)}</td>
+              <td>{showLimit(config.proSettings.proAddressesPerButtonLimit!)}</td>
             </tr>
             <tr>
               <td>Outgoing Server-to-Server Messages On Payment</td>
-              <td>{showLimit(config.proSettings.standardDailyEmailLimit)} / day</td>
-              <td>{showLimit(config.proSettings.proDailyEmailLimit)} / day</td>
+              <td>{showLimit(config.proSettings.standardDailyEmailLimit!)} / day</td>
+              <td>{showLimit(config.proSettings.proDailyEmailLimit!)} / day</td>
             </tr>
           </tbody>
         </table>

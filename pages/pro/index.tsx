@@ -42,7 +42,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 }
 
 export default function Pro ({ user }: IProps): React.ReactElement {
-  const offeredMonths = Object.keys(config.proSettings.monthsCost)
+  if (!config.proSettings.enabled) return <Page/>
+  const offeredMonths = Object.keys(config.proSettings.monthsCost || {})
   const [selectedMonths, setSelectedMonths] = useState<string | null>(null)
 
   const handleSelect = (months: string): void => {
@@ -71,7 +72,7 @@ export default function Pro ({ user }: IProps): React.ReactElement {
               className={`${style.card} ${selected ? style.selected : ''}`}
             >
               <div className={style.label}>{renderLabel(m)}</div>
-              <div className={style.price}>${config.proSettings.monthsCost[m]}</div>
+              <div className={style.price}>${config.proSettings.monthsCost![m]}</div>
             </div>
           )
         })}
@@ -81,8 +82,8 @@ export default function Pro ({ user }: IProps): React.ReactElement {
         <div className={style.payButtonWrapper}>
           <PayButton
             text={`Subscribe to PayButton Pro for ${renderLabel(selectedMonths)}`}
-            to={config.proSettings.payoutAddress}
-            amount={config.proSettings.monthsCost[selectedMonths]}
+            to={config.proSettings.payoutAddress!}
+            amount={config.proSettings.monthsCost![selectedMonths]}
             currency="USD"
           />
         </div>

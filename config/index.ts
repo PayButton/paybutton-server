@@ -5,14 +5,14 @@ export type BlockchainClientOptions = 'grpc' | 'chronik'
 
 interface ProSettings {
   enabled: boolean
-  monthsCost: {
+  monthsCost?: {
     [key: string]: number
   }
-  payoutAddress: string
-  standardDailyEmailLimit: number | 'Inf'
-  proDailyEmailLimit: number | 'Inf'
-  standardAddressesPerButtonLimit: number | 'Inf'
-  proAddressesPerButtonLimit: number | 'Inf'
+  payoutAddress?: string
+  standardDailyEmailLimit?: number | 'Inf'
+  proDailyEmailLimit?: number | 'Inf'
+  standardAddressesPerButtonLimit?: number | 'Inf'
+  proAddressesPerButtonLimit?: number | 'Inf'
 }
 
 interface Config {
@@ -44,6 +44,12 @@ const readConfig = (): Config => {
   }
   if (config.networkBlockchainURLs === undefined) {
     config.networkBlockchainURLs = {}
+  }
+  
+  if (config.proSettings === undefined) {
+    config.proSettings = { enabled: false }
+  } else {
+    config.proSettings.enabled = config.proSettings.enabled ?? false
   }
   if (
     (
