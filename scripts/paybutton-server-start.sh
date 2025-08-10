@@ -8,8 +8,9 @@ while true; do
   sleep 1
 done                                                                
 echo Connected to the db.
-
-yarn || exit 1
+# Install dependencies without modifying yarn.lock (avoids EACCES on bind mounts)
+# Try frozen first (CI-friendly), fall back to pure if needed
+yarn install --frozen-lockfile || yarn install --pure-lockfile || exit 1
 # Clear logs
 
 logtime=$(date +%Y-%m-%d@%H:%M)
