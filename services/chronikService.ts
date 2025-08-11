@@ -16,7 +16,7 @@ import {
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
-import { fetchAddressBySubstring, fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced } from './addressService'
+import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
@@ -284,16 +284,14 @@ export class ChronikBlockchainClient {
     return (await this.chronik.script(type, hash160).history(page, pageSize)).txs
   }
 
-  public async * syncTransactionsForAddress (addressString: string, fully = false, runTriggers = false): AsyncGenerator<TransactionWithAddressAndPrices[]> {
-    const address = await fetchAddressBySubstring(addressString)
-    if (address.syncing) { return }
+  public async * syncTransactionsForAddress (address: Address, fully = false, runTriggers = false): AsyncGenerator<TransactionWithAddressAndPrices[]> {
     const pageSize = FETCH_N
     let page = 0
     const earliestUnconfirmedTxTimestamp = await getEarliestUnconfirmedTxTimestampForAddress(address.id)
     const latestTimestamp = earliestUnconfirmedTxTimestamp ?? await getLatestConfirmedTxTimestampForAddress(address.id) ?? 0
 
     while (true) {
-      let transactions = await this.getPaginatedTxs(addressString, page, pageSize)
+      let transactions = await this.getPaginatedTxs(address.address, page, pageSize)
 
       // filter out transactions that happened before a certain date set in constants/index,
       //   this date is understood as the beginning and we don't look past it
@@ -317,11 +315,11 @@ export class ChronikBlockchainClient {
       if (persistedTransactions.length > 0) {
         const simplifiedTransactions = getSimplifiedTransactions(persistedTransactions)
 
-        console.log(`${this.CHRONIK_MSG_PREFIX}: added ${simplifiedTransactions.length} txs to ${addressString}`)
+        console.log(`${this.CHRONIK_MSG_PREFIX}: added ${simplifiedTransactions.length} txs to ${address.address}`)
 
         const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
         broadcastTxData.messageType = 'OldTx'
-        broadcastTxData.address = addressString
+        broadcastTxData.address = address.address
         broadcastTxData.txs = simplifiedTransactions
 
         this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
@@ -334,8 +332,8 @@ export class ChronikBlockchainClient {
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
     }
-    await setSyncing(addressString, false)
-    await updateLastSynced(addressString)
+    await setSyncing(address.address, false)
+    await updateLastSynced(address.address)
   }
 
   private async getUtxos (address: string): Promise<ScriptUtxo[]> {
@@ -583,7 +581,7 @@ export class ChronikBlockchainClient {
     await setSyncingBatch(addresses.map(a => a.address), true)
     for (const addr of addresses) {
       try {
-        const generator = this.syncTransactionsForAddress(addr.address, false, runTriggers)
+        const generator = this.syncTransactionsForAddress(addr, false, runTriggers)
         let count = 0
         while (true) {
           const result = await generator.next()
@@ -721,7 +719,6 @@ class MultiBlockchainClient {
     void (async () => {
       if (this.isRunningApp()) {
         await syncPastDaysNewerPrices()
-        await connectAllTransactionsToPrices()
         const asyncOperations: Array<Promise<void>> = []
         this.clients = {
           ecash: this.instantiateChronikClient('ecash', asyncOperations),
