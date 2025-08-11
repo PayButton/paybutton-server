@@ -461,13 +461,16 @@ export async function connectTransactionsListToPrices (txList: Transaction[]): P
 }
 
 export async function connectAllTransactionsToPrices (): Promise<void> {
+  console.log('[PRICES] Started connecting txs to prices.')
   const noPricesTxs = await fetchAllTransactionsWithNoPrices()
+  console.log(`[PRICES] Found ${noPricesTxs.length} txs with no prices.`)
   const wrongNumberOfPricesTxs = await fetchAllTransactionsWithIrregularPrices()
+  console.log(`[PRICES] Found ${wrongNumberOfPricesTxs.length} txs with irregular prices.`)
   const txs = [
     ...noPricesTxs,
     ...wrongNumberOfPricesTxs
   ]
-  console.log(`[PRICES] Connecting ${noPricesTxs.length} txs with no prices and ${wrongNumberOfPricesTxs.length} with irregular prices...`)
+  console.log('[PRICES] Connecting txs to prices...')
   void await connectTransactionsListToPrices(txs)
   console.log('[PRICES] Finished connecting txs to prices.')
 }
