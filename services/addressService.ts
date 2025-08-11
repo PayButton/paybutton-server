@@ -299,7 +299,7 @@ export async function fetchAddressById (addressId: string, includePaybuttons = f
 }
 
 export async function setSyncingBatch (addressStringArray: string[], syncing: boolean): Promise<void> {
-  const result = await prisma.address.updateMany({
+  await prisma.address.updateMany({
     where: {
       address: {
         in: addressStringArray
@@ -309,9 +309,6 @@ export async function setSyncingBatch (addressStringArray: string[], syncing: bo
       syncing
     }
   })
-  if (result.count === 0) {
-    throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
-  }
 }
 
 export async function setSyncing (addressString: string, syncing: boolean): Promise<void> {
