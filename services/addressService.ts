@@ -298,6 +298,19 @@ export async function fetchAddressById (addressId: string, includePaybuttons = f
   return result
 }
 
+export async function setSyncingBatch (addressStringArray: string[], syncing: boolean): Promise<void> {
+  await prisma.address.updateMany({
+    where: {
+      address: {
+        in: addressStringArray
+      }
+    },
+    data: {
+      syncing
+    }
+  })
+}
+
 export async function setSyncing (addressString: string, syncing: boolean): Promise<void> {
   const result = await prisma.address.update({
     where: {

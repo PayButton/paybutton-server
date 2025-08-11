@@ -38,4 +38,4 @@ redis/dump.rdb
 prisma/seeds/productionTxs.csv
 paybutton-config.json
 
-dump.sql
+dump.sql*

@@ -16,7 +16,7 @@ import {
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
-import { fetchAddressBySubstring, fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, updateLastSynced } from './addressService'
+import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
@@ -284,17 +284,14 @@ export class ChronikBlockchainClient {
     return (await this.chronik.script(type, hash160).history(page, pageSize)).txs
   }
 
-  public async * syncTransactionsForAddress (addressString: string, fully = false, runTriggers = false): AsyncGenerator<TransactionWithAddressAndPrices[]> {
-    const address = await fetchAddressBySubstring(addressString)
-    if (address.syncing) { return }
-    await setSyncing(addressString, true)
+  public async * syncTransactionsForAddress (address: Address, fully = false, runTriggers = false): AsyncGenerator<TransactionWithAddressAndPrices[]> {
     const pageSize = FETCH_N
     let page = 0
     const earliestUnconfirmedTxTimestamp = await getEarliestUnconfirmedTxTimestampForAddress(address.id)
     const latestTimestamp = earliestUnconfirmedTxTimestamp ?? await getLatestConfirmedTxTimestampForAddress(address.id) ?? 0
 
     while (true) {
-      let transactions = await this.getPaginatedTxs(addressString, page, pageSize)
+      let transactions = await this.getPaginatedTxs(address.address, page, pageSize)
 
       // filter out transactions that happened before a certain date set in constants/index,
       //   this date is understood as the beginning and we don't look past it
@@ -318,11 +315,11 @@ export class ChronikBlockchainClient {
       if (persistedTransactions.length > 0) {
         const simplifiedTransactions = getSimplifiedTransactions(persistedTransactions)
 
-        console.log(`${this.CHRONIK_MSG_PREFIX}: added ${simplifiedTransactions.length} txs to ${addressString}`)
+        console.log(`${this.CHRONIK_MSG_PREFIX}: added ${simplifiedTransactions.length} txs to ${address.address}`)
 
         const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
         broadcastTxData.messageType = 'OldTx'
-        broadcastTxData.address = addressString
+        broadcastTxData.address = address.address
         broadcastTxData.txs = simplifiedTransactions
 
         this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
@@ -335,8 +332,8 @@ export class ChronikBlockchainClient {
 
       await new Promise(resolve => setTimeout(resolve, FETCH_DELAY))
     }
-    await setSyncing(addressString, false)
-    await updateLastSynced(addressString)
+    await setSyncing(address.address, false)
+    await updateLastSynced(address.address)
   }
 
   private async getUtxos (address: string): Promise<ScriptUtxo[]> {
@@ -408,12 +405,22 @@ export class ChronikBlockchainClient {
     return sortedInputAddresses
   }
 
+  public async waitForSyncing (txId: string, addressStringArray: string[]): Promise<void> {
+    if (!this.initializing) return
+    console.log(`${this.CHRONIK_MSG_PREFIX}: Waiting unblocking addresses for ${txId}`)
+    while (true) {
+      const addresses = await fetchAddressesArray(addressStringArray)
+      if (addresses.every(a => !a.syncing)) {
+        console.log(`${this.CHRONIK_MSG_PREFIX}: Finished unblocking addresses for ${txId}`)
+        return
+      }
+      await new Promise(resolve => setTimeout(resolve, CHRONIK_INITIALIZATION_DELAY))
+    }
+  }
+
   private async processWsMessage (msg: WsMsgClient): Promise<void> {
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
-    while (this.initializing) {
-      await new Promise(resolve => setTimeout(resolve, CHRONIK_INITIALIZATION_DELAY))
-    }
     if (msg.type === 'Tx') {
       if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
@@ -433,13 +440,14 @@ export class ChronikBlockchainClient {
         if (this.isAlreadyBeingProcessed(msg.txid, false)) {
           return
         }
-        while (this.mempoolTxsBeingProcessed > MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME) {
+        while (this.mempoolTxsBeingProcessed >= MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME) {
           await new Promise(resolve => setTimeout(resolve, MEMPOOL_PROCESS_DELAY))
         }
         this.mempoolTxsBeingProcessed += 1
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transaction = await this.chronik.tx(msg.txid)
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+        await this.waitForSyncing(msg.txid, addressesWithTransactions.map(obj => obj.address.address))
         const inputAddresses = this.getSortedInputAddresses(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
           const { created, tx } = await upsertTransaction(addressWithTransaction.transaction)
@@ -456,6 +464,9 @@ export class ChronikBlockchainClient {
       console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
       if (msg.msgType === 'BLK_FINALIZED') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Syncing ${this.confirmedTxsHashesFromLastBlock.length} txs on the block...`)
+        while (this.initializing) {
+          await new Promise(resolve => setTimeout(resolve, CHRONIK_INITIALIZATION_DELAY))
+        }
         await this.syncBlockTransactions(msg.blockHash)
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Syncing done.`)
         this.confirmedTxsHashesFromLastBlock = []
@@ -567,9 +578,10 @@ export class ChronikBlockchainClient {
       }
     }
     console.log(`${this.CHRONIK_MSG_PREFIX} Syncing ${addresses.length} addresses...`)
+    await setSyncingBatch(addresses.map(a => a.address), true)
     for (const addr of addresses) {
       try {
-        const generator = this.syncTransactionsForAddress(addr.address, false, runTriggers)
+        const generator = this.syncTransactionsForAddress(addr, false, runTriggers)
         let count = 0
         while (true) {
           const result = await generator.next()
@@ -593,7 +605,10 @@ export class ChronikBlockchainClient {
       }
     }
     const failedAddresses = Object.keys(failedAddressesWithErrors)
-    console.log(`${this.CHRONIK_MSG_PREFIX} Finished syncing ${addresses.length} addresses with ${failedAddresses.length} errors.`)
+    const totalSyncedTxsArray = Object.values(successfulAddressesWithCount)
+    const totalSyncedTxsCount = totalSyncedTxsArray.reduce((prev, curr) => prev + curr, 0)
+
+    console.log(`${this.CHRONIK_MSG_PREFIX} Finished syncing ${totalSyncedTxsCount} txs for ${addresses.length} addresses with ${failedAddresses.length} errors.`)
     if (failedAddresses.length > 0) {
       console.log(`${this.CHRONIK_MSG_PREFIX} Failed addresses were:\n- ${Object.entries(failedAddressesWithErrors).map((kv: [string, string]) => `${kv[0]}: ${kv[1]}`).join('\n- ')}`)
     }
@@ -704,13 +719,13 @@ class MultiBlockchainClient {
     void (async () => {
       if (this.isRunningApp()) {
         await syncPastDaysNewerPrices()
-        await connectAllTransactionsToPrices()
         const asyncOperations: Array<Promise<void>> = []
         this.clients = {
           ecash: this.instantiateChronikClient('ecash', asyncOperations),
           bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
         }
         await Promise.all(asyncOperations)
+        this.initializing = false
         await connectAllTransactionsToPrices()
         this.clients.ecash.setInitialized()
         this.clients.bitcoincash.setInitialized()
@@ -721,8 +736,8 @@ class MultiBlockchainClient {
           bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
         }
         await Promise.all(asyncOperations)
+        this.initializing = false
       }
-      this.initializing = false
     })()
   }
 
