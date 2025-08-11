@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `Paybutton` ADD COLUMN `description` LONGTEXT NOT NULL DEFAULT '',
+    ADD COLUMN `url` VARCHAR(255) NOT NULL DEFAULT '';
