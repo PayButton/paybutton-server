@@ -50,6 +50,7 @@ jest.mock('../../services/addressService', () => ({
   getEarliestUnconfirmedTxTimestampForAddress: jest.fn(),
   getLatestConfirmedTxTimestampForAddress: jest.fn(),
   setSyncing: jest.fn(),
+  setSyncingBatch: jest.fn(),
   updateLastSynced: jest.fn()
 }))
 
