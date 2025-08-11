@@ -309,7 +309,7 @@ export async function setSyncingBatch (addressStringArray: string[], syncing: bo
       syncing
     }
   })
-  if (result === null) {
+  if (result.count === 0) {
     throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
   }
 }
