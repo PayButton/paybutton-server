@@ -1,6 +1,6 @@
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import * as paybuttonService from 'services/paybuttonService'
-import { prismaMock } from 'prisma/mockedClient'
+import { prismaMock } from 'prisma-local/mockedClient'
 import { mockedPaybutton, mockedPaybuttonList, mockedNetwork, mockedWalletsOnUserProfile, mockedXECAddress } from '../mockedObjects'
 
 describe('Fetch services', () => {

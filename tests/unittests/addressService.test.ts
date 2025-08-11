@@ -1,7 +1,7 @@
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { Prisma } from '@prisma/client'
 import * as addressService from 'services/addressService'
-import { prismaMock } from 'prisma/mockedClient'
+import { prismaMock } from 'prisma-local/mockedClient'
 import { mockedBCHAddress, mockedNetwork, mockedTransactionList, mockedAddressesOnButtons, mockedAddressIdList } from '../mockedObjects'
 import { RESPONSE_MESSAGES } from 'constants/index'
 

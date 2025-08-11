@@ -1,5 +1,5 @@
 import { Decimal } from '@prisma/client/runtime/library'
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { Invoice, Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES } from 'constants/index'
 

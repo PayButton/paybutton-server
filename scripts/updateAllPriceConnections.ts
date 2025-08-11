@@ -1,5 +1,5 @@
 import { flattenTimestamp } from '../services/priceService'
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { connectTransactionsListToPrices } from 'services/transactionService'
 import { Transaction } from '@prisma/client'
 import moment from 'moment'

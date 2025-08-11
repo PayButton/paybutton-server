@@ -1,7 +1,7 @@
 import { UserProfile } from '@prisma/client'
 import supertokensNode from 'supertokens-node'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import crypto from 'crypto'
 
 export async function fetchUserProfileFromId (id: string): Promise<UserProfile> {
