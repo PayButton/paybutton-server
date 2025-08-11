@@ -728,6 +728,7 @@ class MultiBlockchainClient {
           bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
         }
         await Promise.all(asyncOperations)
+        this.initializing = false
         await connectAllTransactionsToPrices()
         this.clients.ecash.setInitialized()
         this.clients.bitcoincash.setInitialized()
@@ -738,8 +739,8 @@ class MultiBlockchainClient {
           bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
         }
         await Promise.all(asyncOperations)
+        this.initializing = false
       }
-      this.initializing = false
     })()
   }
 
