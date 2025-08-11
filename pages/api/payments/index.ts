@@ -1,4 +1,5 @@
 import { fetchAllPaymentsByUserIdWithPagination } from 'services/transactionService'
+import { fetchUserProfileFromId } from 'services/userService'
 import { setSession } from 'utils/setSession'
 
 export default async (req: any, res: any): Promise<void> => {
@@ -18,6 +19,9 @@ export default async (req: any, res: any): Promise<void> => {
     if (typeof req.query.years === 'string' && req.query.years !== '') {
       years = (req.query.years as string).split(',')
     }
+    const userReqTimezone = req.headers.timezone as string
+    const userProfile = await fetchUserProfileFromId(userId)
+    const userPreferredTimezone = userProfile?.preferredTimezone
 
     const resJSON = await fetchAllPaymentsByUserIdWithPagination(
       userId,
@@ -26,7 +30,8 @@ export default async (req: any, res: any): Promise<void> => {
       orderBy,
       orderDesc,
       buttonIds,
-      years
+      years,
+      userPreferredTimezone ?? userReqTimezone
     )
     res.status(200).json(resJSON)
   }

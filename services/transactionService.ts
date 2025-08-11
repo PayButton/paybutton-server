@@ -564,10 +564,6 @@ export async function fetchTransactionsByPaybuttonId (paybuttonId: string, netwo
   const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
   const transactions = await fetchTransactionsByAddressList(addressIdList, networkIds)
 
-  if (transactions.length === 0) {
-    throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
-  }
-
   return transactions
 }
 
@@ -586,10 +582,6 @@ export async function fetchTransactionsByPaybuttonIdWithPagination (
     orderBy,
     orderDesc,
     networkIds)
-
-  if (transactions.length === 0) {
-    throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
-  }
 
   return transactions
 }
@@ -760,7 +752,8 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   orderBy?: string,
   orderDesc = true,
   buttonIds?: string[],
-  years?: string[]
+  years?: string[],
+  timezone?: string
 ): Promise<Payment[]> {
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
 
@@ -804,16 +797,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
     }
   }
   if (years !== undefined && years.length > 0) {
-    const yearFilters = years.map((year) => {
-      const start = new Date(`${year}-01-01T00:00:00Z`).getTime() / 1000
-      const end = new Date(`${Number(year) + 1}-01-01T00:00:00Z`).getTime() / 1000
-      return {
-        timestamp: {
-          gte: Math.floor(start),
-          lt: Math.floor(end)
-        }
-      }
-    })
+    const yearFilters = getYearFilters(years, timezone)
 
     where.OR = yearFilters
   }
@@ -846,12 +830,39 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   }
   return transformedData
 }
+const getYearFilters = (years: string[], timezone?: string): Prisma.TransactionWhereInput[] => {
+  return years.map((year) => {
+    let start: number
+    let end: number
+    if (timezone !== undefined && timezone !== null && timezone !== '') {
+      const startDate = new Date(`${year}-01-01T00:00:00`)
+      const endDate = new Date(`${Number(year) + 1}-01-01T00:00:00`)
+      const startInTimezone = new Date(startDate.toLocaleString('en-US', { timeZone: timezone }))
+      const endInTimezone = new Date(endDate.toLocaleString('en-US', { timeZone: timezone }))
+      const startOffset = startDate.getTime() - startInTimezone.getTime()
+      const endOffset = endDate.getTime() - endInTimezone.getTime()
+      start = (startDate.getTime() + startOffset) / 1000
+      end = (endDate.getTime() + endOffset) / 1000
+    } else {
+      start = new Date(`${year}-01-01T00:00:00Z`).getTime() / 1000
+      end = new Date(`${Number(year) + 1}-01-01T00:00:00Z`).getTime() / 1000
+    }
+
+    return {
+      timestamp: {
+        gte: Math.floor(start),
+        lt: Math.floor(end)
+      }
+    }
+  })
+}
 
 export async function fetchAllPaymentsByUserId (
   userId: string,
   networkIds?: number[],
   buttonIds?: string[],
-  years?: string[]
+  years?: string[],
+  timezone?: string
 ): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   const where: Prisma.TransactionWhereInput = {
     address: {
@@ -878,16 +889,7 @@ export async function fetchAllPaymentsByUserId (
   }
 
   if (years !== undefined && years.length > 0) {
-    const yearFilters = years.map((year) => {
-      const start = new Date(`${year}-01-01T00:00:00Z`).getTime() / 1000
-      const end = new Date(`${Number(year) + 1}-01-01T00:00:00Z`).getTime() / 1000
-      return {
-        timestamp: {
-          gte: Math.floor(start),
-          lt: Math.floor(end)
-        }
-      }
-    })
+    const yearFilters = getYearFilters(years, timezone)
 
     where.OR = yearFilters
   }
@@ -916,7 +918,8 @@ export async function fetchTxCountByPaybuttonId (paybuttonId: string): Promise<n
 export const getFilteredTransactionCount = async (
   userId: string,
   buttonIds?: string[],
-  years?: string[]
+  years?: string[],
+  timezone?: string
 ): Promise<number> => {
   const where: Prisma.TransactionWhereInput = {
     address: {
@@ -936,16 +939,7 @@ export const getFilteredTransactionCount = async (
     }
   }
   if (years !== undefined && years.length > 0) {
-    const yearFilters = years.map((year) => {
-      const start = new Date(`${year}-01-01T00:00:00Z`).getTime() / 1000
-      const end = new Date(`${Number(year) + 1}-01-01T00:00:00Z`).getTime() / 1000
-      return {
-        timestamp: {
-          gte: Math.floor(start),
-          lt: Math.floor(end)
-        }
-      }
-    })
+    const yearFilters = getYearFilters(years, timezone)
 
     where.OR = yearFilters
   }

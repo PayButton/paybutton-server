@@ -191,7 +191,11 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
         url += `&years=${selectedTransactionYears.join(',')}`
       }
 
-      const paymentsResponse = await fetch(url)
+      const paymentsResponse = await fetch(url, {
+        headers: {
+          Timezone: moment.tz.guess()
+        }
+      })
       let paymentsCountUrl = '/api/payments/count'
       if (selectedButtonIds.length > 0) {
         paymentsCountUrl += `?buttonIds=${selectedButtonIds.join(',')}`
