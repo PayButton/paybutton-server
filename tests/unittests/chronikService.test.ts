@@ -10,6 +10,7 @@ import {
   ChronikBlockchainClient,
   multiBlockchainClient
 } from '../../services/chronikService'
+import { Address } from '@prisma/client'
 
 // Mock the heavy dependencies to avoid network calls in tests
 jest.mock('chronik-client-cashtokens', () => ({
@@ -922,7 +923,7 @@ describe('ChronikBlockchainClient advanced functionality', () => {
 
     // Mock the sync generator method
     const mockSyncGenerator = {
-      async *syncTransactionsForAddress(address: string) {
+      async *syncTransactionsForAddress(address: Address) {
         yield []
         return
       }
