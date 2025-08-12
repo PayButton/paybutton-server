@@ -52,6 +52,7 @@ jest.mock('../../services/addressService', () => ({
   setSyncing: jest.fn(),
   setSyncingBatch: jest.fn(),
   updateLastSynced: jest.fn()
+  updateManyLastSynced: jest.fn()
 }))
 
 jest.mock('../../services/transactionService', () => ({
