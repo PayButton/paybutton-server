@@ -723,10 +723,8 @@ export class ChronikBlockchainClient {
       addresses.forEach(a => {
         successfulAddressesWithCount[a.address] = perAddrCount.get(a.id) ?? 0
       })
-      if (process.env.NODE_ENV !== 'test') {
-        const okAddresses = addresses.filter(a => !(a.address in failedAddressesWithErrors))
-        await updateManyLastSynced(okAddresses.map(a => a.address))
-      }
+      const okAddresses = addresses.filter(a => !(a.address in failedAddressesWithErrors))
+      await updateManyLastSynced(okAddresses.map(a => a.address))
     } catch (err: any) {
       console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR in parallel sync: ${err.message as string}`)
       addresses.forEach(a => {
@@ -735,9 +733,7 @@ export class ChronikBlockchainClient {
         }
       })
     } finally {
-      if (process.env.NODE_ENV !== 'test') {
-        await setSyncingBatch(addresses.map(a => a.address), false)
-      }
+      await setSyncingBatch(addresses.map(a => a.address), false)
     }
 
     const failed = Object.keys(failedAddressesWithErrors)
