@@ -138,16 +138,6 @@ export const NETWORK_SLUGS_FROM_IDS: Record<number, string> = {
   2: 'bitcoincash'
 }
 
-// When fetching some address transactions, number of transactions to fetch at a time.
-// On chronik, the max allowed is 200
-export const FETCH_N = 200
-
-// When fetching the FETCH_N transactions, max time (in ms) to wait to upsert them.
-export const FETCH_N_TIMEOUT = 120000
-
-// When fetching some address transactions, delay (in ms) between each fetch.
-export const FETCH_DELAY = 100
-
 // Delay to check if latency test has finished, when the app starts.
 export const LATENCY_TEST_CHECK_DELAY = 200
 
@@ -281,3 +271,19 @@ export const BCH_TX_EXPLORER_URL = 'https://blockchair.com/bitcoin-cash/transact
 export const MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME = 2
 export const CHRONIK_INITIALIZATION_DELAY = 2000
 export const MEMPOOL_PROCESS_DELAY = 100
+
+/* WIP RENAME ALL THOSE */
+// When fetching some address transactions, number of transactions to fetch at a time.
+// On chronik, the max allowed is 200
+export const FETCH_N = 200
+
+// When fetching the FETCH_N transactions, max time (in ms) to wait to upsert them.
+export const FETCH_N_TIMEOUT = 120000
+
+// When fetching some address transactions, delay (in ms) between each fetch.
+export const FETCH_DELAY = 100
+/* END: WIP RENAME ALL THOSE */
+
+export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 10_000
+export const TX_EMIT_BATCH_SIZE = 10_000 // for our generator, not chronik
+export const DB_COMMIT_BATCH_SIZE = 10_000 // tamanho dos lotes para commit no DB
