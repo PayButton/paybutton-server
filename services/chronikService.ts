@@ -16,7 +16,7 @@ import {
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
-import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced } from './addressService'
+import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced, updateManyLastSynced } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
@@ -723,6 +723,10 @@ export class ChronikBlockchainClient {
       addresses.forEach(a => {
         successfulAddressesWithCount[a.address] = perAddrCount.get(a.id) ?? 0
       })
+      if (process.env.NODE_ENV !== 'test') {
+        const okAddresses = addresses.filter(a => !(a.address in failedAddressesWithErrors))
+        await updateManyLastSynced(okAddresses.map(a => a.address))
+      }
     } catch (err: any) {
       console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR in parallel sync: ${err.message as string}`)
       addresses.forEach(a => {
