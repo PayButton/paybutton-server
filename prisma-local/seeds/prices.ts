@@ -17,7 +17,7 @@ export interface PriceFileData extends KeyValueT<string> {
 
 const writeFile = promisify(fs.writeFile)
 
-export const PATH_PRICE_CSV_FILE = path.join('prisma', 'seeds', 'prices.csv')
+export const PATH_PRICE_CSV_FILE = path.join('prisma-local', 'seeds', 'prices.csv')
 
 async function writePricesToFile (content: PriceFileData[]): Promise<void> {
   const headers = ['ticker', 'date', 'priceInCAD', 'priceInUSD']
