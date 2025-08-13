@@ -178,7 +178,8 @@ model UserProfile {
   organizationId String?
   organization Organization?     @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
-  emailCredits Int  @default(100)
+  emailCredits Int  @default(5)
+  postCredits Int  @default(5)
   }
 
 model PaybuttonTrigger {
