@@ -1017,3 +1017,10 @@ export const generatePaymentId = async (address: string): Promise<string> => {
 
   return clientPayment.paymentId
 }
+
+export const updatePaymentStatus = async (paymentId: string, status: ClientPaymentStatus): Promise<void> => {
+  await prisma.clientPayment.update({
+    where: { paymentId },
+    data: { status }
+  })
+}
