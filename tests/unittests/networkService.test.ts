@@ -1,8 +1,8 @@
 import * as networkService from 'services/networkService'
-import prisma from 'prisma/clientInstance'
-import { prismaMock } from 'prisma/mockedClient'
+import prisma from 'prisma-local/clientInstance'
+import { prismaMock } from 'prisma-local/mockedClient'
 import { mockedBCHAddress, mockedXECAddress } from '../mockedObjects'
-import { networks } from 'prisma/seeds/networks'
+import { networks } from 'prisma-local/seeds/networks'
 import { NETWORK_IDS } from 'constants/index'
 
 const mainNetworkIds = Object.values(NETWORK_IDS)

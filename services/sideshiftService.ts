@@ -1,4 +1,4 @@
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { SideshiftShiftRes } from 'ws-service/types'
 
 export async function createSideshiftShift (shiftRes: SideshiftShiftRes): Promise<void> {

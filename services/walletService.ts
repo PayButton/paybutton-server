@@ -1,5 +1,5 @@
 import { Prisma, type WalletsOnUserProfile, type Wallet } from '@prisma/client'
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { connectAddressToUser } from 'services/addressesOnUserProfileService'
 import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import { CacheGet } from 'redis/index'

@@ -72,11 +72,11 @@ jest.mock('../../services/triggerService', () => ({
   executeAddressTriggers: jest.fn()
 }))
 
-jest.mock('../../prisma/seeds/transactions', () => ({
+jest.mock('../../prisma-local/seeds/transactions', () => ({
   appendTxsToFile: jest.fn()
 }))
 
-jest.mock('../../prisma/seeds/addresses', () => ({
+jest.mock('../../prisma-local/seeds/addresses', () => ({
   productionAddresses: []
 }))
 

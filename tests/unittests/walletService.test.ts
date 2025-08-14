@@ -1,8 +1,8 @@
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { Prisma, Paybutton, Address } from '@prisma/client'
 import * as walletService from 'services/walletService'
 import * as addressService from 'services/addressService'
-import { prismaMock } from 'prisma/mockedClient'
+import { prismaMock } from 'prisma-local/mockedClient'
 import { RESPONSE_MESSAGES, XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import {
   mockedWallet,

@@ -1,7 +1,7 @@
 import { Organization, OrganizationInvite, UserProfile } from '@prisma/client'
 import config from 'config'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { CreateOrganizationInput, UpdateOrganizationInput } from 'utils/validators'
 
 export async function createOrganization ({ creatorId, name }: CreateOrganizationInput): Promise<Organization> {

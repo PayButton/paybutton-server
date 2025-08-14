@@ -1,7 +1,7 @@
 import * as priceService from 'services/priceService'
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { Prisma } from '@prisma/client'
-import { prismaMock } from 'prisma/mockedClient'
+import { prismaMock } from 'prisma-local/mockedClient'
 import { mockedUSDPrice, mockedCADPrice } from 'tests/mockedObjects'
 
 describe('Fetch services', () => {
