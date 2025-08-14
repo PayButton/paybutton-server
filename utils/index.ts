@@ -236,3 +236,10 @@ export const removeUnserializableFields = (user: UserProfile): void => {
   (user.lastSentVerificationEmailAt as any) = user.lastSentVerificationEmailAt === null ? null : user.lastSentVerificationEmailAt.toString();
   (user.updatedAt as any) = user.updatedAt.toString()
 }
+
+export async function runAsyncInBatches (tasks: Array<() => Promise<void>>, batchSize: number): Promise<void> {
+  for (let i = 0; i < tasks.length; i += batchSize) {
+    const slice = tasks.slice(i, i + batchSize)
+    await Promise.all(slice.map(async fn => await fn()))
+  }
+}

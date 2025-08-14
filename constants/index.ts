@@ -287,3 +287,8 @@ export const FETCH_DELAY = 100
 export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 10_000
 export const TX_EMIT_BATCH_SIZE = 10_000 // for our generator, not chronik
 export const DB_COMMIT_BATCH_SIZE = 10_000 // tamanho dos lotes para commit no DB
+
+export const TRIGGER_POST_CONCURRENCY = 100
+export const TRIGGER_EMAIL_CONCURRENCY = 100
+
+export const TRIGGER_LOG_BATCH_SIZE = 200

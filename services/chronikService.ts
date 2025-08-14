@@ -23,7 +23,7 @@ import config from 'config'
 import io, { Socket } from 'socket.io-client'
 import moment from 'moment'
 import { OpReturnData, parseError, parseOpReturnData } from 'utils/validators'
-import { executeAddressTriggers } from './triggerService'
+import { executeAddressTriggers, executeTriggersBatch } from './triggerService'
 import { appendTxsToFile } from 'prisma-local/seeds/transactions'
 import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
 import { syncPastDaysNewerPrices } from './priceService'
@@ -683,15 +683,16 @@ export class ChronikBlockchainClient {
 
           // broadcast/triggers after commit
           if (created.length > 0) {
+            // Always broadcast per tx (keeps existing behavior)
+            const triggerBatch: BroadcastTxData[] = []
+            for (const tx of created) {
+              const bd = this.broadcastIncomingTx(tx.address.address, tx, []) // inputAddresses left empty in bulk
+              triggerBatch.push(bd)
+            }
+
+            // Then, if enabled, execute triggers **in batch**
             if (runTriggers) {
-              for (const tx of created) {
-                const broadcast = this.broadcastIncomingTx(tx.address.address, tx, [])
-                await executeAddressTriggers(broadcast, tx.address.networkId)
-              }
-            } else {
-              for (const tx of created) {
-                this.broadcastIncomingTx(tx.address.address, tx, [])
-              }
+              await executeTriggersBatch(triggerBatch, this.networkId)
             }
           }
         }
@@ -707,14 +708,14 @@ export class ChronikBlockchainClient {
           await appendTxsToFile(createdForProd as unknown as Prisma.TransactionCreateManyInput[])
         }
 
-        if (runTriggers) {
+        if (created.length > 0) {
+          const triggerBatch: BroadcastTxData[] = []
           for (const tx of created) {
-            const broadcast = this.broadcastIncomingTx(tx.address.address, tx, [])
-            await executeAddressTriggers(broadcast, tx.address.networkId)
+            const bd = this.broadcastIncomingTx(tx.address.address, tx, [])
+            triggerBatch.push(bd)
           }
-        } else {
-          for (const tx of created) {
-            this.broadcastIncomingTx(tx.address.address, tx, [])
+          if (runTriggers) {
+            await executeTriggersBatch(triggerBatch, this.networkId)
           }
         }
       }
