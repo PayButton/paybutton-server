@@ -11,7 +11,8 @@ import {
   upsertTransaction,
   getSimplifiedTransactions,
   getSimplifiedTrasaction,
-  connectAllTransactionsToPrices
+  connectAllTransactionsToPrices,
+  updatePaymentStatus
 } from './transactionService'
 import { Address, Prisma } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
@@ -28,6 +29,7 @@ import { appendTxsToFile } from 'prisma-local/seeds/transactions'
 import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
 import { syncPastDaysNewerPrices } from './priceService'
 import { AddressType } from 'ecashaddrjs/dist/types'
+import { ClientPaymentStatus } from 'redis/types'
 
 const decoder = new TextDecoder()
 
@@ -588,6 +590,11 @@ export class ChronikBlockchainClient {
             if (created) { // only execute trigger for newly added txs
               await executeAddressTriggers(broadcastTxData, tx.address.networkId)
             }
+            const parsedOpReturn = parseOpReturnData(tx.opReturn)
+            const paymentId = parsedOpReturn.paymentId
+            const newClientPaymentStatus = 'ADDED_TO_MEMPOOL' as ClientPaymentStatus
+
+            await updatePaymentStatus(paymentId, newClientPaymentStatus)
           }
         }
         this.mempoolTxsBeingProcessed -= 1
