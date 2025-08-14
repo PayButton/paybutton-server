@@ -529,46 +529,19 @@ function makePostTask (
   currency: string,
   valueStr: string,
   logs: Prisma.TriggerLogCreateManyInput[],
-  availablePostCredits: Record<string, number>,
-  acceptedPostsPerUser: Record<string, number>,
   address: string
-): (() => Promise<void>) | null {
-  const user = trigger.paybutton.user
-  if (availablePostCredits[user.id] === undefined) {
-    availablePostCredits[user.id] = user.postCredits
-  }
-
-  // no credits left => log and skip scheduling task
-  if (availablePostCredits[user.id] <= 0) {
-    const actionType: TriggerLogActionType = 'PostData'
-    const data: PostDataTriggerLogError = {
-      errorName: 'USER_OUT_OF_POST_CREDITS',
-      errorMessage: 'USER_OUT_OF_POST_CREDITS',
-      errorStack: '',
-      triggerPostData: trigger.postData,
-      triggerPostURL: trigger.postURL
-    }
-    logs.push({ triggerId: trigger.id, isError: true, actionType, data: JSON.stringify(data) })
-    return null
-  }
-
-  // reserve one credit in the snapshot to avoid overscheduling
-  availablePostCredits[user.id] -= 1
-
+): () => Promise<boolean> {
   return async () => {
     const actionType: TriggerLogActionType = 'PostData'
+    let accepted = false
     let isError = false
     let data!: PostDataTriggerLog | PostDataTriggerLogError
     try {
       const params = buildPostParams(trigger, tx, currency, valueStr, address)
-      const parsed = parseTriggerPostData({ userId: user.id, postData: trigger.postData, postDataParameters: params })
+      const parsed = parseTriggerPostData({ userId: trigger.paybutton.user.id, postData: trigger.postData, postDataParameters: params })
       const resp = await axios.post(trigger.postURL, parsed, { timeout: config.triggerPOSTTimeout })
-
-      // treat 2xx as accepted
-      if (resp.status >= 200 && resp.status < 300) {
-        acceptedPostsPerUser[user.id] = (acceptedPostsPerUser[user.id] ?? 0) + 1
-      }
-
+      // HTTP 2xx counts as accepted
+      accepted = resp.status >= 200 && resp.status < 300
       data = { postedData: parsed, postedURL: trigger.postURL, responseData: resp.data }
     } catch (err: any) {
       isError = true
@@ -576,6 +549,7 @@ function makePostTask (
     } finally {
       logs.push({ triggerId: trigger.id, isError, actionType, data: JSON.stringify(data) })
     }
+    return accepted
   }
 }
 
@@ -583,31 +557,11 @@ function makeEmailTask (
   trigger: TriggerWithPaybuttonAndUser,
   tx: SimplifiedTransaction,
   currency: string,
-  logs: Prisma.TriggerLogCreateManyInput[],
-  availableEmailCredits: Record<string, number>,
-  acceptedPerUser: Record<string, number>
-): (() => Promise<void>) | null {
-  const user = trigger.paybutton.user
-  if (availableEmailCredits[user.id] === undefined) availableEmailCredits[user.id] = user.emailCredits
-
-  // No credits left => log and skip scheduling
-  if (availableEmailCredits[user.id] <= 0) {
-    const actionType: TriggerLogActionType = 'SendEmail'
-    const data: EmailTriggerLogError = {
-      errorName: 'USER_OUT_OF_EMAIL_CREDITS',
-      errorMessage: RESPONSE_MESSAGES.USER_OUT_OF_EMAIL_CREDITS_400.message,
-      errorStack: '',
-      triggerEmail: trigger.emails
-    }
-    logs.push({ triggerId: trigger.id, isError: true, actionType, data: JSON.stringify(data) })
-    return null
-  }
-
-  // Reserve one from snapshot to avoid overscheduling
-  availableEmailCredits[user.id] -= 1
-
+  logs: Prisma.TriggerLogCreateManyInput[]
+): () => Promise<boolean> {
   return async () => {
     const actionType: TriggerLogActionType = 'SendEmail'
+    let accepted = false
     let isError = false
     let data!: EmailTriggerLog | EmailTriggerLogError
     try {
@@ -629,16 +583,14 @@ function makeEmailTask (
       }
       const resp = await getMailerTransporter().sendMail(mailOptions)
       data = { email: trigger.emails, responseData: resp.response }
-
-      if (Array.isArray(resp.accepted) && resp.accepted.includes(trigger.emails)) {
-        acceptedPerUser[user.id] = (acceptedPerUser[user.id] ?? 0) + 1
-      }
+      accepted = Array.isArray(resp.accepted) && resp.accepted.includes(trigger.emails)
     } catch (err: any) {
       isError = true
       data = { errorName: err.name, errorMessage: err.message, errorStack: err.stack, triggerEmail: trigger.emails }
     } finally {
       logs.push({ triggerId: trigger.id, isError, actionType, data: JSON.stringify(data) })
     }
+    return accepted
   }
 }
 
@@ -647,47 +599,81 @@ async function persistLogsAndDecrements (
   acceptedEmailPerUser: Record<string, number>,
   acceptedPostsPerUser: Record<string, number>
 ): Promise<void> {
+  // 1) Always persist logs, independent of credits outcome
+  if (logs.length > 0) {
+    for (let i = 0; i < logs.length; i += TRIGGER_LOG_BATCH_SIZE) {
+      const slice = logs.slice(i, i + TRIGGER_LOG_BATCH_SIZE)
+      await prisma.triggerLog.createMany({ data: slice })
+    }
+  }
+
+  // 2) Then try credits in a separate transaction
   const userIds = Array.from(new Set([
     ...Object.keys(acceptedEmailPerUser),
     ...Object.keys(acceptedPostsPerUser)
   ]))
+  if (userIds.length === 0) return
 
-  await prisma.$transaction(async (tx) => {
-    // logs in chunks
-    for (let i = 0; i < logs.length; i += TRIGGER_LOG_BATCH_SIZE) {
-      await tx.triggerLog.createMany({ data: logs.slice(i, i + TRIGGER_LOG_BATCH_SIZE) })
-    }
+  try {
+    await prisma.$transaction(async (tx) => {
+      const balances = await tx.userProfile.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, emailCredits: true, postCredits: true }
+      })
+      const byId = new Map(balances.map(u => [u.id, u]))
 
-    if (userIds.length === 0) return
-
-    // single read for all balances
-    const balances = await tx.userProfile.findMany({
-      where: { id: { in: userIds } },
-      select: { id: true, emailCredits: true, postCredits: true }
-    })
-    const balancesById = new Map(balances.map(u => [u.id, u]))
-
-    // per-user clamped decrements (combine both fields in one update each)
-    const updates: Array<Promise<any>> = []
-    for (const id of userIds) {
-      const row = balancesById.get(id)
-      if (row === undefined) continue
-      const wantEmail = acceptedEmailPerUser[id] ?? 0
-      const wantPost = acceptedPostsPerUser[id] ?? 0
-      const decEmail = Math.min(Math.max(wantEmail, 0), row.emailCredits ?? 0)
-      const decPost = Math.min(Math.max(wantPost, 0), row.postCredits ?? 0)
-      if (decEmail > 0 || decPost > 0) {
-        updates.push(tx.userProfile.update({
-          where: { id },
-          data: {
-            ...(decEmail > 0 ? { emailCredits: { decrement: decEmail } } : {}),
-            ...(decPost > 0 ? { postCredits: { decrement: decPost } } : {})
-          }
-        }))
+      const updates: Array<Promise<unknown>> = []
+      for (const id of userIds) {
+        const row = byId.get(id)
+        if (row == null) continue
+        const reqEmail = acceptedEmailPerUser[id] ?? 0
+        const reqPost = acceptedPostsPerUser[id] ?? 0
+        const decEmail = Math.min(Math.max(reqEmail, 0), row.emailCredits ?? 0)
+        const decPost = Math.min(Math.max(reqPost, 0), row.postCredits ?? 0)
+        if (decEmail > 0 || decPost > 0) {
+          updates.push(tx.userProfile.update({
+            where: { id },
+            data: {
+              ...(decEmail > 0 ? { emailCredits: { decrement: decEmail } } : {}),
+              ...(decPost > 0 ? { postCredits: { decrement: decPost } } : {})
+            }
+          }))
+        }
       }
-    }
-    if (updates.length > 0) await Promise.all(updates)
-  })
+      if (updates.length > 0) await Promise.all(updates)
+    })
+  } catch (e: any) {
+    console.error(`[TRIGGER]: credit decrement tx failed: ${e?.message as string ?? e as string}`)
+    // logs already written; we don’t rollback them
+  }
+}
+
+async function runTasksUpToCredits (
+  taskFns: Array<() => Promise<boolean>>,
+  credits: number
+): Promise<number> {
+  if (credits <= 0 || taskFns.length === 0) return 0
+
+  let acceptedSoFar = 0
+  let nextIndex = 0
+
+  // Start with up to `credits` attempts
+  let currentBatch = taskFns.slice(nextIndex, nextIndex + credits)
+  nextIndex += currentBatch.length
+
+  while (currentBatch.length > 0 && acceptedSoFar < credits) {
+    const results = await Promise.all(currentBatch.map(async fn => await fn()))
+    for (const ok of results) if (ok) acceptedSoFar += 1
+
+    const remainingCredits = credits - acceptedSoFar
+    if (remainingCredits <= 0) break
+
+    // Top up with as many additional attempts as we still have credits for
+    currentBatch = taskFns.slice(nextIndex, nextIndex + remainingCredits)
+    nextIndex += currentBatch.length
+  }
+
+  return acceptedSoFar
 }
 
 export async function executeTriggersBatch (broadcasts: BroadcastTxData[], networkId: number): Promise<void> {
@@ -696,58 +682,83 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
     return
   }
 
-  const items = broadcasts.flatMap(b => (b.txs ?? []).map(t => ({ address: b.address, tx: t })))
-  if (items.length === 0) return
+  const txItems = broadcasts.flatMap(b => (b.txs ?? []).map(tx => ({ address: b.address, tx })))
+  if (txItems.length === 0) return
 
   const currency = NETWORK_TICKERS_FROM_ID[networkId]
-  const addresses = [...new Set(items.map(i => i.address))]
-  const triggersByAddr = await fetchTriggersGroupedByAddress(addresses)
+  const uniqueAddresses = [...new Set(txItems.map(i => i.address))]
+  const triggersByAddress = await fetchTriggersGroupedByAddress(uniqueAddresses)
 
-  const postTasks: Array<() => Promise<void>> = []
-  const emailTasks: Array<() => Promise<void>> = []
+  // Per-user queues and credits
+  const postTaskQueueByUser: Record<string, Array<() => Promise<boolean>>> = {}
+  const emailTaskQueueByUser: Record<string, Array<() => Promise<boolean>>> = {}
+  const userPostCredits: Record<string, number> = {}
+  const userEmailCredits: Record<string, number> = {}
+
   const logs: Prisma.TriggerLogCreateManyInput[] = []
 
-  const availableEmailCredits: Record<string, number> = {}
-  const availablePostCredits: Record<string, number> = {}
-
-  const acceptedEmailPerUser: Record<string, number> = {}
-  const acceptedPostsPerUser: Record<string, number> = {}
-
-  let skippedEmailNoCredit = 0
-  let skippedPostNoCredit = 0
-
-  for (const { address, tx } of items) {
-    const triggers = triggersByAddr.get(address) ?? []
+  // Build queues
+  for (const { address, tx } of txItems) {
+    const triggers = triggersByAddress.get(address) ?? []
     if (triggers.length === 0) continue
 
     const values = getTransactionValue(tx)
 
     for (const trigger of triggers) {
+      const user = trigger.paybutton.user
       if (trigger.isEmailTrigger) {
-        const before = (availableEmailCredits[trigger.paybutton.user.id] ?? trigger.paybutton.user.emailCredits)
-        const task = makeEmailTask(trigger, tx, currency, logs, availableEmailCredits, acceptedEmailPerUser)
-        if (task !== null) emailTasks.push(task)
-        else if (before <= 0) skippedEmailNoCredit++
+        userEmailCredits[user.id] ??= user.emailCredits
+        ;(emailTaskQueueByUser[user.id] ??= []).push(
+          makeEmailTask(trigger, tx, currency, logs)
+        )
       } else {
-        const quoteSlug = SUPPORTED_QUOTES_FROM_ID[trigger.paybutton.user.preferredCurrencyId]
-        const before = (availablePostCredits[trigger.paybutton.user.id] ?? trigger.paybutton.user.postCredits)
-        const task = makePostTask(trigger, tx, currency, values[quoteSlug].toString(), logs, availablePostCredits, acceptedPostsPerUser, address)
-        if (task != null) postTasks.push(task)
-        else if (before <= 0) skippedPostNoCredit++
+        userPostCredits[user.id] ??= user.postCredits
+        const quoteSlug = SUPPORTED_QUOTES_FROM_ID[user.preferredCurrencyId]
+        ;(postTaskQueueByUser[user.id] ??= []).push(
+          makePostTask(trigger, tx, currency, values[quoteSlug].toString(), logs, address)
+        )
       }
     }
   }
 
-  console.log(`[TRIGGER ${currency}]: batch start — items=${items.length} postTasks=${postTasks.length} emailTasks=${emailTasks.length} skippedNoCredits(email=${skippedEmailNoCredit}, post=${skippedPostNoCredit})`)
+  console.log(`[TRIGGER ${currency}]: batch start — users(posts=${Object.keys(postTaskQueueByUser).length}, emails=${Object.keys(emailTaskQueueByUser).length})`)
+  const postTasksCount = Object.values(postTaskQueueByUser).map(tasks => tasks.length).reduce((a, b) => a + b, 0)
+  const mailTasksCount = Object.values(emailTaskQueueByUser).map(tasks => tasks.length).reduce((a, b) => a + b, 0)
+  console.log(`[TRIGGER ${currency}]: batch start — tasks(posts=${postTasksCount}, emails=${mailTasksCount}`)
 
-  await runAsyncInBatches(postTasks, TRIGGER_POST_CONCURRENCY)
-  await runAsyncInBatches(emailTasks, TRIGGER_EMAIL_CONCURRENCY)
+  // Per-user runners (return accepted counts to charge)
+  const postUserRunners = Object.entries(postTaskQueueByUser).map(([userId, fns]) => async () => {
+    const accepted = await runTasksUpToCredits(fns, userPostCredits[userId] ?? 0)
+    return { userId, accepted }
+  })
+  const emailUserRunners = Object.entries(emailTaskQueueByUser).map(([userId, fns]) => async () => {
+    const accepted = await runTasksUpToCredits(fns, userEmailCredits[userId] ?? 0)
+    return { userId, accepted }
+  })
 
-  await persistLogsAndDecrements(logs, acceptedEmailPerUser, acceptedPostsPerUser)
+  const postResults: Array<{ userId: string, accepted: number }> = []
+  const emailResults: Array<{ userId: string, accepted: number }> = []
 
-  const chargedUsers = new Set([
-    ...Object.keys(acceptedEmailPerUser),
-    ...Object.keys(acceptedPostsPerUser)
-  ])
-  console.log(`[TRIGGER ${currency}]: batch done — logs=${logs.length} usersCharged=${chargedUsers.size} accepted(email=${Object.values(acceptedEmailPerUser).reduce((a, b) => a + b, 0)}, post=${Object.values(acceptedPostsPerUser).reduce((a, b) => a + b, 0)})`)
+  await runAsyncInBatches(
+    postUserRunners.map(run => async () => { postResults.push(await run()) }),
+    TRIGGER_POST_CONCURRENCY
+  )
+  await runAsyncInBatches(
+    emailUserRunners.map(run => async () => { emailResults.push(await run()) }),
+    TRIGGER_EMAIL_CONCURRENCY
+  )
+  // Build per-user accepted maps for decrements
+  const postsAcceptedByUser: Record<string, number> = {}
+  const emailsAcceptedByUser: Record<string, number> = {}
+  for (const r of postResults) postsAcceptedByUser[r.userId] = r.accepted
+  for (const r of emailResults) emailsAcceptedByUser[r.userId] = r.accepted
+
+  // Persist logs first, then safe decrements (clamped)
+  await persistLogsAndDecrements(logs, emailsAcceptedByUser, postsAcceptedByUser)
+
+  const totalPostsAccepted = Object.values(postsAcceptedByUser).reduce((a, b) => a + b, 0)
+  const totalEmailsAccepted = Object.values(emailsAcceptedByUser).reduce((a, b) => a + b, 0)
+  const chargedUsers = new Set([...Object.keys(postsAcceptedByUser), ...Object.keys(emailsAcceptedByUser)]).size
+
+  console.log(`[TRIGGER ${currency}]: batch done — logs=${logs.length} usersCharged=${chargedUsers} accepted(email=${totalEmailsAccepted}, post=${totalPostsAccepted})`)
 }
