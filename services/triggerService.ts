@@ -1,4 +1,4 @@
-import { PaybuttonTrigger, Prisma, UserProfile } from '@prisma/client'
+import { PaybuttonTrigger, Prisma } from '@prisma/client'
 import axios from 'axios'
 import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID, SUPPORTED_QUOTES_FROM_ID, TRIGGER_LOG_BATCH_SIZE, TRIGGER_POST_CONCURRENCY, TRIGGER_EMAIL_CONCURRENCY } from 'constants/index'
 import prisma from 'prisma-local/clientInstance'
@@ -6,15 +6,9 @@ import { EMPTY_OP_RETURN, OpReturnData, parseTriggerPostData } from 'utils/valid
 import { BroadcastTxData, SimplifiedTransaction } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'
 import config from 'config'
-import { MAIL_FROM, MAIL_HTML_REPLACER, MAIL_SUBJECT, getMailerTransporter, SendEmailParameters } from 'constants/mail'
+import { MAIL_FROM, MAIL_HTML_REPLACER, MAIL_SUBJECT, getMailerTransporter } from 'constants/mail'
 import { getTransactionValue } from './transactionService'
 import { runAsyncInBatches } from 'utils'
-
-const triggerWithPaybutton = Prisma.validator<Prisma.PaybuttonTriggerDefaultArgs>()({
-  include: { paybutton: true }
-})
-
-export type TriggerWithPaybutton = Prisma.PaybuttonTriggerGetPayload<typeof triggerWithPaybutton>
 
 // Include Paybutton.owner user inline so we don't refetch per trigger
 const triggerWithPaybuttonAndUserInclude = {
@@ -209,25 +203,6 @@ export async function fetchTriggersForPaybuttonAddresses (paybuttonId: string): 
   })
 }
 
-export async function fetchTriggersForAddress (addressString: string): Promise<TriggerWithPaybutton[]> {
-  return await prisma.paybuttonTrigger.findMany({
-    where: {
-      paybutton: {
-        addresses: {
-          some: {
-            address: {
-              address: addressString
-            }
-          }
-        }
-      }
-    },
-    include: {
-      paybutton: true
-    }
-  })
-}
-
 type TriggerLogActionType = 'SendEmail' | 'PostData'
 
 interface PostDataTriggerLogError {
@@ -256,161 +231,15 @@ interface EmailTriggerLog {
   responseData: string
 }
 
-export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, networkId: number): Promise<void> {
+export async function executeAddressTriggers (
+  broadcastTxData: BroadcastTxData,
+  networkId: number
+): Promise<void> {
   if (process.env.DONT_EXECUTE_TRIGGERS === 'true') {
     console.log(`DONT_EXECUTE_TRIGGERS in env, skipping execution for broadcast ${broadcastTxData.address}`)
     return
   }
-  try {
-    const address = broadcastTxData.address
-    const tx = broadcastTxData.txs[0]
-    const currency = NETWORK_TICKERS_FROM_ID[networkId]
-    const {
-      amount,
-      hash,
-      timestamp,
-      paymentId,
-      message,
-      rawMessage,
-      inputAddresses
-    } = tx
-    const values = getTransactionValue(tx)
-    const addressTriggers = await fetchTriggersForAddress(address)
-    if (addressTriggers.length === 0) return
-    console.log(`[TRIGGER ${currency}]: Will execute ${addressTriggers.length} triggers for tx ${hash} and address ${address}`)
-
-    // Send post requests
-    const posterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
-    await Promise.all(posterTriggers.map(async (trigger) => {
-      const userProfile = await fetchUserFromTriggerId(trigger.id)
-      const quoteSlug = SUPPORTED_QUOTES_FROM_ID[userProfile.preferredCurrencyId]
-      const postDataParameters: PostDataParameters = {
-        amount,
-        currency,
-        txId: hash,
-        buttonName: trigger.paybutton.name,
-        address,
-        timestamp,
-        opReturn: paymentId !== '' || message !== ''
-          ? {
-              paymentId,
-              message,
-              rawMessage
-            }
-          : EMPTY_OP_RETURN,
-        inputAddresses,
-        value: values[quoteSlug].toString()
-      }
-
-      await postDataForTrigger(trigger, postDataParameters)
-    }))
-
-    // Send emails
-    const emailTriggers = addressTriggers.filter(t => t.isEmailTrigger)
-    const sendEmailParameters: Partial<SendEmailParameters> = {
-      amount,
-      currency,
-      txId: hash,
-      address,
-      timestamp,
-      opReturn: paymentId !== '' || message !== ''
-        ? {
-            paymentId,
-            message,
-            rawMessage
-          }
-        : EMPTY_OP_RETURN
-    }
-    await Promise.all(emailTriggers.map(async (trigger) => {
-      sendEmailParameters.buttonName = trigger.paybutton.name
-      await sendEmailForTrigger(trigger, sendEmailParameters as SendEmailParameters)
-    }))
-  } catch (err: any) {
-    console.error(RESPONSE_MESSAGES.COULD_NOT_EXECUTE_TRIGGER_500.message, err.stack)
-  }
-}
-
-async function fetchUserFromTriggerId (triggerId: string): Promise<UserProfile> {
-  const pb = await prisma.paybutton.findFirstOrThrow({
-    where: {
-      triggers: {
-        some: {
-          id: triggerId
-        }
-      }
-    },
-    select: {
-      providerUserId: true
-    }
-  })
-
-  return await prisma.userProfile.findUniqueOrThrow({
-    where: {
-      id: pb.providerUserId
-    }
-  })
-}
-
-async function decrementUserCreditCount (userId: string): Promise<void> {
-  await prisma.userProfile.update({
-    where: {
-      id: userId
-    },
-    data: {
-      emailCredits: { decrement: 1 }
-    }
-  })
-}
-
-async function sendEmailForTrigger (trigger: TriggerWithPaybutton, sendEmailParameters: SendEmailParameters): Promise<void> {
-  const actionType: TriggerLogActionType = 'SendEmail'
-  let logData!: EmailTriggerLog | EmailTriggerLogError
-  let isError = false
-
-  const mailOptions = {
-    from: MAIL_FROM,
-    to: trigger.emails,
-    subject: MAIL_SUBJECT,
-    html: MAIL_HTML_REPLACER(sendEmailParameters)
-  }
-
-  try {
-    const user = await fetchUserFromTriggerId(trigger.id)
-    if (user.emailCredits > 0) {
-      const response = await getMailerTransporter().sendMail(mailOptions)
-      logData = {
-        email: trigger.emails,
-        responseData: response.response
-      }
-      if (response.accepted.includes(trigger.emails)) {
-        await decrementUserCreditCount(user.id)
-      }
-    } else {
-      logData = {
-        errorName: 'USER_OUT_OF_EMAIL_CREDITS',
-        errorMessage: RESPONSE_MESSAGES.USER_OUT_OF_EMAIL_CREDITS_400.message,
-        errorStack: '',
-        triggerEmail: trigger.emails
-      }
-    }
-  } catch (err: any) {
-    isError = true
-    logData = {
-      errorName: err.name,
-      errorMessage: err.message,
-      errorStack: err.stack,
-      triggerEmail: trigger.emails
-    }
-  } finally {
-    await prisma.triggerLog.create({
-      data: {
-        triggerId: trigger.id,
-        isError,
-        actionType,
-        data: JSON.stringify(logData)
-      }
-    })
-  }
+  await executeTriggersBatch([broadcastTxData], networkId)
 }
 
 export interface PostDataParameters {
@@ -423,50 +252,6 @@ export interface PostDataParameters {
   opReturn: OpReturnData
   inputAddresses?: string[]
   value: string
-}
-
-async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParameters: PostDataParameters): Promise<void> {
-  const actionType: TriggerLogActionType = 'PostData'
-  let logData!: PostDataTriggerLog | PostDataTriggerLogError
-  let isError = false
-  try {
-    const parsedPostDataParameters = parseTriggerPostData({
-      userId: trigger.paybutton.providerUserId,
-      postData: trigger.postData,
-      postDataParameters
-    })
-    const response = await axios.post(
-      trigger.postURL,
-      parsedPostDataParameters,
-      {
-        timeout: config.triggerPOSTTimeout
-      }
-    )
-    const responseData = await response.data
-    logData = {
-      postedData: parsedPostDataParameters,
-      postedURL: trigger.postURL,
-      responseData
-    }
-  } catch (err: any) {
-    isError = true
-    logData = {
-      errorName: err.name,
-      errorMessage: err.message,
-      errorStack: err.stack,
-      triggerPostData: trigger.postData,
-      triggerPostURL: trigger.postURL
-    }
-  } finally {
-    await prisma.triggerLog.create({
-      data: {
-        triggerId: trigger.id,
-        isError,
-        actionType,
-        data: JSON.stringify(logData)
-      }
-    })
-  }
 }
 
 async function fetchTriggersGroupedByAddress (addresses: string[]): Promise<Map<string, TriggerWithPaybuttonAndUser[]>> {
@@ -599,7 +384,6 @@ async function persistLogsAndDecrements (
   acceptedEmailPerUser: Record<string, number>,
   acceptedPostsPerUser: Record<string, number>
 ): Promise<void> {
-  // 1) Always persist logs, independent of credits outcome
   if (logs.length > 0) {
     for (let i = 0; i < logs.length; i += TRIGGER_LOG_BATCH_SIZE) {
       const slice = logs.slice(i, i + TRIGGER_LOG_BATCH_SIZE)
