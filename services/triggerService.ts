@@ -648,32 +648,59 @@ async function persistLogsAndDecrements (
   }
 }
 
+interface TriggerTask {
+  run: () => Promise<boolean> // resolves true if accepted
+  triggerId: string
+  actionType: 'PostData' | 'SendEmail'
+}
+
 async function runTasksUpToCredits (
-  taskFns: Array<() => Promise<boolean>>,
+  tasks: TriggerTask[],
   credits: number
-): Promise<number> {
-  if (credits <= 0 || taskFns.length === 0) return 0
+): Promise<{ accepted: number, attempted: number }> {
+  if (credits <= 0 || tasks.length === 0) return { accepted: 0, attempted: 0 }
 
-  let acceptedSoFar = 0
-  let nextIndex = 0
+  let accepted = 0
+  let attempted = 0
+  let idx = 0
 
-  // Start with up to `credits` attempts
-  let currentBatch = taskFns.slice(nextIndex, nextIndex + credits)
-  nextIndex += currentBatch.length
+  // Keep attempting until we achieve `credits` accepted OR we exhaust tasks.
+  while (accepted < credits && idx < tasks.length) {
+    const remainingNeeded = credits - accepted
+    const batch = tasks.slice(idx, idx + remainingNeeded)
+    idx += batch.length
+    attempted += batch.length
 
-  while (currentBatch.length > 0 && acceptedSoFar < credits) {
-    const results = await Promise.all(currentBatch.map(async fn => await fn()))
-    for (const ok of results) if (ok) acceptedSoFar += 1
-
-    const remainingCredits = credits - acceptedSoFar
-    if (remainingCredits <= 0) break
-
-    // Top up with as many additional attempts as we still have credits for
-    currentBatch = taskFns.slice(nextIndex, nextIndex + remainingCredits)
-    nextIndex += currentBatch.length
+    const results = await Promise.all(batch.map(async t => await t.run()))
+    for (const ok of results) if (ok) accepted += 1
   }
 
-  return acceptedSoFar
+  return { accepted, attempted }
+}
+
+function appendOutOfCreditsLogs (
+  queue: TriggerTask[],
+  startIndex: number,
+  logs: Prisma.TriggerLogCreateManyInput[],
+  kind: 'PostData' | 'SendEmail'
+): void {
+  const msg =
+    kind === 'PostData'
+      ? RESPONSE_MESSAGES.USER_OUT_OF_POST_CREDITS_400.message
+      : RESPONSE_MESSAGES.USER_OUT_OF_EMAIL_CREDITS_400.message
+
+  for (let i = startIndex; i < queue.length; i++) {
+    logs.push({
+      triggerId: queue[i].triggerId,
+      isError: true,
+      actionType: kind,
+      data: JSON.stringify({
+        errorName: kind === 'PostData' ? 'USER_OUT_OF_POST_CREDITS' : 'USER_OUT_OF_EMAIL_CREDITS',
+        errorMessage: msg,
+        errorStack: ''
+      })
+    })
+  }
 }
 
 export async function executeTriggersBatch (broadcasts: BroadcastTxData[], networkId: number): Promise<void> {
@@ -690,8 +717,8 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   const triggersByAddress = await fetchTriggersGroupedByAddress(uniqueAddresses)
 
   // Per-user queues and credits
-  const postTaskQueueByUser: Record<string, Array<() => Promise<boolean>>> = {}
-  const emailTaskQueueByUser: Record<string, Array<() => Promise<boolean>>> = {}
+  const postTaskQueueByUser: Record<string, TriggerTask[]> = {}
+  const emailTaskQueueByUser: Record<string, TriggerTask[]> = {}
   const userPostCredits: Record<string, number> = {}
   const userEmailCredits: Record<string, number> = {}
 
@@ -708,15 +735,19 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
       const user = trigger.paybutton.user
       if (trigger.isEmailTrigger) {
         userEmailCredits[user.id] ??= user.emailCredits
-        ;(emailTaskQueueByUser[user.id] ??= []).push(
-          makeEmailTask(trigger, tx, currency, logs)
-        )
+        ;(emailTaskQueueByUser[user.id] ??= []).push({
+          run: makeEmailTask(trigger, tx, currency, logs),
+          triggerId: trigger.id,
+          actionType: 'SendEmail'
+        })
       } else {
         userPostCredits[user.id] ??= user.postCredits
         const quoteSlug = SUPPORTED_QUOTES_FROM_ID[user.preferredCurrencyId]
-        ;(postTaskQueueByUser[user.id] ??= []).push(
-          makePostTask(trigger, tx, currency, values[quoteSlug].toString(), logs, address)
-        )
+        ;(postTaskQueueByUser[user.id] ??= []).push({
+          run: makePostTask(trigger, tx, currency, values[quoteSlug].toString(), logs, address),
+          triggerId: trigger.id,
+          actionType: 'PostData'
+        })
       }
     }
   }
@@ -726,18 +757,20 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   const mailTasksCount = Object.values(emailTaskQueueByUser).map(tasks => tasks.length).reduce((a, b) => a + b, 0)
   console.log(`[TRIGGER ${currency}]: batch start — tasks(posts=${postTasksCount}, emails=${mailTasksCount}`)
 
-  // Per-user runners (return accepted counts to charge)
-  const postUserRunners = Object.entries(postTaskQueueByUser).map(([userId, fns]) => async () => {
-    const accepted = await runTasksUpToCredits(fns, userPostCredits[userId] ?? 0)
-    return { userId, accepted }
-  })
-  const emailUserRunners = Object.entries(emailTaskQueueByUser).map(([userId, fns]) => async () => {
-    const accepted = await runTasksUpToCredits(fns, userEmailCredits[userId] ?? 0)
-    return { userId, accepted }
+  const postUserRunners = Object.entries(postTaskQueueByUser).map(([userId, queue]) => async () => {
+    const limit = userPostCredits[userId] ?? 0
+    const { accepted, attempted } = await runTasksUpToCredits(queue, limit)
+    return { userId, accepted, attempted, total: queue.length, limit }
   })
 
-  const postResults: Array<{ userId: string, accepted: number }> = []
-  const emailResults: Array<{ userId: string, accepted: number }> = []
+  const emailUserRunners = Object.entries(emailTaskQueueByUser).map(([userId, queue]) => async () => {
+    const limit = userEmailCredits[userId] ?? 0
+    const { accepted, attempted } = await runTasksUpToCredits(queue, limit)
+    return { userId, accepted, attempted, total: queue.length, limit }
+  })
+
+  const postResults: Array<{ userId: string, accepted: number, attempted: number, total: number, limit: number }> = []
+  const emailResults: Array<{ userId: string, accepted: number, attempted: number, total: number, limit: number }> = []
 
   await runAsyncInBatches(
     postUserRunners.map(run => async () => { postResults.push(await run()) }),
@@ -747,13 +780,24 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
     emailUserRunners.map(run => async () => { emailResults.push(await run()) }),
     TRIGGER_EMAIL_CONCURRENCY
   )
-  // Build per-user accepted maps for decrements
-  const postsAcceptedByUser: Record<string, number> = {}
-  const emailsAcceptedByUser: Record<string, number> = {}
-  for (const r of postResults) postsAcceptedByUser[r.userId] = r.accepted
-  for (const r of emailResults) emailsAcceptedByUser[r.userId] = r.accepted
 
-  // Persist logs first, then safe decrements (clamped)
+  for (const r of postResults) {
+    if (r.attempted < r.total && r.accepted >= r.limit) {
+      const queue = postTaskQueueByUser[r.userId]!
+      appendOutOfCreditsLogs(queue, r.attempted, logs, 'PostData')
+    }
+  }
+  for (const r of emailResults) {
+    if (r.attempted < r.total && r.accepted >= r.limit) {
+      const queue = emailTaskQueueByUser[r.userId]!
+      appendOutOfCreditsLogs(queue, r.attempted, logs, 'SendEmail')
+    }
+  }
+
+  // Build accepted maps for decrements (charge only accepted)
+  const postsAcceptedByUser = Object.fromEntries(postResults.map(r => [r.userId, r.accepted]))
+  const emailsAcceptedByUser = Object.fromEntries(emailResults.map(r => [r.userId, r.accepted]))
+
   await persistLogsAndDecrements(logs, emailsAcceptedByUser, postsAcceptedByUser)
 
   const totalPostsAccepted = Object.values(postsAcceptedByUser).reduce((a, b) => a + b, 0)
