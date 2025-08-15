@@ -388,76 +388,92 @@ export async function upsertTransaction (
   }
 }
 
-export async function connectTransactionToPrices (tx: Transaction, prisma: Prisma.TransactionClient, allPrices: AllPrices, disconnectBefore = true): Promise<void> {
-  if (disconnectBefore) {
-    void await prisma.pricesOnTransactions.deleteMany({
-      where: {
-        transactionId: tx.id
-      }
+// how many join rows to insert per createMany
+const PRICES_JOIN_BATCH_SIZE = Number(process.env.PRICES_JOIN_BATCH_SIZE ?? 1000)
+// interactive $transaction timeout in ms (for the single delete + several createMany)
+const PRISMA_ITX_TIMEOUT_MS = Number(process.env.PRISMA_ITX_TIMEOUT_MS ?? 30000)
+
+function buildPriceTxConnectionInput (tx: Transaction, allPrices: AllPrices): Prisma.PricesOnTransactionsCreateManyInput[] {
+  return [
+    { transactionId: tx.id, priceId: allPrices.usd.id },
+    { transactionId: tx.id, priceId: allPrices.cad.id }
+  ]
+}
+
+async function createPriceTxConnectionInChunks (
+  client: Prisma.TransactionClient | typeof prisma,
+  rows: Prisma.PricesOnTransactionsCreateManyInput[]
+): Promise<void> {
+  for (let i = 0; i < rows.length; i += PRICES_JOIN_BATCH_SIZE) {
+    const slice = rows.slice(i, i + PRICES_JOIN_BATCH_SIZE)
+    await client.pricesOnTransactions.createMany({
+      data: slice,
+      skipDuplicates: true // respects unique(priceId, transactionId); safe like upsert
     })
   }
-  void await prisma.pricesOnTransactions.upsert({
-    where: {
-      priceId_transactionId: {
-        priceId: allPrices.usd.id,
-        transactionId: tx.id
-      }
-    },
-    create: {
-      transactionId: tx.id,
-      priceId: allPrices.usd.id
-    },
-    update: {}
-  })
-  void await prisma.pricesOnTransactions.upsert({
-    where: {
-      priceId_transactionId: {
-        priceId: allPrices.cad.id,
-        transactionId: tx.id
-      }
-    },
-    create: {
-      transactionId: tx.id,
-      priceId: allPrices.cad.id
-    },
-    update: {}
-  })
+}
+
+export async function connectTransactionToPrices (
+  tx: Transaction,
+  txClient: Prisma.TransactionClient,
+  allPrices: AllPrices,
+  disconnectBefore = true
+): Promise<void> {
+  if (disconnectBefore) {
+    await txClient.pricesOnTransactions.deleteMany({ where: { transactionId: tx.id } })
+  }
+  const rows = buildPriceTxConnectionInput(tx, allPrices)
+  await createPriceTxConnectionInChunks(txClient, rows)
 }
 
 export async function connectTransactionsListToPrices (txList: Transaction[]): Promise<void> {
-  const networkIdToUniqueTimestamp: Record<number, number[]> = {}
-  await Promise.all(txList.map(async tx => {
-    const networkId = await getTransactionNetworkId(tx)
-    if (networkIdToUniqueTimestamp[networkId] === undefined) {
-      networkIdToUniqueTimestamp[networkId] = []
-    }
-    networkIdToUniqueTimestamp[networkId].push(
-      flattenTimestamp(tx.timestamp)
-    )
+  if (txList.length === 0) return
+
+  console.log(`[PRICES] Preparing to connect ${txList.length} txs to prices...`)
+
+  // Collect unique (networkId -> Set<flattenedTimestamp>)
+  const networkIdToTimestamps = new Map<number, Set<number>>()
+  await Promise.all(txList.map(async (t) => {
+    const networkId = await getTransactionNetworkId(t)
+    const ts = flattenTimestamp(t.timestamp)
+    const set = networkIdToTimestamps.get(networkId) ?? new Set<number>()
+    set.add(ts)
+    networkIdToTimestamps.set(networkId, set)
   }))
 
+  // Fetch AllPrices for each unique (networkId, ts)
   const timestampToPrice: Record<number, AllPrices> = {}
-  for (const networkId of Object.keys(networkIdToUniqueTimestamp)) {
-    for (const timestamp of networkIdToUniqueTimestamp[Number(networkId)]) {
-      const allPrices = await fetchPricesForNetworkAndTimestamp(Number(networkId), timestamp, prisma)
-      timestampToPrice[timestamp] = allPrices
+  let pairs = 0
+  for (const [networkId, stamps] of networkIdToTimestamps.entries()) {
+    for (const ts of stamps) {
+      pairs++
+      // outside any ITX; fine to run in parallel-ish
+      const allPrices = await fetchPricesForNetworkAndTimestamp(networkId, ts, prisma)
+      timestampToPrice[ts] = allPrices
     }
   }
+  console.log(`[PRICES] Loaded prices for ${pairs} (network,timestamp) pairs.`)
 
-  await prisma.$transaction(async (prisma) => {
-    void await prisma.pricesOnTransactions.deleteMany({
-      where: {
-        transactionId: {
-          in: txList.map(t => t.id)
-        }
-      }
+  // Build all join rows (2 per tx: USD + CAD)
+  const rows: Prisma.PricesOnTransactionsCreateManyInput[] = []
+  for (const t of txList) {
+    const ts = flattenTimestamp(t.timestamp)
+    const allPrices = timestampToPrice[ts]
+    rows.push(...buildPriceTxConnectionInput(t, allPrices))
+  }
+  console.log(`[PRICES] Built ${rows.length} price links (2 per tx).`)
+
+  // One deleteMany + chunked createMany inside a single interactive tx
+  await prisma.$transaction(async (tx) => {
+    console.log(`[PRICES] Disconnecting existing price links for ${txList.length} txs...`)
+    await tx.pricesOnTransactions.deleteMany({
+      where: { transactionId: { in: txList.map(t => t.id) } }
     })
-    await Promise.all(txList.map(async tx => {
-      const ts = flattenTimestamp(tx.timestamp)
-      const allPrices = timestampToPrice[ts]
-      await connectTransactionToPrices(tx, prisma, allPrices, false)
-    }))
-  })
+
+    console.log(`[PRICES] Inserting links in chunks of ${PRICES_JOIN_BATCH_SIZE}...`)
+    await createPriceTxConnectionInChunks(tx, rows)
+    console.log('[PRICES] Inserted all price links.')
+  }, { timeout: PRISMA_ITX_TIMEOUT_MS })
 }
 
 export async function connectAllTransactionsToPrices (): Promise<void> {
