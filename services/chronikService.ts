@@ -584,7 +584,13 @@ export class ChronikBlockchainClient {
       } else if (msg.msgType === 'TX_CONFIRMED') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
-        await this.updateClientPaymentStatusToConfirmed(addressesWithTransactions)
+        for (const addressWithTransaction of addressesWithTransactions) {
+          const parsedOpReturn = parseOpReturnData(addressWithTransaction.transaction.opReturn ?? '')
+          const paymentId = parsedOpReturn.paymentId
+          const newClientPaymentStatus = 'COMFIRMED' as ClientPaymentStatus
+
+          await updatePaymentStatus(paymentId, newClientPaymentStatus)
+        }
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
         if (this.isAlreadyBeingProcessed(msg.txid, false)) {
           return
