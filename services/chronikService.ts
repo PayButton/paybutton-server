@@ -557,6 +557,9 @@ export class ChronikBlockchainClient {
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
     if (msg.type === 'Tx') {
+      const transaction = await this.chronik.tx(msg.txid)
+      const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+      const inputAddresses = this.getSortedInputAddresses(transaction)
       if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
@@ -571,6 +574,13 @@ export class ChronikBlockchainClient {
       } else if (msg.msgType === 'TX_CONFIRMED') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
+        for (const addressWithTransaction of addressesWithTransactions) {
+          const parsedOpReturn = parseOpReturnData(addressWithTransaction.transaction.opReturn ?? '')
+          const paymentId = parsedOpReturn.paymentId
+          const newClientPaymentStatus = 'COMFIRMED' as ClientPaymentStatus
+
+          await updatePaymentStatus(paymentId, newClientPaymentStatus)
+        }
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
         if (this.isAlreadyBeingProcessed(msg.txid, false)) {
           return
