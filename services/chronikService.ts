@@ -653,6 +653,7 @@ export class ChronikBlockchainClient {
     }
 
     console.log(`${this.CHRONIK_MSG_PREFIX} (PARALLEL) Syncing ${addresses.length} addresses...`)
+    console.time(`${this.CHRONIK_MSG_PREFIX} address syncing`)
     await setSyncingBatch(addresses.map(a => a.address), true)
 
     // per-address counters
@@ -665,6 +666,7 @@ export class ChronikBlockchainClient {
     try {
       // consume generator: it yields batches of prepared txs
       for await (const batch of this.fetchLatestTxsForAddresses(addresses)) {
+        console.log(`${this.CHRONIK_MSG_PREFIX} (PARALLEL) fetched batch from chronik — txs=${batch.length}`)
         // count per address before committing
         for (const tx of batch) {
           perAddrCount.set(tx.addressId, (perAddrCount.get(tx.addressId) ?? 0) + 1)
@@ -672,7 +674,9 @@ export class ChronikBlockchainClient {
         toCommit.push(...batch)
 
         if (toCommit.length >= DB_COMMIT_BATCH_SIZE) {
+          console.log(`${this.CHRONIK_MSG_PREFIX} committing batch to DB — txs=${toCommit.length}`)
           const created = await createManyTransactions(toCommit)
+          console.log(`${this.CHRONIK_MSG_PREFIX} committed — created=${created.length}`)
           toCommit = []
 
           // optional append for production addresses
@@ -689,9 +693,9 @@ export class ChronikBlockchainClient {
               const bd = this.broadcastIncomingTx(tx.address.address, tx, []) // inputAddresses left empty in bulk
               triggerBatch.push(bd)
             }
-
             // Then, if enabled, execute triggers **in batch**
             if (runTriggers) {
+              console.log(`${this.CHRONIK_MSG_PREFIX} executing trigger batch — broadcasts=${triggerBatch.length}`)
               await executeTriggersBatch(triggerBatch, this.networkId)
             }
           }
@@ -700,7 +704,9 @@ export class ChronikBlockchainClient {
 
       // final DB flush
       if (toCommit.length > 0) {
+        console.log(`${this.CHRONIK_MSG_PREFIX} committing FINAL batch to DB — txs=${toCommit.length}`)
         const created = await createManyTransactions(toCommit)
+        console.log(`${this.CHRONIK_MSG_PREFIX} committed FINAL — created=${created.length}`)
         toCommit = []
 
         const createdForProd = created.filter(t => productionAddressesIds.includes(t.addressId))
@@ -715,6 +721,7 @@ export class ChronikBlockchainClient {
             triggerBatch.push(bd)
           }
           if (runTriggers) {
+            console.log(`${this.CHRONIK_MSG_PREFIX} executing FINAL trigger batch — broadcasts=${triggerBatch.length}`)
             await executeTriggersBatch(triggerBatch, this.networkId)
           }
         }
@@ -740,6 +747,7 @@ export class ChronikBlockchainClient {
     const failed = Object.keys(failedAddressesWithErrors)
     const total = Object.values(successfulAddressesWithCount).reduce((p, c) => p + c, 0)
     console.log(`${this.CHRONIK_MSG_PREFIX} (PARALLEL) Finished syncing ${total} txs for ${addresses.length} addresses with ${failed.length} errors.`)
+    console.timeEnd(`${this.CHRONIK_MSG_PREFIX} address syncing`)
     if (failed.length > 0) {
       console.log(`${this.CHRONIK_MSG_PREFIX} Failed addresses were:\n- ${Object.entries(failedAddressesWithErrors).map(([k, v]) => `${k}: ${v}`).join('\n- ')}`)
     }

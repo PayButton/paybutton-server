@@ -509,6 +509,8 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   const logs: Prisma.TriggerLogCreateManyInput[] = []
 
   // Build queues
+  console.log(`[TRIGGER ${currency}]: preparing batch — txItems=${txItems.length} addresses=${uniqueAddresses.length}`)
+
   for (const { address, tx } of txItems) {
     const triggers = triggersByAddress.get(address) ?? []
     if (triggers.length === 0) continue
@@ -536,10 +538,9 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
     }
   }
 
-  console.log(`[TRIGGER ${currency}]: batch start — users(posts=${Object.keys(postTaskQueueByUser).length}, emails=${Object.keys(emailTaskQueueByUser).length})`)
   const postTasksCount = Object.values(postTaskQueueByUser).map(tasks => tasks.length).reduce((a, b) => a + b, 0)
   const mailTasksCount = Object.values(emailTaskQueueByUser).map(tasks => tasks.length).reduce((a, b) => a + b, 0)
-  console.log(`[TRIGGER ${currency}]: batch start — tasks(posts=${postTasksCount}, emails=${mailTasksCount}`)
+  console.log(`[TRIGGER ${currency}]: scheduling — users(posts=${Object.keys(postTaskQueueByUser).length}, emails=${Object.keys(emailTaskQueueByUser).length}) tasks(posts=${postTasksCount}, emails=${mailTasksCount})`)
 
   const postUserRunners = Object.entries(postTaskQueueByUser).map(([userId, queue]) => async () => {
     const limit = userPostCredits[userId] ?? 0
@@ -556,10 +557,12 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   const postResults: Array<{ userId: string, accepted: number, attempted: number, total: number, limit: number }> = []
   const emailResults: Array<{ userId: string, accepted: number, attempted: number, total: number, limit: number }> = []
 
+  console.log(`[TRIGGER ${currency}]: executing posts with concurrency=${TRIGGER_POST_CONCURRENCY}`)
   await runAsyncInBatches(
     postUserRunners.map(run => async () => { postResults.push(await run()) }),
     TRIGGER_POST_CONCURRENCY
   )
+  console.log(`[TRIGGER ${currency}]: executing emails with concurrency=${TRIGGER_EMAIL_CONCURRENCY}`)
   await runAsyncInBatches(
     emailUserRunners.map(run => async () => { emailResults.push(await run()) }),
     TRIGGER_EMAIL_CONCURRENCY
