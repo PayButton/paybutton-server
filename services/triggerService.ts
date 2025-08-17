@@ -246,7 +246,8 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
       paymentId,
       message,
       rawMessage,
-      inputAddresses
+      inputAddresses,
+      outputAddresses
     } = tx
     const values = getTransactionValue(tx)
     const addressTriggers = await fetchTriggersForAddress(address)
@@ -273,6 +274,7 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
             }
           : EMPTY_OP_RETURN,
         inputAddresses,
+        outputAddresses,
         value: values[quoteSlug].toString()
       }
 
@@ -396,6 +398,7 @@ export interface PostDataParameters {
   address: string
   opReturn: OpReturnData
   inputAddresses?: string[]
+  outputAddresses?: string[]
   value: string
 }
 
