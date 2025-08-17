@@ -101,7 +101,7 @@
   },
   "lint-staged": {
     "*.ts?(x)": [
-      "yarn eslint --fix"
+      "node ./node_modules/eslint/bin/eslint.js --fix"
     ]
   }
 }
