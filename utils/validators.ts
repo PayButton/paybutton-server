@@ -273,6 +273,7 @@ export function parseTriggerPostData ({ userId, postData, postDataParameters }: 
       .replace('<opReturn>', opReturn)
       .replace('<signature>', `${JSON.stringify(signature, undefined, 2)}`)
       .replace('<inputAddresses>', `${JSON.stringify(postDataParameters.inputAddresses, undefined, 2)}`)
+      .replace('<outputAddresses>', `${JSON.stringify(postDataParameters.outputAddresses, undefined, 2)}`)
       .replace('<value>', `"${postDataParameters.value}"`)
 
     const parsedResultingData = JSON.parse(resultingData)
@@ -319,6 +320,7 @@ export const parsePaybuttonTriggerPOSTRequest = function (params: PaybuttonTrigg
       timestamp: 0,
       opReturn: EMPTY_OP_RETURN,
       inputAddresses: [],
+      outputAddresses: [],
       value: ''
     }
     const parsed = parseTriggerPostData({

@@ -18,6 +18,7 @@ export interface SimplifiedTransaction {
   address: string
   rawMessage: string
   inputAddresses: string[]
+  outputAddresses: string[]
   prices: Array<{
     price: {
       value: Prisma.Decimal
