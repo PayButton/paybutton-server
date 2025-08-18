@@ -1,7 +1,7 @@
 import { PaybuttonTrigger, Prisma, UserProfile } from '@prisma/client'
 import axios from 'axios'
 import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID, SUPPORTED_QUOTES_FROM_ID } from 'constants/index'
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { EMPTY_OP_RETURN, OpReturnData, parseTriggerPostData } from 'utils/validators'
 import { BroadcastTxData } from 'ws-service/types'
 import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonService'

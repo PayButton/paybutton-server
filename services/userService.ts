@@ -1,7 +1,7 @@
 import { UserProfile } from '@prisma/client'
 import supertokensNode from 'supertokens-node'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import crypto from 'crypto'
 
 export async function fetchUserProfileFromId (id: string): Promise<UserProfile> {
@@ -148,4 +148,18 @@ export async function updatePreferredTimezone (id: string, preferredTimezone: st
       preferredTimezone
     }
   })
+}
+
+export async function userRemainingProTime (id: string): Promise<number | null> {
+  const today = new Date()
+  const proUntil = (await prisma.userProfile.findUniqueOrThrow({
+    where: { id },
+    select: {
+      proUntil: true
+    }
+  })).proUntil
+  if (proUntil === null) {
+    return null
+  }
+  return proUntil.getTime() - today.getTime()
 }

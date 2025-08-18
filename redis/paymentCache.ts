@@ -1,6 +1,12 @@
 import { redis } from 'redis/clientInstance'
 import { Address, Prisma } from '@prisma/client'
-import { generateTransactionsWithPaybuttonsAndPricesForAddress, getTransactionValue, TransactionsWithPaybuttonsAndPrices, TransactionWithAddressAndPrices } from 'services/transactionService'
+import {
+  generateTransactionsWithPaybuttonsAndPricesForAddress,
+  getTransactionValue,
+  TransactionsWithPaybuttonsAndPrices,
+  TransactionWithAddressAndPrices,
+  TransactionWithAddressAndPricesAndInvoices
+} from 'services/transactionService'
 import { fetchAllUserAddresses, AddressPaymentInfo } from 'services/addressService'
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
@@ -80,6 +86,7 @@ export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPri
     console.warn('Orphan address:', tx.address.address)
   }
   return {
+    id: tx.id,
     timestamp: tx.timestamp,
     values,
     amount: tx.amount,
@@ -87,6 +94,41 @@ export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPri
     hash: tx.hash,
     buttonDisplayDataList,
     address: tx.address.address
+  }
+}
+
+export const generatePaymentFromTxWithInvoices = async (tx: TransactionWithAddressAndPricesAndInvoices, userId?: string): Promise<Payment> => {
+  const values = getTransactionValue(tx)
+  let buttonDisplayDataList: Array<{ name: string, id: string}> = []
+  if (tx.address.paybuttons !== undefined) {
+    buttonDisplayDataList = tx.address.paybuttons.map(
+      (conn) => {
+        return {
+          name: conn.paybutton.name,
+          id: conn.paybutton.id,
+          providerUserId: conn.paybutton.providerUserId
+        }
+      }
+    )
+  } else {
+    console.warn('Orphan address:', tx.address.address)
+  }
+  let invoices = null
+  if (tx.invoices.length > 0) {
+    invoices = tx.invoices.filter(invoice => {
+      return invoice !== null && invoice.userId === userId
+    })
+  }
+  return {
+    id: tx.id,
+    timestamp: tx.timestamp,
+    values,
+    amount: tx.amount,
+    networkId: tx.address.networkId,
+    hash: tx.hash,
+    buttonDisplayDataList,
+    address: tx.address.address,
+    invoices: invoices ?? []
   }
 }
 

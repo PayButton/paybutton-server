@@ -16,9 +16,13 @@ export default async (req: any, res: any): Promise<void> => {
     if (typeof req.query.buttonIds === 'string' && req.query.buttonIds !== '') {
       buttonIds = (req.query.buttonIds as string).split(',')
     }
-
-    if ((buttonIds !== undefined) && buttonIds.length > 0) {
-      const totalCount = await getFilteredTransactionCount(userId, buttonIds)
+    let years: string[] | undefined
+    if (typeof req.query.years === 'string' && req.query.years !== '') {
+      years = (req.query.years as string).split(',')
+    }
+    if (((buttonIds !== undefined) && buttonIds.length > 0) ||
+        ((years !== undefined) && years.length > 0)) {
+      const totalCount = await getFilteredTransactionCount(userId, buttonIds, years)
       res.status(200).json(totalCount)
     } else {
       const totalCount = await CacheGet.paymentsCount(userId, timezone)

@@ -33,9 +33,9 @@ yarn-error.log*
 # vercel
 .vercel
 
-/prisma/seeds/prices.csv
+/prisma-local/seeds/prices.csv
 redis/dump.rdb
-prisma/seeds/productionTxs.csv
+prisma-local/seeds/productionTxs.csv
 paybutton-config.json
 
-dump.sql
+dump.sql*

@@ -10,15 +10,22 @@ import Link from 'next/link'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
-import { formatQuoteValue, compareNumericString, removeUnserializableFields } from 'utils/index'
+import { formatQuoteValue, compareNumericString, removeUnserializableFields, removeDateFields } from 'utils/index'
 import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL, NETWORK_TICKERS_FROM_ID, DECIMALS } from 'constants/index'
 import moment from 'moment-timezone'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
-import { UserProfile } from '@prisma/client'
+import { Organization, UserProfile } from '@prisma/client'
 import Button from 'components/Button'
 import style from './payments.module.css'
 import SettingsIcon from '../../assets/settings-slider-icon.png'
+import Plus from 'assets/plus.png'
+import Pencil from 'assets/pencil.png'
+import FileText from 'assets/file-text.png'
+import InvoiceModal from 'components/Transaction/InvoiceModal'
+import { TransactionWithAddressAndPricesAndInvoices } from 'services/transactionService'
+import { fetchOrganizationForUser } from 'services/organizationService'
+import { InvoiceWithTransaction } from 'services/invoiceService'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -39,12 +46,18 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (session === undefined) return
   const userId = session.getUserId()
   const user = await fetchUserWithSupertokens(userId)
-  removeUnserializableFields(user.userProfile)
+  const organization = await fetchOrganizationForUser(userId)
 
+  removeUnserializableFields(user.userProfile)
+  let serializableOrg = null
+  if (organization !== null) {
+    serializableOrg = removeDateFields(organization)
+  }
   return {
     props: {
       user,
-      userId
+      userId,
+      organization: serializableOrg
     }
   }
 }
@@ -52,22 +65,78 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 interface PaybuttonsProps {
   user: UserWithSupertokens
   userId: string
+  organization: Organization
 }
 
-export default function Payments ({ user, userId }: PaybuttonsProps): React.ReactElement {
+export default function Payments ({ user, userId, organization }: PaybuttonsProps): React.ReactElement {
   const timezone = user?.userProfile.preferredTimezone === '' ? moment.tz.guess() : user?.userProfile?.preferredTimezone
   const [selectedCurrencyCSV, setSelectedCurrencyCSV] = useState<string>('')
   const [paybuttonNetworks, setPaybuttonNetworks] = useState<Set<number>>(new Set())
+  const [transactionYears, setTransactionYears] = useState<number[]>([])
+  const [selectedTransactionYears, setSelectedTransactionYears] = useState<number[]>([])
+
   const [loading, setLoading] = useState(false)
   const [buttons, setButtons] = useState<any[]>([])
   const [selectedButtonIds, setSelectedButtonIds] = useState<any[]>([])
   const [showFilters, setShowFilters] = useState<boolean>(false)
   const [tableLoading, setTableLoading] = useState<boolean>(true)
   const [refreshCount, setRefreshCount] = useState(0)
+  const [invoiceData, setInvoiceData] = useState<InvoiceWithTransaction | null>(null)
+  const [invoiceDataTransaction, setInvoiceDataTransaction] = useState<TransactionWithAddressAndPricesAndInvoices | null >(null)
+  const [invoiceMode, setInvoiceMode] = useState<'create' | 'edit' | 'view'>('create')
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
+  const fetchNextInvoiceNumberByUserId = async (): Promise<string> => {
+    const response = await fetch('/api/invoices/invoiceNumber/', {
+      headers: {
+        Timezone: moment.tz.guess()
+      }
+    })
+    const result = await response?.json()
+    return result?.invoiceNumber
+  }
+  const handleCloseModal = (): void => {
+    setIsModalOpen(false)
+    setInvoiceData(null)
+    setRefreshCount(prev => prev + 1)
+  }
+  const onCreateInvoice = async (transaction: TransactionWithAddressAndPricesAndInvoices): Promise<void> => {
+    const nextInvoiceNumber = await fetchNextInvoiceNumberByUserId()
+    const invoiceData = {
+      invoiceNumber: nextInvoiceNumber ?? '',
+      amount: transaction.amount,
+      recipientName: '',
+      recipientAddress: transaction.address ?? '',
+      description: '',
+      customerName: organization?.name ?? '',
+      customerAddress: '',
+      userId: '',
+      transaction,
+      transactionId: transaction.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      id: ''
+    }
+    setInvoiceDataTransaction(transaction)
+    setInvoiceData(invoiceData)
+    setInvoiceMode('create')
+    setIsModalOpen(true)
+  }
+
+  const onEditInvoice = (invoiceData: InvoiceWithTransaction): void => {
+    setInvoiceData(invoiceData)
+    setInvoiceMode('edit')
+    setIsModalOpen(true)
+  }
+
+  const onViewInvoice = (invoiceData: InvoiceWithTransaction): void => {
+    setInvoiceData(invoiceData)
+    setInvoiceMode('view')
+    setIsModalOpen(true)
+  }
   useEffect(() => {
     setRefreshCount(prev => prev + 1)
-  }, [selectedButtonIds])
+  }, [selectedButtonIds, selectedTransactionYears])
 
   const fetchPaybuttons = async (): Promise<any> => {
     const res = await fetch(`/api/paybuttons?userId=${user?.userProfile.id}`, {
@@ -77,8 +146,22 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       return await res.json()
     }
   }
+
+  const fetchTransactionYears = async (): Promise<any> => {
+    const res = await fetch('/api/transaction/years', {
+      method: 'GET'
+    })
+    if (res.status === 200) {
+      const data = await res.json()
+      return data.years
+    } else {
+      console.error('Failed to fetch transaction years:', res.statusText)
+      return []
+    }
+  }
   const getDataAndSetUpCurrencyCSV = async (): Promise<void> => {
     const paybuttons = await fetchPaybuttons()
+    const years = await fetchTransactionYears()
     const networkIds: Set<number> = new Set()
     setButtons(paybuttons)
 
@@ -87,6 +170,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
     })
 
     setPaybuttonNetworks(networkIds)
+    setTransactionYears(years)
   }
 
   useEffect(() => {
@@ -106,10 +190,24 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       if (selectedButtonIds.length > 0) {
         url += `&buttonIds=${selectedButtonIds.join(',')}`
       }
+      if (selectedTransactionYears.length > 0) {
+        url += `&years=${selectedTransactionYears.join(',')}`
+      }
 
-      const paymentsResponse = await fetch(url)
+      const paymentsResponse = await fetch(url, {
+        headers: {
+          Timezone: moment.tz.guess()
+        }
+      })
+      let paymentsCountUrl = '/api/payments/count'
+      if (selectedButtonIds.length > 0) {
+        paymentsCountUrl += `?buttonIds=${selectedButtonIds.join(',')}`
+      }
+      if (selectedTransactionYears.length > 0) {
+        paymentsCountUrl += `${selectedButtonIds.length > 0 ? '&' : '?'}years=${selectedTransactionYears.join(',')}`
+      }
       const paymentsCountResponse = await fetch(
-        `/api/payments/count${selectedButtonIds.length > 0 ? `?buttonIds=${selectedButtonIds.join(',')}` : ''}`,
+        paymentsCountUrl,
         { headers: { Timezone: timezone } }
       )
 
@@ -212,6 +310,70 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
             </a>
           )
         }
+      },
+      {
+        Header: () => (<div style={{ textAlign: 'center' }}>Invoice</div>),
+        id: 'actions',
+        disableSortBy: true,
+        Cell: (cellProps) => {
+          const transaction = cellProps.row.original
+          const invoices = transaction.invoices ?? []
+          const hasInvoice = invoices.filter(i => i !== null).length > 0
+          let invoice = {} as InvoiceWithTransaction
+          if (hasInvoice) {
+            invoice = {
+              transaction,
+              ...transaction.invoices[0]
+            }
+          }
+
+          return (
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              {!hasInvoice
+                ? (
+                <div className={style.create_invoice_ctn}>
+                  <button
+                    onClick={() => {
+                      onCreateInvoice(transaction).catch(console.error)
+                    }}
+                    title="Create Invoice"
+                    className={style.create_invoice}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+
+                    <Image src={Plus} alt='create invoice' width={14} height={14} />
+                  </button>
+                  <div className={style.tooltiptext}>New Invoice</div>
+                </div>
+                  )
+                : (
+                <>
+                  <div className={style.edit_invoice_ctn}>
+                    <button
+                      onClick={() => onEditInvoice(invoice)}
+                      title="Edit Invoice"
+                      className={style.edit_invoice}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
+                    >
+                      <Image src={Pencil} alt='edit invoice' width={16} height={16} />
+                    </button>
+                  </div>
+                  <div className={style.view_invoice_ctn}>
+                    <button
+                      onClick={() => onViewInvoice(invoice)}
+                      title="View Invoice"
+                      className={style.view_invoice}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
+                    >
+                      <Image src={FileText} alt='see invoice' width={16} height={16} />
+
+                    </button>
+                  </div>
+                </>
+                  )}
+            </div>
+          )
+        }
       }
     ],
     []
@@ -224,6 +386,9 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
       let url = `/api/payments/download/?currency=${preferredCurrencyId}`
       if (selectedButtonIds.length > 0) {
         url += `&buttonIds=${selectedButtonIds.join(',')}`
+      }
+      if (selectedTransactionYears.length > 0) {
+        url += `&years=${selectedTransactionYears.join(',')}`
       }
       const isCurrencyEmptyOrUndefined = (value: string): boolean => (value === '' || value === undefined)
 
@@ -275,7 +440,10 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
     setSelectedCurrencyCSV(currencyParam)
     void downloadCSV(userId, user?.userProfile, currencyParam)
   }
-
+  const handleClearFilters = (): void => {
+    setSelectedButtonIds([])
+    setSelectedTransactionYears([])
+  }
   return (
     <>
      <TopBar title="Payments" user={user?.stUser?.email} />
@@ -287,9 +455,9 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
           >
             <Image src={SettingsIcon} alt="filters" width={15} />Filters
           </div>
-          {selectedButtonIds.length > 0 &&
+          {(selectedButtonIds.length > 0 || selectedTransactionYears.length > 0) &&
           <div
-          onClick={() => setSelectedButtonIds([])}
+          onClick={() => handleClearFilters()}
           className={style.show_filters_button}
         >
           Clear
@@ -328,6 +496,7 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
               </Button>)}
       </div>
       {showFilters && (
+        <div>
             <div className={style.showfilters_ctn}>
               <span>Filter by button</span>
               <div className={style.filters_ctn}>
@@ -348,6 +517,27 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
                 ))}
               </div>
             </div>
+            <div className={style.showfilters_ctn}>
+            <span>Filter by year</span>
+              <div className={style.filters_ctn}>
+                {transactionYears.map((y) => (
+                  <div
+                    key={y}
+                    onClick={() => {
+                      setSelectedTransactionYears(prev =>
+                        prev.includes(y)
+                          ? prev.filter(year => year !== y)
+                          : [...prev, y]
+                      )
+                    }}
+                    className={`${style.filter_button} ${selectedTransactionYears.includes(y) ? style.active : ''}`}
+                  >
+                    {y}
+                  </div>
+                ))}
+              </div>
+            </div>
+        </div>
       )}
       <TableContainerGetter
         columns={columns}
@@ -356,6 +546,13 @@ export default function Payments ({ user, userId }: PaybuttonsProps): React.Reac
         }
         tableRefreshCount={refreshCount}
         emptyMessage={tableLoading ? 'Loading...' : 'No Payments to show yet'}
+        />
+      <InvoiceModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        invoiceData={invoiceData}
+        mode={invoiceMode}
+        transaction={invoiceDataTransaction}
         />
     </>
   )

@@ -1,6 +1,6 @@
 import { Network, Prisma } from '@prisma/client'
 import { RESPONSE_MESSAGES, NETWORK_SLUGS, NETWORK_IDS } from 'constants/index'
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { fetchAllUserAddresses } from 'services/addressService'
 import config from 'config'
 import { multiBlockchainClient } from './chronikService'

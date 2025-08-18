@@ -1,5 +1,5 @@
 import { Prisma, Address } from '@prisma/client'
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { fetchAddressTransactions } from 'services/transactionService'
 import { getNetworkFromSlug } from 'services/networkService'
@@ -296,6 +296,19 @@ export async function fetchAddressById (addressId: string, includePaybuttons = f
     throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
   }
   return result
+}
+
+export async function setSyncingBatch (addressStringArray: string[], syncing: boolean): Promise<void> {
+  await prisma.address.updateMany({
+    where: {
+      address: {
+        in: addressStringArray
+      }
+    },
+    data: {
+      syncing
+    }
+  })
 }
 
 export async function setSyncing (addressString: string, syncing: boolean): Promise<void> {

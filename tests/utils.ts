@@ -1,5 +1,5 @@
 import * as httpMocks from 'node-mocks-http'
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { createPaybutton, CreatePaybuttonReturn } from 'services/paybuttonService'
 import { createWallet, WalletWithAddressesWithPaybuttons } from 'services/walletService'
 import { upsertCurrentPricesForNetworkId } from 'services/priceService'

@@ -1,7 +1,7 @@
 import { Organization, OrganizationInvite, UserProfile } from '@prisma/client'
 import config from 'config'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { CreateOrganizationInput, UpdateOrganizationInput } from 'utils/validators'
 
 export async function createOrganization ({ creatorId, name }: CreateOrganizationInput): Promise<Organization> {
@@ -13,7 +13,8 @@ export async function createOrganization ({ creatorId, name }: CreateOrganizatio
         connect: {
           id: creatorId
         }
-      }
+      },
+      address: ''
     }
   })
 }
@@ -71,7 +72,7 @@ export async function deleteOrganization (organizationId: string, userId: string
   })
 }
 
-export async function updateOrganization ({ userId, name }: UpdateOrganizationInput): Promise<Organization> {
+export async function updateOrganization ({ userId, name, address }: UpdateOrganizationInput): Promise<Organization> {
   const organization = await prisma.organization.findFirst({
     where: { creatorId: userId }
   })
@@ -80,9 +81,14 @@ export async function updateOrganization ({ userId, name }: UpdateOrganizationIn
     throw new Error(RESPONSE_MESSAGES.USER_HAS_NO_ORGANIZATION_400.message)
   }
 
+  const updateData: Partial<Organization> = {}
+
+  if (name !== undefined && name !== '') updateData.name = name
+  if (address !== undefined && address !== '') updateData.address = address
+
   return await prisma.organization.update({
     where: { id: organization.id },
-    data: { name }
+    data: updateData
   })
 }
 

@@ -19,7 +19,7 @@ interface ButtonProps {
   loading?: boolean
 }
 
-export default function TopBar ({
+export default function Button ({
   children,
   disabled,
   type = 'button',

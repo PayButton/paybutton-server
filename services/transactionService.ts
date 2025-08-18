@@ -1,4 +1,4 @@
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS } from 'constants/index'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
@@ -7,7 +7,7 @@ import _ from 'lodash'
 import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
-import { generatePaymentFromTx } from 'redis/paymentCache'
+import { generatePaymentFromTxWithInvoices } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
 
 export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
@@ -461,13 +461,16 @@ export async function connectTransactionsListToPrices (txList: Transaction[]): P
 }
 
 export async function connectAllTransactionsToPrices (): Promise<void> {
+  console.log('[PRICES] Started connecting txs to prices.')
   const noPricesTxs = await fetchAllTransactionsWithNoPrices()
+  console.log(`[PRICES] Found ${noPricesTxs.length} txs with no prices.`)
   const wrongNumberOfPricesTxs = await fetchAllTransactionsWithIrregularPrices()
+  console.log(`[PRICES] Found ${wrongNumberOfPricesTxs.length} txs with irregular prices.`)
   const txs = [
     ...noPricesTxs,
     ...wrongNumberOfPricesTxs
   ]
-  console.log(`[PRICES] Connecting ${noPricesTxs.length} txs with no prices and ${wrongNumberOfPricesTxs.length} with irregular prices...`)
+  console.log('[PRICES] Connecting txs to prices...')
   void await connectTransactionsListToPrices(txs)
   console.log('[PRICES] Finished connecting txs to prices.')
 }
@@ -564,10 +567,6 @@ export async function fetchTransactionsByPaybuttonId (paybuttonId: string, netwo
   const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
   const transactions = await fetchTransactionsByAddressList(addressIdList, networkIds)
 
-  if (transactions.length === 0) {
-    throw new Error(RESPONSE_MESSAGES.NO_TRANSACTION_FOUND_404.message)
-  }
-
   return transactions
 }
 
@@ -663,13 +662,32 @@ export async function getPaymentsByUserIdOrderedByButtonName (
           'priceValue', pb.value,
           'quoteId', pb.quoteId
         )
-      ) AS prices
+      ) AS prices,
+      JSON_ARRAYAGG(
+        IF(i.id IS NOT NULL,
+          JSON_OBJECT(
+            'id', i.id,
+            'invoiceNumber', i.invoiceNumber,
+            'userId', i.userId,
+            'amount', i.amount,
+            'description', i.description,
+            'recipientName', i.recipientName,
+            'recipientAddress', i.recipientAddress,
+            'customerName', i.customerName,
+            'customerAddress', i.customerAddress,
+            'createdAt', i.createdAt,
+            'updatedAt', i.updatedAt
+          ),
+          NULL
+        )
+      ) AS invoices
     FROM \`Transaction\` t
     INNER JOIN \`Address\` a ON t.\`addressId\` = a.\`id\`
     INNER JOIN \`AddressesOnButtons\` ab ON a.\`id\` = ab.\`addressId\`
     INNER JOIN \`Paybutton\` p ON ab.\`paybuttonId\` = p.\`id\`
     LEFT JOIN \`PricesOnTransactions\` pt ON t.\`id\` = pt.\`transactionId\`
     LEFT JOIN \`Price\` pb ON pt.\`priceId\` = pb.\`id\`
+    LEFT JOIN \`Invoice\` i ON i.\`transactionId\` = t.\`id\`
     WHERE t.\`amount\` > 0
     AND EXISTS (
       SELECT 1
@@ -706,14 +724,23 @@ export async function getPaymentsByUserIdOrderedByButtonName (
       id: tx.paybuttonId,
       providerUserId: tx.paybuttonProviderUserId
     })
+    let invoices = null
+    if (JSON.parse(tx.invoices).length > 0) {
+      invoices = JSON.parse(tx.invoices).filter((invoice: any) => {
+        return invoice !== null && invoice.userId === userId
+      })
+    }
+
     if (tx.amount > 0) {
       payments.push({
+        id: tx.id,
         amount: tx.amount,
         timestamp: tx.timestamp,
         values: ret,
         networkId: tx.networkId,
         hash: tx.hash,
-        buttonDisplayDataList
+        buttonDisplayDataList,
+        invoices
       })
     }
   })
@@ -727,7 +754,9 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   pageSize: number,
   orderBy?: string,
   orderDesc = true,
-  buttonIds?: string[]
+  buttonIds?: string[],
+  years?: string[],
+  timezone?: string
 ): Promise<Payment[]> {
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
 
@@ -770,6 +799,11 @@ export async function fetchAllPaymentsByUserIdWithPagination (
       gt: 0
     }
   }
+  if (years !== undefined && years.length > 0) {
+    const yearFilters = getYearFilters(years, timezone)
+
+    where.OR = yearFilters
+  }
 
   if ((buttonIds !== undefined) && buttonIds.length > 0) {
     where.address!.paybuttons = {
@@ -783,7 +817,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
 
   const transactions = await prisma.transaction.findMany({
     where,
-    include: includePaybuttonsAndPrices,
+    include: includePaybuttonsAndPricesAndInvoices,
     orderBy: orderByQuery,
     skip: page * Number(pageSize),
     take: Number(pageSize)
@@ -793,17 +827,45 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   for (let index = 0; index < transactions.length; index++) {
     const tx = transactions[index]
     if (Number(tx.amount) > 0) {
-      const payment = await generatePaymentFromTx(tx)
+      const payment = await generatePaymentFromTxWithInvoices(tx, userId)
       transformedData.push(payment)
     }
   }
   return transformedData
 }
+const getYearFilters = (years: string[], timezone?: string): Prisma.TransactionWhereInput[] => {
+  return years.map((year) => {
+    let start: number
+    let end: number
+    if (timezone !== undefined && timezone !== null && timezone !== '') {
+      const startDate = new Date(`${year}-01-01T00:00:00`)
+      const endDate = new Date(`${Number(year) + 1}-01-01T00:00:00`)
+      const startInTimezone = new Date(startDate.toLocaleString('en-US', { timeZone: timezone }))
+      const endInTimezone = new Date(endDate.toLocaleString('en-US', { timeZone: timezone }))
+      const startOffset = startDate.getTime() - startInTimezone.getTime()
+      const endOffset = endDate.getTime() - endInTimezone.getTime()
+      start = (startDate.getTime() + startOffset) / 1000
+      end = (endDate.getTime() + endOffset) / 1000
+    } else {
+      start = new Date(`${year}-01-01T00:00:00Z`).getTime() / 1000
+      end = new Date(`${Number(year) + 1}-01-01T00:00:00Z`).getTime() / 1000
+    }
+
+    return {
+      timestamp: {
+        gte: Math.floor(start),
+        lt: Math.floor(end)
+      }
+    }
+  })
+}
 
 export async function fetchAllPaymentsByUserId (
   userId: string,
   networkIds?: number[],
-  buttonIds?: string[]
+  buttonIds?: string[],
+  years?: string[],
+  timezone?: string
 ): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   const where: Prisma.TransactionWhereInput = {
     address: {
@@ -829,6 +891,12 @@ export async function fetchAllPaymentsByUserId (
     }
   }
 
+  if (years !== undefined && years.length > 0) {
+    const yearFilters = getYearFilters(years, timezone)
+
+    where.OR = yearFilters
+  }
+
   return await prisma.transaction.findMany({
     where,
     include: includePaybuttonsAndPrices,
@@ -852,21 +920,46 @@ export async function fetchTxCountByPaybuttonId (paybuttonId: string): Promise<n
 
 export const getFilteredTransactionCount = async (
   userId: string,
-  buttonIds: string[]
+  buttonIds?: string[],
+  years?: string[],
+  timezone?: string
 ): Promise<number> => {
-  return await prisma.transaction.count({
-    where: {
-      address: {
-        userProfiles: {
-          some: { userId }
-        },
-        paybuttons: {
-          some: {
-            paybutton: { id: { in: buttonIds } }
-          }
+  const where: Prisma.TransactionWhereInput = {
+    address: {
+      userProfiles: {
+        some: { userId }
+      }
+    },
+    amount: { gt: 0 }
+  }
+  if (buttonIds !== undefined && buttonIds.length > 0) {
+    where.address!.paybuttons = {
+      some: {
+        paybutton: {
+          id: { in: buttonIds }
         }
-      },
-      amount: { gt: 0 }
+      }
     }
-  })
+  }
+  if (years !== undefined && years.length > 0) {
+    const yearFilters = getYearFilters(years, timezone)
+
+    where.OR = yearFilters
+  }
+
+  return await prisma.transaction.count({ where })
+}
+
+export const fetchDistinctPaymentYearsByUser = async (userId: string): Promise<number[]> => {
+  const years = await prisma.$queryRaw<Array<{ year: number }>>`
+    SELECT DISTINCT YEAR(FROM_UNIXTIME(t.timestamp)) AS year
+    FROM Transaction t
+    JOIN Address a ON a.id = t.addressId
+    JOIN AddressesOnUserProfiles ap ON ap.addressId = a.id
+    WHERE ap.userId = ${userId} AND
+    t.amount > 0
+    ORDER BY year ASC
+  `
+
+  return years.map(y => y.year)
 }

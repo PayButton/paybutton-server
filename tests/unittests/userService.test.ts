@@ -1,6 +1,6 @@
 import * as userService from 'services/userService'
-import prisma from 'prisma/clientInstance'
-import { prismaMock } from 'prisma/mockedClient'
+import prisma from 'prisma-local/clientInstance'
+import { prismaMock } from 'prisma-local/mockedClient'
 import { mockedUserProfile, mockedUserProfileWithPublicKey } from 'tests/mockedObjects'
 
 describe('seedHash is deterministic', () => {

@@ -99,6 +99,7 @@ export const RESPONSE_MESSAGES = {
   INVALID_INVITE_400: { statusCode: 400, message: 'Invalid invite.' },
   INVITATION_TOKEN_NOT_PROVIDED_400: { statusCode: 400, message: "'token' not provided." },
   ORGANIZATION_NAME_NOT_PROVIDED_400: { statusCode: 400, message: "'organizationName' not provided." },
+  MISSING_PARAMS_TO_UPDATE_ORGANIZATION_400: { statusCode: 400, message: 'Missing params to update organization.' },
   INVITE_EXPIRED_400: { statusCode: 400, message: 'Invite expired.' },
   INVALID_EMAIL_400: { statusCode: 400, message: 'Invalid email.' },
   USER_OUT_OF_EMAIL_CREDITS_400: { statusCode: 400, message: 'User out of email credits.' },
@@ -278,5 +279,5 @@ export const XEC_TX_EXPLORER_URL = 'https://explorer.e.cash/tx/'
 export const BCH_TX_EXPLORER_URL = 'https://blockchair.com/bitcoin-cash/transaction/'
 
 export const MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME = 2
-export const CHRONIK_INITIALIZATION_DELAY = 500
+export const CHRONIK_INITIALIZATION_DELAY = 2000
 export const MEMPOOL_PROCESS_DELAY = 100

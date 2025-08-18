@@ -1,6 +1,6 @@
-import prisma from 'prisma/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import * as transactionService from 'services/transactionService'
-import { prismaMock } from 'prisma/mockedClient'
+import { prismaMock } from 'prisma-local/mockedClient'
 import { mockedBCHAddress, mockedUSDPriceOnTransaction, mockedCADPriceOnTransaction, mockedTransaction, mockedUserProfile, mockedAddressIdList, mockedTransactionList } from '../mockedObjects'
 import { CacheSet } from 'redis/index'
 import { Prisma } from '@prisma/client'
