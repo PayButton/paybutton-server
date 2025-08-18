@@ -2237,7 +2237,7 @@ chronik-client-cashtokens@^3.1.1-rc0:
   dependencies:
     "@types/ws" "^8.2.1"
     axios "^1.6.3"
-    ecashaddrjs "file:../.cache/yarn/v6/npm-chronik-client-cashtokens-3.1.1-rc0-e5e4a3538e8010b70623974a731bf2712506c5e3-integrity/node_modules/ecashaddrjs"
+    ecashaddrjs "file:../../../../AppData/Local/Yarn/Cache/v6/npm-chronik-client-cashtokens-3.1.1-rc0-e5e4a3538e8010b70623974a731bf2712506c5e3-integrity/node_modules/ecashaddrjs"
     isomorphic-ws "^4.0.1"
     protobufjs "^6.8.8"
     ws "^8.3.0"
@@ -2773,7 +2773,7 @@ ecashaddrjs@^1.0.7:
     big-integer "1.6.36"
     bs58check "^3.0.1"
 
-ecashaddrjs@^2.0.0, "ecashaddrjs@file:../ecashaddrjs":
+ecashaddrjs@^2.0.0, "ecashaddrjs@file:../.cache/yarn/v6/npm-chronik-client-cashtokens-3.1.1-rc0-e5e4a3538e8010b70623974a731bf2712506c5e3-integrity/node_modules/ecashaddrjs":
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ecashaddrjs/-/ecashaddrjs-2.0.0.tgz#d45ede7fb6168815dbcf664b8e0a6872e485d874"
   integrity sha512-EvK1V4D3+nIEoD0ggy/b0F4lW39/72R9aOs/scm6kxMVuXu16btc+H74eQv7okNfXaQWKgolEekZkQ6wfcMMLw==
