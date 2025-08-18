@@ -259,6 +259,11 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
     await Promise.all(posterTriggers.map(async (trigger) => {
       const userProfile = await fetchUserFromTriggerId(trigger.id)
       const quoteSlug = SUPPORTED_QUOTES_FROM_ID[userProfile.preferredCurrencyId]
+      // We ensure that the primary address (<address> variable) is the first element in the outputAddresses since this is likely more useful for apps using the data than it would be if it was in a random order.
+      let reorderedOutputAddresses = outputAddresses
+      if (Array.isArray(outputAddresses) && outputAddresses.includes(address)) {
+        reorderedOutputAddresses = [address, ...outputAddresses.filter(a => a !== address)]
+      }
       const postDataParameters: PostDataParameters = {
         amount,
         currency,
@@ -274,7 +279,7 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
             }
           : EMPTY_OP_RETURN,
         inputAddresses,
-        outputAddresses,
+        outputAddresses: reorderedOutputAddresses,
         value: values[quoteSlug].toString()
       }
 
