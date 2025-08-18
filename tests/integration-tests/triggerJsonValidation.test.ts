@@ -1,7 +1,8 @@
-import { Prisma } from '@prisma/client'
-import { prismaMock } from '../../prisma/mockedClient'
-import prisma from '../../prisma/clientInstance'
+import { prismaMock } from '../../prisma-local/mockedClient'
+import prisma from '../../prisma-local/clientInstance'
 import axios from 'axios'
+
+import { parseTriggerPostData } from '../../utils/validators'
 
 // Mock axios for external requests
 jest.mock('axios')
@@ -15,8 +16,6 @@ jest.mock('../../utils/validators', () => {
     parseTriggerPostData: jest.fn()
   }
 })
-
-import { parseTriggerPostData } from '../../utils/validators'
 const mockedParseTriggerPostData = parseTriggerPostData as jest.MockedFunction<typeof parseTriggerPostData>
 
 describe('Trigger JSON Validation Integration Tests', () => {
@@ -24,9 +23,9 @@ describe('Trigger JSON Validation Integration Tests', () => {
     it('should reject trigger creation with invalid JSON during validation', async () => {
       // This tests the existing validation during trigger creation
       // which should catch most JSON issues before they reach execution
-      
+
       const invalidPostData = '{"amount": <amount>, "currency": <currency>' // Missing closing brace
-      
+
       // Mock the parsing to fail during creation validation
       mockedParseTriggerPostData.mockImplementation(() => {
         throw new SyntaxError('Unexpected end of JSON input')
@@ -48,7 +47,7 @@ describe('Trigger JSON Validation Integration Tests', () => {
     it('should allow trigger creation with valid JSON', async () => {
       const validPostData = '{"amount": <amount>, "currency": <currency>}'
       const expectedParsedData = { amount: 100, currency: 'XEC' }
-      
+
       // Mock successful parsing
       mockedParseTriggerPostData.mockReturnValue(expectedParsedData)
 
@@ -66,7 +65,7 @@ describe('Trigger JSON Validation Integration Tests', () => {
   describe('Trigger Execution Scenarios', () => {
     beforeEach(() => {
       jest.clearAllMocks()
-      
+
       // Setup common mocks
       prismaMock.triggerLog.create.mockResolvedValue({
         id: 1,
@@ -83,7 +82,7 @@ describe('Trigger JSON Validation Integration Tests', () => {
     it('should demonstrate JSON validation flow differences', async () => {
       // Test Case 1: Valid JSON - should proceed to network request
       console.log('=== Test Case 1: Valid JSON ===')
-      
+
       mockedParseTriggerPostData.mockReturnValue({ amount: 100, currency: 'XEC' })
       mockedAxios.post.mockResolvedValue({ data: { success: true } })
 
@@ -102,7 +101,7 @@ describe('Trigger JSON Validation Integration Tests', () => {
 
       // Test Case 2: Invalid JSON - should fail early
       console.log('\n=== Test Case 2: Invalid JSON ===')
-      
+
       mockedParseTriggerPostData.mockImplementation(() => {
         throw new SyntaxError('Unexpected end of JSON input')
       })
@@ -144,7 +143,7 @@ describe('Trigger JSON Validation Integration Tests', () => {
 
       testCases.forEach(({ name, postData, expectedError }) => {
         console.log(`\n=== Testing: ${name} ===`)
-        
+
         // Mock parsing to fail with specific error
         mockedParseTriggerPostData.mockImplementation(() => {
           const error = new SyntaxError(expectedError)
@@ -162,13 +161,13 @@ describe('Trigger JSON Validation Integration Tests', () => {
         } catch (error) {
           const err = error as Error
           console.log('✅ Failed as expected:', err.message)
-          
+
           // In the actual implementation, this error would be logged with:
           // - errorName: 'SyntaxError'
           // - errorMessage: the error message
           // - triggerPostData: the original malformed JSON
           // - triggerPostURL: the webhook URL
-          
+
           expect(err.name).toBe('SyntaxError')
           expect(err.message).toContain(expectedError)
         }
@@ -183,7 +182,7 @@ describe('Trigger JSON Validation Integration Tests', () => {
           mockError: new Error('No data to parse')
         },
         {
-          name: 'Null-like post data', 
+          name: 'Null-like post data',
           postData: 'null',
           mockError: new Error('Invalid null data')
         },
@@ -196,7 +195,7 @@ describe('Trigger JSON Validation Integration Tests', () => {
 
       edgeCases.forEach(({ name, postData, mockError }) => {
         console.log(`\n=== Testing edge case: ${name} ===`)
-        
+
         mockedParseTriggerPostData.mockImplementation(() => {
           throw mockError
         })
@@ -218,7 +217,7 @@ describe('Trigger JSON Validation Integration Tests', () => {
   describe('Performance and Efficiency Benefits', () => {
     it('should demonstrate network request avoidance', async () => {
       let networkRequestCount = 0
-      
+
       // Track network requests
       mockedAxios.post.mockImplementation(async () => {
         networkRequestCount++
@@ -229,7 +228,7 @@ describe('Trigger JSON Validation Integration Tests', () => {
 
       // Test 1: Valid JSON - network request should be made
       mockedParseTriggerPostData.mockReturnValue({ amount: 100 })
-      
+
       try {
         parseTriggerPostData({
           userId: 'user-123',
