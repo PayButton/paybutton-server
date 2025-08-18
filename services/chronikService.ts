@@ -665,8 +665,9 @@ export class ChronikBlockchainClient {
 
     try {
       // consume generator: it yields batches of prepared txs
+      console.log(`${this.CHRONIK_MSG_PREFIX} (PARALLEL) will fetch batches of ${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY} txs from chronik`)
       for await (const batch of this.fetchLatestTxsForAddresses(addresses)) {
-        console.log(`${this.CHRONIK_MSG_PREFIX} (PARALLEL) fetched batch from chronik — txs=${batch.length}`)
+        console.log(`${this.CHRONIK_MSG_PREFIX} (PARALLEL) fetched first batch of ${batch.length} tx from chronik`)
         // count per address before committing
         for (const tx of batch) {
           perAddrCount.set(tx.addressId, (perAddrCount.get(tx.addressId) ?? 0) + 1)
@@ -862,10 +863,8 @@ class MultiBlockchainClient {
           bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
         }
         await Promise.all(asyncOperations)
-        this.initializing = false
+        this.setInitialized()
         await connectAllTransactionsToPrices()
-        this.clients.ecash.setInitialized()
-        this.clients.bitcoincash.setInitialized()
       } else if (process.env.NODE_ENV === 'test') {
         const asyncOperations: Array<Promise<void>> = []
         this.clients = {
@@ -873,9 +872,15 @@ class MultiBlockchainClient {
           bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
         }
         await Promise.all(asyncOperations)
-        this.initializing = false
+        this.setInitialized()
       }
     })()
+  }
+
+  public setInitialized (): void {
+    this.initializing = false
+    this.clients.ecash.setInitialized()
+    this.clients.bitcoincash.setInitialized()
   }
 
   public async waitForStart (): Promise<void> {
