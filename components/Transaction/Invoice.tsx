@@ -3,8 +3,22 @@ import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL, NETWORK_TICKERS_FROM_ID, XEC_
 import moment from 'moment'
 import logoImageSource from 'assets/logo.png'
 import Image from 'next/image'
-
-const Receipt = React.forwardRef((props, ref) => {
+interface ReceiptProps {
+  data: {
+    invoiceNumber: string
+    amount: number
+    recipientName: string
+    recipientAddress: string
+    description: string
+    customerName: string
+    customerAddress: string
+    createdAt: string | number | Date
+    transactionHash: string
+    transactionDate: number
+    transactionNetworkId: number
+  }
+}
+const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>((props, ref) => {
   const { data } = props
   const {
     invoiceNumber,
