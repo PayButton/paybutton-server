@@ -403,7 +403,7 @@ async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParame
   const actionType: TriggerLogActionType = 'PostData'
   let logData!: PostDataTriggerLog | PostDataTriggerLogError
   let isError = false
-  
+
   // Validate JSON first before attempting network request
   let parsedPostDataParameters: any
   try {
@@ -415,9 +415,9 @@ async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParame
   } catch (jsonErr: any) {
     isError = true
     logData = {
-      errorName: jsonErr.name || 'JSON_VALIDATION_ERROR',
-      errorMessage: jsonErr.message || 'Invalid JSON in trigger post data',
-      errorStack: jsonErr.stack || '',
+      errorName: jsonErr.name ?? 'JSON_VALIDATION_ERROR',
+      errorMessage: jsonErr.message ?? 'Invalid JSON in trigger post data',
+      errorStack: jsonErr.stack ?? '',
       triggerPostData: trigger.postData,
       triggerPostURL: trigger.postURL
     }
@@ -429,6 +429,7 @@ async function postDataForTrigger (trigger: TriggerWithPaybutton, postDataParame
         data: JSON.stringify(logData)
       }
     })
+    console.error(`[ERROR] Invalid trigger data in DB for trigger ${trigger.id} (should never happen)`)
     return
   }
 
