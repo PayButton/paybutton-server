@@ -1,4 +1,5 @@
-// Mock heavy deps before imports
+// Mock heavy deps before importing modules that depend on them
+// Now import modules under test
 import axios from 'axios'
 import { Prisma } from '@prisma/client'
 import prisma from 'prisma-local/clientInstance'
@@ -16,7 +17,35 @@ jest.mock('axios', () => ({
 jest.mock('config', () => ({
   __esModule: true,
   default: {
-    triggerPOSTTimeout: 3000
+    triggerPOSTTimeout: 3000,
+    networkBlockchainURLs: {
+      ecash: ['https://xec.paybutton.org'],
+      bitcoincash: ['https://bch.paybutton.org']
+    },
+    wsBaseURL: 'localhost:5000'
+  }
+}))
+
+// Also mock networkService to prevent it from importing and instantiating chronikService via relative path
+jest.mock('services/networkService', () => ({
+  __esModule: true,
+  getNetworkIdFromSlug: jest.fn((slug: string) => 1),
+  getNetworkFromSlug: jest.fn(async (slug: string) => ({ id: 1, slug } as any))
+}))
+
+// Prevent real Chronik client initialization during this test suite
+jest.mock('services/chronikService', () => ({
+  __esModule: true,
+  multiBlockchainClient: {
+    waitForStart: jest.fn(async () => {}),
+    getUrls: jest.fn(() => ({ ecash: [], bitcoincash: [] })),
+    getAllSubscribedAddresses: jest.fn(() => ({ ecash: [], bitcoincash: [] })),
+    subscribeAddresses: jest.fn(async () => {}),
+    syncAddresses: jest.fn(async () => ({ failedAddressesWithErrors: {}, successfulAddressesWithCount: {} })),
+    getTransactionDetails: jest.fn(async () => ({ hash: '', version: 0, block: { hash: '', height: 0, timestamp: '0' }, inputs: [], outputs: [] })),
+    getLastBlockTimestamp: jest.fn(async () => 0),
+    getBalance: jest.fn(async () => 0n),
+    syncAndSubscribeAddresses: jest.fn(async () => ({ failedAddressesWithErrors: {}, successfulAddressesWithCount: {} }))
   }
 }))
 
@@ -68,7 +97,7 @@ describe('Payment Trigger system', () => {
       {
         id: 'trigger-1',
         isEmailTrigger: false,
-        postURL: 'http://example.com/webhook',
+        postURL: 'https://httpbin.org/post',
         postData: '{"address": <address>, "outputAddresses": <outputAddresses>}',
         paybutton: {
           name: 'My Paybutton',
