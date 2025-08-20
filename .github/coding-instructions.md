@@ -9,7 +9,7 @@ When writing tests, follow these guidelines to ensure consistency and maintainab
  - **Make tests resilient to refactoring**: Tests should pass even if internal implementation changes, as long as the behavior remains the same.
  - Never make up new functions just to make tests pass. Always build tests based on the functions that already exist. If a function needs to be updated/revised/refactored, that is also OK.
  - Do not just add a 'markTestSkipped' on tests that look difficult to write. Instead, explain the problem and ask for some additional context before trying again.
- - Make sure new tests added into the "intergation-tests" directory are actually intergration tests.
+ - Make sure new tests added into the "integration-tests" directory are actually integration tests.
 
 General guidlines:
 - Never edit files that are git ignored.
