@@ -9,7 +9,11 @@ while true; do
 done                                                                
 echo Connected to the db.
 
-yarn || exit 1
+if [ -n "$NO_BIN_LINKS" ]; then
+    yarn install --no-bin-links || exit 1
+else
+    yarn || exit 1
+fi
 # Clear logs
 
 logtime=$(date +%Y-%m-%d@%H:%M)
