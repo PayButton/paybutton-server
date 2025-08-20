@@ -231,7 +231,7 @@ interface TriggerSignature {
 
 function getSignaturePayload (postData: string, postDataParameters: PostDataParameters): string {
   const includedVariables = TRIGGER_POST_VARIABLES.filter(v => postData.includes(v)).sort()
-  return includedVariables.map(varString => {
+  const result = includedVariables.map(varString => {
     const key = varString.replace('<', '').replace('>', '') as keyof PostDataParameters
     let valueString = ''
     if (key === 'opReturn') {
@@ -241,7 +241,8 @@ function getSignaturePayload (postData: string, postDataParameters: PostDataPara
       valueString = postDataParameters[key] as string
     }
     return valueString
-  }).join('+')
+  }).filter(value => value !== undefined && value !== null && value !== '')
+  return result.join('+')
 }
 
 export function signPostData ({ userId, postData, postDataParameters }: PaybuttonTriggerParseParameters): TriggerSignature {
