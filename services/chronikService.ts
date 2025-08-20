@@ -387,9 +387,8 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private getSortedInputAddresses (transaction: Tx): string[] {
+  private getSortedInputAddresses (transaction: Tx): Array<{address: string, amount: Prisma.Decimal}> {
     const addressSatsMap = new Map<string, bigint>()
-
     transaction.inputs.forEach((inp) => {
       const address = outputScriptToAddress(this.networkSlug, inp.outputScript)
       if (address !== undefined && address !== '') {
@@ -397,17 +396,26 @@ export class ChronikBlockchainClient {
         addressSatsMap.set(address, currentValue + inp.sats)
       }
     })
-
     const sortedInputAddresses = Array.from(addressSatsMap.entries())
       .sort(([, valueA], [, valueB]) => Number(valueB - valueA))
-      .map(([address]) => address)
-
-    return sortedInputAddresses
+    return sortedInputAddresses.map(([address, sats]) => {
+      const format = xecaddr.detectAddressFormat(address)
+      // satoshisToUnit returns Promise; but we can't make this function async easily without refactor, so keep raw satoshis division inline
+      const decimal = new Prisma.Decimal(sats.toString())
+      let amount: Prisma.Decimal
+      if (format === xecaddr.Format.Xecaddr) {
+        amount = decimal.dividedBy(1e2)
+      } else if (format === xecaddr.Format.Cashaddr) {
+        amount = decimal.dividedBy(1e8)
+      } else {
+        amount = decimal
+      }
+      return { address, amount }
+    })
   }
 
-  private getSortedOutputAddresses (transaction: Tx): string[] {
+  private getSortedOutputAddresses (transaction: Tx): Array<{address: string, amount: Prisma.Decimal}> {
     const addressSatsMap = new Map<string, bigint>()
-
     transaction.outputs.forEach((out) => {
       const address = outputScriptToAddress(this.networkSlug, out.outputScript)
       if (address !== undefined && address !== '') {
@@ -415,11 +423,21 @@ export class ChronikBlockchainClient {
         addressSatsMap.set(address, currentValue + out.sats)
       }
     })
-
     const sortedOutputAddresses = Array.from(addressSatsMap.entries())
       .sort(([, valueA], [, valueB]) => Number(valueB - valueA))
-      .map(([address]) => address)
-
+      .map(([address, sats]) => {
+        const format = xecaddr.detectAddressFormat(address)
+        const decimal = new Prisma.Decimal(sats.toString())
+        let amount: Prisma.Decimal
+        if (format === xecaddr.Format.Xecaddr) {
+          amount = decimal.dividedBy(1e2)
+        } else if (format === xecaddr.Format.Cashaddr) {
+          amount = decimal.dividedBy(1e8)
+        } else {
+          amount = decimal
+        }
+        return { address, amount }
+      })
     return sortedOutputAddresses
   }
 
@@ -495,7 +513,7 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private broadcastIncomingTx (addressString: string, createdTx: TransactionWithAddressAndPrices, inputAddresses: string[], outputAddresses: string[]): BroadcastTxData {
+  private broadcastIncomingTx (addressString: string, createdTx: TransactionWithAddressAndPrices, inputAddresses: Array<{address: string, amount: Prisma.Decimal}>, outputAddresses: Array<{address: string, amount: Prisma.Decimal}>): BroadcastTxData {
     const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
     broadcastTxData.address = addressString
     broadcastTxData.messageType = 'NewTx'

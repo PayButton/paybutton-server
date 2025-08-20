@@ -70,8 +70,11 @@ describe('Payment Trigger system', () => {
       buttonName: 'Button Name',
       address: primaryAddress,
       opReturn: { message: '', paymentId: '', rawMessage: '' },
-      inputAddresses: ['ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h'],
-      outputAddresses: [primaryAddress, other],
+      inputAddresses: [{ address: 'ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h', amount: new Prisma.Decimal(1) }],
+      outputAddresses: [
+        { address: primaryAddress, amount: new Prisma.Decimal(5) },
+        { address: other, amount: new Prisma.Decimal(7) }
+      ],
       value: '0.0002'
     }
 
@@ -84,8 +87,8 @@ describe('Payment Trigger system', () => {
 
     expect(result.addr).toBe(primaryAddress)
     expect(Array.isArray(result.outs)).toBe(true)
-    expect(result.outs[0]).toBe(primaryAddress)
-    expect(result.outs).toEqual([primaryAddress, other])
+  expect(result.outs[0].address).toBe(primaryAddress)
+  expect(result.outs.map((o: any) => o.address)).toEqual([primaryAddress, other])
   })
 
   it('executeAddressTriggers posts with outputAddresses containing primary at index 0', async () => {
@@ -131,8 +134,12 @@ describe('Payment Trigger system', () => {
           timestamp: 1700000000,
           address: primaryAddress,
           rawMessage: '',
-          inputAddresses: ['ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h'],
-          outputAddresses: [other1, primaryAddress, other2],
+          inputAddresses: [{ address: 'ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h', amount: new Prisma.Decimal(1) }],
+          outputAddresses: [
+            { address: other1, amount: new Prisma.Decimal(2) },
+            { address: primaryAddress, amount: new Prisma.Decimal(3) },
+            { address: other2, amount: new Prisma.Decimal(4) }
+          ],
           prices: [
             { price: { value: new Prisma.Decimal('0.5'), quoteId: 1 } },
             { price: { value: new Prisma.Decimal('0.6'), quoteId: 2 } }
@@ -147,8 +154,8 @@ describe('Payment Trigger system', () => {
     const postedBody = (axios as any).post.mock.calls[0][1]
 
     expect(postedBody.address).toBe(primaryAddress)
-    expect(Array.isArray(postedBody.outputAddresses)).toBe(true)
-    expect(postedBody.outputAddresses[0]).toBe(primaryAddress)
-    expect(postedBody.outputAddresses).toEqual([primaryAddress, other1, other2])
+  expect(Array.isArray(postedBody.outputAddresses)).toBe(true)
+  expect(postedBody.outputAddresses[0].address).toBe(primaryAddress)
+  expect(postedBody.outputAddresses.map((o: any) => o.address)).toEqual([primaryAddress, other1, other2])
   })
 })
