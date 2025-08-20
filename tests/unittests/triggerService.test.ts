@@ -58,7 +58,7 @@ describe('Payment Trigger system', () => {
     jest.clearAllMocks()
   })
 
-  it('parseTriggerPostData replaces <outputAddresses> and <address>, keeping index 0 as the primary address', () => {
+  it('parseTriggerPostData replaces <outputAddresses> and <address>, keeping index 0 as the primary address and preserves amounts', () => {
     const primaryAddress = 'ecash:qz3ye4namaqlca8zgvdju8uqa2wwx8twd5y8wjd9ru'
     const other = 'ecash:qrju9pgzn3m84q57ldjvxph30zrm8q7dlc8r8a3eyp'
 
@@ -85,10 +85,12 @@ describe('Payment Trigger system', () => {
       postDataParameters: params
     })
 
-    expect(result.addr).toBe(primaryAddress)
-    expect(Array.isArray(result.outs)).toBe(true)
+  expect(result.addr).toBe(primaryAddress)
+  expect(Array.isArray(result.outs)).toBe(true)
   expect(result.outs[0].address).toBe(primaryAddress)
   expect(result.outs.map((o: any) => o.address)).toEqual([primaryAddress, other])
+  // ensure amounts are present
+  result.outs.forEach((o: any) => expect(o.amount).toBeDefined())
   })
 
   it('executeAddressTriggers posts with outputAddresses containing primary at index 0', async () => {
@@ -157,5 +159,9 @@ describe('Payment Trigger system', () => {
   expect(Array.isArray(postedBody.outputAddresses)).toBe(true)
   expect(postedBody.outputAddresses[0].address).toBe(primaryAddress)
   expect(postedBody.outputAddresses.map((o: any) => o.address)).toEqual([primaryAddress, other1, other2])
+    // Ensure amounts carried over as decimals (stringifiable)
+    postedBody.outputAddresses.forEach((o: any) => {
+      expect(o.amount).toBeDefined()
+    })
   })
 })
