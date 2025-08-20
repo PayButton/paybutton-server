@@ -261,8 +261,11 @@ export async function executeAddressTriggers (broadcastTxData: BroadcastTxData, 
       const quoteSlug = SUPPORTED_QUOTES_FROM_ID[userProfile.preferredCurrencyId]
       // We ensure that the primary address (<address> variable) is the first element in the outputAddresses since this is likely more useful for apps using the data than it would be if it was in a random order.
       let reorderedOutputAddresses = outputAddresses
-      if (Array.isArray(outputAddresses) && outputAddresses.includes(address)) {
-        reorderedOutputAddresses = [address, ...outputAddresses.filter(a => a !== address)]
+      if (Array.isArray(outputAddresses)) {
+        const primary = reorderedOutputAddresses.find(oa => oa.address === address)
+        if (primary !== undefined) {
+          reorderedOutputAddresses = [primary, ...reorderedOutputAddresses.filter(o => o.address !== address)]
+        }
       }
       const postDataParameters: PostDataParameters = {
         amount,
@@ -402,8 +405,8 @@ export interface PostDataParameters {
   buttonName: string
   address: string
   opReturn: OpReturnData
-  inputAddresses?: string[]
-  outputAddresses?: string[]
+  inputAddresses?: Array<{address: string, amount: Prisma.Decimal}>
+  outputAddresses?: Array<{address: string, amount: Prisma.Decimal}>
   value: string
 }
 

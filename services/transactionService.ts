@@ -41,7 +41,7 @@ export function getSimplifiedTransactions (transactionsToPersist: TransactionWit
   return simplifiedTransactions
 }
 
-export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices, inputAddresses?: string[], outputAddresses?: string[]): SimplifiedTransaction {
+export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices, inputAddresses?: Array<{address: string, amount: Prisma.Decimal}>, outputAddresses?: Array<{address: string, amount: Prisma.Decimal}>): SimplifiedTransaction {
   const {
     hash,
     amount,
