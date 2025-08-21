@@ -14,7 +14,7 @@ import {
   connectAllTransactionsToPrices,
   updatePaymentStatus
 } from './transactionService'
-import { Address, Prisma } from '@prisma/client'
+import { Address, Prisma, ClientPaymentStatus } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
 import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced, updateManyLastSynced } from './addressService'
@@ -29,7 +29,6 @@ import { appendTxsToFile } from 'prisma-local/seeds/transactions'
 import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
 import { syncPastDaysNewerPrices } from './priceService'
 import { AddressType } from 'ecashaddrjs/dist/types'
-import { ClientPaymentStatus } from 'redis/types'
 
 const decoder = new TextDecoder()
 
@@ -577,7 +576,7 @@ export class ChronikBlockchainClient {
         for (const addressWithTransaction of addressesWithTransactions) {
           const parsedOpReturn = parseOpReturnData(addressWithTransaction.transaction.opReturn ?? '')
           const paymentId = parsedOpReturn.paymentId
-          const newClientPaymentStatus = 'COMFIRMED' as ClientPaymentStatus
+          const newClientPaymentStatus = 'CONFIRMED' as ClientPaymentStatus
 
           await updatePaymentStatus(paymentId, newClientPaymentStatus)
         }
