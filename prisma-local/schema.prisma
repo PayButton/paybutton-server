@@ -22,6 +22,7 @@ model Address {
   syncing      Boolean                @default(false)
   paybuttons   AddressesOnButtons[]
   transactions Transaction[]
+  clientPaymentIds                     ClientPayment[]
 
   @@index([networkId], map: "Address_networkId_fkey")
 }
@@ -272,11 +273,18 @@ model Invoice {
   @@unique([transactionId, userId], map: "Invoice_transactionId_userId_unique_constraint")
 }
 
+enum ClientPaymentStatus {
+ PENDING
+ ADDED_TO_MEMPOOL
+ CONFIRMED
+}
+
 model ClientPayment {
   id                   String                 @id @default(dbgenerated("(uuid())"))
   paymentId            String                 @unique
-  status               String               
-  address              String
+  status               ClientPaymentStatus               
+  addressString        String
+  address              Address   @relation(fields: [addressString], references: [address])
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
 }

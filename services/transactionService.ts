@@ -1,5 +1,5 @@
 import prisma from 'prisma-local/clientInstance'
-import { Prisma, Transaction } from '@prisma/client'
+import { Prisma, Transaction, ClientPaymentStatus } from '@prisma/client'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT } from 'constants/index'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
 import { AllPrices, QuoteValues, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
@@ -8,8 +8,9 @@ import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTxWithInvoices } from 'redis/paymentCache'
-import { ButtonDisplayData, ClientPaymentStatus, Payment } from 'redis/types'
+import { ButtonDisplayData, Payment } from 'redis/types'
 import { v4 as uuidv4 } from 'uuid'
+import { getNetworkFromSlug } from './networkService'
 
 export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
   const ret: QuoteValues = {
@@ -980,10 +981,19 @@ export const generatePaymentId = async (address: string): Promise<string> => {
   const rawUUID = uuidv4()
   const cleanUUID = rawUUID.replace(/-/g, '')
   const status = 'PENDING' as ClientPaymentStatus
-
+  const prefix = address.split(':')[0].toLowerCase()
+  const network = await getNetworkFromSlug(prefix)
   const clientPayment = await prisma.clientPayment.create({
     data: {
-      address,
+      address: {
+        connectOrCreate: {
+          where: { address },
+          create: {
+            address,
+            networkId: network.id
+          }
+        }
+      },
       paymentId: cleanUUID,
       status
     }
