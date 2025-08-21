@@ -552,6 +552,16 @@ export class ChronikBlockchainClient {
     }
   }
 
+  private async updateClientPaymentStatusToConfirmed (addressesWithTransactions: AddressWithTransaction[]): Promise<void> {
+    for (const addressWithTransaction of addressesWithTransactions) {
+      const parsedOpReturn = parseOpReturnData(addressWithTransaction.transaction.opReturn ?? '')
+      const paymentId = parsedOpReturn.paymentId
+      const newClientPaymentStatus = 'CONFIRMED' as ClientPaymentStatus
+
+      await updatePaymentStatus(paymentId, newClientPaymentStatus)
+    }
+  }
+
   private async processWsMessage (msg: WsMsgClient): Promise<void> {
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
@@ -573,13 +583,7 @@ export class ChronikBlockchainClient {
       } else if (msg.msgType === 'TX_CONFIRMED') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
-        for (const addressWithTransaction of addressesWithTransactions) {
-          const parsedOpReturn = parseOpReturnData(addressWithTransaction.transaction.opReturn ?? '')
-          const paymentId = parsedOpReturn.paymentId
-          const newClientPaymentStatus = 'CONFIRMED' as ClientPaymentStatus
-
-          await updatePaymentStatus(paymentId, newClientPaymentStatus)
-        }
+        await this.updateClientPaymentStatusToConfirmed(addressesWithTransactions)
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
         if (this.isAlreadyBeingProcessed(msg.txid, false)) {
           return
