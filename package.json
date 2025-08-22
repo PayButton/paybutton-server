@@ -1,6 +1,6 @@
 {
   "name": "paybutton-server",
-  "version": "3.0.0",
+  "version": "4.2.0",
   "description": "The easiest way to accept eCash online",
   "author": "Blockchain Ventures Corp.",
   "repository": "https://github.com/PayButton/paybutton-server.git",
