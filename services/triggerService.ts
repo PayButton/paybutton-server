@@ -8,7 +8,7 @@ import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonServi
 import config from 'config'
 import { MAIL_FROM, MAIL_HTML_REPLACER, MAIL_SUBJECT, getMailerTransporter } from 'constants/mail'
 import { getTransactionValue } from './transactionService'
-import { runAsyncInBatches } from 'utils'
+import { runAsyncInBatches } from 'utils/index'
 
 // Include Paybutton.owner user inline so we don't refetch per trigger
 const triggerWithPaybuttonAndUserInclude = {
@@ -559,11 +559,13 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
 
   console.log(`[TRIGGER ${currency}]: executing posts with concurrency=${TRIGGER_POST_CONCURRENCY}`)
   await runAsyncInBatches(
+    `${currency} POST TRIGGERS`,
     postUserRunners.map(run => async () => { postResults.push(await run()) }),
     TRIGGER_POST_CONCURRENCY
   )
   console.log(`[TRIGGER ${currency}]: executing emails with concurrency=${TRIGGER_EMAIL_CONCURRENCY}`)
   await runAsyncInBatches(
+    `${currency} POST TRIGGERS`,
     emailUserRunners.map(run => async () => { emailResults.push(await run()) }),
     TRIGGER_EMAIL_CONCURRENCY
   )
