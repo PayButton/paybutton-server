@@ -295,126 +295,136 @@ export class ChronikBlockchainClient {
     addresses: Address[]
   ): AsyncGenerator<Prisma.TransactionUncheckedCreateInput[]> {
     // 1024 -> 7:10m
-    // 512 -> 7:34.175
-    // 256 -> 7:47.876
-    const addressConcurrency = INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY
-    const pageConcurrency = 1
-    const pfx = `${this.CHRONIK_MSG_PREFIX}[PARALLEL FETCHING]`
+    // 512  -> 7:34.175
+    // 256  -> 7:47.876
+    const pagesPerBurstPerAddress = 1 // pageConcurrency
+    const logPrefix = `${this.CHRONIK_MSG_PREFIX}[PARALLEL FETCHING]`
 
-    console.log(`${pfx}: Will fetch latest txs for ${addresses.length} addresses (addressConcurrency=${addressConcurrency}, pageConcurrency=${pageConcurrency}).`)
+    console.log(
+      `${logPrefix}: Will fetch latest txs for ${addresses.length} addresses ` +
+      `(addressConcurrency=${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY}, pageConcurrency=${pagesPerBurstPerAddress}).`
+    )
 
-    // Shared buffer; only the top-level generator yields.
-    let outBuffer: Prisma.TransactionUncheckedCreateInput[] = []
+    // Shared accumulation buffer — emitted only at the top-level generator yields
+    let transactionsToEmitBuffer: Prisma.TransactionUncheckedCreateInput[] = []
 
-    for (let i = 0; i < addresses.length; i += addressConcurrency) {
-      const slice = addresses.slice(i, i + addressConcurrency)
-      console.log(`${pfx}: starting chronik fetching for ${slice.length} addresses...`)
+    for (let i = 0; i < addresses.length; i += INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY) {
+      const addressBatchSlice = addresses.slice(i, i + INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY)
+      console.log(`${logPrefix}: starting chronik fetching for ${addressBatchSlice.length} addresses...`)
 
-      const jobs = slice.map(async (addr) => {
-        const addrPfx = `${pfx} > ${addr.address}:`
-        const lastSync = this.getLastSyncTs(addr)
-        const thresholdFilter = this.txThesholdFilter(addr)
+      const perAddressWorkers = addressBatchSlice.map(async (address) => {
+        const addrLogPrefix = `${logPrefix} > ${address.address}:`
+        const lastSyncedTimestampSeconds = this.getLastSyncTs(address)
+        const txThresholdFilter = this.txThesholdFilter(address)
 
-        let basePage = 0
-        let stop = false
+        let nextBurstBasePageIndex = 0
+        let hasReachedStoppingCondition = false
 
-        while (!stop) {
-          const pages = Array.from({ length: pageConcurrency }, (_, k) => basePage + k)
+        while (!hasReachedStoppingCondition) {
+          const pageIndicesInBurst = Array.from(
+            { length: pagesPerBurstPerAddress },
+            (_, k) => nextBurstBasePageIndex + k
+          )
 
-          // Fetch a burst of pages in parallel; swallow per-page errors so one bad page doesn't kill the address.
-          const results = await Promise.all(
-            pages.map(async (pg) => {
+          // Fetch one "burst" of pages for this address in parallel.
+          // Swallow individual page errors so one failing page doesn't cancel the address worker.
+          const burstFetchResults = await Promise.all(
+            pageIndicesInBurst.map(async (pageIndex) => {
               try {
-                const value = await this.getPaginatedTxs(addr.address, pg, FETCH_N)
-                return { page: pg, value }
+                const value = await this.getPaginatedTxs(address.address, pageIndex, FETCH_N)
+                return { page: pageIndex, value }
               } catch (err: any) {
-                console.warn(`${addrPfx} page=${pg} failed: ${err?.message as string ?? err as string}`)
-                return { page: pg, value: [] as any[] }
+                console.warn(`${addrLogPrefix} page=${pageIndex} failed: ${err?.message as string ?? err as string}`)
+                return { page: pageIndex, value: [] as any[] }
               }
             })
           )
 
-          // Consider only non-empty pages for timestamp logic.
-          const nonEmpty = results.filter(r => r.value.length > 0)
-          if (nonEmpty.length === 0) {
-            console.log(`${addrPfx} EMPTY ADDRESS`)
-            break // nothing in this burst -> we’re done with this address
+          // Only consider non-empty pages for timestamp bounds and processing.
+          const nonEmptyPageResults = burstFetchResults.filter(r => r.value.length > 0)
+          if (nonEmptyPageResults.length === 0) {
+            console.log(`${addrLogPrefix} EMPTY ADDRESS`)
+            break // nothing in this burst -> done with this address
           }
 
-          // Burst-level timestamp bounds
-          const newestAcross = Math.max(
-            ...nonEmpty.map(r => Number(r.value[0].block?.timestamp ?? r.value[0].timeFirstSeen))
+          // Determine burst-level timestamp bounds
+          const newestTimestampAcrossBurst = Math.max(
+            ...nonEmptyPageResults.map(r => Number(r.value[0].block?.timestamp ?? r.value[0].timeFirstSeen))
           )
-          const oldestAcross = Math.min(
-            ...nonEmpty.map(r => {
-              const v = r.value
-              const last = v[v.length - 1]
-              return Number(last.block?.timestamp ?? last.timeFirstSeen)
+          const oldestTimestampAcrossBurst = Math.min(
+            ...nonEmptyPageResults.map(r => {
+              const pageTxs = r.value
+              const lastTx = pageTxs[pageTxs.length - 1]
+              return Number(lastTx.block?.timestamp ?? lastTx.timeFirstSeen)
             })
           )
 
-          // If even the newest across the burst is older than lastSync, we’re done.
-          if (newestAcross < lastSync) {
-            console.log(`${addrPfx} NO NEW TXS`)
+          // If the newest tx across the entire burst is older than our last sync, we can quit immediately.
+          if (newestTimestampAcrossBurst < lastSyncedTimestampSeconds) {
+            console.log(`${addrLogPrefix} NO NEW TXS`)
             break
           }
 
-          // Process pages in order; keep mempool and confirmed >= lastSync.
-          let keptThisBurst = 0
-          for (const r of nonEmpty.sort((a, b) => a.page - b.page)) {
-            const raw = r.value
+          // Process each non-empty page in ascending page order.
+          let keptTransactionsInBurstCount = 0
+          for (const pageResult of nonEmptyPageResults.sort((a, b) => a.page - b.page)) {
+            const pageTxs = pageResult.value
 
-            const filtered = raw
-              .filter(thresholdFilter)
-              .filter(t => t.block === undefined || t.block.timestamp >= lastSync)
+            const filteredTxs = pageTxs
+              .filter(txThresholdFilter)
+              .filter(t => t.block === undefined || t.block.timestamp >= lastSyncedTimestampSeconds)
 
-            if (filtered.length > 0) {
-              const toCreate = await Promise.all(
-                filtered.map(async t => await this.getTransactionFromChronikTransaction(t, addr))
+            if (filteredTxs.length > 0) {
+              const txRowsToCreate = await Promise.all(
+                filteredTxs.map(async t => await this.getTransactionFromChronikTransaction(t, address))
               )
-              outBuffer.push(...toCreate)
-              keptThisBurst += toCreate.length
+              transactionsToEmitBuffer.push(...txRowsToCreate)
+              keptTransactionsInBurstCount += txRowsToCreate.length
             }
 
-            // If this page’s oldest is older than lastSync, we can stop after this page.
-            const oldestTs = Number(
-              raw[raw.length - 1].block?.timestamp ?? raw[raw.length - 1].timeFirstSeen
+            // If this page’s oldest tx is already older than our last sync, we can stop after the burst.
+            const oldestTimestampInPage = Number(
+              pageTxs[pageTxs.length - 1].block?.timestamp ?? pageTxs[pageTxs.length - 1].timeFirstSeen
             )
-            if (oldestTs < lastSync) {
-              stop = true
-              // continue loop so we can log & advance basePage consistently
+            if (oldestTimestampInPage < lastSyncedTimestampSeconds) {
+              hasReachedStoppingCondition = true
+              // continue the for-loop to finish logging consistently
             }
           }
 
-          console.log(`${addrPfx} ${keptThisBurst} new txs...`)
+          console.log(`${addrLogPrefix} ${keptTransactionsInBurstCount} new txs...`)
 
-          basePage += pageConcurrency
+          nextBurstBasePageIndex += pagesPerBurstPerAddress
 
-          // Optional fast-stop if entire burst yielded nothing and the oldestAcross is older than lastSync.
-          if (keptThisBurst === 0 && oldestAcross < lastSync) {
-            stop = true
+          // Fast-stop: if we kept nothing in this burst and the burst’s oldest is older than lastSync, we’re done.
+          if (keptTransactionsInBurstCount === 0 && oldestTimestampAcrossBurst < lastSyncedTimestampSeconds) {
+            hasReachedStoppingCondition = true
           }
         }
       })
 
-      // Wait the slice; keep going even if some worker throws.
-      await Promise.all(jobs.map(async j => await j.catch(err => {
-        console.error(`${pfx}: address job failed: ${err?.message as string ?? err as tring}`)
-      })))
+      // Wait for this slice of address workers; continue even if some workers throw.
+      await Promise.all(
+        perAddressWorkers.map(async worker =>
+          await worker.catch(err => {
+            console.error(`${logPrefix}: address job failed: ${err?.message as string ?? err as string}`)
+          })
+        )
+      )
 
-      // Emit as many full chunks as we have after this slice
-      while (outBuffer.length >= TX_EMIT_BATCH_SIZE) {
-        const emit = outBuffer.slice(0, TX_EMIT_BATCH_SIZE)
-        outBuffer = outBuffer.slice(TX_EMIT_BATCH_SIZE)
-        yield emit
+      // Emit any full chunks we’ve accumulated after this slice
+      while (transactionsToEmitBuffer.length >= TX_EMIT_BATCH_SIZE) {
+        const emitChunk = transactionsToEmitBuffer.slice(0, TX_EMIT_BATCH_SIZE)
+        transactionsToEmitBuffer = transactionsToEmitBuffer.slice(TX_EMIT_BATCH_SIZE)
+        yield emitChunk
       }
     }
 
     // Final flush
-    if (outBuffer.length > 0) {
-      const emit = outBuffer
-      outBuffer = []
-      yield emit
+    if (transactionsToEmitBuffer.length > 0) {
+      const remaining = transactionsToEmitBuffer
+      transactionsToEmitBuffer = []
+      yield remaining
     }
   }
 
