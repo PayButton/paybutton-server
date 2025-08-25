@@ -285,7 +285,7 @@ export const FETCH_N_TIMEOUT = 120000
 export const FETCH_DELAY = 100
 /* END: WIP RENAME ALL THOSE */
 
-export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 10_000
+export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 512
 export const TX_EMIT_BATCH_SIZE = 10_000 // for our generator, not chronik
 export const DB_COMMIT_BATCH_SIZE = 10_000 // tamanho dos lotes para commit no DB
 
