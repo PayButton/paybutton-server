@@ -288,64 +288,121 @@ export class ChronikBlockchainClient {
     return (await this.chronik.script(type, hash160).history(page, pageSize)).txs
   }
 
+  // For each address, fetch PAGE_CONCURRENCY pages in parallel (“burst”),
+  // then use the burst’s newest/oldest timestamps to decide whether to continue.
+  // Yields happen only in the generator body (after each slice finishes, and at final flush).
   private async * fetchLatestTxsForAddresses (
     addresses: Address[]
   ): AsyncGenerator<Prisma.TransactionUncheckedCreateInput[]> {
-    const targets = addresses.filter(a => a.networkId === this.networkId)
+    // 1024 -> 7:10m
+    // 512 -> 7:34.175
+    // 256 -> 7:47.876
+    const addressConcurrency = INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY
+    const pageConcurrency = 1
+    const pfx = `${this.CHRONIK_MSG_PREFIX}[PARALLEL FETCHING]`
 
-    let i = 0
-    const batchSize = INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY
+    console.log(`${pfx}: Will fetch latest txs for ${addresses.length} addresses (addressConcurrency=${addressConcurrency}, pageConcurrency=${pageConcurrency}).`)
 
-    // shared buffer filled by parallel jobs; yielded by the generator after each slice finishes
+    // Shared buffer; only the top-level generator yields.
     let outBuffer: Prisma.TransactionUncheckedCreateInput[] = []
 
-    while (i < targets.length) {
-      const slice = targets.slice(i, i + batchSize)
-      i += batchSize
+    for (let i = 0; i < addresses.length; i += addressConcurrency) {
+      const slice = addresses.slice(i, i + addressConcurrency)
+      console.log(`${pfx}: starting chronik fetching for ${slice.length} addresses...`)
 
       const jobs = slice.map(async (addr) => {
+        const addrPfx = `${pfx} > ${addr.address}:`
         const lastSync = this.getLastSyncTs(addr)
-        let page = 0
-        const pageSize = FETCH_N // 200 (Chronik per-address limit)
+        const thresholdFilter = this.txThesholdFilter(addr)
 
+        let basePage = 0
         let stop = false
+
         while (!stop) {
-          let txs = await this.getPaginatedTxs(addr.address, page, pageSize)
+          const pages = Array.from({ length: pageConcurrency }, (_, k) => basePage + k)
 
-          txs = txs.filter(this.txThesholdFilter(addr))
-          if (txs.length === 0) break
+          // Fetch a burst of pages in parallel; swallow per-page errors so one bad page doesn't kill the address.
+          const results = await Promise.all(
+            pages.map(async (pg) => {
+              try {
+                const value = await this.getPaginatedTxs(addr.address, pg, FETCH_N)
+                return { page: pg, value }
+              } catch (err: any) {
+                console.warn(`${addrPfx} page=${pg} failed: ${err?.message as string ?? err as string}`)
+                return { page: pg, value: [] as any[] }
+              }
+            })
+          )
 
-          const newestTs = Number(txs[0].block?.timestamp ?? txs[0].timeFirstSeen)
-          const oldestTs = Number(txs[txs.length - 1].block?.timestamp ?? txs[txs.length - 1].timeFirstSeen)
-          if (newestTs < lastSync) break
-
-          // keep all unconfirmed; keep confirmed only with ts >= lastSync
-          const txsToKeep = txs.filter(t => {
-            if (t.block === undefined) return true // always include mempool
-            return t.block.timestamp >= lastSync
-          })
-
-          if (txsToKeep.length > 0) {
-            const toCreate = await Promise.all(
-              txsToKeep.map(async (t) => await this.getTransactionFromChronikTransaction(t, addr))
-            )
-            // push into shared buffer; yielding happens outside after all jobs of this slice finish
-            outBuffer.push(...toCreate)
+          // Consider only non-empty pages for timestamp logic.
+          const nonEmpty = results.filter(r => r.value.length > 0)
+          if (nonEmpty.length === 0) {
+            console.log(`${addrPfx} EMPTY ADDRESS`)
+            break // nothing in this burst -> we’re done with this address
           }
 
-          // stop this address if the oldest tx in page is already < lastSync
-          if (oldestTs < lastSync) {
+          // Burst-level timestamp bounds
+          const newestAcross = Math.max(
+            ...nonEmpty.map(r => Number(r.value[0].block?.timestamp ?? r.value[0].timeFirstSeen))
+          )
+          const oldestAcross = Math.min(
+            ...nonEmpty.map(r => {
+              const v = r.value
+              const last = v[v.length - 1]
+              return Number(last.block?.timestamp ?? last.timeFirstSeen)
+            })
+          )
+
+          // If even the newest across the burst is older than lastSync, we’re done.
+          if (newestAcross < lastSync) {
+            console.log(`${addrPfx} NO NEW TXS`)
+            break
+          }
+
+          // Process pages in order; keep mempool and confirmed >= lastSync.
+          let keptThisBurst = 0
+          for (const r of nonEmpty.sort((a, b) => a.page - b.page)) {
+            const raw = r.value
+
+            const filtered = raw
+              .filter(thresholdFilter)
+              .filter(t => t.block === undefined || t.block.timestamp >= lastSync)
+
+            if (filtered.length > 0) {
+              const toCreate = await Promise.all(
+                filtered.map(async t => await this.getTransactionFromChronikTransaction(t, addr))
+              )
+              outBuffer.push(...toCreate)
+              keptThisBurst += toCreate.length
+            }
+
+            // If this page’s oldest is older than lastSync, we can stop after this page.
+            const oldestTs = Number(
+              raw[raw.length - 1].block?.timestamp ?? raw[raw.length - 1].timeFirstSeen
+            )
+            if (oldestTs < lastSync) {
+              stop = true
+              // continue loop so we can log & advance basePage consistently
+            }
+          }
+
+          console.log(`${addrPfx} ${keptThisBurst} new txs...`)
+
+          basePage += pageConcurrency
+
+          // Optional fast-stop if entire burst yielded nothing and the oldestAcross is older than lastSync.
+          if (keptThisBurst === 0 && oldestAcross < lastSync) {
             stop = true
-          } else {
-            page += 1
           }
         }
       })
 
-      // wait all addresses in this slice; then yield buffer in chunks
-      await Promise.all(jobs)
+      // Wait the slice; keep going even if some worker throws.
+      await Promise.all(jobs.map(async j => await j.catch(err => {
+        console.error(`${pfx}: address job failed: ${err?.message as string ?? err as tring}`)
+      })))
 
-      // yield as many full chunks as we have
+      // Emit as many full chunks as we have after this slice
       while (outBuffer.length >= TX_EMIT_BATCH_SIZE) {
         const emit = outBuffer.slice(0, TX_EMIT_BATCH_SIZE)
         outBuffer = outBuffer.slice(TX_EMIT_BATCH_SIZE)
@@ -353,7 +410,7 @@ export class ChronikBlockchainClient {
       }
     }
 
-    // final flush
+    // Final flush
     if (outBuffer.length > 0) {
       const emit = outBuffer
       outBuffer = []
@@ -646,14 +703,12 @@ export class ChronikBlockchainClient {
     const successfulAddressesWithCount: KeyValueT<number> = {}
     const productionAddressesIds = productionAddresses.filter(a => a.networkId === this.networkId).map(a => a.id)
 
-    // filter by this client network and set syncing in batch
-    addresses = addresses.filter(a => a.networkId === this.networkId)
     if (addresses.length === 0) {
       return { failedAddressesWithErrors, successfulAddressesWithCount }
     }
 
-    console.log(`${this.CHRONIK_MSG_PREFIX} (PARALLEL) Syncing ${addresses.length} addresses...`)
-    console.time(`${this.CHRONIK_MSG_PREFIX} address syncing`)
+    console.log(`${this.CHRONIK_MSG_PREFIX} Syncing ${addresses.length} addresses...`)
+    console.time(`${this.CHRONIK_MSG_PREFIX} syncAddresses`)
     await setSyncingBatch(addresses.map(a => a.address), true)
 
     // per-address counters
@@ -664,10 +719,11 @@ export class ChronikBlockchainClient {
     let toCommit: Prisma.TransactionUncheckedCreateInput[] = []
 
     try {
+      const pfx = `${this.CHRONIK_MSG_PREFIX}[PARALLEL FETCHING]`
       // consume generator: it yields batches of prepared txs
-      console.log(`${this.CHRONIK_MSG_PREFIX} (PARALLEL) will fetch batches of ${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY} txs from chronik`)
+      console.log(`${pfx} will fetch batches of ${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY} txs from chronik`)
       for await (const batch of this.fetchLatestTxsForAddresses(addresses)) {
-        console.log(`${this.CHRONIK_MSG_PREFIX} (PARALLEL) fetched first batch of ${batch.length} tx from chronik`)
+        console.log(`${pfx} fetched batch of ${batch.length} tx from chronik`)
         // count per address before committing
         for (const tx of batch) {
           perAddrCount.set(tx.addressId, (perAddrCount.get(tx.addressId) ?? 0) + 1)
@@ -677,6 +733,7 @@ export class ChronikBlockchainClient {
         if (toCommit.length >= DB_COMMIT_BATCH_SIZE) {
           console.log(`${this.CHRONIK_MSG_PREFIX} committing batch to DB — txs=${toCommit.length}`)
           const created = await createManyTransactions(toCommit)
+          await setSyncingBatch(addresses.map(a => a.address), false)
           console.log(`${this.CHRONIK_MSG_PREFIX} committed — created=${created.length}`)
           toCommit = []
 
@@ -741,14 +798,12 @@ export class ChronikBlockchainClient {
           failedAddressesWithErrors[a.address] = err.stack ?? String(err)
         }
       })
-    } finally {
-      await setSyncingBatch(addresses.map(a => a.address), false)
     }
 
     const failed = Object.keys(failedAddressesWithErrors)
     const total = Object.values(successfulAddressesWithCount).reduce((p, c) => p + c, 0)
     console.log(`${this.CHRONIK_MSG_PREFIX} (PARALLEL) Finished syncing ${total} txs for ${addresses.length} addresses with ${failed.length} errors.`)
-    console.timeEnd(`${this.CHRONIK_MSG_PREFIX} address syncing`)
+    console.timeEnd(`${this.CHRONIK_MSG_PREFIX} syncAddresses`)
     if (failed.length > 0) {
       console.log(`${this.CHRONIK_MSG_PREFIX} Failed addresses were:\n- ${Object.entries(failedAddressesWithErrors).map(([k, v]) => `${k}: ${v}`).join('\n- ')}`)
     }
@@ -763,9 +818,10 @@ export class ChronikBlockchainClient {
       Object.keys(failedAddressesWithErrors).forEach((addr) => {
         console.error(`${this.CHRONIK_MSG_PREFIX}: When syncing missing addresses for address ${addr} encountered error: ${failedAddressesWithErrors[addr]}`)
       })
+      console.log(`${this.CHRONIK_MSG_PREFIX}: Missed txs successfully synced per address:`)
       Object.keys(successfulAddressesWithCount).forEach((addr) => {
         if (successfulAddressesWithCount[addr] > 0) {
-          console.log(`${this.CHRONIK_MSG_PREFIX}: Successful synced ${successfulAddressesWithCount[addr]} missed txs for ${addr}.`)
+          console.log(`${this.CHRONIK_MSG_PREFIX}:> ${addr} — ${successfulAddressesWithCount[addr]}.`)
         }
       })
     } catch (err: any) {
@@ -964,7 +1020,8 @@ class MultiBlockchainClient {
     let successfulAddressesWithCount: KeyValueT<number> = {}
 
     for (const networkSlug of Object.keys(this.clients)) {
-      const ret = await this.clients[networkSlug as MainNetworkSlugsType].syncAddresses(addresses, runTriggers)
+      const thisNetworkAddresses = addresses.filter(a => a.networkId === NETWORK_IDS_FROM_SLUGS[networkSlug])
+      const ret = await this.clients[networkSlug as MainNetworkSlugsType].syncAddresses(thisNetworkAddresses, runTriggers)
       failedAddressesWithErrors = { ...failedAddressesWithErrors, ...ret.failedAddressesWithErrors }
       successfulAddressesWithCount = { ...successfulAddressesWithCount, ...ret.successfulAddressesWithCount }
     }
