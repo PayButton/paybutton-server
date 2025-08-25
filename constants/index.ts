@@ -276,14 +276,7 @@ export const MEMPOOL_PROCESS_DELAY = 100
 /* WIP RENAME ALL THOSE */
 // When fetching some address transactions, number of transactions to fetch at a time.
 // On chronik, the max allowed is 200
-export const FETCH_N = 200
-
-// When fetching the FETCH_N transactions, max time (in ms) to wait to upsert them.
-export const FETCH_N_TIMEOUT = 120000
-
-// When fetching some address transactions, delay (in ms) between each fetch.
-export const FETCH_DELAY = 100
-/* END: WIP RENAME ALL THOSE */
+export const CHRONIK_FETCH_N_TXS_PER_PAGE = 200
 
 export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 512
 export const TX_EMIT_BATCH_SIZE = 10_000 // for our generator, not chronik
