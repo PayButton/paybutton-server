@@ -274,16 +274,16 @@ async function fetchTriggersGroupedByAddress (addresses: string[]): Promise<Map<
     include: triggerWithPaybuttonAndUserInclude
   })
 
-  const byAddr = new Map<string, TriggerWithPaybuttonAndUser[]>()
+  const triggersByAddress = new Map<string, TriggerWithPaybuttonAndUser[]>()
   for (const t of triggers as TriggerWithPaybuttonAndUser[]) {
     for (const conn of t.paybutton.addresses) {
       const addr = conn.address.address
-      const arr = byAddr.get(addr) ?? []
+      const arr = triggersByAddress.get(addr) ?? []
       arr.push(t)
-      byAddr.set(addr, arr)
+      triggersByAddress.set(addr, arr)
     }
   }
-  return byAddr
+  return triggersByAddress
 }
 
 function buildPostParams (
@@ -391,7 +391,7 @@ async function persistLogsAndDecrements (
     }
   }
 
-  // 2) Then try credits in a separate transaction
+  // 2) try credits in a separate transaction
   const userIds = Array.from(new Set([
     ...Object.keys(acceptedEmailPerUser),
     ...Object.keys(acceptedPostsPerUser)
@@ -410,16 +410,25 @@ async function persistLogsAndDecrements (
       for (const id of userIds) {
         const row = byId.get(id)
         if (row == null) continue
-        const reqEmail = acceptedEmailPerUser[id] ?? 0
-        const reqPost = acceptedPostsPerUser[id] ?? 0
-        const decEmail = Math.min(Math.max(reqEmail, 0), row.emailCredits ?? 0)
-        const decPost = Math.min(Math.max(reqPost, 0), row.postCredits ?? 0)
-        if (decEmail > 0 || decPost > 0) {
+        const requestedEmailCredits = acceptedEmailPerUser[id] ?? 0
+        const requestedPostCredits = acceptedPostsPerUser[id] ?? 0
+
+        // Clamp to [0, availableCredits]
+        const emailCreditsToDecrement = Math.min(
+          Math.max(requestedEmailCredits, 0),
+          row.emailCredits ?? 0
+        )
+
+        const postCreditsToDecrement = Math.min(
+          Math.max(requestedPostCredits, 0),
+          row.postCredits ?? 0
+        )
+        if (emailCreditsToDecrement > 0 || postCreditsToDecrement > 0) {
           updates.push(tx.userProfile.update({
             where: { id },
             data: {
-              ...(decEmail > 0 ? { emailCredits: { decrement: decEmail } } : {}),
-              ...(decPost > 0 ? { postCredits: { decrement: decPost } } : {})
+              ...(emailCreditsToDecrement > 0 ? { emailCredits: { decrement: emailCreditsToDecrement } } : {}),
+              ...(postCreditsToDecrement > 0 ? { postCredits: { decrement: postCreditsToDecrement } } : {})
             }
           }))
         }
@@ -428,7 +437,7 @@ async function persistLogsAndDecrements (
     })
   } catch (e: any) {
     console.error(`[TRIGGER]: credit decrement tx failed: ${e?.message as string ?? e as string}`)
-    // logs already written; we don’t rollback them
+    // logs already written;
   }
 }
 
@@ -466,10 +475,10 @@ function appendOutOfCreditsLogs (
   queue: TriggerTask[],
   startIndex: number,
   logs: Prisma.TriggerLogCreateManyInput[],
-  kind: 'PostData' | 'SendEmail'
+  triggerType: 'PostData' | 'SendEmail'
 ): void {
   const msg =
-    kind === 'PostData'
+    triggerType === 'PostData'
       ? RESPONSE_MESSAGES.USER_OUT_OF_POST_CREDITS_400.message
       : RESPONSE_MESSAGES.USER_OUT_OF_EMAIL_CREDITS_400.message
 
@@ -477,9 +486,9 @@ function appendOutOfCreditsLogs (
     logs.push({
       triggerId: queue[i].triggerId,
       isError: true,
-      actionType: kind,
+      actionType: triggerType,
       data: JSON.stringify({
-        errorName: kind === 'PostData' ? 'USER_OUT_OF_POST_CREDITS' : 'USER_OUT_OF_EMAIL_CREDITS',
+        errorName: triggerType === 'PostData' ? 'USER_OUT_OF_POST_CREDITS' : 'USER_OUT_OF_EMAIL_CREDITS',
         errorMessage: msg,
         errorStack: ''
       })
@@ -489,7 +498,7 @@ function appendOutOfCreditsLogs (
 
 export async function executeTriggersBatch (broadcasts: BroadcastTxData[], networkId: number): Promise<void> {
   if (process.env.DONT_EXECUTE_TRIGGERS === 'true') {
-    console.log(`DONT_EXECUTE_TRIGGERS in env, skipping batch execution of triggers ${broadcasts.length}`)
+    console.log(`DONT_EXECUTE_TRIGGERS in env, skipping batch execution of ${broadcasts.length} triggers`)
     return
   }
 
@@ -509,7 +518,7 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   const logs: Prisma.TriggerLogCreateManyInput[] = []
 
   // Build queues
-  console.log(`[TRIGGER ${currency}]: preparing batch — txItems=${txItems.length} addresses=${uniqueAddresses.length}`)
+  console.log(`[TRIGGER ${currency}]: preparing batch — txs=${txItems.length} addresses=${uniqueAddresses.length}`)
 
   for (const { address, tx } of txItems) {
     const triggers = triggersByAddress.get(address) ?? []
@@ -583,7 +592,7 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
     }
   }
 
-  // Build accepted maps for decrements (charge only accepted)
+  // count accepted triggers for decrements (charge only accepted)
   const postsAcceptedByUser = Object.fromEntries(postResults.map(r => [r.userId, r.accepted]))
   const emailsAcceptedByUser = Object.fromEntries(emailResults.map(r => [r.userId, r.accepted]))
 

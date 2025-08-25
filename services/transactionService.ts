@@ -404,7 +404,7 @@ async function createPriceTxConnectionInChunks (
     const slice = rows.slice(i, i + PRICES_CONNECTION_BATCH_SIZE)
     await client.pricesOnTransactions.createMany({
       data: slice,
-      skipDuplicates: true // respects unique(priceId, transactionId); safe like upsert
+      skipDuplicates: true
     })
   }
   console.log('[PRICES] Inserted all price links.')
@@ -428,7 +428,7 @@ export async function connectTransactionsListToPrices (txList: Transaction[]): P
 
   console.log(`[PRICES] Preparing to connect ${txList.length} txs to prices...`)
 
-  // Collect unique (networkId -> Set<flattenedTimestamp>)
+  // collect UNIQUE (networkId, timestamp) pairs
   const networkIdToTimestamps = new Map<number, Set<number>>()
   await Promise.all(txList.map(async (t) => {
     const networkId = await getTransactionNetworkId(t)
@@ -438,13 +438,13 @@ export async function connectTransactionsListToPrices (txList: Transaction[]): P
     networkIdToTimestamps.set(networkId, set)
   }))
 
-  // Fetch AllPrices for each unique (networkId, ts)
+  // fetch AllPrices for each unique (networkId, timestamp)
   const timestampToPrice: Record<number, AllPrices> = {}
   let pairs = 0
-  for (const [networkId, stamps] of networkIdToTimestamps.entries()) {
-    for (const ts of stamps) {
+  for (const [networkId, timestamps] of networkIdToTimestamps.entries()) {
+    for (const ts of timestamps) {
       pairs++
-      // outside any ITX; fine to run in parallel-ish
+      // not parallel
       const allPrices = await fetchPricesForNetworkAndTimestamp(networkId, ts, prisma)
       timestampToPrice[ts] = allPrices
     }
@@ -460,7 +460,6 @@ export async function connectTransactionsListToPrices (txList: Transaction[]): P
   }
   console.log(`[PRICES] Built ${rows.length} price links (2 per tx).`)
 
-  // One deleteMany + chunked createMany inside a single interactive tx
   await prisma.$transaction(async (tx) => {
     console.log(`[PRICES] Disconnecting existing price links for ${txList.length} txs...`)
     await tx.pricesOnTransactions.deleteMany({

@@ -288,24 +288,21 @@ export class ChronikBlockchainClient {
     return (await this.chronik.script(type, hash160).history(page, pageSize)).txs
   }
 
-  // For each address, fetch PAGE_CONCURRENCY pages in parallel (“burst”),
-  // then use the burst’s newest/oldest timestamps to decide whether to continue.
-  // Yields happen only in the generator body (after each slice finishes, and at final flush).
+  /*
+   * For each address, fetch PAGE_CONCURRENCY pages in parallel (“burst”),
+   * then use the burst’s newest/oldest timestamps to decide whether to continue.
+   * Yields happen only in the generator body (after each slice finishes, and at final flush).
+  */
   private async * fetchLatestTxsForAddresses (
     addresses: Address[]
   ): AsyncGenerator<Prisma.TransactionUncheckedCreateInput[]> {
-    // 1024 -> 7:10m
-    // 512  -> 7:34.175
-    // 256  -> 7:47.876
-    const pagesPerBurstPerAddress = 1 // pageConcurrency
     const logPrefix = `${this.CHRONIK_MSG_PREFIX}[PARALLEL FETCHING]`
 
     console.log(
       `${logPrefix}: Will fetch latest txs for ${addresses.length} addresses ` +
-      `(addressConcurrency=${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY}, pageConcurrency=${pagesPerBurstPerAddress}).`
+      `(addressConcurrency=${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY}, pageConcurrency=1).`
     )
 
-    // Shared accumulation buffer — emitted only at the top-level generator yields
     let transactionsToEmitBuffer: Prisma.TransactionUncheckedCreateInput[] = []
 
     for (let i = 0; i < addresses.length; i += INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY) {
@@ -321,82 +318,59 @@ export class ChronikBlockchainClient {
         let hasReachedStoppingCondition = false
 
         while (!hasReachedStoppingCondition) {
-          const pageIndicesInBurst = Array.from(
-            { length: pagesPerBurstPerAddress },
-            (_, k) => nextBurstBasePageIndex + k
-          )
+          const pageIndex = nextBurstBasePageIndex
 
-          // Fetch one "burst" of pages for this address in parallel.
-          // Swallow individual page errors so one failing page doesn't cancel the address worker.
-          const burstFetchResults = await Promise.all(
-            pageIndicesInBurst.map(async (pageIndex) => {
-              try {
-                const value = await this.getPaginatedTxs(address.address, pageIndex, CHRONIK_FETCH_N_TXS_PER_PAGE)
-                return { page: pageIndex, value }
-              } catch (err: any) {
-                console.warn(`${addrLogPrefix} page=${pageIndex} failed: ${err?.message as string ?? err as string}`)
-                return { page: pageIndex, value: [] as any[] }
-              }
-            })
-          )
-
-          // Only consider non-empty pages for timestamp bounds and processing.
-          const nonEmptyPageResults = burstFetchResults.filter(r => r.value.length > 0)
-          if (nonEmptyPageResults.length === 0) {
-            console.log(`${addrLogPrefix} EMPTY ADDRESS`)
-            break // nothing in this burst -> done with this address
+          // Fetch the single page for this burst; swallow page errors.
+          let pageTxs: any[] = []
+          try {
+            pageTxs = await this.getPaginatedTxs(address.address, pageIndex, CHRONIK_FETCH_N_TXS_PER_PAGE)
+          } catch (err: any) {
+            console.warn(`${addrLogPrefix} page=${pageIndex} failed: ${err?.message as string ?? err as string}`)
+            pageTxs = []
           }
 
-          // Determine burst-level timestamp bounds
-          const newestTimestampAcrossBurst = Math.max(
-            ...nonEmptyPageResults.map(r => Number(r.value[0].block?.timestamp ?? r.value[0].timeFirstSeen))
-          )
-          const oldestTimestampAcrossBurst = Math.min(
-            ...nonEmptyPageResults.map(r => {
-              const pageTxs = r.value
-              const lastTx = pageTxs[pageTxs.length - 1]
-              return Number(lastTx.block?.timestamp ?? lastTx.timeFirstSeen)
-            })
-          )
+          // If the page is empty, treat as "EMPTY ADDRESS" and stop.
+          if (pageTxs.length === 0) {
+            console.log(`${addrLogPrefix} EMPTY ADDRESS`)
+            break
+          }
 
-          // If the newest tx across the entire burst is older than our last sync, we can quit immediately.
+          // Burst-level bounds collapse to this single page
+          const newestTimestampAcrossBurst = Number(pageTxs[0].block?.timestamp ?? pageTxs[0].timeFirstSeen)
+          const lastTxInPage = pageTxs[pageTxs.length - 1]
+          const oldestTimestampAcrossBurst = Number(lastTxInPage.block?.timestamp ?? lastTxInPage.timeFirstSeen)
+
+          // If even the newest is older than lastSync, stop.
           if (newestTimestampAcrossBurst < lastSyncedTimestampSeconds) {
             console.log(`${addrLogPrefix} NO NEW TXS`)
             break
           }
 
-          // Process each non-empty page in ascending page order.
+          // Process this page
           let keptTransactionsInBurstCount = 0
-          for (const pageResult of nonEmptyPageResults.sort((a, b) => a.page - b.page)) {
-            const pageTxs = pageResult.value
 
-            const filteredTxs = pageTxs
-              .filter(txThresholdFilter)
-              .filter(t => t.block === undefined || t.block.timestamp >= lastSyncedTimestampSeconds)
+          const filteredTxs = pageTxs
+            .filter(txThresholdFilter)
+            .filter(t => t.block === undefined || t.block.timestamp >= lastSyncedTimestampSeconds)
 
-            if (filteredTxs.length > 0) {
-              const txRowsToCreate = await Promise.all(
-                filteredTxs.map(async t => await this.getTransactionFromChronikTransaction(t, address))
-              )
-              transactionsToEmitBuffer.push(...txRowsToCreate)
-              keptTransactionsInBurstCount += txRowsToCreate.length
-            }
-
-            // If this page’s oldest tx is already older than our last sync, we can stop after the burst.
-            const oldestTimestampInPage = Number(
-              pageTxs[pageTxs.length - 1].block?.timestamp ?? pageTxs[pageTxs.length - 1].timeFirstSeen
+          if (filteredTxs.length > 0) {
+            const txRowsToCreate = await Promise.all(
+              filteredTxs.map(async t => await this.getTransactionFromChronikTransaction(t, address))
             )
-            if (oldestTimestampInPage < lastSyncedTimestampSeconds) {
-              hasReachedStoppingCondition = true
-              // continue the for-loop to finish logging consistently
-            }
+            transactionsToEmitBuffer.push(...txRowsToCreate)
+            keptTransactionsInBurstCount += txRowsToCreate.length
+          }
+
+          // If the page’s oldest tx is older than lastSync, stop after this burst.
+          const oldestTimestampInPage = oldestTimestampAcrossBurst
+          if (oldestTimestampInPage < lastSyncedTimestampSeconds) {
+            hasReachedStoppingCondition = true
           }
 
           console.log(`${addrLogPrefix} ${keptTransactionsInBurstCount} new txs...`)
 
-          nextBurstBasePageIndex += pagesPerBurstPerAddress
+          nextBurstBasePageIndex += 1
 
-          // Fast-stop: if we kept nothing in this burst and the burst’s oldest is older than lastSync, we’re done.
           if (keptTransactionsInBurstCount === 0 && oldestTimestampAcrossBurst < lastSyncedTimestampSeconds) {
             hasReachedStoppingCondition = true
           }
@@ -719,19 +693,16 @@ export class ChronikBlockchainClient {
     console.time(`${this.CHRONIK_MSG_PREFIX} syncAddresses`)
     await setSyncingBatch(addresses.map(a => a.address), true)
 
-    // per-address counters
     const perAddrCount = new Map<string, number>()
     addresses.forEach(a => perAddrCount.set(a.id, 0))
 
-    // commit buffer
     let toCommit: Prisma.TransactionUncheckedCreateInput[] = []
 
     try {
       const pfx = `${this.CHRONIK_MSG_PREFIX}[PARALLEL FETCHING]`
-      // consume generator: it yields batches of prepared txs
-      console.log(`${pfx} will fetch batches of ${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY} txs from chronik`)
+      console.log(`${pfx} will fetch batches of ${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY} addresses from chronik`)
       for await (const batch of this.fetchLatestTxsForAddresses(addresses)) {
-        console.log(`${pfx} fetched batch of ${batch.length} tx from chronik`)
+        console.log(`${pfx} fetched batch of ${batch.length} txs from chronik`)
         // count per address before committing
         for (const tx of batch) {
           perAddrCount.set(tx.addressId, (perAddrCount.get(tx.addressId) ?? 0) + 1)
@@ -753,13 +724,11 @@ export class ChronikBlockchainClient {
 
           // broadcast/triggers after commit
           if (created.length > 0) {
-            // Always broadcast per tx (keeps existing behavior)
             const triggerBatch: BroadcastTxData[] = []
             for (const tx of created) {
               const bd = this.broadcastIncomingTx(tx.address.address, tx, []) // inputAddresses left empty in bulk
               triggerBatch.push(bd)
             }
-            // Then, if enabled, execute triggers **in batch**
             if (runTriggers) {
               console.log(`${this.CHRONIK_MSG_PREFIX} executing trigger batch — broadcasts=${triggerBatch.length}`)
               await executeTriggersBatch(triggerBatch, this.networkId)
