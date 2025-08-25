@@ -293,3 +293,7 @@ export const TRIGGER_POST_CONCURRENCY = 100
 export const TRIGGER_EMAIL_CONCURRENCY = 100
 
 export const TRIGGER_LOG_BATCH_SIZE = 200
+
+export const PRICES_CONNECTION_BATCH_SIZE = 1_000
+// interactive $transaction timeout in ms (for the single delete + several createMany of prices)
+export const PRICES_CONNECTION_TIMEOUT = 30_000

@@ -1,6 +1,6 @@
 import prisma from 'prisma-local/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS } from 'constants/index'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT } from 'constants/index'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
 import { AllPrices, QuoteValues, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
 import _ from 'lodash'
@@ -388,11 +388,6 @@ export async function upsertTransaction (
   }
 }
 
-// how many join rows to insert per createMany
-const PRICES_JOIN_BATCH_SIZE = Number(process.env.PRICES_JOIN_BATCH_SIZE ?? 1000)
-// interactive $transaction timeout in ms (for the single delete + several createMany)
-const PRISMA_ITX_TIMEOUT_MS = Number(process.env.PRISMA_ITX_TIMEOUT_MS ?? 30000)
-
 function buildPriceTxConnectionInput (tx: Transaction, allPrices: AllPrices): Prisma.PricesOnTransactionsCreateManyInput[] {
   return [
     { transactionId: tx.id, priceId: allPrices.usd.id },
@@ -404,13 +399,15 @@ async function createPriceTxConnectionInChunks (
   client: Prisma.TransactionClient | typeof prisma,
   rows: Prisma.PricesOnTransactionsCreateManyInput[]
 ): Promise<void> {
-  for (let i = 0; i < rows.length; i += PRICES_JOIN_BATCH_SIZE) {
-    const slice = rows.slice(i, i + PRICES_JOIN_BATCH_SIZE)
+  console.log(`[PRICES] Inserting links in chunks of ${PRICES_CONNECTION_BATCH_SIZE}...`)
+  for (let i = 0; i < rows.length; i += PRICES_CONNECTION_BATCH_SIZE) {
+    const slice = rows.slice(i, i + PRICES_CONNECTION_BATCH_SIZE)
     await client.pricesOnTransactions.createMany({
       data: slice,
       skipDuplicates: true // respects unique(priceId, transactionId); safe like upsert
     })
   }
+  console.log('[PRICES] Inserted all price links.')
 }
 
 export async function connectTransactionToPrices (
@@ -470,10 +467,8 @@ export async function connectTransactionsListToPrices (txList: Transaction[]): P
       where: { transactionId: { in: txList.map(t => t.id) } }
     })
 
-    console.log(`[PRICES] Inserting links in chunks of ${PRICES_JOIN_BATCH_SIZE}...`)
     await createPriceTxConnectionInChunks(tx, rows)
-    console.log('[PRICES] Inserted all price links.')
-  }, { timeout: PRISMA_ITX_TIMEOUT_MS })
+  }, { timeout: PRICES_CONNECTION_TIMEOUT })
 }
 
 export async function connectAllTransactionsToPrices (): Promise<void> {
