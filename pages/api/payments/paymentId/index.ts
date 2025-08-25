@@ -19,6 +19,7 @@ export default async (req: any, res: any): Promise<void> => {
       }
     }
   } else {
-    res.status(405).json({ error: 'Method not allowed' })
+    res.status(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.statusCode)
+      .json(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED)
   }
 }
