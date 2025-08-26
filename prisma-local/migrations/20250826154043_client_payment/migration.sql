@@ -4,6 +4,7 @@ CREATE TABLE `ClientPayment` (
     `paymentId` VARCHAR(191) NOT NULL,
     `status` ENUM('PENDING', 'ADDED_TO_MEMPOOL', 'CONFIRMED') NOT NULL,
     `addressString` VARCHAR(191) NOT NULL,
+    `amount` DECIMAL(65, 30) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
