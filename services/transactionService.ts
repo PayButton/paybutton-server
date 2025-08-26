@@ -10,6 +10,7 @@ import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTxWithInvoices } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
 import { v4 as uuidv4 } from 'uuid'
+import { multiBlockchainClient } from 'services/chronikService'
 
 export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
   const ret: QuoteValues = {
@@ -976,12 +977,14 @@ export const fetchDistinctPaymentYearsByUser = async (userId: string): Promise<n
   return years.map(y => y.year)
 }
 
-export const generatePaymentId = async (address: string): Promise<string> => {
+export const generatePaymentId = async (address: string, amount?: Prisma.Decimal): Promise<string> => {
   const rawUUID = uuidv4()
   const cleanUUID = rawUUID.replace(/-/g, '')
   const status = 'PENDING' as ClientPaymentStatus
   const prefix = address.split(':')[0].toLowerCase()
   const networkId = NETWORK_IDS_FROM_SLUGS[prefix]
+  const isAddressRegistered = await addressExists(address)
+
   const clientPayment = await prisma.clientPayment.create({
     data: {
       address: {
@@ -994,9 +997,17 @@ export const generatePaymentId = async (address: string): Promise<string> => {
         }
       },
       paymentId: cleanUUID,
-      status
+      status,
+      amount
+    },
+    include: {
+      address: true
     }
   })
+
+  if (!isAddressRegistered) {
+    void multiBlockchainClient.syncAndSubscribeAddresses([clientPayment.address])
+  }
 
   return clientPayment.paymentId
 }
