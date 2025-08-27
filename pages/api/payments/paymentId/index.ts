@@ -1,13 +1,14 @@
 import { Decimal } from '@prisma/client/runtime/library'
 import { generatePaymentId } from 'services/transactionService'
-import { parseAddress } from 'utils/validators'
+import { parseAddress, parseCreatePaymentIdPOSTRequest } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'POST') {
     try {
-      const address = parseAddress(req.query.address as string)
-      const amount = req.query.amount as Decimal | undefined
+      const values = parseCreatePaymentIdPOSTRequest(req.body)
+      const address = parseAddress(values.address)
+      const amount = values.amount as Decimal | undefined
 
       const paymentId = await generatePaymentId(address, amount)
 
