@@ -12,7 +12,8 @@ import {
   getSimplifiedTransactions,
   getSimplifiedTrasaction,
   connectAllTransactionsToPrices,
-  updatePaymentStatus
+  updatePaymentStatus,
+  getClientPayment
 } from './transactionService'
 import { Address, Prisma, ClientPaymentStatus } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
@@ -606,8 +607,14 @@ export class ChronikBlockchainClient {
             const parsedOpReturn = parseOpReturnData(tx.opReturn)
             const paymentId = parsedOpReturn.paymentId
             const newClientPaymentStatus = 'ADDED_TO_MEMPOOL' as ClientPaymentStatus
-
-            await updatePaymentStatus(paymentId, newClientPaymentStatus)
+            const clientPayment = await getClientPayment(paymentId)
+            if (clientPayment.amount !== null) {
+              if (clientPayment.amount === tx.amount) {
+                await updatePaymentStatus(paymentId, newClientPaymentStatus)
+              }
+            } else {
+              await updatePaymentStatus(paymentId, newClientPaymentStatus)
+            }
           }
         }
         this.mempoolTxsBeingProcessed -= 1
