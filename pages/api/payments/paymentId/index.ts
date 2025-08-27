@@ -4,7 +4,7 @@ import { parseAddress } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 export default async (req: any, res: any): Promise<void> => {
-  if (req.method === 'GET') {
+  if (req.method === 'POST') {
     try {
       const address = parseAddress(req.query.address as string)
       const amount = req.query.amount as Decimal | undefined
