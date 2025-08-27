@@ -566,3 +566,24 @@ export interface CreateInvoicePOSTParameters {
   customerName: string
   customerAddress: string
 }
+export interface CreatePaymentIdPOSTParameters {
+  address?: string
+  amount?: string
+}
+export interface CreatePaymentIdInput {
+  address: string
+  amount?: string
+}
+
+export const parseCreatePaymentIdPOSTRequest = function (params: CreatePaymentIdPOSTParameters): CreatePaymentIdInput {
+  if (
+    params.address === undefined
+  ) {
+    throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
+  }
+
+  return {
+    address: params.address,
+    amount: params.amount
+  }
+}
