@@ -396,20 +396,14 @@ export class ChronikBlockchainClient {
         addressSatsMap.set(address, currentValue + inp.sats)
       }
     })
+    const unitDivisor = this.networkId === XEC_NETWORK_ID
+      ? 1e2
+      : (this.networkId === BCH_NETWORK_ID ? 1e8 : 1)
     const sortedInputAddresses = Array.from(addressSatsMap.entries())
       .sort(([, valueA], [, valueB]) => Number(valueB - valueA))
     return sortedInputAddresses.map(([address, sats]) => {
-      const format = xecaddr.detectAddressFormat(address)
-      // satoshisToUnit returns Promise; but we can't make this function async easily without refactor, so keep raw satoshis division inline
       const decimal = new Prisma.Decimal(sats.toString())
-      let amount: Prisma.Decimal
-      if (format === xecaddr.Format.Xecaddr) {
-        amount = decimal.dividedBy(1e2)
-      } else if (format === xecaddr.Format.Cashaddr) {
-        amount = decimal.dividedBy(1e8)
-      } else {
-        amount = decimal
-      }
+      const amount = decimal.dividedBy(unitDivisor)
       return { address, amount }
     })
   }
@@ -426,16 +420,11 @@ export class ChronikBlockchainClient {
     const sortedOutputAddresses = Array.from(addressSatsMap.entries())
       .sort(([, valueA], [, valueB]) => Number(valueB - valueA))
       .map(([address, sats]) => {
-        const format = xecaddr.detectAddressFormat(address)
+        const unitDivisor = this.networkId === XEC_NETWORK_ID
+          ? 1e2
+          : (this.networkId === BCH_NETWORK_ID ? 1e8 : 1)
         const decimal = new Prisma.Decimal(sats.toString())
-        let amount: Prisma.Decimal
-        if (format === xecaddr.Format.Xecaddr) {
-          amount = decimal.dividedBy(1e2)
-        } else if (format === xecaddr.Format.Cashaddr) {
-          amount = decimal.dividedBy(1e8)
-        } else {
-          amount = decimal
-        }
+        const amount = decimal.dividedBy(unitDivisor)
         return { address, amount }
       })
     return sortedOutputAddresses
