@@ -272,6 +272,19 @@ export async function getLatestConfirmedTxTimestampForAddress (addressId: string
   return tx?.timestamp
 }
 
+export async function updateManyLastSynced (addressStringArray: string[]): Promise<void> {
+  await prisma.address.updateMany({
+    where: {
+      address: {
+        in: addressStringArray
+      }
+    },
+    data: {
+      lastSynced: new Date()
+    }
+  })
+}
+
 export async function updateLastSynced (addressString: string): Promise<void> {
   await prisma.address.update({
     where: {

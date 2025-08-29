@@ -63,8 +63,8 @@ const ProConfig = (): JSX.Element => {
             </tr>
             <tr>
               <td>Outgoing Server-to-Server Messages On Payment</td>
-              <td>{showLimit(config.proSettings.standardDailyEmailLimit)} / day</td>
-              <td>{showLimit(config.proSettings.proDailyEmailLimit)} / day</td>
+              <td>{showLimit(config.proSettings.standardDailyPostLimit)} / day</td>
+              <td>{showLimit(config.proSettings.proDailyPostLimit)} / day</td>
             </tr>
           </tbody>
         </table>

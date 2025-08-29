@@ -57,6 +57,9 @@ describe('Create services', () => {
     prismaMock.pricesOnTransactions.deleteMany.mockResolvedValue({ count: 2 })
     prisma.pricesOnTransactions.deleteMany = prismaMock.pricesOnTransactions.deleteMany
 
+    prismaMock.pricesOnTransactions.createMany.mockResolvedValue({ count: 2 })
+    prisma.pricesOnTransactions.createMany = prismaMock.pricesOnTransactions.createMany
+
     const mockCacheTx = jest.spyOn(CacheSet, 'txCreation')
     mockCacheTx.mockImplementation(async () => {
       // Do nothing
