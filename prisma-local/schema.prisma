@@ -280,7 +280,6 @@ enum ClientPaymentStatus {
 }
 
 model ClientPayment {
-  id                   String                 @id @default(dbgenerated("(uuid())"))
   paymentId            String                 @unique
   status               ClientPaymentStatus               
   addressString        String
