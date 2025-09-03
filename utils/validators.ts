@@ -577,13 +577,14 @@ export interface CreatePaymentIdInput {
 
 export const parseCreatePaymentIdPOSTRequest = function (params: CreatePaymentIdPOSTParameters): CreatePaymentIdInput {
   if (
-    params.address === undefined
+    params.address === undefined ||
+    params.address === ''
   ) {
     throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
   }
 
   return {
     address: params.address,
-    amount: params.amount
+    amount: params.amount === undefined || params.amount === '' ? undefined : params.amount
   }
 }
