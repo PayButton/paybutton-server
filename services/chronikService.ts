@@ -11,9 +11,11 @@ import {
   upsertTransaction,
   getSimplifiedTransactions,
   getSimplifiedTrasaction,
-  connectAllTransactionsToPrices
+  connectAllTransactionsToPrices,
+  updatePaymentStatus,
+  getClientPayment
 } from './transactionService'
-import { Address, Prisma } from '@prisma/client'
+import { Address, Prisma, ClientPaymentStatus } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
 import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced } from './addressService'
@@ -418,10 +420,23 @@ export class ChronikBlockchainClient {
     }
   }
 
+  private async updateClientPaymentStatusToConfirmed (addressesWithTransactions: AddressWithTransaction[]): Promise<void> {
+    for (const addressWithTransaction of addressesWithTransactions) {
+      const parsedOpReturn = parseOpReturnData(addressWithTransaction.transaction.opReturn ?? '')
+      const paymentId = parsedOpReturn.paymentId
+      const newClientPaymentStatus = 'CONFIRMED' as ClientPaymentStatus
+
+      await updatePaymentStatus(paymentId, newClientPaymentStatus)
+    }
+  }
+
   private async processWsMessage (msg: WsMsgClient): Promise<void> {
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
     if (msg.type === 'Tx') {
+      const transaction = await this.chronik.tx(msg.txid)
+      const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+      const inputAddresses = this.getSortedInputAddresses(transaction)
       if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
@@ -436,6 +451,7 @@ export class ChronikBlockchainClient {
       } else if (msg.msgType === 'TX_CONFIRMED') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
+        await this.updateClientPaymentStatusToConfirmed(addressesWithTransactions)
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
         if (this.isAlreadyBeingProcessed(msg.txid, false)) {
           return
@@ -445,16 +461,23 @@ export class ChronikBlockchainClient {
         }
         this.mempoolTxsBeingProcessed += 1
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
-        const transaction = await this.chronik.tx(msg.txid)
-        const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-        await this.waitForSyncing(msg.txid, addressesWithTransactions.map(obj => obj.address.address))
-        const inputAddresses = this.getSortedInputAddresses(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
           const { created, tx } = await upsertTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
             const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses)
             if (created) { // only execute trigger for newly added txs
               await executeAddressTriggers(broadcastTxData, tx.address.networkId)
+            }
+            const parsedOpReturn = parseOpReturnData(tx.opReturn)
+            const paymentId = parsedOpReturn.paymentId
+            const newClientPaymentStatus = 'ADDED_TO_MEMPOOL' as ClientPaymentStatus
+            const clientPayment = await getClientPayment(paymentId)
+            if (clientPayment.amount !== null) {
+              if (clientPayment.amount === tx.amount) {
+                await updatePaymentStatus(paymentId, newClientPaymentStatus)
+              }
+            } else {
+              await updatePaymentStatus(paymentId, newClientPaymentStatus)
             }
           }
         }
