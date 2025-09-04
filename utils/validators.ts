@@ -585,6 +585,6 @@ export const parseCreatePaymentIdPOSTRequest = function (params: CreatePaymentId
 
   return {
     address: params.address,
-    amount: params.amount === undefined || params.amount === '' ? undefined : params.amount
+    amount: params.amount === '' ? undefined : params.amount
   }
 }
