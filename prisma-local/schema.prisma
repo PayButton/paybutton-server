@@ -277,7 +277,7 @@ enum ClientPaymentStatus {
 }
 
 model ClientPayment {
-  paymentId            String                 @unique
+  paymentId            String                 @id
   status               ClientPaymentStatus               
   addressString        String
   amount               Decimal?              
