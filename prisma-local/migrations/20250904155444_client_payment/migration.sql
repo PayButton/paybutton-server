@@ -7,7 +7,7 @@ CREATE TABLE `ClientPayment` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `ClientPayment_paymentId_key`(`paymentId`)
+    PRIMARY KEY (`paymentId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
