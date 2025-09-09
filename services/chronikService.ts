@@ -417,12 +417,12 @@ export class ChronikBlockchainClient {
         addressSatsMap.set(address, currentValue + out.sats)
       }
     })
+    const unitDivisor = this.networkId === XEC_NETWORK_ID
+      ? 1e2
+      : (this.networkId === BCH_NETWORK_ID ? 1e8 : 1)
     const sortedOutputAddresses = Array.from(addressSatsMap.entries())
       .sort(([, valueA], [, valueB]) => Number(valueB - valueA))
       .map(([address, sats]) => {
-        const unitDivisor = this.networkId === XEC_NETWORK_ID
-          ? 1e2
-          : (this.networkId === BCH_NETWORK_ID ? 1e8 : 1)
         const decimal = new Prisma.Decimal(sats.toString())
         const amount = decimal.dividedBy(unitDivisor)
         return { address, amount }
