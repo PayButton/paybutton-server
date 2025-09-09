@@ -99,8 +99,8 @@
     "chronik-client-cashtokens/ecashaddrjs": "^2.0.0"
   },
   "lint-staged": {
-    "*.ts?(x)": [
-      "yarn eslint --fix"
+    "*.{ts,tsx}": [
+      "node ./node_modules/eslint/bin/eslint.js --fix"
     ]
   }
 }
