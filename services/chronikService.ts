@@ -387,9 +387,8 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private getSortedInputAddresses (transaction: Tx): string[] {
+  private getSortedInputAddresses (transaction: Tx): Array<{address: string, amount: Prisma.Decimal}> {
     const addressSatsMap = new Map<string, bigint>()
-
     transaction.inputs.forEach((inp) => {
       const address = outputScriptToAddress(this.networkSlug, inp.outputScript)
       if (address !== undefined && address !== '') {
@@ -397,12 +396,38 @@ export class ChronikBlockchainClient {
         addressSatsMap.set(address, currentValue + inp.sats)
       }
     })
-
+    const unitDivisor = this.networkId === XEC_NETWORK_ID
+      ? 1e2
+      : (this.networkId === BCH_NETWORK_ID ? 1e8 : 1)
     const sortedInputAddresses = Array.from(addressSatsMap.entries())
       .sort(([, valueA], [, valueB]) => Number(valueB - valueA))
-      .map(([address]) => address)
+    return sortedInputAddresses.map(([address, sats]) => {
+      const decimal = new Prisma.Decimal(sats.toString())
+      const amount = decimal.dividedBy(unitDivisor)
+      return { address, amount }
+    })
+  }
 
-    return sortedInputAddresses
+  private getSortedOutputAddresses (transaction: Tx): Array<{address: string, amount: Prisma.Decimal}> {
+    const addressSatsMap = new Map<string, bigint>()
+    transaction.outputs.forEach((out) => {
+      const address = outputScriptToAddress(this.networkSlug, out.outputScript)
+      if (address !== undefined && address !== '') {
+        const currentValue = addressSatsMap.get(address) ?? 0n
+        addressSatsMap.set(address, currentValue + out.sats)
+      }
+    })
+    const unitDivisor = this.networkId === XEC_NETWORK_ID
+      ? 1e2
+      : (this.networkId === BCH_NETWORK_ID ? 1e8 : 1)
+    const sortedOutputAddresses = Array.from(addressSatsMap.entries())
+      .sort(([, valueA], [, valueB]) => Number(valueB - valueA))
+      .map(([address, sats]) => {
+        const decimal = new Prisma.Decimal(sats.toString())
+        const amount = decimal.dividedBy(unitDivisor)
+        return { address, amount }
+      })
+    return sortedOutputAddresses
   }
 
   public async waitForSyncing (txId: string, addressStringArray: string[]): Promise<void> {
@@ -449,10 +474,11 @@ export class ChronikBlockchainClient {
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
         await this.waitForSyncing(msg.txid, addressesWithTransactions.map(obj => obj.address.address))
         const inputAddresses = this.getSortedInputAddresses(transaction)
+        const outputAddresses = this.getSortedOutputAddresses(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
           const { created, tx } = await upsertTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
-            const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses)
+            const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses, outputAddresses)
             if (created) { // only execute trigger for newly added txs
               await executeAddressTriggers(broadcastTxData, tx.address.networkId)
             }
@@ -476,11 +502,11 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private broadcastIncomingTx (addressString: string, createdTx: TransactionWithAddressAndPrices, inputAddresses: string[]): BroadcastTxData {
+  private broadcastIncomingTx (addressString: string, createdTx: TransactionWithAddressAndPrices, inputAddresses: Array<{address: string, amount: Prisma.Decimal}>, outputAddresses: Array<{address: string, amount: Prisma.Decimal}>): BroadcastTxData {
     const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
     broadcastTxData.address = addressString
     broadcastTxData.messageType = 'NewTx'
-    const newSimplifiedTransaction = getSimplifiedTrasaction(createdTx, inputAddresses)
+    const newSimplifiedTransaction = getSimplifiedTrasaction(createdTx, inputAddresses, outputAddresses)
     broadcastTxData.txs = [newSimplifiedTransaction]
     try { // emit broadcast for both unconfirmed and confirmed txs
       this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
@@ -504,11 +530,12 @@ export class ChronikBlockchainClient {
     for (const transaction of blockTxsToSync) {
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
       const inputAddresses = this.getSortedInputAddresses(transaction)
+      const outputAddresses = this.getSortedOutputAddresses(transaction)
 
       for (const addressWithTransaction of addressesWithTransactions) {
         const { created, tx } = await upsertTransaction(addressWithTransaction.transaction)
         if (tx !== undefined) {
-          const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses)
+          const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses, outputAddresses)
           if (created) { // only execute trigger for newly added txs
             await executeAddressTriggers(broadcastTxData, tx.address.networkId)
           }
