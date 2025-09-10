@@ -81,7 +81,7 @@ model Transaction {
   updatedAt DateTime                  @updatedAt
 
   @@unique([hash, addressId], name: "Transaction_hash_addressId_unique_constraint")
-  @@index([addressId], map: "Transaction_addressId_fkey")
+  @@index([addressId, timestamp], map: "Transaction_addressId_timestamp_idx")
 }
 
 model Wallet {
