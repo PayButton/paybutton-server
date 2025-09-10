@@ -250,7 +250,8 @@ export interface PostDataParameters {
   buttonName: string
   address: string
   opReturn: OpReturnData
-  inputAddresses?: string[]
+  inputAddresses?: Array<{address: string, amount: Prisma.Decimal}>
+  outputAddresses?: Array<{address: string, amount: Prisma.Decimal}>
   value: string
 }
 

@@ -169,3 +169,28 @@ describe('Fetch transactions by paybuttonId', () => {
     }
   })
 })
+
+describe('Address object arrays (input/output) integration', () => {
+  it('getSimplifiedTrasaction returns provided input/output address objects untouched', () => {
+    const tx: any = {
+      hash: 'hash1',
+      amount: new Prisma.Decimal(5),
+      confirmed: true,
+      opReturn: '',
+      address: { address: 'ecash:qqprimaryaddressxxxxxxxxxxxxxxxxxxxxx' },
+      timestamp: 1700000000,
+      prices: mockedTransaction.prices
+    }
+    const inputs = [
+      { address: 'ecash:qqinput1', amount: new Prisma.Decimal(1.23) },
+      { address: 'ecash:qqinput2', amount: new Prisma.Decimal(4.56) }
+    ]
+    const outputs = [
+      { address: 'ecash:qqout1', amount: new Prisma.Decimal(7.89) },
+      { address: 'ecash:qqout2', amount: new Prisma.Decimal(0.12) }
+    ]
+    const simplified = transactionService.getSimplifiedTrasaction(tx, inputs, outputs)
+    expect(simplified.inputAddresses).toEqual(inputs)
+    expect(simplified.outputAddresses).toEqual(outputs)
+  })
+})

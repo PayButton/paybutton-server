@@ -238,6 +238,7 @@ export const TRIGGER_POST_VARIABLES = [
   '<timestamp>',
   '<txId>',
   '<inputAddresses>',
+  '<outputAddresses>',
   '<value>'
 ]
 
