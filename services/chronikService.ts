@@ -124,7 +124,7 @@ export class ChronikBlockchainClient {
     this.latencyTestFinished = false
     void (async () => {
       if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
-        throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
+        console.warn(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
       }
 
       this.initializing = true
@@ -380,8 +380,31 @@ export class ChronikBlockchainClient {
     return {
       onMessage: (msg: WsMsgClient) => { void this.processWsMessage(msg) },
       onError: (e: ws.ErrorEvent) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik webSocket error, type: ${e.type} | message: ${e.message} | error: ${e.error as string}`) },
-      onReconnect: (_: ws.Event) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik webSocket unexpectedly closed.`) },
-      onConnect: (_: ws.Event) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik webSocket connection (re)established.`) },
+      onReconnect: (_: ws.Event) => {
+        console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik webSocket unexpectedly closed.`)
+      },
+      onConnect: (_: ws.Event) => {
+        console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik webSocket connection (re)established.`)
+        try {
+          // Ensure block subscription is active after (re)connect
+          this.chronikWSEndpoint.subscribeToBlocks()
+        } catch (err: any) {
+          console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to (re)subscribe to blocks: ${err?.message as string}`)
+        }
+        // Re-subscribe all known addresses and sync any missed txs after reconnect
+        void (async () => {
+          try {
+            await this.subscribeInitialAddresses()
+          } catch (err: any) {
+            console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR when (re)subscribing initial addresses: ${err?.message as string}`)
+          }
+          try {
+            await this.syncMissedTransactions()
+          } catch (err: any) {
+            console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR when syncing missed transactions after reconnect: ${err?.message as string}`)
+          }
+        })()
+      },
       onEnd: (e: ws.Event) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik WebSocket ended, type: ${e.type}.`) },
       autoReconnect: true
     }
