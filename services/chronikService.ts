@@ -106,6 +106,11 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
   return ret
 }
 
+interface FetchedTxsBatch {
+  txs: Prisma.TransactionUncheckedCreateInput[]
+  addressesSynced: string[]
+}
+
 export class ChronikBlockchainClient {
   chronik!: ChronikClient
   networkId!: number
@@ -295,7 +300,7 @@ export class ChronikBlockchainClient {
   */
   private async * fetchLatestTxsForAddresses (
     addresses: Address[]
-  ): AsyncGenerator<Prisma.TransactionUncheckedCreateInput[]> {
+  ): AsyncGenerator<FetchedTxsBatch> {
     const logPrefix = `${this.CHRONIK_MSG_PREFIX}[PARALLEL FETCHING]`
 
     console.log(
@@ -305,8 +310,11 @@ export class ChronikBlockchainClient {
 
     let transactionsToEmitBuffer: Prisma.TransactionUncheckedCreateInput[] = []
 
+    let lastBatchAddresses: string[] = []
     for (let i = 0; i < addresses.length; i += INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY) {
       const addressBatchSlice = addresses.slice(i, i + INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY)
+      lastBatchAddresses = addressBatchSlice.map(a => a.address)
+
       console.log(`${logPrefix}: starting chronik fetching for ${addressBatchSlice.length} addresses...`)
 
       const perAddressWorkers = addressBatchSlice.map(async (address) => {
@@ -390,7 +398,10 @@ export class ChronikBlockchainClient {
       while (transactionsToEmitBuffer.length >= TX_EMIT_BATCH_SIZE) {
         const emitChunk = transactionsToEmitBuffer.slice(0, TX_EMIT_BATCH_SIZE)
         transactionsToEmitBuffer = transactionsToEmitBuffer.slice(TX_EMIT_BATCH_SIZE)
-        yield emitChunk
+        yield {
+          txs: emitChunk,
+          addressesSynced: lastBatchAddresses
+        }
       }
     }
 
@@ -398,7 +409,10 @@ export class ChronikBlockchainClient {
     if (transactionsToEmitBuffer.length > 0) {
       const remaining = transactionsToEmitBuffer
       transactionsToEmitBuffer = []
-      yield remaining
+      yield {
+        txs: remaining,
+        addressesSynced: lastBatchAddresses
+      }
     }
   }
 
@@ -729,17 +743,17 @@ export class ChronikBlockchainClient {
       const pfx = `${this.CHRONIK_MSG_PREFIX}[PARALLEL FETCHING]`
       console.log(`${pfx} will fetch batches of ${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY} addresses from chronik`)
       for await (const batch of this.fetchLatestTxsForAddresses(addresses)) {
-        console.log(`${pfx} fetched batch of ${batch.length} txs from chronik`)
+        console.log(`${pfx} fetched batch of ${batch.txs.length} txs from chronik`)
         // count per address before committing
-        for (const tx of batch) {
+        for (const tx of batch.txs) {
           perAddrCount.set(tx.addressId, (perAddrCount.get(tx.addressId) ?? 0) + 1)
         }
-        toCommit.push(...batch)
+        toCommit.push(...batch.txs)
+        await setSyncingBatch(batch.addressesSynced, false)
 
         if (toCommit.length >= DB_COMMIT_BATCH_SIZE) {
           console.log(`${this.CHRONIK_MSG_PREFIX} committing batch to DB — txs=${toCommit.length}`)
           const created = await createManyTransactions(toCommit)
-          await setSyncingBatch(addresses.map(a => a.address), false)
           console.log(`${this.CHRONIK_MSG_PREFIX} committed — created=${created.length}`)
           toCommit = []
 
@@ -753,7 +767,7 @@ export class ChronikBlockchainClient {
           if (created.length > 0) {
             const triggerBatch: BroadcastTxData[] = []
             for (const tx of created) {
-              const bd = this.broadcastIncomingTx(tx.address.address, tx, []) // inputAddresses left empty in bulk
+              const bd = this.broadcastIncomingTx(tx.address.address, tx, [], []) // inputAddresses left empty in bulk
               triggerBatch.push(bd)
             }
             if (runTriggers) {
@@ -779,7 +793,7 @@ export class ChronikBlockchainClient {
         if (created.length > 0) {
           const triggerBatch: BroadcastTxData[] = []
           for (const tx of created) {
-            const bd = this.broadcastIncomingTx(tx.address.address, tx, [])
+            const bd = this.broadcastIncomingTx(tx.address.address, tx, [], [])
             triggerBatch.push(bd)
           }
           if (runTriggers) {

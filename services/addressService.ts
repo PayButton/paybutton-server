@@ -280,6 +280,7 @@ export async function updateManyLastSynced (addressStringArray: string[]): Promi
       }
     },
     data: {
+      syncing: false,
       lastSynced: new Date()
     }
   })
@@ -291,6 +292,7 @@ export async function updateLastSynced (addressString: string): Promise<void> {
       address: addressString
     },
     data: {
+      syncing: false,
       lastSynced: new Date()
     }
   })
