@@ -21,12 +21,14 @@ if [ "$ENVIRONMENT" = "production" ]; then
     yarn prisma migrate deploy || exit 1
     pm2 start yarn --time --interpreter ash --name jobs --output logs/jobs.log --error logs/jobs.log -- initJobs || exit 1
     pm2 start yarn --time --interpreter ash --name WSServer --output logs/ws-server.log --error logs/ws-server.log -- initWSServer || exit 1
+    pm2 start yarn --time --interpreter ash --name watchers --output logs/watchers.log --error logs/watchers.log -- initWatchers || exit 1
     pm2 start yarn --time --interpreter ash --name next --output logs/next.log --error logs/next.log -- prod || exit 1
 else
     yarn prisma migrate dev || exit 1
     yarn prisma db seed || exit 1
     pm2 start yarn --time --interpreter ash --name jobs --output logs/jobs.log --error logs/jobs.log -- initJobs || exit 1
     pm2 start yarn --time --interpreter ash --name WSServer --output logs/ws-server.log --error logs/ws-server.log -- initWSServer || exit 1
+    pm2 start yarn --time --interpreter ash --name watchers --output logs/watchers.log --error logs/watchers.log -- initWatchers || exit 1
     pm2 start yarn --time --interpreter ash --name next --output logs/next.log --error logs/next.log -- dev || exit 1
 fi
 pm2 logs next
