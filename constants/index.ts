@@ -279,6 +279,6 @@ export const MAX_DAILY_EMAILS = 100 // If changed, update the DB default accordi
 export const XEC_TX_EXPLORER_URL = 'https://explorer.e.cash/tx/'
 export const BCH_TX_EXPLORER_URL = 'https://blockchair.com/bitcoin-cash/transaction/'
 
-export const MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME = 2
+export const MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME = 20
 export const CHRONIK_INITIALIZATION_DELAY = 2000
 export const MEMPOOL_PROCESS_DELAY = 100
