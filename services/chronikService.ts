@@ -140,6 +140,8 @@ export class ChronikBlockchainClient {
       this.confirmedTxsHashesFromLastBlock = []
       void this.chronikWSEndpoint.waitForOpen()
       this.chronikWSEndpoint.subscribeToBlocks()
+      // Allow mempool processing to continue while initial address subscription & sync run in background
+      this.setInitialized()
       this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
       this.CHRONIK_MSG_PREFIX = `[CHRONIK — ${networkSlug}]`
       this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
