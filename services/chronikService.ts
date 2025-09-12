@@ -462,6 +462,8 @@ export class ChronikBlockchainClient {
       const transaction = await this.chronik.tx(msg.txid)
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
       const inputAddresses = this.getSortedInputAddresses(transaction)
+      const outputAddresses = this.getSortedOutputAddresses(transaction)
+
       if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
