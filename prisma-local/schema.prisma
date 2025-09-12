@@ -22,7 +22,7 @@ model Address {
   syncing      Boolean                @default(false)
   paybuttons   AddressesOnButtons[]
   transactions Transaction[]
-  clientPaymentIds                     ClientPayment[]
+  clientPayments                     ClientPayment[]
 
   @@index([networkId], map: "Address_networkId_fkey")
 }
