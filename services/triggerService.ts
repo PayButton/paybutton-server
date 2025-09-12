@@ -305,6 +305,7 @@ function buildPostParams (
       ? { paymentId: tx.paymentId, message: tx.message, rawMessage: tx.rawMessage }
       : EMPTY_OP_RETURN,
     inputAddresses: tx.inputAddresses,
+    outputAddresses: tx.outputAddresses,
     value: valueStr
   }
 }
