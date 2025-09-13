@@ -106,8 +106,9 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
   return ret
 }
 
+type ChronikTxWithAddress = { tx: Tx; address: Address }
 interface FetchedTxsBatch {
-  txs: Prisma.TransactionUncheckedCreateInput[]
+  chronikTxs: ChronikTxWithAddress[]
   addressesSynced: string[]
 }
 
@@ -308,7 +309,7 @@ export class ChronikBlockchainClient {
       `(addressConcurrency=${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY}, pageConcurrency=1).`
     )
 
-    let transactionsToEmitBuffer: Prisma.TransactionUncheckedCreateInput[] = []
+    let chronikTxs: ChronikTxWithAddress[] = []
 
     let lastBatchAddresses: string[] = []
     for (let i = 0; i < addresses.length; i += INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY) {
@@ -329,7 +330,7 @@ export class ChronikBlockchainClient {
           const pageIndex = nextBurstBasePageIndex
 
           // Fetch the single page for this burst; swallow page errors.
-          let pageTxs: any[] = []
+          let pageTxs: Tx[] = []
           try {
             pageTxs = await this.getPaginatedTxs(address.address, pageIndex, CHRONIK_FETCH_N_TXS_PER_PAGE)
           } catch (err: any) {
@@ -357,16 +358,13 @@ export class ChronikBlockchainClient {
           // Process this page
           let keptTransactionsInBurstCount = 0
 
-          const filteredTxs = pageTxs
+          pageTxs = pageTxs
             .filter(txThresholdFilter)
             .filter(t => t.block === undefined || t.block.timestamp >= lastSyncedTimestampSeconds)
 
-          if (filteredTxs.length > 0) {
-            const txRowsToCreate = await Promise.all(
-              filteredTxs.map(async t => await this.getTransactionFromChronikTransaction(t, address))
-            )
-            transactionsToEmitBuffer.push(...txRowsToCreate)
-            keptTransactionsInBurstCount += txRowsToCreate.length
+          if (pageTxs.length > 0) {
+            chronikTxs.push(...pageTxs.map(tx => ({ tx, address: address })))
+            keptTransactionsInBurstCount += pageTxs.length
           }
 
           // If the page’s oldest tx is older than lastSync, stop after this burst.
@@ -395,22 +393,22 @@ export class ChronikBlockchainClient {
       )
 
       // Emit any full chunks we’ve accumulated after this slice
-      while (transactionsToEmitBuffer.length >= TX_EMIT_BATCH_SIZE) {
-        const emitChunk = transactionsToEmitBuffer.slice(0, TX_EMIT_BATCH_SIZE)
-        transactionsToEmitBuffer = transactionsToEmitBuffer.slice(TX_EMIT_BATCH_SIZE)
+      while (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
+        const chronikTxsSlice = chronikTxs.slice(0, TX_EMIT_BATCH_SIZE)
+        chronikTxs = chronikTxs.slice(TX_EMIT_BATCH_SIZE)
         yield {
-          txs: emitChunk,
+          chronikTxs: chronikTxsSlice,
           addressesSynced: lastBatchAddresses
         }
       }
     }
 
     // Final flush
-    if (transactionsToEmitBuffer.length > 0) {
-      const remaining = transactionsToEmitBuffer
-      transactionsToEmitBuffer = []
+    if (chronikTxs.length > 0) {
+      const remaining = chronikTxs
+      chronikTxs = []
       yield {
-        txs: remaining,
+        chronikTxs: remaining,
         addressesSynced: lastBatchAddresses
       }
     }
@@ -603,12 +601,10 @@ export class ChronikBlockchainClient {
         const transaction = await this.chronik.tx(msg.txid)
         const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
         await this.waitForSyncing(msg.txid, addressesWithTransactions.map(obj => obj.address.address))
-        const inputAddresses = this.getSortedInputAddresses(transaction)
-        const outputAddresses = this.getSortedOutputAddresses(transaction)
         for (const addressWithTransaction of addressesWithTransactions) {
           const { created, tx } = await upsertTransaction(addressWithTransaction.transaction)
           if (tx !== undefined) {
-            const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses, outputAddresses)
+            const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, transaction, tx)
             if (created) { // only execute trigger for newly added txs
               await executeAddressTriggers(broadcastTxData, tx.address.networkId)
             }
@@ -632,10 +628,12 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private broadcastIncomingTx (addressString: string, createdTx: TransactionWithAddressAndPrices, inputAddresses: Array<{address: string, amount: Prisma.Decimal}>, outputAddresses: Array<{address: string, amount: Prisma.Decimal}>): BroadcastTxData {
+  private broadcastIncomingTx (addressString: string, chronikTx: Tx, createdTx: TransactionWithAddressAndPrices): BroadcastTxData {
     const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
     broadcastTxData.address = addressString
     broadcastTxData.messageType = 'NewTx'
+    const inputAddresses = this.getSortedInputAddresses(chronikTx)
+    const outputAddresses = this.getSortedOutputAddresses(chronikTx)
     const newSimplifiedTransaction = getSimplifiedTrasaction(createdTx, inputAddresses, outputAddresses)
     broadcastTxData.txs = [newSimplifiedTransaction]
     try { // emit broadcast for both unconfirmed and confirmed txs
@@ -659,13 +657,11 @@ export class ChronikBlockchainClient {
     }
     for (const transaction of blockTxsToSync) {
       const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-      const inputAddresses = this.getSortedInputAddresses(transaction)
-      const outputAddresses = this.getSortedOutputAddresses(transaction)
 
       for (const addressWithTransaction of addressesWithTransactions) {
         const { created, tx } = await upsertTransaction(addressWithTransaction.transaction)
         if (tx !== undefined) {
-          const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, tx, inputAddresses, outputAddresses)
+          const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, transaction, tx)
           if (created) { // only execute trigger for newly added txs
             await executeAddressTriggers(broadcastTxData, tx.address.networkId)
           }
@@ -737,37 +733,48 @@ export class ChronikBlockchainClient {
     const perAddrCount = new Map<string, number>()
     addresses.forEach(a => perAddrCount.set(a.id, 0))
 
-    let toCommit: Prisma.TransactionUncheckedCreateInput[] = []
+    let txsToCreate: Prisma.TransactionUncheckedCreateInput[] = []
 
     try {
       const pfx = `${this.CHRONIK_MSG_PREFIX}[PARALLEL FETCHING]`
       console.log(`${pfx} will fetch batches of ${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY} addresses from chronik`)
       for await (const batch of this.fetchLatestTxsForAddresses(addresses)) {
-        console.log(`${pfx} fetched batch of ${batch.txs.length} txs from chronik`)
+        console.log(`${pfx} fetched batch of ${batch.chronikTxs.length} txs from chronik`)
         // count per address before committing
-        for (const tx of batch.txs) {
+        const txRowsToCreate = await Promise.all(
+          batch.chronikTxs.map(({ tx, address }) =>
+            this.getTransactionFromChronikTransaction(tx, address)
+          )
+        )
+
+        for (const tx of txRowsToCreate) {
           perAddrCount.set(tx.addressId, (perAddrCount.get(tx.addressId) ?? 0) + 1)
         }
-        toCommit.push(...batch.txs)
+        txsToCreate.push(...txRowsToCreate)
         await setSyncingBatch(batch.addressesSynced, false)
 
-        if (toCommit.length >= DB_COMMIT_BATCH_SIZE) {
-          console.log(`${this.CHRONIK_MSG_PREFIX} committing batch to DB — txs=${toCommit.length}`)
-          const created = await createManyTransactions(toCommit)
-          console.log(`${this.CHRONIK_MSG_PREFIX} committed — created=${created.length}`)
-          toCommit = []
+        if (txsToCreate.length >= DB_COMMIT_BATCH_SIZE) {
+          console.log(`${this.CHRONIK_MSG_PREFIX} committing batch to DB — txs=${txsToCreate.length}`)
+          const createdTxs = await createManyTransactions(txsToCreate)
+          console.log(`${this.CHRONIK_MSG_PREFIX} committed — created=${createdTxs.length}`)
+          txsToCreate = []
 
           // optional append for production addresses
-          const createdForProd = created.filter(t => productionAddressesIds.includes(t.addressId))
+          const createdForProd = createdTxs.filter(t => productionAddressesIds.includes(t.addressId))
           if (createdForProd.length > 0) {
             await appendTxsToFile(createdForProd as unknown as Prisma.TransactionCreateManyInput[])
           }
 
           // broadcast/triggers after commit
-          if (created.length > 0) {
+          if (createdTxs.length > 0) {
             const triggerBatch: BroadcastTxData[] = []
-            for (const tx of created) {
-              const bd = this.broadcastIncomingTx(tx.address.address, tx, [], []) // inputAddresses left empty in bulk
+            const rawByHash = new Map(
+              batch.chronikTxs.map(({ tx }) => [tx.txid, tx])
+            )
+            for (const createdTx of created) {
+              const raw = rawByHash.get(createdTx.txId) // ajuste: campo do seu modelo
+              if (!raw) continue
+              const bd = this.broadcastIncomingTx(createdTx.address.address, raw, createdTx)
               triggerBatch.push(bd)
             }
             if (runTriggers) {
@@ -779,21 +786,22 @@ export class ChronikBlockchainClient {
       }
 
       // final DB flush
-      if (toCommit.length > 0) {
-        console.log(`${this.CHRONIK_MSG_PREFIX} committing FINAL batch to DB — txs=${toCommit.length}`)
-        const created = await createManyTransactions(toCommit)
-        console.log(`${this.CHRONIK_MSG_PREFIX} committed FINAL — created=${created.length}`)
-        toCommit = []
+      if (txsToCreate.length > 0) {
+        console.log(`${this.CHRONIK_MSG_PREFIX} committing FINAL batch to DB — txs=${txsToCreate.length}`)
+        const createdTxs = await createManyTransactions(txsToCreate)
+        console.log(`${this.CHRONIK_MSG_PREFIX} committed FINAL — createdTxs=${createdTxs.length}`)
+        txsToCreate = []
 
-        const createdForProd = created.filter(t => productionAddressesIds.includes(t.addressId))
+        const createdForProd = createdTxs.filter(t => productionAddressesIds.includes(t.addressId))
         if (createdForProd.length > 0) {
           await appendTxsToFile(createdForProd as unknown as Prisma.TransactionCreateManyInput[])
         }
 
-        if (created.length > 0) {
+        if (createdTxs.length > 0) {
           const triggerBatch: BroadcastTxData[] = []
-          for (const tx of created) {
-            const bd = this.broadcastIncomingTx(tx.address.address, tx, [], [])
+          for (const tx of createdTxs) {
+            // WIP FIX
+            const bd = this.broadcastIncomingTx(tx.address.address, tx)
             triggerBatch.push(bd)
           }
           if (runTriggers) {
