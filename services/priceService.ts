@@ -100,8 +100,8 @@ export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networ
       if (isResponseAsExpected(data)) return data
     }
     throw new Error(RESPONSE_MESSAGES.FAILED_TO_FETCH_PRICE_FROM_API_500(day.format(PRICE_API_DATE_FORMAT), networkTicker).message)
-  } catch (error) {
-    console.error(`Problem getting price of ${networkTicker} ${day.format(HUMAN_READABLE_DATE_FORMAT)} -> ${error as string} (attempt ${attempt})`)
+  } catch (error: any) {
+    console.error(`Problem getting price of ${networkTicker} ${day.format(HUMAN_READABLE_DATE_FORMAT)} (attempt ${attempt}) ->\n${error as string}: ${error.message as string} `)
 
     if (attempt < PRICE_API_MAX_RETRIES) {
       return await getPriceForDayAndNetworkTicker(day, networkTicker, attempt + 1)
@@ -123,6 +123,7 @@ function isResponseAsExpected (data: any): boolean {
 }
 
 export async function getAllPricesByNetworkTicker (networkTicker: string, attempt: number = 1): Promise<IResponseDataDaily[]> {
+  let lastError: any
   try {
     const res = await axios.get(getAllPricesURLForNetworkTicker(networkTicker), {
       timeout: PRICE_API_TIMEOUT
@@ -141,14 +142,16 @@ export async function getAllPricesByNetworkTicker (networkTicker: string, attemp
       }
     }
     throw new Error(RESPONSE_MESSAGES.FAILED_TO_FETCH_PRICE_FROM_API_500('ALL_DAYS', networkTicker).message)
-  } catch (error) {
-    console.error(`Problem getting price of ${networkTicker} -> ${error as string} (attempt ${attempt})`)
+  } catch (error: any) {
+    lastError = error
+    console.error(`Problem getting price of ${networkTicker} (attempt ${attempt}) ->\n${error as string}: ${error.response.statusText as string} `)
   }
 
   if (attempt < PRICE_API_MAX_RETRIES) {
     return await getAllPricesByNetworkTicker(networkTicker, attempt + 1)
   } else {
-    throw new Error(`Price file could not be created after ${PRICE_API_MAX_RETRIES} retries`)
+    console.error(`Price file could not be created after ${PRICE_API_MAX_RETRIES} retries`)
+    throw new Error(lastError.response.statusText)
   }
 }
 

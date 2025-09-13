@@ -527,6 +527,7 @@ export const mockedUserProfile: UserProfile = {
   preferredCurrencyId: 1,
   preferredTimezone: '',
   emailCredits: 15,
+  postCredits: 15,
   proUntil: null
 }
 
@@ -541,6 +542,7 @@ export const mockedUserProfileWithPublicKey: UserProfile = {
   preferredCurrencyId: 1,
   preferredTimezone: '',
   emailCredits: 15,
+  postCredits: 15,
   proUntil: null
 }
 

@@ -85,12 +85,12 @@ describe('Payment Trigger system', () => {
       postDataParameters: params
     })
 
-  expect(result.addr).toBe(primaryAddress)
-  expect(Array.isArray(result.outs)).toBe(true)
-  expect(result.outs[0].address).toBe(primaryAddress)
-  expect(result.outs.map((o: any) => o.address)).toEqual([primaryAddress, other])
-  // ensure amounts are present
-  result.outs.forEach((o: any) => expect(o.amount).toBeDefined())
+    expect(result.addr).toBe(primaryAddress)
+    expect(Array.isArray(result.outs)).toBe(true)
+    expect(result.outs[0].address).toBe(primaryAddress)
+    expect(result.outs.map((o: any) => o.address)).toEqual([primaryAddress, other])
+    // ensure amounts are present
+    result.outs.forEach((o: any) => expect(o.amount).toBeDefined())
   })
 
   it('executeAddressTriggers posts with outputAddresses containing primary at index 0', async () => {
@@ -156,9 +156,9 @@ describe('Payment Trigger system', () => {
     const postedBody = (axios as any).post.mock.calls[0][1]
 
     expect(postedBody.address).toBe(primaryAddress)
-  expect(Array.isArray(postedBody.outputAddresses)).toBe(true)
-  expect(postedBody.outputAddresses[0].address).toBe(primaryAddress)
-  expect(postedBody.outputAddresses.map((o: any) => o.address)).toEqual([primaryAddress, other1, other2])
+    expect(Array.isArray(postedBody.outputAddresses)).toBe(true)
+    expect(postedBody.outputAddresses[0].address).toBe(primaryAddress)
+    expect(postedBody.outputAddresses.map((o: any) => o.address)).toEqual([primaryAddress, other1, other2])
     // Ensure amounts carried over as decimals (stringifiable)
     postedBody.outputAddresses.forEach((o: any) => {
       expect(o.amount).toBeDefined()

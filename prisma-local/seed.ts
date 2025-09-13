@@ -34,6 +34,11 @@ async function main (): Promise<void> {
   if (await prisma.network.count() === 0) {
     await prisma.network.createMany({ data: networks })
   }
+  // create user profiles
+  if (await prisma.userProfile.count() === 0) {
+    await prisma.userProfile.createMany({ data: devUserProfiles })
+    await prisma.userProfile.createMany({ data: adminUserProfiles })
+  }
   // create wallets
   if (await prisma.wallet.count() === 0) {
     await prisma.wallet.createMany({ data: wallets })
@@ -54,11 +59,6 @@ async function main (): Promise<void> {
   }
   for (const q of createAdminUserRawQueryList) {
     await prisma.$executeRawUnsafe(q)
-  }
-  // create user profiles
-  if (await prisma.userProfile.count() === 0) {
-    await prisma.userProfile.createMany({ data: devUserProfiles })
-    await prisma.userProfile.createMany({ data: adminUserProfiles })
   }
   // create wallet user profiles connectors
   if (await prisma.walletsOnUserProfile.count() === 0) {
