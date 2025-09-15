@@ -48,6 +48,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     } else if (err.type === Session.Error.UNAUTHORISED) {
       return { props: {} }
     } else {
+      console.error(`ERROR LOGGIN IN ON SUPERTOKENS, type: ${err.type as string}`)
+      console.error('ERROR OBJ:', { err })
       throw err
     }
   }
