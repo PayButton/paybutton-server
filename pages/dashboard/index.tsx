@@ -44,7 +44,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     session = await Session.getSession(context.req, context.res)
   } catch (err: any) {
     console.error(`ERROR LOGGIN IN ON SUPERTOKENS, type: ${err.type as string}`)
-    console.error('ERROR OBJ:', { err })
+    console.error('ERROR OBJ:', { wip: err.payload[0].reason })
     if (err.type === Session.Error.TRY_REFRESH_TOKEN) {
       console.error('ERR1')
       return { props: { fromSupertokens: 'needs-refresh' } }
