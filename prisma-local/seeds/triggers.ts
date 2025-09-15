@@ -19,7 +19,7 @@ export const paybuttonTriggers = [
       "currency": <currency>,
       "secret":  "06d1b75746d5be25f9ebb345a887c08698ebe0fe605b51c22c0c04fe57150f24"
     }`,
-    postURL: 'http://192.168.128.1:3003/paymentReceived'
+    postURL: 'https://httpbin.org/post'
   }
 ]
 // "secret" is to be used by staking; of course this value shouldn't be used in prod

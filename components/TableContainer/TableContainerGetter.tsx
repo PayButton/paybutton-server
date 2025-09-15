@@ -89,7 +89,7 @@ const TableContainer = ({ columns, dataGetter, opts, ssr, tableRefreshCount, emp
       setLoading(true)
       const d = await dataGetter(pageIndex, pageSize, sortColumn, sortDesc)
       setPageCount(Math.ceil(d.totalCount / pageSize))
-      setData(d.data)
+      setData(d.data ?? [])
       setLoading(false)
     })()
   }, [pageSize, pageIndex, sortColumn, sortDesc, tableRefreshCount])
