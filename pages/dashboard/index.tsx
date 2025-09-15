@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
-import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import style from './dashboard.module.css'
 import { formatQuoteValue, removeUnserializableFields } from 'utils/index'
@@ -15,6 +14,7 @@ import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userServ
 import moment from 'moment-timezone'
 import SettingsIcon from '../../assets/settings-slider-icon.png'
 import Image from 'next/image'
+import { frontEndGetSession } from 'utils/setSession'
 
 const Chart = dynamic(async () => await import('components/Chart'), {
   ssr: false
@@ -39,24 +39,11 @@ const NumberBlock = ({ value, text }: NumberBlockProps): JSX.Element => {
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
   supertokensNode.init(SuperTokensConfig.backendConfig())
-  let session
-  try {
-    session = await Session.getSession(context.req, context.res)
-  } catch (err: any) {
-    console.error(`ERROR LOGGIN IN ON SUPERTOKENS, type: ${err.type as string}`)
-    console.error('ERROR OBJ:', { wip: err.payload[0].reason })
-    if (err.type === Session.Error.TRY_REFRESH_TOKEN) {
-      console.error('ERR1')
-      return { props: { fromSupertokens: 'needs-refresh' } }
-    } else if (err.type === Session.Error.UNAUTHORISED) {
-      console.error('ERR2')
-      return { props: {} }
-    } else {
-      throw err
-    }
+  const sessionResult = await frontEndGetSession(context)
+  if (!sessionResult.success) {
+    return sessionResult.failedResult.payload
   }
-
-  if (session === undefined) return
+  const session = sessionResult.session
   const userId = session.getUserId()
   const user = await fetchUserWithSupertokens(userId)
   removeUnserializableFields(user.userProfile)

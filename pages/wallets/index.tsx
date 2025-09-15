@@ -1,7 +1,6 @@
 import React from 'react'
 import supertokensNode from 'supertokens-node'
 import * as SuperTokensConfig from '../../config/backendConfig'
-import Session from 'supertokens-node/recipe/session'
 import { GetServerSideProps } from 'next'
 import WalletCard from 'components/Wallet/WalletCard'
 import WalletForm from 'components/Wallet/WalletForm'
@@ -11,24 +10,16 @@ import { UserNetworksInfo } from 'services/networkService'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
 import { removeUnserializableFields } from 'utils/index'
+import { frontEndGetSession } from 'utils/setSession'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
   supertokensNode.init(SuperTokensConfig.backendConfig())
-  let session
-  try {
-    session = await Session.getSession(context.req, context.res)
-  } catch (err: any) {
-    if (err.type === Session.Error.TRY_REFRESH_TOKEN) {
-      return { props: { fromSupertokens: 'needs-refresh' } }
-    } else if (err.type === Session.Error.UNAUTHORISED) {
-      return { props: {} }
-    } else {
-      throw err
-    }
+  const sessionResult = await frontEndGetSession(context)
+  if (!sessionResult.success) {
+    return sessionResult.failedResult.payload
   }
-
-  if (session === undefined) return
+  const session = sessionResult.session
   const userId = session.getUserId()
   const user = await fetchUserWithSupertokens(userId)
   removeUnserializableFields(user.userProfile)

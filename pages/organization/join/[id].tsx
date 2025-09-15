@@ -5,34 +5,20 @@ import Image from 'next/image'
 import logoImageSource from 'assets/logo.png'
 import style from 'styles/signin.module.css'
 import { GetServerSideProps } from 'next/types'
-import Session from 'supertokens-node/recipe/session'
 import supertokensNode from 'supertokens-node'
 import { fetchOrganization, fetchInviteForToken } from 'services/organizationService'
 import { Organization, OrganizationInvite } from '@prisma/client'
 import { removeDateFields } from 'utils/index'
 import { useRouter } from 'next/router'
+import { frontEndGetSession } from 'utils/setSession'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
   supertokensNode.init(SuperTokensConfig.backendConfig())
-  let session
-  try {
-    session = await Session.getSession(context.req, context.res)
-  } catch (err: any) {
-    if (err.type === Session.Error.TRY_REFRESH_TOKEN) {
-      return { props: { fromSupertokens: 'needs-refresh' } }
-    } else if (err.type === Session.Error.UNAUTHORISED) {
-      return {
-        redirect: {
-          permanent: false,
-          destination: '/'
-        }
-      }
-    } else {
-      throw err
-    }
+  const sessionResult = await frontEndGetSession(context)
+  if (!sessionResult.success) {
+    return sessionResult.failedResult.payload
   }
-  if (session === undefined) return
 
   const token = context.params?.id
   if (token === undefined || Array.isArray(token)) {
