@@ -12,7 +12,7 @@ import {
   getSimplifiedTransactions,
   getSimplifiedTrasaction,
   connectAllTransactionsToPrices,
-  updatePaymentStatus,
+  updateClientPaymentStatus,
   getClientPayment
 } from './transactionService'
 import { Address, Prisma, ClientPaymentStatus } from '@prisma/client'
@@ -554,17 +554,17 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private async updateClientPaymentStatus (txAmount: string | number | Prisma.Decimal | DecimalJsLike, opReturn: string | undefined, status: ClientPaymentStatus): Promise<void> {
+  private async handleUpdateClientPaymentStatus (txAmount: string | number | Prisma.Decimal | DecimalJsLike, opReturn: string | undefined, status: ClientPaymentStatus): Promise<void> {
     const parsedOpReturn = parseOpReturnData(opReturn ?? '')
     const paymentId = parsedOpReturn.paymentId
 
     const clientPayment = await getClientPayment(paymentId)
     if (clientPayment.amount !== null) {
       if (Number(clientPayment.amount) === Number(txAmount)) {
-        await updatePaymentStatus(paymentId, status)
+        await updateClientPaymentStatus(paymentId, status)
       }
     } else {
-      await updatePaymentStatus(paymentId, status)
+      await updateClientPaymentStatus(paymentId, status)
     }
   }
 
