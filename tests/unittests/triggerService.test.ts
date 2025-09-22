@@ -154,8 +154,8 @@ describe('Payment Trigger system', () => {
           rawMessage: '',
           inputAddresses: [{ address: 'ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h', amount: new Prisma.Decimal(1) }],
           outputAddresses: [
-            { address: other1, amount: new Prisma.Decimal(2) },
             { address: primaryAddress, amount: new Prisma.Decimal(3) },
+            { address: other1, amount: new Prisma.Decimal(2) },
             { address: other2, amount: new Prisma.Decimal(4) }
           ],
           prices: [
