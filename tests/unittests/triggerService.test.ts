@@ -106,7 +106,23 @@ describe('Payment Trigger system', () => {
         postData: '{"address": <address>, "outputAddresses": <outputAddresses>}',
         paybutton: {
           name: 'My Paybutton',
-          providerUserId: 'user-1'
+          addresses: [
+            {
+              address: {
+                address: primaryAddress
+              }
+            }
+          ],
+          providerUserId: 'user-1',
+          user: {
+            id: 'user-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            publicKey: '',
+            emailCredits: 1,
+            postCredits: 1,
+            preferredCurrencyId: 1
+          }
         }
       } as any
     ])
