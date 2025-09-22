@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `UserProfile` ADD COLUMN `postCredits` INTEGER NOT NULL DEFAULT 5,
+    MODIFY `emailCredits` INTEGER NOT NULL DEFAULT 5;

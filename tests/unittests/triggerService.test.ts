@@ -85,12 +85,12 @@ describe('Payment Trigger system', () => {
       postDataParameters: params
     })
 
-  expect(result.addr).toBe(primaryAddress)
-  expect(Array.isArray(result.outs)).toBe(true)
-  expect(result.outs[0].address).toBe(primaryAddress)
-  expect(result.outs.map((o: any) => o.address)).toEqual([primaryAddress, other])
-  // ensure amounts are present
-  result.outs.forEach((o: any) => expect(o.amount).toBeDefined())
+    expect(result.addr).toBe(primaryAddress)
+    expect(Array.isArray(result.outs)).toBe(true)
+    expect(result.outs[0].address).toBe(primaryAddress)
+    expect(result.outs.map((o: any) => o.address)).toEqual([primaryAddress, other])
+    // ensure amounts are present
+    result.outs.forEach((o: any) => expect(o.amount).toBeDefined())
   })
 
   it('executeAddressTriggers posts with outputAddresses containing primary at index 0', async () => {
@@ -106,7 +106,23 @@ describe('Payment Trigger system', () => {
         postData: '{"address": <address>, "outputAddresses": <outputAddresses>}',
         paybutton: {
           name: 'My Paybutton',
-          providerUserId: 'user-1'
+          addresses: [
+            {
+              address: {
+                address: primaryAddress
+              }
+            }
+          ],
+          providerUserId: 'user-1',
+          user: {
+            id: 'user-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            publicKey: '',
+            emailCredits: 1,
+            postCredits: 1,
+            preferredCurrencyId: 1
+          }
         }
       } as any
     ])
@@ -138,8 +154,8 @@ describe('Payment Trigger system', () => {
           rawMessage: '',
           inputAddresses: [{ address: 'ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h', amount: new Prisma.Decimal(1) }],
           outputAddresses: [
-            { address: other1, amount: new Prisma.Decimal(2) },
             { address: primaryAddress, amount: new Prisma.Decimal(3) },
+            { address: other1, amount: new Prisma.Decimal(2) },
             { address: other2, amount: new Prisma.Decimal(4) }
           ],
           prices: [
@@ -156,9 +172,9 @@ describe('Payment Trigger system', () => {
     const postedBody = (axios as any).post.mock.calls[0][1]
 
     expect(postedBody.address).toBe(primaryAddress)
-  expect(Array.isArray(postedBody.outputAddresses)).toBe(true)
-  expect(postedBody.outputAddresses[0].address).toBe(primaryAddress)
-  expect(postedBody.outputAddresses.map((o: any) => o.address)).toEqual([primaryAddress, other1, other2])
+    expect(Array.isArray(postedBody.outputAddresses)).toBe(true)
+    expect(postedBody.outputAddresses[0].address).toBe(primaryAddress)
+    expect(postedBody.outputAddresses.map((o: any) => o.address)).toEqual([primaryAddress, other1, other2])
     // Ensure amounts carried over as decimals (stringifiable)
     postedBody.outputAddresses.forEach((o: any) => {
       expect(o.amount).toBeDefined()

@@ -51,7 +51,8 @@ jest.mock('../../services/addressService', () => ({
   getLatestConfirmedTxTimestampForAddress: jest.fn(),
   setSyncing: jest.fn(),
   setSyncingBatch: jest.fn(),
-  updateLastSynced: jest.fn()
+  updateLastSynced: jest.fn(),
+  updateManyLastSynced: jest.fn()
 }))
 
 jest.mock('../../services/transactionService', () => ({

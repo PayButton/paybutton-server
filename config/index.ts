@@ -11,6 +11,8 @@ interface ProSettings {
   payoutAddress: string
   standardDailyEmailLimit: number | 'Inf'
   proDailyEmailLimit: number | 'Inf'
+  standardDailyPostLimit: number | 'Inf'
+  proDailyPostLimit: number | 'Inf'
   standardAddressesPerButtonLimit: number | 'Inf'
   proAddressesPerButtonLimit: number | 'Inf'
 }
