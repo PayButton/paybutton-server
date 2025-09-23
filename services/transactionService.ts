@@ -1012,7 +1012,7 @@ export const generatePaymentId = async (address: string, amount?: Prisma.Decimal
   return clientPayment.paymentId
 }
 
-export const updatePaymentStatus = async (paymentId: string, status: ClientPaymentStatus): Promise<void> => {
+export const updateClientPaymentStatus = async (paymentId: string, status: ClientPaymentStatus): Promise<void> => {
   await prisma.clientPayment.update({
     where: { paymentId },
     data: { status }

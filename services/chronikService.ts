@@ -591,7 +591,7 @@ export class ChronikBlockchainClient {
         this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
         for (const addressWithTransaction of addressesWithTransactions) {
           const { amount, opReturn } = addressWithTransaction.transaction
-          await this.updateClientPaymentStatus(amount, opReturn, 'CONFIRMED' as ClientPaymentStatus)
+          await this.handleUpdateClientPaymentStatus(amount, opReturn, 'CONFIRMED' as ClientPaymentStatus)
         }
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
         if (this.isAlreadyBeingProcessed(msg.txid, false)) {
@@ -614,7 +614,7 @@ export class ChronikBlockchainClient {
             }
             const { amount, opReturn } = addressWithTransaction.transaction
             const newClientPaymentStatus = 'ADDED_TO_MEMPOOL' as ClientPaymentStatus
-            await this.updateClientPaymentStatus(amount, opReturn, newClientPaymentStatus)
+            await this.handleUpdateClientPaymentStatus(amount, opReturn, newClientPaymentStatus)
           }
         }
         this.mempoolTxsBeingProcessed -= 1
