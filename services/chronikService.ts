@@ -557,14 +557,17 @@ export class ChronikBlockchainClient {
   private async handleUpdateClientPaymentStatus (txAmount: string | number | Prisma.Decimal | DecimalJsLike, opReturn: string | undefined, status: ClientPaymentStatus): Promise<void> {
     const parsedOpReturn = parseOpReturnData(opReturn ?? '')
     const paymentId = parsedOpReturn.paymentId
-
-    const clientPayment = await getClientPayment(paymentId)
-    if (clientPayment.amount !== null) {
-      if (Number(clientPayment.amount) === Number(txAmount)) {
-        await updateClientPaymentStatus(paymentId, status)
+    if (paymentId !== undefined && paymentId !== '') {
+      const clientPayment = await getClientPayment(paymentId)
+      if (clientPayment !== null) {
+        if (clientPayment?.amount !== null) {
+          if (Number(clientPayment?.amount) === Number(txAmount)) {
+            await updateClientPaymentStatus(paymentId, status)
+          }
+        } else {
+          await updateClientPaymentStatus(paymentId, status)
+        }
       }
-    } else {
-      await updateClientPaymentStatus(paymentId, status)
     }
   }
 

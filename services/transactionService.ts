@@ -1019,8 +1019,8 @@ export const updateClientPaymentStatus = async (paymentId: string, status: Clien
   })
 }
 
-export const getClientPayment = async (paymentId: string): Promise<Prisma.ClientPaymentGetPayload<{ include: { address: true } }>> => {
-  return await prisma.clientPayment.findUniqueOrThrow({
+export const getClientPayment = async (paymentId: string): Promise<Prisma.ClientPaymentGetPayload<{ include: { address: true } }> | null> => {
+  return await prisma.clientPayment.findUnique({
     where: { paymentId },
     include: { address: true }
   })
