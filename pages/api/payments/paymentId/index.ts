@@ -7,7 +7,7 @@ import { runMiddleware } from 'utils/index'
 import Cors from 'cors'
 
 const cors = Cors({
-  methods: ['GET', 'HEAD', 'POST']
+  methods: ['POST']
 })
 
 export default async (req: any, res: any): Promise<void> => {
