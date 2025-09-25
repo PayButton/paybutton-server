@@ -2,8 +2,16 @@ import { Decimal } from '@prisma/client/runtime/library'
 import { generatePaymentId } from 'services/transactionService'
 import { parseAddress, parseCreatePaymentIdPOSTRequest } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
+import { runMiddleware } from 'utils/index'
+
+import Cors from 'cors'
+
+const cors = Cors({
+  methods: ['GET', 'HEAD', 'POST']
+})
 
 export default async (req: any, res: any): Promise<void> => {
+  await runMiddleware(req, res, cors)
   if (req.method === 'POST') {
     try {
       const values = parseCreatePaymentIdPOSTRequest(req.body)
