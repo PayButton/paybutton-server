@@ -491,43 +491,61 @@ interface TxDistinguished {
   isCreated: boolean
 }
 
-export async function createManyTransactions (
+export async function createManyTransactions(
   transactionsData: Prisma.TransactionUncheckedCreateInput[]
 ): Promise<TransactionWithAddressAndPrices[]> {
-  // we don't use `createMany` to ignore conflicts between the sync and the subscription
-  // and we don't return transactions that were updated, only ones that were created
   const insertedTransactionsDistinguished: TxDistinguished[] = []
-  await prisma.$transaction(async (prisma) => {
-    for (const tx of transactionsData) {
-      const upsertedTx = await prisma.transaction.upsert({
-        create: tx,
-        where: {
-          Transaction_hash_addressId_unique_constraint: {
-            hash: tx.hash,
-            addressId: tx.addressId
-          }
-        },
-        update: {
-          confirmed: tx.confirmed,
-          timestamp: tx.timestamp
+
+  await prisma.$transaction(
+    async (prisma) => {
+      // processa em lotes para não explodir conexões
+      const BATCH_SIZE = 50
+      for (let i = 0; i < transactionsData.length; i += BATCH_SIZE) {
+        const batch = transactionsData.slice(i, i + BATCH_SIZE)
+
+        const results = await Promise.all(
+          batch.map((tx) =>
+            prisma.transaction.upsert({
+              create: tx,
+              where: {
+                Transaction_hash_addressId_unique_constraint: {
+                  hash: tx.hash,
+                  addressId: tx.addressId,
+                },
+              },
+              update: {
+                confirmed: tx.confirmed,
+                timestamp: tx.timestamp,
+              },
+            })
+          )
+        )
+
+        for (const upsertedTx of results) {
+          insertedTransactionsDistinguished.push({
+            tx: upsertedTx,
+            isCreated: upsertedTx.createdAt.getTime() === upsertedTx.updatedAt.getTime(),
+          })
         }
-      })
-      insertedTransactionsDistinguished.push({
-        tx: upsertedTx,
-        isCreated: upsertedTx.createdAt.getTime() === upsertedTx.updatedAt.getTime()
-      })
+      }
+    },
+    {
+      timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT,
     }
-  },
-  {
-    timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT
-  }
   )
+
   const insertedTransactions = insertedTransactionsDistinguished
-    .filter(txD => txD.isCreated)
-    .map(txD => txD.tx)
-  void await connectTransactionsListToPrices(insertedTransactions)
-  const txsWithPaybuttonsAndPrices = await fetchTransactionsWithPaybuttonsAndPricesForIdList(insertedTransactions.map(tx => tx.id))
-  void await CacheSet.txsCreation(txsWithPaybuttonsAndPrices)
+    .filter((txD) => txD.isCreated)
+    .map((txD) => txD.tx)
+
+  // roda independente em paralelo
+  const [_, txsWithPaybuttonsAndPrices] = await Promise.all([
+    connectTransactionsListToPrices(insertedTransactions),
+    fetchTransactionsWithPaybuttonsAndPricesForIdList(insertedTransactions.map((tx) => tx.id)),
+  ])
+
+  void CacheSet.txsCreation(txsWithPaybuttonsAndPrices)
+
   return txsWithPaybuttonsAndPrices
 }
 
