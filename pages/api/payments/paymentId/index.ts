@@ -26,6 +26,9 @@ export default async (req: any, res: any): Promise<void> => {
         case RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message:
           res.status(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.statusCode).json(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400)
           break
+        case RESPONSE_MESSAGES.INVALID_ADDRESS_400.message:
+          res.status(RESPONSE_MESSAGES.INVALID_ADDRESS_400.statusCode).json(RESPONSE_MESSAGES.INVALID_ADDRESS_400)
+          break
         default:
           res.status(500).json({ statusCode: 500, message: error.message })
       }
