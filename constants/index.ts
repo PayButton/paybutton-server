@@ -92,7 +92,7 @@ export const RESPONSE_MESSAGES = {
   INVALID_OUTPUT_SCRIPT_LENGTH_500: (l: number) => { return { statusCode: 500, message: `Invalid outputScript length ${l}` } },
   FAILED_TO_PARSE_TX_OP_RETURN_500: { statusCode: 500, message: 'Failed to parse OP_RETURN data in Tx.' },
   PAYBUTTON_ID_NOT_PROVIDED_400: { statusCode: 400, message: 'Paybutton id not provided' },
-  METHOD_NOT_ALLOWED: { statusCode: 500, message: 'Method not allowed.' },
+  METHOD_NOT_ALLOWED_405: { statusCode: 405, message: 'Method not allowed.' },
   USER_HAS_NO_ORGANIZATION_400: { statusCode: 400, message: 'User does not belong to an organization.' },
   USER_ALREADY_HAS_ORGANIZATION_400: { statusCode: 400, message: 'User already belongs to an organization.' },
   USER_HAS_ALREADY_USED_INVITE_400: { statusCode: 400, message: 'You have already used this invite.' },

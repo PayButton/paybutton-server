@@ -34,7 +34,7 @@ export default async (req: any, res: any): Promise<void> => {
       }
     }
   } else {
-    res.status(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.statusCode)
-      .json(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED)
+    res.status(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED_405.statusCode)
+      .json(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED_405)
   }
 }
