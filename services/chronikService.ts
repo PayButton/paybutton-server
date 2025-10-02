@@ -616,8 +616,7 @@ export class ChronikBlockchainClient {
               await executeAddressTriggers(broadcastTxData, tx.address.networkId)
             }
             const { amount, opReturn } = addressWithTransaction.transaction
-            const newClientPaymentStatus = 'ADDED_TO_MEMPOOL' as ClientPaymentStatus
-            await this.handleUpdateClientPaymentStatus(amount, opReturn, newClientPaymentStatus)
+            await this.handleUpdateClientPaymentStatus(amount, opReturn, 'ADDED_TO_MEMPOOL' as ClientPaymentStatus)
           }
         }
         this.mempoolTxsBeingProcessed -= 1
