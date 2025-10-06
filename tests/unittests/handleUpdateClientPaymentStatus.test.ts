@@ -115,7 +115,8 @@ describe('handleUpdateClientPaymentStatus tests', () => {
     await (client as any).handleUpdateClientPaymentStatus(
       new Prisma.Decimal('100.00'),
       mockOpReturn,
-      'CONFIRMED' as ClientPaymentStatus
+      'CONFIRMED' as ClientPaymentStatus,
+      'test-address'
     )
 
     expect(mockGetClientPayment).toHaveBeenCalledWith('test-payment-id-123')
@@ -152,7 +153,8 @@ describe('handleUpdateClientPaymentStatus tests', () => {
     await (client as any).handleUpdateClientPaymentStatus(
       new Prisma.Decimal('200.00'),
       mockOpReturn,
-      'ADDED_TO_MEMPOOL' as ClientPaymentStatus
+      'ADDED_TO_MEMPOOL' as ClientPaymentStatus,
+      'test-address-2'
     )
 
     expect(mockGetClientPayment).toHaveBeenCalledWith('test-payment-id-456')
@@ -189,7 +191,8 @@ describe('handleUpdateClientPaymentStatus tests', () => {
     await (client as any).handleUpdateClientPaymentStatus(
       new Prisma.Decimal('150.00'), // Different amount
       mockOpReturn,
-      'CONFIRMED' as ClientPaymentStatus
+      'CONFIRMED' as ClientPaymentStatus,
+      'test-address-3'
     )
 
     expect(mockGetClientPayment).toHaveBeenCalledWith('test-payment-id-789')
@@ -208,7 +211,8 @@ describe('handleUpdateClientPaymentStatus tests', () => {
     await (client as any).handleUpdateClientPaymentStatus(
       new Prisma.Decimal('100.00'),
       mockOpReturn,
-      'CONFIRMED' as ClientPaymentStatus
+      'CONFIRMED' as ClientPaymentStatus,
+      'non-existent-address'
     )
 
     expect(mockGetClientPayment).toHaveBeenCalledWith('non-existent-payment-id')
@@ -223,7 +227,8 @@ describe('handleUpdateClientPaymentStatus tests', () => {
     await (client as any).handleUpdateClientPaymentStatus(
       new Prisma.Decimal('100.00'),
       mockOpReturn,
-      'CONFIRMED' as ClientPaymentStatus
+      'CONFIRMED' as ClientPaymentStatus,
+      'test-address-no-payment-id'
     )
 
     expect(mockGetClientPayment).not.toHaveBeenCalled()
@@ -239,7 +244,8 @@ describe('handleUpdateClientPaymentStatus tests', () => {
     await (client as any).handleUpdateClientPaymentStatus(
       new Prisma.Decimal('100.00'),
       mockOpReturn,
-      'CONFIRMED' as ClientPaymentStatus
+      'CONFIRMED' as ClientPaymentStatus,
+      'test-address-empty-payment-id'
     )
 
     expect(mockGetClientPayment).not.toHaveBeenCalled()
@@ -250,7 +256,8 @@ describe('handleUpdateClientPaymentStatus tests', () => {
     await (client as any).handleUpdateClientPaymentStatus(
       new Prisma.Decimal('100.00'),
       undefined,
-      'CONFIRMED' as ClientPaymentStatus
+      'CONFIRMED' as ClientPaymentStatus,
+      'test-address-undefined-opreturn'
     )
 
     expect(mockGetClientPayment).not.toHaveBeenCalled()
@@ -288,7 +295,8 @@ describe('handleUpdateClientPaymentStatus tests', () => {
     await (client as any).handleUpdateClientPaymentStatus(
       '100.00',
       mockOpReturn,
-      'CONFIRMED' as ClientPaymentStatus
+      'CONFIRMED' as ClientPaymentStatus,
+      'test-address-4'
     )
 
     expect(mockUpdateClientPaymentStatus).toHaveBeenCalledWith('test-payment-id-types', 'CONFIRMED')
@@ -299,7 +307,8 @@ describe('handleUpdateClientPaymentStatus tests', () => {
     await (client as any).handleUpdateClientPaymentStatus(
       100,
       mockOpReturn,
-      'CONFIRMED' as ClientPaymentStatus
+      'CONFIRMED' as ClientPaymentStatus,
+      'test-address-4'
     )
 
     expect(mockUpdateClientPaymentStatus).toHaveBeenCalledWith('test-payment-id-types', 'CONFIRMED')
@@ -312,7 +321,8 @@ describe('handleUpdateClientPaymentStatus tests', () => {
     await (client as any).handleUpdateClientPaymentStatus(
       new Prisma.Decimal('100.00'),
       stringOpReturn,
-      'CONFIRMED' as ClientPaymentStatus
+      'CONFIRMED' as ClientPaymentStatus,
+      'test-address-non-object'
     )
 
     // When parseOpReturnData returns a string, there's no paymentId property
@@ -354,7 +364,8 @@ describe('handleUpdateClientPaymentStatus tests', () => {
     await (client as any).handleUpdateClientPaymentStatus(
       new Prisma.Decimal('500.00'),
       complexOpReturn,
-      'CONFIRMED' as ClientPaymentStatus
+      'CONFIRMED' as ClientPaymentStatus,
+      'test-address-5'
     )
 
     expect(mockGetClientPayment).toHaveBeenCalledWith('complex-payment-id')
@@ -392,7 +403,8 @@ describe('handleUpdateClientPaymentStatus tests', () => {
     await (client as any).handleUpdateClientPaymentStatus(
       new Prisma.Decimal('100.00'),
       mockOpReturn,
-      'CONFIRMED' as ClientPaymentStatus
+      'CONFIRMED' as ClientPaymentStatus,
+      'test-address-6'
     )
 
     expect(mockGetClientPayment).toHaveBeenCalledWith('precision-test-id')
@@ -435,7 +447,8 @@ describe('handleUpdateClientPaymentStatus tests', () => {
       await (client as any).handleUpdateClientPaymentStatus(
         new Prisma.Decimal('100.00'),
         mockOpReturn,
-        status
+        status,
+        'test-address-7'
       )
 
       expect(mockUpdateClientPaymentStatus).toHaveBeenCalledWith('status-test-id', status)
@@ -473,10 +486,128 @@ describe('handleUpdateClientPaymentStatus tests', () => {
     await (client as any).handleUpdateClientPaymentStatus(
       new Prisma.Decimal('0.00'),
       mockOpReturn,
-      'CONFIRMED' as ClientPaymentStatus
+      'CONFIRMED' as ClientPaymentStatus,
+      'test-address-8'
     )
 
     expect(mockGetClientPayment).toHaveBeenCalledWith('zero-amount-test')
     expect(mockUpdateClientPaymentStatus).toHaveBeenCalledWith('zero-amount-test', 'CONFIRMED')
+  })
+
+  it('Should not update when addresses do not match', async () => {
+    const mockOpReturn = JSON.stringify({
+      paymentId: 'address-mismatch-test',
+      message: 'address mismatch test'
+    })
+
+    const mockClientPayment = {
+      paymentId: 'address-mismatch-test',
+      amount: new Prisma.Decimal('100.00'),
+      status: 'PENDING' as ClientPaymentStatus,
+      addressString: 'expected-address',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      address: {
+        id: '9',
+        address: 'expected-address',
+        networkId: 1,
+        syncing: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastSynced: null
+      }
+    }
+
+    mockGetClientPayment.mockResolvedValue(mockClientPayment)
+    mockUpdateClientPaymentStatus.mockResolvedValue(undefined)
+
+    // Should not update when transaction address differs from client payment address
+    await (client as any).handleUpdateClientPaymentStatus(
+      new Prisma.Decimal('100.00'),
+      mockOpReturn,
+      'CONFIRMED' as ClientPaymentStatus,
+      'different-address'
+    )
+
+    expect(mockGetClientPayment).toHaveBeenCalledWith('address-mismatch-test')
+    expect(mockUpdateClientPaymentStatus).not.toHaveBeenCalled()
+  })
+
+  it('Should update when addresses match and amount is null', async () => {
+    const mockOpReturn = JSON.stringify({
+      paymentId: 'address-match-null-amount-test',
+      message: 'address match null amount test'
+    })
+
+    const mockClientPayment = {
+      paymentId: 'address-match-null-amount-test',
+      amount: null,
+      status: 'PENDING' as ClientPaymentStatus,
+      addressString: 'matching-address',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      address: {
+        id: '10',
+        address: 'matching-address',
+        networkId: 1,
+        syncing: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastSynced: null
+      }
+    }
+
+    mockGetClientPayment.mockResolvedValue(mockClientPayment)
+    mockUpdateClientPaymentStatus.mockResolvedValue(undefined)
+
+    // Should update when addresses match, even if amount is null
+    await (client as any).handleUpdateClientPaymentStatus(
+      new Prisma.Decimal('200.00'),
+      mockOpReturn,
+      'CONFIRMED' as ClientPaymentStatus,
+      'matching-address'
+    )
+
+    expect(mockGetClientPayment).toHaveBeenCalledWith('address-match-null-amount-test')
+    expect(mockUpdateClientPaymentStatus).toHaveBeenCalledWith('address-match-null-amount-test', 'CONFIRMED')
+  })
+
+  it('Should not update when addresses do not match even with null amount', async () => {
+    const mockOpReturn = JSON.stringify({
+      paymentId: 'address-mismatch-null-amount-test',
+      message: 'address mismatch null amount test'
+    })
+
+    const mockClientPayment = {
+      paymentId: 'address-mismatch-null-amount-test',
+      amount: null,
+      status: 'PENDING' as ClientPaymentStatus,
+      addressString: 'expected-address',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      address: {
+        id: '11',
+        address: 'expected-address',
+        networkId: 1,
+        syncing: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastSynced: null
+      }
+    }
+
+    mockGetClientPayment.mockResolvedValue(mockClientPayment)
+    mockUpdateClientPaymentStatus.mockResolvedValue(undefined)
+
+    // Should not update when addresses don't match, even if amount is null
+    await (client as any).handleUpdateClientPaymentStatus(
+      new Prisma.Decimal('200.00'),
+      mockOpReturn,
+      'CONFIRMED' as ClientPaymentStatus,
+      'different-address'
+    )
+
+    expect(mockGetClientPayment).toHaveBeenCalledWith('address-mismatch-null-amount-test')
+    expect(mockUpdateClientPaymentStatus).not.toHaveBeenCalled()
   })
 })

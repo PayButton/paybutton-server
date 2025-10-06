@@ -554,18 +554,24 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private async handleUpdateClientPaymentStatus (txAmount: string | number | Prisma.Decimal | DecimalJsLike, opReturn: string | undefined, status: ClientPaymentStatus): Promise<void> {
+  private async handleUpdateClientPaymentStatus (
+    txAmount: string | number | Prisma.Decimal | DecimalJsLike,
+    opReturn: string | undefined, status: ClientPaymentStatus,
+    txAdress: string): Promise<void> {
     const parsedOpReturn = parseOpReturnData(opReturn ?? '')
     const paymentId = parsedOpReturn.paymentId
     if (paymentId !== undefined && paymentId !== '') {
       const clientPayment = await getClientPayment(paymentId)
       if (clientPayment !== null) {
         if (clientPayment?.amount !== null) {
-          if (Number(clientPayment?.amount) === Number(txAmount)) {
+          if (Number(clientPayment?.amount) === Number(txAmount) &&
+            (clientPayment?.addressString === txAdress)) {
             await updateClientPaymentStatus(paymentId, status)
           }
         } else {
-          await updateClientPaymentStatus(paymentId, status)
+          if (clientPayment?.addressString === txAdress) {
+            await updateClientPaymentStatus(paymentId, status)
+          }
         }
       }
     }
@@ -594,7 +600,7 @@ export class ChronikBlockchainClient {
         this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
         for (const addressWithTransaction of addressesWithTransactions) {
           const { amount, opReturn } = addressWithTransaction.transaction
-          await this.handleUpdateClientPaymentStatus(amount, opReturn, 'CONFIRMED' as ClientPaymentStatus)
+          await this.handleUpdateClientPaymentStatus(amount, opReturn, 'CONFIRMED' as ClientPaymentStatus, addressWithTransaction.address.address)
         }
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
         if (this.isAlreadyBeingProcessed(msg.txid, false)) {
@@ -616,7 +622,7 @@ export class ChronikBlockchainClient {
               await executeAddressTriggers(broadcastTxData, tx.address.networkId)
             }
             const { amount, opReturn } = addressWithTransaction.transaction
-            await this.handleUpdateClientPaymentStatus(amount, opReturn, 'ADDED_TO_MEMPOOL' as ClientPaymentStatus)
+            await this.handleUpdateClientPaymentStatus(amount, opReturn, 'ADDED_TO_MEMPOOL' as ClientPaymentStatus, addressWithTransaction.address.address)
           }
         }
         this.mempoolTxsBeingProcessed -= 1
