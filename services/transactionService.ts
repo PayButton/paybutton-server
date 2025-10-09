@@ -1,6 +1,6 @@
 import prisma from 'prisma-local/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT } from 'constants/index'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT, HUMAN_READABLE_DATE_FORMAT } from 'constants/index'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
 import { AllPrices, QuoteValues, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
 import _ from 'lodash'
@@ -9,6 +9,7 @@ import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTxWithInvoices } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
+import moment from 'moment'
 
 export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
   const ret: QuoteValues = {
@@ -78,6 +79,7 @@ const resolveOpReturn = (opReturn: string): OpReturnData | null => {
     return null
   }
 }
+
 const includePrices = {
   prices: {
     include: {
@@ -95,7 +97,21 @@ const transactionWithPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
   { include: includePrices }
 )
 
-export type TransactionWithPrices = Prisma.TransactionGetPayload<typeof transactionWithPrices>
+type TransactionWithPrices = Prisma.TransactionGetPayload<typeof transactionWithPrices>
+
+const includeNetwork = {
+  address: {
+    select: {
+      networkId: true
+    }
+  }
+}
+
+const transactionWithNetwork = Prisma.validator<Prisma.TransactionDefaultArgs>()(
+  { include: includeNetwork }
+)
+
+type TransactionWithNetwork = Prisma.TransactionGetPayload<typeof transactionWithNetwork>
 
 const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
   { include: includeAddressAndPrices }
@@ -379,7 +395,7 @@ export async function upsertTransaction (
   const created = createdTx.createdAt.getTime() === createdTx.updatedAt.getTime()
   const networkId = await getTransactionNetworkId(createdTx)
   const ts = flattenTimestamp(createdTx.timestamp)
-  const allPrices = await fetchPricesForNetworkAndTimestamp(Number(networkId), ts, prisma)
+  const allPrices = await fetchPricesForNetworkAndTimestamp(Number(networkId), ts, prisma, true)
   await connectTransactionToPrices(createdTx, prisma, allPrices)
   const txWithPaybuttonsAndPrices = await fetchTransactionWithPaybuttonsAndPrices(createdTx.id)
   await CacheSet.txCreation(txWithPaybuttonsAndPrices)
@@ -424,32 +440,70 @@ export async function connectTransactionToPrices (
   await createPriceTxConnectionInChunks(txClient, rows)
 }
 
-export async function connectTransactionsListToPrices (txList: Transaction[]): Promise<void> {
+export async function connectTransactionsListToPrices (
+  txList: TransactionWithNetwork[]
+): Promise<void> {
   if (txList.length === 0) return
 
   console.log(`[PRICES] Preparing to connect ${txList.length} txs to prices...`)
 
   // collect UNIQUE (networkId, timestamp) pairs
   const networkIdToTimestamps = new Map<number, Set<number>>()
-  await Promise.all(txList.map(async (t) => {
-    const networkId = await getTransactionNetworkId(t)
+  for (const t of txList) {
+    const networkId = t.address.networkId
     const ts = flattenTimestamp(t.timestamp)
     const set = networkIdToTimestamps.get(networkId) ?? new Set<number>()
     set.add(ts)
     networkIdToTimestamps.set(networkId, set)
-  }))
+  }
 
-  // fetch AllPrices for each unique (networkId, timestamp)
+  // ---- efficient fetch ----
   const timestampToPrice: Record<number, AllPrices> = {}
   let pairs = 0
+
   for (const [networkId, timestamps] of networkIdToTimestamps.entries()) {
-    for (const ts of timestamps) {
-      pairs++
-      // not parallel
-      const allPrices = await fetchPricesForNetworkAndTimestamp(networkId, ts, prisma)
-      timestampToPrice[ts] = allPrices
+    const tsArray = [...timestamps]
+    pairs += tsArray.length
+
+    // Bulk fetch all (CAD + USD) for this networkId
+    const prices = await prisma.price.findMany({
+      where: {
+        networkId,
+        timestamp: { in: tsArray },
+        quoteId: { in: [CAD_QUOTE_ID, USD_QUOTE_ID] }
+      }
+    })
+
+    // Group prices by timestamp
+    const grouped = new Map<number, Partial<AllPrices>>()
+    for (const p of prices) {
+      const g = grouped.get(p.timestamp) ?? {}
+      if (p.quoteId === CAD_QUOTE_ID) g.cad = p
+      else if (p.quoteId === USD_QUOTE_ID) g.usd = p
+      grouped.set(p.timestamp, g)
+    }
+
+    // Throw on missing price pairs
+    for (const ts of tsArray) {
+      const allPrices = grouped.get(ts)
+      const formattedDate = moment.unix(ts).format(HUMAN_READABLE_DATE_FORMAT)
+
+      if (allPrices == null) {
+        throw new Error(
+          `[PRICES] No price record found for networkId=${networkId} at ${formattedDate}.`
+        )
+      }
+
+      if ((allPrices.cad == null) || (allPrices.usd == null)) {
+        throw new Error(
+          `[PRICES] Incomplete price data for networkId=${networkId} at ${formattedDate}. Partial data: ${JSON.stringify(allPrices, null, 2)}`
+        )
+      }
+
+      timestampToPrice[ts] = allPrices as AllPrices
     }
   }
+
   console.log(`[PRICES] Loaded prices for ${pairs} (network,timestamp) pairs.`)
 
   // Build all join rows (2 per tx: USD + CAD)
@@ -461,14 +515,18 @@ export async function connectTransactionsListToPrices (txList: Transaction[]): P
   }
   console.log(`[PRICES] Built ${rows.length} price links (2 per tx).`)
 
-  await prisma.$transaction(async (tx) => {
-    console.log(`[PRICES] Disconnecting existing price links for ${txList.length} txs...`)
-    await tx.pricesOnTransactions.deleteMany({
-      where: { transactionId: { in: txList.map(t => t.id) } }
-    })
-
-    await createPriceTxConnectionInChunks(tx, rows)
-  }, { timeout: PRICES_CONNECTION_TIMEOUT })
+  await prisma.$transaction(
+    async (tx) => {
+      console.log(
+        `[PRICES] Disconnecting existing price links for ${txList.length} txs...`
+      )
+      await tx.pricesOnTransactions.deleteMany({
+        where: { transactionId: { in: txList.map((t) => t.id) } }
+      })
+      await createPriceTxConnectionInChunks(tx, rows)
+    },
+    { timeout: PRICES_CONNECTION_TIMEOUT }
+  )
 }
 
 export async function connectAllTransactionsToPrices (): Promise<void> {
@@ -487,36 +545,36 @@ export async function connectAllTransactionsToPrices (): Promise<void> {
 }
 
 interface TxDistinguished {
-  tx: Transaction
+  tx: TransactionWithNetwork
   isCreated: boolean
 }
 
-export async function createManyTransactions(
+export async function createManyTransactions (
   transactionsData: Prisma.TransactionUncheckedCreateInput[]
 ): Promise<TransactionWithAddressAndPrices[]> {
   const insertedTransactionsDistinguished: TxDistinguished[] = []
 
   await prisma.$transaction(
     async (prisma) => {
-      // processa em lotes para não explodir conexões
       const BATCH_SIZE = 50
       for (let i = 0; i < transactionsData.length; i += BATCH_SIZE) {
         const batch = transactionsData.slice(i, i + BATCH_SIZE)
 
         const results = await Promise.all(
-          batch.map((tx) =>
-            prisma.transaction.upsert({
+          batch.map(async (tx) =>
+            await prisma.transaction.upsert({
               create: tx,
               where: {
                 Transaction_hash_addressId_unique_constraint: {
                   hash: tx.hash,
-                  addressId: tx.addressId,
-                },
+                  addressId: tx.addressId
+                }
               },
               update: {
                 confirmed: tx.confirmed,
-                timestamp: tx.timestamp,
+                timestamp: tx.timestamp
               },
+              include: includeNetwork
             })
           )
         )
@@ -524,13 +582,13 @@ export async function createManyTransactions(
         for (const upsertedTx of results) {
           insertedTransactionsDistinguished.push({
             tx: upsertedTx,
-            isCreated: upsertedTx.createdAt.getTime() === upsertedTx.updatedAt.getTime(),
+            isCreated: upsertedTx.createdAt.getTime() === upsertedTx.updatedAt.getTime()
           })
         }
       }
     },
     {
-      timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT,
+      timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT
     }
   )
 
@@ -538,10 +596,9 @@ export async function createManyTransactions(
     .filter((txD) => txD.isCreated)
     .map((txD) => txD.tx)
 
-  // roda independente em paralelo
-  const [_, txsWithPaybuttonsAndPrices] = await Promise.all([
+  const [, txsWithPaybuttonsAndPrices] = await Promise.all([
     connectTransactionsListToPrices(insertedTransactions),
-    fetchTransactionsWithPaybuttonsAndPricesForIdList(insertedTransactions.map((tx) => tx.id)),
+    fetchTransactionsWithPaybuttonsAndPricesForIdList(insertedTransactions.map((tx) => tx.id))
   ])
 
   void CacheSet.txsCreation(txsWithPaybuttonsAndPrices)
@@ -569,27 +626,31 @@ export async function deleteTransactions (transactions: TransactionWithAddressAn
   ))
 }
 
-export async function fetchAllTransactionsWithNoPrices (): Promise<Transaction[]> {
+async function fetchAllTransactionsWithNoPrices (): Promise<TransactionWithNetwork[]> {
   const x = await prisma.transaction.findMany({
     where: {
       prices: {
         none: {}
       }
-    }
+    },
+    include: includeNetwork
   })
   return x
 }
 
-export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transaction[]> {
-  return await prisma.$queryRaw<Transaction[]>`
-  SELECT t.*
-  FROM Transaction t
-  WHERE (
-    SELECT COUNT(*)
-    FROM PricesOnTransactions pot
-    WHERE pot.transactionId = t.id
-  ) = 1;
-`
+export async function fetchAllTransactionsWithIrregularPrices (): Promise<TransactionWithNetwork[]> {
+  const grouped = await prisma.pricesOnTransactions.groupBy({
+    by: ['transactionId'],
+    _count: { transactionId: true },
+    having: { transactionId: { _count: { equals: 1 } } }
+  })
+
+  const ids = grouped.map(g => g.transactionId)
+
+  return await prisma.transaction.findMany({
+    where: { id: { in: ids } },
+    include: includeNetwork
+  })
 }
 
 export async function fetchTransactionsByPaybuttonId (paybuttonId: string, networkIds?: number[]): Promise<TransactionsWithPaybuttonsAndPrices[]> {
