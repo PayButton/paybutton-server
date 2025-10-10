@@ -602,6 +602,8 @@ export class ChronikBlockchainClient {
         }
         await this.syncBlockTransactions(msg.blockHash)
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Syncing done.`)
+        const subsCount = this.chronikWSEndpoint.subs.scripts.length
+        console.log(`${this.CHRONIK_MSG_PREFIX}: [INFO] *Currently Subscribed to ${subsCount} addresses*`)
         this.confirmedTxsHashesFromLastBlock = []
       }
     } else if (msg.type === 'Error') {
