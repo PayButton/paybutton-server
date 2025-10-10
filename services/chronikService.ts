@@ -295,7 +295,7 @@ export class ChronikBlockchainClient {
   }
 
   /*
-   * For each address, fetch PAGE_CONCURRENCY pages in parallel (“burst”),
+   * For each address, fetch pages in parallel (“burst”),
    * then use the burst’s newest/oldest timestamps to decide whether to continue.
    * Yields happen only in the generator body (after each slice finishes, and at final flush).
   */
@@ -343,12 +343,13 @@ export class ChronikBlockchainClient {
           }
 
           const newestTs = Number(pageTxs[0].block?.timestamp ?? pageTxs[0].timeFirstSeen)
-          const oldestTs = Number(pageTxs[pageTxs.length - 1].block?.timestamp ?? pageTxs[pageTxs.length - 1].timeFirstSeen)
 
           if (newestTs < lastSyncedTimestampSeconds) {
             console.log(`${addrLogPrefix} NO NEW TXS`)
             break
           }
+
+          const oldestTs = Number(pageTxs[pageTxs.length - 1].block?.timestamp ?? pageTxs[pageTxs.length - 1].timeFirstSeen)
 
           pageTxs = pageTxs
             .filter(txThresholdFilter)
