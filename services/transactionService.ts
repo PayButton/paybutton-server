@@ -596,10 +596,8 @@ export async function createManyTransactions (
     .filter((txD) => txD.isCreated)
     .map((txD) => txD.tx)
 
-  const [, txsWithPaybuttonsAndPrices] = await Promise.all([
-    connectTransactionsListToPrices(insertedTransactions),
-    fetchTransactionsWithPaybuttonsAndPricesForIdList(insertedTransactions.map((tx) => tx.id))
-  ])
+  await connectTransactionsListToPrices(insertedTransactions)
+  const txsWithPaybuttonsAndPrices = await fetchTransactionsWithPaybuttonsAndPricesForIdList(insertedTransactions.map((tx) => tx.id))
 
   void CacheSet.txsCreation(txsWithPaybuttonsAndPrices)
 
