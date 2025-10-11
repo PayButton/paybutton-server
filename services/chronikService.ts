@@ -376,18 +376,18 @@ export class ChronikBlockchainClient {
         )
       )
 
-      // Emit full chunks of chronik txs (addressesSynced vazio)
+      // Yield full TX batches when buffer reaches TX_EMIT_BATCH_SIZE
       while (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
         const chronikTxsSlice = chronikTxs.slice(0, TX_EMIT_BATCH_SIZE)
         chronikTxs = chronikTxs.slice(TX_EMIT_BATCH_SIZE)
         yield { chronikTxs: chronikTxsSlice, addressesSynced: [] }
       }
 
-      // Emit marcador para este slice (sem txs, só addressesSynced)
+      // Yield batch marker for completed address group
       yield { chronikTxs: [], addressesSynced: lastBatchAddresses }
     }
 
-    // Final flush de txs (addressesSynced vazio)
+    // Final TX flush after all addresses processed
     if (chronikTxs.length > 0) {
       const remaining = chronikTxs
       chronikTxs = []
