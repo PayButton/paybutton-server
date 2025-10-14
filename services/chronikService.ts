@@ -566,13 +566,13 @@ export class ChronikBlockchainClient {
         if (clientPayment.status === 'CONFIRMED') {
           return
         }
-        if (clientPayment?.amount !== null) {
-          if (Number(clientPayment?.amount) === Number(txAmount) &&
-            (clientPayment?.addressString === txAdress)) {
+        if (clientPayment.amount !== null) {
+          if (Number(clientPayment.amount) === Number(txAmount) &&
+            (clientPayment.addressString === txAdress)) {
             await updateClientPaymentStatus(paymentId, status)
           }
         } else {
-          if (clientPayment?.addressString === txAdress) {
+          if (clientPayment.addressString === txAdress) {
             await updateClientPaymentStatus(paymentId, status)
           }
         }
