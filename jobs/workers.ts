@@ -37,9 +37,6 @@ export const syncBlockchainAndPricesWorker = async (queueName: string): Promise<
       console.log(`job ${job.id as string}: syncing missed transactions and connecting prices...`)
       await multiBlockchainClient.syncMissedTransactions()
       await connectAllTransactionsToPrices()
-      // teardown
-      console.log('Cleaning up MultiBlockchainClient global instance...');
-      (global as any).multiBlockchainClient = null
     },
     {
       connection: redisBullMQ,
@@ -47,8 +44,14 @@ export const syncBlockchainAndPricesWorker = async (queueName: string): Promise<
     }
   )
 
-  worker.on('completed', job => {
-    console.log(`job ${job.id as string}: blockchain + prices sync finished`)
+  worker.on('completed', (job) => {
+    // teardown
+    void (async () => {
+      console.log('Cleaning up MultiBlockchainClient global instance...')
+      await multiBlockchainClient.destroy()
+      console.log('Done.')
+      console.log(`job ${job.id as string}: blockchain + prices sync finished`)
+    })()
   })
 
   worker.on('failed', (job, err) => {

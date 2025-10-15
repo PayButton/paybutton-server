@@ -1087,6 +1087,17 @@ class MultiBlockchainClient {
     await this.subscribeAddresses(addresses)
     return await this.syncAddresses(addresses)
   }
+
+  public async destroy (): Promise<void> {
+    await Promise.all(
+      Object.values(this.clients).map(async (c) => {
+        try {
+          c.chronikWSEndpoint.close()
+          c.wsEndpoint.close()
+        } catch {}
+      })
+    )
+  }
 }
 
 export interface NodeJsGlobalMultiBlockchainClient extends NodeJS.Global {
