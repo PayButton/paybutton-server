@@ -11,7 +11,6 @@ import {
   upsertTransaction,
   getSimplifiedTransactions,
   getSimplifiedTrasaction,
-  connectAllTransactionsToPrices,
   updateClientPaymentStatus,
   getClientPayment
 } from './transactionService'
@@ -28,7 +27,6 @@ import { OpReturnData, parseError, parseOpReturnData } from 'utils/validators'
 import { executeAddressTriggers, executeTriggersBatch } from './triggerService'
 import { appendTxsToFile } from 'prisma-local/seeds/transactions'
 import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
-import { syncPastDaysNewerPrices } from './priceService'
 import { AddressType } from 'ecashaddrjs/dist/types'
 import { DecimalJsLike } from '@prisma/client/runtime/library'
 
@@ -957,25 +955,14 @@ class MultiBlockchainClient {
     console.log('Initializing MultiBlockchainClient...')
     this.initializing = true
     void (async () => {
-      if (this.isRunningApp()) {
-        await syncPastDaysNewerPrices()
-        const asyncOperations: Array<Promise<void>> = []
-        this.clients = {
-          ecash: this.instantiateChronikClient('ecash', asyncOperations),
-          bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
-        }
-        await Promise.all(asyncOperations)
-        this.setInitialized()
-        await connectAllTransactionsToPrices()
-      } else if (process.env.NODE_ENV === 'test') {
-        const asyncOperations: Array<Promise<void>> = []
-        this.clients = {
-          ecash: this.instantiateChronikClient('ecash', asyncOperations),
-          bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
-        }
-        await Promise.all(asyncOperations)
-        this.setInitialized()
+      const asyncOperations: Array<Promise<void>> = []
+      this.clients = {
+        ecash: this.instantiateChronikClient('ecash', asyncOperations),
+        bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
       }
+      await Promise.all(asyncOperations)
+      this.setInitialized()
+      console.log('Finished initializing MultiBlockchainClient.')
     })()
   }
 
@@ -1020,9 +1007,6 @@ class MultiBlockchainClient {
           await newClient.waitForLatencyTest()
           console.log(`[CHRONIK — ${networkSlug}] Subscribing addresses in database...`)
           await newClient.subscribeInitialAddresses()
-          console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
-          await newClient.syncMissedTransactions()
-          console.log(`[CHRONIK — ${networkSlug}] Finished instantiating client.`)
         })()
       )
     } else if (process.env.NODE_ENV === 'test') {
@@ -1033,6 +1017,7 @@ class MultiBlockchainClient {
       )
     }
 
+    console.log(`Finished instantiating ${networkSlug} client.`)
     return newClient
   }
 
@@ -1088,6 +1073,14 @@ class MultiBlockchainClient {
   public async getBalance (address: string): Promise<bigint> {
     const networkSlug = getAddressPrefix(address)
     return await this.clients[networkSlug as MainNetworkSlugsType].getBalance(address)
+  }
+
+  public async syncMissedTransactions (): Promise<void> {
+    await this.waitForStart()
+    await Promise.all([
+      this.clients.ecash.syncMissedTransactions(),
+      this.clients.bitcoincash.syncMissedTransactions()
+    ])
   }
 
   public async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
