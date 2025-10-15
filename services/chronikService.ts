@@ -582,7 +582,6 @@ export class ChronikBlockchainClient {
   }
 
   private async processWsMessage (msg: WsMsgClient): Promise<void> {
-    console.log('aiai', msg)
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
     if (msg.type === 'Tx') {
