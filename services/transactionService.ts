@@ -1,6 +1,6 @@
 import prisma from 'prisma-local/clientInstance'
-import { Prisma, Transaction } from '@prisma/client'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT } from 'constants/index'
+import { Prisma, Transaction, ClientPaymentStatus } from '@prisma/client'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, NETWORK_IDS_FROM_SLUGS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT } from 'constants/index'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
 import { AllPrices, QuoteValues, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
 import _ from 'lodash'
@@ -9,6 +9,8 @@ import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTxWithInvoices } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
+import { v4 as uuidv4 } from 'uuid'
+import { multiBlockchainClient } from 'services/chronikService'
 
 export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
   const ret: QuoteValues = {
@@ -973,4 +975,54 @@ export const fetchDistinctPaymentYearsByUser = async (userId: string): Promise<n
   `
 
   return years.map(y => y.year)
+}
+
+export const generatePaymentId = async (address: string, amount?: Prisma.Decimal): Promise<string> => {
+  const rawUUID = uuidv4()
+  const cleanUUID = rawUUID.replace(/-/g, '')
+  const status = 'PENDING' as ClientPaymentStatus
+  address = parseAddress(address)
+  const prefix = address.split(':')[0].toLowerCase()
+  const networkId = NETWORK_IDS_FROM_SLUGS[prefix]
+  const isAddressRegistered = await addressExists(address)
+
+  const clientPayment = await prisma.clientPayment.create({
+    data: {
+      address: {
+        connectOrCreate: {
+          where: { address },
+          create: {
+            address,
+            networkId
+          }
+        }
+      },
+      paymentId: cleanUUID,
+      status,
+      amount
+    },
+    include: {
+      address: true
+    }
+  })
+
+  if (!isAddressRegistered) {
+    void multiBlockchainClient.syncAndSubscribeAddresses([clientPayment.address])
+  }
+
+  return clientPayment.paymentId
+}
+
+export const updateClientPaymentStatus = async (paymentId: string, status: ClientPaymentStatus): Promise<void> => {
+  await prisma.clientPayment.update({
+    where: { paymentId },
+    data: { status }
+  })
+}
+
+export const getClientPayment = async (paymentId: string): Promise<Prisma.ClientPaymentGetPayload<{ include: { address: true } }> | null> => {
+  return await prisma.clientPayment.findUnique({
+    where: { paymentId },
+    include: { address: true }
+  })
 }

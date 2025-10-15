@@ -11,9 +11,11 @@ import {
   upsertTransaction,
   getSimplifiedTransactions,
   getSimplifiedTrasaction,
-  connectAllTransactionsToPrices
+  connectAllTransactionsToPrices,
+  updateClientPaymentStatus,
+  getClientPayment
 } from './transactionService'
-import { Address, Prisma } from '@prisma/client'
+import { Address, Prisma, ClientPaymentStatus } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
 import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced, updateManyLastSynced } from './addressService'
@@ -28,6 +30,7 @@ import { appendTxsToFile } from 'prisma-local/seeds/transactions'
 import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
 import { syncPastDaysNewerPrices } from './priceService'
 import { AddressType } from 'ecashaddrjs/dist/types'
+import { DecimalJsLike } from '@prisma/client/runtime/library'
 
 const decoder = new TextDecoder()
 
@@ -551,10 +554,38 @@ export class ChronikBlockchainClient {
     }
   }
 
+  private async handleUpdateClientPaymentStatus (
+    txAmount: string | number | Prisma.Decimal | DecimalJsLike,
+    opReturn: string | undefined, status: ClientPaymentStatus,
+    txAddress: string): Promise<void> {
+    const parsedOpReturn = parseOpReturnData(opReturn ?? '')
+    const paymentId = parsedOpReturn.paymentId
+    if (paymentId === undefined || paymentId === '') {
+      return
+    }
+    const clientPayment = await getClientPayment(paymentId)
+    if (clientPayment === null || clientPayment.status === 'CONFIRMED') {
+      return
+    }
+    if (clientPayment.amount !== null) {
+      if (Number(clientPayment.amount) === Number(txAmount) &&
+        (clientPayment.addressString === txAddress)) {
+        await updateClientPaymentStatus(paymentId, status)
+      }
+    } else {
+      if (clientPayment.addressString === txAddress) {
+        await updateClientPaymentStatus(paymentId, status)
+      }
+    }
+  }
+
   private async processWsMessage (msg: WsMsgClient): Promise<void> {
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
     if (msg.type === 'Tx') {
+      const transaction = await this.chronik.tx(msg.txid)
+      const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+
       if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
@@ -569,6 +600,10 @@ export class ChronikBlockchainClient {
       } else if (msg.msgType === 'TX_CONFIRMED') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
+        for (const addressWithTransaction of addressesWithTransactions) {
+          const { amount, opReturn } = addressWithTransaction.transaction
+          await this.handleUpdateClientPaymentStatus(amount, opReturn, 'CONFIRMED' as ClientPaymentStatus, addressWithTransaction.address.address)
+        }
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
         if (this.isAlreadyBeingProcessed(msg.txid, false)) {
           return
@@ -588,6 +623,8 @@ export class ChronikBlockchainClient {
             if (created) { // only execute trigger for newly added txs
               await executeAddressTriggers(broadcastTxData, tx.address.networkId)
             }
+            const { amount, opReturn } = addressWithTransaction.transaction
+            await this.handleUpdateClientPaymentStatus(amount, opReturn, 'ADDED_TO_MEMPOOL' as ClientPaymentStatus, addressWithTransaction.address.address)
           }
         }
         this.mempoolTxsBeingProcessed -= 1

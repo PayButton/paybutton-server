@@ -43,6 +43,6 @@ export default async (req: any, res: any): Promise<void> => {
       }
     }
   } else {
-    res.status(405).json(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED)
+    res.status(405).json(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED_405)
   }
 }
