@@ -981,6 +981,7 @@ export const generatePaymentId = async (address: string, amount?: Prisma.Decimal
   const rawUUID = uuidv4()
   const cleanUUID = rawUUID.replace(/-/g, '')
   const status = 'PENDING' as ClientPaymentStatus
+  address = parseAddress(address)
   const prefix = address.split(':')[0].toLowerCase()
   const networkId = NETWORK_IDS_FROM_SLUGS[prefix]
   const isAddressRegistered = await addressExists(address)
