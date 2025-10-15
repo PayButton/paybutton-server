@@ -560,27 +560,29 @@ export class ChronikBlockchainClient {
     txAddress: string): Promise<void> {
     const parsedOpReturn = parseOpReturnData(opReturn ?? '')
     const paymentId = parsedOpReturn.paymentId
-    if (paymentId !== undefined && paymentId !== '') {
-      const clientPayment = await getClientPayment(paymentId)
-      if (clientPayment !== null) {
-        if (clientPayment.status === 'CONFIRMED') {
-          return
+    if (paymentId === undefined || paymentId === '') {
+      return
+    }
+    const clientPayment = await getClientPayment(paymentId)
+    if (clientPayment !== null) {
+      if (clientPayment.status === 'CONFIRMED') {
+        return
+      }
+      if (clientPayment.amount !== null) {
+        if (Number(clientPayment.amount) === Number(txAmount) &&
+          (clientPayment.addressString === txAddress)) {
+          await updateClientPaymentStatus(paymentId, status)
         }
-        if (clientPayment.amount !== null) {
-          if (Number(clientPayment.amount) === Number(txAmount) &&
-            (clientPayment.addressString === txAddress)) {
-            await updateClientPaymentStatus(paymentId, status)
-          }
-        } else {
-          if (clientPayment.addressString === txAddress) {
-            await updateClientPaymentStatus(paymentId, status)
-          }
+      } else {
+        if (clientPayment.addressString === txAddress) {
+          await updateClientPaymentStatus(paymentId, status)
         }
       }
     }
   }
 
   private async processWsMessage (msg: WsMsgClient): Promise<void> {
+    console.log('aiai', msg)
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
     if (msg.type === 'Tx') {
