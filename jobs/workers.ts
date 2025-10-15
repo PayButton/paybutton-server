@@ -37,6 +37,9 @@ export const syncBlockchainAndPricesWorker = async (queueName: string): Promise<
       console.log(`job ${job.id as string}: syncing missed transactions and connecting prices...`)
       await multiBlockchainClient.syncMissedTransactions()
       await connectAllTransactionsToPrices()
+      // teardown
+      console.log('Cleaning up MultiBlockchainClient global instance...');
+      (global as any).multiBlockchainClient = null
     },
     {
       connection: redisBullMQ,
