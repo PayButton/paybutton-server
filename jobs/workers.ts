@@ -3,6 +3,7 @@ import { redisBullMQ } from 'redis/clientInstance'
 import { DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
 import { multiBlockchainClient } from 'services/chronikService'
 import { connectAllTransactionsToPrices } from 'services/transactionService'
+import { cleanupExpiredClientPayments } from 'services/clientPaymentService'
 
 import * as priceService from 'services/priceService'
 
@@ -58,5 +59,28 @@ export const syncBlockchainAndPricesWorker = async (queueName: string): Promise<
     if (job != null) {
       console.error(`job ${job.id as string}: FAILED — ${err.message}`)
     }
+  })
+}
+
+export const cleanupClientPaymentsWorker = async (queueName: string): Promise<void> => {
+  const worker = new Worker(
+    queueName,
+    async (job) => {
+      console.log(`[CLIENT_PAYMENT CLEANUP] job ${job.id as string}: running expired payment cleanup...`)
+      await cleanupExpiredClientPayments()
+      console.log('[CLIENT_PAYMENT CLEANUP] cleanup finished.')
+    },
+    {
+      connection: redisBullMQ,
+      lockDuration: DEFAULT_WORKER_LOCK_DURATION
+    }
+  )
+
+  worker.on('completed', job => {
+    console.log(`[CLIENT_PAYMENT CLEANUP] job ${job.id as string}: completed successfully`)
+  })
+
+  worker.on('failed', (job, err) => {
+    console.error(`[CLIENT_PAYMENT CLEANUP] job ${job?.id as string}: FAILED — ${err.message}`)
   })
 }

@@ -10,10 +10,12 @@ import {
   fetchUnconfirmedTransactions,
   upsertTransaction,
   getSimplifiedTransactions,
-  getSimplifiedTrasaction,
+  getSimplifiedTrasaction
+} from './transactionService'
+import {
   updateClientPaymentStatus,
   getClientPayment
-} from './transactionService'
+} from './clientPaymentService'
 import { Address, Prisma, ClientPaymentStatus } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
