@@ -292,5 +292,4 @@ export const PRICES_CONNECTION_BATCH_SIZE = 1_000
 // interactive $transaction timeout in ms (for the single delete + several createMany of prices)
 export const PRICES_CONNECTION_TIMEOUT = 30_000
 
-export const CLIENT_PAYMENT_EXPIRATION_HOURS = 6
-export const CLIENT_PAYMENT_EXPIRATION_TIME = CLIENT_PAYMENT_EXPIRATION_HOURS * 60 * 60 * 1000 // ms
+export const CLIENT_PAYMENT_EXPIRATION_TIME = (7) * (24 * 60 * 60 * 1000) // (number of days) * (24 * 60 * 60 * 1000)

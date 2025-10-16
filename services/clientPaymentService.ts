@@ -2,7 +2,7 @@ import prisma from 'prisma-local/clientInstance'
 import { v4 as uuidv4 } from 'uuid'
 import { multiBlockchainClient } from 'services/chronikService'
 import { Prisma, ClientPaymentStatus } from '@prisma/client'
-import { NETWORK_IDS_FROM_SLUGS, CLIENT_PAYMENT_EXPIRATION_HOURS } from 'constants/index'
+import { NETWORK_IDS_FROM_SLUGS, CLIENT_PAYMENT_EXPIRATION_TIME } from 'constants/index'
 import { parseAddress } from 'utils/validators'
 import { addressExists } from './addressService'
 import moment from 'moment'
@@ -58,7 +58,7 @@ export const getClientPayment = async (paymentId: string): Promise<Prisma.Client
 }
 
 export const cleanupExpiredClientPayments = async (): Promise<void> => {
-  const cutoff = moment.utc().subtract(CLIENT_PAYMENT_EXPIRATION_HOURS, 'hours').toDate()
+  const cutoff = moment.utc().subtract(CLIENT_PAYMENT_EXPIRATION_TIME, 'milliseconds').toDate()
 
   const oldPaymentsUnpaid = await prisma.clientPayment.findMany({
     where: {
