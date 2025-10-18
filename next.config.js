@@ -29,7 +29,7 @@ module.exports = (phase) => {
     typescript: {
       ignoreBuildErrors: true
     },
-    async headers() {
+    async headers () {
       return [
         {
           source: '/(.*)',
@@ -40,7 +40,7 @@ module.exports = (phase) => {
         },
       ]
     },
-    async rewrites() {
+    async rewrites () {
       return [
         {
           source: '/:path*',
