@@ -4,8 +4,8 @@ import { ChronikBlockchainClient } from '../../services/chronikService'
 
 process.env.WS_AUTH_KEY = 'test-auth-key'
 
-// Mock the transactionService functions
-jest.mock('../../services/transactionService', () => ({
+// Mock the clientPayment functions
+jest.mock('../../services/clientPaymentService', () => ({
   getClientPayment: jest.fn(),
   updateClientPaymentStatus: jest.fn()
 }))
@@ -71,9 +71,9 @@ describe('handleUpdateClientPaymentStatus tests', () => {
 
     // Get the mocked functions
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const transactionService = require('../../services/transactionService')
-    mockGetClientPayment = transactionService.getClientPayment
-    mockUpdateClientPaymentStatus = transactionService.updateClientPaymentStatus
+    const clientPaymentService = require('../../services/clientPaymentService')
+    mockGetClientPayment = clientPaymentService.getClientPayment
+    mockUpdateClientPaymentStatus = clientPaymentService.updateClientPaymentStatus
 
     // Clear all mocks before each test
     jest.clearAllMocks()

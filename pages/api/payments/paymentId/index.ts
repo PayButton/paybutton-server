@@ -1,5 +1,5 @@
 import { Decimal } from '@prisma/client/runtime/library'
-import { generatePaymentId } from 'services/transactionService'
+import { generatePaymentId } from 'services/clientPaymentService'
 import { parseAddress, parseCreatePaymentIdPOSTRequest } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { runMiddleware } from 'utils/index'
