@@ -1094,7 +1094,9 @@ class MultiBlockchainClient {
         try {
           c.chronikWSEndpoint.close()
           c.wsEndpoint.close()
-        } catch {}
+        } catch (err: any) {
+          console.error(`Failed to close connections for client: ${err.message as string}`)
+        }
       })
     )
   }
