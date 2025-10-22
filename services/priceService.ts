@@ -124,7 +124,7 @@ function isResponseAsExpected (data: any): boolean {
   if (isExpectedObj) return true
   const values = Object.values(data ?? {})
   if (values.length > 0) {
-    const first = values[0]
+    const first = values[0] as any
     return first?.Price_in_CAD !== undefined && first?.Price_in_USD !== undefined
   }
   return false
