@@ -10,10 +10,13 @@ import {
   fetchUnconfirmedTransactions,
   upsertTransaction,
   getSimplifiedTransactions,
-  getSimplifiedTrasaction,
-  connectAllTransactionsToPrices
+  getSimplifiedTrasaction
 } from './transactionService'
-import { Address, Prisma } from '@prisma/client'
+import {
+  updateClientPaymentStatus,
+  getClientPayment
+} from './clientPaymentService'
+import { Address, Prisma, ClientPaymentStatus } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
 import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced, updateManyLastSynced } from './addressService'
@@ -26,8 +29,8 @@ import { OpReturnData, parseError, parseOpReturnData } from 'utils/validators'
 import { executeAddressTriggers, executeTriggersBatch } from './triggerService'
 import { appendTxsToFile } from 'prisma-local/seeds/transactions'
 import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
-import { syncPastDaysNewerPrices } from './priceService'
 import { AddressType } from 'ecashaddrjs/dist/types'
+import { DecimalJsLike } from '@prisma/client/runtime/library'
 
 const decoder = new TextDecoder()
 
@@ -178,19 +181,21 @@ export class ChronikBlockchainClient {
   }
 
   private clearOldMessages (): void {
-    const now = moment()
+    const now = moment().unix()
+
     for (const key of Object.keys(this.lastProcessedMessages.unconfirmed)) {
-      const diff = moment.unix(this.lastProcessedMessages.unconfirmed[key]).diff(now)
-      if (diff > CHRONIK_MESSAGE_CACHE_DELAY) {
-        const { [key]: _, ...newConfirmed } = this.lastProcessedMessages.confirmed
-        this.lastProcessedMessages.confirmed = newConfirmed
+      const ageSec = now - Number(this.lastProcessedMessages.unconfirmed[key])
+      if (ageSec > CHRONIK_MESSAGE_CACHE_DELAY) {
+        const { [key]: _, ...rest } = this.lastProcessedMessages.unconfirmed
+        this.lastProcessedMessages.unconfirmed = rest
       }
     }
+
     for (const key of Object.keys(this.lastProcessedMessages.confirmed)) {
-      const diff = moment.unix(this.lastProcessedMessages.confirmed[key]).diff(now)
-      if (diff > CHRONIK_MESSAGE_CACHE_DELAY) {
-        const { [key]: _, ...newConfirmed } = this.lastProcessedMessages.confirmed
-        this.lastProcessedMessages.confirmed = newConfirmed
+      const ageSec = now - Number(this.lastProcessedMessages.confirmed[key])
+      if (ageSec > CHRONIK_MESSAGE_CACHE_DELAY) {
+        const { [key]: _, ...rest } = this.lastProcessedMessages.confirmed
+        this.lastProcessedMessages.confirmed = rest
       }
     }
   }
@@ -552,10 +557,52 @@ export class ChronikBlockchainClient {
     }
   }
 
+  private async handleUpdateClientPaymentStatus (
+    txAmount: string | number | Prisma.Decimal | DecimalJsLike,
+    opReturn: string | undefined, status: ClientPaymentStatus,
+    txAddress: string): Promise<void> {
+    const parsedOpReturn = parseOpReturnData(opReturn ?? '')
+    const paymentId = parsedOpReturn.paymentId
+    if (paymentId === undefined || paymentId === '') {
+      return
+    }
+    const clientPayment = await getClientPayment(paymentId)
+    if (clientPayment === null || clientPayment.status === 'CONFIRMED') {
+      return
+    }
+    if (clientPayment.amount !== null) {
+      if (Number(clientPayment.amount) === Number(txAmount) &&
+        (clientPayment.addressString === txAddress)) {
+        await updateClientPaymentStatus(paymentId, status)
+      }
+    } else {
+      if (clientPayment.addressString === txAddress) {
+        await updateClientPaymentStatus(paymentId, status)
+      }
+    }
+  }
+
+  private async fetchTxWithRetry (txid: string, tries = 3, delayMs = 400): Promise<Tx> {
+    for (let i = 0; i < tries; i++) {
+      try {
+        return await this.chronik.tx(txid)
+      } catch (e: any) {
+        const msg = String(e?.message ?? e)
+        const is404 = /not found in the index|404/.test(msg)
+        if (!is404 || i === tries - 1) throw e
+        await new Promise(resolve => setTimeout(resolve, delayMs * Math.pow(2, i)))
+      }
+    }
+    throw new Error('unreachable')
+  }
+
   private async processWsMessage (msg: WsMsgClient): Promise<void> {
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
     if (msg.type === 'Tx') {
+      const transaction = await this.chronik.tx(msg.txid)
+      const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+
       if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
@@ -570,28 +617,40 @@ export class ChronikBlockchainClient {
       } else if (msg.msgType === 'TX_CONFIRMED') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
-      } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
-        if (this.isAlreadyBeingProcessed(msg.txid, false)) {
-          return
+        for (const addressWithTransaction of addressesWithTransactions) {
+          const { amount, opReturn } = addressWithTransaction.transaction
+          await this.handleUpdateClientPaymentStatus(amount, opReturn, 'CONFIRMED' as ClientPaymentStatus, addressWithTransaction.address.address)
         }
+      } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
+        if (this.isAlreadyBeingProcessed(msg.txid, false)) return
+
         while (this.mempoolTxsBeingProcessed >= MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME) {
           await new Promise(resolve => setTimeout(resolve, MEMPOOL_PROCESS_DELAY))
         }
+
         this.mempoolTxsBeingProcessed += 1
-        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
-        const transaction = await this.chronik.tx(msg.txid)
-        const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-        await this.waitForSyncing(msg.txid, addressesWithTransactions.map(obj => obj.address.address))
-        for (const addressWithTransaction of addressesWithTransactions) {
-          const { created, tx } = await upsertTransaction(addressWithTransaction.transaction)
-          if (tx !== undefined) {
-            const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, transaction, tx)
-            if (created) { // only execute trigger for newly added txs
-              await executeAddressTriggers(broadcastTxData, tx.address.networkId)
+        try {
+          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
+          const transaction = await this.fetchTxWithRetry(msg.txid)
+          const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+          await this.waitForSyncing(msg.txid, addressesWithTransactions.map(obj => obj.address.address))
+
+          for (const addressWithTransaction of addressesWithTransactions) {
+            const { created, tx } = await upsertTransaction(addressWithTransaction.transaction)
+            if (tx !== undefined) {
+              const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, transaction, tx)
+              if (created) { // only execute trigger for newly added txs
+                await executeAddressTriggers(broadcastTxData, tx.address.networkId)
+              }
+              const { amount, opReturn } = addressWithTransaction.transaction
+              await this.handleUpdateClientPaymentStatus(amount, opReturn, 'ADDED_TO_MEMPOOL' as ClientPaymentStatus, addressWithTransaction.address.address)
             }
           }
+        } catch (e) {
+          console.error(`${this.CHRONIK_MSG_PREFIX}: mempool handler failed for ${msg.txid}`, e)
+        } finally {
+          this.mempoolTxsBeingProcessed = Math.max(0, this.mempoolTxsBeingProcessed - 1)
         }
-        this.mempoolTxsBeingProcessed -= 1
       }
     } else if (msg.type === 'Block') {
       console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
@@ -787,8 +846,9 @@ export class ChronikBlockchainClient {
 
       // final DB flush (se sobrou menos que DB_COMMIT_BATCH_SIZE)
       if (toCommit.length > 0) {
-        const commitPairs = toCommit
+        const commitPairs = toCommit.slice()
         toCommit = []
+
         const rows = commitPairs.map(p => p.row)
         const createdTxs = await createManyTransactions(rows)
         console.log(`${this.CHRONIK_MSG_PREFIX} committed FINAL — created=${createdTxs.length}`)
@@ -936,25 +996,14 @@ class MultiBlockchainClient {
     console.log('Initializing MultiBlockchainClient...')
     this.initializing = true
     void (async () => {
-      if (this.isRunningApp()) {
-        await syncPastDaysNewerPrices()
-        const asyncOperations: Array<Promise<void>> = []
-        this.clients = {
-          ecash: this.instantiateChronikClient('ecash', asyncOperations),
-          bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
-        }
-        await Promise.all(asyncOperations)
-        this.setInitialized()
-        await connectAllTransactionsToPrices()
-      } else if (process.env.NODE_ENV === 'test') {
-        const asyncOperations: Array<Promise<void>> = []
-        this.clients = {
-          ecash: this.instantiateChronikClient('ecash', asyncOperations),
-          bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
-        }
-        await Promise.all(asyncOperations)
-        this.setInitialized()
+      const asyncOperations: Array<Promise<void>> = []
+      this.clients = {
+        ecash: this.instantiateChronikClient('ecash', asyncOperations),
+        bitcoincash: this.instantiateChronikClient('bitcoincash', asyncOperations)
       }
+      await Promise.all(asyncOperations)
+      this.setInitialized()
+      console.log('Finished initializing MultiBlockchainClient.')
     })()
   }
 
@@ -999,9 +1048,6 @@ class MultiBlockchainClient {
           await newClient.waitForLatencyTest()
           console.log(`[CHRONIK — ${networkSlug}] Subscribing addresses in database...`)
           await newClient.subscribeInitialAddresses()
-          console.log(`[CHRONIK — ${networkSlug}] Syncing missed transactions...`)
-          await newClient.syncMissedTransactions()
-          console.log(`[CHRONIK — ${networkSlug}] Finished instantiating client.`)
         })()
       )
     } else if (process.env.NODE_ENV === 'test') {
@@ -1012,6 +1058,7 @@ class MultiBlockchainClient {
       )
     }
 
+    console.log(`Finished instantiating ${networkSlug} client.`)
     return newClient
   }
 
@@ -1069,9 +1116,30 @@ class MultiBlockchainClient {
     return await this.clients[networkSlug as MainNetworkSlugsType].getBalance(address)
   }
 
+  public async syncMissedTransactions (): Promise<void> {
+    await this.waitForStart()
+    await Promise.all([
+      this.clients.ecash.syncMissedTransactions(),
+      this.clients.bitcoincash.syncMissedTransactions()
+    ])
+  }
+
   public async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
     await this.subscribeAddresses(addresses)
     return await this.syncAddresses(addresses)
+  }
+
+  public async destroy (): Promise<void> {
+    await Promise.all(
+      Object.values(this.clients).map(async (c) => {
+        try {
+          c.chronikWSEndpoint.close()
+          c.wsEndpoint.close()
+        } catch (err: any) {
+          console.error(`Failed to close connections for client: ${err.message as string}`)
+        }
+      })
+    )
   }
 }
 

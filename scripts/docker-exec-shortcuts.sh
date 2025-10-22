@@ -49,7 +49,7 @@ case "$command" in
         eval "$base_command_db" mariadb-dump -h "$MAIN_DB_HOST" -u root -p"$MAIN_DB_ROOT_PASSWORD" "$@"
         ;;
     "databaseshell" | "dbs")
-        eval "$base_command_db" bash -l "$@"
+        eval "$base_command_db" bash -c bash -l "$@"
         ;;
     "databasetest" | "dbt")
         eval "$base_command_db" mariadb -h "$MAIN_DB_HOST" -u "$MAIN_DB_USER"-test -p"$MAIN_DB_PASSWORD" -D "$MAIN_DB_NAME"-test "$@"
@@ -70,10 +70,10 @@ case "$command" in
         eval "$base_command_node" yarn test --coverage --verbose  "$@"
         ;;
     "nodeshell" | "ns")
-        eval "$base_command_node" bash -l
+        eval "$base_command_node" bash -c bash -l
         ;;
     "rootnodeshell" | "rns")
-        eval "$base_command_node_root" bash -l
+        eval "$base_command_node_root" bash -c bash -l
         ;;
     "jobslogs" | "jl")
         eval "$base_command_node" pm2 logs jobs

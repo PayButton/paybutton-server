@@ -92,7 +92,7 @@ export const RESPONSE_MESSAGES = {
   INVALID_OUTPUT_SCRIPT_LENGTH_500: (l: number) => { return { statusCode: 500, message: `Invalid outputScript length ${l}` } },
   FAILED_TO_PARSE_TX_OP_RETURN_500: { statusCode: 500, message: 'Failed to parse OP_RETURN data in Tx.' },
   PAYBUTTON_ID_NOT_PROVIDED_400: { statusCode: 400, message: 'Paybutton id not provided' },
-  METHOD_NOT_ALLOWED: { statusCode: 500, message: 'Method not allowed.' },
+  METHOD_NOT_ALLOWED_405: { statusCode: 405, message: 'Method not allowed.' },
   USER_HAS_NO_ORGANIZATION_400: { statusCode: 400, message: 'User does not belong to an organization.' },
   USER_ALREADY_HAS_ORGANIZATION_400: { statusCode: 400, message: 'User already belongs to an organization.' },
   USER_HAS_ALREADY_USED_INVITE_400: { statusCode: 400, message: 'You have already used this invite.' },
@@ -291,3 +291,5 @@ export const TRIGGER_LOG_BATCH_SIZE = 200
 export const PRICES_CONNECTION_BATCH_SIZE = 1_000
 // interactive $transaction timeout in ms (for the single delete + several createMany of prices)
 export const PRICES_CONNECTION_TIMEOUT = 30_000
+
+export const CLIENT_PAYMENT_EXPIRATION_TIME = (7) * (24 * 60 * 60 * 1000) // (number of days) * (24 * 60 * 60 * 1000)
