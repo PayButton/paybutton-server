@@ -181,19 +181,21 @@ export class ChronikBlockchainClient {
   }
 
   private clearOldMessages (): void {
-    const now = moment()
+    const now = moment().unix()
+
     for (const key of Object.keys(this.lastProcessedMessages.unconfirmed)) {
-      const diff = moment.unix(this.lastProcessedMessages.unconfirmed[key]).diff(now)
-      if (diff > CHRONIK_MESSAGE_CACHE_DELAY) {
-        const { [key]: _, ...newConfirmed } = this.lastProcessedMessages.confirmed
-        this.lastProcessedMessages.confirmed = newConfirmed
+      const ageSec = now - Number(this.lastProcessedMessages.unconfirmed[key])
+      if (ageSec > CHRONIK_MESSAGE_CACHE_DELAY) {
+        const { [key]: _, ...rest } = this.lastProcessedMessages.unconfirmed
+        this.lastProcessedMessages.unconfirmed = rest
       }
     }
+
     for (const key of Object.keys(this.lastProcessedMessages.confirmed)) {
-      const diff = moment.unix(this.lastProcessedMessages.confirmed[key]).diff(now)
-      if (diff > CHRONIK_MESSAGE_CACHE_DELAY) {
-        const { [key]: _, ...newConfirmed } = this.lastProcessedMessages.confirmed
-        this.lastProcessedMessages.confirmed = newConfirmed
+      const ageSec = now - Number(this.lastProcessedMessages.confirmed[key])
+      if (ageSec > CHRONIK_MESSAGE_CACHE_DELAY) {
+        const { [key]: _, ...rest } = this.lastProcessedMessages.confirmed
+        this.lastProcessedMessages.confirmed = rest
       }
     }
   }
@@ -579,6 +581,20 @@ export class ChronikBlockchainClient {
     }
   }
 
+  private async fetchTxWithRetry (txid: string, tries = 3, delayMs = 400): Promise<Tx> {
+    for (let i = 0; i < tries; i++) {
+      try {
+        return await this.chronik.tx(txid)
+      } catch (e: any) {
+        const msg = String(e?.message ?? e)
+        const is404 = /not found in the index|404/.test(msg)
+        if (!is404 || i === tries - 1) throw e
+        await new Promise(resolve => setTimeout(resolve, delayMs * Math.pow(2, i)))
+      }
+    }
+    throw new Error('unreachable')
+  }
+
   private async processWsMessage (msg: WsMsgClient): Promise<void> {
     // delete unconfirmed transaction from our database
     // if they were cancelled and not confirmed
@@ -605,29 +621,35 @@ export class ChronikBlockchainClient {
           await this.handleUpdateClientPaymentStatus(amount, opReturn, 'CONFIRMED' as ClientPaymentStatus, addressWithTransaction.address.address)
         }
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
-        if (this.isAlreadyBeingProcessed(msg.txid, false)) {
-          return
-        }
+        if (this.isAlreadyBeingProcessed(msg.txid, false)) return
+
         while (this.mempoolTxsBeingProcessed >= MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME) {
           await new Promise(resolve => setTimeout(resolve, MEMPOOL_PROCESS_DELAY))
         }
+
         this.mempoolTxsBeingProcessed += 1
-        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
-        const transaction = await this.chronik.tx(msg.txid)
-        const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-        await this.waitForSyncing(msg.txid, addressesWithTransactions.map(obj => obj.address.address))
-        for (const addressWithTransaction of addressesWithTransactions) {
-          const { created, tx } = await upsertTransaction(addressWithTransaction.transaction)
-          if (tx !== undefined) {
-            const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, transaction, tx)
-            if (created) { // only execute trigger for newly added txs
-              await executeAddressTriggers(broadcastTxData, tx.address.networkId)
+        try {
+          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
+          const transaction = await this.fetchTxWithRetry(msg.txid)
+          const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+          await this.waitForSyncing(msg.txid, addressesWithTransactions.map(obj => obj.address.address))
+
+          for (const addressWithTransaction of addressesWithTransactions) {
+            const { created, tx } = await upsertTransaction(addressWithTransaction.transaction)
+            if (tx !== undefined) {
+              const broadcastTxData = this.broadcastIncomingTx(addressWithTransaction.address.address, transaction, tx)
+              if (created) { // only execute trigger for newly added txs
+                await executeAddressTriggers(broadcastTxData, tx.address.networkId)
+              }
+              const { amount, opReturn } = addressWithTransaction.transaction
+              await this.handleUpdateClientPaymentStatus(amount, opReturn, 'ADDED_TO_MEMPOOL' as ClientPaymentStatus, addressWithTransaction.address.address)
             }
-            const { amount, opReturn } = addressWithTransaction.transaction
-            await this.handleUpdateClientPaymentStatus(amount, opReturn, 'ADDED_TO_MEMPOOL' as ClientPaymentStatus, addressWithTransaction.address.address)
           }
+        } catch (e) {
+          console.error(`${this.CHRONIK_MSG_PREFIX}: mempool handler failed for ${msg.txid}`, e)
+        } finally {
+          this.mempoolTxsBeingProcessed = Math.max(0, this.mempoolTxsBeingProcessed - 1)
         }
-        this.mempoolTxsBeingProcessed -= 1
       }
     } else if (msg.type === 'Block') {
       console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] Height: ${msg.blockHeight} Hash: ${msg.blockHash}`)
@@ -809,10 +831,12 @@ export class ChronikBlockchainClient {
 
       // final DB flush (se sobrou menos que DB_COMMIT_BATCH_SIZE)
       if (toCommit.length > 0) {
-        const rows = toCommit.map(p => p.row)
+        const commitPairs = toCommit.slice()
+        toCommit = []
+
+        const rows = commitPairs.map(p => p.row)
         const createdTxs = await createManyTransactions(rows)
         console.log(`${this.CHRONIK_MSG_PREFIX} committed FINAL — created=${createdTxs.length}`)
-        toCommit = []
 
         const createdForProd = createdTxs.filter(t => productionAddressesIds.includes(t.addressId))
         if (createdForProd.length > 0) {
@@ -820,8 +844,8 @@ export class ChronikBlockchainClient {
         }
 
         if (createdTxs.length > 0) {
-          const rawByHash = new Map(toCommit.map(p => [p.raw.txid, p.raw]))
-          const triggerBatch: BroadcastTxData[] = []
+          const rawByHash = new Map(commitPairs.map(p => [p.raw.txid, p.raw]))
+          const triggerBatch = []
           for (const createdTx of createdTxs) {
             const raw = rawByHash.get(createdTx.hash)
             if (raw == null) continue
