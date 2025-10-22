@@ -416,15 +416,17 @@ async function createPriceTxConnectionInChunks (
   client: Prisma.TransactionClient | typeof prisma,
   rows: Prisma.PricesOnTransactionsCreateManyInput[]
 ): Promise<void> {
-  console.log(`[PRICES] Inserting links in chunks of ${PRICES_CONNECTION_BATCH_SIZE}...`)
+  let pricesLinkedCount = 0
+  console.log(`[PRICES] Inserting ${rows.length} price links...`)
   for (let i = 0; i < rows.length; i += PRICES_CONNECTION_BATCH_SIZE) {
     const slice = rows.slice(i, i + PRICES_CONNECTION_BATCH_SIZE)
-    await client.pricesOnTransactions.createMany({
+    const result = await client.pricesOnTransactions.createMany({
       data: slice,
       skipDuplicates: true
     })
+    pricesLinkedCount += result.count
   }
-  console.log('[PRICES] Inserted all price links.')
+  console.log(`[PRICES] Inserted ${pricesLinkedCount} price links.`)
 }
 
 export async function connectTransactionToPrices (

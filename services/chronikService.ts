@@ -310,18 +310,20 @@ export class ChronikBlockchainClient {
     const logPrefix = `${this.CHRONIK_MSG_PREFIX}[PARALLEL FETCHING]`
 
     console.log(
-      `${logPrefix}: Will fetch latest txs for ${addresses.length} addresses ` +
+      `${logPrefix} >>> Will fetch latest txs for ${addresses.length} addresses ` +
       `(addressConcurrency=${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY}, pageConcurrency=1).`
     )
 
     let chronikTxs: ChronikTxWithAddress[] = []
     let lastBatchAddresses: string[] = []
 
+    const totalCount = addresses.length
+    let syncedAlready = 0
     for (let i = 0; i < addresses.length; i += INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY) {
       const addressBatchSlice = addresses.slice(i, i + INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY)
       lastBatchAddresses = addressBatchSlice.map(a => a.address)
 
-      console.log(`${logPrefix}: starting chronik fetching for ${addressBatchSlice.length} addresses...`)
+      console.log(`${logPrefix} >>> starting chronik fetching for ${addressBatchSlice.length} addresses... (${syncedAlready}/${totalCount} synced)`)
 
       const perAddressWorkers = addressBatchSlice.map(async (address) => {
         const addrLogPrefix = `${logPrefix} > ${address.address}:`
@@ -331,6 +333,7 @@ export class ChronikBlockchainClient {
         let nextBurstBasePageIndex = 0
         let hasReachedStoppingCondition = false
 
+        let newTxs = 0
         while (!hasReachedStoppingCondition) {
           const pageIndex = nextBurstBasePageIndex
           let pageTxs: Tx[] = []
@@ -360,7 +363,8 @@ export class ChronikBlockchainClient {
             .filter(txThresholdFilter)
             .filter(t => t.block === undefined || t.block.timestamp >= lastSyncedTimestampSeconds)
 
-          if (pageTxs.length > 0) {
+          const newTxsInThisPage = pageTxs.length
+          if (newTxsInThisPage > 0) {
             chronikTxs.push(...pageTxs.map(tx => ({ tx, address })))
           }
 
@@ -369,11 +373,16 @@ export class ChronikBlockchainClient {
           }
 
           nextBurstBasePageIndex += 1
-          if (pageTxs.length === 0 && oldestTs < lastSyncedTimestampSeconds) {
+          if (newTxsInThisPage === 0 && oldestTs < lastSyncedTimestampSeconds) {
             hasReachedStoppingCondition = true
           }
+          newTxs += newTxsInThisPage
+        }
+        if (newTxs > 0) {
+          console.log(`${addrLogPrefix} ${newTxs} new txs.`)
         }
       })
+      syncedAlready += addressBatchSlice.length
 
       await Promise.all(
         perAddressWorkers.map(async worker =>
@@ -890,7 +899,7 @@ export class ChronikBlockchainClient {
 
     const failed = Object.keys(failedAddressesWithErrors)
     const total = Object.values(successfulAddressesWithCount).reduce((p, c) => p + c, 0)
-    console.log(`${this.CHRONIK_MSG_PREFIX} (PARALLEL) Finished syncing ${total} txs for ${addresses.length} addresses with ${failed.length} errors.`)
+    console.log(`${this.CHRONIK_MSG_PREFIX} Finished syncing ${total} txs for ${addresses.length} addresses with ${failed.length} errors.`)
     console.timeEnd(`${this.CHRONIK_MSG_PREFIX} syncAddresses`)
 
     return { failedAddressesWithErrors, successfulAddressesWithCount }
