@@ -7,7 +7,7 @@ import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/valida
 import moment from 'moment'
 
 export function flattenTimestamp (timestamp: number): number {
-  const date = moment.utc((timestamp * 1000))
+  const date = moment.utc(timestamp * 1000)
   const dateStart = date.startOf('day')
   return dateStart.unix()
 }
@@ -47,6 +47,7 @@ export async function upsertPricesForNetworkId (responseData: IResponseData, net
         value: new Prisma.Decimal(responseData.Price_in_USD)
       }
     })
+
     await prisma.price.upsert({
       where: {
         Price_timestamp_quoteId_networkId_unique_constraint: {
@@ -92,7 +93,6 @@ function getAllPricesURLForNetworkTicker (networkTicker: string): string {
 async function withRetries<T> (
   fn: () => Promise<T>,
   { maxRetries = PRICE_API_MAX_RETRIES, throwOnFailure = true, context = {} } = {}
-
 ): Promise<T | null> {
   let lastError: any
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -100,14 +100,11 @@ async function withRetries<T> (
       return await fn()
     } catch (error) {
       lastError = error
-      console.error(`[Retry ${attempt}/${maxRetries}] ${error as string}`, { ...context })
+      console.error(`[Retry ${attempt}/${maxRetries}] ${String(error)}`, { ...context })
       if (attempt < maxRetries) continue
-      if (throwOnFailure) {
-        throw lastError
-      } else {
-        console.error(`[Retry ${attempt}/${maxRetries}] skipping error:`)
-        console.error(String(lastError))
-      }
+      if (throwOnFailure) throw lastError
+      console.error(`[Retry ${attempt}/${maxRetries}] skipping error:`)
+      console.error(String(lastError))
       return null
     }
   }
@@ -119,9 +116,18 @@ export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networ
     const res = await axios.get(getPriceURLForDayAndNetworkTicker(day, networkTicker), { timeout: PRICE_API_TIMEOUT })
     if (res.data.success !== false && isResponseAsExpected(res.data)) return res.data
     throw new Error(RESPONSE_MESSAGES.FAILED_TO_FETCH_PRICE_FROM_API_500(day.format(PRICE_API_DATE_FORMAT), networkTicker).message)
-  },
-  { context: { day } }
-  )
+  }, { context: { day } })
+}
+
+function isResponseAsExpected (data: any): boolean {
+  const isExpectedObj = data?.Price_in_CAD !== undefined && data?.Price_in_USD !== undefined
+  if (isExpectedObj) return true
+  const values = Object.values(data ?? {})
+  if (values.length > 0) {
+    const first = values[0]
+    return first?.Price_in_CAD !== undefined && first?.Price_in_USD !== undefined
+  }
+  return false
 }
 
 export async function getAllPricesByNetworkTicker (
@@ -147,53 +153,12 @@ export async function getAllPricesByNetworkTicker (
   }, { throwOnFailure })
 }
 
-export async function fetchPricesForNetworkAndTimestamp (
-  networkId: number,
-  timestamp: number,
-  tx: Prisma.TransactionClient,
-  tryRenewing = true
-): Promise<AllPrices> {
-  const getPrices = async (firstRun = true): Promise<AllPrices> => {
-    const flattened = flattenTimestamp(timestamp)
-    try {
-      const cad = await tx.price.findUniqueOrThrow({
-        where: { Price_timestamp_quoteId_networkId_unique_constraint: { quoteId: CAD_QUOTE_ID, networkId, timestamp: flattened } }
-      })
-      const usd = await tx.price.findUniqueOrThrow({
-        where: { Price_timestamp_quoteId_networkId_unique_constraint: { quoteId: USD_QUOTE_ID, networkId, timestamp: flattened } }
-      })
-      return { cad, usd }
-    } catch (err) {
-      if (tryRenewing && firstRun) {
-        const success = await renewPricesForTimestamp(flattened)
-        if (success) {
-          return await getPrices(false)
-        }
-      }
-      throw err
-    }
-  }
-  return await getPrices()
-}
-
-function isResponseAsExpected (data: any): boolean {
-  const isExpectedObj = data.Price_in_CAD !== undefined && data.Price_in_USD !== undefined
-  if (isExpectedObj) return true
-  const values = Object.values(data) as unknown as any[]
-  if (values.length > 0) {
-    const firstValueIsExpectedObj = values[0].Price_in_CAD !== undefined && values[0].Price_in_USD !== undefined
-    if (firstValueIsExpectedObj) return true
-  }
-  return false
-}
-
 export async function syncPastDaysNewerPrices (): Promise<void> {
   console.log('[PRICES] Syncing prices...')
   const lastPrice = await prisma.price.findFirst({
     orderBy: [{ timestamp: 'desc' }],
     select: { timestamp: true }
   })
-
   if (lastPrice === null) throw new Error('No prices found, initial database seed did not complete successfully')
 
   const lastDateInDB = moment.unix(lastPrice.timestamp)
@@ -207,28 +172,28 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
 
   const allXECPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.ecash, false)
   const allBCHPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.bitcoincash, false)
+
   if (allXECPrices !== null) {
     await Promise.all(
-      allXECPrices.filter(p => daysToRetrieve.includes(p.day)).map(async price => {
-        return await upsertPricesForNetworkId(price, XEC_NETWORK_ID, moment(price.day).unix())
-      }
-      )
+      allXECPrices
+        .filter(p => daysToRetrieve.includes(p.day))
+        .map(async price => await upsertPricesForNetworkId(price, XEC_NETWORK_ID, moment(price.day).unix()))
     )
   }
+
   if (allBCHPrices !== null) {
     await Promise.all(
-      allBCHPrices.filter(p => daysToRetrieve.includes(p.day)).map(async price => {
-        return await upsertPricesForNetworkId(price, BCH_NETWORK_ID, moment(price.day).unix())
-      }
-      )
+      allBCHPrices
+        .filter(p => daysToRetrieve.includes(p.day))
+        .map(async price => await upsertPricesForNetworkId(price, BCH_NETWORK_ID, moment(price.day).unix()))
     )
   }
-  console.log('[PRICES] Finished trying to sync past prices.')
+
+  console.log('[PRICES] All past prices have been synced.')
 }
 
 export async function syncCurrentPrices (): Promise<void> {
   const today = moment()
-
   const bchPrice = await getPriceForDayAndNetworkTicker(today, NETWORK_TICKERS.bitcoincash)
   void upsertCurrentPricesForNetworkId(bchPrice, BCH_NETWORK_ID)
 
@@ -238,32 +203,28 @@ export async function syncCurrentPrices (): Promise<void> {
 
 export async function getCurrentPrices (): Promise<Price[]> {
   return await prisma.price.findMany({
-    where: {
-      timestamp: 0
-    }
+    where: { timestamp: 0 }
   })
 }
 
 export async function getCurrentPricesForNetworkId (networkId: number): Promise<QuoteValues> {
   const currentPrices = await prisma.price.findMany({
-    where: {
-      timestamp: 0,
-      networkId
-    }
+    where: { timestamp: 0, networkId }
   })
   if (currentPrices.length !== N_OF_QUOTES) {
     throw new Error(RESPONSE_MESSAGES.NO_CURRENT_PRICES_FOUND_404.message)
   }
   return {
-    usd: currentPrices.filter((price) => price.quoteId === USD_QUOTE_ID)[0].value,
-    cad: currentPrices.filter((price) => price.quoteId === CAD_QUOTE_ID)[0].value
+    usd: currentPrices.filter(p => p.quoteId === USD_QUOTE_ID)[0].value,
+    cad: currentPrices.filter(p => p.quoteId === CAD_QUOTE_ID)[0].value
   }
 }
 
 export interface QuoteValues {
-  'usd': Prisma.Decimal
-  'cad': Prisma.Decimal
+  usd: Prisma.Decimal
+  cad: Prisma.Decimal
 }
+
 export interface CreatePricesFromTransactionInput {
   timestamp: number
   networkId: number
@@ -277,6 +238,33 @@ export interface SyncTransactionPricesInput {
   transactionId: string
 }
 
+export async function fetchPricesForNetworkAndTimestamp (
+  networkId: number,
+  timestamp: number,
+  prismaTx: Prisma.TransactionClient,
+  tryRenewing = true
+): Promise<AllPrices> {
+  const getPrices = async (firstRun = true): Promise<AllPrices> => {
+    const flattenedTimestamp = flattenTimestamp(timestamp)
+    try {
+      const cad = await prismaTx.price.findUniqueOrThrow({
+        where: { Price_timestamp_quoteId_networkId_unique_constraint: { quoteId: CAD_QUOTE_ID, networkId, timestamp: flattenedTimestamp } }
+      })
+      const usd = await prismaTx.price.findUniqueOrThrow({
+        where: { Price_timestamp_quoteId_networkId_unique_constraint: { quoteId: USD_QUOTE_ID, networkId, timestamp: flattenedTimestamp } }
+      })
+      return { cad, usd }
+    } catch (err) {
+      if (tryRenewing && firstRun) {
+        const ok = await renewPricesForTimestamp(flattenedTimestamp)
+        if (ok) return await getPrices(false)
+      }
+      throw err
+    }
+  }
+  return await getPrices()
+}
+
 async function renewPricesForTimestamp (timestamp: number): Promise<boolean> {
   try {
     const xecPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.ecash)
@@ -284,8 +272,9 @@ async function renewPricesForTimestamp (timestamp: number): Promise<boolean> {
 
     const bchPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.bitcoincash)
     await upsertPricesForNetworkId(bchPrice, BCH_NETWORK_ID, timestamp)
+
     return true
-  } catch (err) {
+  } catch {
     return false
   }
 }
