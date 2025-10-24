@@ -56,9 +56,12 @@ export const syncBlockchainAndPricesWorker = async (queueName: string): Promise<
   })
 
   worker.on('failed', (job, err) => {
-    if (job != null) {
-      console.error(`job ${job.id as string}: FAILED — ${err.message}`)
-    }
+    void (async () => {
+      if (job != null) {
+        console.error(`job ${job.id as string}: FAILED — ${err.message}`)
+      }
+      await multiBlockchainClient.destroy()
+    })()
   })
 }
 

@@ -33,7 +33,7 @@ export async function createPricesFile (): Promise<void> {
   const prices: PriceFileData[] = []
 
   await Promise.all(Object.values(NETWORK_TICKERS).map(async (networkTicker) => {
-    const pricesByNetworkTicker = await getAllPricesByNetworkTicker(networkTicker)
+    const pricesByNetworkTicker = await getAllPricesByNetworkTicker(networkTicker, true)
 
     pricesByNetworkTicker?.forEach(price => {
       if (isEmpty(price.Price_in_CAD) || isEmpty(price.Price_in_USD)) { throw new Error(`Price came back with at least one quote empty from API: ${JSON.stringify(price)}`) }

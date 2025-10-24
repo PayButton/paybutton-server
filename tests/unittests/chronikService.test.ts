@@ -20,7 +20,8 @@ jest.mock('chronik-client-cashtokens', () => ({
         waitForOpen: jest.fn(),
         subscribeToBlocks: jest.fn(),
         subs: { scripts: [] }
-      })
+      }),
+      tx: jest.fn(), // <-- needed
     })
   },
   ConnectionStrategy: {
@@ -1269,3 +1270,76 @@ describe('Additional behavior and integration tests', () => {
     expect(p2shResult.hash160).toHaveLength(40)
   })
 })
+
+describe('Regression: mempool + retries + onMessage + cache TTL', () => {
+  it('TX_ADDED_TO_MEMPOOL never leaks in-flight counter on error', async () => {
+    process.env.WS_AUTH_KEY = 'test-auth-key'
+    const client = new ChronikBlockchainClient('ecash')
+
+    // make internal state writable
+    Object.defineProperty(client as any, 'mempoolTxsBeingProcessed', { value: 0, writable: true })
+
+    // simulate mempool path with a failing chronik.tx
+    ;(client as any).chronik = { tx: jest.fn().mockRejectedValue(new Error('boom')) }
+    jest.spyOn(client as any, 'isAlreadyBeingProcessed').mockReturnValue(false)
+
+    const msg = { type: 'Tx', msgType: 'TX_ADDED_TO_MEMPOOL', txid: 'tx123' } as any
+    await (client as any).processWsMessage(msg).catch(() => {})
+
+    // counter must be decremented in finally
+    expect((client as any).mempoolTxsBeingProcessed).toBe(0)
+
+    // next run should still be accepted and complete
+    ;((client as any).chronik.tx as jest.Mock).mockResolvedValue({ txid: 'tx123', inputs: [], outputs: [] })
+    jest.spyOn(client as any, 'getAddressesForTransaction').mockResolvedValue([])
+    await (client as any).processWsMessage(msg)
+    expect((client as any).mempoolTxsBeingProcessed).toBe(0)
+  })
+
+  it('fetchTxWithRetry retries on 404 then succeeds', async () => {
+    process.env.WS_AUTH_KEY = 'test-auth-key'
+    const client = new ChronikBlockchainClient('ecash')
+
+    // wait for async constructor to assign `chronik`
+    await new Promise(resolve => setImmediate(resolve))
+
+    const txMock = (client as any).chronik.tx as jest.Mock
+    txMock.mockReset()
+
+    const err404 = new Error('Transaction not found in the index')
+
+    // first call => reject with a 404-ish error
+    txMock.mockImplementationOnce(async () => { throw err404 })
+    // second call => succeed
+    txMock.mockImplementationOnce(async () => ({ txid: 'txABC', inputs: [], outputs: [] }))
+
+    const tx = await (client as any).fetchTxWithRetry('txABC', 3, 1)
+
+    expect(tx).toBeDefined()
+    expect(tx.txid).toBe('txABC')
+    expect(txMock).toHaveBeenCalledTimes(2)
+  })
+
+
+  it('clearOldMessages expires entries by TTL and from the correct maps', () => {
+    process.env.WS_AUTH_KEY = 'test-auth-key'
+    const client = new ChronikBlockchainClient('ecash')
+
+    const nowSec = Math.floor(Date.now() / 1000)
+    // build state: one old and one fresh in each map
+    ;(client as any).lastProcessedMessages = {
+      unconfirmed: { u_old: nowSec - 999999, u_new: nowSec - 1 },
+      confirmed:   { c_old: nowSec - 999999, c_new: nowSec - 1 }
+    }
+
+    // run cleanup
+    ;(client as any).clearOldMessages()
+
+    // old entries should be gone, fresh ones should remain
+    expect((client as any).lastProcessedMessages.unconfirmed.u_old).toBeUndefined()
+    expect((client as any).lastProcessedMessages.confirmed.c_old).toBeUndefined()
+    expect((client as any).lastProcessedMessages.unconfirmed.u_new).toBeDefined()
+    expect((client as any).lastProcessedMessages.confirmed.c_new).toBeDefined()
+  })
+})
+
