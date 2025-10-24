@@ -460,7 +460,7 @@ export async function connectTransactionsListToPrices (
   }
 
   // ---- efficient fetch ----
-  const timestampToPrice: Record<number, AllPrices> = {}
+  const priceByNetworkTs = new Map<string, AllPrices>()
   let pairs = 0
 
   for (const [networkId, timestamps] of networkIdToTimestamps.entries()) {
@@ -502,7 +502,7 @@ export async function connectTransactionsListToPrices (
         )
       }
 
-      timestampToPrice[ts] = allPrices as AllPrices
+      priceByNetworkTs.set(`${networkId}:${ts}`, allPrices as AllPrices)
     }
   }
 
@@ -512,7 +512,10 @@ export async function connectTransactionsListToPrices (
   const rows: Prisma.PricesOnTransactionsCreateManyInput[] = []
   for (const t of txList) {
     const ts = flattenTimestamp(t.timestamp)
-    const allPrices = timestampToPrice[ts]
+    const allPrices = priceByNetworkTs.get(`${t.address.networkId}:${ts}`)
+    if (allPrices == null) {
+      throw new Error(`[PRICES] Missing price pair for networkId ${t.address.networkId} at ${moment.unix(ts).format(HUMAN_READABLE_DATE_FORMAT)}.`)
+    }
     rows.push(...buildPriceTxConnectionInput(t, allPrices))
   }
   console.log(`[PRICES] Built ${rows.length} price links (2 per tx).`)
