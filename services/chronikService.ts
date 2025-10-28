@@ -184,16 +184,16 @@ export class ChronikBlockchainClient {
     const now = moment().unix()
 
     for (const key of Object.keys(this.lastProcessedMessages.unconfirmed)) {
-      const ageDiff = now - Number(this.lastProcessedMessages.unconfirmed[key])
-      if (ageDiff > CHRONIK_MESSAGE_CACHE_DELAY) {
+      const ageDiffMs = (now - Number(this.lastProcessedMessages.unconfirmed[key])) * 1000
+      if (ageDiffMs > CHRONIK_MESSAGE_CACHE_DELAY) {
         const { [key]: _, ...rest } = this.lastProcessedMessages.unconfirmed
         this.lastProcessedMessages.unconfirmed = rest
       }
     }
 
     for (const key of Object.keys(this.lastProcessedMessages.confirmed)) {
-      const ageDiff = now - Number(this.lastProcessedMessages.confirmed[key])
-      if (ageDiff > CHRONIK_MESSAGE_CACHE_DELAY) {
+      const ageDiffMs = (now - Number(this.lastProcessedMessages.confirmed[key])) * 1000
+      if (ageDiffMs > CHRONIK_MESSAGE_CACHE_DELAY) {
         const { [key]: _, ...rest } = this.lastProcessedMessages.confirmed
         this.lastProcessedMessages.confirmed = rest
       }
