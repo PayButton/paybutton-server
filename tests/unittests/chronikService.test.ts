@@ -1343,3 +1343,178 @@ describe('Regression: mempool + retries + onMessage + cache TTL', () => {
   })
 })
 
+describe.only('WS onMessage matrix (no re-mocks)', () => {
+  beforeAll(() => {
+    process.env.WS_AUTH_KEY = 'test-auth-key'
+  })
+
+  let client: any
+  let fetchAddressesArray: jest.Mock
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+
+    // fresh client
+    client = new ChronikBlockchainClient('ecash')
+
+    // avoid any wait-paths that depend on async ctor
+    client.setInitialized() // initializing=false
+
+    // ensure ws endpoint exists for BLK_FINALIZED logs
+    client.chronikWSEndpoint = {
+      subs: { scripts: [] },
+      subscribeToBlocks: jest.fn(),
+      waitForOpen: jest.fn()
+    } as any
+
+    // addressService mocks used by getAddressesForTransaction / waitForSyncing
+    ;({ fetchAddressesArray } = require('../../services/addressService'))
+    fetchAddressesArray.mockResolvedValue([
+      {
+        id: 'addr-1',
+        address: 'ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h',
+        networkId: 1,
+        syncing: false,
+        lastSynced: new Date().toISOString()
+      }
+    ])
+
+    // never hit real payment layer in these tests
+    jest.spyOn(client as any, 'handleUpdateClientPaymentStatus').mockResolvedValue(undefined)
+  })
+
+  it('handles TX_REMOVED_FROM_MEMPOOL → deletes unconfirmed txs', async () => {
+    const { fetchUnconfirmedTransactions, deleteTransactions } = require('../../services/transactionService')
+    fetchUnconfirmedTransactions.mockResolvedValueOnce(['tx-to-del'])
+    deleteTransactions.mockResolvedValueOnce(undefined)
+
+    await client.processWsMessage({ type: 'Tx', msgType: 'TX_REMOVED_FROM_MEMPOOL', txid: 'deadbeef' })
+
+    expect(fetchUnconfirmedTransactions).toHaveBeenCalledWith('deadbeef')
+    expect(deleteTransactions).toHaveBeenCalledWith(['tx-to-del'])
+  })
+
+  it('handles TX_CONFIRMED → uses fetchTxWithRetry and updates payments for related addresses', async () => {
+    const fetchSpy = jest.spyOn(client, 'fetchTxWithRetry').mockResolvedValue({
+      txid: 'txCONF',
+      inputs: [],
+      outputs: [{ sats: 10n, outputScript: '76a914c5d2460186f7233c927e7db2dcc703c0e500b65388ac' }]
+    })
+
+    // deterministic related addresses
+    jest.spyOn(client as any, 'getRelatedAddressesForTransaction')
+      .mockReturnValue(['ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h'])
+
+    // minimal transaction shape for downstream
+    jest.spyOn(client as any, 'getTransactionFromChronikTransaction')
+      .mockResolvedValue({
+        hash: 'txCONF',
+        amount: '0.01',
+        timestamp: Math.floor(Date.now() / 1000),
+        addressId: 'addr-1',
+        confirmed: false,
+        opReturn: JSON.stringify({ message: { type: 'PAY', paymentId: 'pid-1' } })
+      })
+
+    const paySpy = jest.spyOn(client as any, 'handleUpdateClientPaymentStatus')
+
+    await client.processWsMessage({ type: 'Tx', msgType: 'TX_CONFIRMED', txid: 'txCONF' })
+
+    expect(fetchSpy).toHaveBeenCalledWith('txCONF')
+    expect(paySpy).toHaveBeenCalled()
+    expect(client.confirmedTxsHashesFromLastBlock).toContain('txCONF')
+  })
+
+  it('handles TX_ADDED_TO_MEMPOOL → calls fetchTxWithRetry and upserts, triggers once', async () => {
+    const { upsertTransaction } = require('../../services/transactionService')
+    const { executeAddressTriggers } = require('../../services/triggerService')
+
+    jest.spyOn(client as any, 'isAlreadyBeingProcessed').mockReturnValue(false)
+
+    jest.spyOn(client, 'fetchTxWithRetry').mockResolvedValue({
+      txid: 'txMEM',
+      inputs: [],
+      outputs: [{ sats: 10n, outputScript: '76a914c5d2460186f7233c927e7db2dcc703c0e500b65388ac' }]
+    })
+
+    jest.spyOn(client as any, 'getAddressesForTransaction').mockResolvedValue([
+      {
+        address: { address: 'ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h', networkId: 1 },
+        transaction: {
+          hash: 'txMEM',
+          amount: '0.01',
+          timestamp: Math.floor(Date.now() / 1000),
+          addressId: 'addr-1',
+          confirmed: false,
+          opReturn: JSON.stringify({ message: { type: 'PAY', paymentId: 'pid-2' } })
+        }
+      }
+    ])
+
+    upsertTransaction.mockResolvedValue({
+      created: true,
+      tx: { address: { networkId: 1, address: 'ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h' } }
+    })
+
+    await client.processWsMessage({ type: 'Tx', msgType: 'TX_ADDED_TO_MEMPOOL', txid: 'txMEM' })
+
+    expect(client.fetchTxWithRetry).toHaveBeenCalledWith('txMEM')
+    expect(upsertTransaction).toHaveBeenCalledTimes(1)
+    expect(executeAddressTriggers).toHaveBeenCalledTimes(1)
+    expect(client.mempoolTxsBeingProcessed).toBe(0)
+  })
+
+  it('TX_ADDED_TO_MEMPOOL → short-circuits when already being processed', async () => {
+    const fetchSpy = jest.spyOn(client, 'fetchTxWithRetry')
+    jest.spyOn(client as any, 'isAlreadyBeingProcessed').mockReturnValue(true)
+
+    await client.processWsMessage({ type: 'Tx', msgType: 'TX_ADDED_TO_MEMPOOL', txid: 'dup' })
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('TX_ADDED_TO_MEMPOOL → retries on 404-ish twice then succeeds (uses fake timers)', async () => {
+    jest.useFakeTimers()
+
+    let attempts = 0
+    // drive underlying chronik.tx via the real fetchTxWithRetry
+    ;(client.chronik as any) = { tx: jest.fn(async () => {
+      attempts += 1
+      if (attempts < 3) throw new Error('Transaction not found in the index')
+      return { txid: 'tx404', inputs: [], outputs: [] }
+    })}
+
+    jest.spyOn(client as any, 'isAlreadyBeingProcessed').mockReturnValue(false)
+    jest.spyOn(client as any, 'getAddressesForTransaction').mockResolvedValue([])
+
+    const p = client.processWsMessage({ type: 'Tx', msgType: 'TX_ADDED_TO_MEMPOOL', txid: 'tx404' })
+
+    // advance 1s + 2s exponential backoffs
+    await jest.advanceTimersByTimeAsync(1000)
+    await jest.advanceTimersByTimeAsync(2000)
+
+    await p
+    expect(attempts).toBe(3)
+    expect(client.mempoolTxsBeingProcessed).toBe(0)
+
+    jest.useRealTimers()
+  })
+
+  it('handles Block → BLK_FINALIZED triggers sync and clears cache', async () => {
+    client.initializing = false
+    client.confirmedTxsHashesFromLastBlock = ['A', 'B']
+    const syncSpy = jest.spyOn(client as any, 'syncBlockTransactions').mockResolvedValue(undefined)
+
+    await client.processWsMessage({ type: 'Block', msgType: 'BLK_FINALIZED', blockHash: 'bh', blockHeight: 123 })
+
+    expect(syncSpy).toHaveBeenCalledWith('bh')
+    expect(client.confirmedTxsHashesFromLastBlock).toEqual([])
+  })
+
+  it('handles type=Error → logs JSON payload', async () => {
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {})
+    await client.processWsMessage({ type: 'Error', msg: { code: 42, reason: 'nope' } } as any)
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('[CHRONIK — ecash]: [Error]'))
+    logSpy.mockRestore()
+  })
+})
