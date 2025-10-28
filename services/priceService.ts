@@ -2,12 +2,12 @@ import axios from 'axios'
 import { Prisma, Price } from '@prisma/client'
 import config from 'config'
 import prisma from 'prisma-local/clientInstance'
-import { HUMAN_READABLE_DATE_FORMAT, PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
 import moment from 'moment'
 
 export function flattenTimestamp (timestamp: number): number {
-  const date = moment.utc((timestamp * 1000))
+  const date = moment.utc(timestamp * 1000)
   const dateStart = date.startOf('day')
   return dateStart.unix()
 }
@@ -47,6 +47,7 @@ export async function upsertPricesForNetworkId (responseData: IResponseData, net
         value: new Prisma.Decimal(responseData.Price_in_USD)
       }
     })
+
     await prisma.price.upsert({
       where: {
         Price_timestamp_quoteId_networkId_unique_constraint: {
@@ -89,70 +90,67 @@ function getAllPricesURLForNetworkTicker (networkTicker: string): string {
   return `${config.priceAPIURL}/dailyprices/${process.env.PRICE_API_TOKEN!}/${networkTicker}`
 }
 
-export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networkTicker: string, attempt: number = 1): Promise<IResponseData> {
-  try {
-    const res = await axios.get(getPriceURLForDayAndNetworkTicker(day, networkTicker), {
-      timeout: PRICE_API_TIMEOUT
-    })
-
-    if (res.data.success !== false) {
-      const data = res.data
-      if (isResponseAsExpected(data)) return data
-    }
-    throw new Error(RESPONSE_MESSAGES.FAILED_TO_FETCH_PRICE_FROM_API_500(day.format(PRICE_API_DATE_FORMAT), networkTicker).message)
-  } catch (error: any) {
-    console.error(`Problem getting price of ${networkTicker} ${day.format(HUMAN_READABLE_DATE_FORMAT)} (attempt ${attempt}) ->\n${error as string}: ${error.message as string} `)
-
-    if (attempt < PRICE_API_MAX_RETRIES) {
-      return await getPriceForDayAndNetworkTicker(day, networkTicker, attempt + 1)
-    } else {
-      throw error
+async function withRetries<T> (
+  fn: () => Promise<T>,
+  { maxRetries = PRICE_API_MAX_RETRIES, throwOnFailure = true, context = {} } = {}
+): Promise<T | null> {
+  let lastError: any
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      lastError = error
+      console.error(`[Retry ${attempt}/${maxRetries}] ${String(error)}`, { ...context })
+      if (attempt < maxRetries) continue
+      if (throwOnFailure) throw lastError
+      console.error(`[Retry ${attempt}/${maxRetries}] skipping error:`)
+      console.error(String(lastError))
+      return null
     }
   }
+  return null
+}
+
+export async function getPriceForDayAndNetworkTicker (day: moment.Moment, networkTicker: string): Promise<IResponseData> {
+  return await withRetries(async () => {
+    const res = await axios.get(getPriceURLForDayAndNetworkTicker(day, networkTicker), { timeout: PRICE_API_TIMEOUT })
+    if (res.data.success !== false && isResponseAsExpected(res.data)) return res.data
+    throw new Error(RESPONSE_MESSAGES.FAILED_TO_FETCH_PRICE_FROM_API_500(day.format(PRICE_API_DATE_FORMAT), networkTicker).message)
+  }, { context: { day } })
 }
 
 function isResponseAsExpected (data: any): boolean {
-  const isExpectedObj = data.Price_in_CAD !== undefined && data.Price_in_USD !== undefined
+  const isExpectedObj = data?.Price_in_CAD !== undefined && data?.Price_in_USD !== undefined
   if (isExpectedObj) return true
-  const values = Object.values(data) as unknown as any[]
+  const values = Object.values(data ?? {})
   if (values.length > 0) {
-    const firstValueIsExpectedObj = values[0].Price_in_CAD !== undefined && values[0].Price_in_USD !== undefined
-    if (firstValueIsExpectedObj) return true
+    const first = values[0] as any
+    return first?.Price_in_CAD !== undefined && first?.Price_in_USD !== undefined
   }
   return false
 }
 
-export async function getAllPricesByNetworkTicker (networkTicker: string, attempt: number = 1): Promise<IResponseDataDaily[]> {
-  let lastError: any
-  try {
-    const res = await axios.get(getAllPricesURLForNetworkTicker(networkTicker), {
-      timeout: PRICE_API_TIMEOUT
-    })
+export async function getAllPricesByNetworkTicker (
+  networkTicker: string,
+  throwOnFailure: true
+): Promise<IResponseDataDaily[]>
 
-    if (res.data.success !== false) {
-      const data = res.data
-      if (isResponseAsExpected(data)) {
-        const dailyPrices: IResponseDataDaily[] = Object.entries<IResponseData>(res.data).map(([day, priceData]) => {
-          return {
-            day,
-            ...priceData
-          }
-        })
-        return dailyPrices
-      }
+export async function getAllPricesByNetworkTicker (
+  networkTicker: string,
+  throwOnFailure: false
+): Promise<IResponseDataDaily[] | null>
+
+export async function getAllPricesByNetworkTicker (
+  networkTicker: string,
+  throwOnFailure = true
+): Promise<IResponseDataDaily[] | null> {
+  return await withRetries(async () => {
+    const res = await axios.get(getAllPricesURLForNetworkTicker(networkTicker), { timeout: PRICE_API_TIMEOUT })
+    if (res.data.success !== false && isResponseAsExpected(res.data)) {
+      return Object.entries<IResponseData>(res.data).map(([day, priceData]) => ({ day, ...priceData }))
     }
     throw new Error(RESPONSE_MESSAGES.FAILED_TO_FETCH_PRICE_FROM_API_500('ALL_DAYS', networkTicker).message)
-  } catch (error: any) {
-    lastError = error
-    console.error(`Problem getting price of ${networkTicker} (attempt ${attempt}) ->\n${error as string}: ${error.response.statusText as string} `)
-  }
-
-  if (attempt < PRICE_API_MAX_RETRIES) {
-    return await getAllPricesByNetworkTicker(networkTicker, attempt + 1)
-  } else {
-    console.error(`Price file could not be created after ${PRICE_API_MAX_RETRIES} retries`)
-    throw new Error(lastError.response.statusText)
-  }
+  }, { throwOnFailure })
 }
 
 export async function syncPastDaysNewerPrices (): Promise<void> {
@@ -161,7 +159,6 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
     orderBy: [{ timestamp: 'desc' }],
     select: { timestamp: true }
   })
-
   if (lastPrice === null) throw new Error('No prices found, initial database seed did not complete successfully')
 
   const lastDateInDB = moment.unix(lastPrice.timestamp)
@@ -173,26 +170,30 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
     date.add(-1, 'day')
   }
 
-  const allXECPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.ecash)
-  const allBCHPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.bitcoincash)
-  await Promise.all(
-    allXECPrices.filter(p => daysToRetrieve.includes(p.day)).map(async price => {
-      return await upsertPricesForNetworkId(price, XEC_NETWORK_ID, moment(price.day).unix())
-    }
+  const allXECPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.ecash, false)
+  const allBCHPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.bitcoincash, false)
+
+  if (allXECPrices !== null) {
+    await Promise.all(
+      allXECPrices
+        .filter(p => daysToRetrieve.includes(p.day))
+        .map(async price => await upsertPricesForNetworkId(price, XEC_NETWORK_ID, moment(price.day).unix()))
     )
-  )
-  await Promise.all(
-    allBCHPrices.filter(p => daysToRetrieve.includes(p.day)).map(async price => {
-      return await upsertPricesForNetworkId(price, BCH_NETWORK_ID, moment(price.day).unix())
-    }
+  }
+
+  if (allBCHPrices !== null) {
+    await Promise.all(
+      allBCHPrices
+        .filter(p => daysToRetrieve.includes(p.day))
+        .map(async price => await upsertPricesForNetworkId(price, BCH_NETWORK_ID, moment(price.day).unix()))
     )
-  )
+  }
+
   console.log('[PRICES] All past prices have been synced.')
 }
 
 export async function syncCurrentPrices (): Promise<void> {
   const today = moment()
-
   const bchPrice = await getPriceForDayAndNetworkTicker(today, NETWORK_TICKERS.bitcoincash)
   void upsertCurrentPricesForNetworkId(bchPrice, BCH_NETWORK_ID)
 
@@ -202,32 +203,28 @@ export async function syncCurrentPrices (): Promise<void> {
 
 export async function getCurrentPrices (): Promise<Price[]> {
   return await prisma.price.findMany({
-    where: {
-      timestamp: 0
-    }
+    where: { timestamp: 0 }
   })
 }
 
 export async function getCurrentPricesForNetworkId (networkId: number): Promise<QuoteValues> {
   const currentPrices = await prisma.price.findMany({
-    where: {
-      timestamp: 0,
-      networkId
-    }
+    where: { timestamp: 0, networkId }
   })
   if (currentPrices.length !== N_OF_QUOTES) {
     throw new Error(RESPONSE_MESSAGES.NO_CURRENT_PRICES_FOUND_404.message)
   }
   return {
-    usd: currentPrices.filter((price) => price.quoteId === USD_QUOTE_ID)[0].value,
-    cad: currentPrices.filter((price) => price.quoteId === CAD_QUOTE_ID)[0].value
+    usd: currentPrices.filter(p => p.quoteId === USD_QUOTE_ID)[0].value,
+    cad: currentPrices.filter(p => p.quoteId === CAD_QUOTE_ID)[0].value
   }
 }
 
 export interface QuoteValues {
-  'usd': Prisma.Decimal
-  'cad': Prisma.Decimal
+  usd: Prisma.Decimal
+  cad: Prisma.Decimal
 }
+
 export interface CreatePricesFromTransactionInput {
   timestamp: number
   networkId: number
@@ -241,43 +238,43 @@ export interface SyncTransactionPricesInput {
   transactionId: string
 }
 
-export async function fetchPricesForNetworkAndTimestamp (networkId: number, timestamp: number, prisma: Prisma.TransactionClient, attempt: number = 1): Promise<AllPrices> {
-  const flattenedTimestamp = flattenTimestamp(timestamp)
-  const cadPrice = await prisma.price.findUnique({
-    where: {
-      Price_timestamp_quoteId_networkId_unique_constraint: {
-        quoteId: CAD_QUOTE_ID,
-        networkId,
-        timestamp: flattenedTimestamp
+export async function fetchPricesForNetworkAndTimestamp (
+  networkId: number,
+  timestamp: number,
+  prismaTx: Prisma.TransactionClient,
+  tryRenewing = true
+): Promise<AllPrices> {
+  const getPrices = async (firstRun = true): Promise<AllPrices> => {
+    const flattenedTimestamp = flattenTimestamp(timestamp)
+    try {
+      const cad = await prismaTx.price.findUniqueOrThrow({
+        where: { Price_timestamp_quoteId_networkId_unique_constraint: { quoteId: CAD_QUOTE_ID, networkId, timestamp: flattenedTimestamp } }
+      })
+      const usd = await prismaTx.price.findUniqueOrThrow({
+        where: { Price_timestamp_quoteId_networkId_unique_constraint: { quoteId: USD_QUOTE_ID, networkId, timestamp: flattenedTimestamp } }
+      })
+      return { cad, usd }
+    } catch (err) {
+      if (tryRenewing && firstRun) {
+        const ok = await renewPricesForTimestamp(flattenedTimestamp)
+        if (ok) return await getPrices(false)
       }
+      throw err
     }
-  })
-  const usdPrice = await prisma.price.findUnique({
-    where: {
-      Price_timestamp_quoteId_networkId_unique_constraint: {
-        quoteId: USD_QUOTE_ID,
-        networkId,
-        timestamp: flattenedTimestamp
-      }
-    }
-  })
-  if (cadPrice === null || usdPrice === null) {
-    await renewPricesForTimestamp(flattenedTimestamp)
-    if (attempt < PRICE_API_MAX_RETRIES) {
-      return await fetchPricesForNetworkAndTimestamp(networkId, flattenedTimestamp, prisma, attempt + 1)
-    }
-    throw new Error(RESPONSE_MESSAGES.NO_PRICES_FOUND_404(networkId, flattenedTimestamp).message)
   }
-  return {
-    cad: cadPrice,
-    usd: usdPrice
-  }
+  return await getPrices()
 }
 
-async function renewPricesForTimestamp (timestamp: number): Promise<void> {
-  const xecPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.ecash)
-  await upsertPricesForNetworkId(xecPrice, XEC_NETWORK_ID, timestamp)
+async function renewPricesForTimestamp (timestamp: number): Promise<boolean> {
+  try {
+    const xecPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.ecash)
+    await upsertPricesForNetworkId(xecPrice, XEC_NETWORK_ID, timestamp)
 
-  const bchPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.bitcoincash)
-  await upsertPricesForNetworkId(bchPrice, BCH_NETWORK_ID, timestamp)
+    const bchPrice = await getPriceForDayAndNetworkTicker(moment(timestamp * 1000), NETWORK_TICKERS.bitcoincash)
+    await upsertPricesForNetworkId(bchPrice, BCH_NETWORK_ID, timestamp)
+
+    return true
+  } catch {
+    return false
+  }
 }
