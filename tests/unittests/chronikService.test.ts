@@ -330,7 +330,7 @@ const originalEnv = process.env
 
 describe('ChronikBlockchainClient tests', () => {
   beforeEach(() => {
-    jest.resetModules()
+    jest.clearAllMocks()
     process.env = { ...originalEnv }
     process.env.WS_AUTH_KEY = 'test-auth-key'
   })
