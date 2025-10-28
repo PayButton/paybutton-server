@@ -1343,7 +1343,7 @@ describe('Regression: mempool + retries + onMessage + cache TTL', () => {
   })
 })
 
-describe.only('WS onMessage matrix (no re-mocks)', () => {
+describe('WS onMessage matrix (no re-mocks)', () => {
   beforeAll(() => {
     process.env.WS_AUTH_KEY = 'test-auth-key'
   })
