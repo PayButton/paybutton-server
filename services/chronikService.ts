@@ -591,7 +591,7 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private async fetchTxWithRetry (txid: string, tries = 3, delayMs = 400): Promise<Tx> {
+  private async fetchTxWithRetry (txid: string, tries = 3, delayMs = 1000): Promise<Tx> {
     for (let i = 0; i < tries; i++) {
       try {
         return await this.chronik.tx(txid)
@@ -599,7 +599,9 @@ export class ChronikBlockchainClient {
         const msg = String(e?.message ?? e)
         const is404 = /not found in the index|404/.test(msg)
         if (!is404 || i === tries - 1) throw e
-        await new Promise(resolve => setTimeout(resolve, delayMs * Math.pow(2, i)))
+        const delay = delayMs * Math.pow(2, i)
+        console.error(`Got a 404 Error trying to fetch tx ${txid} on the attempt number ${i + 1}, waiting ${(delay / 1000).toFixed(1)}s...`)
+        await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
     throw new Error('unreachable')
