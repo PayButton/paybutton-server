@@ -608,12 +608,9 @@ export class ChronikBlockchainClient {
   }
 
   private async processWsMessage (msg: WsMsgClient): Promise<void> {
-    // delete unconfirmed transaction from our database
-    // if they were cancelled and not confirmed
     if (msg.type === 'Tx') {
-      const transaction = await this.chronik.tx(msg.txid)
-      const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-
+      // delete unconfirmed transaction from our database
+      // if they were cancelled and not confirmed
       if (msg.msgType === 'TX_REMOVED_FROM_MEMPOOL') {
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         const transactionsToDelete = await fetchUnconfirmedTransactions(msg.txid)
@@ -626,6 +623,8 @@ export class ChronikBlockchainClient {
           }
         }
       } else if (msg.msgType === 'TX_CONFIRMED') {
+        const transaction = await this.fetchTxWithRetry(msg.txid)
+        const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
         console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
         this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
         for (const addressWithTransaction of addressesWithTransactions) {
