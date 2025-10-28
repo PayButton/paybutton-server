@@ -1060,7 +1060,7 @@ class MultiBlockchainClient {
           await newClient.subscribeInitialAddresses()
         })()
       )
-    } else if (process.env.NODE_ENV === 'test') {
+    } else if (process.env.NODE_ENV === 'test' || process.env.JOBS_ENV !== undefined) {
       asyncOperations.push(
         (async () => {
           await newClient.waitForLatencyTest()
