@@ -623,13 +623,17 @@ export class ChronikBlockchainClient {
           }
         }
       } else if (msg.msgType === 'TX_CONFIRMED') {
-        const transaction = await this.fetchTxWithRetry(msg.txid)
-        const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
-        console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
-        this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
-        for (const addressWithTransaction of addressesWithTransactions) {
-          const { amount, opReturn } = addressWithTransaction.transaction
-          await this.handleUpdateClientPaymentStatus(amount, opReturn, 'CONFIRMED' as ClientPaymentStatus, addressWithTransaction.address.address)
+        try {
+          const transaction = await this.fetchTxWithRetry(msg.txid)
+          const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
+          console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] ${msg.txid}`)
+          this.confirmedTxsHashesFromLastBlock = [...this.confirmedTxsHashesFromLastBlock, msg.txid]
+          for (const addressWithTransaction of addressesWithTransactions) {
+            const { amount, opReturn } = addressWithTransaction.transaction
+            await this.handleUpdateClientPaymentStatus(amount, opReturn, 'CONFIRMED' as ClientPaymentStatus, addressWithTransaction.address.address)
+          }
+        } catch (e) {
+          console.error(`${this.CHRONIK_MSG_PREFIX}: confirmed tx handler failed for ${msg.txid}`, e)
         }
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
         if (this.isAlreadyBeingProcessed(msg.txid, false)) return
