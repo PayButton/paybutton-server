@@ -323,16 +323,17 @@ function makePostTask (
     let accepted = false
     let isError = false
     let data!: PostDataTriggerLog | PostDataTriggerLogError
+    let parsed: any = null
     try {
       const params = buildPostParams(trigger, tx, currency, valueStr, address)
-      const parsed = parseTriggerPostData({ userId: trigger.paybutton.user.id, postData: trigger.postData, postDataParameters: params })
+      parsed = parseTriggerPostData({ userId: trigger.paybutton.user.id, postData: trigger.postData, postDataParameters: params })
       const resp = await axios.post(trigger.postURL, parsed, { timeout: config.triggerPOSTTimeout })
       // HTTP 2xx counts as accepted
       accepted = resp.status >= 200 && resp.status < 300
       data = { postedData: parsed, postedURL: trigger.postURL, responseData: resp.data }
     } catch (err: any) {
       isError = true
-      data = { errorName: err.name, errorMessage: err.message, errorStack: err.stack, triggerPostData: trigger.postData, triggerPostURL: trigger.postURL }
+      data = { errorName: err.name, errorMessage: err.message, errorStack: err.stack, triggerPostData: parsed ?? trigger.postData, triggerPostURL: trigger.postURL }
     } finally {
       logs.push({ triggerId: trigger.id, isError, actionType, data: JSON.stringify(data) })
     }
