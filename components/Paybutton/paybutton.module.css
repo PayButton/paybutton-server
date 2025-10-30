@@ -146,6 +146,7 @@
   border: 1px solid var(--secondary-text-color);
   overflow-y: auto;
   max-height: 90vh;
+  min-height: 44rem;
 }
 
 .form_ctn p {
@@ -522,7 +523,7 @@ body[data-theme='dark'] .form_ctn_outer {
   float: right;
 }
 
-.email_credits_info {
+.credits_info {
   display: inline-block;
   font-size: 14px;
   background-color: var(--accent-color);
@@ -532,7 +533,7 @@ body[data-theme='dark'] .form_ctn_outer {
   align-self: flex-end;
 }
 
-body[data-theme='dark'] .email_credits_info {
+body[data-theme='dark'] .credits_info {
   color: var(--secondary-text-color);
 }
 
