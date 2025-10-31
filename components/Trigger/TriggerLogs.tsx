@@ -242,18 +242,22 @@ const TriggerLogs = ({
   return (
     <div className={style.wrapper}>
       <div className={style.tabBar}>
-        <button
+        <div
+          role="tab"
+          tabIndex={0}
           onClick={() => setActiveTab('PostData')}
           className={`${style.tab} ${activeTab === 'PostData' ? style.tabActive : ''}`}
         >
-          POST Logs
-        </button>
-        <button
+          Requests
+        </div>
+        <div
+          role="tab"
+          tabIndex={0}
           onClick={() => setActiveTab('SendEmail')}
           className={`${style.tab} ${activeTab === 'SendEmail' ? style.tabActive : ''}`}
         >
-          EMAIL Logs
-        </button>
+          Emails
+        </div>
       </div>
 
       <TableContainer

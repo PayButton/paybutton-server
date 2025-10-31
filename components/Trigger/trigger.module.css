@@ -5,8 +5,6 @@
 /* ---------- TAB BAR (shared layout) ---------- */
 .tabBar {
   display: flex;
-  border-bottom: 1px solid var(--tab-border, #ccc);
-  margin-bottom: 12px;
 }
 
 .tab {
@@ -18,19 +16,19 @@
   cursor: pointer;
   transition: color 0.2s, border-bottom 0.2s, background 0.2s;
   border-bottom: 2px solid transparent;
+  border: none;
 }
 
-/* ---------- LIGHT THEME ---------- */
-body[data-theme='light'] .tab {
+body .tab {
   color: #333;
 }
 
-body[data-theme='light'] .tab:hover {
+body .tab:hover {
   color: #1e40af; /* deep blue */
   background: rgba(59, 130, 246, 0.1);
 }
 
-body[data-theme='light'] .tabActive {
+body .tabActive {
   color: #111;
   border-bottom: 2px solid #3b82f6; /* bright blue underline */
 }
