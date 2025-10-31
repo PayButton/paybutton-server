@@ -233,7 +233,7 @@ export async function fetchTriggersForPaybuttonAddresses (paybuttonId: string): 
   })
 }
 
-type TriggerLogActionType = 'SendEmail' | 'PostData'
+export type TriggerLogActionType = 'SendEmail' | 'PostData'
 
 export interface PostDataTriggerLogError {
   errorName: string

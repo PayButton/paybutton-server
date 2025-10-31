@@ -1,23 +1,37 @@
 import React, { useEffect, useState } from 'react'
 import style from '../Paybutton/paybutton.module.css'
-// import style_w from '../Wallet/wallet.module.css'
 import { PaybuttonTriggerPOSTParameters } from 'utils/validators'
 import { useForm } from 'react-hook-form'
 import axios from 'axios'
-import { PaybuttonTrigger, UserProfile } from '@prisma/client'
-import config from 'config/index'
+import type { PaybuttonTrigger, UserProfile } from '@prisma/client' // type-only import
 import TriggerLogs from './TriggerLogs'
+import { getUserRemainingTriggerCreditsLimit, getUserTriggerCreditsLimit } from 'services/userService'
+import { TriggerLogActionType } from 'services/triggerService'
 
 interface IProps {
   paybuttonId: string
   userProfile: UserProfile
 }
 
-const WIP = config.proSettings.proDailyPostLimit === 'Inf' ? 999 : config.proSettings.proDailyPostLimit
-
 type TriggerType = 'poster' | 'email'
 
-export default ({ paybuttonId, userProfile }: IProps): JSX.Element => {
+export function renderCreditsInfo (
+  user: UserProfile,
+  actionType: TriggerLogActionType
+): JSX.Element {
+  const limit = getUserTriggerCreditsLimit(user, actionType)
+  const remaining = getUserRemainingTriggerCreditsLimit(user, actionType)
+  const used = Math.max(0, limit - remaining)
+  const label = actionType === 'SendEmail' ? 'emails' : 'requests'
+
+  return (
+    <span>
+      Sent today: {used}/{limit} {label}. <b>{remaining} remaining.</b>
+    </span>
+  )
+}
+
+export default function PaybuttonTriggerComponent ({ paybuttonId, userProfile }: IProps): JSX.Element {
   const [posterError, setPosterError] = useState('')
   const [emailError, setEmailError] = useState('')
   const [posterSuccessText, setPosterSuccessText] = useState('')
@@ -25,8 +39,23 @@ export default ({ paybuttonId, userProfile }: IProps): JSX.Element => {
   const [clearModal, setClearModal] = useState<TriggerType | undefined>()
   const [currentPosterTriggerId, setCurrentPosterTriggerId] = useState<string>()
   const [currentEmailTriggerId, setCurrentEmailTriggerId] = useState<string>()
-  const { register: registerPosterTrigger, handleSubmit: handleSubmitPosterTrigger, reset: resetPosterTrigger, setValue: setValuePosterTrigger, watch: watchPosterTrigger } = useForm<PaybuttonTriggerPOSTParameters>()
-  const { register: registerEmailTrigger, handleSubmit: handleSubmitEmailTrigger, reset: resetEmailTrigger, setValue: setValueEmailTrigger, watch: watchEmailTrigger } = useForm<PaybuttonTriggerPOSTParameters>()
+
+  const {
+    register: registerPosterTrigger,
+    handleSubmit: handleSubmitPosterTrigger,
+    reset: resetPosterTrigger,
+    setValue: setValuePosterTrigger,
+    watch: watchPosterTrigger
+  } = useForm<PaybuttonTriggerPOSTParameters>()
+
+  const {
+    register: registerEmailTrigger,
+    handleSubmit: handleSubmitEmailTrigger,
+    reset: resetEmailTrigger,
+    setValue: setValueEmailTrigger,
+    watch: watchEmailTrigger
+  } = useForm<PaybuttonTriggerPOSTParameters>()
+
   const [initialStateURL, setInitialStateURL] = useState<string>()
   const [initialStateData, setInitialStateData] = useState<string>()
   const [initialStateEmails, setInitialStateEmails] = useState<string>()
@@ -35,7 +64,7 @@ export default ({ paybuttonId, userProfile }: IProps): JSX.Element => {
 
   const getTriggers = async (): Promise<void> => {
     const response = await axios.get(`/api/paybutton/triggers/${paybuttonId}`)
-    const triggers = await response.data as PaybuttonTrigger[]
+    const triggers = response.data as PaybuttonTrigger[]
     for (const trigger of triggers) {
       const isEmailTrigger = trigger.postURL === ''
       if (isEmailTrigger) {
@@ -62,50 +91,44 @@ export default ({ paybuttonId, userProfile }: IProps): JSX.Element => {
   }, [])
 
   useEffect(() => {
-    if (
-      (watchPostData === initialStateData &&
-        watchPostURL === initialStateURL) ||
-      (watchPostData === '' || watchPostURL === '')
-    ) {
-      setDisablePosterSubmit(true)
-    } else {
-      setDisablePosterSubmit(false)
-    }
-    if (watchEmails === initialStateEmails || watchEmails === '') {
-      setDisableEmailSubmit(true)
-    } else {
-      setDisableEmailSubmit(false)
-    }
+    const samePosterData =
+      (watchPostData ?? '') === (initialStateData ?? '') &&
+      (watchPostURL ?? '') === (initialStateURL ?? '')
+    const emptyPosterFields =
+      (watchPostData ?? '') === '' || (watchPostURL ?? '') === ''
+    const disablePoster = samePosterData || emptyPosterFields
+    setDisablePosterSubmit(disablePoster)
+
+    const disableEmail =
+      (watchEmails ?? '') === (initialStateEmails ?? '') || (watchEmails ?? '') === ''
+    setDisableEmailSubmit(disableEmail)
   }, [initialStateURL, initialStateData, watchPostData, watchPostURL, initialStateEmails, watchEmails])
 
   function getDeleteTriggerHandler (triggerType: TriggerType): () => Promise<void> {
     let triggerToDelete: string | undefined
-    let setError: Function
-    let setSuccess: Function
-    let setCurrentTriggerId: Function
-    let resetForm: Function
-    switch (triggerType) {
-      case 'email':
-        triggerToDelete = currentEmailTriggerId
-        setError = setEmailError
-        setSuccess = setEmailSuccessText
-        setCurrentTriggerId = setCurrentEmailTriggerId
-        resetForm = resetEmailTrigger
-        break
-      case 'poster':
-        triggerToDelete = currentPosterTriggerId
-        setError = setPosterError
-        setSuccess = setPosterSuccessText
-        setCurrentTriggerId = setCurrentPosterTriggerId
-        resetForm = resetPosterTrigger
+    let setError: (msg: string) => void
+    let setSuccess: (msg: string) => void
+    let setCurrentTriggerId: (id?: string) => void
+    let resetForm: () => void
+
+    if (triggerType === 'email') {
+      triggerToDelete = currentEmailTriggerId
+      setError = setEmailError
+      setSuccess = setEmailSuccessText
+      setCurrentTriggerId = setCurrentEmailTriggerId
+      resetForm = resetEmailTrigger
+    } else {
+      triggerToDelete = currentPosterTriggerId
+      setError = setPosterError
+      setSuccess = setPosterSuccessText
+      setCurrentTriggerId = setCurrentPosterTriggerId
+      resetForm = resetPosterTrigger
     }
 
     return async () => {
       try {
         const response = await axios.delete(`/api/paybutton/triggers/${paybuttonId}`, {
-          data: {
-            triggerId: triggerToDelete
-          }
+          data: { triggerId: triggerToDelete }
         })
         if (response.status === 200) {
           resetForm()
@@ -115,7 +138,7 @@ export default ({ paybuttonId, userProfile }: IProps): JSX.Element => {
         }
       } catch (err: any) {
         setSuccess('')
-        setError(err.response.data.message)
+        setError(err.response?.data?.message ?? 'Unknown error')
       } finally {
         setClearModal(undefined)
         setTimeout(() => {
@@ -128,18 +151,17 @@ export default ({ paybuttonId, userProfile }: IProps): JSX.Element => {
 
   function getSubmitTriggerHandler (triggerType: TriggerType): (params: PaybuttonTriggerPOSTParameters) => Promise<void> {
     let currentTriggerId: string | undefined
-    let setError: Function
-    let setSuccess: Function
-    switch (triggerType) {
-      case 'email':
-        currentTriggerId = currentEmailTriggerId
-        setError = setEmailError
-        setSuccess = setEmailSuccessText
-        break
-      case 'poster':
-        currentTriggerId = currentPosterTriggerId
-        setError = setPosterError
-        setSuccess = setPosterSuccessText
+    let setError: (msg: string) => void
+    let setSuccess: (msg: string) => void
+
+    if (triggerType === 'email') {
+      currentTriggerId = currentEmailTriggerId
+      setError = setEmailError
+      setSuccess = setEmailSuccessText
+    } else {
+      currentTriggerId = currentPosterTriggerId
+      setError = setPosterError
+      setSuccess = setPosterSuccessText
     }
 
     return async (params: PaybuttonTriggerPOSTParameters) => {
@@ -153,7 +175,7 @@ export default ({ paybuttonId, userProfile }: IProps): JSX.Element => {
         }
       } catch (err: any) {
         setSuccess('')
-        setError(err.response.data.message)
+        setError(err.response?.data?.message ?? 'Unknown error')
       } finally {
         setTimeout(() => {
           setSuccess('')
@@ -171,30 +193,20 @@ export default ({ paybuttonId, userProfile }: IProps): JSX.Element => {
           <div className={style.form_ctn}>
             <div className={style.trigger_header}>
               <h5>Send Request</h5>
-              {currentPosterTriggerId !== undefined && <div className={style.active_label}>Active</div>}
-
-              <div className={style.credits_info}>
-                {userProfile.postCredits < WIP
+              <div>
+                {currentPosterTriggerId !== undefined
                   ? (
-                    <span>
-                      You have sent <b>{WIP - userProfile.postCredits}</b>{' '}
-                      of a daily maximum of <b>{WIP}</b> requests.
-                    </span>
+                    <div className={style.active_label}>Active</div>
                     )
                   : (
-                    <span>
-                      You may send up to <b>{WIP}</b> requests per
-                      day.
-                    </span>
+                    <div className={style.inactive_label}>Inactive</div>
                     )}
+                <div className={style.credits_info}>{renderCreditsInfo(userProfile, 'PostData')}</div>
               </div>
             </div>
+
             <form
-              onSubmit={(e) => {
-                void handleSubmitPosterTrigger(
-                  getSubmitTriggerHandler('poster')
-                )(e)
-              }}
+              onSubmit={(e) => { void handleSubmitPosterTrigger(getSubmitTriggerHandler('poster'))(e) }}
               method="post"
             >
               <div>
@@ -204,7 +216,7 @@ export default ({ paybuttonId, userProfile }: IProps): JSX.Element => {
                   type="text"
                   id="postURL"
                   name="postURL"
-                  placeholder='The URL that will receive the request'
+                  placeholder="The URL that will receive the request"
                 />
               </div>
 
@@ -234,50 +246,24 @@ export default ({ paybuttonId, userProfile }: IProps): JSX.Element => {
                   <div>&lt;inputAddresses&gt;</div>
                   <div>&lt;outputAddresses&gt;</div>
                   <div>&lt;value&gt;</div>
-
                 </div>
               </div>
-              {/* Tooltip */}
-              <div>
-                <div className={style.tip}>
-                  {/* Only triggers if payment &gt; X */}
-                </div>
 
-                <div className={style.trigger_btn_row}>
-
-                {posterError === undefined || posterError === ''
-                  ? null
-                  : (
-                    <div className={style.error_message_}>{posterError}</div>
-                    )}
-                  {posterSuccessText === undefined ||
-                  posterSuccessText === ''
-                    ? null
-                    : (
-                    <div className={style.success_message_}>
-                      {posterSuccessText}
-                    </div>
-                      )}
-                  {currentPosterTriggerId !== undefined && (
-                      <button
-                        type="button"
-                        onClick={() => setClearModal('poster')}
-                        className={style.trigger_delete_btn}
-                      >
-                        Delete
-                      </button>
-                  )}
+              <div className={style.trigger_btn_row}>
+                {posterError !== '' && <div className={style.error_message_}>{posterError}</div>}
+                {posterSuccessText !== '' && <div className={style.success_message_}>{posterSuccessText}</div>}
+                {currentPosterTriggerId !== '' && (
                   <button
-                    disabled={disablePosterSubmit}
-                    type="submit"
-                    className="button_main"
+                    type="button"
+                    onClick={() => setClearModal('poster')}
+                    className={style.trigger_delete_btn}
                   >
-                    {currentPosterTriggerId === undefined
-                      ? 'Create Send Request'
-                      : 'Update Send Request'}
+                    Delete
                   </button>
-
-                </div>
+                )}
+                <button disabled={disablePosterSubmit} type="submit" className="button_main">
+                  {currentPosterTriggerId === undefined ? 'Create Send Request' : 'Update Send Request'}
+                </button>
               </div>
             </form>
           </div>
@@ -285,123 +271,80 @@ export default ({ paybuttonId, userProfile }: IProps): JSX.Element => {
           <div className={style.form_ctn}>
             <div className={style.trigger_header}>
               <h5>Send Email</h5>
-              <div className={style.credits_info}>
-                {userProfile.emailCredits < WIP
+              <div>
+                {currentEmailTriggerId !== undefined
                   ? (
-                    <span>
-                      You have sent <b>{WIP - userProfile.emailCredits}</b>{' '}
-                      of a daily maximum of <b>{WIP}</b> emails.
-                    </span>
+                    <div className={style.active_label}>Active</div>
                     )
                   : (
-                    <span>
-                      You may send up to <b>{WIP}</b> emails per
-                      day.
-                    </span>
+                    <div className={style.inactive_label}>Inactive</div>
                     )}
+                <div className={style.credits_info}>{renderCreditsInfo(userProfile, 'SendEmail')}</div>
               </div>
-              {currentEmailTriggerId !== undefined && <div className={style.active_label}>Active</div>}
             </div>
+
             <form
-              onSubmit={(e) => {
-                void handleSubmitEmailTrigger(getSubmitTriggerHandler('email'))(
-                  e
-                )
-              }}
+              onSubmit={(e) => { void handleSubmitEmailTrigger(getSubmitTriggerHandler('email'))(e) }}
               method="post"
             >
+              <label htmlFor="emails">Email</label>
+              <input {...registerEmailTrigger('emails')} type="text" id="emails" name="emails" />
 
-                <label htmlFor="emails">Email</label>
-                <input
-                  {...registerEmailTrigger('emails')}
-                  type="text"
-                  id="emails"
-                  name="emails"
-                />
-
-              <div>
-                <div className={style.trigger_btn_row}>
-                  {emailError === undefined || emailError === ''
-                    ? null
-                    : (
-                    <div className={style.error_message_}>{emailError}</div>
-                      )}
-                  {emailSuccessText === undefined ||
-                  emailSuccessText === ''
-                    ? null
-                    : (
-                    <div className={style.success_message_}>
-                      {emailSuccessText}
-                    </div>
-                      )}
-                  {currentEmailTriggerId !== undefined && (
-                      <button
-                        type="button"
-                        onClick={() => setClearModal('email')}
-                        className={style.trigger_delete_btn}
-                      >
-                        Delete
-                      </button>
-                  )}
-                    <button
-                      disabled={disableEmailSubmit}
-                      type="submit"
-                      className="button_main"
-                    >
-                      {currentEmailTriggerId === undefined
-                        ? 'Create Send Email'
-                        : 'Update Send Email'}
-                    </button>
-
-                </div>
+              <div className={style.trigger_btn_row}>
+                {emailError !== '' && <div className={style.error_message_}>{emailError}</div>}
+                {emailSuccessText !== '' && <div className={style.success_message_}>{emailSuccessText}</div>}
+                {currentEmailTriggerId !== '' && (
+                  <button
+                    type="button"
+                    onClick={() => setClearModal('email')}
+                    className={style.trigger_delete_btn}
+                  >
+                    Delete
+                  </button>
+                )}
+                <button disabled={disableEmailSubmit} type="submit" className="button_main">
+                  {currentEmailTriggerId === undefined ? 'Create Send Email' : 'Update Send Email'}
+                </button>
               </div>
             </form>
           </div>
         </div>
       </div>
-      {/* Activity Log (below both trigger forms) */}
+
       <div style={{ marginTop: '28px' }}>
         <h4>Activity Log</h4>
         <TriggerLogs paybuttonId={paybuttonId} />
       </div>
-      {clearModal !== undefined
-        ? (
+
+      {Boolean(clearModal) && (
         <div className={style.form_ctn_outer}>
           <div className={style.form_ctn_inner}>
             <h4>Clear Payment Trigger?</h4>
-            <div
-              className={`${style.form_ctn} ${style.delete_button_form_ctn}`}
-            >
-              <label htmlFor="name">
-                Are you sure you want to clear this payment trigger?
-                <br />
+            <div className={`${style.form_ctn} ${style.delete_button_form_ctn}`}>
+              <label>
+                Are you sure you want to clear this payment trigger? <br />
                 This action cannot be undone.
               </label>
               <div className={style.btn_row}>
-                <div>
-                  <button
-                    onClick={() => {
-                      void getDeleteTriggerHandler(clearModal)()
-                    }}
-                    className={style.delete_confirm_btn}
-                  >
-                    Yes
-                  </button>
-                  <button
-                    onClick={() => {
-                      setClearModal(undefined)
-                    }}
-                    className={style.cancel_btn}
-                  >
-                    Cancel
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => { void getDeleteTriggerHandler(clearModal!)() }}
+                  className={style.delete_confirm_btn}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setClearModal(undefined)}
+                  className={style.cancel_btn}
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
         </div>
-          )
-        : null}
+      )}
     </div>
   )
 }
