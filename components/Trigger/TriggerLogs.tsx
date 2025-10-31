@@ -1,7 +1,7 @@
-// FILE: components/Trigger/TriggerLogs.tsx
 import React, { useMemo, useState } from 'react'
 import moment from 'moment-timezone'
 import TableContainer, { DataGetterReturn } from 'components/TableContainer/TableContainerGetter'
+import style from './trigger.module.css'
 
 type ActionType = 'PostData' | 'SendEmail'
 
@@ -77,7 +77,12 @@ const toEmailRow = (row: Record<string, unknown>): TriggerLogRow => {
       response: '-'
     }
   } catch {
-    return { ...(row as unknown as TriggerLogRow), sentData: '-', email: '-', response: String(row.data ?? '-') }
+    return {
+      ...(row as unknown as TriggerLogRow),
+      sentData: '-',
+      email: '-',
+      response: String(row.data ?? '-')
+    }
   }
 }
 
@@ -110,7 +115,11 @@ const toPostRow = (row: Record<string, unknown>): TriggerLogRow => {
       response: pretty(d.responseData)
     }
   } catch {
-    return { ...(row as unknown as TriggerLogRow), sentData: '-', response: String(row.data ?? '-') }
+    return {
+      ...(row as unknown as TriggerLogRow),
+      sentData: '-',
+      response: String(row.data ?? '-')
+    }
   }
 }
 
@@ -125,7 +134,6 @@ const TriggerLogs = ({
   const [activeTab, setActiveTab] = useState<ActionType>('PostData')
   const tz = timezone?.trim() !== '' ? timezone : moment.tz.guess()
 
-  // order: Time | Status | [SentData or Email] | Response
   const timeCol = {
     Header: 'Time',
     id: 'createdAt',
@@ -138,7 +146,7 @@ const TriggerLogs = ({
     id: 'isError',
     accessor: 'isError',
     Cell: ({ value }: { value: boolean }) => (
-      <span style={{ color: value ? '#ff4d4f' : '#4ade80', fontWeight: 600 }}>
+      <span className={value ? style.errorText : style.successText}>
         {value ? 'Error' : 'Success'}
       </span>
     )
@@ -151,21 +159,12 @@ const TriggerLogs = ({
     Cell: ({ value }: { value: string }) =>
       value === '-'
         ? (
-      <span style={{ color: '#888' }}>N/A</span>
+        <span className={style.naText}>N/A</span>
           )
         : (
-      <pre
-        title={value}
-        style={{
-          whiteSpace: 'pre-wrap',
-          overflow: 'auto',
-          maxHeight: 240,
-          borderRadius: 8,
-          padding: 10
-        }}
-      >
-        {value}
-      </pre>
+        <pre title={value} className={style.codeBlock}>
+          {value}
+        </pre>
           )
   }
 
@@ -180,28 +179,19 @@ const TriggerLogs = ({
         Cell: ({ value }: { value: string }) =>
           value === '-'
             ? (
-          <span style={{ color: '#888' }}>N/A</span>
+            <span className={style.naText}>N/A</span>
               )
             : (
-          <pre
-            title={value}
-            style={{
-              whiteSpace: 'pre-wrap',
-              overflow: 'auto',
-              maxHeight: 240,
-              maxWidth: 480,
-              borderRadius: 8,
-              padding: 10
-            }}
-          >
-            {value}
-          </pre>
+            <pre title={value} className={style.codeBlock}>
+              {value}
+            </pre>
               )
       },
       responseCol
     ],
     [tz]
   )
+
   const emailColumns = useMemo(
     () => [
       timeCol,
@@ -250,8 +240,8 @@ const TriggerLogs = ({
   }
 
   return (
-    <div style={{ marginTop: '28px' }}>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+    <div className={style.wrapper}>
+      <div className={style.tabBar}>
         <button
           onClick={() => setActiveTab('PostData')}
           className={activeTab === 'PostData' ? 'tab-active' : 'tab-inactive'}

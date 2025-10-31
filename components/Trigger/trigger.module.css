@@ -1,0 +1,33 @@
+.wrapper {
+  margin-top: 28px;
+}
+
+.tabBar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.codeBlock {
+  white-space: pre-wrap;
+  overflow: auto;
+  max-height: 240px;
+  max-width: 480px;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.naText {
+  color: #888;
+}
+
+.errorText {
+  color: #ff4d4f;
+  font-weight: 600;
+}
+
+.successText {
+  color: #4ade80;
+  font-weight: 600;
+}
+
