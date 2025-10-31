@@ -148,7 +148,12 @@ const TriggerLogs = ({
     Header: 'Response',
     id: 'response',
     accessor: 'response',
-    Cell: ({ value }: { value: string }) => (
+    Cell: ({ value }: { value: string }) =>
+      value === '-'
+        ? (
+      <span style={{ color: '#888' }}>N/A</span>
+          )
+        : (
       <pre
         title={value}
         style={{
@@ -161,7 +166,7 @@ const TriggerLogs = ({
       >
         {value}
       </pre>
-    )
+          )
   }
 
   const postColumns = useMemo(
@@ -172,7 +177,12 @@ const TriggerLogs = ({
         Header: 'Sent Data',
         id: 'sentData',
         accessor: 'sentData',
-        Cell: ({ value }: { value: string }) => (
+        Cell: ({ value }: { value: string }) =>
+          value === '-'
+            ? (
+          <span style={{ color: '#888' }}>N/A</span>
+              )
+            : (
           <pre
             title={value}
             style={{
@@ -186,13 +196,12 @@ const TriggerLogs = ({
           >
             {value}
           </pre>
-        )
+              )
       },
       responseCol
     ],
     [tz]
   )
-
   const emailColumns = useMemo(
     () => [
       timeCol,
@@ -203,7 +212,10 @@ const TriggerLogs = ({
         accessor: 'email',
         Cell: ({ value }: { value: string }) => <span>{value}</span>
       },
-      responseCol
+      {
+        ...responseCol,
+        Header: 'Error'
+      }
     ],
     [tz]
   )
