@@ -1,20 +1,23 @@
 import React, { useEffect, useState } from 'react'
-import style from './paybutton.module.css'
+import style from '../Paybutton/paybutton.module.css'
 // import style_w from '../Wallet/wallet.module.css'
 import { PaybuttonTriggerPOSTParameters } from 'utils/validators'
 import { useForm } from 'react-hook-form'
 import axios from 'axios'
-import { PaybuttonTrigger } from '@prisma/client'
-import { MAX_DAILY_EMAILS } from 'constants/index'
+import { PaybuttonTrigger, UserProfile } from '@prisma/client'
+import config from 'config/index'
+import TriggerLogs from './TriggerLogs'
 
 interface IProps {
   paybuttonId: string
-  emailCredits: number
+  userProfile: UserProfile
 }
+
+const WIP = config.proSettings.proDailyPostLimit === 'Inf' ? 999 : config.proSettings.proDailyPostLimit
 
 type TriggerType = 'poster' | 'email'
 
-export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
+export default ({ paybuttonId, userProfile }: IProps): JSX.Element => {
   const [posterError, setPosterError] = useState('')
   const [emailError, setEmailError] = useState('')
   const [posterSuccessText, setPosterSuccessText] = useState('')
@@ -169,6 +172,22 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
             <div className={style.trigger_header}>
               <h5>Send Request</h5>
               {currentPosterTriggerId !== undefined && <div className={style.active_label}>Active</div>}
+
+              <div className={style.credits_info}>
+                {userProfile.postCredits < WIP
+                  ? (
+                    <span>
+                      You have sent <b>{WIP - userProfile.postCredits}</b>{' '}
+                      of a daily maximum of <b>{WIP}</b> requests.
+                    </span>
+                    )
+                  : (
+                    <span>
+                      You may send up to <b>{WIP}</b> requests per
+                      day.
+                    </span>
+                    )}
+              </div>
             </div>
             <form
               onSubmit={(e) => {
@@ -266,6 +285,21 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
           <div className={style.form_ctn}>
             <div className={style.trigger_header}>
               <h5>Send Email</h5>
+              <div className={style.credits_info}>
+                {userProfile.emailCredits < WIP
+                  ? (
+                    <span>
+                      You have sent <b>{WIP - userProfile.emailCredits}</b>{' '}
+                      of a daily maximum of <b>{WIP}</b> emails.
+                    </span>
+                    )
+                  : (
+                    <span>
+                      You may send up to <b>{WIP}</b> emails per
+                      day.
+                    </span>
+                    )}
+              </div>
               {currentEmailTriggerId !== undefined && <div className={style.active_label}>Active</div>}
             </div>
             <form
@@ -284,21 +318,6 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
                   id="emails"
                   name="emails"
                 />
-                <div className={style.email_credits_info}>
-                    {emailCredits < MAX_DAILY_EMAILS
-                      ? (
-                      <span>
-                        You have sent <b>{MAX_DAILY_EMAILS - emailCredits}</b>{' '}
-                        of a daily maximum of <b>{MAX_DAILY_EMAILS}</b> emails.
-                      </span>
-                        )
-                      : (
-                      <span>
-                        You may send up to <b>{MAX_DAILY_EMAILS}</b> emails per
-                        day.
-                      </span>
-                        )}
-                </div>
 
               <div>
                 <div className={style.trigger_btn_row}>
@@ -339,6 +358,11 @@ export default ({ paybuttonId, emailCredits }: IProps): JSX.Element => {
             </form>
           </div>
         </div>
+      </div>
+      {/* Activity Log (below both trigger forms) */}
+      <div style={{ marginTop: '28px' }}>
+        <h4>Activity Log</h4>
+        <TriggerLogs paybuttonId={paybuttonId} />
       </div>
       {clearModal !== undefined
         ? (

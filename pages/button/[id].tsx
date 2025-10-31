@@ -13,6 +13,7 @@ import { KeyValueT, NETWORK_TICKERS_FROM_ID, ResponseMessage, SOCKET_MESSAGES } 
 import config from 'config'
 import io from 'socket.io-client'
 import PaybuttonTrigger from 'components/Trigger/PaybuttonTrigger'
+import TriggerLogs from 'components/Trigger/TriggerLogs'
 import { UserProfile } from '@prisma/client'
 import { fetchUserProfileFromId } from 'services/userService'
 import { removeUnserializableFields } from 'utils'
@@ -208,7 +209,7 @@ export default function PayButton (props: PaybuttonProps): React.ReactElement {
         </div>
 
         <PaybuttonTransactions addressSyncing={isSyncing} paybuttonId={paybutton.id} tableRefreshCount={tableRefreshCount} timezone={timezone}/>
-        <PaybuttonTrigger emailCredits={userProfile.emailCredits} paybuttonId={paybutton.id}/>
+        <PaybuttonTrigger userProfile={userProfile} paybuttonId={paybutton.id}/>
       </>
     )
   }
