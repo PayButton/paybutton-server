@@ -456,9 +456,9 @@ body[data-theme='dark'] .form_ctn_outer {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 24px;       /* force identical height */
-  line-height: 1;         /* neutralize font rounding */
-  box-sizing: border-box; /* avoid overflow rounding */
+  min-height: 24px;
+  line-height: 1;
+  box-sizing: border-box;
   border-radius: 5px;
   font-size: 14px;
   font-weight: 600;
