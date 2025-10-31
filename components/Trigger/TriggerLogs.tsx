@@ -244,13 +244,13 @@ const TriggerLogs = ({
       <div className={style.tabBar}>
         <button
           onClick={() => setActiveTab('PostData')}
-          className={activeTab === 'PostData' ? 'tab-active' : 'tab-inactive'}
+          className={`${style.tab} ${activeTab === 'PostData' ? style.tabActive : ''}`}
         >
           POST Logs
         </button>
         <button
           onClick={() => setActiveTab('SendEmail')}
-          className={activeTab === 'SendEmail' ? 'tab-active' : 'tab-inactive'}
+          className={`${style.tab} ${activeTab === 'SendEmail' ? style.tabActive : ''}`}
         >
           EMAIL Logs
         </button>
