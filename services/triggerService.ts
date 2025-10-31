@@ -64,6 +64,36 @@ export async function fetchTriggersForPaybutton (paybuttonId: string, userId: st
   return paybutton.triggers
 }
 
+export interface FetchTriggerLogsInput {
+  paybuttonId: string
+  page: number
+  pageSize: number
+  orderBy: string
+  orderDesc: boolean
+}
+
+export const fetchTriggerLogsForPaybutton = async ({
+  paybuttonId,
+  page,
+  pageSize,
+  orderBy,
+  orderDesc
+}: FetchTriggerLogsInput): Promise<{ data: any[], totalCount: number }> => {
+  const [data, totalCount] = await Promise.all([
+    prisma.triggerLog.findMany({
+      where: { trigger: { paybuttonId } },
+      orderBy: { [orderBy]: orderDesc ? 'desc' : 'asc' },
+      skip: page * pageSize,
+      take: pageSize
+    }),
+    prisma.triggerLog.count({
+      where: { trigger: { paybuttonId } }
+    })
+  ])
+
+  return { data, totalCount }
+}
+
 async function validateTriggerForPaybutton (paybuttonId: string, values: CreatePaybuttonTriggerInput | UpdatePaybuttonTriggerInput): Promise<void> {
   const postURL = values.postURL ?? ''
   const postData = values.postData ?? ''
@@ -205,7 +235,7 @@ export async function fetchTriggersForPaybuttonAddresses (paybuttonId: string): 
 
 type TriggerLogActionType = 'SendEmail' | 'PostData'
 
-interface PostDataTriggerLogError {
+export interface PostDataTriggerLogError {
   errorName: string
   errorMessage: string
   errorStack: string
@@ -213,20 +243,20 @@ interface PostDataTriggerLogError {
   triggerPostURL: string
 }
 
-interface PostDataTriggerLog {
+export interface PostDataTriggerLog {
   postedData: string
   postedURL: string
   responseData: string
 }
 
-interface EmailTriggerLogError {
+export interface EmailTriggerLogError {
   errorName: string
   errorMessage: string
   errorStack: string
   triggerEmail: string
 }
 
-interface EmailTriggerLog {
+export interface EmailTriggerLog {
   email: string
   responseData: string
 }
