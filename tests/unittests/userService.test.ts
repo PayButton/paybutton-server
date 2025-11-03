@@ -2,7 +2,6 @@ import * as userService from 'services/userService'
 import prisma from 'prisma-local/clientInstance'
 import { prismaMock } from 'prisma-local/mockedClient'
 import { mockedUserProfile, mockedUserProfileWithPublicKey } from 'tests/mockedObjects'
-import { getUserTriggerCreditsLimit } from 'services/userService'
 
 describe('seedHash is deterministic', () => {
   it('Gets seedHash deterministically for user 1', () => {
@@ -85,7 +84,7 @@ describe('user trigger limits and pro logic', () => {
     expect(userService.isUserPro(past)).toBe(false)
   })
 
-  it('getUserTriggerCreditsLimit returns correct standard and pro limits for emails', () => {
+  it('getUserTriggerCreditsLimit returns correct standard and pro limits for emails', async () => {
     jest.resetModules()
     const baseUser: any = { proUntil: null }
     const config = {
@@ -97,12 +96,13 @@ describe('user trigger limits and pro logic', () => {
       }
     }
     jest.doMock('config', () => ({ __esModule: true, default: config }))
+    const { getUserTriggerCreditsLimit } = await import('services/userService')
     expect(getUserTriggerCreditsLimit(baseUser, 'SendEmail')).toBe(5)
     baseUser.proUntil = new Date(now + 10000)
     expect(getUserTriggerCreditsLimit(baseUser, 'SendEmail')).toBe(999)
   })
 
-  it('getUserTriggerCreditsLimit returns correct limits for posts', () => {
+  it('getUserTriggerCreditsLimit returns correct limits for posts', async () => {
     jest.resetModules()
     const baseUser: any = { proUntil: new Date(now + 10000) }
     const config = {
@@ -114,6 +114,7 @@ describe('user trigger limits and pro logic', () => {
       }
     }
     jest.doMock('config', () => ({ __esModule: true, default: config }))
+    const { getUserTriggerCreditsLimit } = await import('services/userService')
     expect(getUserTriggerCreditsLimit(baseUser, 'PostData')).toBe(222)
     baseUser.proUntil = null
     expect(getUserTriggerCreditsLimit(baseUser, 'PostData')).toBe(7)
