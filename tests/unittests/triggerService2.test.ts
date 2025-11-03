@@ -1,6 +1,7 @@
 import { prismaMock } from '../../prisma-local/mockedClient'
 import prisma from '../../prisma-local/clientInstance'
 import axios from 'axios'
+import { fetchTriggerLogsForPaybutton } from 'services/triggerService'
 
 import { parseTriggerPostData } from '../../utils/validators'
 
@@ -234,5 +235,52 @@ describe('Trigger JSON Validation Unit Tests', () => {
       console.log(`Network requests made: ${networkRequestCount}`)
       expect(networkRequestCount).toBe(1)
     })
+  })
+})
+
+describe('fetchTriggerLogsForPaybutton', () => {
+  const mockLogs = [{ id: 1 }, { id: 2 }]
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('returns data and totalCount with correct pagination and sorting', async () => {
+    prismaMock.triggerLog.findMany.mockResolvedValue(mockLogs)
+    prismaMock.triggerLog.count.mockResolvedValue(2)
+    prisma.triggerLog.findMany = prismaMock.triggerLog.findMany
+    prisma.triggerLog.count = prismaMock.triggerLog.count
+
+    const result = await fetchTriggerLogsForPaybutton({
+      paybuttonId: 'pb1',
+      page: 0,
+      pageSize: 10,
+      orderBy: 'createdAt',
+      orderDesc: true
+    })
+    expect(result).toEqual({ data: mockLogs, totalCount: 2 })
+    expect(prismaMock.triggerLog.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { trigger: { paybuttonId: 'pb1' } },
+        orderBy: { createdAt: 'desc' },
+        skip: 0,
+        take: 10
+      })
+    )
+  })
+
+  it('handles empty result gracefully', async () => {
+    prismaMock.triggerLog.findMany.mockResolvedValue([])
+    prismaMock.triggerLog.count.mockResolvedValue(0)
+    prisma.triggerLog.findMany = prismaMock.triggerLog.findMany
+    prisma.triggerLog.count = prismaMock.triggerLog.count
+
+    const result = await fetchTriggerLogsForPaybutton({
+      paybuttonId: 'pb2',
+      page: 2,
+      pageSize: 5,
+      orderBy: 'id',
+      orderDesc: false
+    })
+    expect(result).toEqual({ data: [], totalCount: 0 })
   })
 })

@@ -2,6 +2,7 @@ import * as userService from 'services/userService'
 import prisma from 'prisma-local/clientInstance'
 import { prismaMock } from 'prisma-local/mockedClient'
 import { mockedUserProfile, mockedUserProfileWithPublicKey } from 'tests/mockedObjects'
+import { getUserTriggerCreditsLimit } from 'services/userService'
 
 describe('seedHash is deterministic', () => {
   it('Gets seedHash deterministically for user 1', () => {
@@ -67,5 +68,60 @@ describe('public key is deterministic', () => {
 
     const resultHex = await userService.getUserPublicKeyHex('yet-another-test-uid')
     expect(resultHex).toEqual('mocked-already-set-public-key-1b3a0d9f')
+  })
+})
+
+describe('user trigger limits and pro logic', () => {
+  const now = Date.now()
+
+  it('isUserPro returns true when proUntil is in the future', () => {
+    const proUntil = new Date(now + 10000)
+    expect(userService.isUserPro(proUntil)).toBe(true)
+  })
+
+  it('isUserPro returns false when proUntil is null or past', () => {
+    expect(userService.isUserPro(null)).toBe(false)
+    const past = new Date(now - 10000)
+    expect(userService.isUserPro(past)).toBe(false)
+  })
+
+  it('getUserTriggerCreditsLimit returns correct standard and pro limits for emails', () => {
+    jest.resetModules()
+    const baseUser: any = { proUntil: null }
+    const config = {
+      proSettings: {
+        proDailyEmailLimit: 999,
+        standardDailyEmailLimit: 5,
+        proDailyPostLimit: 888,
+        standardDailyPostLimit: 3
+      }
+    }
+    jest.doMock('config', () => ({ __esModule: true, default: config }))
+    expect(getUserTriggerCreditsLimit(baseUser, 'SendEmail')).toBe(5)
+    baseUser.proUntil = new Date(now + 10000)
+    expect(getUserTriggerCreditsLimit(baseUser, 'SendEmail')).toBe(999)
+  })
+
+  it('getUserTriggerCreditsLimit returns correct limits for posts', () => {
+    jest.resetModules()
+    const baseUser: any = { proUntil: new Date(now + 10000) }
+    const config = {
+      proSettings: {
+        proDailyEmailLimit: 111,
+        standardDailyEmailLimit: 5,
+        proDailyPostLimit: 222,
+        standardDailyPostLimit: 7
+      }
+    }
+    jest.doMock('config', () => ({ __esModule: true, default: config }))
+    expect(getUserTriggerCreditsLimit(baseUser, 'PostData')).toBe(222)
+    baseUser.proUntil = null
+    expect(getUserTriggerCreditsLimit(baseUser, 'PostData')).toBe(7)
+  })
+
+  it('getUserRemainingTriggerCreditsLimit returns proper remaining values', () => {
+    const user: any = { emailCredits: 4, postCredits: 8 }
+    expect(userService.getUserRemainingTriggerCreditsLimit(user, 'SendEmail')).toBe(4)
+    expect(userService.getUserRemainingTriggerCreditsLimit(user, 'PostData')).toBe(8)
   })
 })
