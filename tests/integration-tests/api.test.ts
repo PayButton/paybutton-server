@@ -14,6 +14,8 @@ import paymentsEndpoint from 'pages/api/payments/index'
 import currentPriceEndpoint from 'pages/api/price/[networkSlug]'
 import currentPriceForQuoteEndpoint from 'pages/api/price/[networkSlug]/[quoteSlug]'
 import { WalletWithAddressesWithPaybuttons, fetchWalletById, createDefaultWalletForUser } from 'services/walletService'
+import { fetchAddressWallet } from 'services/addressesOnUserProfileService'
+
 import {
   exampleAddresses,
   testEndpoint,
@@ -925,7 +927,7 @@ describe('PATCH /api/wallet/[id]', () => {
     })
   })
 
-  it.skip('Update wallet with new paybuttons addresses', async () => { // WIP
+  it('Update wallet with new paybuttons addresses', async () => { // WIP
     const wallet = createdWallets[0]
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     const newPaybuttons = await Promise.all([
@@ -956,37 +958,22 @@ describe('PATCH /api/wallet/[id]', () => {
     // check that endpoint returns updated wallet
     expect(responseData).toMatchObject({
       ...wallet,
-      addresses: newAddresses,
+      userAddresses: expect.arrayContaining(
+        newAddresses.map(a => expect.objectContaining({
+          address: expect.objectContaining({
+            id: a.id,
+            address: a.address
+          }),
+          walletId: wallet.id
+        }))
+      ),
       createdAt: expect.anything(),
       updatedAt: expect.anything()
     })
 
-    // check that old addresses do not belong to any wallet
-    const getPaybuttonsOptions: RequestOptions = {
-      method: 'GET' as RequestMethod,
-      query: {}
-    }
-
-    for (const id of oldAddressesIds) {
-      if (getPaybuttonsOptions.query != null) getPaybuttonsOptions.query.id = id
-      const res = await testEndpoint(getPaybuttonsOptions, paybuttonIdEndpoint)
-      const responseData = res._getJSONData()
-      expect(res.statusCode).toBe(200)
-      expect(responseData.userAddresses).toEqual(
-        expect.arrayContaining([
-          {
-            address: expect.objectContaining({
-              walletId: null
-            })
-          },
-          {
-            address: expect.objectContaining({
-              walletId: null
-            })
-          }
-        ])
-      )
-      expect(responseData.walletId).toBeNull()
+    for (const addressId of oldAddressesIds) {
+      const wallet = await fetchAddressWallet('test-u-id', addressId)
+      expect(wallet).toBeNull()
     }
   })
 })
