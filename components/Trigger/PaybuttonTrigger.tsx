@@ -37,8 +37,8 @@ export default function PaybuttonTriggerComponent ({ paybuttonId, userProfile }:
   const [posterSuccessText, setPosterSuccessText] = useState('')
   const [emailSuccessText, setEmailSuccessText] = useState('')
   const [clearModal, setClearModal] = useState<TriggerType | undefined>()
-  const [currentPosterTriggerId, setCurrentPosterTriggerId] = useState<string>()
-  const [currentEmailTriggerId, setCurrentEmailTriggerId] = useState<string>()
+  const [currentPosterTriggerId, setCurrentPosterTriggerId] = useState<string | undefined>(undefined)
+  const [currentEmailTriggerId, setCurrentEmailTriggerId] = useState<string | undefined>(undefined)
 
   const {
     register: registerPosterTrigger,
@@ -252,7 +252,7 @@ export default function PaybuttonTriggerComponent ({ paybuttonId, userProfile }:
               <div className={style.trigger_btn_row}>
                 {posterError !== '' && <div className={style.error_message_}>{posterError}</div>}
                 {posterSuccessText !== '' && <div className={style.success_message_}>{posterSuccessText}</div>}
-                {currentPosterTriggerId !== '' && (
+                {currentPosterTriggerId !== undefined && (
                   <button
                     type="button"
                     onClick={() => setClearModal('poster')}
@@ -293,7 +293,7 @@ export default function PaybuttonTriggerComponent ({ paybuttonId, userProfile }:
               <div className={style.trigger_btn_row}>
                 {emailError !== '' && <div className={style.error_message_}>{emailError}</div>}
                 {emailSuccessText !== '' && <div className={style.success_message_}>{emailSuccessText}</div>}
-                {currentEmailTriggerId !== '' && (
+                {currentEmailTriggerId !== undefined && (
                   <button
                     type="button"
                     onClick={() => setClearModal('email')}
