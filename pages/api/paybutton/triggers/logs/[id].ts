@@ -15,7 +15,18 @@ export default async function handler (req: any, res: any): Promise<void> {
   const paybuttonId = req.query.id as string
   const page = parseInt(req.query.page ?? '0', 10)
   const pageSize = parseInt(req.query.pageSize ?? '10', 10)
+
+  if (Number.isNaN(page) || Number.isNaN(pageSize) || page < 0 || pageSize < 1) {
+    res.status(400).json(RESPONSE_MESSAGES.PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400)
+    return
+  }
+
   const orderBy = (req.query.orderBy as string) ?? 'createdAt'
+  const allowedOrderFields = new Set(['createdAt', 'id', 'isError', 'actionType'])
+  if (!allowedOrderFields.has(orderBy)) {
+    res.status(400).json(RESPONSE_MESSAGES.INVALID_INPUT_400)
+    return
+  }
   const orderDesc = req.query.orderDesc === 'true'
   const actionType = req.query.actionType as TriggerLogActionType
 
@@ -51,7 +62,7 @@ export default async function handler (req: any, res: any): Promise<void> {
         res.status(400).json(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400)
         break
       case RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message:
-        res.status(400).json(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404)
+        res.status(404).json(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404)
         break
       default:
         res.status(500).json({ statusCode: 500, message: parsedErr.message })
