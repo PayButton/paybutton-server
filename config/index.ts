@@ -42,9 +42,11 @@ const readConfig = (): Config => {
 
   // normalize "Inf" → Infinity
   const p = config.proSettings as unknown as Record<string, unknown>
-  for (const key of Object.keys(p)) {
-    if (p[key] === 'Inf') {
-      p[key] = Infinity
+  if (p !== undefined && p !== null) {
+    for (const key of Object.keys(p)) {
+      if (p[key] === 'Inf') {
+        p[key] = Infinity
+      }
     }
   }
 
