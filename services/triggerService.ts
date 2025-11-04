@@ -94,7 +94,12 @@ export const fetchTriggerLogsForPaybutton = async ({
       take: pageSize
     }),
     prisma.triggerLog.count({
-      where: { trigger: { paybuttonId } }
+      where: {
+        trigger: {
+          paybuttonId
+        },
+        actionType
+      }
     })
   ])
 
