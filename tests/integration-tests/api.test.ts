@@ -1506,7 +1506,7 @@ describe('GET /api/paybutton/triggers/logs/[id]', () => {
     expect(res.statusCode).toBe(405)
   })
 
-  it('returns 400 for nonexistent paybutton', async () => {
+  it('returns 404 for nonexistent paybutton', async () => {
     const req: any = {
       method: 'GET',
       query: { id: 'nonexistent-id' },
@@ -1514,7 +1514,7 @@ describe('GET /api/paybutton/triggers/logs/[id]', () => {
     }
     const res = await testEndpoint(req, triggerLogsEndpoint)
     const body = res._getJSONData()
-    expect(res.statusCode).toBe(400)
+    expect(res.statusCode).toBe(404)
     expect(body.message).toBe(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
   })
 
