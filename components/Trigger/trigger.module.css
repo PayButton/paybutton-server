@@ -9,14 +9,12 @@
 
 .tab {
   background: transparent;
-  border: none;
   font-weight: 600;
   font-size: 14px;
   padding: 10px 16px;
   cursor: pointer;
   transition: color 0.2s, border-bottom 0.2s, background 0.2s;
   border-bottom: 2px solid transparent;
-  border: none;
 }
 
 body .tab {
