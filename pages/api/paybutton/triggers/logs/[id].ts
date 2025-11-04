@@ -2,7 +2,7 @@ import { setSession } from 'utils/setSession'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { parseError } from 'utils/validators'
 import { fetchPaybuttonById } from 'services/paybuttonService'
-import { fetchTriggerLogsForPaybutton } from 'services/triggerService'
+import { fetchTriggerLogsForPaybutton, TriggerLogActionType } from 'services/triggerService'
 
 export default async function handler (req: any, res: any): Promise<void> {
   if (req.method !== 'GET') {
@@ -17,6 +17,7 @@ export default async function handler (req: any, res: any): Promise<void> {
   const pageSize = parseInt(req.query.pageSize ?? '10', 10)
   const orderBy = (req.query.orderBy as string) ?? 'createdAt'
   const orderDesc = req.query.orderDesc === 'true'
+  const actionType = req.query.actionType as TriggerLogActionType
 
   try {
     if (userId === null || userId === undefined || userId === '') {
@@ -35,7 +36,8 @@ export default async function handler (req: any, res: any): Promise<void> {
       page,
       pageSize,
       orderBy,
-      orderDesc
+      orderDesc,
+      actionType
     })
 
     res.status(200).json({ data, totalCount })

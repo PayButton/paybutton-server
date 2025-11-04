@@ -220,7 +220,8 @@ const TriggerLogs = ({
       page: String(page),
       pageSize: String(pageSize),
       orderBy,
-      orderDesc: String(orderDesc)
+      orderDesc: String(orderDesc),
+      actionType: activeTab
     })
     const res = await fetch(
       `/api/paybutton/triggers/logs/${paybuttonId}?${params.toString()}`,
@@ -230,13 +231,12 @@ const TriggerLogs = ({
 
     const json = (await res.json()) as { data: any[], totalCount: number }
 
-    const filteredRaw = json.data.filter((r) => r.actionType === activeTab)
     const shaped =
       activeTab === 'PostData'
-        ? filteredRaw.map((r) => toPostRow(r))
-        : filteredRaw.map((r) => toEmailRow(r))
+        ? json.data.map((r) => toPostRow(r))
+        : json.data.map((r) => toEmailRow(r))
 
-    return { data: shaped, totalCount: shaped.length }
+    return { data: shaped, totalCount: json.totalCount }
   }
 
   return (

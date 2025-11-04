@@ -70,6 +70,7 @@ export interface FetchTriggerLogsInput {
   pageSize: number
   orderBy: string
   orderDesc: boolean
+  actionType: TriggerLogActionType
 }
 
 export const fetchTriggerLogsForPaybutton = async ({
@@ -77,11 +78,17 @@ export const fetchTriggerLogsForPaybutton = async ({
   page,
   pageSize,
   orderBy,
-  orderDesc
+  orderDesc,
+  actionType
 }: FetchTriggerLogsInput): Promise<{ data: any[], totalCount: number }> => {
   const [data, totalCount] = await Promise.all([
     prisma.triggerLog.findMany({
-      where: { trigger: { paybuttonId } },
+      where: {
+        trigger: {
+          paybuttonId
+        },
+        actionType
+      },
       orderBy: { [orderBy]: orderDesc ? 'desc' : 'asc' },
       skip: page * pageSize,
       take: pageSize
