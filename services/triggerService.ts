@@ -563,7 +563,7 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   const logs: Prisma.TriggerLogCreateManyInput[] = []
 
   // Build queues
-  console.log(`[TRIGGER ${currency}]: preparing batch — txs=${txItems.length} addresses=${uniqueAddresses.length}`)
+  console.log(`[TRIGGER ${currency}]: will get triggers for ${txItems.length} txs and ${uniqueAddresses.length} addresses...`)
 
   for (const { address, tx } of txItems) {
     const triggers = triggersByAddress.get(address) ?? []
@@ -594,7 +594,13 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
 
   const postTasksCount = Object.values(postTaskQueueByUser).map(tasks => tasks.length).reduce((a, b) => a + b, 0)
   const mailTasksCount = Object.values(emailTaskQueueByUser).map(tasks => tasks.length).reduce((a, b) => a + b, 0)
-  console.log(`[TRIGGER ${currency}]: scheduling — users(posts=${Object.keys(postTaskQueueByUser).length}, emails=${Object.keys(emailTaskQueueByUser).length}) tasks(posts=${postTasksCount}, emails=${mailTasksCount})`)
+  console.log(
+    `[TRIGGER ${currency}]: scheduling ${postTasksCount} post trigger and ${mailTasksCount} email trigger runners` +
+    `for ${new Set([
+      ...Object.keys(postTaskQueueByUser),
+      ...Object.keys(emailTaskQueueByUser)
+    ]).size} users`
+  )
 
   const postUserRunners = Object.entries(postTaskQueueByUser).map(([userId, queue]) => async () => {
     const limit = userPostCredits[userId] ?? 0
@@ -611,18 +617,22 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   const postResults: Array<{ userId: string, accepted: number, attempted: number, total: number, limit: number }> = []
   const emailResults: Array<{ userId: string, accepted: number, attempted: number, total: number, limit: number }> = []
 
-  console.log(`[TRIGGER ${currency}]: executing posts with concurrency=${TRIGGER_POST_CONCURRENCY}`)
-  await runAsyncInBatches(
-    `${currency} POST TRIGGERS`,
-    postUserRunners.map(run => async () => { postResults.push(await run()) }),
-    TRIGGER_POST_CONCURRENCY
-  )
-  console.log(`[TRIGGER ${currency}]: executing emails with concurrency=${TRIGGER_EMAIL_CONCURRENCY}`)
-  await runAsyncInBatches(
-    `${currency} POST TRIGGERS`,
-    emailUserRunners.map(run => async () => { emailResults.push(await run()) }),
-    TRIGGER_EMAIL_CONCURRENCY
-  )
+  if (postUserRunners.length > 0) {
+    console.log(`[TRIGGER ${currency}]: executing ${postUserRunners.length} post tasks...`)
+    await runAsyncInBatches(
+      `${currency} POST TRIGGERS`,
+      postUserRunners.map(run => async () => { postResults.push(await run()) }),
+      TRIGGER_POST_CONCURRENCY
+    )
+  }
+  if (emailUserRunners.length > 0) {
+    console.log(`[TRIGGER ${currency}]: executing ${emailUserRunners.length} email tasks...`)
+    await runAsyncInBatches(
+      `${currency} EMAIL TRIGGERS`,
+      emailUserRunners.map(run => async () => { emailResults.push(await run()) }),
+      TRIGGER_EMAIL_CONCURRENCY
+    )
+  }
 
   for (const r of postResults) {
     if (r.attempted < r.total && r.accepted >= r.limit) {
