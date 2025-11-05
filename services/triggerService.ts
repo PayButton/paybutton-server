@@ -634,16 +634,22 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
     )
   }
 
-  for (const r of postResults) {
-    if (r.attempted < r.total && r.accepted >= r.limit) {
-      const queue = postTaskQueueByUser[r.userId]!
-      appendOutOfCreditsLogs(queue, r.attempted, logs, 'PostData')
+  for (const result of postResults) {
+    if (result.attempted < result.total && result.accepted >= result.limit) {
+      if (result.accepted > result.limit) {
+        console.warn(`[TRIGGER ${currency}]: accepted (${result.accepted}) exceeded limit (${result.limit}) for user ${result.userId}`)
+      }
+      const queue = postTaskQueueByUser[result.userId]!
+      appendOutOfCreditsLogs(queue, result.attempted, logs, 'PostData')
     }
   }
-  for (const r of emailResults) {
-    if (r.attempted < r.total && r.accepted >= r.limit) {
-      const queue = emailTaskQueueByUser[r.userId]!
-      appendOutOfCreditsLogs(queue, r.attempted, logs, 'SendEmail')
+  for (const result of emailResults) {
+    if (result.attempted < result.total && result.accepted >= result.limit) {
+      if (result.accepted > result.limit) {
+        console.warn(`[TRIGGER ${currency}]: accepted (${result.accepted}) exceeded limit (${result.limit}) for user ${result.userId}`)
+      }
+      const queue = emailTaskQueueByUser[result.userId]!
+      appendOutOfCreditsLogs(queue, result.attempted, logs, 'SendEmail')
     }
   }
 
