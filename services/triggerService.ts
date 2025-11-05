@@ -663,5 +663,9 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   const totalEmailsAttempted = Object.values(emailsAttemptedByUser).reduce((a, b) => a + b, 0)
   const chargedUsers = new Set([...Object.keys(postsAttemptedByUser), ...Object.keys(emailsAttemptedByUser)]).size
 
-  console.log(`[TRIGGER ${currency}]: batch done — logs=${logs.length} usersCharged=${chargedUsers} accepted(email=${totalEmailsAttempted}, post=${totalPostsAttempted})`)
+  console.log(
+    `[TRIGGER ${currency}]: finished batch — wrote ${logs.length} logs, ` +
+    `charged ${chargedUsers} users after executing ${totalPostsAttempted} post triggers ` +
+    `and ${totalEmailsAttempted} email triggers`
+  )
 }
