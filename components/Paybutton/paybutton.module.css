@@ -480,13 +480,14 @@ body[data-theme='dark'] .form_ctn_outer {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 26px; /* same height */
+  height: 4rem;
   margin: 0;
   padding: 0 10px;
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
   box-sizing: border-box;
 }
+
 body[data-theme='dark'] .credits_info {
   color: var(--secondary-text-color);
 }
