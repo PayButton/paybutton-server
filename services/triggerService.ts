@@ -502,10 +502,10 @@ async function runTasksUpToCredits (
   let attempted = 0
   let idx = 0
 
-  // Keep attempting until we achieve `credits` accepted OR we exhaust tasks.
-  while (accepted < credits && idx < tasks.length) {
-    const remainingNeeded = credits - accepted
-    const batch = tasks.slice(idx, idx + remainingNeeded)
+  // Run until we've *attempted* up to credits (not only successful ones)
+  while (attempted < credits && idx < tasks.length) {
+    const remainingAllowed = credits - attempted
+    const batch = tasks.slice(idx, idx + remainingAllowed)
     idx += batch.length
     attempted += batch.length
 
@@ -654,14 +654,14 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   }
 
   // count accepted triggers for decrements (charge only accepted)
-  const postsAcceptedByUser = Object.fromEntries(postResults.map(r => [r.userId, r.accepted]))
-  const emailsAcceptedByUser = Object.fromEntries(emailResults.map(r => [r.userId, r.accepted]))
+  const postsAttemptedByUser = Object.fromEntries(postResults.map(r => [r.userId, r.attempted]))
+  const emailsAttemptedByUser = Object.fromEntries(emailResults.map(r => [r.userId, r.attempted]))
 
-  await persistLogsAndDecrements(logs, emailsAcceptedByUser, postsAcceptedByUser)
+  await persistLogsAndDecrements(logs, emailsAttemptedByUser, postsAttemptedByUser)
 
-  const totalPostsAccepted = Object.values(postsAcceptedByUser).reduce((a, b) => a + b, 0)
-  const totalEmailsAccepted = Object.values(emailsAcceptedByUser).reduce((a, b) => a + b, 0)
-  const chargedUsers = new Set([...Object.keys(postsAcceptedByUser), ...Object.keys(emailsAcceptedByUser)]).size
+  const totalPostsAttempted = Object.values(postsAttemptedByUser).reduce((a, b) => a + b, 0)
+  const totalEmailsAttempted = Object.values(emailsAttemptedByUser).reduce((a, b) => a + b, 0)
+  const chargedUsers = new Set([...Object.keys(postsAttemptedByUser), ...Object.keys(emailsAttemptedByUser)]).size
 
-  console.log(`[TRIGGER ${currency}]: batch done — logs=${logs.length} usersCharged=${chargedUsers} accepted(email=${totalEmailsAccepted}, post=${totalPostsAccepted})`)
+  console.log(`[TRIGGER ${currency}]: batch done — logs=${logs.length} usersCharged=${chargedUsers} accepted(email=${totalEmailsAttempted}, post=${totalPostsAttempted})`)
 }
