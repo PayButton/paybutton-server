@@ -126,8 +126,8 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
     }
   }
 
-  const paybuttonEmailTriggers = paybutton.triggers.filter(t => t.isEmailTrigger)
-  const paybuttonPosterTriggers = paybutton.triggers.filter(t => !t.isEmailTrigger)
+  const paybuttonEmailTriggers = paybutton.triggers.filter(t => t.isEmailTrigger && t.deletedAt === null)
+  const paybuttonPosterTriggers = paybutton.triggers.filter(t => !t.isEmailTrigger && t.deletedAt === null)
 
   if (
     !isUpdate &&
@@ -139,8 +139,8 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
     throw new Error(RESPONSE_MESSAGES.LIMIT_TRIGGERS_PER_BUTTON_400.message)
   }
   const addressTriggers = (await fetchTriggersForPaybuttonAddresses(paybutton.id))
-  const addressEmailTriggers = addressTriggers.filter(t => t.isEmailTrigger)
-  const addressPosterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
+  const addressEmailTriggers = addressTriggers.filter(t => t.isEmailTrigger && t.deletedAt === null)
+  const addressPosterTriggers = addressTriggers.filter(t => !t.isEmailTrigger && t.deletedAt === null)
 
   if (
     !isUpdate &&
@@ -187,9 +187,12 @@ export async function deleteTrigger (paybuttonId: string, values: DeletePaybutto
   if (!paybutton.triggers.map(t => t.id).includes(values.triggerId)) {
     throw new Error(RESPONSE_MESSAGES.INVALID_RESOURCE_UPDATE_400.message)
   }
-  return await prisma.paybuttonTrigger.delete({
+  return await prisma.paybuttonTrigger.update({
     where: {
       id: values.triggerId
+    },
+    data: {
+      deletedAt: new Date()
     }
   })
 }
@@ -204,11 +207,7 @@ function isEmptyUpdateParams (values: UpdatePaybuttonTriggerInput): boolean {
 
 export async function updateTrigger (paybuttonId: string, values: UpdatePaybuttonTriggerInput): Promise<PaybuttonTrigger> {
   if (isEmptyUpdateParams(values)) {
-    return await prisma.paybuttonTrigger.delete({
-      where: {
-        id: values.triggerId
-      }
-    })
+    return await deleteTrigger(paybuttonId, { userId: values.userId, triggerId: values.triggerId })
   }
   await validateTriggerForPaybutton(paybuttonId, values)
   return await prisma.paybuttonTrigger.update({
@@ -240,7 +239,8 @@ export async function fetchTriggersForPaybuttonAddresses (paybuttonId: string): 
           }
         },
         providerUserId: userId
-      }
+      },
+      deletedAt: null
     }
   })
 }
@@ -312,7 +312,8 @@ async function fetchTriggersGroupedByAddress (addresses: string[]): Promise<Map<
             }
           }
         }
-      }
+      },
+      deletedAt: null
     },
     include: triggerWithPaybuttonAndUserInclude
   })
