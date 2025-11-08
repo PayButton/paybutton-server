@@ -519,6 +519,79 @@ describe('executeTriggersBatch mechanics', () => {
     await executeTriggersBatch([{ address: primaryAddr, txs: [mkTx('h1')] }] as any, 1)
     expect(prismaMock.triggerLog.createMany).toHaveBeenCalled()
   })
+  it('logs out-of-credits when attempts==limit but accepted<limit (failed attempts)', async () => {
+    // usuário com 1 crédito de POST; 3 tasks na fila; a 1ª falha
+    const u2 = makeUser({ id: 'u2', emailCredits: 0, postCredits: 1 })
+
+    // triggers (todos POST) para o mesmo user
+    const trigA = {
+      id: 'tA',
+      isEmailTrigger: false,
+      deletedAt: null,
+      postURL: 'https://p/a',
+      postData: '{"address": <address>}',
+      paybutton: { name: 'PB', providerUserId: 'u2', user: u2, addresses: [{ address: { address: primaryAddr } }] }
+    }
+    const trigB = {
+      id: 'tB',
+      isEmailTrigger: false,
+      deletedAt: null,
+      postURL: 'https://p/b',
+      postData: '{"address": <address>}',
+      paybutton: { name: 'PB', providerUserId: 'u2', user: u2, addresses: [{ address: { address: primaryAddr } }] }
+    }
+    const trigC = {
+      id: 'tC',
+      isEmailTrigger: false,
+      deletedAt: null,
+      postURL: 'https://p/c',
+      postData: '{"address": <address>}',
+      paybutton: { name: 'PB', providerUserId: 'u2', user: u2, addresses: [{ address: { address: primaryAddr } }] }
+    }
+
+    // parse ok pra todos
+    mockedParse.mockImplementation((args: { postData: string }) =>
+      JSON.parse(args.postData.replace('<address>', '"' + primaryAddr + '"'))
+    )
+
+    // 1º attempt falha; os demais nem serão tentados por falta de créditos
+    mockedAxios.post.mockRejectedValueOnce(new Error('boom'))
+    mockedAxios.post.mockResolvedValue({ status: 200, data: 'ok' })
+
+    prismaMock.userProfile.findMany.mockResolvedValue([u2])
+    prismaMock.userProfile.update.mockResolvedValue({} as any)
+    prismaMock.triggerLog.createMany.mockResolvedValue({ count: 0 } as any)
+    prismaMock.paybuttonTrigger.findMany.mockResolvedValue([trigA, trigB, trigC] as any)
+
+    const mkTx = (h: string): any => ({
+      hash: h,
+      amount: new Prisma.Decimal(1),
+      paymentId: '',
+      confirmed: true,
+      message: '',
+      timestamp: 1700000000,
+      address: primaryAddr,
+      rawMessage: '',
+      inputAddresses: [],
+      outputAddresses: [{ address: primaryAddr, amount: new Prisma.Decimal(1) }],
+      prices: [
+        { price: { value: new Prisma.Decimal('0.5'), quoteId: 1 } },
+        { price: { value: new Prisma.Decimal('0.6'), quoteId: 2 } }
+      ]
+    })
+
+    await executeTriggersBatch([{ address: primaryAddr, txs: [mkTx('hX')] }] as any, 1)
+
+    // Deve haver logs "out of credits" pros itens que ficaram na fila
+    const logs = prismaMock.triggerLog.createMany.mock.calls.flatMap((c: any[]) => c[0].data as any[])
+    const ooc = logs.filter(
+      (l: any) =>
+        l.actionType === 'PostData' &&
+      l.isError === true &&
+      (() => { try { return JSON.parse(l.data).errorName === 'USER_OUT_OF_POST_CREDITS' } catch { return false } })()
+    )
+    expect(ooc.length).toBeGreaterThan(0)
+  })
 })
 
 // ------------------------------
