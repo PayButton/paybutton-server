@@ -636,7 +636,8 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   }
 
   for (const result of postResults) {
-    if (result.attempted < result.total && result.accepted >= result.limit) {
+    const spent = result.attempted
+    if (spent < result.total && spent >= result.limit) {
       if (result.accepted > result.limit) {
         console.warn(`[TRIGGER ${currency}]: accepted (${result.accepted}) exceeded limit (${result.limit}) for user ${result.userId}`)
       }
@@ -645,7 +646,8 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
     }
   }
   for (const result of emailResults) {
-    if (result.attempted < result.total && result.accepted >= result.limit) {
+    const spent = result.attempted
+    if (spent < result.total && spent >= result.limit) {
       if (result.accepted > result.limit) {
         console.warn(`[TRIGGER ${currency}]: accepted (${result.accepted}) exceeded limit (${result.limit}) for user ${result.userId}`)
       }
