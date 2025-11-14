@@ -1,6 +1,6 @@
 git_hook_setup = cp .githooks/pre-commit .git/hooks/pre-commit
 git_diff_to_master = git diff --name-only --diff-filter=ACMRTUXB origin/master > DIFF
-create_test_paybutton_json = echo { \"priceAPIURL\": \"foo\", \"networkBlockchainClients\": { \"ecash\": \"chronik\", \"bitcoincash\": \"chronik\" }, \"networkBlockchainURLs\": { \"ecash\": [\"https://xec.paybutton.io\"], \"bitcoincash\": [\"https://bch.paybutton.io\"] }, \"wsBaseURL\": \"http://localhost:5000\", \"apiDomain\": \"http://localhost:3000\" } > paybutton-config.json
+create_test_paybutton_json = echo { \"priceAPIURL\": \"foo\", \"networkBlockchainClients\": { \"ecash\": \"chronik\", \"bitcoincash\": \"chronik\" }, \"networkBlockchainURLs\": { \"ecash\": [\"https://xec.paybutton.io\"], \"bitcoincash\": [\"https://bch.paybutton.io\"] }, \"wsBaseURL\": \"http://localhost:5000\", \"apiDomain\": \"http://localhost:3000\", \"proSettings\": { \"enabled\": true, \"monthsCost\": { \"1\": 10, \"3\": 20, \"6\": 30, \"12\": 50 }, \"payoutAddress\":  \"ecash:qrf4zh4vgrdal8d8gu905d90w5u2y60djcd2d5h6un\", \"standardDailyEmailLimit\": 5, \"proDailyEmailLimit\": 100, \"standardDailyPostLimit\": 5, \"proDailyPostLimit\": 100, \"standardAddressesPerButtonLimit\": 20, \"proAddressesPerButtonLimit\": \"Inf\" } } > paybutton-config.json
 touch_local_env = touch .env.local
 
 prod:

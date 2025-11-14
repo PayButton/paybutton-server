@@ -1,0 +1,72 @@
+.wrapper {
+  margin-top: 28px;
+}
+
+/* ---------- TAB BAR (shared layout) ---------- */
+.tabBar {
+  display: flex;
+}
+
+.tab {
+  background: transparent;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: color 0.2s, border-bottom 0.2s, background 0.2s;
+  border-bottom: 2px solid transparent;
+}
+
+body .tab {
+  color: #333;
+}
+
+body .tab:hover {
+  color: #1e40af; /* deep blue */
+  background: rgba(59, 130, 246, 0.1);
+}
+
+body .tabActive {
+  color: #111;
+  border-bottom: 2px solid #3b82f6; /* bright blue underline */
+}
+
+/* ---------- DARK THEME ---------- */
+body[data-theme='dark'] .tab {
+  color: #aaa;
+}
+
+body[data-theme='dark'] .tab:hover {
+  color: #60a5fa; /* soft blue hover */
+  background: rgba(59, 130, 246, 0.1);
+}
+
+body[data-theme='dark'] .tabActive {
+  color: #fff;
+  border-bottom: 2px solid #3b82f6; /* vivid blue accent */
+}
+
+/* ---------- OTHER SHARED STYLES ---------- */
+.codeBlock {
+  white-space: pre-wrap;
+  overflow: auto;
+  max-height: 140px;
+  max-width: 480px;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.naText {
+  color: #888;
+}
+
+.errorText {
+  color: #ff4d4f;
+  font-weight: 600;
+}
+
+.successText {
+  color: #4ade80;
+  font-weight: 600;
+}
+

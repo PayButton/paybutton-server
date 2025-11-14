@@ -13,7 +13,10 @@ import dashboardEndpoint from 'pages/api/dashboard/index'
 import paymentsEndpoint from 'pages/api/payments/index'
 import currentPriceEndpoint from 'pages/api/price/[networkSlug]'
 import currentPriceForQuoteEndpoint from 'pages/api/price/[networkSlug]/[quoteSlug]'
+import triggerLogsEndpoint from 'pages/api/paybutton/triggers/logs/[id]'
 import { WalletWithAddressesWithPaybuttons, fetchWalletById, createDefaultWalletForUser } from 'services/walletService'
+import { fetchAddressWallet } from 'services/addressesOnUserProfileService'
+
 import {
   exampleAddresses,
   testEndpoint,
@@ -38,7 +41,7 @@ const setUpUsers = async (): Promise<void> => {
 }
 jest.mock('../../utils/setSession', () => {
   return {
-    setSession: (req: any, res: any) => {
+    setSession: (req: any, _res: any) => {
       if (req.session?.userId === undefined) {
         req.session = { userId: 'test-u-id' }
       }
@@ -925,7 +928,7 @@ describe('PATCH /api/wallet/[id]', () => {
     })
   })
 
-  it.skip('Update wallet with new paybuttons addresses', async () => { // WIP
+  it('Update wallet with new paybuttons addresses', async () => { // WIP
     const wallet = createdWallets[0]
     if (baseRequestOptions.query != null) baseRequestOptions.query.id = wallet.id
     const newPaybuttons = await Promise.all([
@@ -956,37 +959,22 @@ describe('PATCH /api/wallet/[id]', () => {
     // check that endpoint returns updated wallet
     expect(responseData).toMatchObject({
       ...wallet,
-      addresses: newAddresses,
+      userAddresses: expect.arrayContaining(
+        newAddresses.map(a => expect.objectContaining({
+          address: expect.objectContaining({
+            id: a.id,
+            address: a.address
+          }),
+          walletId: wallet.id
+        }))
+      ),
       createdAt: expect.anything(),
       updatedAt: expect.anything()
     })
 
-    // check that old addresses do not belong to any wallet
-    const getPaybuttonsOptions: RequestOptions = {
-      method: 'GET' as RequestMethod,
-      query: {}
-    }
-
-    for (const id of oldAddressesIds) {
-      if (getPaybuttonsOptions.query != null) getPaybuttonsOptions.query.id = id
-      const res = await testEndpoint(getPaybuttonsOptions, paybuttonIdEndpoint)
-      const responseData = res._getJSONData()
-      expect(res.statusCode).toBe(200)
-      expect(responseData.userAddresses).toEqual(
-        expect.arrayContaining([
-          {
-            address: expect.objectContaining({
-              walletId: null
-            })
-          },
-          {
-            address: expect.objectContaining({
-              walletId: null
-            })
-          }
-        ])
-      )
-      expect(responseData.walletId).toBeNull()
+    for (const addressId of oldAddressesIds) {
+      const wallet = await fetchAddressWallet('test-u-id', addressId)
+      expect(wallet).toBeNull()
     }
   })
 })
@@ -1468,5 +1456,78 @@ describe('GET /api/prices/current/[networkSlug]/[quoteSlug]', () => {
     const responseData = res._getJSONData()
     expect(res.statusCode).toBe(200)
     expect(responseData).toEqual('133')
+  })
+})
+
+describe('GET /api/paybutton/triggers/logs/[id]', () => {
+  let userId: string
+  let otherUserId: string
+  let paybuttonId: string
+
+  beforeAll(async () => {
+    await clearPaybuttonsAndAddresses()
+    const user = await createUserProfile('triggerlog-user')
+    const other = await createUserProfile('triggerlog-other')
+    userId = user.id
+    otherUserId = other.id
+    const { paybutton } = await createPaybuttonForUser(userId)
+    paybuttonId = paybutton.id
+  })
+
+  it('returns logs data for user-owned paybutton (empty ok)', async () => {
+    const req: any = {
+      method: 'GET',
+      query: { id: paybuttonId, page: '0', pageSize: '10', orderBy: 'createdAt', orderDesc: 'false' },
+      session: { userId }
+    }
+    const res = await testEndpoint(req, triggerLogsEndpoint)
+    expect(res.statusCode).toBe(200)
+    const body = res._getJSONData()
+    expect(body).toHaveProperty('data')
+    expect(body).toHaveProperty('totalCount')
+    expect(Array.isArray(body.data)).toBe(true)
+    expect(typeof body.totalCount).toBe('number')
+  })
+
+  it('returns 400 if paybutton does not belong to user', async () => {
+    const req: any = {
+      method: 'GET',
+      query: { id: paybuttonId },
+      session: { userId: otherUserId }
+    }
+    const res = await testEndpoint(req, triggerLogsEndpoint)
+    expect(res.statusCode).toBe(400)
+    const body = res._getJSONData()
+    expect(body.message).toBe(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
+  })
+  it('returns 405 for invalid method', async () => {
+    const req: any = { method: 'POST' }
+    const res = await testEndpoint(req, triggerLogsEndpoint)
+    expect(res.statusCode).toBe(405)
+  })
+
+  it('returns 404 for nonexistent paybutton', async () => {
+    const req: any = {
+      method: 'GET',
+      query: { id: 'nonexistent-id' },
+      session: { userId }
+    }
+    const res = await testEndpoint(req, triggerLogsEndpoint)
+    const body = res._getJSONData()
+    expect(res.statusCode).toBe(404)
+    expect(body.message).toBe(RESPONSE_MESSAGES.NO_BUTTON_FOUND_404.message)
+  })
+
+  it('works with pagination params', async () => {
+    const req: any = {
+      method: 'GET',
+      query: { id: paybuttonId, page: '2', pageSize: '3', orderBy: 'createdAt', orderDesc: 'true' },
+      session: { userId }
+    }
+    const res = await testEndpoint(req, triggerLogsEndpoint)
+    expect(res.statusCode).toBe(200)
+    const body = res._getJSONData()
+    expect(body).toHaveProperty('data')
+    expect(body).toHaveProperty('totalCount')
   })
 })

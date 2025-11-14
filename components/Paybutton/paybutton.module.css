@@ -146,6 +146,7 @@
   border: 1px solid var(--secondary-text-color);
   overflow-y: auto;
   max-height: 90vh;
+  min-height: 44rem;
 }
 
 .form_ctn p {
@@ -244,6 +245,7 @@ body[data-theme='dark'] .form_ctn select:not([multiple]) {
 
 .delete_button_form_ctn {
   word-break: normal;
+  min-height: unset;
 }
 
 .form_ctn .delete_confirm_btn:hover {
@@ -449,14 +451,48 @@ body[data-theme='dark'] .form_ctn_outer {
   margin-bottom: 20px;
 }
 
-.active_label {
-  color: green;
-  font-size: 14px;
-  background-color: rgb(146, 245, 146);
-  padding: 4px 10px;
+.active_label,
+.inactive_label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  line-height: 1;
+  box-sizing: border-box;
   border-radius: 5px;
+  font-size: 14px;
   font-weight: 600;
+  padding: 4px 10px;
+  text-align: center;
 }
+
+.active_label {
+  color: darkgreen;
+  background-color: rgb(146, 245, 146);
+}
+
+.inactive_label {
+  color: darkred;
+  background-color: rgb(245, 146, 146);
+}
+
+.credits_info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 4rem;
+  margin: 0;
+  padding: 0 10px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  box-sizing: border-box;
+}
+
+body[data-theme='dark'] .credits_info {
+  color: var(--secondary-text-color);
+}
+
+
 
 .loading_spinner_ctn {
   width: 100%;
@@ -521,21 +557,6 @@ body[data-theme='dark'] .form_ctn_outer {
   display: inline-block;
   float: right;
 }
-
-.email_credits_info {
-  display: inline-block;
-  font-size: 14px;
-  background-color: var(--accent-color);
-  color: #000 !important;
-  padding: 4px 10px;
-  border-radius: 3px;
-  align-self: flex-end;
-}
-
-body[data-theme='dark'] .email_credits_info {
-  color: var(--secondary-text-color);
-}
-
 
 
 .post_data_area {
