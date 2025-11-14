@@ -61,7 +61,7 @@ export async function fetchTriggersForPaybutton (paybuttonId: string, userId: st
   if (paybutton.providerUserId !== userId) {
     throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
   }
-  return paybutton.triggers
+  return paybutton.triggers.filter(t => t.deletedAt === null)
 }
 
 export interface FetchTriggerLogsInput {
