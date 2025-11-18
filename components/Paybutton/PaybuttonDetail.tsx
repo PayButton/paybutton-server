@@ -56,30 +56,32 @@ export default ({ paybutton, refreshPaybutton, listView }: IProps): JSX.Element 
         <label className={style.label_margin}>
           Address{paybutton.addresses.length > 1 ? 'es' : ''}
         </label>
-        {paybutton.addresses.map((item) => (
-          <div className={style.address_ctn} key={item.address.address}>
-            <div className={style.address}>
-              {isCopied === item.address.address && (
-                <div className={style.copied}>Copied!</div>
-              )}
-              {item.address.address.slice(
-                0,
-                item.address.address.startsWith('bitcoin') ? 16 : 10
-              )}
-              ...{item.address.address.slice(-5)}
+        <div className={style.paybutton_detail_address}>
+          {paybutton.addresses.map((item) => (
+            <div className={style.address_ctn} key={item.address.address}>
+              <div className={style.address}>
+                {isCopied === item.address.address && (
+                  <div className={style.copied}>Copied!</div>
+                )}
+                {item.address.address.slice(
+                  0,
+                  item.address.address.startsWith('bitcoin') ? 16 : 10
+                )}
+                ...{item.address.address.slice(-5)}
+              </div>
+              <div
+                className={style.copy_btn}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  void handleCopyClick(item.address.address)
+                }}
+              >
+                <Image src={CopyIcon} alt="copy" width={15} height={15} />
+              </div>
             </div>
-            <div
-              className={style.copy_btn}
-              onClick={(e) => {
-                e.stopPropagation()
-                e.preventDefault()
-                void handleCopyClick(item.address.address)
-              }}
-            >
-              <Image src={CopyIcon} alt="copy" width={15} height={15} />
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
 
         {paybutton.url !== '' && (
           <>

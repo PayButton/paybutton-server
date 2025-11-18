@@ -3,6 +3,8 @@ import supertokensNode from 'supertokens-node'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import prisma from 'prisma-local/clientInstance'
 import crypto from 'crypto'
+import config from 'config/index'
+import { TriggerLogActionType } from 'services/triggerService'
 
 export async function fetchUserProfileFromId (id: string): Promise<UserProfile> {
   const userProfile = await prisma.userProfile.findUnique({ where: { id } })
@@ -166,4 +168,29 @@ export async function userRemainingProTime (id: string): Promise<number | null> 
     return null
   }
   return proUntil.getTime() - today.getTime()
+}
+
+export function isUserPro (proUntil?: Date | null): boolean {
+  if (proUntil == null) return false
+  return new Date(proUntil).getTime() > Date.now()
+}
+
+export function getUserTriggerCreditsLimit (
+  user: UserProfile,
+  actionType: TriggerLogActionType
+): number {
+  const { proSettings } = config
+  const isPro = isUserPro(user.proUntil)
+
+  if (actionType === 'SendEmail') {
+    return isPro ? proSettings.proDailyEmailLimit : proSettings.standardDailyEmailLimit
+  }
+  return isPro ? proSettings.proDailyPostLimit : proSettings.standardDailyPostLimit
+}
+
+export function getUserRemainingTriggerCreditsLimit (
+  user: UserProfile,
+  actionType: TriggerLogActionType
+): number {
+  return actionType === 'SendEmail' ? user.emailCredits : user.postCredits
 }

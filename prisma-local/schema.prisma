@@ -193,6 +193,7 @@ model PaybuttonTrigger {
   logs           TriggerLog[]
   emails         String               @db.Text @default("")
   isEmailTrigger Boolean               @default(false)
+  deletedAt      DateTime?
 
   paybutton      Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade)
 }

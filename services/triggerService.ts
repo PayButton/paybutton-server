@@ -61,7 +61,49 @@ export async function fetchTriggersForPaybutton (paybuttonId: string, userId: st
   if (paybutton.providerUserId !== userId) {
     throw new Error(RESPONSE_MESSAGES.RESOURCE_DOES_NOT_BELONG_TO_USER_400.message)
   }
-  return paybutton.triggers
+  return paybutton.triggers.filter(t => t.deletedAt === null)
+}
+
+export interface FetchTriggerLogsInput {
+  paybuttonId: string
+  page: number
+  pageSize: number
+  orderBy: string
+  orderDesc: boolean
+  actionType: TriggerLogActionType
+}
+
+export const fetchTriggerLogsForPaybutton = async ({
+  paybuttonId,
+  page,
+  pageSize,
+  orderBy,
+  orderDesc,
+  actionType
+}: FetchTriggerLogsInput): Promise<{ data: any[], totalCount: number }> => {
+  const [data, totalCount] = await Promise.all([
+    prisma.triggerLog.findMany({
+      where: {
+        trigger: {
+          paybuttonId
+        },
+        actionType
+      },
+      orderBy: { [orderBy]: orderDesc ? 'desc' : 'asc' },
+      skip: page * pageSize,
+      take: pageSize
+    }),
+    prisma.triggerLog.count({
+      where: {
+        trigger: {
+          paybuttonId
+        },
+        actionType
+      }
+    })
+  ])
+
+  return { data, totalCount }
 }
 
 async function validateTriggerForPaybutton (paybuttonId: string, values: CreatePaybuttonTriggerInput | UpdatePaybuttonTriggerInput): Promise<void> {
@@ -84,8 +126,8 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
     }
   }
 
-  const paybuttonEmailTriggers = paybutton.triggers.filter(t => t.isEmailTrigger)
-  const paybuttonPosterTriggers = paybutton.triggers.filter(t => !t.isEmailTrigger)
+  const paybuttonEmailTriggers = paybutton.triggers.filter(t => t.isEmailTrigger && t.deletedAt === null)
+  const paybuttonPosterTriggers = paybutton.triggers.filter(t => !t.isEmailTrigger && t.deletedAt === null)
 
   if (
     !isUpdate &&
@@ -97,8 +139,8 @@ async function validateTriggerForPaybutton (paybuttonId: string, values: CreateP
     throw new Error(RESPONSE_MESSAGES.LIMIT_TRIGGERS_PER_BUTTON_400.message)
   }
   const addressTriggers = (await fetchTriggersForPaybuttonAddresses(paybutton.id))
-  const addressEmailTriggers = addressTriggers.filter(t => t.isEmailTrigger)
-  const addressPosterTriggers = addressTriggers.filter(t => !t.isEmailTrigger)
+  const addressEmailTriggers = addressTriggers.filter(t => t.isEmailTrigger && t.deletedAt === null)
+  const addressPosterTriggers = addressTriggers.filter(t => !t.isEmailTrigger && t.deletedAt === null)
 
   if (
     !isUpdate &&
@@ -145,9 +187,12 @@ export async function deleteTrigger (paybuttonId: string, values: DeletePaybutto
   if (!paybutton.triggers.map(t => t.id).includes(values.triggerId)) {
     throw new Error(RESPONSE_MESSAGES.INVALID_RESOURCE_UPDATE_400.message)
   }
-  return await prisma.paybuttonTrigger.delete({
+  return await prisma.paybuttonTrigger.update({
     where: {
       id: values.triggerId
+    },
+    data: {
+      deletedAt: new Date()
     }
   })
 }
@@ -162,11 +207,7 @@ function isEmptyUpdateParams (values: UpdatePaybuttonTriggerInput): boolean {
 
 export async function updateTrigger (paybuttonId: string, values: UpdatePaybuttonTriggerInput): Promise<PaybuttonTrigger> {
   if (isEmptyUpdateParams(values)) {
-    return await prisma.paybuttonTrigger.delete({
-      where: {
-        id: values.triggerId
-      }
-    })
+    return await deleteTrigger(paybuttonId, { userId: values.userId, triggerId: values.triggerId })
   }
   await validateTriggerForPaybutton(paybuttonId, values)
   return await prisma.paybuttonTrigger.update({
@@ -198,14 +239,15 @@ export async function fetchTriggersForPaybuttonAddresses (paybuttonId: string): 
           }
         },
         providerUserId: userId
-      }
+      },
+      deletedAt: null
     }
   })
 }
 
-type TriggerLogActionType = 'SendEmail' | 'PostData'
+export type TriggerLogActionType = 'SendEmail' | 'PostData'
 
-interface PostDataTriggerLogError {
+export interface PostDataTriggerLogError {
   errorName: string
   errorMessage: string
   errorStack: string
@@ -213,20 +255,20 @@ interface PostDataTriggerLogError {
   triggerPostURL: string
 }
 
-interface PostDataTriggerLog {
+export interface PostDataTriggerLog {
   postedData: string
   postedURL: string
   responseData: string
 }
 
-interface EmailTriggerLogError {
+export interface EmailTriggerLogError {
   errorName: string
   errorMessage: string
   errorStack: string
   triggerEmail: string
 }
 
-interface EmailTriggerLog {
+export interface EmailTriggerLog {
   email: string
   responseData: string
 }
@@ -270,7 +312,8 @@ async function fetchTriggersGroupedByAddress (addresses: string[]): Promise<Map<
             }
           }
         }
-      }
+      },
+      deletedAt: null
     },
     include: triggerWithPaybuttonAndUserInclude
   })
@@ -323,16 +366,17 @@ function makePostTask (
     let accepted = false
     let isError = false
     let data!: PostDataTriggerLog | PostDataTriggerLogError
+    let parsed: any = null
     try {
       const params = buildPostParams(trigger, tx, currency, valueStr, address)
-      const parsed = parseTriggerPostData({ userId: trigger.paybutton.user.id, postData: trigger.postData, postDataParameters: params })
+      parsed = parseTriggerPostData({ userId: trigger.paybutton.user.id, postData: trigger.postData, postDataParameters: params })
       const resp = await axios.post(trigger.postURL, parsed, { timeout: config.triggerPOSTTimeout })
       // HTTP 2xx counts as accepted
       accepted = resp.status >= 200 && resp.status < 300
       data = { postedData: parsed, postedURL: trigger.postURL, responseData: resp.data }
     } catch (err: any) {
       isError = true
-      data = { errorName: err.name, errorMessage: err.message, errorStack: err.stack, triggerPostData: trigger.postData, triggerPostURL: trigger.postURL }
+      data = { errorName: err.name, errorMessage: err.message, errorStack: err.stack, triggerPostData: parsed ?? trigger.postData, triggerPostURL: trigger.postURL }
     } finally {
       logs.push({ triggerId: trigger.id, isError, actionType, data: JSON.stringify(data) })
     }
@@ -459,10 +503,10 @@ async function runTasksUpToCredits (
   let attempted = 0
   let idx = 0
 
-  // Keep attempting until we achieve `credits` accepted OR we exhaust tasks.
-  while (accepted < credits && idx < tasks.length) {
-    const remainingNeeded = credits - accepted
-    const batch = tasks.slice(idx, idx + remainingNeeded)
+  // Run until we've *attempted* up to credits (not only successful ones)
+  while (attempted < credits && idx < tasks.length) {
+    const remainingAllowed = credits - attempted
+    const batch = tasks.slice(idx, idx + remainingAllowed)
     idx += batch.length
     attempted += batch.length
 
@@ -520,7 +564,7 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   const logs: Prisma.TriggerLogCreateManyInput[] = []
 
   // Build queues
-  console.log(`[BATCH TRIGGER ${currency}]: preparing triggers for ${txItems.length} txs belonging to ${uniqueAddresses.length} addresses`)
+  console.log(`[TRIGGER ${currency}]: preparing triggers for ${txItems.length} txs belonging to ${uniqueAddresses.length} addresses`)
 
   for (const { address, tx } of txItems) {
     const triggers = triggersByAddress.get(address) ?? []
@@ -551,8 +595,13 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
 
   const postTasksCount = Object.values(postTaskQueueByUser).map(tasks => tasks.length).reduce((a, b) => a + b, 0)
   const mailTasksCount = Object.values(emailTaskQueueByUser).map(tasks => tasks.length).reduce((a, b) => a + b, 0)
-  console.log(`[BATCH TRIGGER ${currency}]: will run ${postTasksCount} post triggers for ${Object.keys(postTaskQueueByUser).length} users, ${mailTasksCount} email triggers for ${Object.keys(emailTaskQueueByUser).length} users.`)
-
+  console.log(
+    `[TRIGGER ${currency}]: scheduling ${postTasksCount} post trigger and ${mailTasksCount} email trigger runners` +
+    `for ${new Set([
+      ...Object.keys(postTaskQueueByUser),
+      ...Object.keys(emailTaskQueueByUser)
+    ]).size} users`
+  )
   const postUserRunners = Object.entries(postTaskQueueByUser).map(([userId, queue]) => async () => {
     const limit = userPostCredits[userId] ?? 0
     const { accepted, attempted } = await runTasksUpToCredits(queue, limit)
@@ -568,39 +617,57 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   const postResults: Array<{ userId: string, accepted: number, attempted: number, total: number, limit: number }> = []
   const emailResults: Array<{ userId: string, accepted: number, attempted: number, total: number, limit: number }> = []
 
-  await runAsyncInBatches(
-    `${currency} POST TRIGGERS`,
-    postUserRunners.map(run => async () => { postResults.push(await run()) }),
-    TRIGGER_POST_CONCURRENCY
-  )
-  await runAsyncInBatches(
-    `${currency} POST TRIGGERS`,
-    emailUserRunners.map(run => async () => { emailResults.push(await run()) }),
-    TRIGGER_EMAIL_CONCURRENCY
-  )
+  if (postUserRunners.length > 0) {
+    console.log(`[TRIGGER ${currency}]: executing ${postUserRunners.length} post tasks...`)
+    await runAsyncInBatches(
+      `${currency} POST TRIGGERS`,
+      postUserRunners.map(run => async () => { postResults.push(await run()) }),
+      TRIGGER_POST_CONCURRENCY
+    )
+  }
+  if (emailUserRunners.length > 0) {
+    console.log(`[TRIGGER ${currency}]: executing ${emailUserRunners.length} email tasks...`)
+    await runAsyncInBatches(
+      `${currency} EMAIL TRIGGERS`,
+      emailUserRunners.map(run => async () => { emailResults.push(await run()) }),
+      TRIGGER_EMAIL_CONCURRENCY
+    )
+  }
 
-  for (const r of postResults) {
-    if (r.attempted < r.total && r.accepted >= r.limit) {
-      const queue = postTaskQueueByUser[r.userId]!
-      appendOutOfCreditsLogs(queue, r.attempted, logs, 'PostData')
+  for (const result of postResults) {
+    const spent = result.attempted
+    if (spent < result.total && spent >= result.limit) {
+      if (result.accepted > result.limit) {
+        console.warn(`[TRIGGER ${currency}]: accepted (${result.accepted}) exceeded limit (${result.limit}) for user ${result.userId}`)
+      }
+      const queue = postTaskQueueByUser[result.userId]!
+      appendOutOfCreditsLogs(queue, result.attempted, logs, 'PostData')
     }
   }
-  for (const r of emailResults) {
-    if (r.attempted < r.total && r.accepted >= r.limit) {
-      const queue = emailTaskQueueByUser[r.userId]!
-      appendOutOfCreditsLogs(queue, r.attempted, logs, 'SendEmail')
+  for (const result of emailResults) {
+    const spent = result.attempted
+    if (spent < result.total && spent >= result.limit) {
+      if (result.accepted > result.limit) {
+        console.warn(`[TRIGGER ${currency}]: accepted (${result.accepted}) exceeded limit (${result.limit}) for user ${result.userId}`)
+      }
+      const queue = emailTaskQueueByUser[result.userId]!
+      appendOutOfCreditsLogs(queue, result.attempted, logs, 'SendEmail')
     }
   }
 
   // count accepted triggers for decrements (charge only accepted)
-  const postsAcceptedByUser = Object.fromEntries(postResults.map(r => [r.userId, r.accepted]))
-  const emailsAcceptedByUser = Object.fromEntries(emailResults.map(r => [r.userId, r.accepted]))
+  const postsAttemptedByUser = Object.fromEntries(postResults.map(r => [r.userId, r.attempted]))
+  const emailsAttemptedByUser = Object.fromEntries(emailResults.map(r => [r.userId, r.attempted]))
 
-  await persistLogsAndDecrements(logs, emailsAcceptedByUser, postsAcceptedByUser)
+  await persistLogsAndDecrements(logs, emailsAttemptedByUser, postsAttemptedByUser)
 
-  const totalPostsAccepted = Object.values(postsAcceptedByUser).reduce((a, b) => a + b, 0)
-  const totalEmailsAccepted = Object.values(emailsAcceptedByUser).reduce((a, b) => a + b, 0)
-  const chargedUsers = new Set([...Object.keys(postsAcceptedByUser), ...Object.keys(emailsAcceptedByUser)]).size
+  const totalPostsAttempted = Object.values(postsAttemptedByUser).reduce((a, b) => a + b, 0)
+  const totalEmailsAttempted = Object.values(emailsAttemptedByUser).reduce((a, b) => a + b, 0)
+  const chargedUsers = new Set([...Object.keys(postsAttemptedByUser), ...Object.keys(emailsAttemptedByUser)]).size
 
-  console.log(`[BATCH TRIGGER ${currency}]: Done — ${logs.length} created, ${chargedUsers} users charged (accepted ${totalEmailsAccepted} email and ${totalPostsAccepted} posts)`)
+  console.log(
+    `[TRIGGER ${currency}]: finished batch — wrote ${logs.length} logs, ` +
+    `charged ${chargedUsers} users after executing ${totalPostsAttempted} post triggers ` +
+    `and ${totalEmailsAttempted} email triggers`
+  )
 }

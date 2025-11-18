@@ -27,21 +27,24 @@ export const devUserProfiles = [
     createdAt: new Date(),
     publicKey: '',
     updatedAt: new Date(),
-    emailCredits: 91
+    emailCredits: 3,
+    postCredits: 1
   },
   {
     id: 'dev2-uid',
     createdAt: new Date(),
     publicKey: '',
     updatedAt: new Date(),
-    emailCredits: 19
+    emailCredits: 19,
+    postCredits: 14
   },
   {
     id: 'dev3-uid',
     createdAt: new Date(),
     publicKey: '',
     updatedAt: new Date(),
-    emailCredits: 100
+    emailCredits: 100,
+    postCredits: 100
   }
 ]
 
@@ -64,6 +67,7 @@ export const adminUserProfiles = [
     updatedAt: new Date(),
     isAdmin: true,
     publicKey: '',
-    emailCredits: 10000000
+    emailCredits: 10000000,
+    postCredits: 10000000
   }
 ]
