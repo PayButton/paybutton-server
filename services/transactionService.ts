@@ -844,6 +844,7 @@ const buildDateRange = (
 
   const startObj = new Date(startDate)
   const endObj = new Date(endDate)
+  endObj.setDate(endObj.getDate() + 1)
 
   if (timezone !== undefined && timezone !== null && timezone !== '') {
     const startInTimezone = new Date(startObj.toLocaleString('en-US', { timeZone: timezone }))
