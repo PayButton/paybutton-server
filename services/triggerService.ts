@@ -564,7 +564,7 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   const logs: Prisma.TriggerLogCreateManyInput[] = []
 
   // Build queues
-  console.log(`[TRIGGER ${currency}]: will get triggers for ${txItems.length} txs and ${uniqueAddresses.length} addresses...`)
+  console.log(`[TRIGGER ${currency}]: preparing triggers for ${txItems.length} txs belonging to ${uniqueAddresses.length} addresses`)
 
   for (const { address, tx } of txItems) {
     const triggers = triggersByAddress.get(address) ?? []
@@ -602,7 +602,6 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
       ...Object.keys(emailTaskQueueByUser)
     ]).size} users`
   )
-
   const postUserRunners = Object.entries(postTaskQueueByUser).map(([userId, queue]) => async () => {
     const limit = userPostCredits[userId] ?? 0
     const { accepted, attempted } = await runTasksUpToCredits(queue, limit)

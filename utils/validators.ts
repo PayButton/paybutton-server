@@ -248,9 +248,14 @@ function getSignaturePayload (postData: string, postDataParameters: PostDataPara
 export function signPostData ({ userId, postData, postDataParameters }: PaybuttonTriggerParseParameters): TriggerSignature {
   const payload = getSignaturePayload(postData, postDataParameters)
   const pk = getUserPrivateKey(userId)
+
+  const data: Uint8Array = typeof payload === 'string'
+    ? new TextEncoder().encode(payload)
+    : payload as unknown as Uint8Array
+
   const signature = crypto.sign(
     null,
-    Buffer.from(payload),
+    data,
     pk
   )
   return {

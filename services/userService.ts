@@ -74,8 +74,12 @@ function getUserSeedHash (userId: string): Buffer {
 export function getUserPrivateKey (userId: string): crypto.KeyObject {
   const seed = getUserSeedHash(userId)
   const prefixPrivateEd25519 = Buffer.from('302e020100300506032b657004220420', 'hex')
-  const der = Buffer.concat([prefixPrivateEd25519, seed])
-  return crypto.createPrivateKey({ key: der, format: 'der', type: 'pkcs8' })
+
+  const der = new Uint8Array(prefixPrivateEd25519.length + seed.length)
+  der.set(prefixPrivateEd25519 instanceof Uint8Array ? prefixPrivateEd25519 : new Uint8Array(prefixPrivateEd25519))
+  der.set(seed instanceof Uint8Array ? seed : new Uint8Array(seed), prefixPrivateEd25519.length)
+  const derBuf = Buffer.from(der)
+  return crypto.createPrivateKey({ key: derBuf, format: 'der', type: 'pkcs8' })
 }
 
 export async function getUserPublicKeyHex (id: string): Promise<string> {
