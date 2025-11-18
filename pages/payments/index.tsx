@@ -86,6 +86,9 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
   const [invoiceMode, setInvoiceMode] = useState<'create' | 'edit' | 'view'>('create')
   const [isModalOpen, setIsModalOpen] = useState(false)
 
+  const [startDate, setStartDate] = useState<string>('')
+  const [endDate, setEndDate] = useState<string>('')
+
   const fetchNextInvoiceNumberByUserId = async (): Promise<string> => {
     const response = await fetch('/api/invoices/invoiceNumber/', {
       headers: {
@@ -136,7 +139,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
   }
   useEffect(() => {
     setRefreshCount(prev => prev + 1)
-  }, [selectedButtonIds, selectedTransactionYears])
+  }, [selectedButtonIds, selectedTransactionYears, endDate])
 
   const fetchPaybuttons = async (): Promise<any> => {
     const res = await fetch(`/api/paybuttons?userId=${user?.userProfile.id}`, {
@@ -193,19 +196,33 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
       if (selectedTransactionYears.length > 0) {
         url += `&years=${selectedTransactionYears.join(',')}`
       }
+      if (startDate !== '') {
+        url += `&startDate=${startDate}`
+      }
+      if (endDate !== '') {
+        url += `&endDate=${endDate}`
+      }
+
+      let paymentsCountUrl = '/api/payments/count'
+      if (selectedButtonIds.length > 0) {
+        paymentsCountUrl += `?buttonIds=${selectedButtonIds.join(',')}`
+      }
+      if (selectedTransactionYears.length > 0) {
+        paymentsCountUrl += `${paymentsCountUrl.includes('?') ? '&' : '?'}years=${selectedTransactionYears.join(',')}`
+      }
+      if (startDate !== '') {
+        paymentsCountUrl += `${paymentsCountUrl.includes('?') ? '&' : '?'}startDate=${startDate}`
+      }
+      if (endDate !== '') {
+        paymentsCountUrl += `${paymentsCountUrl.includes('?') ? '&' : '?'}endDate=${endDate}`
+      }
 
       const paymentsResponse = await fetch(url, {
         headers: {
           Timezone: moment.tz.guess()
         }
       })
-      let paymentsCountUrl = '/api/payments/count'
-      if (selectedButtonIds.length > 0) {
-        paymentsCountUrl += `?buttonIds=${selectedButtonIds.join(',')}`
-      }
-      if (selectedTransactionYears.length > 0) {
-        paymentsCountUrl += `${selectedButtonIds.length > 0 ? '&' : '?'}years=${selectedTransactionYears.join(',')}`
-      }
+
       const paymentsCountResponse = await fetch(
         paymentsCountUrl,
         { headers: { Timezone: timezone } }
@@ -390,8 +407,14 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
       if (selectedTransactionYears.length > 0) {
         url += `&years=${selectedTransactionYears.join(',')}`
       }
-      const isCurrencyEmptyOrUndefined = (value: string): boolean => (value === '' || value === undefined)
+      if (startDate !== '') {
+        url += `&startDate=${startDate}`
+      }
+      if (endDate !== '') {
+        url += `&endDate=${endDate}`
+      }
 
+      const isCurrencyEmptyOrUndefined = (value: string): boolean => (value === '' || value === undefined)
       if (!isCurrencyEmptyOrUndefined(currency)) {
         url += `&network=${currency}`
       }
@@ -443,10 +466,13 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
   const handleClearFilters = (): void => {
     setSelectedButtonIds([])
     setSelectedTransactionYears([])
+    setStartDate('')
+    setEndDate('')
   }
+
   return (
     <>
-     <TopBar title="Payments" user={user?.stUser?.email} />
+      <TopBar title="Payments" user={user?.stUser?.email} />
       <div className={style.filters_export_ctn}>
         <div className={style.filter_btns}>
           <div
@@ -455,7 +481,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
           >
             <Image src={SettingsIcon} alt="filters" width={15} />Filters
           </div>
-          {(selectedButtonIds.length > 0 || selectedTransactionYears.length > 0) &&
+          {(selectedButtonIds.length > 0 || selectedTransactionYears.length > 0 || startDate !== '' || endDate !== '') &&
           <div
           onClick={() => handleClearFilters()}
           className={style.show_filters_button}
@@ -524,11 +550,17 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
                   <div
                     key={y}
                     onClick={() => {
-                      setSelectedTransactionYears(prev =>
-                        prev.includes(y)
+                      setSelectedTransactionYears(prev => {
+                        const newYears = prev.includes(y)
                           ? prev.filter(year => year !== y)
                           : [...prev, y]
-                      )
+
+                        if (newYears.length > 0) {
+                          setStartDate('')
+                          setEndDate('')
+                        }
+                        return newYears
+                      })
                     }}
                     className={`${style.filter_button} ${selectedTransactionYears.includes(y) ? style.active : ''}`}
                   >
@@ -537,6 +569,38 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
                 ))}
               </div>
             </div>
+          <div className={style.showfilters_ctn}>
+            <span>Filter by date range</span>
+            <div className={style.filters_ctn} style={{ alignItems: 'center' }}>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  const newStartDate = e.target.value
+                  setStartDate(newStartDate)
+                  if (newStartDate !== '') {
+                    setSelectedTransactionYears([])
+                  }
+                  setEndDate('')
+                }}
+                className={style.filter_input}
+              />
+              <span style={{ margin: '0 8px' }}>to</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  const newEndDate = e.target.value
+                  setEndDate(newEndDate)
+                  if (newEndDate !== '') {
+                    setSelectedTransactionYears([])
+                  }
+                }}
+                min={startDate !== '' ? startDate : undefined}
+                className={style.filter_input}
+              />
+            </div>
+          </div>
         </div>
       )}
       <TableContainerGetter
