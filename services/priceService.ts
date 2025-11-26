@@ -2,7 +2,7 @@ import axios from 'axios'
 import { Prisma, Price } from '@prisma/client'
 import config from 'config'
 import prisma from 'prisma-local/clientInstance'
-import { PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, HUMAN_READABLE_DATE_FORMAT } from 'constants/index'
 import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
 import moment from 'moment'
 
@@ -165,10 +165,12 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
   const date = moment().startOf('day')
   const daysToRetrieve: string[] = []
 
+  console.log(`[PRICES] Last price found is for ${lastDateInDB.format(HUMAN_READABLE_DATE_FORMAT)}.`)
   while (date.isAfter(lastDateInDB)) {
     daysToRetrieve.push(date.format(PRICE_API_DATE_FORMAT))
     date.add(-1, 'day')
   }
+  console.log(`[PRICES] Will try to retrieve ${daysToRetrieve.length} prices.`)
 
   const allXECPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.ecash, false)
   const allBCHPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.bitcoincash, false)
