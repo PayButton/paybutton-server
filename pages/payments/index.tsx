@@ -92,7 +92,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
   const fetchNextInvoiceNumberByUserId = async (): Promise<string> => {
     const response = await fetch('/api/invoices/invoiceNumber/', {
       headers: {
-        Timezone: moment.tz.guess()
+        Timezone: timezone
       }
     })
     const result = await response?.json()
@@ -223,7 +223,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
 
       const paymentsResponse = await fetch(url, {
         headers: {
-          Timezone: moment.tz.guess()
+          Timezone: timezone
         }
       })
 
@@ -425,7 +425,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
 
       const response = await fetch(url, {
         headers: {
-          Timezone: moment.tz.guess()
+          Timezone: timezone
         }
       })
 
