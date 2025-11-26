@@ -166,7 +166,7 @@ export const HUMAN_READABLE_DATE_FORMAT = 'YYYY-MM-DD'
 
 export const PRICE_API_DATE_FORMAT = 'YYYY-MM-DD'
 export const PRICE_API_TIMEOUT = 40 * 1000 // 40 seconds
-export const PRICE_API_MAX_RETRIES = 3
+export const PRICE_API_MAX_RETRIES = 1
 
 export const SYNC_TXS_JOBS_MAX_RETRIES = 3
 export const SYNC_TXS_JOBS_RETRY_DELAY = 2000
@@ -277,9 +277,9 @@ export const MEMPOOL_PROCESS_DELAY = 100
 // On chronik, the max allowed is 200
 export const CHRONIK_FETCH_N_TXS_PER_PAGE = 200
 
-export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 512
-export const TX_EMIT_BATCH_SIZE = 10_000 // for our generator, not chronik
-export const DB_COMMIT_BATCH_SIZE = 10_000 // tamanho dos lotes para commit no DB
+export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 128
+export const TX_EMIT_BATCH_SIZE = 2_000 // for our generator, not chronik
+export const DB_COMMIT_BATCH_SIZE = 2_000 // tamanho dos lotes para commit no DB
 
 export const TRIGGER_POST_CONCURRENCY = 100
 export const TRIGGER_EMAIL_CONCURRENCY = 100

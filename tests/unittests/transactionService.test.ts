@@ -48,8 +48,8 @@ describe('Create services', () => {
     prismaMock.userProfile.findMany.mockResolvedValue([mockedUserProfile])
     prisma.userProfile.findMany = prismaMock.userProfile.findMany
 
-    prismaMock.price.findUnique.mockResolvedValue(mockedUSDPriceOnTransaction.price)
-    prisma.price.findUnique = prismaMock.price.findUnique
+    prismaMock.price.findUniqueOrThrow.mockResolvedValue(mockedUSDPriceOnTransaction.price)
+    prisma.price.findUniqueOrThrow = prismaMock.price.findUniqueOrThrow
 
     prismaMock.pricesOnTransactions.upsert.mockResolvedValue(mockedUSDPriceOnTransaction)
     prisma.pricesOnTransactions.upsert = prismaMock.pricesOnTransactions.upsert

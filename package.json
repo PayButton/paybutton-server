@@ -72,7 +72,7 @@
     "xecaddrjs": "^0.0.1"
   },
   "devDependencies": {
-    "@types/jest": "^27.5.1",
+    "@types/jest": "^30.0.0",
     "@types/node": "^12.0.12",
     "@types/nodemailer": "^6.4.16",
     "@types/react": "^16.9.44",

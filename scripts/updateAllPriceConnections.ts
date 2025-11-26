@@ -58,7 +58,8 @@ async function fixMisconnectedTxs (): Promise<void> {
           select: {
             price: {
               select: {
-                timestamp: true
+                timestamp: true,
+                networkId: true
               }
             }
           }
