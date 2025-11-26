@@ -930,7 +930,7 @@ const buildDateRange = (
   startDate: Date,
   endDate: Date,
   timezone?: string
-): { gte: number, lt: number } => {
+): { gte: number, lte: number } => {
   let start: number
   let end: number
 
@@ -944,7 +944,7 @@ const buildDateRange = (
 
   return {
     gte: Math.floor(start),
-    lt: Math.floor(end) + 1
+    lte: Math.floor(end)
   }
 }
 
