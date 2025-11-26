@@ -28,10 +28,10 @@ services:
       - .env.local
       - .env.from-dump
     environment:
-      MYSQL_ROOT_PASSWORD: ${MAIN_DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MAIN_DB_NAME}
-      MYSQL_USER: ${MAIN_DB_USER}
-      MYSQL_PASSWORD: ${MAIN_DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MAIN_DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MAIN_DB_NAME}
+      MARIADB_USER: ${MAIN_DB_USER}
+      MARIADB_PASSWORD: ${MAIN_DB_PASSWORD}
     command: --default-authentication-plugin=mysql_native_password
     ports:
       - 3306:3306
