@@ -11,7 +11,7 @@ import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import { formatQuoteValue, compareNumericString, removeUnserializableFields, removeDateFields } from 'utils/index'
-import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL, NETWORK_TICKERS_FROM_ID, DECIMALS } from 'constants/index'
+import { XEC_NETWORK_ID, BCH_TX_EXPLORER_URL, XEC_TX_EXPLORER_URL, NETWORK_TICKERS_FROM_ID, DECIMALS, HUMAN_READABLE_DATE_FORMAT } from 'constants/index'
 import moment from 'moment-timezone'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
@@ -103,8 +103,12 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
     setInvoiceData(null)
     setRefreshCount(prev => prev + 1)
   }
+
+  const todayDateString = moment().format(HUMAN_READABLE_DATE_FORMAT)
+
   const onCreateInvoice = async (transaction: TransactionWithAddressAndPricesAndInvoices): Promise<void> => {
     const nextInvoiceNumber = await fetchNextInvoiceNumberByUserId()
+    const now = new Date()
     const invoiceData = {
       invoiceNumber: nextInvoiceNumber ?? '',
       amount: transaction.amount,
@@ -116,8 +120,8 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
       userId: '',
       transaction,
       transactionId: transaction.id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
       id: ''
     }
     setInvoiceDataTransaction(transaction)
@@ -584,6 +588,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
                   setEndDate('')
                 }}
                 className={style.filter_input}
+                max={todayDateString}
               />
               <span style={{ margin: '0 8px' }}>to</span>
               <input
@@ -597,6 +602,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
                   }
                 }}
                 min={startDate !== '' ? startDate : undefined}
+                max={todayDateString}
                 className={style.filter_input}
               />
             </div>
