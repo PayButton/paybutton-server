@@ -35,7 +35,7 @@ export const syncBlockchainAndPricesWorker = async (queueName: string): Promise<
   const worker = new Worker(
     queueName,
     async (job) => {
-      console.log(`job ${job.id as string}: syncing missed transactions and connecting prices...`)
+      console.log(`job ${job.id as string}: syncing missed prices, transactions and connecting them...`)
       await priceService.syncPastDaysNewerPrices()
       await multiBlockchainClient.syncMissedTransactions()
       await connectAllTransactionsToPrices()
