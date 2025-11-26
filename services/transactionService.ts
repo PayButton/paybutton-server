@@ -935,16 +935,34 @@ const buildDateRange = (
   let end: number
 
   if (timezone !== undefined && timezone !== null && timezone !== '') {
-    start = moment.tz(startDate, timezone).unix()
-    end = moment.tz(endDate, timezone).endOf('day').unix()
+    const startMoment = moment.tz(
+      {
+        year: startDate.getUTCFullYear(),
+        month: startDate.getUTCMonth(),
+        day: startDate.getUTCDate()
+      },
+      timezone
+    ).startOf('day')
+
+    const endMoment = moment.tz(
+      {
+        year: endDate.getUTCFullYear(),
+        month: endDate.getUTCMonth(),
+        day: endDate.getUTCDate()
+      },
+      timezone
+    ).endOf('day')
+
+    start = startMoment.unix()
+    end = endMoment.unix()
   } else {
     start = moment.utc(startDate).unix()
     end = moment.utc(endDate).endOf('day').unix()
   }
 
   return {
-    gte: Math.floor(start),
-    lte: Math.floor(end)
+    gte: Math.round(start),
+    lte: Math.round(end)
   }
 }
 
