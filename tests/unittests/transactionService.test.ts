@@ -48,14 +48,17 @@ describe('Create services', () => {
     prismaMock.userProfile.findMany.mockResolvedValue([mockedUserProfile])
     prisma.userProfile.findMany = prismaMock.userProfile.findMany
 
-    prismaMock.price.findUnique.mockResolvedValue(mockedUSDPriceOnTransaction.price)
-    prisma.price.findUnique = prismaMock.price.findUnique
+    prismaMock.price.findUniqueOrThrow.mockResolvedValue(mockedUSDPriceOnTransaction.price)
+    prisma.price.findUniqueOrThrow = prismaMock.price.findUniqueOrThrow
 
     prismaMock.pricesOnTransactions.upsert.mockResolvedValue(mockedUSDPriceOnTransaction)
     prisma.pricesOnTransactions.upsert = prismaMock.pricesOnTransactions.upsert
 
     prismaMock.pricesOnTransactions.deleteMany.mockResolvedValue({ count: 2 })
     prisma.pricesOnTransactions.deleteMany = prismaMock.pricesOnTransactions.deleteMany
+
+    prismaMock.pricesOnTransactions.createMany.mockResolvedValue({ count: 2 })
+    prisma.pricesOnTransactions.createMany = prismaMock.pricesOnTransactions.createMany
 
     const mockCacheTx = jest.spyOn(CacheSet, 'txCreation')
     mockCacheTx.mockImplementation(async () => {

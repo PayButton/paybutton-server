@@ -13,7 +13,7 @@ import { fetchAllPaymentsByUserId } from 'services/transactionService'
 export default async (req: any, res: any): Promise<void> => {
   try {
     if (req.method !== 'GET') {
-      throw new Error(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.message)
+      throw new Error(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED_405.message)
     }
 
     await setSession(req, res)
@@ -65,9 +65,9 @@ export default async (req: any, res: any): Promise<void> => {
     await downloadTxsFile(res, quoteSlug, timezone, transactions, userId)
   } catch (error: any) {
     switch (error.message) {
-      case RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.message:
-        res.status(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.statusCode)
-          .json(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED)
+      case RESPONSE_MESSAGES.METHOD_NOT_ALLOWED_405.message:
+        res.status(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED_405.statusCode)
+          .json(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED_405)
         break
       case RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message:
         res.status(RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.statusCode)

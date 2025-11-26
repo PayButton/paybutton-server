@@ -256,6 +256,18 @@ type: number | "Inf"
 ```
 > How many emails can a PayButton Pro user send daily.
 
+##### proSettings.standardDailyPostLimit
+```
+type: number | "Inf"
+```
+> How many POST requests can a standard user send daily.
+
+##### proSettings.proDailyPostLimit
+```
+type: number | "Inf"
+```
+> How many POST requests can a PayButton Pro user send daily.
+
 ##### proSettings.standardAddressesPerButtonLimit
 ```
 type: number | "Inf"

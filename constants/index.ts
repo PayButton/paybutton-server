@@ -92,7 +92,7 @@ export const RESPONSE_MESSAGES = {
   INVALID_OUTPUT_SCRIPT_LENGTH_500: (l: number) => { return { statusCode: 500, message: `Invalid outputScript length ${l}` } },
   FAILED_TO_PARSE_TX_OP_RETURN_500: { statusCode: 500, message: 'Failed to parse OP_RETURN data in Tx.' },
   PAYBUTTON_ID_NOT_PROVIDED_400: { statusCode: 400, message: 'Paybutton id not provided' },
-  METHOD_NOT_ALLOWED: { statusCode: 500, message: 'Method not allowed.' },
+  METHOD_NOT_ALLOWED_405: { statusCode: 405, message: 'Method not allowed.' },
   USER_HAS_NO_ORGANIZATION_400: { statusCode: 400, message: 'User does not belong to an organization.' },
   USER_ALREADY_HAS_ORGANIZATION_400: { statusCode: 400, message: 'User already belongs to an organization.' },
   USER_HAS_ALREADY_USED_INVITE_400: { statusCode: 400, message: 'You have already used this invite.' },
@@ -103,6 +103,7 @@ export const RESPONSE_MESSAGES = {
   INVITE_EXPIRED_400: { statusCode: 400, message: 'Invite expired.' },
   INVALID_EMAIL_400: { statusCode: 400, message: 'Invalid email.' },
   USER_OUT_OF_EMAIL_CREDITS_400: { statusCode: 400, message: 'User out of email credits.' },
+  USER_OUT_OF_POST_CREDITS_400: { statusCode: 400, message: 'User out of post credits.' },
   NO_INVOICE_FOUND_404: { statusCode: 404, message: 'No invoice found.' }
 }
 
@@ -138,16 +139,6 @@ export const NETWORK_SLUGS_FROM_IDS: Record<number, string> = {
   2: 'bitcoincash'
 }
 
-// When fetching some address transactions, number of transactions to fetch at a time.
-// On chronik, the max allowed is 200
-export const FETCH_N = 200
-
-// When fetching the FETCH_N transactions, max time (in ms) to wait to upsert them.
-export const FETCH_N_TIMEOUT = 120000
-
-// When fetching some address transactions, delay (in ms) between each fetch.
-export const FETCH_DELAY = 100
-
 // Delay to check if latency test has finished, when the app starts.
 export const LATENCY_TEST_CHECK_DELAY = 200
 
@@ -175,7 +166,7 @@ export const HUMAN_READABLE_DATE_FORMAT = 'YYYY-MM-DD'
 
 export const PRICE_API_DATE_FORMAT = 'YYYY-MM-DD'
 export const PRICE_API_TIMEOUT = 40 * 1000 // 40 seconds
-export const PRICE_API_MAX_RETRIES = 3
+export const PRICE_API_MAX_RETRIES = 1
 
 export const SYNC_TXS_JOBS_MAX_RETRIES = 3
 export const SYNC_TXS_JOBS_RETRY_DELAY = 2000
@@ -274,11 +265,29 @@ export const DECIMALS: Record<string, number> = {
 
 export const EMAIL_REGEX: RegExp = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
 
-export const MAX_DAILY_EMAILS = 100 // If changed, update the DB default accordingly
-
 export const XEC_TX_EXPLORER_URL = 'https://explorer.e.cash/tx/'
 export const BCH_TX_EXPLORER_URL = 'https://blockchair.com/bitcoin-cash/transaction/'
 
 export const MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME = 2
 export const CHRONIK_INITIALIZATION_DELAY = 2000
 export const MEMPOOL_PROCESS_DELAY = 100
+
+/* WIP RENAME ALL THOSE */
+// When fetching some address transactions, number of transactions to fetch at a time.
+// On chronik, the max allowed is 200
+export const CHRONIK_FETCH_N_TXS_PER_PAGE = 200
+
+export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 128
+export const TX_EMIT_BATCH_SIZE = 2_000 // for our generator, not chronik
+export const DB_COMMIT_BATCH_SIZE = 2_000 // tamanho dos lotes para commit no DB
+
+export const TRIGGER_POST_CONCURRENCY = 100
+export const TRIGGER_EMAIL_CONCURRENCY = 100
+
+export const TRIGGER_LOG_BATCH_SIZE = 200
+
+export const PRICES_CONNECTION_BATCH_SIZE = 1_000
+// interactive $transaction timeout in ms (for the single delete + several createMany of prices)
+export const PRICES_CONNECTION_TIMEOUT = 30_000
+
+export const CLIENT_PAYMENT_EXPIRATION_TIME = (7) * (24 * 60 * 60 * 1000) // (number of days) * (24 * 60 * 60 * 1000)

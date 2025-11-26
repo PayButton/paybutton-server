@@ -248,9 +248,14 @@ function getSignaturePayload (postData: string, postDataParameters: PostDataPara
 export function signPostData ({ userId, postData, postDataParameters }: PaybuttonTriggerParseParameters): TriggerSignature {
   const payload = getSignaturePayload(postData, postDataParameters)
   const pk = getUserPrivateKey(userId)
+
+  const data: Uint8Array = typeof payload === 'string'
+    ? new TextEncoder().encode(payload)
+    : payload as unknown as Uint8Array
+
   const signature = crypto.sign(
     null,
-    Buffer.from(payload),
+    data,
     pk
   )
   return {
@@ -565,4 +570,26 @@ export interface CreateInvoicePOSTParameters {
   recipientAddress: string
   customerName: string
   customerAddress: string
+}
+export interface CreatePaymentIdPOSTParameters {
+  address?: string
+  amount?: string
+}
+export interface CreatePaymentIdInput {
+  address: string
+  amount?: string
+}
+
+export const parseCreatePaymentIdPOSTRequest = function (params: CreatePaymentIdPOSTParameters): CreatePaymentIdInput {
+  if (
+    params.address === undefined ||
+    params.address === ''
+  ) {
+    throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
+  }
+
+  return {
+    address: params.address,
+    amount: params.amount === '' ? undefined : params.amount
+  }
 }

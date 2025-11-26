@@ -84,6 +84,11 @@ body[data-theme='dark'] .arrow {
   margin-right: 5px;
 }
 
+.paybutton_detail_address {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
 .address_ctn {
   display: flex;
   margin-bottom: 4px;

@@ -22,6 +22,7 @@ model Address {
   syncing      Boolean                @default(false)
   paybuttons   AddressesOnButtons[]
   transactions Transaction[]
+  clientPayments                     ClientPayment[]
 
   @@index([networkId], map: "Address_networkId_fkey")
 }
@@ -33,6 +34,7 @@ model Paybutton {
   description    String               @db.LongText @default("")
   url            String               @db.VarChar(255) @default("")
   providerUserId String               @db.VarChar(255)
+  user           UserProfile          @relation(fields: [providerUserId], references: [id], onUpdate: Restrict)
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   addresses      AddressesOnButtons[]
@@ -80,7 +82,7 @@ model Transaction {
   updatedAt DateTime                  @updatedAt
 
   @@unique([hash, addressId], name: "Transaction_hash_addressId_unique_constraint")
-  @@index([addressId], map: "Transaction_addressId_fkey")
+  @@index([addressId, timestamp], map: "Transaction_addressId_timestamp_idx")
 }
 
 model Wallet {
@@ -172,11 +174,13 @@ model UserProfile {
   preferredCurrencyId Int @default(1)
   preferredTimezone String    @db.VarChar(255)@default("")
   proUntil DateTime?
+  paybuttons   Paybutton[]
 
   organizationId String?
   organization Organization?     @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
-  emailCredits Int  @default(100)
+  emailCredits Int  @default(5)
+  postCredits Int  @default(5)
   }
 
 model PaybuttonTrigger {
@@ -189,6 +193,7 @@ model PaybuttonTrigger {
   logs           TriggerLog[]
   emails         String               @db.Text @default("")
   isEmailTrigger Boolean               @default(false)
+  deletedAt      DateTime?
 
   paybutton      Paybutton @relation(fields: [paybuttonId], references: [id], onDelete: Cascade)
 }
@@ -267,4 +272,20 @@ model Invoice {
 
   @@unique([invoiceNumber, userId], map: "Invoice_invoiceNumber_userId_unique_constraint")
   @@unique([transactionId, userId], map: "Invoice_transactionId_userId_unique_constraint")
+}
+
+enum ClientPaymentStatus {
+ PENDING
+ ADDED_TO_MEMPOOL
+ CONFIRMED
+}
+
+model ClientPayment {
+  paymentId            String                 @id
+  status               ClientPaymentStatus               
+  addressString        String
+  amount               Decimal?              
+  address              Address   @relation(fields: [addressString], references: [address])
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
 }

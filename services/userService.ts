@@ -3,6 +3,8 @@ import supertokensNode from 'supertokens-node'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import prisma from 'prisma-local/clientInstance'
 import crypto from 'crypto'
+import config from 'config/index'
+import { TriggerLogActionType } from 'services/triggerService'
 
 export async function fetchUserProfileFromId (id: string): Promise<UserProfile> {
   const userProfile = await prisma.userProfile.findUnique({ where: { id } })
@@ -72,8 +74,12 @@ function getUserSeedHash (userId: string): Buffer {
 export function getUserPrivateKey (userId: string): crypto.KeyObject {
   const seed = getUserSeedHash(userId)
   const prefixPrivateEd25519 = Buffer.from('302e020100300506032b657004220420', 'hex')
-  const der = Buffer.concat([prefixPrivateEd25519, seed])
-  return crypto.createPrivateKey({ key: der, format: 'der', type: 'pkcs8' })
+
+  const der = new Uint8Array(prefixPrivateEd25519.length + seed.length)
+  der.set(prefixPrivateEd25519 instanceof Uint8Array ? prefixPrivateEd25519 : new Uint8Array(prefixPrivateEd25519))
+  der.set(seed instanceof Uint8Array ? seed : new Uint8Array(seed), prefixPrivateEd25519.length)
+  const derBuf = Buffer.from(der)
+  return crypto.createPrivateKey({ key: derBuf, format: 'der', type: 'pkcs8' })
 }
 
 export async function getUserPublicKeyHex (id: string): Promise<string> {
@@ -162,4 +168,29 @@ export async function userRemainingProTime (id: string): Promise<number | null> 
     return null
   }
   return proUntil.getTime() - today.getTime()
+}
+
+export function isUserPro (proUntil?: Date | null): boolean {
+  if (proUntil == null) return false
+  return new Date(proUntil).getTime() > Date.now()
+}
+
+export function getUserTriggerCreditsLimit (
+  user: UserProfile,
+  actionType: TriggerLogActionType
+): number {
+  const { proSettings } = config
+  const isPro = isUserPro(user.proUntil)
+
+  if (actionType === 'SendEmail') {
+    return isPro ? proSettings.proDailyEmailLimit : proSettings.standardDailyEmailLimit
+  }
+  return isPro ? proSettings.proDailyPostLimit : proSettings.standardDailyPostLimit
+}
+
+export function getUserRemainingTriggerCreditsLimit (
+  user: UserProfile,
+  actionType: TriggerLogActionType
+): number {
+  return actionType === 'SendEmail' ? user.emailCredits : user.postCredits
 }

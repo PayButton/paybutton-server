@@ -14,7 +14,7 @@ import { fetchUserProfileFromId } from 'services/userService'
 export default async (req: any, res: any): Promise<void> => {
   try {
     if (req.method !== 'GET') {
-      throw new Error(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.message)
+      throw new Error(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED_405.message)
     }
     if ((req.query.paybuttonId === undefined)) {
       throw new Error(RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400.message)
@@ -59,9 +59,9 @@ export default async (req: any, res: any): Promise<void> => {
         res.status(RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400.statusCode)
           .json(RESPONSE_MESSAGES.PAYBUTTON_ID_NOT_PROVIDED_400)
         break
-      case RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.message:
-        res.status(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED.statusCode)
-          .json(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED)
+      case RESPONSE_MESSAGES.METHOD_NOT_ALLOWED_405.message:
+        res.status(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED_405.statusCode)
+          .json(RESPONSE_MESSAGES.METHOD_NOT_ALLOWED_405)
         break
       case RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.message:
         res.status(RESPONSE_MESSAGES.MISSING_PRICE_FOR_TRANSACTION_400.statusCode)
