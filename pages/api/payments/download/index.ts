@@ -60,7 +60,7 @@ export default async (req: any, res: any): Promise<void> => {
       endDate = req.query.endDate as string
     }
 
-    const transactions = await fetchAllPaymentsByUserId(userId, networkIdArray, buttonIds, years, startDate, endDate)
+    const transactions = await fetchAllPaymentsByUserId(userId, networkIdArray, buttonIds, years, startDate, endDate, timezone)
 
     await downloadTxsFile(res, quoteSlug, timezone, transactions, userId)
   } catch (error: any) {

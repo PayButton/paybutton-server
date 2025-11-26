@@ -9,6 +9,7 @@ import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTxWithInvoices } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
+import moment from 'moment-timezone'
 
 export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
   const ret: QuoteValues = {
@@ -753,11 +754,11 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   userId: string,
   page: number,
   pageSize: number,
+  timezone: string,
   orderBy?: string,
   orderDesc = true,
   buttonIds?: string[],
   years?: string[],
-  timezone?: string,
   startDate?: string,
   endDate?: string
 ): Promise<Payment[]> {
@@ -800,7 +801,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   }
 
   if (startDate !== undefined && endDate !== undefined && startDate !== '' && endDate !== '') {
-    Object.assign(where, getDateRangeFilter(startDate, endDate, timezone))
+    Object.assign(where, getDateRangeFilter(new Date(startDate), new Date(endDate), timezone))
   } else if (years !== undefined && years.length > 0) {
     where.OR = getYearFilters(years, timezone)
   }
@@ -835,40 +836,30 @@ export async function fetchAllPaymentsByUserIdWithPagination (
 }
 
 const buildDateRange = (
-  startDate: string | Date,
-  endDate: string | Date,
+  startDate: Date,
+  endDate: Date,
   timezone?: string
 ): { gte: number, lt: number } => {
   let start: number
   let end: number
 
-  const startObj = new Date(startDate)
-  const endObj = new Date(endDate)
-  endObj.setDate(endObj.getDate() + 1)
-
   if (timezone !== undefined && timezone !== null && timezone !== '') {
-    const startInTimezone = new Date(startObj.toLocaleString('en-US', { timeZone: timezone }))
-    const endInTimezone = new Date(endObj.toLocaleString('en-US', { timeZone: timezone }))
-
-    const startOffset = startObj.getTime() - startInTimezone.getTime()
-    const endOffset = endObj.getTime() - endInTimezone.getTime()
-
-    start = (startObj.getTime() + startOffset) / 1000
-    end = (endObj.getTime() + endOffset) / 1000
+    start = moment.tz(startDate, timezone).unix()
+    end = moment.tz(endDate, timezone).endOf('day').unix()
   } else {
-    start = startObj.getTime() / 1000
-    end = endObj.getTime() / 1000
+    start = moment.utc(startDate).unix()
+    end = moment.utc(endDate).endOf('day').unix()
   }
 
   return {
     gte: Math.floor(start),
-    lt: Math.floor(end)
+    lt: Math.floor(end) + 1
   }
 }
 
 const getDateRangeFilter = (
-  startDate: string,
-  endDate: string,
+  startDate: Date,
+  endDate: Date,
   timezone?: string
 ): Prisma.TransactionWhereInput => ({
   timestamp: buildDateRange(startDate, endDate, timezone)
@@ -879,8 +870,8 @@ const getYearFilters = (
   timezone?: string
 ): Prisma.TransactionWhereInput[] => {
   return years.map((year) => {
-    const startDate = `${year}-01-01T00:00:00`
-    const endDate = `${Number(year) + 1}-01-01T00:00:00`
+    const startDate = new Date(Number(year), 0, 1, 0, 0, 0) // Jan 1, 00:00:00
+    const endDate = new Date(Number(year), 11, 31, 23, 59, 59) // Dec 31, 23:59:59
     return {
       timestamp: buildDateRange(startDate, endDate, timezone)
     }
@@ -921,7 +912,7 @@ export async function fetchAllPaymentsByUserId (
   }
 
   if (startDate !== undefined && endDate !== undefined && startDate !== '' && endDate !== '') {
-    Object.assign(where, getDateRangeFilter(startDate, endDate, timezone))
+    Object.assign(where, getDateRangeFilter(new Date(startDate), new Date(endDate), timezone))
   } else if (years !== undefined && years.length > 0) {
     where.OR = getYearFilters(years, timezone)
   }
@@ -974,7 +965,7 @@ export const getFilteredTransactionCount = async (
   }
 
   if (startDate !== undefined && endDate !== undefined && startDate !== '' && endDate !== '') {
-    Object.assign(where, getDateRangeFilter(startDate, endDate, timezone))
+    Object.assign(where, getDateRangeFilter(new Date(startDate), new Date(endDate), timezone))
   } else if (years !== undefined && years.length > 0) {
     where.OR = getYearFilters(years, timezone)
   }

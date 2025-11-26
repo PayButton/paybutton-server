@@ -35,11 +35,11 @@ export default async (req: any, res: any): Promise<void> => {
       userId,
       page,
       pageSize,
+      userPreferredTimezone ?? userReqTimezone,
       orderBy,
       orderDesc,
       buttonIds,
       years,
-      userPreferredTimezone ?? userReqTimezone,
       startDate,
       endDate
     )
