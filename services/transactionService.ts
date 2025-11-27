@@ -979,8 +979,9 @@ const getYearFilters = (
   timezone?: string
 ): Prisma.TransactionWhereInput[] => {
   return years.map((year) => {
-    const startDate = new Date(Number(year), 0, 1, 0, 0, 0) // Jan 1, 00:00:00
-    const endDate = new Date(Number(year), 11, 31, 23, 59, 59) // Dec 31, 23:59:59
+    const y = Number(year)
+    const startDate = new Date(Date.UTC(y, 0, 1, 0, 0, 0)) // Jan 1, 00:00:00
+    const endDate = new Date(Date.UTC(y, 11, 31, 23, 59, 59)) // Dec 31, 23:59:59
     return {
       timestamp: buildDateRange(startDate, endDate, timezone)
     }
