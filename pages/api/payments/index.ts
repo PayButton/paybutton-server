@@ -30,7 +30,12 @@ export default async (req: any, res: any): Promise<void> => {
     }
     const userReqTimezone = req.headers.timezone as string
     const userPreferredTimezone = user?.preferredTimezone
-    const timezone = userPreferredTimezone !== '' ? userPreferredTimezone : userReqTimezone
+    let timezone = userPreferredTimezone !== '' ? userPreferredTimezone : userReqTimezone
+    if (timezone === '' || timezone === undefined || timezone === null) {
+      const timezoneValue = timezone === '' ? 'an empty string' : (timezone === undefined ? 'undefined' : 'null')
+      console.warn(`WARN: Payments API got timezone as ${timezoneValue}, defaulting to UTC`)
+      timezone = 'UTC'
+    }
 
     const resJSON = await fetchAllPaymentsByUserIdWithPagination(
       userId,
