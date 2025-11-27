@@ -6,6 +6,7 @@ import { CacheSet } from 'redis/index'
 import { Prisma } from '@prisma/client'
 import * as addressService from 'services/addressService'
 import { RESPONSE_MESSAGES } from 'constants/index'
+import moment from 'moment-timezone'
 
 const includePrices = {
   prices: {
@@ -194,3 +195,233 @@ describe('Address object arrays (input/output) integration', () => {
     expect(simplified.outputAddresses).toEqual(outputs)
   })
 })
+
+describe('Date and timezone filters for transactions', () => {
+  const startDate = '2025-11-05'
+  const endDate = '2025-11-10'
+
+  const timezones = [
+    { label: 'UTC', timezone: 'UTC' },
+    { label: 'positive offset (China)', timezone: 'Asia/Shanghai' },
+    { label: 'negative offset (Canada)', timezone: 'America/Toronto' }
+  ]
+
+  const computeExpectedRange = (tz: string) => {
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+
+    const startMoment = moment.tz(
+      {
+        year: start.getUTCFullYear(),
+        month: start.getUTCMonth(),
+        day: start.getUTCDate()
+      },
+      tz
+    ).startOf('day')
+
+    const endMoment = moment.tz(
+      {
+        year: end.getUTCFullYear(),
+        month: end.getUTCMonth(),
+        day: end.getUTCDate()
+      },
+      tz
+    ).endOf('day')
+
+    return {
+      gte: Math.round(startMoment.unix()),
+      lte: Math.round(endMoment.unix())
+    }
+  }
+
+  const computeYearFilter = (year: number, tz: string) => {
+    const startDateObj = new Date(year, 0, 1, 0, 0, 0)
+    const endDateObj = new Date(year, 11, 31, 23, 59, 59)
+
+    const startMoment = moment.tz(
+      {
+        year: startDateObj.getUTCFullYear(),
+        month: startDateObj.getUTCMonth(),
+        day: startDateObj.getUTCDate()
+      },
+      tz
+    ).startOf('day')
+
+    const endMoment = moment.tz(
+      {
+        year: endDateObj.getUTCFullYear(),
+        month: endDateObj.getUTCMonth(),
+        day: endDateObj.getUTCDate()
+      },
+      tz
+    ).endOf('day')
+
+    return {
+      timestamp: {
+        gte: Math.round(startMoment.unix()),
+        lte: Math.round(endMoment.unix())
+      }
+    }
+  }
+
+  test.each(timezones)(
+    'fetchAllPaymentsByUserIdWithPagination uses local day boundaries for %s',
+    async ({ timezone }) => {
+      prismaMock.transaction.findMany.mockResolvedValue([])
+      prisma.transaction.findMany = prismaMock.transaction.findMany
+
+      const expected = computeExpectedRange(timezone)
+
+      await transactionService.fetchAllPaymentsByUserIdWithPagination(
+        'user-1',
+        0,
+        10,
+        timezone,
+        'timestamp',
+        true,
+        undefined,
+        undefined,
+        startDate,
+        endDate
+      )
+
+      expect(prismaMock.transaction.findMany).toHaveBeenCalledTimes(1)
+      const callArgs = prismaMock.transaction.findMany.mock.calls[0][0] as any
+
+      expect(callArgs.where.timestamp).toEqual(expected)
+      expect(callArgs.where.OR).toBeUndefined()
+    }
+  )
+
+  test.each(timezones)(
+    'getFilteredTransactionCount uses local day boundaries for %s',
+    async ({ timezone }) => {
+      prismaMock.transaction.count.mockResolvedValue(7)
+      prisma.transaction.count = prismaMock.transaction.count
+
+      const expected = computeExpectedRange(timezone)
+
+      const result = await transactionService.getFilteredTransactionCount(
+        'user-1',
+        undefined,
+        undefined,
+        timezone,
+        startDate,
+        endDate
+      )
+
+      expect(result).toBe(7)
+      expect(prismaMock.transaction.count).toHaveBeenCalledTimes(1)
+      const callArgs = prismaMock.transaction.count.mock.calls[0][0] as any
+
+      expect(callArgs.where.timestamp).toEqual(expected)
+      expect(callArgs.where.OR).toBeUndefined()
+    }
+  )
+
+  it('uses year filters when only years are provided (no start/end)', async () => {
+    const timezone = 'America/Sao_Paulo'
+    const years = ['2025']
+
+    prismaMock.transaction.findMany.mockResolvedValue([])
+    prisma.transaction.findMany = prismaMock.transaction.findMany
+
+    await transactionService.fetchAllPaymentsByUserId(
+      'user-1',
+      undefined,
+      undefined,
+      years,
+      undefined,
+      undefined,
+      timezone
+    )
+
+    expect(prismaMock.transaction.findMany).toHaveBeenCalledTimes(1)
+    const callArgs = prismaMock.transaction.findMany.mock.calls[0][0] as any
+
+    const expectedFilter = computeYearFilter(2025, timezone)
+    expect(callArgs.where.timestamp).toBeUndefined()
+    expect(callArgs.where.OR).toHaveLength(1)
+    expect(callArgs.where.OR[0]).toEqual(expectedFilter)
+  })
+
+  it('date range takes precedence over year filters (pagination)', async () => {
+    const timezone = 'America/Sao_Paulo'
+    const years = ['2024']
+
+    prismaMock.transaction.findMany.mockResolvedValue([])
+    prisma.transaction.findMany = prismaMock.transaction.findMany
+
+    const expected = computeExpectedRange(timezone)
+
+    await transactionService.fetchAllPaymentsByUserIdWithPagination(
+      'user-1',
+      0,
+      10,
+      timezone,
+      'timestamp',
+      true,
+      undefined,
+      years,
+      startDate,
+      endDate
+    )
+
+    const callArgs = prismaMock.transaction.findMany.mock.calls[0][0] as any
+
+    expect(callArgs.where.timestamp).toEqual(expected)
+    expect(callArgs.where.OR).toBeUndefined()
+  })
+
+  it('date range takes precedence over year filters (count)', async () => {
+    const timezone = 'America/Sao_Paulo'
+    const years = ['2024']
+
+    prismaMock.transaction.count.mockResolvedValue(13)
+    prisma.transaction.count = prismaMock.transaction.count
+
+    const expected = computeExpectedRange(timezone)
+
+    const result = await transactionService.getFilteredTransactionCount(
+      'user-1',
+      undefined,
+      years,
+      timezone,
+      startDate,
+      endDate
+    )
+
+    expect(result).toBe(13)
+    expect(prismaMock.transaction.count).toHaveBeenCalledTimes(1)
+    const callArgs = prismaMock.transaction.count.mock.calls[0][0] as any
+
+    expect(callArgs.where.timestamp).toEqual(expected)
+    expect(callArgs.where.OR).toBeUndefined()
+  })
+
+  it('does not add timestamp or OR when no years and no date range are provided', async () => {
+    const timezone = 'America/Sao_Paulo'
+
+    prismaMock.transaction.findMany.mockResolvedValue([])
+    prisma.transaction.findMany = prismaMock.transaction.findMany
+
+    await transactionService.fetchAllPaymentsByUserIdWithPagination(
+      'user-1',
+      0,
+      10,
+      timezone,
+      'timestamp',
+      true,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    )
+
+    const callArgs = prismaMock.transaction.findMany.mock.calls[0][0] as any
+
+    expect(callArgs.where.timestamp).toBeUndefined()
+    expect(callArgs.where.OR).toBeUndefined()
+  })
+})
+
