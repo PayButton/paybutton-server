@@ -492,7 +492,7 @@ export async function connectTransactionsListToPrices (
 
       if (allPrices == null) {
         throw new Error(
-          `[PRICES] No price record found for networkId=${networkId} at ${formattedDate}.`
+          `[PRICES] No price record found for networkId=${networkId} at ${formattedDate}, timestamp ${ts}.`
         )
       }
 
