@@ -37,6 +37,7 @@ export const syncBlockchainAndPricesWorker = async (queueName: string): Promise<
     async (job) => {
       console.log(`job ${job.id as string}: syncing missed prices, transactions and connecting them...`)
       await priceService.syncPastDaysNewerPrices()
+      await priceService.syncCurrentPrices() // remove if coin.dance/dailyprices is fixed, sending all prices for **UTC** days
       await multiBlockchainClient.syncMissedTransactions()
       await connectAllTransactionsToPrices()
     },
