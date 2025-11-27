@@ -6,6 +6,7 @@ export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'GET') {
     await setSession(req, res)
     const userId = req.session.userId
+    const user = await fetchUserProfileFromId(userId)
     const page = req.query.page as number
     const pageSize = req.query.pageSize as number
     const orderDesc: boolean = !!(req.query.orderDesc === '' || req.query.orderDesc === undefined || req.query.orderDesc === 'true')
@@ -28,14 +29,14 @@ export default async (req: any, res: any): Promise<void> => {
       endDate = req.query.endDate as string
     }
     const userReqTimezone = req.headers.timezone as string
-    const userProfile = await fetchUserProfileFromId(userId)
-    const userPreferredTimezone = userProfile?.preferredTimezone
+    const userPreferredTimezone = user?.preferredTimezone
+    const timezone = userPreferredTimezone !== '' ? userPreferredTimezone : userReqTimezone
 
     const resJSON = await fetchAllPaymentsByUserIdWithPagination(
       userId,
       page,
       pageSize,
-      userPreferredTimezone ?? userReqTimezone,
+      timezone,
       orderBy,
       orderDesc,
       buttonIds,
