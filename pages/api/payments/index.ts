@@ -6,6 +6,7 @@ export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'GET') {
     await setSession(req, res)
     const userId = req.session.userId
+    const user = await fetchUserProfileFromId(userId)
     const page = req.query.page as number
     const pageSize = req.query.pageSize as number
     const orderDesc: boolean = !!(req.query.orderDesc === '' || req.query.orderDesc === undefined || req.query.orderDesc === 'true')
@@ -19,19 +20,34 @@ export default async (req: any, res: any): Promise<void> => {
     if (typeof req.query.years === 'string' && req.query.years !== '') {
       years = (req.query.years as string).split(',')
     }
+    let startDate: string | undefined
+    if (typeof req.query.startDate === 'string' && req.query.startDate !== '') {
+      startDate = req.query.startDate as string
+    }
+    let endDate: string | undefined
+    if (typeof req.query.endDate === 'string' && req.query.endDate !== '') {
+      endDate = req.query.endDate as string
+    }
     const userReqTimezone = req.headers.timezone as string
-    const userProfile = await fetchUserProfileFromId(userId)
-    const userPreferredTimezone = userProfile?.preferredTimezone
+    const userPreferredTimezone = user?.preferredTimezone
+    let timezone = userPreferredTimezone !== '' ? userPreferredTimezone : userReqTimezone
+    if (timezone === '' || timezone === undefined || timezone === null) {
+      const timezoneValue = timezone === '' ? 'an empty string' : (timezone === undefined ? 'undefined' : 'null')
+      console.warn(`WARN: Payments API got timezone as ${timezoneValue}, defaulting to UTC`)
+      timezone = 'UTC'
+    }
 
     const resJSON = await fetchAllPaymentsByUserIdWithPagination(
       userId,
       page,
       pageSize,
+      timezone,
       orderBy,
       orderDesc,
       buttonIds,
       years,
-      userPreferredTimezone ?? userReqTimezone
+      startDate,
+      endDate
     )
     res.status(200).json(resJSON)
   }

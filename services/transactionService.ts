@@ -9,7 +9,7 @@ import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTxWithInvoices } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
-import moment from 'moment'
+import moment from 'moment-timezone'
 
 export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
   const ret: QuoteValues = {
@@ -845,11 +845,13 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   userId: string,
   page: number,
   pageSize: number,
+  timezone: string,
   orderBy?: string,
   orderDesc = true,
   buttonIds?: string[],
   years?: string[],
-  timezone?: string
+  startDate?: string,
+  endDate?: string
 ): Promise<Payment[]> {
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
 
@@ -884,18 +886,15 @@ export async function fetchAllPaymentsByUserIdWithPagination (
 
   const where: Prisma.TransactionWhereInput = {
     address: {
-      userProfiles: {
-        some: { userId }
-      }
+      userProfiles: { some: { userId } }
     },
-    amount: {
-      gt: 0
-    }
+    amount: { gt: 0 }
   }
-  if (years !== undefined && years.length > 0) {
-    const yearFilters = getYearFilters(years, timezone)
 
-    where.OR = yearFilters
+  if (startDate !== undefined && endDate !== undefined && startDate !== '' && endDate !== '') {
+    Object.assign(where, getDateRangeFilter(new Date(startDate), new Date(endDate), timezone))
+  } else if (years !== undefined && years.length > 0) {
+    where.OR = getYearFilters(years, timezone)
   }
 
   if ((buttonIds !== undefined) && buttonIds.length > 0) {
@@ -926,29 +925,65 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   }
   return transformedData
 }
-const getYearFilters = (years: string[], timezone?: string): Prisma.TransactionWhereInput[] => {
-  return years.map((year) => {
-    let start: number
-    let end: number
-    if (timezone !== undefined && timezone !== null && timezone !== '') {
-      const startDate = new Date(`${year}-01-01T00:00:00`)
-      const endDate = new Date(`${Number(year) + 1}-01-01T00:00:00`)
-      const startInTimezone = new Date(startDate.toLocaleString('en-US', { timeZone: timezone }))
-      const endInTimezone = new Date(endDate.toLocaleString('en-US', { timeZone: timezone }))
-      const startOffset = startDate.getTime() - startInTimezone.getTime()
-      const endOffset = endDate.getTime() - endInTimezone.getTime()
-      start = (startDate.getTime() + startOffset) / 1000
-      end = (endDate.getTime() + endOffset) / 1000
-    } else {
-      start = new Date(`${year}-01-01T00:00:00Z`).getTime() / 1000
-      end = new Date(`${Number(year) + 1}-01-01T00:00:00Z`).getTime() / 1000
-    }
 
+const buildDateRange = (
+  startDate: Date,
+  endDate: Date,
+  timezone?: string
+): { gte: number, lte: number } => {
+  let start: number
+  let end: number
+
+  if (timezone !== undefined && timezone !== null && timezone !== '') {
+    const startMoment = moment.tz(
+      {
+        year: startDate.getUTCFullYear(),
+        month: startDate.getUTCMonth(),
+        day: startDate.getUTCDate()
+      },
+      timezone
+    ).startOf('day')
+
+    const endMoment = moment.tz(
+      {
+        year: endDate.getUTCFullYear(),
+        month: endDate.getUTCMonth(),
+        day: endDate.getUTCDate()
+      },
+      timezone
+    ).endOf('day')
+
+    start = startMoment.unix()
+    end = endMoment.unix()
+  } else {
+    start = moment.utc(startDate).unix()
+    end = moment.utc(endDate).endOf('day').unix()
+  }
+
+  return {
+    gte: Math.round(start),
+    lte: Math.round(end)
+  }
+}
+
+const getDateRangeFilter = (
+  startDate: Date,
+  endDate: Date,
+  timezone?: string
+): Prisma.TransactionWhereInput => ({
+  timestamp: buildDateRange(startDate, endDate, timezone)
+})
+
+const getYearFilters = (
+  years: string[],
+  timezone?: string
+): Prisma.TransactionWhereInput[] => {
+  return years.map((year) => {
+    const y = Number(year)
+    const startDate = new Date(Date.UTC(y, 0, 1, 0, 0, 0)) // Jan 1, 00:00:00
+    const endDate = new Date(Date.UTC(y, 11, 31, 23, 59, 59)) // Dec 31, 23:59:59
     return {
-      timestamp: {
-        gte: Math.floor(start),
-        lt: Math.floor(end)
-      }
+      timestamp: buildDateRange(startDate, endDate, timezone)
     }
   })
 }
@@ -958,6 +993,8 @@ export async function fetchAllPaymentsByUserId (
   networkIds?: number[],
   buttonIds?: string[],
   years?: string[],
+  startDate?: string,
+  endDate?: string,
   timezone?: string
 ): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   const where: Prisma.TransactionWhereInput = {
@@ -984,10 +1021,10 @@ export async function fetchAllPaymentsByUserId (
     }
   }
 
-  if (years !== undefined && years.length > 0) {
-    const yearFilters = getYearFilters(years, timezone)
-
-    where.OR = yearFilters
+  if (startDate !== undefined && endDate !== undefined && startDate !== '' && endDate !== '') {
+    Object.assign(where, getDateRangeFilter(new Date(startDate), new Date(endDate), timezone))
+  } else if (years !== undefined && years.length > 0) {
+    where.OR = getYearFilters(years, timezone)
   }
 
   return await prisma.transaction.findMany({
@@ -1015,7 +1052,9 @@ export const getFilteredTransactionCount = async (
   userId: string,
   buttonIds?: string[],
   years?: string[],
-  timezone?: string
+  timezone?: string,
+  startDate?: string,
+  endDate?: string
 ): Promise<number> => {
   const where: Prisma.TransactionWhereInput = {
     address: {
@@ -1034,10 +1073,11 @@ export const getFilteredTransactionCount = async (
       }
     }
   }
-  if (years !== undefined && years.length > 0) {
-    const yearFilters = getYearFilters(years, timezone)
 
-    where.OR = yearFilters
+  if (startDate !== undefined && endDate !== undefined && startDate !== '' && endDate !== '') {
+    Object.assign(where, getDateRangeFilter(new Date(startDate), new Date(endDate), timezone))
+  } else if (years !== undefined && years.length > 0) {
+    where.OR = getYearFilters(years, timezone)
   }
 
   return await prisma.transaction.count({ where })
