@@ -363,7 +363,7 @@ export default function ButtonGenerator (): JSX.Element {
                 <PayButtonWidget
                   key={`widget-${JSON.stringify(button)}`}
                   to={button.to}
-                  amount={parseFloat(button.amount)}
+                  amount={button.amount === '' ? undefined : parseFloat(button.amount)}
                   currency={button.currency}
                   text={button.text === '' ? undefined : button.text}
                   hoverText={
@@ -385,7 +385,7 @@ export default function ButtonGenerator (): JSX.Element {
                       ? undefined
                       : button.onTransaction
                   }
-                  randomSatoshis={button.randomSatoshis}
+                  randomSatoshis={button.amount !== '' ? button.randomSatoshis : undefined}
                   hideToasts={button.hideToasts}
                   disableEnforceFocus={button.disableEnforceFocus}
                   contributionOffset={button.contributionOffset}
@@ -398,7 +398,7 @@ export default function ButtonGenerator (): JSX.Element {
                 <PayButton
                   key={`button-${JSON.stringify(button)}`}
                   to={button.to}
-                  amount={button.amount}
+                  amount={button.amount === '' ? undefined : button.amount}
                   currency={button.currency}
                   text={button.text === '' ? undefined : button.text}
                   hoverText={
@@ -420,7 +420,7 @@ export default function ButtonGenerator (): JSX.Element {
                       ? undefined
                       : button.onTransaction
                   }
-                  randomSatoshis={button.randomSatoshis}
+                  randomSatoshis={button.amount !== '' ? button.randomSatoshis : undefined}
                   hideToasts={button.hideToasts}
                   disableEnforceFocus={button.disableEnforceFocus}
                   contributionOffset={button.contributionOffset}
@@ -428,8 +428,8 @@ export default function ButtonGenerator (): JSX.Element {
                   disabled={button.disabled}
                   editable={button.editable}
                   autoClose={button.autoClose}
-                  onOpen={button.onOpen}
-                  onClose={button.onClose}
+                  onOpen={button.onOpen === '' ? undefined : button.onOpen}
+                  onClose={button.onClose === '' ? undefined : button.onClose}
                   wsBaseURL={button.wsBaseURL}
                   apiBaseURL={button.apiBaseURL}
                 />
