@@ -13,6 +13,7 @@ import { multiBlockchainClient } from 'services/chronikService'
 import { MainNetworkSlugsType } from 'constants/index'
 import SubscribedAddresses from 'components/Admin/SubscribedAddresses'
 import ChronikURLs from 'components/Admin/ChronikURLs'
+import Loading from 'components/Loading'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -57,6 +58,7 @@ interface IProps {
 export default function Admin ({ user, isAdmin, chronikUrls }: IProps): JSX.Element {
   const router = useRouter()
   const [users, setUsers] = useState<UserWithSupertokens[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (user === null || !isAdmin) {
@@ -68,10 +70,19 @@ export default function Admin ({ user, isAdmin, chronikUrls }: IProps): JSX.Elem
     void (async () => {
       const usersJSON = await (await fetch('/api/users')).json()
       setUsers(usersJSON)
+      setLoading(false)
     })()
   }, [])
 
   if (user !== null && isAdmin) {
+    if (loading) {
+      return (
+        <div className={style.admin_ctn}>
+          <h2>Admin Dashboard</h2>
+          <Loading />
+        </div>
+      )
+    }
     return <>
       <div className={style.admin_ctn}>
         <h2>Admin Dashboard</h2>

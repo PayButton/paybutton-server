@@ -9,6 +9,7 @@ import { UserNetworksInfo } from 'services/networkService'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
 import { removeUnserializableFields } from 'utils/index'
+import Loading from 'components/Loading'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -81,13 +82,19 @@ export default class Networks extends React.Component<NetworksProps, NetworksSta
   }
 
   render (): React.ReactElement {
-    if (this.state.networks !== []) {
+    if (this.state.networks.length === 0) {
       return (
         <>
           <TopBar title="Networks" user={this.props.user.stUser?.email} />
-          <NetworkList networks={this.state.networks} userNetworks={this.state.userNetworks} />
+          <Loading />
         </>
       )
     }
+    return (
+      <>
+        <TopBar title="Networks" user={this.props.user.stUser?.email} />
+        <NetworkList networks={this.state.networks} userNetworks={this.state.userNetworks} />
+      </>
+    )
   }
 }

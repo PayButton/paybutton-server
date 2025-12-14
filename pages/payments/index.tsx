@@ -26,6 +26,7 @@ import InvoiceModal from 'components/Transaction/InvoiceModal'
 import { TransactionWithAddressAndPricesAndInvoices } from 'services/transactionService'
 import { fetchOrganizationForUser } from 'services/organizationService'
 import { InvoiceWithTransaction } from 'services/invoiceService'
+import Loading from 'components/Loading'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -76,6 +77,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
   const [selectedTransactionYears, setSelectedTransactionYears] = useState<number[]>([])
 
   const [loading, setLoading] = useState(false)
+  const [pageLoading, setPageLoading] = useState(true)
   const [buttons, setButtons] = useState<any[]>([])
   const [selectedButtonIds, setSelectedButtonIds] = useState<any[]>([])
   const [showFilters, setShowFilters] = useState<boolean>(false)
@@ -178,6 +180,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
 
     setPaybuttonNetworks(networkIds)
     setTransactionYears(years)
+    setPageLoading(false)
   }
 
   useEffect(() => {
@@ -472,6 +475,15 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
     setSelectedTransactionYears([])
     setStartDate('')
     setEndDate('')
+  }
+
+  if (pageLoading) {
+    return (
+      <>
+        <TopBar title="Payments" user={user?.stUser?.email} />
+        <Loading />
+      </>
+    )
   }
 
   return (
