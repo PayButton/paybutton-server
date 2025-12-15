@@ -138,7 +138,8 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
           const rowId = cellProps.row.id
           return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
-              <span style={{ textAlign: 'right' }}>{formatAddressWithEllipsis(address)}</span>
+              <span className={style.addressFull} style={{ textAlign: 'right' }}>{address}</span>
+              <span className={style.addressShort} style={{ textAlign: 'right' }}>{formatAddressWithEllipsis(address)}</span>
               <div
                 className={style.copy_btn}
                 onClick={(e) => {

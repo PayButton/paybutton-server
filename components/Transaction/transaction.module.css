@@ -152,6 +152,23 @@ body[data-theme='dark'] .copy_btn:hover img {
   }
 }
 
+.addressFull {
+  display: inline;
+}
+
+.addressShort {
+  display: none;
+}
+
+@media (max-width: 1599px) {
+  .addressFull {
+    display: none;
+  }
+  .addressShort {
+    display: inline;
+  }
+}
+
 @media (max-width: 600px) {
   .transactiontable_header > div:first-child,
   .transaction_row > div:first-child {
