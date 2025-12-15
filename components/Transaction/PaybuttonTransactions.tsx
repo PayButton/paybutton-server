@@ -7,7 +7,7 @@ import CheckIcon from 'assets/check-icon.png'
 import XIcon from 'assets/x-icon.png'
 
 import TableContainerGetter, { DataGetterReturn } from '../TableContainer/TableContainerGetter'
-import { compareNumericString } from 'utils/index'
+import { compareNumericString, formatAddressWithEllipsis } from 'utils/index'
 import moment from 'moment-timezone'
 import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL } from 'constants/index'
 
@@ -108,7 +108,7 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
         Cell: (cellProps) => {
           return (
             <div>
-              {cellProps.cell.value}
+              {formatAddressWithEllipsis(cellProps.cell.value)}
             </div>
           )
         }

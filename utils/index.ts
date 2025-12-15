@@ -13,6 +13,15 @@ export const removeAddressPrefix = function (addressString: string): string {
   return addressString
 }
 
+export const formatAddressWithEllipsis = (addressString: string): string => {
+  const prefixLength = addressString.startsWith('bitcoin') ? 16 : 10
+  const suffixLength = 5
+
+  if (addressString.length <= prefixLength + suffixLength) return addressString
+
+  return `${addressString.slice(0, prefixLength)}...${addressString.slice(-suffixLength)}`
+}
+
 export const getAddressPrefix = function (addressString: string): NetworkSlugsType {
   try {
     const format = xecaddr.detectAddressFormat(addressString)
