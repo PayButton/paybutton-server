@@ -81,11 +81,13 @@
 .copy_btn {
   position: relative;
   display: inline-block;
-  margin-left: 10px;
+  margin-left: 5px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
+  min-width: 20px;
 }
 
 .copy_btn img {
@@ -102,8 +104,8 @@
 .tooltiptext2 {
   visibility: hidden;
   opacity: 0;
-  background-color: var(--secondary-bg-color);
-  color: var(--primary-text-color);
+  background-color: var(--accent-color);
+  color: #fff;
   text-align: center;
   padding: 2px 0px;
   border-radius: 5px;
@@ -137,6 +139,17 @@ body[data-theme='dark'] .copy_btn:hover img {
 .copy_btn:focus-visible {
   outline: 2px solid var(--accent-color);
   border-radius: 4px;
+}
+
+.transactionsTable {
+  width: 100%;
+}
+
+@media (max-width: 639px) {
+  .transactionsTable :global(.paybutton-table-ctn th:nth-child(1)),
+  .transactionsTable :global(.paybutton-table-ctn td:nth-child(1)) {
+    display: none;
+  }
 }
 
 @media (max-width: 600px) {

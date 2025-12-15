@@ -160,8 +160,8 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
     [copiedRowId, handleCopyClick]
   )
   return (
-    <>
+    <div className={style.transactionsTable}>
       <TableContainerGetter columns={columns} dataGetter={fetchTransactionsByPaybuttonId(paybuttonId)} tableRefreshCount={localRefreshCount} emptyMessage={'No transactions.'}/>
-    </>
+    </div>
   )
 }
