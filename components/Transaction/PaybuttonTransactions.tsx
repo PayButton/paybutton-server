@@ -1,15 +1,17 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import XECIcon from 'assets/xec-logo.png'
 import BCHIcon from 'assets/bch-logo.png'
 import EyeIcon from 'assets/eye-icon.png'
 import CheckIcon from 'assets/check-icon.png'
 import XIcon from 'assets/x-icon.png'
+import CopyIcon from 'assets/copy-black.png'
 
 import TableContainerGetter, { DataGetterReturn } from '../TableContainer/TableContainerGetter'
 import { compareNumericString, formatAddressWithEllipsis } from 'utils/index'
 import moment from 'moment-timezone'
 import { XEC_TX_EXPLORER_URL, BCH_TX_EXPLORER_URL } from 'constants/index'
+import style from './transaction.module.css'
 
 interface IProps {
   addressSyncing: {
@@ -39,6 +41,32 @@ function fetchTransactionsByPaybuttonId (paybuttonId: string): (page: number, pa
 
 export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = moment.tz.guess() }: IProps): JSX.Element => {
   const [localRefreshCount] = useState(tableRefreshCount)
+  const [copiedRowId, setCopiedRowId] = useState('')
+  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const handleCopyClick = useCallback(async (address: string, rowId: string): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(address)
+      setCopiedRowId(rowId)
+      if (copyTimeoutRef.current != null) {
+        clearTimeout(copyTimeoutRef.current)
+      }
+      copyTimeoutRef.current = setTimeout(() => {
+        setCopiedRowId('')
+        copyTimeoutRef.current = null
+      }, 1200)
+    } catch (error) {
+      console.error('Copy failed:', error)
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current != null) {
+        clearTimeout(copyTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const columns = useMemo(
     () => [
@@ -106,15 +134,30 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
         accessor: 'address.address',
         shrinkable: true,
         Cell: (cellProps) => {
+          const address = cellProps.cell.value
+          const rowId = cellProps.row.id
           return (
-            <div>
-              {formatAddressWithEllipsis(cellProps.cell.value)}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+              <span style={{ textAlign: 'right' }}>{formatAddressWithEllipsis(address)}</span>
+              <div
+                className={style.copy_btn}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  void handleCopyClick(address, rowId)
+                }}
+              >
+                <Image src={CopyIcon} alt='copy address' width={14} height={14} />
+                <span className={`${style.tooltiptext2} ${copiedRowId === rowId ? style.tooltiptext2Visible : ''}`}>
+                  Copied!
+                </span>
+              </div>
             </div>
           )
         }
       }
     ],
-    []
+    [copiedRowId, handleCopyClick]
   )
   return (
     <>

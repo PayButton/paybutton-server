@@ -85,15 +85,18 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 .copy_btn img {
   border-radius: 0 !important;
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 .copy_btn:hover img {
   opacity: 1;
+  filter: invert(60%) sepia(14%) saturate(5479%) hue-rotate(195deg)
+    brightness(100%) contrast(102%);
 }
 
 .tooltiptext2 {
@@ -107,20 +110,33 @@
   position: absolute;
   z-index: 1;
   width: 110px;
-  left: 100%;
+  right: 100%;
   flex-basis: 1;
   font-size: 12px;
   z-index: 99999999;
   box-sizing: border-box;
-  transition: all 100ms ease-in-out;
-  /* transform: translate(-50%, -80%); */
+  transition: all 120ms ease-in-out;
+  transform: translateX(-6px);
 }
 
-.copy_btn:hover .tooltiptext2,
-.copy_btn:hover .tooltiptext2 {
+.tooltiptext2Visible {
   visibility: visible;
-  transform: translateX(6px);
   opacity: 1;
+}
+
+body[data-theme='dark'] .copy_btn img {
+  filter: invert(1) brightness(1.2);
+}
+
+body[data-theme='dark'] .copy_btn:hover img {
+  filter: invert(60%) sepia(14%) saturate(5479%) hue-rotate(195deg)
+    brightness(100%) contrast(102%);
+  opacity: 1;
+}
+
+.copy_btn:focus-visible {
+  outline: 2px solid var(--accent-color);
+  border-radius: 4px;
 }
 
 @media (max-width: 600px) {
