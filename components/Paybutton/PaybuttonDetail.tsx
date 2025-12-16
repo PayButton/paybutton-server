@@ -9,6 +9,7 @@ import { XEC_NETWORK_ID, BCH_NETWORK_ID } from 'constants/index'
 import Image from 'next/image'
 import CopyIcon from '../../assets/copy-black.png'
 import Arrow from 'assets/right-arrow.png'
+import { formatAddressWithEllipsis } from 'utils/index'
 
 export const paybuttonHasAddressOnNetwork = (paybutton: PaybuttonWithAddresses, networkId: number): boolean =>
   paybutton.addresses.some(addr => addr.address.networkId === networkId)
@@ -63,11 +64,7 @@ export default ({ paybutton, refreshPaybutton, listView }: IProps): JSX.Element 
                 {isCopied === item.address.address && (
                   <div className={style.copied}>Copied!</div>
                 )}
-                {item.address.address.slice(
-                  0,
-                  item.address.address.startsWith('bitcoin') ? 16 : 10
-                )}
-                ...{item.address.address.slice(-5)}
+                {formatAddressWithEllipsis(item.address.address)}
               </div>
               <div
                 className={style.copy_btn}
