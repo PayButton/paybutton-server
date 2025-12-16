@@ -10,6 +10,7 @@ import { GetServerSideProps } from 'next'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
 import { removeUnserializableFields } from 'utils/index'
+import Loading from 'components/Loading'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -47,18 +48,20 @@ interface PaybuttonsState {
   paybuttons: PaybuttonWithAddresses[]
   wallets: WalletWithAddressesWithPaybuttons[]
   error: String
+  loading: boolean
 }
 
 export default class Buttons extends React.Component<PaybuttonsProps, PaybuttonsState> {
   constructor (props: PaybuttonsProps) {
     super(props)
     this.props = props
-    this.state = { paybuttons: [], wallets: [], error: '' }
+    this.state = { paybuttons: [], wallets: [], error: '', loading: true }
   }
 
   async componentDidMount (): Promise<void> {
     await this.fetchPaybuttons()
     await this.fetchWallets()
+    this.setState({ loading: false })
   }
 
   async fetchPaybuttons (): Promise<void> {
@@ -113,6 +116,14 @@ export default class Buttons extends React.Component<PaybuttonsProps, Paybuttons
   }
 
   render (): React.ReactElement {
+    if (this.state.loading) {
+      return (
+        <>
+          <TopBar title="Buttons" user={this.props.user.stUser?.email} />
+          <Loading />
+        </>
+      )
+    }
     return (
       <>
         <TopBar title="Buttons" user={this.props.user.stUser?.email} />

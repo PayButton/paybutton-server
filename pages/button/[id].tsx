@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import Page from 'components/Page'
 import { PaybuttonDetail } from 'components/Paybutton'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { PaybuttonTransactions } from 'components/Transaction'
@@ -18,6 +17,7 @@ import { fetchUserProfileFromId } from 'services/userService'
 import { removeUnserializableFields } from 'utils'
 import moment from 'moment-timezone'
 import Button from 'components/Button'
+import Loading from 'components/Loading'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   supertokensNode.init(SuperTokensConfig.backendConfig())
@@ -214,6 +214,6 @@ export default function PayButton (props: PaybuttonProps): React.ReactElement {
   }
 
   return (
-    <Page />
+    <Loading />
   )
 }

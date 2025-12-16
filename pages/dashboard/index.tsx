@@ -15,6 +15,7 @@ import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userServ
 import moment from 'moment-timezone'
 import SettingsIcon from '../../assets/settings-slider-icon.png'
 import Image from 'next/image'
+import Loading from 'components/Loading'
 
 const Chart = dynamic(async () => await import('components/Chart'), {
   ssr: false
@@ -148,7 +149,14 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
     }
   }, [activePeriodString, dashboardData])
 
-  if (dashboardData === undefined || activePeriod === undefined) return <></>
+  if (dashboardData === undefined || activePeriod === undefined) {
+    return (
+      <>
+        <TopBar title="Dashboard" user={user.stUser?.email} />
+        <Loading />
+      </>
+    )
+  }
 
   return (
     <>

@@ -11,6 +11,7 @@ import { UserNetworksInfo } from 'services/networkService'
 import TopBar from 'components/TopBar'
 import { fetchUserWithSupertokens, UserWithSupertokens } from 'services/userService'
 import { removeUnserializableFields } from 'utils/index'
+import Loading from 'components/Loading'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   // this runs on the backend, so we must call init on supertokens-node SDK
@@ -48,6 +49,7 @@ interface WalletsState {
   walletsWithPaymentInfo: WalletWithPaymentInfo[]
   userAddresses: AddressWithPaybuttons[]
   networksInfo: UserNetworksInfo[]
+  loading: boolean
 }
 
 export default class Wallets extends React.Component<WalletsProps, WalletsState> {
@@ -56,13 +58,15 @@ export default class Wallets extends React.Component<WalletsProps, WalletsState>
     this.state = {
       walletsWithPaymentInfo: [],
       userAddresses: [],
-      networksInfo: []
+      networksInfo: [],
+      loading: true
     }
   }
 
   async componentDidMount (): Promise<void> {
     await this.fetchWallets()
     await this.fetchNetworks()
+    this.setState({ loading: false })
   }
 
   async fetchWallets (): Promise<void> {
@@ -102,6 +106,14 @@ export default class Wallets extends React.Component<WalletsProps, WalletsState>
   }
 
   render (): React.ReactElement {
+    if (this.state.loading) {
+      return (
+        <>
+          <TopBar title="Wallets" user={this.props.user.stUser?.email} />
+          <Loading />
+        </>
+      )
+    }
     return (
       <>
         <TopBar title="Wallets" user={this.props.user.stUser?.email} />
