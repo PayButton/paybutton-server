@@ -181,6 +181,7 @@ model UserProfile {
 
   emailCredits Int  @default(5)
   postCredits Int  @default(5)
+  triggerLogs TriggerLog[]
   }
 
 model PaybuttonTrigger {
@@ -202,6 +203,8 @@ model TriggerLog {
   id        Int       @id @default(autoincrement())
   triggerId String?
   trigger   PaybuttonTrigger? @relation(fields: [triggerId], references: [id], onDelete: SetNull)
+  userId String?
+  userProfile   UserProfile? @relation(fields: [userId], references: [id], onDelete: SetNull)
   createdAt      DateTime                  @default(now())
   updatedAt      DateTime                  @updatedAt
   isError   Boolean

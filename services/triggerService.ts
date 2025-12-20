@@ -378,7 +378,7 @@ function makePostTask (
       isError = true
       data = { errorName: err.name, errorMessage: err.message, errorStack: err.stack, triggerPostData: parsed ?? trigger.postData, triggerPostURL: trigger.postURL }
     } finally {
-      logs.push({ triggerId: trigger.id, isError, actionType, data: JSON.stringify(data) })
+      logs.push({ triggerId: trigger.id, userId: trigger.paybutton.user.id, isError, actionType, data: JSON.stringify(data) })
     }
     return accepted
   }
@@ -419,7 +419,7 @@ function makeEmailTask (
       isError = true
       data = { errorName: err.name, errorMessage: err.message, errorStack: err.stack, triggerEmail: trigger.emails }
     } finally {
-      logs.push({ triggerId: trigger.id, isError, actionType, data: JSON.stringify(data) })
+      logs.push({ triggerId: trigger.id, userId: trigger.paybutton.user.id, isError, actionType, data: JSON.stringify(data) })
     }
     return accepted
   }
@@ -490,6 +490,7 @@ async function persistLogsAndDecrements (
 interface TriggerTask {
   run: () => Promise<boolean> // resolves true if accepted
   triggerId: string
+  userId: string
   actionType: 'PostData' | 'SendEmail'
 }
 
@@ -531,6 +532,7 @@ function appendOutOfCreditsLogs (
   for (let i = startIndex; i < queue.length; i++) {
     logs.push({
       triggerId: queue[i].triggerId,
+      userId: queue[i].userId,
       isError: true,
       actionType: triggerType,
       data: JSON.stringify({
@@ -579,6 +581,7 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
         ;(emailTaskQueueByUser[user.id] ??= []).push({
           run: makeEmailTask(trigger, tx, currency, logs),
           triggerId: trigger.id,
+          userId: user.id,
           actionType: 'SendEmail'
         })
       } else {
@@ -587,6 +590,7 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
         ;(postTaskQueueByUser[user.id] ??= []).push({
           run: makePostTask(trigger, tx, currency, values[quoteSlug].toString(), logs, address),
           triggerId: trigger.id,
+          userId: user.id,
           actionType: 'PostData'
         })
       }
