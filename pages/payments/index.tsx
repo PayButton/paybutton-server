@@ -265,7 +265,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
+        Header: () => (<div className="text-right">Amount</div>),
         accessor: 'amount',
         sortType: compareNumericString,
         Cell: (cellProps) => {
@@ -280,7 +280,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'right' }}>Value</div>),
+        Header: () => (<div className="text-right">Value</div>),
         accessor: 'values',
         sortType: compareNumericString,
         disableSortBy: true,
@@ -289,7 +289,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'center' }}>Network</div>),
+        Header: () => (<div className="text-center">Network</div>),
         accessor: 'networkId',
         Cell: (cellProps) => {
           return (
@@ -302,7 +302,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'center' }}>Buttons</div>),
+        Header: () => (<div className="text-center">Buttons</div>),
         accessor: 'buttonDisplayDataList',
         Cell: (cellProps) => {
           return (
@@ -321,7 +321,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
         }
       },
       {
-        Header: 'TX',
+        Header: () => (<div className="text-center">TX</div>),
         accessor: 'hash',
         disableSortBy: true,
         Cell: (cellProps) => {
@@ -336,7 +336,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'center' }}>Invoice</div>),
+        Header: () => (<div className="text-center">Invoice</div>),
         id: 'actions',
         disableSortBy: true,
         Cell: (cellProps) => {
