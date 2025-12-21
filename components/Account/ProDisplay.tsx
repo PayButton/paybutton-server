@@ -41,14 +41,15 @@ const ProConfig = (): JSX.Element => {
         {text}
       </div>
       {isPro === false && <ProPurchase/>}
-      <div className={stylep.public_key_info_ctn}>
+      <div className="paybutton-table-ctn">
         <table>
           <thead>
             <tr>
-              <th></th>
+              <th>Account Limits</th>
               <th>Standard</th>
               <th>Pro</th>
             </tr>
+            <tr className="header-spacer"></tr>
           </thead>
           <tbody>
             <tr>
