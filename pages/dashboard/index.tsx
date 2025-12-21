@@ -152,10 +152,10 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
     }
   }, [activePeriodString, dashboardData])
 
-  if (dashboardData === undefined || activePeriod === undefined || isLoading) {
+  if (dashboardData === undefined || activePeriod === undefined) {
     return (
       <>
-        <TopBar title="Dashboard" user={user.stUser?.email} />
+        <TopBar title="Dashboard" user={user?.stUser?.email} />
         <Loading />
       </>
     )
@@ -163,7 +163,8 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
 
   return (
     <>
-      <TopBar title="Dashboard" user={user.stUser?.email} />
+      <TopBar title="Dashboard" user={user?.stUser?.email} />
+      {isLoading && <Loading />}
       <div className={style.filter_btns}>
           <div
             onClick={() => setShowFilters(!showFilters)}

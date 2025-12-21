@@ -1,7 +1,11 @@
-.loading_container {
+.loading_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 50vh;
-  width: 100%;
+  z-index: 9999;
 }

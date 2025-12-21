@@ -20,7 +20,7 @@ export default function Loading ({ size = 60, color }: LoadingProps): React.Reac
   }, [color])
 
   return (
-    <div className={style.loading_container}>
+    <div className={style.loading_overlay}>
       <DotLoader
         color={accentColor}
         size={size}
