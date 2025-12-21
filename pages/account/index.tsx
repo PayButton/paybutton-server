@@ -103,7 +103,7 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
     }
   }
 
-  if (user !== null) {
+  if (user != null) {
     return (
       <div className={style.account_ctn}>
         <TopBar title="Account" user={user.stUser?.email} />
