@@ -107,10 +107,11 @@
 .active_btn:active,
 .active_btn:hover {
   filter: none !important;
+  color: #fff !important;
 }
 
 .toggle_btn:hover {
-  color: var(--accent-color) !important;
+  color: #fff !important;
   filter: none !important;
 }
 
