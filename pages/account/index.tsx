@@ -107,6 +107,9 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
     return (
       <div className={style.account_ctn}>
         <TopBar title="Account" user={user.stUser?.email} />
+        <div className={style.account_columns}>
+        <div className={style.account_column}>
+        <h4 className={style.section_header}>General</h4>
         <div className={style.account_card}>
           <div className={style.account_row}>
             <div className={style.label}>Email</div>
@@ -189,10 +192,12 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
 
           </div>
         </div>
+        </div>
 
-        <div>
+        <div className={style.account_column}>
           {config.proSettings.enabled && <ProDisplay/>}
           <ViewOrganization user={user} orgMembers={orgMembers} setOrgMembers={setOrgMembers} organization={organization}/>
+        </div>
         </div>
       </div>)
   }

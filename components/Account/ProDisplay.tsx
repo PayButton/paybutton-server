@@ -9,7 +9,7 @@ const ProConfig = (): JSX.Element => {
   const [isPro, setIsPro] = useState<boolean | null>()
 
   const showLimit = (configLimit: number | 'Inf'): string => {
-    return configLimit === 'Inf' ? 'Unlimited' : configLimit.toString()
+    return configLimit === 'Inf' || configLimit === Infinity ? 'Unlimited' : configLimit.toString()
   }
 
   useEffect(() => {
@@ -35,7 +35,7 @@ const ProConfig = (): JSX.Element => {
   }, [])
 
   return <>
-    <h3>PayButton Pro</h3>
+    <h4 className={style.section_header}>PayButton Pro</h4>
     <div className={style.pro_ctn}>
       <div className={stylep.label}>
         {text}
@@ -57,14 +57,14 @@ const ProConfig = (): JSX.Element => {
               <td>{showLimit(config.proSettings.proDailyEmailLimit)} / day</td>
             </tr>
             <tr>
-              <td>Addresses Per Button</td>
-              <td>{showLimit(config.proSettings.standardAddressesPerButtonLimit)}</td>
-              <td>{showLimit(config.proSettings.proAddressesPerButtonLimit)}</td>
-            </tr>
-            <tr>
               <td>Outgoing Server-to-Server Messages On Payment</td>
               <td>{showLimit(config.proSettings.standardDailyPostLimit)} / day</td>
               <td>{showLimit(config.proSettings.proDailyPostLimit)} / day</td>
+            </tr>
+            <tr>
+              <td>Addresses Per Button</td>
+              <td>{showLimit(config.proSettings.standardAddressesPerButtonLimit)}</td>
+              <td>{showLimit(config.proSettings.proAddressesPerButtonLimit)}</td>
             </tr>
           </tbody>
         </table>
