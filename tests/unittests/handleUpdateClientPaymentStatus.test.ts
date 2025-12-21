@@ -11,7 +11,7 @@ jest.mock('../../services/clientPaymentService', () => ({
 }))
 
 // Mock other heavy dependencies
-jest.mock('chronik-client-cashtokens', () => ({
+jest.mock('chronik-client', () => ({
   ChronikClient: {
     useStrategy: jest.fn().mockResolvedValue({
       ws: jest.fn().mockReturnValue({
