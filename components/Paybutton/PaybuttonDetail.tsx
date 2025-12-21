@@ -84,6 +84,7 @@ export default ({ paybutton, refreshPaybutton, listView }: IProps): JSX.Element 
           <>
             <label className={style.label_margin}>Website</label>
             <a
+              className={style.website_link}
               href={paybutton.url}
               target="_blank"
               rel="noopener noreferrer"
