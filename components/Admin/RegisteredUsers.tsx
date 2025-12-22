@@ -31,10 +31,12 @@ export default function RegisteredUsers ({ users }: IProps): JSX.Element {
       )
     },
     {
-      Header: 'Admin',
+      Header: () => (<div className="text-center">Admin</div>),
       accessor: 'isAdmin',
       Cell: ({ cell }: CellProps<UserWithSupertokens>) => (
-        cell.value === true ? <span className={style.admin}>Yes</span> : 'No'
+        <div className="text-center">
+          {cell.value === true ? <span className={style.admin}>Yes</span> : 'No'}
+        </div>
       )
     }
   ]

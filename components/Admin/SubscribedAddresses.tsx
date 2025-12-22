@@ -27,7 +27,7 @@ export default function SubscribedAddresses (): JSX.Element {
         }
       },
       {
-        Header: 'View',
+        Header: () => (<div className="text-center">View</div>),
         accessor: 'view',
         Cell: (cellProps: any) => {
           return <a href={`https://explorer.e.cash/address/${cellProps.cell.row.values.address as string}`} target="_blank" rel="noopener noreferrer" className="table-eye-ctn">

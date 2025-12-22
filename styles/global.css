@@ -194,6 +194,18 @@ button:enabled:hover {
   transform: rotate(180deg);
 }
 
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
 .table-icon-ctn {
   width: 100%;
   display: flex;
