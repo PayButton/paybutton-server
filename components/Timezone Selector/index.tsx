@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
-import Select from 'react-timezone-select'
+import React, { useState, useMemo } from 'react'
+import { useTimezoneSelect, allTimezones } from 'react-timezone-select'
+import Select from 'react-select'
 import style from './timezone-selector.module.css'
 
 interface TimezoneSelectorProps {
@@ -13,6 +14,16 @@ const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({ value }) => {
   const [selectedTimezone, setSelectedTimezone] = useState(value !== '' ? value : '')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  const { options, parseTimezone } = useTimezoneSelect({ timezones: allTimezones, displayValue: 'UTC' })
+
+  const sortedOptions = useMemo(() => {
+    return [...options].sort((a, b) => {
+      if (a.offset !== b.offset) return (a.offset ?? 0) - (b.offset ?? 0)
+      // secondary sort by timezone name
+      return a.value.localeCompare(b.value)
+    })
+  }, [options])
 
   const handleChange = (selectedOption: any): void => {
     const updateTimezone = async (): Promise<void> => {
@@ -62,12 +73,12 @@ const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({ value }) => {
   return (
     <>
       <Select
-        value={selectedTimezone}
+        value={parseTimezone(selectedTimezone)}
         onChange={handleChange}
-        disabled={false}
+        isDisabled={false}
         className={style.select_timezone}
-        displayValue="UTC"
         styles={customStyles}
+        options={sortedOptions}
       />
       {error !== '' && <span className={style.error_message}>{error}</span>}
       {success !== '' && <span className={style.success_message}>{success}</span>}

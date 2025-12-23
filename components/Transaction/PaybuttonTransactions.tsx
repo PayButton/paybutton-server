@@ -85,7 +85,7 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'right' }}>Amount</div>),
+        Header: () => (<div className="text-right">Amount</div>),
         accessor: 'amount',
         sortType: compareNumericString,
         Cell: (cellProps) => {
@@ -100,7 +100,7 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'center' }}>Network</div>),
+        Header: () => (<div className="text-center">Network</div>),
         accessor: 'address.networkId',
         Cell: (cellProps) => {
           return (
@@ -113,7 +113,7 @@ export default ({ paybuttonId, addressSyncing, tableRefreshCount, timezone = mom
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'center' }}>TX</div>),
+        Header: () => (<div className="text-center">TX</div>),
         accessor: 'hash',
         disableSortBy: true,
         Cell: (cellProps) => {

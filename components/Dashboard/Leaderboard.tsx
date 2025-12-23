@@ -35,7 +35,7 @@ export default ({ buttons, totalString, currencyId }: IProps): JSX.Element => {
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'right' }}>{totalString} Revenue</div>),
+        Header: () => (<div className="text-right">{totalString} Revenue</div>),
         accessor: totalRevenueAcessor,
         id: 'revenue',
         sortType: compareNumericString,
@@ -46,7 +46,7 @@ export default ({ buttons, totalString, currencyId }: IProps): JSX.Element => {
         }
       },
       {
-        Header: () => (<div style={{ textAlign: 'right' }}>{totalString} Payments</div>),
+        Header: () => (<div className="text-right">{totalString} Payments</div>),
         accessor: 'total.payments',
         Cell: (cellProps) => {
           return <div style={{ textAlign: 'right', fontWeight: '600' }}>{cellProps.cell.value}</div>

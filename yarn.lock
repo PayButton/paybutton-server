@@ -6458,7 +6458,7 @@ simple-update-notifier@^1.0.7:
   dependencies:
     semver "~7.0.0"
 
-simpledotcss@^2.1.0:
+simpledotcss@^2.3.7:
   version "2.3.7"
   resolved "https://registry.yarnpkg.com/simpledotcss/-/simpledotcss-2.3.7.tgz#fbdc7cb07aac7dd49cafdfcf0d15d2bb03a54557"
   integrity sha512-Ag3TpigN7725AnvgwyGkErd50SuYmlDQRU+9LLNHUIK8T4DUEWPHut6GpD1ivxARrBd8eYGTL8vzKazVFYUpQg==
