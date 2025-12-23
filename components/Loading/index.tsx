@@ -9,7 +9,7 @@ interface LoadingProps {
 
 export default function Loading ({ size = 60, color }: LoadingProps): React.ReactElement {
   return (
-    <div className={style.loading_container}>
+    <div className={style.loading_overlay}>
       <DotLoader
         color={color ?? 'var(--accent-color)'}
         size={size}

@@ -77,6 +77,7 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
   const [selectedButtonIds, setSelectedButtonIds] = useState<any[]>([])
   const [showFilters, setShowFilters] = useState<boolean>(false)
   const [buttons, setButtons] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const setPeriodFromString = (data?: DashboardData, periodString?: PeriodString): void => {
     if (data === undefined) return
@@ -118,6 +119,7 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
+      setIsLoading(true)
       let url = 'api/dashboard'
       if (selectedButtonIds.length > 0) {
         url += `?buttonIds=${selectedButtonIds.join(',')}`
@@ -129,6 +131,7 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
       })
       const json = await res.json()
       setDashboardData(json)
+      setIsLoading(false)
     }
     fetchData().catch(console.error)
     const savedActivePeriodString = loadStateFromCookie(COOKIE_NAMES.DASHBOARD_FILTER, undefined) as (PeriodString | undefined)
@@ -152,7 +155,7 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
   if (dashboardData === undefined || activePeriod === undefined) {
     return (
       <>
-        <TopBar title="Dashboard" user={user.stUser?.email} />
+        <TopBar title="Dashboard" user={user?.stUser?.email} />
         <Loading />
       </>
     )
@@ -160,7 +163,8 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
 
   return (
     <>
-      <TopBar title="Dashboard" user={user.stUser?.email} />
+      <TopBar title="Dashboard" user={user?.stUser?.email} />
+      {isLoading && <Loading />}
       <div className={style.filter_btns}>
           <div
             onClick={() => setShowFilters(!showFilters)}
