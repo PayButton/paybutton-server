@@ -82,6 +82,16 @@ button:enabled:hover {
   filter: none;
 }
 
+button:enabled:hover,
+button:not([aria-disabled='true']):hover,
+input[type='submit']:enabled:hover,
+input[type='reset']:enabled:hover,
+input[type='button']:enabled:hover {
+  background-color: var(--hover-accent-color) !important;
+  border-color: var(--hover-accent-color) !important;
+  filter: none;
+}
+
 .back_btn {
   border-radius: 10px;
   padding: 4px 40px;
