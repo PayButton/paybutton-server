@@ -144,9 +144,9 @@
   padding: 25px;
   border-radius: 10px;
   border: 1px solid var(--secondary-text-color);
-  overflow-y: auto;
   max-height: 90vh;
-  min-height: 44rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .form_ctn p {
