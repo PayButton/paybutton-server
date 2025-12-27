@@ -4,10 +4,36 @@
   --max-width: 700px;
 }
 
+.account_columns {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (min-width: 1200px) {
+  .account_columns {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .account_column {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.account_column {
+  display: flex;
+  flex-direction: column;
+}
+
+.section_header {
+  margin: 0 0 10px 0;
+}
+
 .account_card {
   width: 100%;
   background-color: var(--secondary-bg-color);
-  max-width: var(--max-width);
   padding: 30px;
   border-radius: 8px;
   word-wrap: break-word;
@@ -233,27 +259,4 @@ background-color: #434343;
 
 .public_key_info_ctn {
   width: 100%;
-}
-
-.public_key_info_ctn table {
-  width: 100%;
-  border-collapse: collapse;
-  border-spacing: 0;
-  margin: 0;
-  border-radius: 6px;
-}
-
-.public_key_info_ctn th,
-.public_key_info_ctn td {
-  border: none;
-  width: 100%;
-}
-
-.public_key_info_ctn th {
-  background-color: black;
-  color: white;
-}
-
-.public_key_info_ctn tr:nth-child(even) {
-  background-color: var(--secondary-bg-color);
 }

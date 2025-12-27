@@ -23,7 +23,7 @@ const ViewOrganization = ({ user, orgMembers, setOrgMembers, organization }: IPr
   const [loading, setLoading] = useState(false)
 
   return <>
-    <h3 className={style.config_title}>Organization</h3>
+    <h4 className={style.config_title}>Organization</h4>
     <div className={style.org_ctn}>
       {org !== null && org.creatorId === user.userProfile.id
         ? (
