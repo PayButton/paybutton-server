@@ -27,6 +27,7 @@ export const devUserProfiles = [
     createdAt: new Date(),
     publicKey: '',
     updatedAt: new Date(),
+    isAdmin: true,
     emailCredits: 3,
     postCredits: 1
   },
