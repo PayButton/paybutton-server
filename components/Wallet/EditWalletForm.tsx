@@ -110,7 +110,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                           />
                           <label htmlFor={`addressIdList.${index}`}>
                             {addr.paybuttons.map((conn) => (
-                              <div className={style.buttonpill}>{conn.paybutton.name}</div>
+                              <div key={conn.addressId} className={style.buttonpill}>{conn.paybutton.name}</div>
                             ))}
                             <div className={style.addresslabel}>{addr.address}</div>
                           </label>
@@ -128,7 +128,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                           id='isXECDefault'
                           disabled={wallet.userProfile?.isXECDefault === true}
                         />
-                        <label htmlFor='xec-default' className={style.makedefault_margin}>Default XEC Wallet</label>
+                        <label htmlFor='isXECDefault' className={style.makedefault_margin}>Default XEC Wallet</label>
                       </div>}
                       {usedNetworks.some(network => network.ticker === 'bch') &&
                       <div className={style.input_field}>
@@ -139,7 +139,7 @@ export default function EditWalletForm ({ wallet, userAddresses, refreshWalletLi
                           id='isBCHDefault'
                           disabled={wallet.userProfile?.isBCHDefault === true}
                         />
-                        <label htmlFor='bch-default' className={style.makedefault_margin}>Default BCH Wallet</label>
+                        <label htmlFor='isBCHDefault' className={style.makedefault_margin}>Default BCH Wallet</label>
                       </div>
 }
                     </div>
