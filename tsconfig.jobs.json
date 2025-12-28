@@ -1,0 +1,40 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2020",
+    "outDir": "./dist-jobs",
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": false,
+    "baseUrl": ".",
+    "paths": {
+      "constants/*": ["./constants/*"],
+      "redis/*": ["./redis/*"],
+      "services/*": ["./services/*"],
+      "utils/*": ["./utils/*"],
+      "prisma-local/*": ["./prisma-local/*"],
+      "config/*": ["./config/*"],
+      "types/*": ["./types/*"]
+    }
+  },
+  "include": [
+    "jobs/**/*.ts",
+    "ws-service/**/*.ts",
+    "services/**/*.ts",
+    "redis/**/*.ts",
+    "constants/**/*.ts",
+    "utils/**/*.ts",
+    "prisma-local/**/*.ts",
+    "config/**/*.ts",
+    "types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".next",
+    "**/*.test.ts",
+    "tests/**/*"
+  ]
+}
+

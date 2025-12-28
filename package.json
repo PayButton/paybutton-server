@@ -8,10 +8,14 @@
   "scripts": {
     "dev": "dotenv -e .env -c -- next dev",
     "build": "next build",
+    "build:jobs": "tsc -p tsconfig.jobs.json && tsc-alias -p tsconfig.jobs.json && node -e \"require('fs').copyFileSync('paybutton-config.json', 'dist-jobs/paybutton-config.json')\"",
+    "build:all": "yarn build && yarn build:jobs",
     "initJobs": "JOBS_ENV=1 dotenv -e .env -c -- tsx jobs/initJobs.ts",
+    "initJobs:prod": "JOBS_ENV=1 dotenv -e .env -c -- node dist-jobs/jobs/initJobs.js",
     "initWSServer": "dotenv -e .env -c -- ts-node -O '{\"module\":\"commonjs\"}' -r tsconfig-paths/register ws-service/route.ts",
+    "initWSServer:prod": "dotenv -e .env -c -- node dist-jobs/ws-service/route.js",
     "start": "cross-env NODE_ENV=production node dist/index.js",
-    "prod": "yarn build && NODE_ENV=production next start",
+    "prod": "yarn build:all && NODE_ENV=production next start",
     "test": "dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js",
     "pretest": "dotenv -e .env.test -- prisma migrate reset --force",
     "prisma": "dotenv -e .env -c -- prisma",
@@ -94,6 +98,7 @@
     "redis": "^4.5.1",
     "ts-jest": "^29.2.5",
     "ts-node": "^8.10.2",
+    "tsc-alias": "^1.8.8",
     "tsx": "^3.12.1",
     "typescript": "^5.7.2"
   },
