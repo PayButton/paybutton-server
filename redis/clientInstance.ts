@@ -51,7 +51,7 @@ const getRedisClient = (isBullMQ = false): IORedis | RedisMocked => {
 }
 
 export const redis = getRedisClient()
-export const redisBullMQ = getRedisClient(true)
+export const redisBullMQ = getRedisClient(true) as IORedis
 
 void redis.on('error', (err) => console.log('Redis Client Error', err))
 void redisBullMQ.on('error', (err) => console.log('Redis BullMQ Client Error', err))
