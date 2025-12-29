@@ -10,6 +10,7 @@ import crypto from 'crypto'
 import { getUserPrivateKey } from '../services/userService'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import moment from 'moment-timezone'
+import { ClientPaymentField } from 'services/clientPaymentService'
 
 /* The functions exported here should validate the data structure / syntax of an
  * input by throwing an error in case something is different from the expected.
@@ -574,10 +575,70 @@ export interface CreateInvoicePOSTParameters {
 export interface CreatePaymentIdPOSTParameters {
   address?: string
   amount?: string
+  fields?: string
 }
+export interface ClientPaymentFieldInput {
+  name?: string
+  text?: string
+  type?: string
+  value?: string | boolean
+}
+
 export interface CreatePaymentIdInput {
   address: string
-  amount?: string
+  amount?: Prisma.Decimal
+  fields?: ClientPaymentField[]
+}
+
+export const parseClientPaymentFields = function (fieldsInput: string | undefined): ClientPaymentField[] | undefined {
+  if (fieldsInput === undefined || fieldsInput === '') {
+    return undefined
+  }
+
+  let parsedFields: unknown
+  try {
+    parsedFields = JSON.parse(fieldsInput)
+  } catch {
+    throw new Error(RESPONSE_MESSAGES.INVALID_FIELDS_FORMAT_400.message)
+  }
+
+  if (!Array.isArray(parsedFields)) {
+    throw new Error(RESPONSE_MESSAGES.INVALID_FIELDS_FORMAT_400.message)
+  }
+
+  for (const field of parsedFields) {
+    if (
+      typeof field !== 'object' ||
+      field === null ||
+      typeof field.name !== 'string' ||
+      field.name?.trim() === ''
+    ) {
+      throw new Error(RESPONSE_MESSAGES.INVALID_FIELD_STRUCTURE_400.message)
+    }
+    if (field.type !== undefined && typeof field.type !== 'string') {
+      throw new Error(RESPONSE_MESSAGES.INVALID_FIELD_STRUCTURE_400.message)
+    }
+    if (field.value !== undefined && typeof field.value !== 'string' && typeof field.value !== 'boolean') {
+      throw new Error(RESPONSE_MESSAGES.INVALID_FIELD_STRUCTURE_400.message)
+    }
+  }
+
+  return parsedFields as ClientPaymentField[]
+}
+
+export const parseAmount = function (amountInput: string | undefined): Prisma.Decimal | undefined {
+  if (amountInput === undefined || amountInput === '') {
+    return undefined
+  }
+
+  const trimmedAmount = amountInput.trim()
+  const numericAmount = Number(trimmedAmount)
+
+  if (isNaN(numericAmount) || numericAmount <= 0) {
+    throw new Error(RESPONSE_MESSAGES.INVALID_AMOUNT_400.message)
+  }
+
+  return new Prisma.Decimal(trimmedAmount)
 }
 
 export const parseCreatePaymentIdPOSTRequest = function (params: CreatePaymentIdPOSTParameters): CreatePaymentIdInput {
@@ -588,8 +649,12 @@ export const parseCreatePaymentIdPOSTRequest = function (params: CreatePaymentId
     throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
   }
 
+  const amount = parseAmount(params.amount)
+  const fields = parseClientPaymentFields(params.fields)
+
   return {
     address: params.address,
-    amount: params.amount === '' ? undefined : params.amount
+    amount,
+    fields
   }
 }
