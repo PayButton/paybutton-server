@@ -621,6 +621,9 @@ export const parseClientPaymentFields = function (fieldsInput: string | undefine
     if (field.value !== undefined && typeof field.value !== 'string' && typeof field.value !== 'boolean') {
       throw new Error(RESPONSE_MESSAGES.INVALID_FIELD_STRUCTURE_400.message)
     }
+    if (field.text !== undefined && typeof field.text !== 'string') {
+      throw new Error(RESPONSE_MESSAGES.INVALID_FIELD_STRUCTURE_400.message)
+    }
   }
 
   return parsedFields as ClientPaymentField[]
