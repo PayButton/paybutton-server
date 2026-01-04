@@ -629,6 +629,17 @@ export async function deleteTransactions (transactions: TransactionWithAddressAn
   ))
 }
 
+export async function markTransactionsOrphaned (hash: string): Promise<void> {
+  await prisma.transaction.updateMany({
+    where: {
+      hash
+    },
+    data: {
+      orphaned: true
+    }
+  })
+}
+
 async function fetchAllTransactionsWithNoPrices (): Promise<TransactionWithNetwork[]> {
   const x = await prisma.transaction.findMany({
     where: {
