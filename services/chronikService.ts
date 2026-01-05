@@ -8,6 +8,7 @@ import {
   createManyTransactions,
   deleteTransactions,
   fetchUnconfirmedTransactions,
+  markTransactionsOrphaned,
   upsertTransaction,
   getSimplifiedTransactions,
   getSimplifiedTrasaction
@@ -632,8 +633,15 @@ export class ChronikBlockchainClient {
             const { amount, opReturn } = addressWithTransaction.transaction
             await this.handleUpdateClientPaymentStatus(amount, opReturn, 'CONFIRMED' as ClientPaymentStatus, addressWithTransaction.address.address)
           }
-        } catch (e) {
-          console.error(`${this.CHRONIK_MSG_PREFIX}: confirmed tx handler failed for ${msg.txid}`, e)
+        } catch (e: any) {
+          const msg404 = String(e?.message ?? e)
+          const is404 = /not found in the index|404/.test(msg404)
+          if (is404) {
+            console.log(`${this.CHRONIK_MSG_PREFIX}: [${msg.msgType}] tx ${msg.txid} not found in chronik, marking as orphaned`)
+            await markTransactionsOrphaned(msg.txid)
+          } else {
+            console.error(`${this.CHRONIK_MSG_PREFIX}: confirmed tx handler failed for ${msg.txid}`, e)
+          }
         }
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
         if (this.isAlreadyBeingProcessed(msg.txid, false)) return
