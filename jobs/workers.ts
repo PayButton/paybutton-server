@@ -100,6 +100,7 @@ export const verifyUnconfirmedTransactionsWorker = async (queueName: string): Pr
 
       let confirmedCount = 0
       let orphanedCount = 0
+      const oneDayAgo = Math.floor(Date.now() / 1000) - (24 * 60 * 60)
 
       // Group transactions by hash to avoid duplicate chronik calls
       const txsByHash = new Map<string, typeof unconfirmedTxs>()
@@ -122,6 +123,12 @@ export const verifyUnconfirmedTransactionsWorker = async (queueName: string): Pr
             await markTransactionConfirmed(hash, blockTimestamp)
             confirmedCount += txs.length
             console.log(`[UNCONFIRMED TX VERIFICATION] Marked tx ${hash} as confirmed`)
+          } else {
+            // Still unconfirmed - txs over a day old should always be either confirmed or orphaned
+            const oldestTx = txs.reduce((oldest, tx) => tx.timestamp < oldest.timestamp ? tx : oldest, txs[0])
+            if (oldestTx.timestamp < oneDayAgo) {
+              console.warn(`[UNCONFIRMED TX VERIFICATION] WARNING: tx ${hash} is over 1 day old and still unconfirmed (address: ${oldestTx.address.address})`)
+            }
           }
         } catch (err: any) {
           const errMsg = String(err?.message ?? err)
