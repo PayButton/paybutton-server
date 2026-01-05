@@ -1,8 +1,8 @@
 import { Worker } from 'bullmq'
 import { redisBullMQ } from 'redis/clientInstance'
-import { DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
+import { DEFAULT_WORKER_LOCK_DURATION, NETWORK_SLUGS_FROM_IDS } from 'constants/index'
 import { multiBlockchainClient } from 'services/chronikService'
-import { connectAllTransactionsToPrices } from 'services/transactionService'
+import { connectAllTransactionsToPrices, fetchUnconfirmedNonOrphanedTransactions, markTransactionConfirmed, markTransactionsOrphaned } from 'services/transactionService'
 import { cleanupExpiredClientPayments } from 'services/clientPaymentService'
 
 import * as priceService from 'services/priceService'
@@ -86,5 +86,71 @@ export const cleanupClientPaymentsWorker = async (queueName: string): Promise<vo
 
   worker.on('failed', (job, err) => {
     console.error(`[CLIENT_PAYMENT CLEANUP] job ${job?.id as string}: FAILED — ${err.message}`)
+  })
+}
+
+export const verifyUnconfirmedTransactionsWorker = async (queueName: string): Promise<void> => {
+  const worker = new Worker(
+    queueName,
+    async (job) => {
+      console.log(`[UNCONFIRMED TX VERIFICATION] job ${job.id as string}: checking unconfirmed transactions...`)
+
+      const unconfirmedTxs = await fetchUnconfirmedNonOrphanedTransactions()
+      console.log(`[UNCONFIRMED TX VERIFICATION] Found ${unconfirmedTxs.length} unconfirmed transactions to verify`)
+
+      let confirmedCount = 0
+      let orphanedCount = 0
+
+      // Group transactions by hash to avoid duplicate chronik calls
+      const txsByHash = new Map<string, typeof unconfirmedTxs>()
+      for (const tx of unconfirmedTxs) {
+        const existing = txsByHash.get(tx.hash) ?? []
+        existing.push(tx)
+        txsByHash.set(tx.hash, existing)
+      }
+
+      for (const [hash, txs] of txsByHash.entries()) {
+        const networkId = txs[0].address.networkId
+        const networkSlug = NETWORK_SLUGS_FROM_IDS[networkId]
+
+        try {
+          const txDetails = await multiBlockchainClient.getTransactionDetails(hash, networkSlug)
+
+          // If tx has a block, it's confirmed
+          if (txDetails.block?.height !== undefined && txDetails.block.height !== null) {
+            const blockTimestamp = Number(txDetails.block.timestamp)
+            await markTransactionConfirmed(hash, blockTimestamp)
+            confirmedCount += txs.length
+            console.log(`[UNCONFIRMED TX VERIFICATION] Marked tx ${hash} as confirmed`)
+          }
+        } catch (err: any) {
+          const errMsg = String(err?.message ?? err)
+          const is404 = /not found in the index|404/.test(errMsg)
+
+          if (is404) {
+            // Transaction no longer exists on the network
+            await markTransactionsOrphaned(hash)
+            orphanedCount += txs.length
+            console.log(`[UNCONFIRMED TX VERIFICATION] Marked tx ${hash} as orphaned (not found)`)
+          } else {
+            console.error(`[UNCONFIRMED TX VERIFICATION] Error checking tx ${hash}: ${errMsg}`)
+          }
+        }
+      }
+
+      console.log(`[UNCONFIRMED TX VERIFICATION] Finished: ${confirmedCount} confirmed, ${orphanedCount} orphaned`)
+    },
+    {
+      connection: redisBullMQ,
+      lockDuration: DEFAULT_WORKER_LOCK_DURATION
+    }
+  )
+
+  worker.on('completed', job => {
+    console.log(`[UNCONFIRMED TX VERIFICATION] job ${job.id as string}: completed successfully`)
+  })
+
+  worker.on('failed', (job, err) => {
+    console.error(`[UNCONFIRMED TX VERIFICATION] job ${job?.id as string}: FAILED — ${err.message}`)
   })
 }

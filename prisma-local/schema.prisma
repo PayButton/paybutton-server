@@ -84,6 +84,7 @@ model Transaction {
 
   @@unique([hash, addressId], name: "Transaction_hash_addressId_unique_constraint")
   @@index([addressId, timestamp], map: "Transaction_addressId_timestamp_idx")
+  @@index([confirmed], map: "Transaction_confirmed_idx")
 }
 
 model Wallet {
