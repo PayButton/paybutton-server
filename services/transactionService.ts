@@ -640,6 +640,47 @@ export async function markTransactionsOrphaned (hash: string): Promise<void> {
   })
 }
 
+export async function markTransactionConfirmed (hash: string, timestamp: number): Promise<void> {
+  await prisma.transaction.updateMany({
+    where: {
+      hash
+    },
+    data: {
+      confirmed: true,
+      timestamp
+    }
+  })
+}
+
+const includeAddressNetwork = {
+  address: {
+    select: {
+      networkId: true,
+      address: true
+    }
+  }
+}
+
+const transactionWithAddressNetwork = Prisma.validator<Prisma.TransactionDefaultArgs>()(
+  { include: includeAddressNetwork }
+)
+
+export type TransactionWithAddressNetwork = Prisma.TransactionGetPayload<typeof transactionWithAddressNetwork>
+
+export async function fetchUnconfirmedNonOrphanedTransactions (): Promise<TransactionWithAddressNetwork[]> {
+  const oneWeekAgo = Math.floor(Date.now() / 1000) - (7 * 24 * 60 * 60)
+  return await prisma.transaction.findMany({
+    where: {
+      confirmed: false,
+      orphaned: false,
+      timestamp: {
+        gte: oneWeekAgo
+      }
+    },
+    include: includeAddressNetwork
+  })
+}
+
 async function fetchAllTransactionsWithNoPrices (): Promise<TransactionWithNetwork[]> {
   const x = await prisma.transaction.findMany({
     where: {
