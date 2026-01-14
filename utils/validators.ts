@@ -597,7 +597,11 @@ export const parseClientPaymentFields = function (fieldsInput: string | undefine
 
   let parsedFields: unknown
   try {
-    parsedFields = JSON.parse(fieldsInput)
+    if (typeof fieldsInput === 'object') {
+      parsedFields = fieldsInput
+    } else {
+      parsedFields = JSON.parse(fieldsInput)
+    }
   } catch {
     throw new Error(RESPONSE_MESSAGES.INVALID_FIELDS_FORMAT_400.message)
   }
@@ -613,9 +617,7 @@ export const parseClientPaymentFields = function (fieldsInput: string | undefine
       typeof field.name !== 'string' ||
       field.name?.trim() === ''
     ) {
-      throw new Error(RESPONSE_MESSAGES.INVALID_FIELD_STRUCTURE_400.message)
-    }
-    if (field.type !== undefined && typeof field.type !== 'string') {
+      console.log('field:', field)
       throw new Error(RESPONSE_MESSAGES.INVALID_FIELD_STRUCTURE_400.message)
     }
     if (field.value !== undefined && typeof field.value !== 'string' && typeof field.value !== 'boolean') {
