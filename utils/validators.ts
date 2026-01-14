@@ -577,12 +577,6 @@ export interface CreatePaymentIdPOSTParameters {
   amount?: string
   fields?: string
 }
-export interface ClientPaymentFieldInput {
-  name?: string
-  text?: string
-  type?: string
-  value?: string | boolean
-}
 
 export interface CreatePaymentIdInput {
   address: string
@@ -590,7 +584,7 @@ export interface CreatePaymentIdInput {
   fields?: ClientPaymentField[]
 }
 
-export const parseClientPaymentFields = function (fieldsInput: string | undefined): ClientPaymentField[] | undefined {
+export const parseClientPaymentFields = function (fieldsInput: string | object | undefined): ClientPaymentField[] | undefined {
   if (fieldsInput === undefined || fieldsInput === '') {
     return undefined
   }
@@ -617,10 +611,12 @@ export const parseClientPaymentFields = function (fieldsInput: string | undefine
       typeof field.name !== 'string' ||
       field.name?.trim() === ''
     ) {
-      console.log('field:', field)
       throw new Error(RESPONSE_MESSAGES.INVALID_FIELD_STRUCTURE_400.message)
     }
     if (field.value !== undefined && typeof field.value !== 'string' && typeof field.value !== 'boolean') {
+      throw new Error(RESPONSE_MESSAGES.INVALID_FIELD_STRUCTURE_400.message)
+    }
+    if (field.type !== undefined && typeof field.type !== 'string') {
       throw new Error(RESPONSE_MESSAGES.INVALID_FIELD_STRUCTURE_400.message)
     }
     if (field.text !== undefined && typeof field.text !== 'string') {
@@ -639,7 +635,7 @@ export const parseAmount = function (amountInput: string | undefined): Prisma.De
   const trimmedAmount = amountInput.trim()
   const numericAmount = Number(trimmedAmount)
 
-  if (isNaN(numericAmount) || numericAmount <= 0) {
+  if (isNaN(numericAmount) || !isFinite(numericAmount) || numericAmount <= 0) {
     throw new Error(RESPONSE_MESSAGES.INVALID_AMOUNT_400.message)
   }
 
