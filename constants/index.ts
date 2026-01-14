@@ -104,7 +104,10 @@ export const RESPONSE_MESSAGES = {
   INVALID_EMAIL_400: { statusCode: 400, message: 'Invalid email.' },
   USER_OUT_OF_EMAIL_CREDITS_400: { statusCode: 400, message: 'User out of email credits.' },
   USER_OUT_OF_POST_CREDITS_400: { statusCode: 400, message: 'User out of post credits.' },
-  NO_INVOICE_FOUND_404: { statusCode: 404, message: 'No invoice found.' }
+  NO_INVOICE_FOUND_404: { statusCode: 404, message: 'No invoice found.' },
+  INVALID_FIELDS_FORMAT_400: { statusCode: 400, message: "'fields' must be a valid JSON array." },
+  INVALID_FIELD_STRUCTURE_400: { statusCode: 400, message: "Each field must have 'name' property as string." },
+  INVALID_AMOUNT_400: { statusCode: 400, message: "'amount' must be a valid positive number." }
 }
 
 export const SOCKET_MESSAGES = {
