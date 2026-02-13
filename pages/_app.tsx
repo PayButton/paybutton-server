@@ -19,7 +19,8 @@ const AUTHORIZED_UNLOGGED_URLS = [
   '/signin',
   '/signup',
   '/reset-password',
-  '/auth/reset-password'
+  '/auth/reset-password',
+  '/app'
 ]
 
 function App ({ Component, pageProps }: AppProps): React.ReactElement | null {
