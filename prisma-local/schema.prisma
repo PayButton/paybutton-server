@@ -71,6 +71,7 @@ model Transaction {
   hash      String                 @db.VarChar(255)
   amount    Decimal                @db.Decimal(24, 8)
   confirmed Boolean                @default(false)
+  orphaned  Boolean                @default(false)
   timestamp Int
   addressId String
   opReturn String                @db.LongText @default("")
