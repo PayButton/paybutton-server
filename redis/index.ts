@@ -76,8 +76,10 @@ export const CacheSet = {
 
 type MethodName = 'dashboardData' | 'paymentList' | 'addressBalance' | 'paymentsCount'
 
+type InFlightCalls = Partial<Record<MethodName, Promise<unknown>>>
+
 interface PendingCalls {
-  [userId: string]: Set<MethodName>
+  [userId: string]: InFlightCalls
 }
 
 export class CacheGet {
@@ -89,21 +91,25 @@ export class CacheGet {
     fn: () => Promise<T>
   ): Promise<T> {
     if (this.pendingCalls[userId] === undefined) {
-      this.pendingCalls[userId] = new Set()
+      this.pendingCalls[userId] = {}
     }
 
-    if (this.pendingCalls[userId].has(methodName)) {
-      throw new Error(`Method "${methodName}" is already being executed for user "${userId}".`)
+    const existingCall = this.pendingCalls[userId][methodName]
+    if (existingCall !== undefined) {
+      return await (await existingCall as Promise<T>)
     }
 
-    this.pendingCalls[userId].add(methodName)
+    const pendingCall = fn()
+    this.pendingCalls[userId][methodName] = pendingCall as Promise<unknown>
 
     try {
-      return await fn()
+      return await pendingCall
     } finally {
-      this.pendingCalls[userId].delete(methodName)
-      if (this.pendingCalls[userId].size === 0) {
-        this.pendingCalls[userId] = undefined as unknown as Set<MethodName>
+      if (this.pendingCalls[userId]?.[methodName] === pendingCall) {
+        this.pendingCalls[userId][methodName] = undefined
+      }
+      if (this.pendingCalls[userId] !== undefined && Object.keys(this.pendingCalls[userId]).length === 0) {
+        this.pendingCalls[userId] = {}
       }
     }
   }
