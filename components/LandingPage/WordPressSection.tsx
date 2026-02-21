@@ -13,9 +13,9 @@ export default function WordPressSection (): JSX.Element {
               WordPress <span>Plugin</span>
             </h2>
             <p>
-              Integrate PayButton seamlessly into your WordPress site with our
-              official plugin. Accept eCash payments with just a few clicks - no
-              coding required.
+              Integrate PayButton seamlessly into your WordPress site or
+              WooCommerce store with our official plugin. Accept eCash
+              payments with just a few clicks - no coding required.
             </p>
             <div className={style.wordpress_features}>
               <div className={style.feature_item}>
