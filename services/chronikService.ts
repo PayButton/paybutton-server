@@ -20,13 +20,13 @@ import {
 import { Address, Prisma, ClientPaymentStatus } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
-import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced, updateManyLastSynced } from './addressService'
+import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced, updateManyLastSynced, upsertAddress } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
 import io, { Socket } from 'socket.io-client'
 import moment from 'moment'
-import { OpReturnData, parseError, parseOpReturnData } from 'utils/validators'
+import { OpReturnData, parseAddress, parseError, parseOpReturnData } from 'utils/validators'
 import { executeAddressTriggers, executeTriggersBatch } from './triggerService'
 import { appendTxsToFile } from 'prisma-local/seeds/transactions'
 import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
@@ -285,13 +285,51 @@ export class ChronikBlockchainClient {
 
   private async getTransactionFromChronikTransaction (transaction: Tx, address: Address): Promise<Prisma.TransactionUncheckedCreateInput> {
     const { amount, opReturn } = await this.getTransactionAmountAndData(transaction, address.address)
+    const inputAddresses = this.getSortedInputAddresses(transaction)
+    const outputAddresses = this.getSortedOutputAddresses(transaction)
+
+    const uniqueAddressStrings = [...new Set([
+      ...inputAddresses.map(({ address: addr }) => addr),
+      ...outputAddresses.map(({ address: addr }) => addr)
+    ])]
+    const addressIdMap = new Map<string, string>()
+    await Promise.all(
+      uniqueAddressStrings.map(async (addrStr) => {
+        try {
+          const parsed = parseAddress(addrStr)
+          const addr = await upsertAddress(parsed)
+          addressIdMap.set(parsed, addr.id)
+        } catch {
+          // Skip invalid addresses: don't upsert, don't add to map
+        }
+      })
+    )
+
+    const getAddressId = (addr: string): string | undefined => {
+      try {
+        return addressIdMap.get(parseAddress(addr))
+      } catch {
+        return undefined
+      }
+    }
+
     return {
       hash: transaction.txid,
       amount,
       timestamp: transaction.block !== undefined ? transaction.block.timestamp : transaction.timeFirstSeen,
       addressId: address.id,
       confirmed: transaction.block !== undefined,
-      opReturn
+      opReturn,
+      inputs: {
+        create: inputAddresses
+          .map(({ address: addr, amount: amt }, i) => ({ addressId: getAddressId(addr), index: i, amount: amt }))
+          .filter((item): item is { addressId: string, index: number, amount: Prisma.Decimal } => item.addressId !== undefined)
+      },
+      outputs: {
+        create: outputAddresses
+          .map(({ address: addr, amount: amt }, i) => ({ addressId: getAddressId(addr), index: i, amount: amt }))
+          .filter((item): item is { addressId: string, index: number, amount: Prisma.Decimal } => item.addressId !== undefined)
+      }
     }
   }
 
