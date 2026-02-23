@@ -11,18 +11,20 @@ datasource db {
 }
 
 model Address {
-  id           String                    @id @default(dbgenerated("(uuid())"))
-  address      String                    @unique @db.VarChar(255)
-  createdAt    DateTime                  @default(now())
-  updatedAt    DateTime                  @updatedAt
-  networkId    Int
-  network      Network                   @relation(fields: [networkId], references: [id], onUpdate: Restrict)
-  userProfiles AddressesOnUserProfiles[]
-  lastSynced   DateTime?
-  syncing      Boolean                @default(false)
-  paybuttons   AddressesOnButtons[]
-  transactions Transaction[]
-  clientPayments                     ClientPayment[]
+  id                 String                    @id @default(dbgenerated("(uuid())"))
+  address            String                    @unique @db.VarChar(255)
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  networkId          Int
+  network            Network                   @relation(fields: [networkId], references: [id], onUpdate: Restrict)
+  userProfiles       AddressesOnUserProfiles[]
+  lastSynced         DateTime?
+  syncing            Boolean                   @default(false)
+  paybuttons         AddressesOnButtons[]
+  transactions       Transaction[]
+  clientPayments     ClientPayment[]
+  transactionInputs  TransactionInput[]
+  transactionOutputs TransactionOutput[]
 
   @@index([networkId], map: "Address_networkId_fkey")
 }
@@ -77,13 +79,41 @@ model Transaction {
   opReturn String                @db.LongText @default("")
   address   Address                @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   prices    PricesOnTransactions[]
-  invoices    Invoice[]
+  invoices  Invoice[]
+  inputs    TransactionInput[]
+  outputs   TransactionOutput[]
 
   createdAt DateTime                  @default(now())
   updatedAt DateTime                  @updatedAt
 
   @@unique([hash, addressId], name: "Transaction_hash_addressId_unique_constraint")
   @@index([addressId, timestamp], map: "Transaction_addressId_timestamp_idx")
+}
+
+model TransactionInput {
+  id            String      @id @default(dbgenerated("(uuid())"))
+  transactionId String
+  addressId     String
+  index         Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  address       Address     @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  amount        Decimal     @db.Decimal(24, 8)
+
+  @@index([transactionId])
+  @@index([addressId])
+}
+
+model TransactionOutput {
+  id            String      @id @default(dbgenerated("(uuid())"))
+  transactionId String
+  addressId     String
+  index         Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  address       Address     @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  amount        Decimal     @db.Decimal(24, 8)
+
+  @@index([transactionId])
+  @@index([addressId])
 }
 
 model Wallet {
