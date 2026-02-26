@@ -1,6 +1,6 @@
 import { Worker } from 'bullmq'
 import { redisBullMQ } from 'redis/clientInstance'
-import { DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
+import { PRICE_SYNC_WORKER_LOCK_DURATION, BLOCKCHAIN_SYNC_WORKER_LOCK_DURATION, CLEANUP_WORKER_LOCK_DURATION } from 'constants/index'
 import { multiBlockchainClient } from 'services/chronikService'
 import { connectAllTransactionsToPrices } from 'services/transactionService'
 import { cleanupExpiredClientPayments } from 'services/clientPaymentService'
@@ -16,7 +16,7 @@ export const syncCurrentPricesWorker = async (queueName: string): Promise<void> 
     },
     {
       connection: redisBullMQ,
-      lockDuration: DEFAULT_WORKER_LOCK_DURATION
+      lockDuration: PRICE_SYNC_WORKER_LOCK_DURATION
     }
   )
   worker.on('completed', job => {
@@ -42,7 +42,7 @@ export const syncBlockchainAndPricesWorker = async (queueName: string): Promise<
     },
     {
       connection: redisBullMQ,
-      lockDuration: DEFAULT_WORKER_LOCK_DURATION
+      lockDuration: BLOCKCHAIN_SYNC_WORKER_LOCK_DURATION
     }
   )
 
@@ -76,7 +76,7 @@ export const cleanupClientPaymentsWorker = async (queueName: string): Promise<vo
     },
     {
       connection: redisBullMQ,
-      lockDuration: DEFAULT_WORKER_LOCK_DURATION
+      lockDuration: CLEANUP_WORKER_LOCK_DURATION
     }
   )
 
