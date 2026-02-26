@@ -276,10 +276,9 @@ export const MEMPOOL_PROCESS_DELAY = 100
 // When fetching some address transactions, number of transactions to fetch at a time.
 // On chronik, the max allowed is 200
 export const CHRONIK_FETCH_N_TXS_PER_PAGE = 200
-
-export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 64
-export const TX_EMIT_BATCH_SIZE = 1_000 // for our generator, not chronik
-export const DB_COMMIT_BATCH_SIZE = 1_000 // tamanho dos lotes para commit no DB
+export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 5
+export const TX_EMIT_BATCH_SIZE = 500
+export const DB_COMMIT_BATCH_SIZE = 500
 
 export const TRIGGER_POST_CONCURRENCY = 100
 export const TRIGGER_EMAIL_CONCURRENCY = 100
