@@ -368,8 +368,12 @@ export class ChronikBlockchainClient {
             pageTxs = []
           }
 
-          if (pageTxs.length === 0) {
-            console.log(`${addrLogPrefix} EMPTY ADDRESS`)
+          const rawPageLength = pageTxs.length
+
+          if (rawPageLength === 0) {
+            if (pageIndex === 0) {
+              console.log(`${addrLogPrefix} EMPTY ADDRESS`)
+            }
             break
           }
 
