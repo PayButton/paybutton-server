@@ -174,7 +174,9 @@ export const SYNC_TXS_JOBS_RETRY_DELAY = 2000
 export const BCH_TIMESTAMP_THRESHOLD = 1501588800 // 2017 Aug 1, 12PM
 export const XEC_TIMESTAMP_THRESHOLD = 1605398400 // 2020 Nov 15, 12AM
 
-export const DEFAULT_WORKER_LOCK_DURATION = 120000
+export const PRICE_SYNC_WORKER_LOCK_DURATION = 180000
+export const BLOCKCHAIN_SYNC_WORKER_LOCK_DURATION = 900000
+export const CLEANUP_WORKER_LOCK_DURATION = 120000
 // Wait time (in ms) between sync of current prices
 export const CURRENT_PRICE_REPEAT_DELAY = 60000
 
@@ -197,7 +199,7 @@ export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
 
 export type BLOCKCHAIN_CLIENT_OPTIONS = 'chronik'
 
-export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 45000
+export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 90000
 export const DEFAULT_TX_PAGE_SIZE = 100
 
 export const PAYMENT_WEEK_KEY_FORMAT = 'YYYY:WW'
@@ -276,10 +278,10 @@ export const MEMPOOL_PROCESS_DELAY = 100
 // When fetching some address transactions, number of transactions to fetch at a time.
 // On chronik, the max allowed is 200
 export const CHRONIK_FETCH_N_TXS_PER_PAGE = 200
-
-export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 128
-export const TX_EMIT_BATCH_SIZE = 2_000 // for our generator, not chronik
-export const DB_COMMIT_BATCH_SIZE = 2_000 // tamanho dos lotes para commit no DB
+export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 1
+export const TX_EMIT_BATCH_SIZE = 500
+export const DB_COMMIT_BATCH_SIZE = 500
+export const SYNC_MISSED_TXS_BATCH_SIZE = 50
 
 export const TRIGGER_POST_CONCURRENCY = 100
 export const TRIGGER_EMAIL_CONCURRENCY = 100
