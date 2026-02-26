@@ -844,32 +844,38 @@ export class ChronikBlockchainClient {
 
       for await (const batch of this.fetchLatestTxsForAddresses(addresses)) {
         if (batch.addressesSynced.length > 0) {
-          // marcador de slice => desmarca syncing
+          console.log(`${pfx} marking batch as syncing...`)
           await setSyncingBatch(batch.addressesSynced, false)
+          console.log(`${pfx} marked batch as syncing.`)
           continue
         }
 
         const involvedAddrIds = new Set(batch.chronikTxs.map(({ address }) => address.id))
 
         try {
+          console.log(`${pfx} getting ${batch.chronikTxs.length} txs from chronik...`)
           const pairsFromBatch: RowWithRaw[] = await Promise.all(
             batch.chronikTxs.map(async ({ tx, address }) => {
               const row = await this.getTransactionFromChronikTransaction(tx, address)
               return { row, raw: tx }
             })
           )
+          console.log(`${pfx} got txs from chronik.`)
 
           for (const { row } of pairsFromBatch) {
             perAddrCount.set(row.addressId, (perAddrCount.get(row.addressId) ?? 0) + 1)
           }
 
+          console.log(`${pfx} added ${pairsFromBatch.length} to commit buffer ${toCommit.length}`)
           toCommit.push(...pairsFromBatch)
 
           if (toCommit.length >= DB_COMMIT_BATCH_SIZE) {
+            console.log(`${pfx} ${toCommit.length} reached commit batch size of ${DB_COMMIT_BATCH_SIZE}, committing to DB...`)
             const commitPairs = toCommit.slice(0, DB_COMMIT_BATCH_SIZE)
             toCommit = toCommit.slice(DB_COMMIT_BATCH_SIZE)
 
             const rows = commitPairs.map(p => p.row)
+            console.log(`${pfx} creating txs from ${rows.length} rows...`)
             const createdTxs = await createManyTransactions(rows)
             console.log(`${this.CHRONIK_MSG_PREFIX} committed — created=${createdTxs.length}`)
 
