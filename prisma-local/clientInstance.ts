@@ -2,8 +2,8 @@ import { PrismaClient, Prisma } from '@prisma/client'
 
 let prisma: PrismaClient
 
-const CONNECTION_LIMIT = 5
-const POOL_TIMEOUT = 30
+const CONNECTION_LIMIT = 10
+const POOL_TIMEOUT = 60
 const SLOW_QUERY_THRESHOLD_MS = 10000
 
 function buildDatasourceUrl (): string {
