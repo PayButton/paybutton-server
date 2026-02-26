@@ -20,7 +20,7 @@ import {
 import { Address, Prisma, ClientPaymentStatus } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
-import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced, updateManyLastSynced, upsertAddress } from './addressService'
+import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced, updateManyLastSynced } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
@@ -288,26 +288,9 @@ export class ChronikBlockchainClient {
     const inputAddresses = this.getSortedInputAddresses(transaction)
     const outputAddresses = this.getSortedOutputAddresses(transaction)
 
-    const uniqueAddressStrings = [...new Set([
-      ...inputAddresses.map(({ address: addr }) => addr),
-      ...outputAddresses.map(({ address: addr }) => addr)
-    ])]
-    const addressIdMap = new Map<string, string>()
-    await Promise.all(
-      uniqueAddressStrings.map(async (addrStr) => {
-        try {
-          const parsed = parseAddress(addrStr)
-          const addr = await upsertAddress(parsed)
-          addressIdMap.set(parsed, addr.id)
-        } catch {
-          // Skip invalid addresses: don't upsert, don't add to map
-        }
-      })
-    )
-
-    const getAddressId = (addr: string): string | undefined => {
+    const parseAddressString = (addr: string): string | undefined => {
       try {
-        return addressIdMap.get(parseAddress(addr))
+        return parseAddress(addr)
       } catch {
         return undefined
       }
@@ -322,13 +305,13 @@ export class ChronikBlockchainClient {
       opReturn,
       inputs: {
         create: inputAddresses
-          .map(({ address: addr, amount: amt }, i) => ({ addressId: getAddressId(addr), index: i, amount: amt }))
-          .filter((item): item is { addressId: string, index: number, amount: Prisma.Decimal } => item.addressId !== undefined)
+          .map(({ address: addr, amount: amt }, i) => ({ address: parseAddressString(addr), index: i, amount: amt }))
+          .filter((item): item is { address: string, index: number, amount: Prisma.Decimal } => item.address !== undefined)
       },
       outputs: {
         create: outputAddresses
-          .map(({ address: addr, amount: amt }, i) => ({ addressId: getAddressId(addr), index: i, amount: amt }))
-          .filter((item): item is { addressId: string, index: number, amount: Prisma.Decimal } => item.addressId !== undefined)
+          .map(({ address: addr, amount: amt }, i) => ({ address: parseAddressString(addr), index: i, amount: amt }))
+          .filter((item): item is { address: string, index: number, amount: Prisma.Decimal } => item.address !== undefined)
       }
     }
   }

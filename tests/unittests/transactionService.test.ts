@@ -27,8 +27,8 @@ const includePaybuttonsAndPrices = {
     }
   },
   ...includePrices,
-  inputs: { include: { address: true }, orderBy: { index: 'asc' as const } },
-  outputs: { include: { address: true }, orderBy: { index: 'asc' as const } }
+  inputs: { orderBy: { index: 'asc' as const } },
+  outputs: { orderBy: { index: 'asc' as const } }
 }
 
 describe('Create services', () => {
@@ -199,12 +199,12 @@ describe('Address object arrays (input/output) integration', () => {
 
   it('getSimplifiedTrasaction uses inputs/outputs from tx when not provided explicitly', () => {
     const inputsFromDb = [
-      { address: { address: 'ecash:qqinput1' }, amount: new Prisma.Decimal(1.23) },
-      { address: { address: 'ecash:qqinput2' }, amount: new Prisma.Decimal(4.56) }
+      { address: 'ecash:qqinput1', amount: new Prisma.Decimal(1.23) },
+      { address: 'ecash:qqinput2', amount: new Prisma.Decimal(4.56) }
     ]
     const outputsFromDb = [
-      { address: { address: 'ecash:qqout1' }, amount: new Prisma.Decimal(7.89) },
-      { address: { address: 'ecash:qqout2' }, amount: new Prisma.Decimal(0.12) }
+      { address: 'ecash:qqout1', amount: new Prisma.Decimal(7.89) },
+      { address: 'ecash:qqout2', amount: new Prisma.Decimal(0.12) }
     ]
     const tx: any = {
       hash: 'hash1',
