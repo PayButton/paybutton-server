@@ -415,11 +415,11 @@ export class ChronikBlockchainClient {
 
       // Yield full TX batches when buffer reaches TX_EMIT_BATCH_SIZE
       while (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
-        const chronikTxsSlice = chronikTxs.slice(0, TX_EMIT_BATCH_SIZE)
-        chronikTxs = chronikTxs.slice(TX_EMIT_BATCH_SIZE)
-        yield { chronikTxs: chronikTxsSlice, addressesSynced: [] }
+        yield {
+          chronikTxs: chronikTxs.splice(0, TX_EMIT_BATCH_SIZE),
+          addressesSynced: []
+        }
       }
-
       // Yield batch marker for completed address group
       yield { chronikTxs: [], addressesSynced: lastBatchAddresses }
     }
