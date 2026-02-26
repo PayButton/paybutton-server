@@ -568,10 +568,16 @@ export async function createManyTransactions (
 ): Promise<TransactionWithAddressAndPrices[]> {
   const insertedTransactionsDistinguished: TxDistinguished[] = []
 
-  await prisma.$transaction(
-    async (prisma) => {
-      const BATCH_SIZE = 50
-      for (let i = 0; i < transactionsData.length; i += BATCH_SIZE) {
+  const txStart = Date.now()
+  console.log(`[createManyTransactions] Starting transaction for ${transactionsData.length} transactions`)
+
+  const BATCH_SIZE = 50
+  const totalBatches = Math.ceil(transactionsData.length / BATCH_SIZE)
+  for (let i = 0; i < transactionsData.length; i += BATCH_SIZE) {
+    await prisma.$transaction(
+      async (prisma) => {
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1
+        const batchStart = Date.now()
         const batch = transactionsData.slice(i, i + BATCH_SIZE)
 
         const results = await Promise.all(
@@ -593,18 +599,20 @@ export async function createManyTransactions (
           )
         )
 
+        const batchElapsed = Date.now() - batchStart
+        const totalElapsed = Date.now() - txStart
+        console.log(`[createManyTransactions] Batch ${batchNum}/${totalBatches}: ${batch.length} upserts in ${batchElapsed}ms (total: ${totalElapsed}ms / ${UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT}ms timeout)`)
+
         for (const upsertedTx of results) {
           insertedTransactionsDistinguished.push({
             tx: upsertedTx,
             isCreated: upsertedTx.createdAt.getTime() === upsertedTx.updatedAt.getTime()
           })
         }
-      }
-    },
-    {
-      timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT
-    }
-  )
+      }, { timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT }
+    )
+    console.log(`[createManyTransactions] Transaction completed in ${Date.now() - txStart}ms`)
+  }
 
   const insertedTransactions = insertedTransactionsDistinguished
     .filter((txD) => txD.isCreated)
