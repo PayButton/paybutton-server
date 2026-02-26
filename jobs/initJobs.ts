@@ -28,16 +28,14 @@ const main = async (): Promise<void> => {
 
   const blockchainEvents = new QueueEvents('blockchainSync', { connection: redisBullMQ })
   await new Promise<void>((resolve) => {
-    blockchainEvents.on('completed', async ({ jobId }) => {
+    blockchainEvents.on('completed', ({ jobId }) => {
       if (jobId === 'syncBlockchainAndPrices') {
-        await blockchainEvents.close()
-        resolve()
+        void blockchainEvents.close().then(() => resolve())
       }
     })
-    blockchainEvents.on('failed', async ({ jobId }) => {
+    blockchainEvents.on('failed', ({ jobId }) => {
       if (jobId === 'syncBlockchainAndPrices') {
-        await blockchainEvents.close()
-        resolve()
+        void blockchainEvents.close().then(() => resolve())
       }
     })
   })
