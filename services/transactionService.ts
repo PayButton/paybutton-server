@@ -259,7 +259,7 @@ export async function fetchTransactionsWithPaybuttonsAndPricesForIdList (txIdLis
   })
 }
 
-export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (addressId: string, pageSize = 5000): AsyncGenerator<TransactionsWithPaybuttonsAndPrices[]> {
+export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (addressId: string, pageSize = 500): AsyncGenerator<TransactionsWithPaybuttonsAndPrices[]> {
   let page = 0
 
   while (true) {
