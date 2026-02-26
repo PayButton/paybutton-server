@@ -41,7 +41,7 @@ jest.mock('config', () => ({
 }))
 
 jest.mock('../../services/addressService', () => ({
-  fetchAllAddressesForNetworkId: jest.fn().mockResolvedValue([])
+  fetchAddressesToSync: jest.fn().mockResolvedValue([])
 }))
 
 jest.mock('../../services/priceService', () => ({

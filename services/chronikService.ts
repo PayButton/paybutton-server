@@ -20,7 +20,7 @@ import {
 import { Address, Prisma, ClientPaymentStatus } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
-import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced, updateManyLastSynced, upsertAddress } from './addressService'
+import { fetchAddressesArray, fetchAddressesToSync, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced, updateManyLastSynced, upsertAddress } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
@@ -957,7 +957,7 @@ export class ChronikBlockchainClient {
   }
 
   public async syncMissedTransactions (): Promise<void> {
-    const addresses = await fetchAllAddressesForNetworkId(this.networkId)
+    const addresses = await fetchAddressesToSync(this.networkId)
     try {
       const { failedAddressesWithErrors, successfulAddressesWithCount } = await this.syncAddresses(addresses, true)
       Object.keys(failedAddressesWithErrors).forEach((addr) => {
@@ -975,7 +975,7 @@ export class ChronikBlockchainClient {
   }
 
   public async subscribeInitialAddresses (): Promise<void> {
-    const addresses = await fetchAllAddressesForNetworkId(this.networkId)
+    const addresses = await fetchAddressesToSync(this.networkId)
     try {
       await this.subscribeAddresses(addresses)
     } catch (err: any) {

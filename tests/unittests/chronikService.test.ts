@@ -48,7 +48,7 @@ jest.mock('config', () => ({
 
 // Mock all the services that might be called during initialization
 jest.mock('../../services/addressService', () => ({
-  fetchAllAddressesForNetworkId: jest.fn().mockResolvedValue([]),
+  fetchAddressesToSync: jest.fn().mockResolvedValue([]),
   fetchAddressBySubstring: jest.fn(),
   fetchAddressesArray: jest.fn(),
   getEarliestUnconfirmedTxTimestampForAddress: jest.fn(),
