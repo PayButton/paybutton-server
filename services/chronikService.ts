@@ -1,7 +1,7 @@
 import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client'
 import { encodeCashAddress, decodeCashAddress } from 'ecashaddrjs'
 import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE } from 'constants/index'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, SYNC_MISSED_TXS_BATCH_SIZE } from 'constants/index'
 import { productionAddresses } from 'prisma-local/seeds/addresses'
 import {
   TransactionWithAddressAndPrices,
@@ -958,20 +958,30 @@ export class ChronikBlockchainClient {
 
   public async syncMissedTransactions (): Promise<void> {
     const addresses = await fetchAllAddressesForNetworkId(this.networkId)
-    try {
-      const { failedAddressesWithErrors, successfulAddressesWithCount } = await this.syncAddresses(addresses, true)
-      Object.keys(failedAddressesWithErrors).forEach((addr) => {
-        console.error(`${this.CHRONIK_MSG_PREFIX}: When syncing missing addresses for address ${addr} encountered error: ${failedAddressesWithErrors[addr]}`)
-      })
-      console.log(`${this.CHRONIK_MSG_PREFIX}: Missed txs successfully synced per address:`)
-      Object.keys(successfulAddressesWithCount).forEach((addr) => {
-        if (successfulAddressesWithCount[addr] > 0) {
-          console.log(`${this.CHRONIK_MSG_PREFIX}:> ${addr} — ${successfulAddressesWithCount[addr]}.`)
-        }
-      })
-    } catch (err: any) {
-      console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR: (skipping anyway) initial missing transactions sync failed: ${err.message as string} ${err.stack as string}`)
+    const failedAddressesWithErrors: KeyValueT<string> = {}
+    const successfulAddressesWithCount: KeyValueT<number> = {}
+
+    for (let i = 0; i < addresses.length; i += SYNC_MISSED_TXS_BATCH_SIZE) {
+      const batch = addresses.slice(i, i + SYNC_MISSED_TXS_BATCH_SIZE)
+      console.log(`${this.CHRONIK_MSG_PREFIX}: Syncing missed txs batch ${Math.floor(i / SYNC_MISSED_TXS_BATCH_SIZE) + 1}/${Math.ceil(addresses.length / SYNC_MISSED_TXS_BATCH_SIZE)} (${batch.length} addresses)`)
+      try {
+        const result = await this.syncAddresses(batch, true)
+        Object.assign(failedAddressesWithErrors, result.failedAddressesWithErrors)
+        Object.assign(successfulAddressesWithCount, result.successfulAddressesWithCount)
+      } catch (err: any) {
+        console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR: (skipping batch) missed transactions sync failed for batch starting at index ${i}: ${err.message as string} ${err.stack as string}`)
+      }
     }
+
+    Object.keys(failedAddressesWithErrors).forEach((addr) => {
+      console.error(`${this.CHRONIK_MSG_PREFIX}: When syncing missing addresses for address ${addr} encountered error: ${failedAddressesWithErrors[addr]}`)
+    })
+    console.log(`${this.CHRONIK_MSG_PREFIX}: Missed txs successfully synced per address:`)
+    Object.keys(successfulAddressesWithCount).forEach((addr) => {
+      if (successfulAddressesWithCount[addr] > 0) {
+        console.log(`${this.CHRONIK_MSG_PREFIX}:> ${addr} — ${successfulAddressesWithCount[addr]}.`)
+      }
+    })
   }
 
   public async subscribeInitialAddresses (): Promise<void> {
