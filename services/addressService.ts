@@ -162,26 +162,32 @@ Address[]
   })
 }
 
-export async function fetchAllAddresses (includeTransactions = false): Promise<AddressWithTransactions[]> {
-  return await prisma.address.findMany({
-    include: {
-      transactions: includeTransactions
-    }
-  })
-}
-
-export async function fetchUnsyncedAddresses (): Promise<Address[]> {
+export async function fetchAddressesToSync (networkId: number): Promise<Address[]> {
   return await prisma.address.findMany({
     where: {
-      lastSynced: null
-    }
-  })
-}
-
-export async function fetchAllAddressesForNetworkId (networkId: number): Promise<Address[]> {
-  return await prisma.address.findMany({
-    where: {
-      networkId
+      networkId,
+      OR: [
+        {
+          transactions: {
+            some: {}
+          }
+        },
+        {
+          userProfiles: {
+            some: {}
+          }
+        },
+        {
+          paybuttons: {
+            some: {}
+          }
+        },
+        {
+          clientPayments: {
+            some: {}
+          }
+        }
+      ]
     }
   })
 }
