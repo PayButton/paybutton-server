@@ -400,9 +400,13 @@ export class ChronikBlockchainClient {
           }
 
           nextBurstBasePageIndex += 1
-          if (newTxsInThisPage === 0 && oldestTs < lastSyncedTimestampSeconds) {
+          if (
+            (newTxsInThisPage === 0 && oldestTs < lastSyncedTimestampSeconds) ||
+            rawPageLength < CHRONIK_FETCH_N_TXS_PER_PAGE
+          ) {
             hasReachedStoppingCondition = true
           }
+
           newTxs += newTxsInThisPage
         }
         if (newTxs > 0) {
