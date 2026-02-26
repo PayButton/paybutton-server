@@ -54,10 +54,10 @@ export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices, in
 
   const parsedOpReturn = resolveOpReturn(opReturn)
 
-  const dbInputsArr = (tx as { inputs?: Array<{ address: { address: string }, amount: Prisma.Decimal }> }).inputs
-  const dbOutputsArr = (tx as { outputs?: Array<{ address: { address: string }, amount: Prisma.Decimal }> }).outputs
-  const resolvedInputAddresses = inputAddresses ?? (Array.isArray(dbInputsArr) ? dbInputsArr.map(i => ({ address: i.address.address, amount: i.amount })) : [])
-  const resolvedOutputAddresses = outputAddresses ?? (Array.isArray(dbOutputsArr) ? dbOutputsArr.map(o => ({ address: o.address.address, amount: o.amount })) : [])
+  const dbInputsArr = (tx as { inputs?: Array<{ address: string, amount: Prisma.Decimal }> }).inputs
+  const dbOutputsArr = (tx as { outputs?: Array<{ address: string, amount: Prisma.Decimal }> }).outputs
+  const resolvedInputAddresses = inputAddresses ?? (Array.isArray(dbInputsArr) ? dbInputsArr.map(i => ({ address: i.address, amount: i.amount })) : [])
+  const resolvedOutputAddresses = outputAddresses ?? (Array.isArray(dbOutputsArr) ? dbOutputsArr.map(o => ({ address: o.address, amount: o.amount })) : [])
 
   const simplifiedTransaction: SimplifiedTransaction = {
     hash,
@@ -96,8 +96,8 @@ const includePrices = {
 const includeAddressAndPrices = {
   address: true,
   ...includePrices,
-  inputs: { include: { address: true }, orderBy: { index: 'asc' as const } },
-  outputs: { include: { address: true }, orderBy: { index: 'asc' as const } }
+  inputs: { orderBy: { index: 'asc' as const } },
+  outputs: { orderBy: { index: 'asc' as const } }
 }
 
 const transactionWithPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
@@ -137,8 +137,8 @@ const includePaybuttonsAndPrices = {
     }
   },
   ...includePrices,
-  inputs: { include: { address: true }, orderBy: { index: 'asc' as const } },
-  outputs: { include: { address: true }, orderBy: { index: 'asc' as const } }
+  inputs: { orderBy: { index: 'asc' as const } },
+  outputs: { orderBy: { index: 'asc' as const } }
 }
 export const includePaybuttonsAndPricesAndInvoices = {
   ...includePaybuttonsAndPrices,
