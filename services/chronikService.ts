@@ -1162,10 +1162,8 @@ class MultiBlockchainClient {
 
   public async syncMissedTransactions (): Promise<void> {
     await this.waitForStart()
-    await Promise.all([
-      this.clients.ecash.syncMissedTransactions(),
-      this.clients.bitcoincash.syncMissedTransactions()
-    ])
+    await this.clients.ecash.syncMissedTransactions()
+    await this.clients.bitcoincash.syncMissedTransactions()
   }
 
   public async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
