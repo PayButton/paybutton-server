@@ -33,6 +33,7 @@ export async function * getUserUncachedAddresses (userId: string): AsyncGenerato
 export const getPaymentList = async (userId: string): Promise<Payment[]> => {
   const uncachedAddressStream = getUserUncachedAddresses(userId)
   for await (const address of uncachedAddressStream) {
+    console.log('[CACHE]: Creating cache for uncached address', address.address)
     void await CacheSet.addressCreation(address)
   }
   return await getCachedPaymentsForUser(userId)
@@ -283,6 +284,7 @@ export const clearRecentAddressCache = async (addressString: string, timestamps:
 export const initPaymentCache = async (address: Address): Promise<boolean> => {
   const cachedKeys = await getCachedWeekKeysForAddress(address.address)
   if (cachedKeys.length === 0) {
+    console.log('[CACHE]: Initializing cache for address', address.address)
     await CacheSet.addressCreation(address)
     return true
   }
