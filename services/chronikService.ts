@@ -857,6 +857,7 @@ export class ChronikBlockchainClient {
           const pairsFromBatch: RowWithRaw[] = await Promise.all(
             batch.chronikTxs.map(async ({ tx, address }) => {
               const row = await this.getTransactionFromChronikTransaction(tx, address)
+              console.log(`${pfx} got 1 row from chronik for address ${address.address}`)
               return { row, raw: tx }
             })
           )
