@@ -8,7 +8,7 @@ import {
   ChronikBlockchainClient,
   multiBlockchainClient
 } from '../../services/chronikService'
-import { Address } from '@prisma/client'
+import { Address, Prisma } from '@prisma/client'
 import { fetchAddressesArray } from '../../services/addressService'
 import { fetchUnconfirmedTransactions, deleteTransactions, upsertTransaction } from '../../services/transactionService'
 import { executeAddressTriggers } from '../../services/triggerService'
@@ -1403,14 +1403,22 @@ describe('WS onMessage matrix (no re-mocks)', () => {
       .mockReturnValue(['ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h'])
 
     // minimal transaction shape for downstream
+    // Note: getTransactionFromChronikTransaction is now synchronous, so use mockReturnValue
     jest.spyOn(client, 'getTransactionFromChronikTransaction')
-      .mockResolvedValue({
+      .mockReturnValue({
         hash: 'txCONF',
-        amount: '0.01',
+        amount: new Prisma.Decimal('0.01'),
         timestamp: Math.floor(Date.now() / 1000),
         addressId: 'addr-1',
-        confirmed: false,
-        opReturn: JSON.stringify({ message: { type: 'PAY', paymentId: 'pid-1' } })
+        confirmed: true,
+        orphaned: false,
+        opReturn: JSON.stringify({ message: { type: 'PAY', paymentId: 'pid-1' } }),
+        inputs: {
+          create: []
+        },
+        outputs: {
+          create: []
+        }
       })
 
     const paySpy = jest.spyOn(client, 'handleUpdateClientPaymentStatus')

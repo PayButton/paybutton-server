@@ -31,7 +31,7 @@ export const syncCurrentPricesWorker = async (queueName: string): Promise<void> 
   })
 }
 
-export const syncBlockchainAndPricesWorker = async (queueName: string): Promise<void> => {
+export const syncBlockchainAndPricesWorker = async (queueName: string, onComplete?: () => Promise<void> | void): Promise<void> => {
   const worker = new Worker(
     queueName,
     async (job) => {
@@ -53,6 +53,7 @@ export const syncBlockchainAndPricesWorker = async (queueName: string): Promise<
       await multiBlockchainClient.destroy()
       console.log('Done.')
       console.log(`job ${job.id as string}: blockchain + prices sync finished`)
+      await onComplete?.()
     })()
   })
 

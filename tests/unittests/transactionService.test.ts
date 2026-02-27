@@ -27,8 +27,7 @@ const includePaybuttonsAndPrices = {
     }
   },
   ...includePrices,
-  inputs: { include: { address: true }, orderBy: { index: 'asc' as const } },
-  outputs: { include: { address: true }, orderBy: { index: 'asc' as const } }
+  inputs: { orderBy: { index: 'asc' as const } }
 }
 
 describe('Create services', () => {
@@ -197,14 +196,14 @@ describe('Address object arrays (input/output) integration', () => {
     expect(simplified.outputAddresses).toEqual(outputs)
   })
 
-  it('getSimplifiedTrasaction uses inputs/outputs from tx when not provided explicitly', () => {
+  it('getSimplifiedTrasaction uses inputs from tx when not provided explicitly, but outputs must be provided as parameter', () => {
     const inputsFromDb = [
-      { address: { address: 'ecash:qqinput1' }, amount: new Prisma.Decimal(1.23) },
-      { address: { address: 'ecash:qqinput2' }, amount: new Prisma.Decimal(4.56) }
+      { address: 'ecash:qqinput1', amount: new Prisma.Decimal(1.23) },
+      { address: 'ecash:qqinput2', amount: new Prisma.Decimal(4.56) }
     ]
-    const outputsFromDb = [
-      { address: { address: 'ecash:qqout1' }, amount: new Prisma.Decimal(7.89) },
-      { address: { address: 'ecash:qqout2' }, amount: new Prisma.Decimal(0.12) }
+    const outputsProvided = [
+      { address: 'ecash:qqout1', amount: new Prisma.Decimal(7.89) },
+      { address: 'ecash:qqout2', amount: new Prisma.Decimal(0.12) }
     ]
     const tx: any = {
       hash: 'hash1',
@@ -214,10 +213,10 @@ describe('Address object arrays (input/output) integration', () => {
       address: { address: 'ecash:qqprimaryaddressxxxxxxxxxxxxxxxxxxxxx' },
       timestamp: 1700000000,
       prices: mockedTransaction.prices,
-      inputs: inputsFromDb,
-      outputs: outputsFromDb
+      inputs: inputsFromDb
+      // Note: outputs are no longer stored in DB, so they won't be read from tx.outputs
     }
-    const simplified = transactionService.getSimplifiedTrasaction(tx)
+    const simplified = transactionService.getSimplifiedTrasaction(tx, undefined, outputsProvided)
     expect(simplified.inputAddresses).toEqual([
       { address: 'ecash:qqinput1', amount: new Prisma.Decimal(1.23) },
       { address: 'ecash:qqinput2', amount: new Prisma.Decimal(4.56) }

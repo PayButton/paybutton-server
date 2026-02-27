@@ -16,19 +16,7 @@ const main = async (): Promise<void> => {
   await blockchainQueue.obliterate({ force: true })
   await cleanupQueue.obliterate({ force: true })
 
-  await pricesQueue.add('syncCurrentPrices',
-    {},
-    {
-      jobId: 'syncCurrentPrices',
-      removeOnFail: false,
-      repeat: {
-        every: CURRENT_PRICE_REPEAT_DELAY
-      }
-    }
-  )
-
-  await syncCurrentPricesWorker(pricesQueue.name)
-
+  // Start blockchain sync first; current prices job starts only after it completes
   await blockchainQueue.add('syncBlockchainAndPrices',
     {},
     {
@@ -37,7 +25,20 @@ const main = async (): Promise<void> => {
       removeOnFail: true
     }
   )
-  await syncBlockchainAndPricesWorker(blockchainQueue.name)
+  void await syncBlockchainAndPricesWorker(blockchainQueue.name, async () => {
+    await pricesQueue.add('syncCurrentPrices',
+      {},
+      {
+        jobId: 'syncCurrentPrices',
+        removeOnFail: false,
+        repeat: {
+          every: CURRENT_PRICE_REPEAT_DELAY
+        }
+      }
+    )
+    await syncCurrentPricesWorker(pricesQueue.name)
+    console.log('Current prices sync job started after blockchain sync completion.')
+  })
 
   await cleanupQueue.add(
     'cleanupClientPayments',
