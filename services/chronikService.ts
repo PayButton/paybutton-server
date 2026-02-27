@@ -26,7 +26,7 @@ import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
 import io, { Socket } from 'socket.io-client'
 import moment from 'moment'
-import { OpReturnData, parseAddress, parseError, parseOpReturnData } from 'utils/validators'
+import { OpReturnData, parseError, parseOpReturnData } from 'utils/validators'
 import { executeAddressTriggers, executeTriggersBatch } from './triggerService'
 import { appendTxsToFile } from 'prisma-local/seeds/transactions'
 import { PHASE_PRODUCTION_BUILD } from 'next/dist/shared/lib/constants'
@@ -251,7 +251,7 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private async getTransactionAmountAndData (transaction: Tx, addressString: string): Promise<{amount: Prisma.Decimal, opReturn: string}> {
+  private getTransactionAmountAndData (transaction: Tx, addressString: string): {amount: Prisma.Decimal, opReturn: string} {
     let totalOutput = 0n
     let totalInput = 0n
     const addressFormat = xecaddr.detectAddressFormat(addressString)
@@ -271,30 +271,26 @@ export class ChronikBlockchainClient {
         }
       }
     }
+
     for (const input of transaction.inputs) {
       if (input?.outputScript?.includes(script) === true) {
         totalInput += input.sats
       }
     }
+
     const satoshis = totalOutput - totalInput
+    const amount = satoshisToUnit(satoshis, addressFormat)
+
     return {
-      amount: await satoshisToUnit(satoshis, addressFormat),
+      amount,
       opReturn
     }
   }
 
-  private async getTransactionFromChronikTransaction (transaction: Tx, address: Address): Promise<Prisma.TransactionUncheckedCreateInput> {
-    const { amount, opReturn } = await this.getTransactionAmountAndData(transaction, address.address)
+  private getTransactionFromChronikTransaction (transaction: Tx, address: Address): Prisma.TransactionUncheckedCreateInput {
+    const { amount, opReturn } = this.getTransactionAmountAndData(transaction, address.address)
     const inputAddresses = this.getSortedInputAddresses(transaction)
     const outputAddresses = this.getSortedOutputAddresses(transaction)
-
-    const parseAddressString = (addr: string): string | undefined => {
-      try {
-        return parseAddress(addr)
-      } catch {
-        return undefined
-      }
-    }
 
     return {
       hash: transaction.txid,
@@ -305,13 +301,9 @@ export class ChronikBlockchainClient {
       opReturn,
       inputs: {
         create: inputAddresses
-          .map(({ address: addr, amount: amt }, i) => ({ address: parseAddressString(addr), index: i, amount: amt }))
-          .filter((item): item is { address: string, index: number, amount: Prisma.Decimal } => item.address !== undefined)
       },
       outputs: {
         create: outputAddresses
-          .map(({ address: addr, amount: amt }, i) => ({ address: parseAddressString(addr), index: i, amount: amt }))
-          .filter((item): item is { address: string, index: number, amount: Prisma.Decimal } => item.address !== undefined)
       }
     }
   }
@@ -367,9 +359,13 @@ export class ChronikBlockchainClient {
             pageTxs = []
           }
 
-          if (pageTxs.length === 0) {
+          if (pageIndex === 0 && pageTxs.length === 0) {
             console.log(`${addrLogPrefix} EMPTY ADDRESS`)
             break
+          }
+
+          if (pageTxs.length < CHRONIK_FETCH_N_TXS_PER_PAGE) {
+            hasReachedStoppingCondition = true
           }
 
           const newestTs = Number(pageTxs[0].block?.timestamp ?? pageTxs[0].timeFirstSeen)
@@ -455,9 +451,7 @@ export class ChronikBlockchainClient {
 
       page += 1
 
-      const transactionsToPersist = await Promise.all(
-        [...confirmedTransactions, ...unconfirmedTransactions].map(async tx => await this.getTransactionFromChronikTransaction(tx, address))
-      )
+      const transactionsToPersist = [...confirmedTransactions, ...unconfirmedTransactions].map(tx => this.getTransactionFromChronikTransaction(tx, address))
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
       if (persistedTransactions.length > 0) {
         const simplifiedTransactions = getSimplifiedTransactions(persistedTransactions)
@@ -532,7 +526,7 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private getSortedInputAddresses (transaction: Tx): Array<{address: string, amount: Prisma.Decimal}> {
+  private getSortedInputAddresses (transaction: Tx): Array<{address: string, index: number, amount: Prisma.Decimal}> {
     const addressSatsMap = new Map<string, bigint>()
     transaction.inputs.forEach((inp) => {
       const address = outputScriptToAddress(this.networkSlug, inp.outputScript)
@@ -544,16 +538,18 @@ export class ChronikBlockchainClient {
     const unitDivisor = this.networkId === XEC_NETWORK_ID
       ? 1e2
       : (this.networkId === BCH_NETWORK_ID ? 1e8 : 1)
-    const sortedInputAddresses = Array.from(addressSatsMap.entries())
-      .sort(([, valueA], [, valueB]) => Number(valueB - valueA))
-    return sortedInputAddresses.map(([address, sats]) => {
+    const result: Array<{address: string, index: number, amount: Prisma.Decimal}> = []
+    let index = 0
+    for (const [address, sats] of addressSatsMap.entries()) {
       const decimal = new Prisma.Decimal(sats.toString())
       const amount = decimal.dividedBy(unitDivisor)
-      return { address, amount }
-    })
+      result.push({ address, index, amount })
+      index++
+    }
+    return result
   }
 
-  private getSortedOutputAddresses (transaction: Tx): Array<{address: string, amount: Prisma.Decimal}> {
+  private getSortedOutputAddresses (transaction: Tx): Array<{address: string, index: number, amount: Prisma.Decimal}> {
     const addressSatsMap = new Map<string, bigint>()
     transaction.outputs.forEach((out) => {
       const address = outputScriptToAddress(this.networkSlug, out.outputScript)
@@ -565,14 +561,15 @@ export class ChronikBlockchainClient {
     const unitDivisor = this.networkId === XEC_NETWORK_ID
       ? 1e2
       : (this.networkId === BCH_NETWORK_ID ? 1e8 : 1)
-    const sortedOutputAddresses = Array.from(addressSatsMap.entries())
-      .sort(([, valueA], [, valueB]) => Number(valueB - valueA))
-      .map(([address, sats]) => {
-        const decimal = new Prisma.Decimal(sats.toString())
-        const amount = decimal.dividedBy(unitDivisor)
-        return { address, amount }
-      })
-    return sortedOutputAddresses
+    const result: Array<{address: string, index: number, amount: Prisma.Decimal}> = []
+    let index = 0
+    for (const [address, sats] of addressSatsMap.entries()) {
+      const decimal = new Prisma.Decimal(sats.toString())
+      const amount = decimal.dividedBy(unitDivisor)
+      result.push({ address, index, amount })
+      index++
+    }
+    return result
   }
 
   public async waitForSyncing (txId: string, addressStringArray: string[]): Promise<void> {
@@ -764,14 +761,14 @@ export class ChronikBlockchainClient {
   private async getAddressesForTransaction (transaction: Tx): Promise<AddressWithTransaction[]> {
     const relatedAddresses = this.getRelatedAddressesForTransaction(transaction)
     const addressesFromStringArray = await fetchAddressesArray(relatedAddresses)
-    const addressesWithTransactions: AddressWithTransaction[] = await Promise.all(addressesFromStringArray.map(
-      async address => {
+    const addressesWithTransactions: AddressWithTransaction[] = addressesFromStringArray.map(
+      address => {
         return {
           address,
-          transaction: await this.getTransactionFromChronikTransaction(transaction, address)
+          transaction: this.getTransactionFromChronikTransaction(transaction, address)
         }
       }
-    ))
+    )
     const zero = new Prisma.Decimal(0)
     return addressesWithTransactions.filter(
       addressWithTransaction => !(zero.equals(addressWithTransaction.transaction.amount as Prisma.Decimal))
@@ -835,12 +832,10 @@ export class ChronikBlockchainClient {
         const involvedAddrIds = new Set(batch.chronikTxs.map(({ address }) => address.id))
 
         try {
-          const pairsFromBatch: RowWithRaw[] = await Promise.all(
-            batch.chronikTxs.map(async ({ tx, address }) => {
-              const row = await this.getTransactionFromChronikTransaction(tx, address)
-              return { row, raw: tx }
-            })
-          )
+          const pairsFromBatch: RowWithRaw[] = batch.chronikTxs.map(({ tx, address }) => {
+            const row = this.getTransactionFromChronikTransaction(tx, address)
+            return { row, raw: tx }
+          })
 
           for (const { row } of pairsFromBatch) {
             perAddrCount.set(row.addressId, (perAddrCount.get(row.addressId) ?? 0) + 1)
