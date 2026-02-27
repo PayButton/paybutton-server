@@ -55,9 +55,9 @@ export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices, in
   const parsedOpReturn = resolveOpReturn(opReturn)
 
   const dbInputsArr = (tx as { inputs?: Array<{ address: string, amount: Prisma.Decimal }> }).inputs
-  const dbOutputsArr = (tx as { outputs?: Array<{ address: string, amount: Prisma.Decimal }> }).outputs
   const resolvedInputAddresses = inputAddresses ?? (Array.isArray(dbInputsArr) ? dbInputsArr.map(i => ({ address: i.address, amount: i.amount })) : [])
-  const resolvedOutputAddresses = outputAddresses ?? (Array.isArray(dbOutputsArr) ? dbOutputsArr.map(o => ({ address: o.address, amount: o.amount })) : [])
+  // outputAddresses must be provided as parameter since TransactionOutput is no longer stored in DB
+  const resolvedOutputAddresses = outputAddresses ?? []
 
   const simplifiedTransaction: SimplifiedTransaction = {
     hash,
@@ -96,8 +96,7 @@ const includePrices = {
 const includeAddressAndPrices = {
   address: true,
   ...includePrices,
-  inputs: { orderBy: { index: 'asc' as const } },
-  outputs: { orderBy: { index: 'asc' as const } }
+  inputs: { orderBy: { index: 'asc' as const } }
 }
 
 const transactionWithPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
@@ -137,8 +136,7 @@ const includePaybuttonsAndPrices = {
     }
   },
   ...includePrices,
-  inputs: { orderBy: { index: 'asc' as const } },
-  outputs: { orderBy: { index: 'asc' as const } }
+  inputs: { orderBy: { index: 'asc' as const } }
 }
 export const includePaybuttonsAndPricesAndInvoices = {
   ...includePaybuttonsAndPrices,
@@ -576,14 +574,12 @@ export async function createManyTransactions (
     orphaned: false
   }))
 
-  const txInputsOutputs = transactionsData.map((tx) => {
+  const txInputs = transactionsData.map((tx) => {
     const inputs = (tx.inputs != null) && 'create' in tx.inputs ? tx.inputs.create : []
-    const outputs = (tx.outputs != null) && 'create' in tx.outputs ? tx.outputs.create : []
     return {
       hash: tx.hash,
       addressId: tx.addressId,
-      inputs: Array.isArray(inputs) ? inputs : [],
-      outputs: Array.isArray(outputs) ? outputs : []
+      inputs: Array.isArray(inputs) ? inputs : []
     }
   })
 
@@ -618,7 +614,7 @@ export async function createManyTransactions (
 
       // 2. Split into new and existing transactions
       const newTxs: typeof flatTxData = []
-      const newTxsInputsOutputs: typeof txInputsOutputs = []
+      const newTxsInputs: typeof txInputs = []
       const toUpdate: Array<{
         id: string
         confirmed: boolean
@@ -649,7 +645,7 @@ export async function createManyTransactions (
           }
         } else {
           newTxs.push(tx)
-          newTxsInputsOutputs.push(txInputsOutputs[i])
+          newTxsInputs.push(txInputs[i])
         }
       }
 
@@ -681,16 +677,15 @@ export async function createManyTransactions (
           }
         })
 
-        // Create a map to match transactions with their inputs/outputs
-        const txMap = new Map<string, { tx: typeof createdTxs[0], inputs: typeof txInputsOutputs[0]['inputs'], outputs: typeof txInputsOutputs[0]['outputs'] }>()
+        // Create a map to match transactions with their inputs
+        const txMap = new Map<string, { tx: typeof createdTxs[0], inputs: typeof txInputs[0]['inputs'] }>()
         for (let i = 0; i < newTxs.length; i++) {
           const tx = newTxs[i]
           const created = createdTxs.find(ct => ct.hash === tx.hash && ct.addressId === tx.addressId)
           if (created != null) {
             txMap.set(`${tx.hash}:${tx.addressId}`, {
               tx: created as any,
-              inputs: newTxsInputsOutputs[i].inputs,
-              outputs: newTxsInputsOutputs[i].outputs
+              inputs: newTxsInputs[i].inputs
             })
           }
         }
@@ -711,26 +706,6 @@ export async function createManyTransactions (
         if (allInputs.length > 0) {
           await prisma.transactionInput.createMany({
             data: allInputs,
-            skipDuplicates: true
-          })
-        }
-
-        // Create all outputs at once
-        const allOutputs: Array<{ transactionId: string, address: string, index: number, amount: Prisma.Decimal }> = []
-        for (const [, { tx, outputs }] of txMap) {
-          for (const output of outputs) {
-            allOutputs.push({
-              transactionId: tx.id,
-              address: output.address,
-              index: output.index,
-              amount: output.amount instanceof Prisma.Decimal ? output.amount : new Prisma.Decimal(output.amount as string | number)
-            })
-          }
-        }
-
-        if (allOutputs.length > 0) {
-          await prisma.transactionOutput.createMany({
-            data: allOutputs,
             skipDuplicates: true
           })
         }

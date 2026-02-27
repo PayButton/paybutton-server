@@ -290,7 +290,6 @@ export class ChronikBlockchainClient {
   private getTransactionFromChronikTransaction (transaction: Tx, address: Address): Prisma.TransactionUncheckedCreateInput {
     const { amount, opReturn } = this.getTransactionAmountAndData(transaction, address.address)
     const inputAddresses = this.getSortedInputAddresses(transaction)
-    const outputAddresses = this.getSortedOutputAddresses(transaction)
 
     return {
       hash: transaction.txid,
@@ -301,9 +300,6 @@ export class ChronikBlockchainClient {
       opReturn,
       inputs: {
         create: inputAddresses
-      },
-      outputs: {
-        create: outputAddresses
       }
     }
   }

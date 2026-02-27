@@ -27,8 +27,7 @@ const includePaybuttonsAndPrices = {
     }
   },
   ...includePrices,
-  inputs: { orderBy: { index: 'asc' as const } },
-  outputs: { orderBy: { index: 'asc' as const } }
+  inputs: { orderBy: { index: 'asc' as const } }
 }
 
 describe('Create services', () => {
@@ -197,12 +196,12 @@ describe('Address object arrays (input/output) integration', () => {
     expect(simplified.outputAddresses).toEqual(outputs)
   })
 
-  it('getSimplifiedTrasaction uses inputs/outputs from tx when not provided explicitly', () => {
+  it('getSimplifiedTrasaction uses inputs from tx when not provided explicitly, but outputs must be provided as parameter', () => {
     const inputsFromDb = [
       { address: 'ecash:qqinput1', amount: new Prisma.Decimal(1.23) },
       { address: 'ecash:qqinput2', amount: new Prisma.Decimal(4.56) }
     ]
-    const outputsFromDb = [
+    const outputsProvided = [
       { address: 'ecash:qqout1', amount: new Prisma.Decimal(7.89) },
       { address: 'ecash:qqout2', amount: new Prisma.Decimal(0.12) }
     ]
@@ -214,10 +213,10 @@ describe('Address object arrays (input/output) integration', () => {
       address: { address: 'ecash:qqprimaryaddressxxxxxxxxxxxxxxxxxxxxx' },
       timestamp: 1700000000,
       prices: mockedTransaction.prices,
-      inputs: inputsFromDb,
-      outputs: outputsFromDb
+      inputs: inputsFromDb
+      // Note: outputs are no longer stored in DB, so they won't be read from tx.outputs
     }
-    const simplified = transactionService.getSimplifiedTrasaction(tx)
+    const simplified = transactionService.getSimplifiedTrasaction(tx, undefined, outputsProvided)
     expect(simplified.inputAddresses).toEqual([
       { address: 'ecash:qqinput1', amount: new Prisma.Decimal(1.23) },
       { address: 'ecash:qqinput2', amount: new Prisma.Decimal(4.56) }
