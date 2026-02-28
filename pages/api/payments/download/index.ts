@@ -62,7 +62,7 @@ export default async (req: any, res: any): Promise<void> => {
 
     const transactions = await fetchAllPaymentsByUserId(userId, networkIdArray, buttonIds, years, startDate, endDate, timezone)
 
-    await downloadTxsFile(res, quoteSlug, timezone, transactions, userId)
+    await downloadTxsFile(res, quoteSlug, timezone, transactions, userId, undefined, user.csvRowCollapsing)
   } catch (error: any) {
     switch (error.message) {
       case RESPONSE_MESSAGES.METHOD_NOT_ALLOWED_405.message:

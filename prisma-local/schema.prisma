@@ -204,6 +204,7 @@ model UserProfile {
   invoices Invoice[]
   preferredCurrencyId Int @default(1)
   preferredTimezone String    @db.VarChar(255)@default("")
+  csvRowCollapsing Boolean @default(true)
   proUntil DateTime?
   paybuttons   Paybutton[]
 
