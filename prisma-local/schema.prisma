@@ -300,6 +300,7 @@ model ClientPayment {
   addressString        String
   amount               Decimal?              
   address              Address   @relation(fields: [addressString], references: [address])
+  fields               String                 @db.LongText @default("[]")
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
 }
