@@ -810,13 +810,13 @@ export class ChronikBlockchainClient {
   }
 
   private async commitTransactionsBatch (
-    commitPairs: Array<{ row: Prisma.TransactionUncheckedCreateInput, raw: Tx }>,
+    commitTuples: Array<{ row: Prisma.TransactionUncheckedCreateInput, raw: Tx, addressString: string }>,
     productionAddressesIds: string[],
     runTriggers: boolean
   ): Promise<void> {
-    const rows = commitPairs.map(p => p.row)
+    const rows = commitTuples.map(p => p.row)
     const createdTxs = await createManyTransactions(rows)
-    console.log(`${this.CHRONIK_MSG_PREFIX} committed — created=${createdTxs.length}/${commitPairs.length}`)
+    console.log(`${this.CHRONIK_MSG_PREFIX} committed — created=${createdTxs.length}/${commitTuples.length}`)
 
     const createdForProd = createdTxs.filter(t => productionAddressesIds.includes(t.addressId))
     if (createdForProd.length > 0) {
@@ -824,7 +824,7 @@ export class ChronikBlockchainClient {
     }
 
     if (createdTxs.length > 0) {
-      const rawByHash = new Map(commitPairs.map(p => [p.raw.txid, p.raw]))
+      const rawByHash = new Map(commitTuples.map(p => [p.raw.txid, p.raw]))
       const triggerBatch: BroadcastTxData[] = []
       for (const createdTx of createdTxs) {
         const raw = rawByHash.get(createdTx.hash)
@@ -837,23 +837,23 @@ export class ChronikBlockchainClient {
       if (runTriggers && triggerBatch.length > 0) {
         await executeTriggersBatch(triggerBatch, this.networkId)
       }
+    }
 
-      // Get the latest timestamp of the committed transactions for each address
-      const addressMaxTimestamp = new Map<string, number>()
-      for (const bd of triggerBatch) {
-        for (const tx of bd.txs) {
-          const currentMax = addressMaxTimestamp.get(bd.address) ?? 0
-          addressMaxTimestamp.set(bd.address, Math.max(currentMax, tx.timestamp))
-        }
-      }
+    // Get the latest timestamp of all committed transactions (including pre-existent) for each address.
+    // This is redundant under normal circumstances, but is more robust than only updating for the newly created transactions.
+    const addressMaxTimestamp = new Map<string, number>()
+    for (const { row, addressString } of commitTuples) {
+      const currentMax = addressMaxTimestamp.get(addressString) ?? 0
+      addressMaxTimestamp.set(addressString, Math.max(currentMax, row.timestamp))
+    }
 
-      // Update lastSynced for the processed addresses
-      for (const [addr, maxTs] of addressMaxTimestamp) {
-        try {
-          await updateLastSynced(addr, maxTs)
-        } catch (err: any) {
-          console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to update lastSynced for ${addr}: ${err.message as string}`)
-        }
+    // Update lastSynced for the processed addresses
+    for (const [addr, maxTs] of addressMaxTimestamp) {
+      try {
+        console.log('updateLastSynced', addr, maxTs)
+        await updateLastSynced(addr, maxTs)
+      } catch (err: any) {
+        console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to update lastSynced for ${addr}: ${err.message as string}`)
       }
     }
   }
@@ -874,7 +874,7 @@ export class ChronikBlockchainClient {
     const perAddrCount = new Map<string, number>()
     addresses.forEach(a => perAddrCount.set(a.id, 0))
 
-    interface RowWithRaw { row: Prisma.TransactionUncheckedCreateInput, raw: Tx }
+    interface RowWithRaw { row: Prisma.TransactionUncheckedCreateInput, raw: Tx, addressString: string }
     let toCommit: RowWithRaw[] = []
 
     try {
@@ -891,16 +891,16 @@ export class ChronikBlockchainClient {
         const involvedAddrIds = new Set(batch.chronikTxs.map(({ address }) => address.id))
 
         try {
-          const pairsFromBatch: RowWithRaw[] = batch.chronikTxs.map(({ tx, address }) => {
+          const tupleFromBatch: RowWithRaw[] = batch.chronikTxs.map(({ tx, address }) => {
             const row = this.getTransactionFromChronikTransaction(tx, address)
-            return { row, raw: tx }
+            return { row, raw: tx, addressString: address.address }
           })
 
-          for (const { row } of pairsFromBatch) {
+          for (const { row } of tupleFromBatch) {
             perAddrCount.set(row.addressId, (perAddrCount.get(row.addressId) ?? 0) + 1)
           }
 
-          toCommit.push(...pairsFromBatch)
+          toCommit.push(...tupleFromBatch)
 
           if (toCommit.length >= DB_COMMIT_BATCH_SIZE) {
             const commitPairs = toCommit.slice(0, DB_COMMIT_BATCH_SIZE)
