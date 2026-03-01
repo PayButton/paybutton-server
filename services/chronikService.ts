@@ -21,7 +21,6 @@ import { Address, Prisma, ClientPaymentStatus } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
 import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced } from './addressService'
-import prisma from 'prisma-local/clientInstance'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
@@ -437,6 +436,7 @@ export class ChronikBlockchainClient {
     let page = 0
     const earliestUnconfirmedTxTimestamp = await getEarliestUnconfirmedTxTimestampForAddress(address.id)
     const latestTimestamp = earliestUnconfirmedTxTimestamp ?? await getLatestConfirmedTxTimestampForAddress(address.id) ?? 0
+    let maxTimestamp = 0
 
     while (true) {
       let transactions = await this.getPaginatedTxs(address.address, page, pageSize)
@@ -459,6 +459,11 @@ export class ChronikBlockchainClient {
       const transactionsToPersist = [...confirmedTransactions, ...unconfirmedTransactions].map(tx => this.getTransactionFromChronikTransaction(tx, address))
       const persistedTransactions = await createManyTransactions(transactionsToPersist)
       if (persistedTransactions.length > 0) {
+        // Track the max timestamp from persisted transactions
+        for (const tx of persistedTransactions) {
+          maxTimestamp = Math.max(maxTimestamp, tx.timestamp)
+        }
+
         const simplifiedTransactions = getSimplifiedTransactions(persistedTransactions)
 
         console.log(`${this.CHRONIK_MSG_PREFIX}: added ${simplifiedTransactions.length} txs to ${address.address}`)
@@ -477,7 +482,7 @@ export class ChronikBlockchainClient {
       yield persistedTransactions
     }
     await setSyncing(address.address, false)
-    await updateLastSynced(address.address)
+    await updateLastSynced(address.address, maxTimestamp)
   }
 
   private async getUtxos (address: string): Promise<ScriptUtxo[]> {
@@ -845,13 +850,7 @@ export class ChronikBlockchainClient {
       // Update lastSynced for the processed addresses
       for (const [addr, maxTs] of addressMaxTimestamp) {
         try {
-          await prisma.address.update({
-            where: { address: addr },
-            data: {
-              lastSynced: new Date(maxTs * 1000),
-              syncing: false
-            }
-          })
+          await updateLastSynced(addr, maxTs)
         } catch (err: any) {
           console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to update lastSynced for ${addr}: ${err.message as string}`)
         }
