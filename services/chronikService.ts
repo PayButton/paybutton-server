@@ -897,9 +897,8 @@ export class ChronikBlockchainClient {
 
       // final DB flush (se sobrou menos que DB_COMMIT_BATCH_SIZE)
       if (toCommit.length > 0) {
-        const commitPairs = toCommit.slice()
+        await this.commitTransactionsBatch(toCommit, productionAddressesIds, runTriggers)
         toCommit = []
-        await this.commitTransactionsBatch(commitPairs, productionAddressesIds, runTriggers)
       }
 
       // build success map
