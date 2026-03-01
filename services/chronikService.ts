@@ -20,7 +20,8 @@ import {
 import { Address, Prisma, ClientPaymentStatus } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
-import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced, updateManyLastSynced } from './addressService'
+import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced } from './addressService'
+import prisma from 'prisma-local/clientInstance'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
@@ -831,6 +832,30 @@ export class ChronikBlockchainClient {
       if (runTriggers && triggerBatch.length > 0) {
         await executeTriggersBatch(triggerBatch, this.networkId)
       }
+
+      // Get the latest timestamp of the committed transactions for each address
+      const addressMaxTimestamp = new Map<string, number>()
+      for (const bd of triggerBatch) {
+        for (const tx of bd.txs) {
+          const currentMax = addressMaxTimestamp.get(bd.address) ?? 0
+          addressMaxTimestamp.set(bd.address, Math.max(currentMax, tx.timestamp))
+        }
+      }
+
+      // Update lastSynced for the processed addresses
+      for (const [addr, maxTs] of addressMaxTimestamp) {
+        try {
+          await prisma.address.update({
+            where: { address: addr },
+            data: {
+              lastSynced: new Date(maxTs * 1000),
+              syncing: false
+            }
+          })
+        } catch (err: any) {
+          console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to update lastSynced for ${addr}: ${err.message as string}`)
+        }
+      }
     }
   }
 
@@ -905,8 +930,6 @@ export class ChronikBlockchainClient {
       addresses.forEach(a => {
         successfulAddressesWithCount[a.address] = perAddrCount.get(a.id) ?? 0
       })
-      const okAddresses = addresses.filter(a => !(a.address in failedAddressesWithErrors))
-      await updateManyLastSynced(okAddresses.map(a => a.address))
     } catch (err: any) {
       console.error(`${this.CHRONIK_MSG_PREFIX}: FATAL ERROR in parallel sync: ${err.message as string}`)
       addresses.forEach(a => {
