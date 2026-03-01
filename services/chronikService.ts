@@ -803,6 +803,37 @@ export class ChronikBlockchainClient {
     }
   }
 
+  private async commitTransactionsBatch (
+    commitPairs: Array<{ row: Prisma.TransactionUncheckedCreateInput, raw: Tx }>,
+    productionAddressesIds: string[],
+    runTriggers: boolean
+  ): Promise<void> {
+    const rows = commitPairs.map(p => p.row)
+    const createdTxs = await createManyTransactions(rows)
+    console.log(`${this.CHRONIK_MSG_PREFIX} committed — created=${createdTxs.length}/${commitPairs.length}`)
+
+    const createdForProd = createdTxs.filter(t => productionAddressesIds.includes(t.addressId))
+    if (createdForProd.length > 0) {
+      await appendTxsToFile(createdForProd as unknown as Prisma.TransactionCreateManyInput[])
+    }
+
+    if (createdTxs.length > 0) {
+      const rawByHash = new Map(commitPairs.map(p => [p.raw.txid, p.raw]))
+      const triggerBatch: BroadcastTxData[] = []
+      for (const createdTx of createdTxs) {
+        const raw = rawByHash.get(createdTx.hash)
+        if (raw == null) {
+          continue
+        }
+        const bd = this.broadcastIncomingTx(createdTx.address.address, raw, createdTx)
+        triggerBatch.push(bd)
+      }
+      if (runTriggers && triggerBatch.length > 0) {
+        await executeTriggersBatch(triggerBatch, this.networkId)
+      }
+    }
+  }
+
   public async syncAddresses (addresses: Address[], runTriggers = false): Promise<SyncAndSubscriptionReturn> {
     const failedAddressesWithErrors: KeyValueT<string> = {}
     const successfulAddressesWithCount: KeyValueT<number> = {}
@@ -850,29 +881,7 @@ export class ChronikBlockchainClient {
           if (toCommit.length >= DB_COMMIT_BATCH_SIZE) {
             const commitPairs = toCommit.slice(0, DB_COMMIT_BATCH_SIZE)
             toCommit = toCommit.slice(DB_COMMIT_BATCH_SIZE)
-
-            const rows = commitPairs.map(p => p.row)
-            const createdTxs = await createManyTransactions(rows)
-            console.log(`${this.CHRONIK_MSG_PREFIX} committed — created=${createdTxs.length}`)
-
-            const createdForProd = createdTxs.filter(t => productionAddressesIds.includes(t.addressId))
-            if (createdForProd.length > 0) {
-              await appendTxsToFile(createdForProd as unknown as Prisma.TransactionCreateManyInput[])
-            }
-
-            if (createdTxs.length > 0) {
-              const rawByHash = new Map(commitPairs.map(p => [p.raw.txid, p.raw]))
-              const triggerBatch: BroadcastTxData[] = []
-              for (const createdTx of createdTxs) {
-                const raw = rawByHash.get(createdTx.hash)
-                if (raw == null) continue
-                const bd = this.broadcastIncomingTx(createdTx.address.address, raw, createdTx)
-                triggerBatch.push(bd)
-              }
-              if (runTriggers && triggerBatch.length > 0) {
-                await executeTriggersBatch(triggerBatch, this.networkId)
-              }
-            }
+            await this.commitTransactionsBatch(commitPairs, productionAddressesIds, runTriggers)
           }
         } catch (err: any) {
           console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR in batch (scoped): ${err.message as string}`)
@@ -890,29 +899,7 @@ export class ChronikBlockchainClient {
       if (toCommit.length > 0) {
         const commitPairs = toCommit.slice()
         toCommit = []
-
-        const rows = commitPairs.map(p => p.row)
-        const createdTxs = await createManyTransactions(rows)
-        console.log(`${this.CHRONIK_MSG_PREFIX} committed FINAL — created=${createdTxs.length}`)
-
-        const createdForProd = createdTxs.filter(t => productionAddressesIds.includes(t.addressId))
-        if (createdForProd.length > 0) {
-          await appendTxsToFile(createdForProd as unknown as Prisma.TransactionCreateManyInput[])
-        }
-
-        if (createdTxs.length > 0) {
-          const rawByHash = new Map(commitPairs.map(p => [p.raw.txid, p.raw]))
-          const triggerBatch: BroadcastTxData[] = []
-          for (const createdTx of createdTxs) {
-            const raw = rawByHash.get(createdTx.hash)
-            if (raw == null) continue
-            const bd = this.broadcastIncomingTx(createdTx.address.address, raw, createdTx)
-            triggerBatch.push(bd)
-          }
-          if (runTriggers && triggerBatch.length > 0) {
-            await executeTriggersBatch(triggerBatch, this.networkId)
-          }
-        }
+        await this.commitTransactionsBatch(commitPairs, productionAddressesIds, runTriggers)
       }
 
       // build success map
