@@ -389,6 +389,7 @@ export class ChronikBlockchainClient {
           const newTxsInThisPage = pageTxs.length
           if (newTxsInThisPage > 0) {
             chronikTxs.push(...pageTxs.map(tx => ({ tx, address })))
+            pageTxs = []
           }
 
           if (oldestTs < lastSyncedTimestampSeconds) {
@@ -848,6 +849,10 @@ export class ChronikBlockchainClient {
       if (runTriggers && triggerBatch.length > 0) {
         await executeTriggersBatch(triggerBatch, this.networkId)
       }
+
+      // Release memory
+      createdTxs.length = 0
+      triggerBatch.length = 0
     }
 
     // Get the latest timestamp of all committed transactions (including pre-existent) for each address.
@@ -932,11 +937,15 @@ export class ChronikBlockchainClient {
           }
 
           toCommit.push(...tupleFromBatch)
+          // Release memory
+          tupleFromBatch.length = 0
 
           if (toCommit.length >= DB_COMMIT_BATCH_SIZE) {
             const commitPairs = toCommit.slice(0, DB_COMMIT_BATCH_SIZE)
             toCommit = toCommit.slice(DB_COMMIT_BATCH_SIZE)
             await this.commitTransactionsBatch(commitPairs, productionAddressesIds, runTriggers)
+            // Clear commitPairs
+            commitPairs.length = 0
           }
         } catch (err: any) {
           console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR in batch (scoped): ${err.message as string}`)
