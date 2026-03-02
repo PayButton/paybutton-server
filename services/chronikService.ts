@@ -416,8 +416,7 @@ export class ChronikBlockchainClient {
 
       // Yield full TX batches when buffer reaches TX_EMIT_BATCH_SIZE
       while (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
-        const chronikTxsSlice = chronikTxs.slice(0, TX_EMIT_BATCH_SIZE)
-        chronikTxs = chronikTxs.slice(TX_EMIT_BATCH_SIZE)
+        const chronikTxsSlice = chronikTxs.splice(0, TX_EMIT_BATCH_SIZE)
         yield { chronikTxs: chronikTxsSlice, addressesSynced: [] }
       }
 
@@ -941,8 +940,7 @@ export class ChronikBlockchainClient {
           tupleFromBatch.length = 0
 
           if (toCommit.length >= DB_COMMIT_BATCH_SIZE) {
-            const commitPairs = toCommit.slice(0, DB_COMMIT_BATCH_SIZE)
-            toCommit = toCommit.slice(DB_COMMIT_BATCH_SIZE)
+            const commitPairs = toCommit.splice(0, DB_COMMIT_BATCH_SIZE)
             await this.commitTransactionsBatch(commitPairs, productionAddressesIds, runTriggers)
             // Clear commitPairs
             commitPairs.length = 0
