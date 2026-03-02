@@ -3,6 +3,7 @@ import { encodeCashAddress, decodeCashAddress } from 'ecashaddrjs'
 import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
 import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, MAX_TXS_PER_ADDRESS } from 'constants/index'
 import { productionAddresses } from 'prisma-local/seeds/addresses'
+import prisma from 'prisma-local/clientInstance'
 import {
   TransactionWithAddressAndPrices,
   createManyTransactions,
@@ -482,7 +483,18 @@ export class ChronikBlockchainClient {
       yield persistedTransactions
     }
     await setSyncing(address.address, false)
-    await updateLastSynced(address.address, maxTimestamp)
+
+    // Only update lastSynced if new value is greater than current (or if current is null)
+    const currentAddress = await prisma.address.findUnique({
+      where: { address: address.address },
+      select: { lastSynced: true }
+    })
+    const currentLastSynced = currentAddress?.lastSynced ?? null
+    const newDate = new Date(maxTimestamp * 1000)
+
+    if ((currentLastSynced == null) || currentLastSynced < newDate) {
+      await updateLastSynced(address.address, maxTimestamp)
+    }
   }
 
   private async getUtxos (address: string): Promise<ScriptUtxo[]> {
@@ -847,13 +859,33 @@ export class ChronikBlockchainClient {
       addressMaxTimestamp.set(addressString, Math.max(currentMax, row.timestamp))
     }
 
-    // Update lastSynced for the processed addresses
+    // Fetch current lastSynced values for all addresses
+    const addressesToUpdate = Array.from(addressMaxTimestamp.keys())
+    const currentAddresses = await prisma.address.findMany({
+      where: {
+        address: { in: addressesToUpdate }
+      },
+      select: {
+        address: true,
+        lastSynced: true
+      }
+    })
+    const currentLastSyncedMap = new Map<string, Date | null>(
+      currentAddresses.map((a: { address: string, lastSynced: Date | null }) => [a.address, a.lastSynced])
+    )
+
+    // Update lastSynced for the processed addresses (only if new value is greater)
     for (const [addr, maxTs] of addressMaxTimestamp) {
-      try {
-        console.log('updateLastSynced', addr, maxTs)
-        await updateLastSynced(addr, maxTs)
-      } catch (err: any) {
-        console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to update lastSynced for ${addr}: ${err.message as string}`)
+      const currentLastSynced = currentLastSyncedMap.get(addr)
+      const newDate = new Date(maxTs * 1000)
+
+      // Only update if new value is greater than current (or if current is null)
+      if ((currentLastSynced == null) || currentLastSynced < newDate) {
+        try {
+          await updateLastSynced(addr, maxTs)
+        } catch (err: any) {
+          console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to update lastSynced for ${addr}: ${err.message as string}`)
+        }
       }
     }
   }
