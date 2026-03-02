@@ -836,14 +836,13 @@ export class ChronikBlockchainClient {
     }
 
     if (createdTxs.length > 0) {
-      const rawByHash = new Map(commitTuples.map(p => [p.raw.txid, p.raw]))
       const triggerBatch: BroadcastTxData[] = []
       for (const createdTx of createdTxs) {
-        const raw = rawByHash.get(createdTx.hash)
-        if (raw == null) {
+        const tuple = commitTuples.find(t => t.row.hash === createdTx.hash)
+        if (tuple == null) {
           continue
         }
-        const bd = this.broadcastIncomingTx(createdTx.address.address, raw, createdTx)
+        const bd = this.broadcastIncomingTx(createdTx.address.address, tuple.raw, createdTx)
         triggerBatch.push(bd)
       }
       if (runTriggers && triggerBatch.length > 0) {
