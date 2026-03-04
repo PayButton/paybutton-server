@@ -252,6 +252,7 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
       throw error
     } finally {
       setLoading(false)
+      setTableLoading(false)
     }
   }
 
