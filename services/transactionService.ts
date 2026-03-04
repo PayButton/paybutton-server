@@ -579,6 +579,7 @@ export async function createManyTransactions (
     timestamp: tx.timestamp,
     addressId: tx.addressId,
     confirmed: tx.confirmed ?? false,
+    isPayment: tx.amount > 0,
     opReturn: tx.opReturn ?? '',
     orphaned: false
   }))
@@ -948,7 +949,7 @@ export async function getPaymentsByUserIdOrderedByButtonName (
     LEFT JOIN \`PricesOnTransactions\` pt ON t.\`id\` = pt.\`transactionId\`
     LEFT JOIN \`Price\` pb ON pt.\`priceId\` = pb.\`id\`
     LEFT JOIN \`Invoice\` i ON i.\`transactionId\` = t.\`id\`
-    WHERE t.\`amount\` > 0
+    WHERE t.\`isPayment\` = TRUE
     AND EXISTS (
       SELECT 1
       FROM \`AddressesOnUserProfiles\` au
@@ -1056,7 +1057,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
     address: {
       userProfiles: { some: { userId } }
     },
-    amount: { gt: 0 }
+    isPayment: true
   }
 
   if (startDate !== undefined && endDate !== undefined && startDate !== '' && endDate !== '') {
@@ -1182,9 +1183,7 @@ export async function fetchAllPaymentsByUserId (
         in: networkIds ?? Object.values(NETWORK_IDS)
       }
     },
-    amount: {
-      gt: 0
-    }
+    isPayment: true
   }
 
   if (buttonIds !== undefined && buttonIds.length > 0) {
@@ -1238,7 +1237,7 @@ export const getFilteredTransactionCount = async (
         some: { userId }
       }
     },
-    amount: { gt: 0 }
+    isPayment: true
   }
   if (buttonIds !== undefined && buttonIds.length > 0) {
     where.address!.paybuttons = {
