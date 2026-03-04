@@ -69,7 +69,7 @@ interface GroupedPaymentsAndInfoObject {
   info: AddressPaymentInfo
 }
 
-export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPrices): Promise<Payment> => {
+export const generatePaymentFromTx = (tx: TransactionsWithPaybuttonsAndPrices): Payment => {
   const values = getTransactionValue(tx)
   let buttonDisplayDataList: Array<{ name: string, id: string}> = []
   if (tx.address.paybuttons !== undefined) {
@@ -97,7 +97,7 @@ export const generatePaymentFromTx = async (tx: TransactionsWithPaybuttonsAndPri
   }
 }
 
-export const generatePaymentFromTxWithInvoices = async (tx: TransactionWithAddressAndPricesAndInvoices, userId?: string): Promise<Payment> => {
+export const generatePaymentFromTxWithInvoices = (tx: TransactionWithAddressAndPricesAndInvoices, userId?: string): Payment => {
   const values = getTransactionValue(tx)
   let buttonDisplayDataList: Array<{ name: string, id: string}> = []
   if (tx.address.paybuttons !== undefined) {
@@ -141,7 +141,7 @@ export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: 
     for (const tx of batch) {
       balance = balance.plus(tx.amount)
       if (tx.amount.gt(0)) {
-        const payment = await generatePaymentFromTx(tx)
+        const payment = generatePaymentFromTx(tx)
         paymentList.push(payment)
         paymentCount++
       }
@@ -235,7 +235,7 @@ const cacheGroupedPaymentsAppend = async (paymentsGroupedByKey: KeyValueT<Paymen
 export const cacheManyTxs = async (txs: TransactionsWithPaybuttonsAndPrices[]): Promise<void> => {
   const zero = new Prisma.Decimal(0)
   for (const tx of txs.filter(tx => tx.amount > zero)) {
-    const payment = await generatePaymentFromTx(tx)
+    const payment = generatePaymentFromTx(tx)
     if (payment.values.usd !== new Prisma.Decimal(0)) {
       const paymentsGroupedByKey = getPaymentsByWeek(tx.address.address, [payment])
       void await cacheGroupedPaymentsAppend(paymentsGroupedByKey)

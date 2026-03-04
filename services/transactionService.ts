@@ -1095,7 +1095,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   for (let index = 0; index < transactions.length; index++) {
     const tx = transactions[index]
     if (Number(tx.amount) > 0) {
-      const payment = await generatePaymentFromTxWithInvoices(tx as unknown as TransactionWithAddressAndPricesAndInvoices, userId)
+      const payment = generatePaymentFromTxWithInvoices(tx as unknown as TransactionWithAddressAndPricesAndInvoices, userId)
       transformedData.push(payment)
     }
   }
