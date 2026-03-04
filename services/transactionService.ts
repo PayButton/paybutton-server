@@ -1265,8 +1265,7 @@ export const fetchDistinctPaymentYearsByUser = async (userId: string): Promise<n
     FROM Transaction t
     JOIN Address a ON a.id = t.addressId
     JOIN AddressesOnUserProfiles ap ON ap.addressId = a.id
-    WHERE ap.userId = ${userId} AND
-    t.amount > 0
+    WHERE ap.userId = ${userId}
     ORDER BY year ASC
   `
 
