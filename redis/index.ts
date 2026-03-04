@@ -96,7 +96,7 @@ export class CacheGet {
 
     const existingCall = this.pendingCalls[userId][methodName]
     if (existingCall !== undefined) {
-      return await (await existingCall as Promise<T>)
+      return await (existingCall as Promise<T>)
     }
 
     const pendingCall = fn()
