@@ -224,16 +224,16 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
         paymentsCountUrl += `${paymentsCountUrl.includes('?') ? '&' : '?'}endDate=${endDate}`
       }
 
-      const paymentsResponse = await fetch(url, {
-        headers: {
-          Timezone: timezone
-        }
-      })
-
-      const paymentsCountResponse = await fetch(
-        paymentsCountUrl,
-        { headers: { Timezone: timezone } }
-      )
+      const [paymentsResponse, paymentsCountResponse] = await Promise.all([
+        fetch(url, {
+          headers: {
+            Timezone: timezone
+          }
+        }),
+        fetch(paymentsCountUrl, {
+          headers: { Timezone: timezone }
+        })
+      ])
 
       if (!paymentsResponse.ok || !paymentsCountResponse.ok) {
         console.log('paymentsResponse status', paymentsResponse.status)
@@ -243,8 +243,10 @@ export default function Payments ({ user, userId, organization }: PaybuttonsProp
         throw new Error('Failed to fetch payments or count')
       }
 
-      const totalCount = await paymentsCountResponse.json()
-      const payments = await paymentsResponse.json()
+      const [payments, totalCount] = await Promise.all([
+        paymentsResponse.json(),
+        paymentsCountResponse.json()
+      ])
 
       return { data: payments, totalCount }
     } catch (error) {

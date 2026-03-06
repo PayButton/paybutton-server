@@ -183,7 +183,8 @@ export async function fetchTransactionsByAddressListWithPagination (
   pageSize: number,
   orderBy?: string,
   orderDesc = true,
-  networkIdsListFilter?: number[]
+  networkIdsListFilter?: number[],
+  includeInputs = false
 ): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
 
@@ -209,6 +210,14 @@ export async function fetchTransactionsByAddressListWithPagination (
     }
   }
 
+  // Build include conditionally - exclude inputs by default unless explicitly requested
+  const include = includeInputs
+    ? includePaybuttonsAndPricesAndInvoices
+    : (() => {
+        const { inputs, ...rest } = includePaybuttonsAndPricesAndInvoices
+        return rest
+      })()
+
   return await prisma.transaction.findMany({
     where: {
       addressId: {
@@ -220,11 +229,11 @@ export async function fetchTransactionsByAddressListWithPagination (
         }
       }
     },
-    include: includePaybuttonsAndPricesAndInvoices,
+    include,
     orderBy: orderByQuery,
     skip: page * pageSize,
     take: pageSize
-  })
+  }) as unknown as TransactionsWithPaybuttonsAndPrices[]
 }
 
 export async function fetchTxCountByAddressString (addressString: string): Promise<number> {
@@ -570,6 +579,7 @@ export async function createManyTransactions (
     timestamp: tx.timestamp,
     addressId: tx.addressId,
     confirmed: tx.confirmed ?? false,
+    isPayment: tx.amount > 0,
     opReturn: tx.opReturn ?? '',
     orphaned: false
   }))
@@ -823,7 +833,9 @@ export async function fetchTransactionsByPaybuttonIdWithPagination (
   pageSize: number,
   orderDesc: boolean,
   orderBy?: string,
-  networkIds?: number[]): Promise<TransactionsWithPaybuttonsAndPrices[]> {
+  networkIds?: number[],
+  includeInputs = false
+): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
   const transactions = await fetchTransactionsByAddressListWithPagination(
     addressIdList,
@@ -831,7 +843,9 @@ export async function fetchTransactionsByPaybuttonIdWithPagination (
     pageSize,
     orderBy,
     orderDesc,
-    networkIds)
+    networkIds,
+    includeInputs
+  )
 
   return transactions
 }
@@ -935,7 +949,7 @@ export async function getPaymentsByUserIdOrderedByButtonName (
     LEFT JOIN \`PricesOnTransactions\` pt ON t.\`id\` = pt.\`transactionId\`
     LEFT JOIN \`Price\` pb ON pt.\`priceId\` = pb.\`id\`
     LEFT JOIN \`Invoice\` i ON i.\`transactionId\` = t.\`id\`
-    WHERE t.\`amount\` > 0
+    WHERE t.\`isPayment\` = TRUE
     AND EXISTS (
       SELECT 1
       FROM \`AddressesOnUserProfiles\` au
@@ -1005,7 +1019,8 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   buttonIds?: string[],
   years?: string[],
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  includeInputs = false
 ): Promise<Payment[]> {
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
 
@@ -1042,7 +1057,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
     address: {
       userProfiles: { some: { userId } }
     },
-    amount: { gt: 0 }
+    isPayment: true
   }
 
   if (startDate !== undefined && endDate !== undefined && startDate !== '' && endDate !== '') {
@@ -1061,9 +1076,17 @@ export async function fetchAllPaymentsByUserIdWithPagination (
     }
   }
 
+  // Build include conditionally - exclude inputs by default unless explicitly requested
+  const include = includeInputs
+    ? includePaybuttonsAndPricesAndInvoices
+    : (() => {
+        const { inputs, ...rest } = includePaybuttonsAndPricesAndInvoices
+        return rest
+      })()
+
   const transactions = await prisma.transaction.findMany({
     where,
-    include: includePaybuttonsAndPricesAndInvoices,
+    include,
     orderBy: orderByQuery,
     skip: page * Number(pageSize),
     take: Number(pageSize)
@@ -1073,7 +1096,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   for (let index = 0; index < transactions.length; index++) {
     const tx = transactions[index]
     if (Number(tx.amount) > 0) {
-      const payment = await generatePaymentFromTxWithInvoices(tx, userId)
+      const payment = generatePaymentFromTxWithInvoices(tx as unknown as TransactionWithAddressAndPricesAndInvoices, userId)
       transformedData.push(payment)
     }
   }
@@ -1160,9 +1183,7 @@ export async function fetchAllPaymentsByUserId (
         in: networkIds ?? Object.values(NETWORK_IDS)
       }
     },
-    amount: {
-      gt: 0
-    }
+    isPayment: true
   }
 
   if (buttonIds !== undefined && buttonIds.length > 0) {
@@ -1216,7 +1237,7 @@ export const getFilteredTransactionCount = async (
         some: { userId }
       }
     },
-    amount: { gt: 0 }
+    isPayment: true
   }
   if (buttonIds !== undefined && buttonIds.length > 0) {
     where.address!.paybuttons = {
@@ -1243,8 +1264,7 @@ export const fetchDistinctPaymentYearsByUser = async (userId: string): Promise<n
     FROM Transaction t
     JOIN Address a ON a.id = t.addressId
     JOIN AddressesOnUserProfiles ap ON ap.addressId = a.id
-    WHERE ap.userId = ${userId} AND
-    t.amount > 0
+    WHERE ap.userId = ${userId}
     ORDER BY year ASC
   `
 

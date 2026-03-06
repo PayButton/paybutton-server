@@ -28,6 +28,7 @@ export default async (req: any, res: any): Promise<void> => {
     if (typeof req.query.endDate === 'string' && req.query.endDate !== '') {
       endDate = req.query.endDate as string
     }
+    const includeInputs = req.query.includeInputs === 'true'
     const userReqTimezone = req.headers.timezone as string
     const userPreferredTimezone = user?.preferredTimezone
     let timezone = userPreferredTimezone !== '' ? userPreferredTimezone : userReqTimezone
@@ -47,7 +48,8 @@ export default async (req: any, res: any): Promise<void> => {
       buttonIds,
       years,
       startDate,
-      endDate
+      endDate,
+      includeInputs
     )
     res.status(200).json(resJSON)
   }
