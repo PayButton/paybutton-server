@@ -528,7 +528,8 @@ export const mockedUserProfile: UserProfile = {
   preferredTimezone: '',
   emailCredits: 15,
   postCredits: 15,
-  proUntil: null
+  proUntil: null,
+  csvRowCollapsing: false
 }
 
 export const mockedUserProfileWithPublicKey: UserProfile = {
@@ -543,7 +544,8 @@ export const mockedUserProfileWithPublicKey: UserProfile = {
   preferredTimezone: '',
   emailCredits: 15,
   postCredits: 15,
-  proUntil: null
+  proUntil: null,
+  csvRowCollapsing: false
 }
 
 export const mockedAddressesOnButtons: AddressesOnButtons[] = [

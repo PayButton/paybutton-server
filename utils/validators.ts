@@ -512,6 +512,17 @@ export interface UpdateUserTimezonePUTParameters {
   timezone: string
 }
 
+export interface UpdateCsvRowCollapsingPUTParameters {
+  csvRowCollapsing: boolean
+}
+
+export const parseUpdateCsvRowCollapsingPUTRequest = function (params: UpdateCsvRowCollapsingPUTParameters): UpdateCsvRowCollapsingPUTParameters {
+  if (typeof params.csvRowCollapsing !== 'boolean') {
+    throw new Error(RESPONSE_MESSAGES.INVALID_CSV_ROW_COLLAPSING_400.message)
+  }
+  return { csvRowCollapsing: params.csvRowCollapsing }
+}
+
 export const parseJoinOrganizationPOSTRequest = function (params: JoinOrganizationPOSTParameters): JoinOrganizationInput {
   if (params.userId === '' || params.userId === undefined) throw new Error(RESPONSE_MESSAGES.USER_ID_NOT_PROVIDED_400.message)
   if (params.token === '' || params.token === undefined) throw new Error(RESPONSE_MESSAGES.INVITATION_TOKEN_NOT_PROVIDED_400.message)
