@@ -156,6 +156,15 @@ export async function updatePreferredTimezone (id: string, preferredTimezone: st
   })
 }
 
+export async function updateCsvCollapseThreshold (id: string, csvCollapseThreshold: number): Promise<void> {
+  await prisma.userProfile.update({
+    where: { id },
+    data: {
+      csvCollapseThreshold
+    }
+  })
+}
+
 export async function userRemainingProTime (id: string): Promise<number | null> {
   const today = new Date()
   const proUntil = (await prisma.userProfile.findUniqueOrThrow({
