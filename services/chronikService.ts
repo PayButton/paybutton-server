@@ -732,6 +732,8 @@ export class ChronikBlockchainClient {
             await markTransactionsOrphaned(msg.txid)
           } else {
             console.error(`${this.CHRONIK_MSG_PREFIX}: confirmed tx handler failed for ${msg.txid}`, e)
+            const { [msg.txid]: _, ...rest } = this.lastProcessedMessages.confirmed
+            this.lastProcessedMessages.confirmed = rest
           }
         }
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
