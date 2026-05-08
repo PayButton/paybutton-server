@@ -2,7 +2,7 @@ import axios from 'axios'
 import { Prisma, Price } from '@prisma/client'
 import config from 'config'
 import prisma from 'prisma-local/clientInstance'
-import { PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
+import { PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, N_DAYS_LOOK_FOR_PRICE_GAPS } from 'constants/index'
 import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
 import moment from 'moment'
 
@@ -154,10 +154,10 @@ export async function getAllPricesByNetworkTicker (
 }
 
 export async function syncPastDaysNewerPrices (): Promise<void> {
-  console.log('[PRICES] Syncing missing prices (gap-aware)...')
+  console.log(`[PRICES] Syncing missing prices, including gaps on the last ${N_DAYS_LOOK_FOR_PRICE_GAPS} days...`)
 
   const today = moment.utc().startOf('day')
-  const windowStart = moment.utc().subtract(365, 'days').startOf('day')
+  const windowStart = moment.utc().subtract(N_DAYS_LOOK_FOR_PRICE_GAPS, 'days').startOf('day')
 
   const existingPrices = await prisma.price.findMany({
     where: {
@@ -189,7 +189,7 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
 
   const totalMissing = missingXECDays.length + missingBCHDays.length
   if (totalMissing === 0) {
-    console.log('[PRICES] No missing prices found in the last 365 days.')
+    console.log(`[PRICES] No missing prices found in the last ${N_DAYS_LOOK_FOR_PRICE_GAPS} days.`)
     return
   }
 
