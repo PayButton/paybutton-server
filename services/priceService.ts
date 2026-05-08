@@ -195,8 +195,13 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
 
   console.log(`[PRICES] Found ${missingXECDays.length} missing XEC days and ${missingBCHDays.length} missing BCH days. Fetching from API...`)
 
+  const failedDays: string[] = []
+
   const allXECPrices = missingXECDays.length > 0 ? await getAllPricesByNetworkTicker(NETWORK_TICKERS.ecash, false) : null
   const allBCHPrices = missingBCHDays.length > 0 ? await getAllPricesByNetworkTicker(NETWORK_TICKERS.bitcoincash, false) : null
+
+  const xecBulkDays = new Set(allXECPrices?.map(p => p.day) ?? [])
+  const bchBulkDays = new Set(allBCHPrices?.map(p => p.day) ?? [])
 
   if (allXECPrices !== null) {
     const missingDaySet = new Set(missingXECDays.map(d => d.formatted))
@@ -216,7 +221,38 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
     )
   }
 
-  console.log('[PRICES] All missing prices have been synced.')
+  const xecStillMissing = missingXECDays.filter(d => !xecBulkDays.has(d.formatted))
+  const bchStillMissing = missingBCHDays.filter(d => !bchBulkDays.has(d.formatted))
+
+  for (const day of xecStillMissing) {
+    const price = await withRetries(
+      async () => await getPriceForDayAndNetworkTicker(moment.utc(day.formatted), NETWORK_TICKERS.ecash),
+      { throwOnFailure: false, context: { day: day.formatted, network: 'XEC' } }
+    )
+    if (price !== null) {
+      await upsertPricesForNetworkId(price, XEC_NETWORK_ID, day.timestamp)
+    } else {
+      failedDays.push(`XEC ${day.formatted}`)
+    }
+  }
+
+  for (const day of bchStillMissing) {
+    const price = await withRetries(
+      async () => await getPriceForDayAndNetworkTicker(moment.utc(day.formatted), NETWORK_TICKERS.bitcoincash),
+      { throwOnFailure: false, context: { day: day.formatted, network: 'BCH' } }
+    )
+    if (price !== null) {
+      await upsertPricesForNetworkId(price, BCH_NETWORK_ID, day.timestamp)
+    } else {
+      failedDays.push(`BCH ${day.formatted}`)
+    }
+  }
+
+  if (failedDays.length > 0) {
+    console.warn(`[PRICES] Could not fetch prices for: ${failedDays.join(', ')}`)
+  } else {
+    console.log('[PRICES] All missing prices have been synced.')
+  }
 }
 
 export async function syncCurrentPrices (): Promise<void> {
