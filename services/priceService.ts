@@ -2,7 +2,7 @@ import axios from 'axios'
 import { Prisma, Price } from '@prisma/client'
 import config from 'config'
 import prisma from 'prisma-local/clientInstance'
-import { PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, HUMAN_READABLE_DATE_FORMAT } from 'constants/index'
+import { PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES } from 'constants/index'
 import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
 import moment from 'moment'
 
@@ -154,44 +154,69 @@ export async function getAllPricesByNetworkTicker (
 }
 
 export async function syncPastDaysNewerPrices (): Promise<void> {
-  console.log('[PRICES] Syncing prices...')
-  const lastPrice = await prisma.price.findFirst({
-    orderBy: [{ timestamp: 'desc' }],
-    select: { timestamp: true }
+  console.log('[PRICES] Syncing missing prices (gap-aware)...')
+
+  const today = moment.utc().startOf('day')
+  const windowStart = moment.utc().subtract(365, 'days').startOf('day')
+
+  const existingPrices = await prisma.price.findMany({
+    where: {
+      timestamp: {
+        gte: windowStart.unix(),
+        lte: today.unix()
+      },
+      quoteId: USD_QUOTE_ID
+    },
+    select: { timestamp: true, networkId: true }
   })
-  if (lastPrice === null) throw new Error('No prices found, initial database seed did not complete successfully')
 
-  const lastDateInDB = moment.unix(lastPrice.timestamp)
-  const date = moment().startOf('day')
-  const daysToRetrieve: string[] = []
+  const xecTimestamps = new Set(
+    existingPrices.filter(p => p.networkId === XEC_NETWORK_ID).map(p => p.timestamp)
+  )
+  const bchTimestamps = new Set(
+    existingPrices.filter(p => p.networkId === BCH_NETWORK_ID).map(p => p.timestamp)
+  )
 
-  console.log(`[PRICES] Last price found is for ${lastDateInDB.format(HUMAN_READABLE_DATE_FORMAT)}.`)
-  while (date.isAfter(lastDateInDB)) {
-    daysToRetrieve.push(date.format(PRICE_API_DATE_FORMAT))
-    date.add(-1, 'day')
+  const expectedDays: Array<{ formatted: string, timestamp: number }> = []
+  const cursor = today.clone()
+  while (cursor.isSameOrAfter(windowStart)) {
+    expectedDays.push({ formatted: cursor.format(PRICE_API_DATE_FORMAT), timestamp: cursor.unix() })
+    cursor.subtract(1, 'day')
   }
-  console.log(`[PRICES] Will try to retrieve ${daysToRetrieve.length} prices.`)
 
-  const allXECPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.ecash, false)
-  const allBCHPrices = await getAllPricesByNetworkTicker(NETWORK_TICKERS.bitcoincash, false)
+  const missingXECDays = expectedDays.filter(d => !xecTimestamps.has(d.timestamp))
+  const missingBCHDays = expectedDays.filter(d => !bchTimestamps.has(d.timestamp))
+
+  const totalMissing = missingXECDays.length + missingBCHDays.length
+  if (totalMissing === 0) {
+    console.log('[PRICES] No missing prices found in the last 365 days.')
+    return
+  }
+
+  console.log(`[PRICES] Found ${missingXECDays.length} missing XEC days and ${missingBCHDays.length} missing BCH days. Fetching from API...`)
+
+  const allXECPrices = missingXECDays.length > 0 ? await getAllPricesByNetworkTicker(NETWORK_TICKERS.ecash, false) : null
+  const allBCHPrices = missingBCHDays.length > 0 ? await getAllPricesByNetworkTicker(NETWORK_TICKERS.bitcoincash, false) : null
 
   if (allXECPrices !== null) {
+    const missingDaySet = new Set(missingXECDays.map(d => d.formatted))
     await Promise.all(
       allXECPrices
-        .filter(p => daysToRetrieve.includes(p.day))
-        .map(async price => await upsertPricesForNetworkId(price, XEC_NETWORK_ID, moment(price.day).unix()))
+        .filter(p => missingDaySet.has(p.day))
+        .map(async price => await upsertPricesForNetworkId(price, XEC_NETWORK_ID, moment.utc(price.day).unix()))
     )
   }
 
   if (allBCHPrices !== null) {
+    const missingDaySet = new Set(missingBCHDays.map(d => d.formatted))
     await Promise.all(
       allBCHPrices
-        .filter(p => daysToRetrieve.includes(p.day))
-        .map(async price => await upsertPricesForNetworkId(price, BCH_NETWORK_ID, moment(price.day).unix()))
+        .filter(p => missingDaySet.has(p.day))
+        .map(async price => await upsertPricesForNetworkId(price, BCH_NETWORK_ID, moment.utc(price.day).unix()))
     )
   }
 
-  console.log('[PRICES] All past prices have been synced.')
+  console.log('[PRICES] All missing prices have been synced.')
 }
 
 export async function syncCurrentPrices (): Promise<void> {
