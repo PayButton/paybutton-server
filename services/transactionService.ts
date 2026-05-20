@@ -588,6 +588,26 @@ const rowNeedsUpsert = (
   )
 }
 
+/** Minimal row returned from bulk sync persist (no prices / paybuttons / cache). */
+export interface SyncPersistedTransaction {
+  id: string
+  hash: string
+  addressId: string
+  amount: Prisma.Decimal
+  timestamp: number
+  confirmed: boolean
+}
+
+export interface CreateManyTransactionsSyncResult {
+  insertedCount: number
+  inserted: SyncPersistedTransaction[]
+}
+
+interface PersistManyTransactionRowsResult {
+  inserted: SyncPersistedTransaction[]
+  updatedCount: number
+}
+
 /**
  * Cheap dedupe before createManyTransactions: returns only new rows or rows
  * whose confirmed, timestamp, or orphaned may have changed.
@@ -629,14 +649,12 @@ export async function filterRowsNeedingCreateMany (
   })
 }
 
-export async function createManyTransactions (
+/**
+ * Insert or update transactions and inputs only (no prices, cache, or heavy includes).
+ */
+async function persistManyTransactionRows (
   transactionsData: Prisma.TransactionUncheckedCreateInput[]
-): Promise<TransactionWithAddressAndPrices[]> {
-  if (transactionsData.length === 0) {
-    return []
-  }
-
-  // Extract flat transaction data and separate inputs/outputs
+): Promise<PersistManyTransactionRowsResult> {
   const flatTxData = transactionsData.map(tx => ({
     hash: tx.hash,
     amount: tx.amount,
@@ -657,17 +675,16 @@ export async function createManyTransactions (
     }
   })
 
-  const insertedTransactions: TransactionWithNetwork[] = []
-  const updatedTransactions: TransactionWithNetwork[] = []
+  const inserted: SyncPersistedTransaction[] = []
+  let updatedCount = 0
 
   await prisma.$transaction(
-    async (prisma) => {
-      // 1. Query existing transactions in one go
-      const existingTxs = await prisma.transaction.findMany({
+    async (tx) => {
+      const existingTxs = await tx.transaction.findMany({
         where: {
-          OR: flatTxData.map(tx => ({
-            hash: tx.hash,
-            addressId: tx.addressId
+          OR: flatTxData.map(row => ({
+            hash: row.hash,
+            addressId: row.addressId
           }))
         },
         select: {
@@ -680,13 +697,11 @@ export async function createManyTransactions (
         }
       })
 
-      // Create a map for quick lookup
       const existingMap = new Map<string, typeof existingTxs[0]>()
-      for (const tx of existingTxs) {
-        existingMap.set(`${tx.hash}:${tx.addressId}`, tx)
+      for (const row of existingTxs) {
+        existingMap.set(`${row.hash}:${row.addressId}`, row)
       }
 
-      // 2. Split into new and existing transactions
       const newTxs: typeof flatTxData = []
       const newTxsInputs: typeof txInputs = []
       const toUpdate: Array<{
@@ -697,119 +712,111 @@ export async function createManyTransactions (
       }> = []
 
       for (let i = 0; i < flatTxData.length; i++) {
-        const tx = flatTxData[i]
-        const key = `${tx.hash}:${tx.addressId}`
+        const row = flatTxData[i]
+        const key = `${row.hash}:${row.addressId}`
         const existing = existingMap.get(key)
 
         if (existing != null) {
-          // Check if confirmed, timestamp, or orphaned changed. These are the
-          // only fields that can be changed after the transaction is created.
-          // This is to avoid updating the transaction with the same data.
-          const confirmedChanged = existing.confirmed !== tx.confirmed
-          const timestampChanged = existing.timestamp !== tx.timestamp
-          const orphanedChanged = existing.orphaned !== tx.orphaned
+          const confirmedChanged = existing.confirmed !== row.confirmed
+          const timestampChanged = existing.timestamp !== row.timestamp
+          const orphanedChanged = existing.orphaned !== row.orphaned
 
           if (confirmedChanged || timestampChanged || orphanedChanged) {
             toUpdate.push({
               id: existing.id,
-              confirmed: tx.confirmed,
-              timestamp: tx.timestamp,
-              orphaned: tx.orphaned
+              confirmed: row.confirmed,
+              timestamp: row.timestamp,
+              orphaned: row.orphaned
             })
           }
         } else {
-          newTxs.push(tx)
+          newTxs.push(row)
           newTxsInputs.push(txInputs[i])
         }
       }
 
-      // 3. Create new transactions using createMany (bulk operation)
       if (newTxs.length > 0) {
-        // Create all transactions at once (without inputs/outputs)
-        await prisma.transaction.createMany({
+        await tx.transaction.createMany({
           data: newTxs,
           skipDuplicates: true
         })
 
-        // Query back the created transactions to get their IDs
-        const createdTxs = await prisma.transaction.findMany({
+        const createdTxs = await tx.transaction.findMany({
           where: {
-            OR: newTxs.map(tx => ({
-              hash: tx.hash,
-              addressId: tx.addressId
+            OR: newTxs.map(row => ({
+              hash: row.hash,
+              addressId: row.addressId
             }))
           },
           select: {
             id: true,
             hash: true,
             addressId: true,
-            address: {
-              select: {
-                networkId: true
-              }
-            }
+            amount: true,
+            timestamp: true,
+            confirmed: true
           }
         })
 
-        // Create a map to match transactions with their inputs
         const txMap = new Map<string, { tx: typeof createdTxs[0], inputs: typeof txInputs[0]['inputs'] }>()
         for (let i = 0; i < newTxs.length; i++) {
-          const tx = newTxs[i]
-          const created = createdTxs.find(ct => ct.hash === tx.hash && ct.addressId === tx.addressId)
+          const row = newTxs[i]
+          const created = createdTxs.find(
+            ct => ct.hash === row.hash && ct.addressId === row.addressId
+          )
           if (created != null) {
-            txMap.set(`${tx.hash}:${tx.addressId}`, {
-              tx: created as any,
+            txMap.set(`${row.hash}:${row.addressId}`, {
+              tx: created,
               inputs: newTxsInputs[i].inputs
             })
           }
         }
 
-        // Create all inputs at once
-        const allInputs: Array<{ transactionId: string, address: string, index: number, amount: Prisma.Decimal }> = []
-        for (const [, { tx, inputs }] of txMap) {
+        const allInputs: Array<{
+          transactionId: string
+          address: string
+          index: number
+          amount: Prisma.Decimal
+        }> = []
+        for (const [, { tx: createdTx, inputs }] of txMap) {
           for (const input of inputs) {
             allInputs.push({
-              transactionId: tx.id,
+              transactionId: createdTx.id,
               address: input.address,
               index: input.index,
-              amount: input.amount instanceof Prisma.Decimal ? input.amount : new Prisma.Decimal(input.amount as string | number)
+              amount: input.amount instanceof Prisma.Decimal
+                ? input.amount
+                : new Prisma.Decimal(input.amount as string | number)
             })
           }
         }
 
         if (allInputs.length > 0) {
-          await prisma.transactionInput.createMany({
+          await tx.transactionInput.createMany({
             data: allInputs,
             skipDuplicates: true
           })
         }
 
-        // Fetch the full transactions with includes for return value
-        const fullTxs = await prisma.transaction.findMany({
-          where: {
-            id: { in: createdTxs.map(t => t.id) }
-          },
-          include: includeNetwork
-        })
-
-        insertedTransactions.push(...fullTxs)
+        for (const createdTx of createdTxs) {
+          inserted.push(createdTx)
+        }
       }
 
-      // 4. Update existing transactions that changed
       if (toUpdate.length > 0) {
-        const updatePromises = toUpdate.map(async update =>
-          await prisma.transaction.update({
-            where: { id: update.id },
-            data: {
-              confirmed: update.confirmed,
-              timestamp: update.timestamp,
-              orphaned: update.orphaned
-            },
-            include: includeNetwork
-          })
+        await Promise.all(
+          toUpdate.map(async update =>
+            await tx.transaction.update({
+              where: { id: update.id },
+              data: {
+                confirmed: update.confirmed,
+                timestamp: update.timestamp,
+                orphaned: update.orphaned
+              }
+            })
+          )
         )
-        const updated = await Promise.all(updatePromises)
-        updatedTransactions.push(...updated)
+        updatedCount = toUpdate.length
       }
     },
     {
@@ -817,9 +824,51 @@ export async function createManyTransactions (
     }
   )
 
-  // 5. Connect prices only for newly created transactions
+  return { inserted, updatedCount }
+}
+
+/**
+ * Bulk sync path: persist txs + inputs only. Prices, Redis cache, and paybutton
+ * graphs are deferred to connectAllTransactionsToPrices after the sync job.
+ */
+export async function createManyTransactionsForSync (
+  transactionsData: Prisma.TransactionUncheckedCreateInput[]
+): Promise<CreateManyTransactionsSyncResult> {
+  if (transactionsData.length === 0) {
+    return { insertedCount: 0, inserted: [] }
+  }
+
+  const { inserted } = await persistManyTransactionRows(transactionsData)
+  return {
+    insertedCount: inserted.length,
+    inserted
+  }
+}
+
+export async function createManyTransactions (
+  transactionsData: Prisma.TransactionUncheckedCreateInput[]
+): Promise<TransactionWithAddressAndPrices[]> {
+  if (transactionsData.length === 0) {
+    return []
+  }
+
+  const { inserted } = await persistManyTransactionRows(transactionsData)
+
+  if (inserted.length === 0) {
+    return []
+  }
+
+  const insertedTransactions = await prisma.transaction.findMany({
+    where: {
+      id: { in: inserted.map(t => t.id) }
+    },
+    include: includeNetwork
+  })
+
   await connectTransactionsListToPrices(insertedTransactions)
-  const txsWithPaybuttonsAndPrices = await fetchTransactionsWithPaybuttonsAndPricesForIdList(insertedTransactions.map((tx) => tx.id))
+  const txsWithPaybuttonsAndPrices = await fetchTransactionsWithPaybuttonsAndPricesForIdList(
+    inserted.map((tx) => tx.id)
+  )
 
   void CacheSet.txsCreation(txsWithPaybuttonsAndPrices)
 

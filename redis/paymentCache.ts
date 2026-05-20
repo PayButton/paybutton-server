@@ -280,6 +280,17 @@ export const clearRecentAddressCache = async (addressString: string, timestamps:
   )
 }
 
+/** Remove all week-grouped payment keys for an address (forces rebuild from DB). */
+export const clearPaymentCacheForAddress = async (addressString: string): Promise<void> => {
+  const weekKeys = await getCachedWeekKeysForAddress(addressString)
+  if (weekKeys.length === 0) {
+    return
+  }
+  await Promise.all(
+    weekKeys.map(async (key) => await redis.del(key, () => {}))
+  )
+}
+
 export const initPaymentCache = async (address: Address): Promise<boolean> => {
   const cachedKeys = await getCachedWeekKeysForAddress(address.address)
   if (cachedKeys.length === 0) {
