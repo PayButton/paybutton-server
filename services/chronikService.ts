@@ -7,7 +7,9 @@ import prisma from 'prisma-local/clientInstance'
 import {
   TransactionWithAddressAndPrices,
   createManyTransactions,
+  createManyTransactionsForSync,
   filterRowsNeedingCreateMany,
+  SyncPersistedTransaction,
   deleteTransactions,
   fetchUnconfirmedTransactions,
   markTransactionsOrphaned,
@@ -856,6 +858,40 @@ export class ChronikBlockchainClient {
     }
   }
 
+  private broadcastIncomingTxFromSyncRow (
+    addressString: string,
+    chronikTx: Tx,
+    createdTx: SyncPersistedTransaction
+  ): BroadcastTxData {
+    const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
+    broadcastTxData.address = addressString
+    broadcastTxData.messageType = 'NewTx'
+    const inputAddresses = this.getSortedInputAddresses(chronikTx)
+    const outputAddresses = this.getSortedOutputAddresses(chronikTx)
+    const stubTx = {
+      hash: createdTx.hash,
+      amount: createdTx.amount,
+      confirmed: createdTx.confirmed,
+      opReturn: '',
+      timestamp: createdTx.timestamp,
+      address: { address: addressString },
+      prices: [],
+      inputs: []
+    } as unknown as TransactionWithAddressAndPrices
+    const newSimplifiedTransaction = getSimplifiedTrasaction(
+      stubTx,
+      inputAddresses,
+      outputAddresses
+    )
+    broadcastTxData.txs = [newSimplifiedTransaction]
+    try {
+      this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
+    } catch (err: any) {
+      console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
+    }
+    return broadcastTxData
+  }
+
   private broadcastIncomingTx (addressString: string, chronikTx: Tx, createdTx: TransactionWithAddressAndPrices): BroadcastTxData {
     const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
     broadcastTxData.address = addressString
@@ -953,30 +989,36 @@ export class ChronikBlockchainClient {
   ): Promise<void> {
     const rows = commitTuples.map(p => p.row)
     const rowsToUpsert = await filterRowsNeedingCreateMany(rows)
-    const createdTxs = await createManyTransactions(rowsToUpsert)
-    console.log(`${this.CHRONIK_MSG_PREFIX} committed — created=${createdTxs.length}/${commitTuples.length}`)
+    const syncResult = await createManyTransactionsForSync(rowsToUpsert)
+    console.log(
+      `${this.CHRONIK_MSG_PREFIX} committed — created=${syncResult.insertedCount}/` +
+      `${commitTuples.length}`
+    )
 
-    const createdForProd = createdTxs.filter(t => productionAddressesIds.includes(t.addressId))
+    const createdForProd = syncResult.inserted.filter(t =>
+      productionAddressesIds.includes(t.addressId)
+    )
     if (createdForProd.length > 0) {
-      await appendTxsToFile(createdForProd as unknown as Prisma.TransactionCreateManyInput[])
+      await appendTxsToFile(createdForProd)
     }
 
-    if (createdTxs.length > 0) {
+    if (runTriggers && syncResult.inserted.length > 0) {
       const triggerBatch: BroadcastTxData[] = []
-      for (const createdTx of createdTxs) {
+      for (const createdTx of syncResult.inserted) {
         const tuple = commitTuples.find(t => t.row.hash === createdTx.hash)
         if (tuple == null) {
           continue
         }
-        const bd = this.broadcastIncomingTx(createdTx.address.address, tuple.raw, createdTx)
+        const bd = this.broadcastIncomingTxFromSyncRow(
+          tuple.addressString,
+          tuple.raw,
+          createdTx
+        )
         triggerBatch.push(bd)
       }
-      if (runTriggers && triggerBatch.length > 0) {
+      if (triggerBatch.length > 0) {
         await executeTriggersBatch(triggerBatch, this.networkId)
       }
-
-      // Release memory
-      createdTxs.length = 0
       triggerBatch.length = 0
     }
 
