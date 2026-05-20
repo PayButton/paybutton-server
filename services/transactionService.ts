@@ -565,6 +565,70 @@ export async function connectAllTransactionsToPrices (): Promise<void> {
   console.log('[PRICES] Finished connecting txs to prices.')
 }
 
+interface ExistingTxSnapshot {
+  confirmed: boolean
+  timestamp: number
+  orphaned: boolean
+}
+
+const txSnapshotKey = (hash: string, addressId: string): string =>
+  `${hash}:${addressId}`
+
+const rowNeedsUpsert = (
+  row: Prisma.TransactionUncheckedCreateInput,
+  existing: ExistingTxSnapshot
+): boolean => {
+  const confirmed = row.confirmed ?? false
+  const timestamp = row.timestamp
+  const orphaned = row.orphaned ?? false
+  return (
+    existing.confirmed !== confirmed ||
+    existing.timestamp !== timestamp ||
+    existing.orphaned !== orphaned
+  )
+}
+
+/**
+ * Cheap dedupe before createManyTransactions: returns only new rows or rows
+ * whose confirmed, timestamp, or orphaned may have changed.
+ */
+export async function filterRowsNeedingCreateMany (
+  transactionsData: Prisma.TransactionUncheckedCreateInput[]
+): Promise<Prisma.TransactionUncheckedCreateInput[]> {
+  if (transactionsData.length === 0) {
+    return []
+  }
+
+  const existingTxs = await prisma.transaction.findMany({
+    where: {
+      OR: transactionsData.map(tx => ({
+        hash: tx.hash,
+        addressId: tx.addressId
+      }))
+    },
+    select: {
+      hash: true,
+      addressId: true,
+      confirmed: true,
+      timestamp: true,
+      orphaned: true
+    }
+  })
+
+  const existingMap = new Map<string, ExistingTxSnapshot>()
+  for (const tx of existingTxs) {
+    existingMap.set(txSnapshotKey(tx.hash, tx.addressId), tx)
+  }
+
+  return transactionsData.filter(row => {
+    const existing = existingMap.get(txSnapshotKey(row.hash, row.addressId))
+    if (existing == null) {
+      return true
+    }
+    return rowNeedsUpsert(row, existing)
+  })
+}
+
 export async function createManyTransactions (
   transactionsData: Prisma.TransactionUncheckedCreateInput[]
 ): Promise<TransactionWithAddressAndPrices[]> {

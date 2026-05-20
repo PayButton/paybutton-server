@@ -7,6 +7,7 @@ import prisma from 'prisma-local/clientInstance'
 import {
   TransactionWithAddressAndPrices,
   createManyTransactions,
+  filterRowsNeedingCreateMany,
   deleteTransactions,
   fetchUnconfirmedTransactions,
   markTransactionsOrphaned,
@@ -881,7 +882,8 @@ export class ChronikBlockchainClient {
     runTriggers: boolean
   ): Promise<void> {
     const rows = commitTuples.map(p => p.row)
-    const createdTxs = await createManyTransactions(rows)
+    const rowsToUpsert = await filterRowsNeedingCreateMany(rows)
+    const createdTxs = await createManyTransactions(rowsToUpsert)
     console.log(`${this.CHRONIK_MSG_PREFIX} committed — created=${createdTxs.length}/${commitTuples.length}`)
 
     const createdForProd = createdTxs.filter(t => productionAddressesIds.includes(t.addressId))
