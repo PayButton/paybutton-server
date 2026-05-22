@@ -18,11 +18,15 @@ class RedisMocked {
   }
 
   scanStream (opt: ScanStreamOptions): ScanStream {
-    return new ScanStream({
+    const stream = new ScanStream({
       ...opt,
-      command: '',
-      redis: {}
+      command: 'scan',
+      redis: this as unknown as IORedis
     })
+    process.nextTick(() => {
+      stream.emit('end')
+    })
+    return stream
   }
 
   pipeline (commands?: unknown[][]): any {
