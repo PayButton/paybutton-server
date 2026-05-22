@@ -295,3 +295,6 @@ export const CLIENT_PAYMENT_EXPIRATION_TIME = (7) * (24 * 60 * 60 * 1000) // (nu
 
 // Enough for eCash IFP when created
 export const MAX_TXS_PER_ADDRESS = 250000
+
+// Will look for this many days before to check if there are gaps in prices
+export const N_DAYS_LOOK_FOR_PRICE_GAPS = 30

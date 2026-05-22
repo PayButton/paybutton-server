@@ -714,6 +714,7 @@ export class ChronikBlockchainClient {
           }
         }
       } else if (msg.msgType === 'TX_CONFIRMED') {
+        if (this.isAlreadyBeingProcessed(msg.txid, true)) return
         try {
           const transaction = await this.fetchTxWithRetry(msg.txid)
           const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
@@ -731,6 +732,8 @@ export class ChronikBlockchainClient {
             await markTransactionsOrphaned(msg.txid)
           } else {
             console.error(`${this.CHRONIK_MSG_PREFIX}: confirmed tx handler failed for ${msg.txid}`, e)
+            const { [msg.txid]: _, ...rest } = this.lastProcessedMessages.confirmed
+            this.lastProcessedMessages.confirmed = rest
           }
         }
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
@@ -803,8 +806,9 @@ export class ChronikBlockchainClient {
     const pageSize = 200
     let blockPageTxs = (await this.chronik.blockTxs(blockHash, page, pageSize)).txs
     let blockTxsToSync: Tx[] = []
-    while (blockPageTxs.length > 0 && blockTxsToSync.length !== this.confirmedTxsHashesFromLastBlock.length) {
-      const thisBlockTxsToSync = blockPageTxs.filter(tx => this.confirmedTxsHashesFromLastBlock.includes(tx.txid))
+    const confirmedTxHashes = new Set(this.confirmedTxsHashesFromLastBlock)
+    while (blockPageTxs.length > 0 && blockTxsToSync.length < confirmedTxHashes.size) {
+      const thisBlockTxsToSync = blockPageTxs.filter(tx => confirmedTxHashes.has(tx.txid))
       blockTxsToSync = [...blockTxsToSync, ...thisBlockTxsToSync]
       page += 1
       blockPageTxs = (await this.chronik.blockTxs(blockHash, page, pageSize)).txs
