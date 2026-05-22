@@ -14,6 +14,29 @@ import * as priceService from 'services/priceService'
 
 const ADDRESS_INVALIDATION_BATCH_SIZE = 100
 
+interface AddressCacheInvalidationResult {
+  paymentFailures: number
+  balanceFailures: number
+}
+
+const invalidateAddressCaches = async (
+  address: string
+): Promise<AddressCacheInvalidationResult> => {
+  let paymentFailures = 0
+  let balanceFailures = 0
+  try {
+    await clearPaymentCacheForAddress(address)
+  } catch {
+    paymentFailures = 1
+  }
+  try {
+    await clearBalanceCache(address)
+  } catch {
+    balanceFailures = 1
+  }
+  return { paymentFailures, balanceFailures }
+}
+
 /**
  * Drop Redis payment-week, balance, and dashboard caches after bulk blockchain sync.
  * Rebuild is lazy on the next API request.
@@ -21,17 +44,38 @@ const ADDRESS_INVALIDATION_BATCH_SIZE = 100
 async function invalidateCachesAfterBlockchainSync (): Promise<void> {
   console.log('[CACHE]: Invalidating caches after blockchain sync...')
   const addresses = await fetchAllAddresses()
+  let paymentCacheFailures = 0
+  let balanceCacheFailures = 0
   for (let i = 0; i < addresses.length; i += ADDRESS_INVALIDATION_BATCH_SIZE) {
     const batch = addresses.slice(i, i + ADDRESS_INVALIDATION_BATCH_SIZE)
-    await Promise.all(
-      batch.map(async (a) => {
-        await clearPaymentCacheForAddress(a.address)
-        await clearBalanceCache(a.address)
-      })
+    const results = await Promise.all(
+      batch.map(async (a) => await invalidateAddressCaches(a.address))
     )
+    for (const r of results) {
+      paymentCacheFailures += r.paymentFailures
+      balanceCacheFailures += r.balanceFailures
+    }
   }
   const users = await fetchAllUsers()
-  await Promise.all(users.map(async (u) => await clearDashboardCache(u.id)))
+  let dashboardCacheFailures = 0
+  await Promise.all(
+    users.map(async (u) => {
+      try {
+        await clearDashboardCache(u.id)
+      } catch {
+        dashboardCacheFailures += 1
+      }
+    })
+  )
+  const totalFailures =
+    paymentCacheFailures + balanceCacheFailures + dashboardCacheFailures
+  if (totalFailures > 0) {
+    console.warn(
+      `[CACHE]: Cache invalidation completed with ${totalFailures} failure(s) ` +
+      `(payment: ${paymentCacheFailures}, balance: ${balanceCacheFailures}, ` +
+      `dashboard: ${dashboardCacheFailures}). DB sync already succeeded.`
+    )
+  }
   console.log(
     `[CACHE]: Invalidated payment/balance caches for ${addresses.length} addresses ` +
     `and dashboard caches for ${users.length} users.`

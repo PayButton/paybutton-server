@@ -861,7 +861,8 @@ export class ChronikBlockchainClient {
   private broadcastIncomingTxFromSyncRow (
     addressString: string,
     chronikTx: Tx,
-    createdTx: SyncPersistedTransaction
+    createdTx: SyncPersistedTransaction,
+    opReturn: string
   ): BroadcastTxData {
     const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
     broadcastTxData.address = addressString
@@ -872,7 +873,7 @@ export class ChronikBlockchainClient {
       hash: createdTx.hash,
       amount: createdTx.amount,
       confirmed: createdTx.confirmed,
-      opReturn: '',
+      opReturn,
       timestamp: createdTx.timestamp,
       address: { address: addressString },
       prices: [],
@@ -1005,14 +1006,18 @@ export class ChronikBlockchainClient {
     if (runTriggers && syncResult.inserted.length > 0) {
       const triggerBatch: BroadcastTxData[] = []
       for (const createdTx of syncResult.inserted) {
-        const tuple = commitTuples.find(t => t.row.hash === createdTx.hash)
+        const tuple = commitTuples.find(
+          t => t.row.hash === createdTx.hash && t.row.addressId === createdTx.addressId
+        )
         if (tuple == null) {
           continue
         }
+        const opReturn = typeof tuple.row.opReturn === 'string' ? tuple.row.opReturn : ''
         const bd = this.broadcastIncomingTxFromSyncRow(
           tuple.addressString,
           tuple.raw,
-          createdTx
+          createdTx,
+          opReturn
         )
         triggerBatch.push(bd)
       }

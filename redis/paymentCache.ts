@@ -39,7 +39,19 @@ export const getPaymentList = async (userId: string): Promise<Payment[]> => {
 }
 
 const getCachedWeekKeysForAddress = async (addressString: string): Promise<string[]> => {
-  return await redis.keys(`${addressString}:payments:*`)
+  const pattern = `${addressString}:payments:*`
+  const keys: string[] = []
+  const stream = redis.scanStream({
+    match: pattern,
+    count: 100
+  })
+  return await new Promise<string[]>((resolve, reject) => {
+    stream.on('data', (batch: string[]) => {
+      keys.push(...batch)
+    })
+    stream.on('end', () => resolve(keys))
+    stream.on('error', reject)
+  })
 }
 
 export const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {

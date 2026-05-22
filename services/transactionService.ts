@@ -605,8 +605,18 @@ export interface CreateManyTransactionsSyncResult {
 
 interface PersistManyTransactionRowsResult {
   inserted: SyncPersistedTransaction[]
+  updated: SyncPersistedTransaction[]
   updatedCount: number
 }
+
+const syncPersistedTxSelect = {
+  id: true,
+  hash: true,
+  addressId: true,
+  amount: true,
+  timestamp: true,
+  confirmed: true
+} as const
 
 /**
  * Cheap dedupe before createManyTransactions: returns only new rows or rows
@@ -676,6 +686,7 @@ async function persistManyTransactionRows (
   })
 
   const inserted: SyncPersistedTransaction[] = []
+  const updated: SyncPersistedTransaction[] = []
   let updatedCount = 0
 
   await prisma.$transaction(
@@ -748,14 +759,7 @@ async function persistManyTransactionRows (
               addressId: row.addressId
             }))
           },
-          select: {
-            id: true,
-            hash: true,
-            addressId: true,
-            amount: true,
-            timestamp: true,
-            confirmed: true
-          }
+          select: syncPersistedTxSelect
         })
 
         const txMap = new Map<string, { tx: typeof createdTxs[0], inputs: typeof txInputs[0]['inputs'] }>()
@@ -816,7 +820,12 @@ async function persistManyTransactionRows (
             })
           )
         )
-        updatedCount = toUpdate.length
+        const updatedTxs = await tx.transaction.findMany({
+          where: { id: { in: toUpdate.map(u => u.id) } },
+          select: syncPersistedTxSelect
+        })
+        updated.push(...updatedTxs)
+        updatedCount = updatedTxs.length
       }
     },
     {
@@ -824,7 +833,7 @@ async function persistManyTransactionRows (
     }
   )
 
-  return { inserted, updatedCount }
+  return { inserted, updated, updatedCount }
 }
 
 /**
@@ -852,22 +861,26 @@ export async function createManyTransactions (
     return []
   }
 
-  const { inserted } = await persistManyTransactionRows(transactionsData)
+  const { inserted, updated } = await persistManyTransactionRows(transactionsData)
+  const persistedIds = [
+    ...inserted.map(t => t.id),
+    ...updated.map(t => t.id)
+  ]
 
-  if (inserted.length === 0) {
+  if (persistedIds.length === 0) {
     return []
   }
 
-  const insertedTransactions = await prisma.transaction.findMany({
+  const persistedTransactions = await prisma.transaction.findMany({
     where: {
-      id: { in: inserted.map(t => t.id) }
+      id: { in: persistedIds }
     },
     include: includeNetwork
   })
 
-  await connectTransactionsListToPrices(insertedTransactions)
+  await connectTransactionsListToPrices(persistedTransactions)
   const txsWithPaybuttonsAndPrices = await fetchTransactionsWithPaybuttonsAndPricesForIdList(
-    inserted.map((tx) => tx.id)
+    persistedIds
   )
 
   void CacheSet.txsCreation(txsWithPaybuttonsAndPrices)
