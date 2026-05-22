@@ -113,7 +113,11 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
 }
 
 interface ChronikTxWithAddress { tx: Tx, address: Address }
+
+type FetchBatchPhase = 'tx-drain' | 'drain-complete' | 'addresses-synced'
+
 interface FetchedTxsBatch {
+  phase: FetchBatchPhase
   chronikTxs: ChronikTxWithAddress[]
   addressesSynced: string[]
 }
@@ -443,19 +447,31 @@ export class ChronikBlockchainClient {
       // are not enough transactions to fill the batch.
       while (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
         const chronikTxsSlice = chronikTxs.splice(0, TX_EMIT_BATCH_SIZE)
-        yield { chronikTxs: chronikTxsSlice, addressesSynced: [] }
+        yield {
+          phase: 'tx-drain',
+          chronikTxs: chronikTxsSlice,
+          addressesSynced: []
+        }
       }
 
       // If no active workers, yield any remaining transactions (even if < batch size)
       if (activeWorkers.size === 0 && chronikTxs.length > 0) {
         const remaining = chronikTxs.splice(0)
-        yield { chronikTxs: remaining, addressesSynced: [] }
+        yield {
+          phase: 'tx-drain',
+          chronikTxs: remaining,
+          addressesSynced: []
+        }
       }
 
       // Yield completed addresses if any
       if (completedAddresses.length > 0) {
         const completed = completedAddresses.splice(0)
-        yield { chronikTxs: [], addressesSynced: completed }
+        yield {
+          phase: 'addresses-synced',
+          chronikTxs: [],
+          addressesSynced: completed
+        }
       }
 
       // If no active workers and no more transactions, break
@@ -479,7 +495,11 @@ export class ChronikBlockchainClient {
     if (chronikTxs.length > 0) {
       const remaining = chronikTxs
       chronikTxs = []
-      yield { chronikTxs: remaining, addressesSynced: [] }
+      yield {
+        phase: 'tx-drain',
+        chronikTxs: remaining,
+        addressesSynced: []
+      }
     }
   }
 
@@ -969,9 +989,17 @@ export class ChronikBlockchainClient {
       console.log(`${pfx} will fetch batches of ${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY} addresses from chronik`)
 
       for await (const batch of this.fetchLatestTxsForAddresses(addresses)) {
-        if (batch.addressesSynced.length > 0) {
+        if (batch.phase === 'addresses-synced') {
           // marcador de slice => desmarca syncing
           await setSyncingBatch(batch.addressesSynced, false)
+          continue
+        }
+
+        if (batch.phase === 'drain-complete') {
+          continue
+        }
+
+        if (batch.chronikTxs.length === 0) {
           continue
         }
 
