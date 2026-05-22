@@ -340,7 +340,7 @@ export class ChronikBlockchainClient {
       `(addressConcurrency=${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY}, pageConcurrency=1).`
     )
 
-    let chronikTxs: ChronikTxWithAddress[] = []
+    const chronikTxs: ChronikTxWithAddress[] = []
     const completedAddresses: string[] = []
 
     let producersPaused = false
@@ -356,14 +356,44 @@ export class ChronikBlockchainClient {
       }
     }
 
-    // Used when a drain cycle completes
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const resumeProducers = (): void => {
       producersPaused = false
       const waiters = producerPauseWaiters.splice(0)
       for (const resolve of waiters) {
         resolve()
       }
+    }
+
+    async function * runDrainCycle (): AsyncGenerator<FetchedTxsBatch> {
+      producersPaused = true
+
+      while (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
+        const chronikTxsSlice = chronikTxs.splice(0, TX_EMIT_BATCH_SIZE)
+        yield {
+          phase: 'tx-drain',
+          chronikTxs: chronikTxsSlice,
+          addressesSynced: []
+        }
+      }
+
+      if (chronikTxs.length > 0) {
+        const remaining = chronikTxs.splice(0)
+        yield {
+          phase: 'tx-drain',
+          chronikTxs: remaining,
+          addressesSynced: []
+        }
+      }
+
+      yield {
+        phase: 'drain-complete',
+        chronikTxs: [],
+        addressesSynced: []
+      }
+
+      // Consumer processes drain-complete before this runs (for await next())
+      producersPaused = false
+      resumeProducers()
     }
 
     // Worker pool: maintain exactly INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY active workers
@@ -468,15 +498,9 @@ export class ChronikBlockchainClient {
 
     // Poll and yield batches while workers are active
     while (activeWorkers.size > 0 || chronikTxs.length > 0) {
-      // Yield batches if buffer is large enough. Make sure to drain until there
-      // are not enough transactions to fill the batch.
-      while (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
-        const chronikTxsSlice = chronikTxs.splice(0, TX_EMIT_BATCH_SIZE)
-        yield {
-          phase: 'tx-drain',
-          chronikTxs: chronikTxsSlice,
-          addressesSynced: []
-        }
+      if (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
+        yield * runDrainCycle()
+        continue
       }
 
       // If no active workers, yield any remaining transactions (even if < batch size)
@@ -489,8 +513,8 @@ export class ChronikBlockchainClient {
         }
       }
 
-      // Yield completed addresses if any
-      if (completedAddresses.length > 0) {
+      // Yield completed addresses if any (not during an active drain pause)
+      if (completedAddresses.length > 0 && !producersPaused) {
         const completed = completedAddresses.splice(0)
         yield {
           phase: 'addresses-synced',
@@ -517,9 +541,10 @@ export class ChronikBlockchainClient {
     }
 
     // Final TX flush after all addresses processed
-    if (chronikTxs.length > 0) {
-      const remaining = chronikTxs
-      chronikTxs = []
+    if (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
+      yield * runDrainCycle()
+    } else if (chronikTxs.length > 0) {
+      const remaining = chronikTxs.splice(0)
       yield {
         phase: 'tx-drain',
         chronikTxs: remaining,
