@@ -343,6 +343,29 @@ export class ChronikBlockchainClient {
     let chronikTxs: ChronikTxWithAddress[] = []
     const completedAddresses: string[] = []
 
+    let producersPaused = false
+    const producerPauseWaiters: Array<() => void> = []
+
+    const waitWhilePaused = async (): Promise<void> => {
+      // producersPaused is cleared by resumeProducers during drain cycles
+      // eslint-disable-next-line no-unmodified-loop-condition
+      while (producersPaused) {
+        await new Promise<void>(resolve => {
+          producerPauseWaiters.push(resolve)
+        })
+      }
+    }
+
+    // Used when a drain cycle completes
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const resumeProducers = (): void => {
+      producersPaused = false
+      const waiters = producerPauseWaiters.splice(0)
+      for (const resolve of waiters) {
+        resolve()
+      }
+    }
+
     // Worker pool: maintain exactly INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY active workers
     const activeWorkers = new Set<Promise<void>>()
     let nextAddressIndex = 0
@@ -359,6 +382,8 @@ export class ChronikBlockchainClient {
 
       try {
         while (!hasReachedStoppingCondition) {
+          await waitWhilePaused()
+
           const pageIndex = nextBurstBasePageIndex
           let pageTxs: Tx[] = []
 
