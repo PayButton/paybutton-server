@@ -1046,6 +1046,15 @@ export class ChronikBlockchainClient {
         }
 
         if (batch.phase === 'drain-complete') {
+          if (toCommit.length > 0) {
+            const remainder = toCommit.splice(0)
+            await this.commitTransactionsBatch(
+              remainder,
+              productionAddressesIds,
+              runTriggers
+            )
+            remainder.length = 0
+          }
           continue
         }
 
