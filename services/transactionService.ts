@@ -671,7 +671,7 @@ async function persistManyTransactionRows (
     timestamp: tx.timestamp,
     addressId: tx.addressId,
     confirmed: tx.confirmed ?? false,
-    isPayment: tx.amount > 0,
+    isPayment: Number(tx.amount) > 0,
     opReturn: tx.opReturn ?? '',
     orphaned: false
   }))

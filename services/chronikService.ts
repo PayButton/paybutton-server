@@ -305,7 +305,7 @@ export class ChronikBlockchainClient {
       timestamp: transaction.block !== undefined ? transaction.block.timestamp : transaction.timeFirstSeen,
       addressId: address.id,
       confirmed: transaction.block !== undefined,
-      isPayment: amount > 0,
+      isPayment: Number(amount) > 0,
       opReturn,
       inputs: {
         create: inputAddresses
