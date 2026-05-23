@@ -5,7 +5,8 @@ import { N_OF_QUOTES, USD_QUOTE_ID, CAD_QUOTE_ID } from 'constants/index'
 import moment from 'moment'
 import { exit } from 'process'
 
-const BATCH_SIZE = 5000
+const PAGE_SIZE = 5000
+const FIX_BATCH_SIZE = 1000
 
 async function misconnectTxs (txsIds: string[]): Promise<void> {
   if (process.env.ENVIRONMENT === 'production') {
@@ -16,7 +17,6 @@ async function misconnectTxs (txsIds: string[]): Promise<void> {
   }
   console.log('Misconnecting', txsIds.length, 'for testing purposes')
 
-  // Ensure txs have price connections first
   const txsWithNetwork: TransactionWithNetwork[] = await prisma.transaction.findMany({
     where: { id: { in: txsIds } },
     include: { address: { select: { networkId: true } } }
@@ -52,43 +52,13 @@ async function misconnectTxs (txsIds: string[]): Promise<void> {
   console.log('Finished misconnecting txs')
 }
 
-async function findTxIdsToFix (): Promise<string[]> {
-  console.log('  Querying misaligned prices...')
-  const misaligned = await prisma.$queryRaw<Array<{ id: string }>>`
-    SELECT DISTINCT t.id
-    FROM Transaction t
-    JOIN PricesOnTransactions pot ON pot.transactionId = t.id
-    JOIN Price p ON pot.priceId = p.id
-    WHERE p.timestamp != (t.timestamp - MOD(t.timestamp, 86400))
-  `
-  console.log(`  Found ${misaligned.length} with misaligned prices.`)
-
-  console.log('  Querying incomplete price connections...')
-  const incomplete = await prisma.$queryRaw<Array<{ transactionId: string }>>`
-    SELECT pot.transactionId
-    FROM PricesOnTransactions pot
-    GROUP BY pot.transactionId
-    HAVING COUNT(*) < ${N_OF_QUOTES}
-  `
-  console.log(`  Found ${incomplete.length} with incomplete connections.`)
-
-  console.log('  Querying missing price connections...')
-  const missing = await prisma.$queryRaw<Array<{ id: string }>>`
-    SELECT t.id
-    FROM Transaction t
-    LEFT JOIN PricesOnTransactions pot ON pot.transactionId = t.id
-    WHERE pot.transactionId IS NULL
-  `
-  console.log(`  Found ${missing.length} with no connections.`)
-
-  const idSet = new Set<string>()
-  for (const r of misaligned) idSet.add(r.id)
-  for (const r of incomplete) idSet.add(r.transactionId)
-  for (const r of missing) idSet.add(r.id)
-  return [...idSet]
+function txNeedsFix (tx: { timestamp: number, prices: Array<{ price: { timestamp: number } }> }): boolean {
+  if (tx.prices.length < N_OF_QUOTES) return true
+  const expected = flattenTimestamp(tx.timestamp)
+  return tx.prices.some(p => p.price.timestamp !== expected)
 }
 
-async function filterTxsWithAvailablePrices (txs: TransactionWithNetwork[]): Promise<TransactionWithNetwork[]> {
+async function filterWithAvailablePrices (txs: TransactionWithNetwork[]): Promise<TransactionWithNetwork[]> {
   const networkIdToTimestamps = new Map<number, Set<number>>()
   for (const t of txs) {
     const networkId = t.address.networkId
@@ -153,40 +123,50 @@ async function fixMisconnectedTxs (): Promise<void> {
     // ADD TXS IDS HERE TO TEST IT
   ])
 
-  console.log('Finding txs with misaligned or missing prices...')
-  const txIdsToFix = await findTxIdsToFix()
-  console.log(`Found ${txIdsToFix.length} txs to fix.`)
+  const total = await prisma.transaction.count()
+  console.log(`Scanning ${total} txs for misaligned or missing prices...`)
 
-  if (txIdsToFix.length === 0) {
-    console.log('Nothing to fix.')
-    exit()
-  }
+  let cursor: string | undefined
+  let scanned = 0
+  let totalFixed = 0
+  let totalSkipped = 0
 
-  for (let i = 0; i < txIdsToFix.length; i += BATCH_SIZE) {
-    const batchIds = txIdsToFix.slice(i, i + BATCH_SIZE)
-    const txs: TransactionWithNetwork[] = await prisma.transaction.findMany({
-      where: { id: { in: batchIds } },
+  while (true) {
+    const txs = await prisma.transaction.findMany({
+      take: PAGE_SIZE,
+      ...(cursor != null ? { skip: 1, cursor: { id: cursor } } : {}),
+      orderBy: { id: 'asc' },
       include: {
-        address: {
-          select: {
-            networkId: true
-          }
-        }
+        prices: { select: { price: { select: { timestamp: true } } } },
+        address: { select: { networkId: true } }
       }
     })
 
-    const fixableTxs = await filterTxsWithAvailablePrices(txs)
-    if (fixableTxs.length === 0) {
-      console.log(`[${i + txs.length}/${txIdsToFix.length}] No fixable txs in batch, skipping.`)
+    if (txs.length === 0) break
+
+    cursor = txs[txs.length - 1].id
+    scanned += txs.length
+
+    const broken = txs.filter(txNeedsFix)
+
+    if (broken.length === 0) {
+      console.log(`[${scanned}/${total}] all OK`)
       continue
     }
 
-    console.log(`[${i + txs.length}/${txIdsToFix.length}] Fixing ${fixableTxs.length} txs...`)
-    await connectTransactionsListToPrices(fixableTxs)
-    console.log(`[${i + txs.length}/${txIdsToFix.length}] Done.`)
+    const fixable = await filterWithAvailablePrices(broken)
+    totalSkipped += broken.length - fixable.length
+
+    for (let i = 0; i < fixable.length; i += FIX_BATCH_SIZE) {
+      const batch = fixable.slice(i, i + FIX_BATCH_SIZE)
+      await connectTransactionsListToPrices(batch)
+      totalFixed += batch.length
+    }
+
+    console.log(`[${scanned}/${total}] fixed ${fixable.length} txs`)
   }
 
-  console.log('FINISHED')
+  console.log(`FINISHED. Fixed: ${totalFixed}, Skipped (no price data): ${totalSkipped}`)
   exit()
 }
 
