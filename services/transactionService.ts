@@ -117,7 +117,7 @@ const transactionWithNetwork = Prisma.validator<Prisma.TransactionDefaultArgs>()
   { include: includeNetwork }
 )
 
-type TransactionWithNetwork = Prisma.TransactionGetPayload<typeof transactionWithNetwork>
+export type TransactionWithNetwork = Prisma.TransactionGetPayload<typeof transactionWithNetwork>
 
 const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
   { include: includeAddressAndPrices }

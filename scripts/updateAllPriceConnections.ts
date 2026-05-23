@@ -1,7 +1,6 @@
 import { flattenTimestamp } from '../services/priceService'
 import prisma from 'prisma-local/clientInstance'
-import { connectTransactionsListToPrices } from 'services/transactionService'
-import { Transaction } from '@prisma/client'
+import { connectTransactionsListToPrices, TransactionWithNetwork } from 'services/transactionService'
 import moment from 'moment'
 import { exit } from 'process'
 
@@ -47,7 +46,7 @@ async function fixMisconnectedTxs (): Promise<void> {
 
   console.log('Fixing misconnected txs...')
   while (true) {
-    const txsToFix: Transaction[] = []
+    const txsToFix: TransactionWithNetwork[] = []
     // Get txs page
     const txs = await prisma.transaction.findMany({
       orderBy: {
@@ -62,6 +61,11 @@ async function fixMisconnectedTxs (): Promise<void> {
                 networkId: true
               }
             }
+          }
+        },
+        address: {
+          select: {
+            networkId: true
           }
         }
       },
