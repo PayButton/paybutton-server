@@ -53,22 +53,39 @@ async function misconnectTxs (txsIds: string[]): Promise<void> {
 }
 
 async function findTxIdsToFix (): Promise<string[]> {
-  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+  console.log('  Querying misaligned prices...')
+  const misaligned = await prisma.$queryRaw<Array<{ id: string }>>`
     SELECT DISTINCT t.id
     FROM Transaction t
     JOIN PricesOnTransactions pot ON pot.transactionId = t.id
     JOIN Price p ON pot.priceId = p.id
     WHERE p.timestamp != (t.timestamp - MOD(t.timestamp, 86400))
+  `
+  console.log(`  Found ${misaligned.length} with misaligned prices.`)
 
-    UNION
+  console.log('  Querying incomplete price connections...')
+  const incomplete = await prisma.$queryRaw<Array<{ transactionId: string }>>`
+    SELECT pot.transactionId
+    FROM PricesOnTransactions pot
+    GROUP BY pot.transactionId
+    HAVING COUNT(*) < ${N_OF_QUOTES}
+  `
+  console.log(`  Found ${incomplete.length} with incomplete connections.`)
 
+  console.log('  Querying missing price connections...')
+  const missing = await prisma.$queryRaw<Array<{ id: string }>>`
     SELECT t.id
     FROM Transaction t
     LEFT JOIN PricesOnTransactions pot ON pot.transactionId = t.id
-    GROUP BY t.id
-    HAVING COUNT(pot.priceId) < ${N_OF_QUOTES}
+    WHERE pot.transactionId IS NULL
   `
-  return rows.map(r => r.id)
+  console.log(`  Found ${missing.length} with no connections.`)
+
+  const idSet = new Set<string>()
+  for (const r of misaligned) idSet.add(r.id)
+  for (const r of incomplete) idSet.add(r.transactionId)
+  for (const r of missing) idSet.add(r.id)
+  return [...idSet]
 }
 
 async function filterTxsWithAvailablePrices (txs: TransactionWithNetwork[]): Promise<TransactionWithNetwork[]> {
