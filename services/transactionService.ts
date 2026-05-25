@@ -428,6 +428,24 @@ function buildPriceTxConnectionInput (tx: Transaction, allPrices: AllPrices): Pr
   ]
 }
 
+async function deletePriceTxConnectionsInChunks (
+  client: Prisma.TransactionClient,
+  transactionIds: string[]
+): Promise<void> {
+  let pricesUnlinkedCount = 0
+  console.log(
+    `[PRICES] Disconnecting existing price links for ${transactionIds.length} txs...`
+  )
+  for (let i = 0; i < transactionIds.length; i += PRICES_CONNECTION_BATCH_SIZE) {
+    const slice = transactionIds.slice(i, i + PRICES_CONNECTION_BATCH_SIZE)
+    const result = await client.pricesOnTransactions.deleteMany({
+      where: { transactionId: { in: slice } }
+    })
+    pricesUnlinkedCount += result.count
+  }
+  console.log(`[PRICES] Disconnected ${pricesUnlinkedCount} price links.`)
+}
+
 async function createPriceTxConnectionInChunks (
   client: Prisma.TransactionClient | typeof prisma,
   rows: Prisma.PricesOnTransactionsCreateManyInput[]
@@ -538,12 +556,7 @@ export async function connectTransactionsListToPrices (
 
   await prisma.$transaction(
     async (tx) => {
-      console.log(
-        `[PRICES] Disconnecting existing price links for ${txList.length} txs...`
-      )
-      await tx.pricesOnTransactions.deleteMany({
-        where: { transactionId: { in: txList.map((t) => t.id) } }
-      })
+      await deletePriceTxConnectionsInChunks(tx, txList.map((t) => t.id))
       await createPriceTxConnectionInChunks(tx, rows)
     },
     { timeout: PRICES_CONNECTION_TIMEOUT }
