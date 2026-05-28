@@ -7,6 +7,9 @@ import prisma from 'prisma-local/clientInstance'
 import {
   TransactionWithAddressAndPrices,
   createManyTransactions,
+  createManyTransactionsForSync,
+  filterRowsNeedingCreateMany,
+  SyncPersistedTransaction,
   deleteTransactions,
   fetchUnconfirmedTransactions,
   markTransactionsOrphaned,
@@ -112,7 +115,11 @@ export function getNullDataScriptData (outputScript: string): OpReturnData | nul
 }
 
 interface ChronikTxWithAddress { tx: Tx, address: Address }
+
+type FetchBatchPhase = 'tx-drain' | 'drain-complete' | 'addresses-synced'
+
 interface FetchedTxsBatch {
+  phase: FetchBatchPhase
   chronikTxs: ChronikTxWithAddress[]
   addressesSynced: string[]
 }
@@ -335,8 +342,61 @@ export class ChronikBlockchainClient {
       `(addressConcurrency=${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY}, pageConcurrency=1).`
     )
 
-    let chronikTxs: ChronikTxWithAddress[] = []
+    const chronikTxs: ChronikTxWithAddress[] = []
     const completedAddresses: string[] = []
+
+    let producersPaused = false
+    const producerPauseWaiters: Array<() => void> = []
+
+    const waitWhilePaused = async (): Promise<void> => {
+      // producersPaused is cleared by resumeProducers during drain cycles
+      // eslint-disable-next-line no-unmodified-loop-condition
+      while (producersPaused) {
+        await new Promise<void>(resolve => {
+          producerPauseWaiters.push(resolve)
+        })
+      }
+    }
+
+    const resumeProducers = (): void => {
+      producersPaused = false
+      const waiters = producerPauseWaiters.splice(0)
+      for (const resolve of waiters) {
+        resolve()
+      }
+    }
+
+    async function * runDrainCycle (): AsyncGenerator<FetchedTxsBatch> {
+      producersPaused = true
+
+      while (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
+        const chronikTxsSlice = chronikTxs.splice(0, TX_EMIT_BATCH_SIZE)
+        yield {
+          phase: 'tx-drain',
+          chronikTxs: chronikTxsSlice,
+          addressesSynced: []
+        }
+      }
+
+      if (chronikTxs.length > 0) {
+        const remaining = chronikTxs.splice(0)
+        yield {
+          phase: 'tx-drain',
+          chronikTxs: remaining,
+          addressesSynced: []
+        }
+      }
+
+      yield {
+        phase: 'drain-complete',
+        chronikTxs: [],
+        addressesSynced: []
+      }
+
+      // Consumer processes drain-complete before this runs (for await next())
+      producersPaused = false
+      resumeProducers()
+    }
 
     // Worker pool: maintain exactly INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY active workers
     const activeWorkers = new Set<Promise<void>>()
@@ -354,6 +414,8 @@ export class ChronikBlockchainClient {
 
       try {
         while (!hasReachedStoppingCondition) {
+          await waitWhilePaused()
+
           const pageIndex = nextBurstBasePageIndex
           let pageTxs: Tx[] = []
 
@@ -438,23 +500,29 @@ export class ChronikBlockchainClient {
 
     // Poll and yield batches while workers are active
     while (activeWorkers.size > 0 || chronikTxs.length > 0) {
-      // Yield batches if buffer is large enough. Make sure to drain until there
-      // are not enough transactions to fill the batch.
-      while (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
-        const chronikTxsSlice = chronikTxs.splice(0, TX_EMIT_BATCH_SIZE)
-        yield { chronikTxs: chronikTxsSlice, addressesSynced: [] }
+      if (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
+        yield * runDrainCycle()
+        continue
       }
 
       // If no active workers, yield any remaining transactions (even if < batch size)
       if (activeWorkers.size === 0 && chronikTxs.length > 0) {
         const remaining = chronikTxs.splice(0)
-        yield { chronikTxs: remaining, addressesSynced: [] }
+        yield {
+          phase: 'tx-drain',
+          chronikTxs: remaining,
+          addressesSynced: []
+        }
       }
 
-      // Yield completed addresses if any
-      if (completedAddresses.length > 0) {
+      // Yield completed addresses if any (not during an active drain pause)
+      if (completedAddresses.length > 0 && !producersPaused) {
         const completed = completedAddresses.splice(0)
-        yield { chronikTxs: [], addressesSynced: completed }
+        yield {
+          phase: 'addresses-synced',
+          chronikTxs: [],
+          addressesSynced: completed
+        }
       }
 
       // If no active workers and no more transactions, break
@@ -475,10 +543,15 @@ export class ChronikBlockchainClient {
     }
 
     // Final TX flush after all addresses processed
-    if (chronikTxs.length > 0) {
-      const remaining = chronikTxs
-      chronikTxs = []
-      yield { chronikTxs: remaining, addressesSynced: [] }
+    if (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
+      yield * runDrainCycle()
+    } else if (chronikTxs.length > 0) {
+      const remaining = chronikTxs.splice(0)
+      yield {
+        phase: 'tx-drain',
+        chronikTxs: remaining,
+        addressesSynced: []
+      }
     }
   }
 
@@ -785,6 +858,41 @@ export class ChronikBlockchainClient {
     }
   }
 
+  private broadcastIncomingTxFromSyncRow (
+    addressString: string,
+    chronikTx: Tx,
+    createdTx: SyncPersistedTransaction,
+    opReturn: string
+  ): BroadcastTxData {
+    const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
+    broadcastTxData.address = addressString
+    broadcastTxData.messageType = 'NewTx'
+    const inputAddresses = this.getSortedInputAddresses(chronikTx)
+    const outputAddresses = this.getSortedOutputAddresses(chronikTx)
+    const stubTx = {
+      hash: createdTx.hash,
+      amount: createdTx.amount,
+      confirmed: createdTx.confirmed,
+      opReturn,
+      timestamp: createdTx.timestamp,
+      address: { address: addressString },
+      prices: [],
+      inputs: []
+    } as unknown as TransactionWithAddressAndPrices
+    const newSimplifiedTransaction = getSimplifiedTrasaction(
+      stubTx,
+      inputAddresses,
+      outputAddresses
+    )
+    broadcastTxData.txs = [newSimplifiedTransaction]
+    try {
+      this.wsEndpoint.emit(SOCKET_MESSAGES.TXS_BROADCAST, broadcastTxData)
+    } catch (err: any) {
+      console.error(RESPONSE_MESSAGES.COULD_NOT_BROADCAST_TX_TO_WS_SERVER_500.message, err.stack)
+    }
+    return broadcastTxData
+  }
+
   private broadcastIncomingTx (addressString: string, chronikTx: Tx, createdTx: TransactionWithAddressAndPrices): BroadcastTxData {
     const broadcastTxData: BroadcastTxData = {} as BroadcastTxData
     broadcastTxData.address = addressString
@@ -881,30 +989,41 @@ export class ChronikBlockchainClient {
     runTriggers: boolean
   ): Promise<void> {
     const rows = commitTuples.map(p => p.row)
-    const createdTxs = await createManyTransactions(rows)
-    console.log(`${this.CHRONIK_MSG_PREFIX} committed — created=${createdTxs.length}/${commitTuples.length}`)
+    const rowsToUpsert = await filterRowsNeedingCreateMany(rows)
+    const syncResult = await createManyTransactionsForSync(rowsToUpsert)
+    console.log(
+      `${this.CHRONIK_MSG_PREFIX} committed — created=${syncResult.insertedCount}/` +
+      `${commitTuples.length}`
+    )
 
-    const createdForProd = createdTxs.filter(t => productionAddressesIds.includes(t.addressId))
+    const createdForProd = syncResult.inserted.filter(t =>
+      productionAddressesIds.includes(t.addressId)
+    )
     if (createdForProd.length > 0) {
-      await appendTxsToFile(createdForProd as unknown as Prisma.TransactionCreateManyInput[])
+      await appendTxsToFile(createdForProd)
     }
 
-    if (createdTxs.length > 0) {
+    if (runTriggers && syncResult.inserted.length > 0) {
       const triggerBatch: BroadcastTxData[] = []
-      for (const createdTx of createdTxs) {
-        const tuple = commitTuples.find(t => t.row.hash === createdTx.hash)
+      for (const createdTx of syncResult.inserted) {
+        const tuple = commitTuples.find(
+          t => t.row.hash === createdTx.hash && t.row.addressId === createdTx.addressId
+        )
         if (tuple == null) {
           continue
         }
-        const bd = this.broadcastIncomingTx(createdTx.address.address, tuple.raw, createdTx)
+        const opReturn = typeof tuple.row.opReturn === 'string' ? tuple.row.opReturn : ''
+        const bd = this.broadcastIncomingTxFromSyncRow(
+          tuple.addressString,
+          tuple.raw,
+          createdTx,
+          opReturn
+        )
         triggerBatch.push(bd)
       }
-      if (runTriggers && triggerBatch.length > 0) {
+      if (triggerBatch.length > 0) {
         await executeTriggersBatch(triggerBatch, this.networkId)
       }
-
-      // Release memory
-      createdTxs.length = 0
       triggerBatch.length = 0
     }
 
@@ -971,9 +1090,26 @@ export class ChronikBlockchainClient {
       console.log(`${pfx} will fetch batches of ${INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY} addresses from chronik`)
 
       for await (const batch of this.fetchLatestTxsForAddresses(addresses)) {
-        if (batch.addressesSynced.length > 0) {
+        if (batch.phase === 'addresses-synced') {
           // marcador de slice => desmarca syncing
           await setSyncingBatch(batch.addressesSynced, false)
+          continue
+        }
+
+        if (batch.phase === 'drain-complete') {
+          if (toCommit.length > 0) {
+            const remainder = toCommit.splice(0)
+            await this.commitTransactionsBatch(
+              remainder,
+              productionAddressesIds,
+              runTriggers
+            )
+            remainder.length = 0
+          }
+          continue
+        }
+
+        if (batch.chronikTxs.length === 0) {
           continue
         }
 

@@ -61,6 +61,11 @@ jest.mock('../../services/addressService', () => ({
 
 jest.mock('../../services/transactionService', () => ({
   createManyTransactions: jest.fn(),
+  createManyTransactionsForSync: jest.fn(async () => ({
+    insertedCount: 0,
+    inserted: []
+  })),
+  filterRowsNeedingCreateMany: jest.fn(async (rows: unknown[]) => rows),
   deleteTransactions: jest.fn(),
   fetchUnconfirmedTransactions: jest.fn(),
   upsertTransaction: jest.fn(),

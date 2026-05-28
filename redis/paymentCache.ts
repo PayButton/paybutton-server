@@ -39,7 +39,19 @@ export const getPaymentList = async (userId: string): Promise<Payment[]> => {
 }
 
 const getCachedWeekKeysForAddress = async (addressString: string): Promise<string[]> => {
-  return await redis.keys(`${addressString}:payments:*`)
+  const pattern = `${addressString}:payments:*`
+  const keys: string[] = []
+  const stream = redis.scanStream({
+    match: pattern,
+    count: 100
+  })
+  return await new Promise<string[]>((resolve, reject) => {
+    stream.on('data', (batch: string[]) => {
+      keys.push(...batch)
+    })
+    stream.on('end', () => resolve(keys))
+    stream.on('error', reject)
+  })
 }
 
 export const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
@@ -277,6 +289,17 @@ export const clearRecentAddressCache = async (addressString: string, timestamps:
     weekKeys.map(async (k) =>
       await redis.del(k, () => {})
     )
+  )
+}
+
+/** Remove all week-grouped payment keys for an address (forces rebuild from DB). */
+export const clearPaymentCacheForAddress = async (addressString: string): Promise<void> => {
+  const weekKeys = await getCachedWeekKeysForAddress(addressString)
+  if (weekKeys.length === 0) {
+    return
+  }
+  await Promise.all(
+    weekKeys.map(async (key) => await redis.del(key, () => {}))
   )
 }
 
