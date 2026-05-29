@@ -277,7 +277,7 @@ export const MEMPOOL_PROCESS_DELAY = 100
 // On chronik, the max allowed is 200
 export const CHRONIK_FETCH_N_TXS_PER_PAGE = 200
 
-export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 16
+export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 64
 export const TX_EMIT_BATCH_SIZE = 200 // for our generator, not chronik
 export const DB_COMMIT_BATCH_SIZE = 200 // tamanho dos lotes para commit no DB
 export const TX_BATCH_POLLING_DELAY = 500 // delay (ms) between polling for new batches of txs to commit to the DB
