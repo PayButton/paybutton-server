@@ -1326,6 +1326,33 @@ describe('Regression: mempool + retries + onMessage + cache TTL', () => {
     expect(txMock).toHaveBeenCalledTimes(2)
   })
 
+  it('chronikCallWithRetry retries on error then succeeds', async () => {
+    process.env.WS_AUTH_KEY = 'test-auth-key'
+    const client = new ChronikBlockchainClient('ecash')
+    await new Promise(resolve => setImmediate(resolve))
+
+    const fn = jest.fn()
+      .mockRejectedValueOnce(new Error('Transaction not found in the index'))
+      .mockResolvedValueOnce({ txs: [{ txid: 'tx1' }], numTxs: 1 })
+
+    const result = await (client as any).chronikCallWithRetry('script history', fn, 3, 1)
+
+    expect(result.txs).toHaveLength(1)
+    expect(fn).toHaveBeenCalledTimes(2)
+  })
+
+  it('chronikCallWithRetry retries on any error until tries exhausted', async () => {
+    process.env.WS_AUTH_KEY = 'test-auth-key'
+    const client = new ChronikBlockchainClient('ecash')
+    await new Promise(resolve => setImmediate(resolve))
+
+    const fn = jest.fn().mockRejectedValue(new Error('connection refused'))
+    await expect(
+      (client as any).chronikCallWithRetry('test', fn, 3, 1)
+    ).rejects.toThrow('connection refused')
+    expect(fn).toHaveBeenCalledTimes(3)
+  })
+
   it('clearOldMessages expires entries by TTL and from the correct maps', () => {
     process.env.WS_AUTH_KEY = 'test-auth-key'
     const client = new ChronikBlockchainClient('ecash')

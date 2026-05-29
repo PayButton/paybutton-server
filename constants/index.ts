@@ -272,6 +272,11 @@ export const MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME = 2
 export const CHRONIK_INITIALIZATION_DELAY = 2000
 export const MEMPOOL_PROCESS_DELAY = 100
 
+// Number of tries before failing a chronik call (min 1)
+export const CHRONIK_TRIES = 3
+// Initial delay between retries in milliseconds. This is multiplied by 2 for each retry.
+export const CHRONIK_RETRY_DELAY_MS = 1000
+
 /* WIP RENAME ALL THOSE */
 // When fetching some address transactions, number of transactions to fetch at a time.
 // On chronik, the max allowed is 200
