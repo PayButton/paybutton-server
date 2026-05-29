@@ -10,7 +10,7 @@ import {
 import { fetchAllUserAddresses, AddressPaymentInfo } from 'services/addressService'
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 
-import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT } from 'constants/index'
+import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT, N_OF_QUOTES } from 'constants/index'
 import moment from 'moment-timezone'
 import { CacheSet } from 'redis/index'
 import { ButtonDisplayData, Payment } from './types'
@@ -155,6 +155,10 @@ export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: 
     for (const tx of batch) {
       balance = balance.plus(tx.amount)
       if (tx.amount.gt(0)) {
+        if (tx.prices.length !== N_OF_QUOTES) {
+          console.warn(`[CACHE] Skipping tx ${tx.hash} — missing price links (${tx.prices.length}/${N_OF_QUOTES})`)
+          continue
+        }
         const payment = generatePaymentFromTx(tx)
         paymentList.push(payment)
         paymentCount++
