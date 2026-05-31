@@ -78,3 +78,34 @@ body[data-theme="dark"] .pro_ctn input {
   margin: 0 0 10px 0;
   font-weight: 600;
 }
+
+.threshold_ctn {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.threshold_row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.threshold_input {
+  width: 80px;
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+body[data-theme='dark'] .threshold_input {
+  border-color: #a5a5a5;
+  background-color: var(--primary-bg-color);
+  color: var(--primary-text-color);
+}
+
+.threshold_ctn button {
+  padding: 5px 15px;
+  border-radius: 5px;
+  font-size: 14px;
+}
