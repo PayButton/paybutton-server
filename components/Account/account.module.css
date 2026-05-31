@@ -38,6 +38,23 @@ body[data-theme='dark'] .changepw_ctn input {
     background-color: #e7bfba;
   }
 
+.success_message_small,
+.error_message_small {
+    background-color: #c5e7ba;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    color: rgb(0, 99, 0);
+    display: inline-block;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.error_message_small {
+    color: rgb(172, 0, 0);
+    background-color: #e7bfba;
+}
+
 @media (max-width: 960px) {
   .changepw_ctn {
    max-width: unset;
@@ -77,4 +94,60 @@ body[data-theme="dark"] .pro_ctn input {
 .section_header {
   margin: 0 0 10px 0;
   font-weight: 600;
+}
+
+.csv_collapsing_ctn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggle_switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+}
+
+.toggle_switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle_slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle_slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle_switch input:checked + .toggle_slider {
+  background-color: #4caf50;
+}
+
+.toggle_switch input:checked + .toggle_slider:before {
+  transform: translateX(24px);
+}
+
+.toggle_label {
+  font-size: 14px;
+  color: #666;
 }

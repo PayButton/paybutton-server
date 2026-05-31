@@ -7,6 +7,7 @@ import { GetServerSideProps } from 'next'
 import Page from 'components/Page'
 import ChangePassword from 'components/Account/ChangePassword'
 import ChangeFiatCurrency from 'components/Account/ChangeFiatCurrency'
+import CsvRowCollapsing from 'components/Account/CsvRowCollapsing'
 import style from './account.module.css'
 import { fetchUserProfileFromId, fetchUserWithSupertokens, getUserPublicKeyHex, UserWithSupertokens } from 'services/userService'
 import CopyIcon from '../../assets/copy-black.png'
@@ -145,6 +146,15 @@ export default function Account ({ user, userPublicKey, organization, orgMembers
               value={timezone}
               onChange={handleTimezoneChange}
             />
+          </div>
+
+          <div className={style.account_row}>
+            <div className={style.label}>CSV Row Collapsing</div>
+            <div className={style.value}>
+              <CsvRowCollapsing
+                initialValue={userProfile.csvRowCollapsing}
+              />
+            </div>
           </div>
 
           <div className={style.account_row}>
