@@ -7,7 +7,14 @@ import { parseAddress } from 'utils/validators'
 import { addressExists } from './addressService'
 import moment from 'moment'
 
-export const generatePaymentId = async (address: string, amount?: Prisma.Decimal): Promise<string> => {
+export interface ClientPaymentField {
+  name: string
+  text?: string
+  type?: string
+  value?: string | boolean
+}
+
+export const generatePaymentId = async (address: string, amount?: Prisma.Decimal, fields?: ClientPaymentField[]): Promise<string> => {
   const rawUUID = uuidv4()
   const cleanUUID = rawUUID.replace(/-/g, '')
   const status = 'PENDING' as ClientPaymentStatus
@@ -29,7 +36,8 @@ export const generatePaymentId = async (address: string, amount?: Prisma.Decimal
       },
       paymentId: cleanUUID,
       status,
-      amount
+      amount,
+      fields: fields !== undefined ? JSON.stringify(fields) : '[]'
     },
     include: {
       address: true
@@ -54,6 +62,28 @@ export const getClientPayment = async (paymentId: string): Promise<Prisma.Client
   return await prisma.clientPayment.findUnique({
     where: { paymentId },
     include: { address: true }
+  })
+}
+
+export const getClientPaymentFields = async (paymentId: string): Promise<ClientPaymentField[]> => {
+  const clientPayment = await prisma.clientPayment.findUnique({
+    where: { paymentId },
+    select: { fields: true }
+  })
+  if (clientPayment === null) {
+    return []
+  }
+  try {
+    return JSON.parse(clientPayment.fields) as ClientPaymentField[]
+  } catch {
+    return []
+  }
+}
+
+export const updateClientPaymentFields = async (paymentId: string, fields: ClientPaymentField[]): Promise<void> => {
+  await prisma.clientPayment.update({
+    where: { paymentId },
+    data: { fields: JSON.stringify(fields) }
   })
 }
 

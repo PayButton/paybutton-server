@@ -1,4 +1,3 @@
-import { Decimal } from '@prisma/client/runtime/library'
 import { generatePaymentId } from 'services/clientPaymentService'
 import { parseAddress, parseCreatePaymentIdPOSTRequest } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
@@ -14,11 +13,10 @@ export default async (req: any, res: any): Promise<void> => {
   await runMiddleware(req, res, cors)
   if (req.method === 'POST') {
     try {
-      const values = parseCreatePaymentIdPOSTRequest(req.body)
-      const address = parseAddress(values.address)
-      const amount = values.amount as Decimal | undefined
+      const { amount, fields, address } = parseCreatePaymentIdPOSTRequest(req.body)
+      const parsedAddress = parseAddress(address)
 
-      const paymentId = await generatePaymentId(address, amount)
+      const paymentId = await generatePaymentId(parsedAddress, amount, fields)
 
       res.status(200).json({ paymentId })
     } catch (error: any) {
@@ -28,6 +26,15 @@ export default async (req: any, res: any): Promise<void> => {
           break
         case RESPONSE_MESSAGES.INVALID_ADDRESS_400.message:
           res.status(RESPONSE_MESSAGES.INVALID_ADDRESS_400.statusCode).json(RESPONSE_MESSAGES.INVALID_ADDRESS_400)
+          break
+        case RESPONSE_MESSAGES.INVALID_FIELDS_FORMAT_400.message:
+          res.status(RESPONSE_MESSAGES.INVALID_FIELDS_FORMAT_400.statusCode).json(RESPONSE_MESSAGES.INVALID_FIELDS_FORMAT_400)
+          break
+        case RESPONSE_MESSAGES.INVALID_FIELD_STRUCTURE_400.message:
+          res.status(RESPONSE_MESSAGES.INVALID_FIELD_STRUCTURE_400.statusCode).json(RESPONSE_MESSAGES.INVALID_FIELD_STRUCTURE_400)
+          break
+        case RESPONSE_MESSAGES.INVALID_AMOUNT_400.message:
+          res.status(RESPONSE_MESSAGES.INVALID_AMOUNT_400.statusCode).json(RESPONSE_MESSAGES.INVALID_AMOUNT_400)
           break
         default:
           res.status(500).json({ statusCode: 500, message: error.message })
