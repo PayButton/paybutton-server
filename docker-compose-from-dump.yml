@@ -42,6 +42,7 @@ services:
       - ./scripts/db/init-supertokens-db.sql:/home/mysql/raw_entrypoint/3-init-supertokens-db.sql
       - ./scripts/db/prisma-shadow-db-fix.sql:/home/mysql/raw_entrypoint/4-prisma-shadow-db-fix.sql
       - ./dump.sql:/home/mysql/raw_entrypoint/5-dump.sql
+      - paybutton-dump-db-data:/var/lib/mysql
 
   users-service:
     container_name: paybutton-users-service
@@ -69,3 +70,6 @@ services:
       - ./redis:/data/redis:z
       - ./scripts:/data/scripts
     command: sh -c "sed -i 's/\\r//g' ./scripts/redis-start.sh && sh ./scripts/redis-start.sh"
+
+volumes:
+  paybutton-dump-db-data:

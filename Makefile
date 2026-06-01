@@ -37,6 +37,18 @@ dev-from-dump:
 	$(touch_local_env)
 	docker compose -f docker-compose-from-dump.yml --env-file .env --env-file .env.local --env-file .env.from-dump up --build -d
 
+stop-dev-from-dump:
+	docker compose -f docker-compose-from-dump.yml --env-file .env --env-file .env.local --env-file .env.from-dump down
+
+reset-dev-from-dump:
+	make stop-dev-from-dump && make dev-from-dump
+
+reset-dev-from-dump-keep-db:
+	docker compose -f docker-compose-from-dump.yml --env-file .env --env-file .env.local --env-file .env.from-dump up --build -d --force-recreate --no-deps paybutton
+
+nuke-dev-from-dump:
+	docker compose -f docker-compose-from-dump.yml --env-file .env --env-file .env.local --env-file .env.from-dump down -v
+
 logs-dev:
 	docker logs -f paybutton-dev
 
