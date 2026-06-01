@@ -23,7 +23,7 @@ cd ../entrypoint/ || exit
 
 for file in *.sql; do
     if [[ "$file" == *dump* ]]; then
-        filesize=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null)
+        filesize=$(stat -Lc%s "$file" 2>/dev/null || stat -Lf%z "$file" 2>/dev/null)
         echo "Importing $file ($(numfmt --to=iec $filesize)) ..."
         pv "$file" | mariadb -u root -p"$MYSQL_ROOT_PASSWORD"
     else
