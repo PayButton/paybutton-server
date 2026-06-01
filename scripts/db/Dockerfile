@@ -3,7 +3,7 @@ FROM mariadb:latest
 RUN mkhomedir_helper mysql
 
 RUN apt-get update || echo && \
-      apt-get install -y gettext || echo
+      apt-get install -y gettext pv || echo
 
 RUN mkdir -p /home/mysql/raw_entrypoint && \
     mkdir -p /home/mysql/entrypoint

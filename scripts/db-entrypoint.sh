@@ -11,8 +11,10 @@ cd /home/mysql/raw_entrypoint || exit
 
 for file in *.sql; do
     if [[ "$file" == *dump* ]]; then
-        cp "$file" /home/mysql/entrypoint/"$file"
+      echo "Linking dump file: $file"
+      ln -s /home/mysql/raw_entrypoint/"$file" /home/mysql/entrypoint/"$file"
     else
+        echo "Copying file $file after seding vars"
         sed_vars "$file"
     fi
 done
@@ -20,5 +22,13 @@ done
 cd ../entrypoint/ || exit
 
 for file in *.sql; do
-    mariadb -u root -p"$MYSQL_ROOT_PASSWORD" < "$file"
+    if [[ "$file" == *dump* ]]; then
+        filesize=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null)
+        echo "Importing $file ($(numfmt --to=iec $filesize)) ..."
+        pv "$file" | mariadb -u root -p"$MYSQL_ROOT_PASSWORD"
+    else
+        echo "Importing $file ..."
+        mariadb -u root -p"$MYSQL_ROOT_PASSWORD" < "$file"
+    fi
+    echo "Done importing $file"
 done
