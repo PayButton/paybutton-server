@@ -1,7 +1,7 @@
 import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client'
 import { encodeCashAddress, decodeCashAddress } from 'ecashaddrjs'
 import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, MAX_TXS_PER_ADDRESS, TX_BATCH_POLLING_DELAY } from 'constants/index'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CONFIRMED_TX_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, MAX_TXS_PER_ADDRESS, TX_BATCH_POLLING_DELAY } from 'constants/index'
 import { productionAddresses } from 'prisma-local/seeds/addresses'
 import prisma from 'prisma-local/clientInstance'
 import {
@@ -138,6 +138,7 @@ export class ChronikBlockchainClient {
 
   private latencyTestFinished: boolean
   private wsReconnecting = false
+  private confirmedTxsBeingProcessed = 0
 
   constructor (networkSlug: string) {
     this.latencyTestFinished = false
@@ -831,6 +832,12 @@ export class ChronikBlockchainClient {
         }
       } else if (msg.msgType === 'TX_CONFIRMED') {
         if (this.isAlreadyBeingProcessed(msg.txid, true)) return
+
+        while (this.confirmedTxsBeingProcessed >= MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME) {
+          await new Promise(resolve => setTimeout(resolve, CONFIRMED_TX_PROCESS_DELAY))
+        }
+
+        this.confirmedTxsBeingProcessed += 1
         try {
           const transaction = await this.fetchTxWithRetry(msg.txid)
           const addressesWithTransactions = await this.getAddressesForTransaction(transaction)
@@ -851,6 +858,8 @@ export class ChronikBlockchainClient {
             const { [msg.txid]: _, ...rest } = this.lastProcessedMessages.confirmed
             this.lastProcessedMessages.confirmed = rest
           }
+        } finally {
+          this.confirmedTxsBeingProcessed = Math.max(0, this.confirmedTxsBeingProcessed - 1)
         }
       } else if (msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
         if (this.isAlreadyBeingProcessed(msg.txid, false)) return
