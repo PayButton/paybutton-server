@@ -14,7 +14,7 @@ import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT, N_OF_QUOTES } fr
 import moment from 'moment-timezone'
 import { CacheSet } from 'redis/index'
 import { ButtonDisplayData, Payment } from './types'
-import { getUserDashboardData } from './dashboardCache'
+import { getUserDashboardData, clearDashboardCache } from './dashboardCache'
 // ADDRESS:payments:YYYY:MM
 const getPaymentsWeekKey = (addressString: string, timestamp: number): string => {
   return `${addressString}:payments:${moment.unix(timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
@@ -31,12 +31,20 @@ export async function * getUserUncachedAddresses (userId: string): AsyncGenerato
 }
 
 export const getPaymentList = async (userId: string): Promise<Payment[]> => {
-  if (process.env.SKIP_CACHE_REBUILD === undefined) {
-    const uncachedAddressStream = getUserUncachedAddresses(userId)
-    for await (const address of uncachedAddressStream) {
-      void await CacheSet.addressCreation(address)
+  const allAddresses = await fetchAllUserAddresses(userId, false, false) as Address[]
+  const uncachedAddresses: Address[] = []
+  for (const address of allAddresses) {
+    const keys = await getCachedWeekKeysForAddress(address.address)
+    if (keys.length === 0) {
+      uncachedAddresses.push(address)
     }
   }
+
+  if (uncachedAddresses.length > 0 && process.env.SKIP_CACHE_REBUILD === undefined) {
+    console.log(`[CACHE] getPaymentList: ${uncachedAddresses.length} uncached addresses for user ${userId}, starting background rebuild`)
+    void cacheAddressesInBackground(uncachedAddresses, userId)
+  }
+
   return await getCachedPaymentsForUser(userId)
 }
 
@@ -147,12 +155,15 @@ export const generatePaymentFromTxWithInvoices = (tx: TransactionWithAddressAndP
 }
 
 export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: Address): Promise<GroupedPaymentsAndInfoObject> => {
+  const startTime = Date.now()
   let paymentList: Payment[] = []
   let balance = new Prisma.Decimal(0)
   let paymentCount = 0
+  let txCount = 0
   const txsWithPaybuttonsGenerator = generateTransactionsWithPaybuttonsAndPricesForAddress(address.id)
   for await (const batch of txsWithPaybuttonsGenerator) {
     for (const tx of batch) {
+      txCount++
       balance = balance.plus(tx.amount)
       if (tx.amount.gt(0)) {
         if (tx.prices.length !== N_OF_QUOTES) {
@@ -165,6 +176,8 @@ export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: 
       }
     }
   }
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
+  console.log(`[CACHE] Cached address ${address.address.slice(0, 20)}...: ${paymentCount} payments, ${txCount} txs in ${elapsed}s`)
   const info: AddressPaymentInfo = {
     balance,
     paymentCount
@@ -319,14 +332,40 @@ export const initPaymentCache = async (address: Address): Promise<boolean> => {
   return false
 }
 
-export async function * getPaymentStream (userId: string): AsyncGenerator<Payment> {
-  if (process.env.SKIP_CACHE_REBUILD === undefined) {
-    const uncachedAddressStream = getUserUncachedAddresses(userId)
-    for await (const address of uncachedAddressStream) {
-      console.log('[CACHE]: Creating cache for address', address.address)
+const cacheAddressesInBackground = async (addresses: Address[], userId: string): Promise<void> => {
+  const startTime = Date.now()
+  let cached = 0
+  for (const address of addresses) {
+    try {
       await CacheSet.addressCreation(address)
+      cached++
+      if (cached % 10 === 0 || cached === addresses.length) {
+        console.log(`[CACHE] Background: cached ${cached}/${addresses.length} addresses for user ${userId}`)
+      }
+    } catch (err: any) {
+      console.error(`[CACHE] Background: failed to cache ${address.address}: ${err.message as string}`)
     }
   }
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
+  console.log(`[CACHE] Background: completed ${cached}/${addresses.length} addresses for user ${userId} in ${elapsed}s`)
+  await clearDashboardCache(userId)
+}
+
+export async function * getPaymentStream (userId: string): AsyncGenerator<Payment> {
+  const allAddresses = await fetchAllUserAddresses(userId, false, false) as Address[]
+  const uncachedAddresses: Address[] = []
+  for (const address of allAddresses) {
+    const keys = await getCachedWeekKeysForAddress(address.address)
+    if (keys.length === 0) {
+      uncachedAddresses.push(address)
+    }
+  }
+
+  if (uncachedAddresses.length > 0 && process.env.SKIP_CACHE_REBUILD === undefined) {
+    console.log(`[CACHE] ${uncachedAddresses.length}/${allAddresses.length} uncached addresses for user ${userId}, starting background rebuild`)
+    void cacheAddressesInBackground(uncachedAddresses, userId)
+  }
+
   const userButtonIds: string[] = (await fetchPaybuttonArrayByUserId(userId))
     .map(p => p.id)
   const weekKeys = await getCachedWeekKeysForUser(userId)
@@ -345,7 +384,7 @@ export async function * getPaymentStream (userId: string): AsyncGenerator<Paymen
         })
 
       for (const payment of weekPayments) {
-        yield payment // Yield one payment at a time
+        yield payment
       }
     }
   }
