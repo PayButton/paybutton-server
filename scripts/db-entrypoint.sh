@@ -10,7 +10,11 @@ sed_vars () {
 cd /home/mysql/raw_entrypoint || exit
 
 for file in *.sql; do
-    sed_vars "$file"
+    if [[ "$file" == *dump* ]]; then
+        cp "$file" /home/mysql/entrypoint/"$file"
+    else
+        sed_vars "$file"
+    fi
 done
 
 cd ../entrypoint/ || exit
