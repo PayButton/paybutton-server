@@ -76,34 +76,34 @@ export const CacheSet = {
 
 type MethodName = 'dashboardData' | 'paymentList' | 'addressBalance' | 'paymentsCount'
 
-interface PendingCalls {
-  [userId: string]: Set<MethodName>
-}
-
 export class CacheGet {
-  private static pendingCalls: PendingCalls = {}
+  private static readonly pendingPromises = new Map<string, Map<MethodName, Promise<any>>>()
 
   private static async executeCall<T>(
     userId: string,
     methodName: MethodName,
     fn: () => Promise<T>
   ): Promise<T> {
-    if (this.pendingCalls[userId] === undefined) {
-      this.pendingCalls[userId] = new Set()
+    let userMap = this.pendingPromises.get(userId)
+    if (userMap === undefined) {
+      userMap = new Map()
+      this.pendingPromises.set(userId, userMap)
     }
 
-    if (this.pendingCalls[userId].has(methodName)) {
-      throw new Error(`Method "${methodName}" is already being executed for user "${userId}".`)
+    const existing = userMap.get(methodName)
+    if (existing !== undefined) {
+      return await existing as T
     }
 
-    this.pendingCalls[userId].add(methodName)
+    const promise = fn()
+    userMap.set(methodName, promise)
 
     try {
-      return await fn()
+      return await promise
     } finally {
-      this.pendingCalls[userId].delete(methodName)
-      if (this.pendingCalls[userId].size === 0) {
-        this.pendingCalls[userId] = undefined as unknown as Set<MethodName>
+      userMap.delete(methodName)
+      if (userMap.size === 0) {
+        this.pendingPromises.delete(userId)
       }
     }
   }

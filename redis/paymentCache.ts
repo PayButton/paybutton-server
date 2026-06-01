@@ -332,23 +332,38 @@ export const initPaymentCache = async (address: Address): Promise<boolean> => {
   return false
 }
 
+const activeBackgroundRebuilds = new Set<string>()
+
+export const isBackgroundRebuildActive = (userId: string): boolean => {
+  return activeBackgroundRebuilds.has(userId)
+}
+
 const cacheAddressesInBackground = async (addresses: Address[], userId: string): Promise<void> => {
+  if (activeBackgroundRebuilds.has(userId)) {
+    console.log(`[CACHE] Background: already running for user ${userId}, skipping`)
+    return
+  }
+  activeBackgroundRebuilds.add(userId)
   const startTime = Date.now()
   let cached = 0
-  for (const address of addresses) {
-    try {
-      await CacheSet.addressCreation(address)
-      cached++
-      if (cached % 10 === 0 || cached === addresses.length) {
-        console.log(`[CACHE] Background: cached ${cached}/${addresses.length} addresses for user ${userId}`)
+  try {
+    for (const address of addresses) {
+      try {
+        await CacheSet.addressCreation(address)
+        cached++
+        if (cached % 10 === 0 || cached === addresses.length) {
+          console.log(`[CACHE] Background: cached ${cached}/${addresses.length} addresses for user ${userId}`)
+        }
+      } catch (err: any) {
+        console.error(`[CACHE] Background: failed to cache ${address.address}: ${err.message as string}`)
       }
-    } catch (err: any) {
-      console.error(`[CACHE] Background: failed to cache ${address.address}: ${err.message as string}`)
     }
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
+    console.log(`[CACHE] Background: completed ${cached}/${addresses.length} addresses for user ${userId} in ${elapsed}s`)
+    await clearDashboardCache(userId)
+  } finally {
+    activeBackgroundRebuilds.delete(userId)
   }
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
-  console.log(`[CACHE] Background: completed ${cached}/${addresses.length} addresses for user ${userId} in ${elapsed}s`)
-  await clearDashboardCache(userId)
 }
 
 export async function * getPaymentStream (userId: string): AsyncGenerator<Payment> {

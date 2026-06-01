@@ -2,6 +2,7 @@ import { CacheGet } from 'redis/index'
 import { fetchUserProfileFromId } from 'services/userService'
 import { setSession } from 'utils/setSession'
 import { getFilteredTransactionCount } from 'services/transactionService'
+import { isBackgroundRebuildActive } from 'redis/paymentCache'
 
 export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'GET') {
@@ -34,8 +35,13 @@ export default async (req: any, res: any): Promise<void> => {
       const totalCount = await getFilteredTransactionCount(userId, buttonIds, years, timezone, startDate, endDate)
       res.status(200).json(totalCount)
     } else {
-      const totalCount = await CacheGet.paymentsCount(userId, timezone)
-      res.status(200).json(totalCount)
+      if (isBackgroundRebuildActive(userId)) {
+        const totalCount = await getFilteredTransactionCount(userId)
+        res.status(200).json(totalCount)
+      } else {
+        const totalCount = await CacheGet.paymentsCount(userId, timezone)
+        res.status(200).json(totalCount)
+      }
     }
   } else {
     res.status(405).json({ error: 'Method not allowed' })

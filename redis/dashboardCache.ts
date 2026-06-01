@@ -1,5 +1,5 @@
 import { redis } from './clientInstance'
-import { getPaymentStream } from 'redis/paymentCache'
+import { getPaymentStream, isBackgroundRebuildActive } from 'redis/paymentCache'
 import { ChartData, DashboardData, Payment, ButtonData, PaymentDataByButton, ChartColor, PeriodData, ButtonDisplayData } from './types'
 import { Prisma } from '@prisma/client'
 import moment, { DurationInputArg2 } from 'moment'
@@ -379,7 +379,14 @@ export const getUserDashboardData = async function (userId: string, timezone: st
       timezone,
       paybuttonIds
     )
-    await cacheDashboardData(userId, dashboardData)
+
+    const rebuilding = isBackgroundRebuildActive(userId)
+    if (rebuilding) {
+      dashboardData.cacheRebuilding = true
+      // Don't cache partial data — next request will recompute with more data available
+    } else {
+      await cacheDashboardData(userId, dashboardData)
+    }
     return dashboardData
   }
   return dashboardData
