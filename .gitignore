@@ -39,3 +39,4 @@ prisma-local/seeds/productionTxs.csv
 paybutton-config.json
 
 dump.sql*
+.forever
