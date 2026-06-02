@@ -31,9 +31,11 @@ export async function * getUserUncachedAddresses (userId: string): AsyncGenerato
 }
 
 export const getPaymentList = async (userId: string): Promise<Payment[]> => {
-  const uncachedAddressStream = getUserUncachedAddresses(userId)
-  for await (const address of uncachedAddressStream) {
-    void await CacheSet.addressCreation(address)
+  if (process.env.SKIP_CACHE_REBUILD === undefined) {
+    const uncachedAddressStream = getUserUncachedAddresses(userId)
+    for await (const address of uncachedAddressStream) {
+      void await CacheSet.addressCreation(address)
+    }
   }
   return await getCachedPaymentsForUser(userId)
 }
@@ -304,6 +306,7 @@ export const clearPaymentCacheForAddress = async (addressString: string): Promis
 }
 
 export const initPaymentCache = async (address: Address): Promise<boolean> => {
+  if (process.env.SKIP_CACHE_REBUILD !== undefined) return false
   const cachedKeys = await getCachedWeekKeysForAddress(address.address)
   if (cachedKeys.length === 0) {
     await CacheSet.addressCreation(address)
@@ -313,10 +316,12 @@ export const initPaymentCache = async (address: Address): Promise<boolean> => {
 }
 
 export async function * getPaymentStream (userId: string): AsyncGenerator<Payment> {
-  const uncachedAddressStream = getUserUncachedAddresses(userId)
-  for await (const address of uncachedAddressStream) {
-    console.log('[CACHE]: Creating cache for address', address.address)
-    await CacheSet.addressCreation(address)
+  if (process.env.SKIP_CACHE_REBUILD === undefined) {
+    const uncachedAddressStream = getUserUncachedAddresses(userId)
+    for await (const address of uncachedAddressStream) {
+      console.log('[CACHE]: Creating cache for address', address.address)
+      await CacheSet.addressCreation(address)
+    }
   }
   const userButtonIds: string[] = (await fetchPaybuttonArrayByUserId(userId))
     .map(p => p.id)
