@@ -238,6 +238,11 @@ describe('Date and timezone filters for transactions', () => {
     { label: 'negative offset (Canada)', timezone: 'America/Toronto' }
   ]
 
+  beforeEach(() => {
+    prismaMock.address.findMany.mockResolvedValue([{ id: 'addr-1' }] as any)
+    prisma.address.findMany = prismaMock.address.findMany
+  })
+
   const computeExpectedRange = (tz: string): { gte: number, lte: number } => {
     const start = new Date(startDate)
     const end = new Date(endDate)
