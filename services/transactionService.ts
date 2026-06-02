@@ -1,4 +1,4 @@
-import prisma, { backgroundPrisma } from 'prisma-local/clientInstance'
+import prisma from 'prisma-local/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT, HUMAN_READABLE_DATE_FORMAT } from 'constants/index'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
@@ -270,7 +270,7 @@ export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (a
   let cursor: string | undefined
 
   while (true) {
-    const txs = await backgroundPrisma.transaction.findMany({
+    const txs = await prisma.transaction.findMany({
       where: {
         addressId
       },
