@@ -383,7 +383,6 @@ export const getUserDashboardData = async function (userId: string, timezone: st
     const rebuilding = isBackgroundRebuildActive(userId)
     if (rebuilding) {
       dashboardData.cacheRebuilding = true
-      await cacheDashboardDataWithTTL(userId, dashboardData, 30)
     } else {
       await cacheDashboardData(userId, dashboardData)
     }
@@ -398,14 +397,6 @@ export const cacheDashboardData = async (userId: string, dashboardData: Dashboar
     ...cachable
   } = dashboardData
   await redis.set(key, JSON.stringify(cachable))
-}
-
-const cacheDashboardDataWithTTL = async (userId: string, dashboardData: DashboardData, ttlSeconds: number): Promise<void> => {
-  const key = getDashboardSummaryKey(userId)
-  const {
-    ...cachable
-  } = dashboardData
-  await redis.set(key, JSON.stringify(cachable), 'EX', ttlSeconds)
 }
 
 export const getCachedDashboardData = async (userId: string): Promise<DashboardData | null> => {
