@@ -177,6 +177,7 @@ export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: 
         paymentCount++
       }
     }
+    await new Promise(resolve => setTimeout(resolve, 200))
   }
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
   console.log(`[CACHE] Cached address ${address.address.slice(0, 20)}...: ${paymentCount} payments, ${txCount} txs in ${elapsed}s`)

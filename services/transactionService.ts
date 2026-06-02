@@ -1,4 +1,4 @@
-import prisma from 'prisma-local/clientInstance'
+import prisma, { backgroundPrisma } from 'prisma-local/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT, HUMAN_READABLE_DATE_FORMAT } from 'constants/index'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
@@ -266,11 +266,11 @@ export async function fetchTransactionsWithPaybuttonsAndPricesForIdList (txIdLis
   })
 }
 
-export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (addressId: string, pageSize = 5000): AsyncGenerator<TransactionsWithPaybuttonsAndPrices[]> {
+export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (addressId: string, pageSize = 1000): AsyncGenerator<TransactionsWithPaybuttonsAndPrices[]> {
   let cursor: string | undefined
 
   while (true) {
-    const txs = await prisma.transaction.findMany({
+    const txs = await backgroundPrisma.transaction.findMany({
       where: {
         addressId
       },
@@ -1217,10 +1217,14 @@ export async function fetchAllPaymentsByUserIdWithPagination (
     }
   }
 
+  const userAddresses = await prisma.address.findMany({
+    where: { userProfiles: { some: { userId } } },
+    select: { id: true }
+  })
+  const userAddressIds = userAddresses.map(a => a.id)
+
   const where: Prisma.TransactionWhereInput = {
-    address: {
-      userProfiles: { some: { userId } }
-    },
+    addressId: { in: userAddressIds },
     isPayment: true
   }
 
@@ -1231,13 +1235,14 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   }
 
   if ((buttonIds !== undefined) && buttonIds.length > 0) {
-    where.address!.paybuttons = {
-      some: {
-        paybutton: {
-          id: { in: buttonIds }
-        }
-      }
-    }
+    const buttonAddresses = await prisma.address.findMany({
+      where: {
+        paybuttons: { some: { paybutton: { id: { in: buttonIds } } } },
+        id: { in: userAddressIds }
+      },
+      select: { id: true }
+    })
+    where.addressId = { in: buttonAddresses.map(a => a.id) }
   }
 
   // Build include conditionally - exclude inputs by default unless explicitly requested
@@ -1395,22 +1400,25 @@ export const getFilteredTransactionCount = async (
   startDate?: string,
   endDate?: string
 ): Promise<number> => {
+  const userAddresses = await prisma.address.findMany({
+    where: { userProfiles: { some: { userId } } },
+    select: { id: true }
+  })
+  const userAddressIds = userAddresses.map(a => a.id)
+
   const where: Prisma.TransactionWhereInput = {
-    address: {
-      userProfiles: {
-        some: { userId }
-      }
-    },
+    addressId: { in: userAddressIds },
     isPayment: true
   }
   if (buttonIds !== undefined && buttonIds.length > 0) {
-    where.address!.paybuttons = {
-      some: {
-        paybutton: {
-          id: { in: buttonIds }
-        }
-      }
-    }
+    const buttonAddresses = await prisma.address.findMany({
+      where: {
+        paybuttons: { some: { paybutton: { id: { in: buttonIds } } } },
+        id: { in: userAddressIds }
+      },
+      select: { id: true }
+    })
+    where.addressId = { in: buttonAddresses.map(a => a.id) }
   }
 
   if (startDate !== undefined && endDate !== undefined && startDate !== '' && endDate !== '') {

@@ -1,7 +1,6 @@
 import { Prisma, Address } from '@prisma/client'
 import prisma from 'prisma-local/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
-import { fetchAddressTransactions } from 'services/transactionService'
 import { getNetworkFromSlug } from 'services/networkService'
 
 const addressWithTransactionAndNetwork = Prisma.validator<Prisma.AddressDefaultArgs>()({
@@ -228,17 +227,20 @@ export interface AddressPaymentInfo {
 }
 
 export async function generateAddressPaymentInfo (addressString: string): Promise<AddressPaymentInfo> {
-  const transactionsAmounts = (await fetchAddressTransactions(addressString)).map((t) => t.amount)
-  const balance = transactionsAmounts.reduce((a, b) => {
-    return a.plus(b)
-  }, new Prisma.Decimal(0))
-  const zero = new Prisma.Decimal(0)
-  const paymentCount = transactionsAmounts.filter(t => t > zero).length
-  const info = {
-    balance,
+  const address = await fetchAddressBySubstring(addressString)
+  const [balanceResult, paymentCount] = await Promise.all([
+    prisma.transaction.aggregate({
+      where: { addressId: address.id },
+      _sum: { amount: true }
+    }),
+    prisma.transaction.count({
+      where: { addressId: address.id, amount: { gt: 0 } }
+    })
+  ])
+  return {
+    balance: balanceResult._sum.amount ?? new Prisma.Decimal(0),
     paymentCount
   }
-  return info
 }
 export async function getEarliestUnconfirmedTxTimestampForAddress (addressId: string): Promise<number | undefined> {
   const tx = await prisma.transaction.findFirst({
