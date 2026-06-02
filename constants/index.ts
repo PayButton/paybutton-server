@@ -274,6 +274,9 @@ export const CHRONIK_INITIALIZATION_DELAY = 2000
 export const MEMPOOL_PROCESS_DELAY = 100
 export const CONFIRMED_TX_PROCESS_DELAY = 100
 
+export const CHRONIK_WS_MAX_RETRIES = 10
+export const CHRONIK_WS_BASE_DELAY_MS = 5000
+
 /* WIP RENAME ALL THOSE */
 // When fetching some address transactions, number of transactions to fetch at a time.
 // On chronik, the max allowed is 200
