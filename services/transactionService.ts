@@ -267,23 +267,34 @@ export async function fetchTransactionsWithPaybuttonsAndPricesForIdList (txIdLis
 }
 
 export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (addressId: string, pageSize = 5000): AsyncGenerator<TransactionsWithPaybuttonsAndPrices[]> {
-  let page = 0
+  let cursor: string | undefined
 
   while (true) {
     const txs = await prisma.transaction.findMany({
       where: {
         addressId
       },
-      include: includePaybuttonsAndPrices,
+      include: {
+        address: {
+          include: {
+            paybuttons: {
+              include: {
+                paybutton: true
+              }
+            }
+          }
+        },
+        ...includePrices
+      },
       orderBy: {
         timestamp: 'asc'
       },
-      skip: page * pageSize,
+      ...(cursor !== undefined ? { cursor: { id: cursor }, skip: 1 } : {}),
       take: pageSize
     })
     if (txs.length === 0) break
-    yield txs
-    page++
+    cursor = txs[txs.length - 1].id
+    yield txs as TransactionsWithPaybuttonsAndPrices[]
   }
 }
 

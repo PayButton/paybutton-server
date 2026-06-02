@@ -41,7 +41,9 @@ export const getPaymentList = async (userId: string): Promise<Payment[]> => {
   }
 
   if (uncachedAddresses.length > 0 && process.env.SKIP_CACHE_REBUILD === undefined) {
-    console.log(`[CACHE] getPaymentList: ${uncachedAddresses.length} uncached addresses for user ${userId}, starting background rebuild`)
+    if (!isBackgroundRebuildActive(userId)) {
+      console.log(`[CACHE] getPaymentList: ${uncachedAddresses.length} uncached addresses for user ${userId}, starting background rebuild`)
+    }
     void cacheAddressesInBackground(uncachedAddresses, userId)
   }
 
@@ -355,7 +357,7 @@ const cacheAddressesInBackground = async (addresses: Address[], userId: string):
           console.log(`[CACHE] Background: cached ${cached}/${addresses.length} addresses for user ${userId}`)
         }
       } catch (err: any) {
-        console.error(`[CACHE] Background: failed to cache ${address.address}: ${err.message as string}`)
+        console.error(`[CACHE] Background: failed to cache ${address.address.slice(0, 20)}...: ${String(err.message ?? err)}`)
       }
     }
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
@@ -377,7 +379,9 @@ export async function * getPaymentStream (userId: string): AsyncGenerator<Paymen
   }
 
   if (uncachedAddresses.length > 0 && process.env.SKIP_CACHE_REBUILD === undefined) {
-    console.log(`[CACHE] ${uncachedAddresses.length}/${allAddresses.length} uncached addresses for user ${userId}, starting background rebuild`)
+    if (!isBackgroundRebuildActive(userId)) {
+      console.log(`[CACHE] ${uncachedAddresses.length}/${allAddresses.length} uncached addresses for user ${userId}, starting background rebuild`)
+    }
     void cacheAddressesInBackground(uncachedAddresses, userId)
   }
 
