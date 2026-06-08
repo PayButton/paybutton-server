@@ -2,8 +2,8 @@ FROM mariadb:latest
 
 RUN mkhomedir_helper mysql
 
-RUN apt-get update || echo && \
-      apt-get install -y gettext pv || echo
+RUN apt-get update || true && \
+      apt-get install -y gettext pv || true
 
 RUN mkdir -p /home/mysql/raw_entrypoint && \
     mkdir -p /home/mysql/entrypoint
