@@ -266,24 +266,35 @@ export async function fetchTransactionsWithPaybuttonsAndPricesForIdList (txIdLis
   })
 }
 
-export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (addressId: string, pageSize = 5000): AsyncGenerator<TransactionsWithPaybuttonsAndPrices[]> {
-  let page = 0
+export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (addressId: string, pageSize = 1000): AsyncGenerator<TransactionsWithPaybuttonsAndPrices[]> {
+  let cursor: string | undefined
 
   while (true) {
     const txs = await prisma.transaction.findMany({
       where: {
         addressId
       },
-      include: includePaybuttonsAndPrices,
+      include: {
+        address: {
+          include: {
+            paybuttons: {
+              include: {
+                paybutton: true
+              }
+            }
+          }
+        },
+        ...includePrices
+      },
       orderBy: {
         timestamp: 'asc'
       },
-      skip: page * pageSize,
+      ...(cursor !== undefined ? { cursor: { id: cursor }, skip: 1 } : {}),
       take: pageSize
     })
     if (txs.length === 0) break
-    yield txs
-    page++
+    cursor = txs[txs.length - 1].id
+    yield txs as TransactionsWithPaybuttonsAndPrices[]
   }
 }
 
@@ -519,21 +530,22 @@ export async function connectTransactionsListToPrices (
       grouped.set(p.timestamp, g)
     }
 
-    // Throw on missing price pairs
     for (const ts of tsArray) {
       const allPrices = grouped.get(ts)
       const formattedDate = moment.unix(ts).format(HUMAN_READABLE_DATE_FORMAT)
 
       if (allPrices == null) {
-        throw new Error(
-          `[PRICES] No price record found for networkId=${networkId} at ${formattedDate}.`
+        console.warn(
+          `[PRICES] No price record found for networkId=${networkId} at ${formattedDate} — skipping affected txs.`
         )
+        continue
       }
 
       if ((allPrices.cad == null) || (allPrices.usd == null)) {
-        throw new Error(
-          `[PRICES] Incomplete price data for networkId=${networkId} at ${formattedDate}. Partial data: ${JSON.stringify(allPrices, null, 2)}`
+        console.warn(
+          `[PRICES] Incomplete price data for networkId=${networkId} at ${formattedDate} — skipping affected txs.`
         )
+        continue
       }
 
       priceByNetworkTs.set(`${networkId}:${ts}`, allPrices as AllPrices)
@@ -544,19 +556,32 @@ export async function connectTransactionsListToPrices (
 
   // Build all join rows (2 per tx: USD + CAD)
   const rows: Prisma.PricesOnTransactionsCreateManyInput[] = []
+  const skippedTxIds: string[] = []
   for (const t of txList) {
     const ts = flattenTimestamp(t.timestamp)
     const allPrices = priceByNetworkTs.get(`${t.address.networkId}:${ts}`)
     if (allPrices == null) {
-      throw new Error(`[PRICES] Missing price pair for networkId ${t.address.networkId} at ${moment.unix(ts).format(HUMAN_READABLE_DATE_FORMAT)}.`)
+      skippedTxIds.push(t.id)
+      continue
     }
     rows.push(...buildPriceTxConnectionInput(t, allPrices))
   }
+
+  if (skippedTxIds.length > 0) {
+    console.warn(`[PRICES] Skipped ${skippedTxIds.length} txs due to missing price data.`)
+  }
+
+  const txIdsToConnect = txList.filter(t => !skippedTxIds.includes(t.id)).map(t => t.id)
+  if (txIdsToConnect.length === 0) {
+    console.warn('[PRICES] No txs to connect after filtering — all had missing prices.')
+    return
+  }
+
   console.log(`[PRICES] Built ${rows.length} price links (2 per tx).`)
 
   await prisma.$transaction(
     async (tx) => {
-      await deletePriceTxConnectionsInChunks(tx, txList.map((t) => t.id))
+      await deletePriceTxConnectionsInChunks(tx, txIdsToConnect)
       await createPriceTxConnectionInChunks(tx, rows)
     },
     { timeout: PRICES_CONNECTION_TIMEOUT }
@@ -1192,10 +1217,14 @@ export async function fetchAllPaymentsByUserIdWithPagination (
     }
   }
 
+  const userAddresses = await prisma.address.findMany({
+    where: { userProfiles: { some: { userId } } },
+    select: { id: true }
+  })
+  const userAddressIds = userAddresses.map(a => a.id)
+
   const where: Prisma.TransactionWhereInput = {
-    address: {
-      userProfiles: { some: { userId } }
-    },
+    addressId: { in: userAddressIds },
     isPayment: true
   }
 
@@ -1206,13 +1235,14 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   }
 
   if ((buttonIds !== undefined) && buttonIds.length > 0) {
-    where.address!.paybuttons = {
-      some: {
-        paybutton: {
-          id: { in: buttonIds }
-        }
-      }
-    }
+    const buttonAddresses = await prisma.address.findMany({
+      where: {
+        paybuttons: { some: { paybutton: { id: { in: buttonIds } } } },
+        id: { in: userAddressIds }
+      },
+      select: { id: true }
+    })
+    where.addressId = { in: buttonAddresses.map(a => a.id) }
   }
 
   // Build include conditionally - exclude inputs by default unless explicitly requested
@@ -1370,22 +1400,25 @@ export const getFilteredTransactionCount = async (
   startDate?: string,
   endDate?: string
 ): Promise<number> => {
+  const userAddresses = await prisma.address.findMany({
+    where: { userProfiles: { some: { userId } } },
+    select: { id: true }
+  })
+  const userAddressIds = userAddresses.map(a => a.id)
+
   const where: Prisma.TransactionWhereInput = {
-    address: {
-      userProfiles: {
-        some: { userId }
-      }
-    },
+    addressId: { in: userAddressIds },
     isPayment: true
   }
   if (buttonIds !== undefined && buttonIds.length > 0) {
-    where.address!.paybuttons = {
-      some: {
-        paybutton: {
-          id: { in: buttonIds }
-        }
-      }
-    }
+    const buttonAddresses = await prisma.address.findMany({
+      where: {
+        paybuttons: { some: { paybutton: { id: { in: buttonIds } } } },
+        id: { in: userAddressIds }
+      },
+      select: { id: true }
+    })
+    where.addressId = { in: buttonAddresses.map(a => a.id) }
   }
 
   if (startDate !== undefined && endDate !== undefined && startDate !== '' && endDate !== '') {
