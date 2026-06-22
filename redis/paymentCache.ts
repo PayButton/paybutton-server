@@ -31,16 +31,15 @@ export async function * getUserUncachedAddresses (userId: string): AsyncGenerato
 }
 
 export const getPaymentList = async (userId: string): Promise<Payment[]> => {
-  const allAddresses = await fetchAllUserAddresses(userId, false, false) as Address[]
   const uncachedAddresses: Address[] = []
-  for (const address of allAddresses) {
-    const keys = await getCachedWeekKeysForAddress(address.address)
-    if (keys.length === 0) {
+  if (process.env.SKIP_CACHE_REBUILD === undefined) {
+    const uncachedAddressStream = getUserUncachedAddresses(userId)
+    for await (const address of uncachedAddressStream) {
       uncachedAddresses.push(address)
     }
   }
 
-  if (uncachedAddresses.length > 0 && process.env.SKIP_CACHE_REBUILD === undefined) {
+  if (uncachedAddresses.length > 0) {
     if (!isBackgroundRebuildActive(userId)) {
       console.log(`[CACHE] getPaymentList: ${uncachedAddresses.length} uncached addresses for user ${userId}, starting background rebuild`)
     }
@@ -370,18 +369,17 @@ const cacheAddressesInBackground = async (addresses: Address[], userId: string):
 }
 
 export async function * getPaymentStream (userId: string): AsyncGenerator<Payment> {
-  const allAddresses = await fetchAllUserAddresses(userId, false, false) as Address[]
   const uncachedAddresses: Address[] = []
-  for (const address of allAddresses) {
-    const keys = await getCachedWeekKeysForAddress(address.address)
-    if (keys.length === 0) {
+  if (process.env.SKIP_CACHE_REBUILD === undefined) {
+    const uncachedAddressStream = getUserUncachedAddresses(userId)
+    for await (const address of uncachedAddressStream) {
       uncachedAddresses.push(address)
     }
   }
 
-  if (uncachedAddresses.length > 0 && process.env.SKIP_CACHE_REBUILD === undefined) {
+  if (uncachedAddresses.length > 0) {
     if (!isBackgroundRebuildActive(userId)) {
-      console.log(`[CACHE] ${uncachedAddresses.length}/${allAddresses.length} uncached addresses for user ${userId}, starting background rebuild`)
+      console.log(`[CACHE] getPaymentStream: ${uncachedAddresses.length} uncached addresses for user ${userId}, starting background rebuild`)
     }
     void cacheAddressesInBackground(uncachedAddresses, userId)
   }
