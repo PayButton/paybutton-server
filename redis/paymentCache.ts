@@ -30,22 +30,23 @@ export async function * getUserUncachedAddresses (userId: string): AsyncGenerato
   }
 }
 
-export const getPaymentList = async (userId: string): Promise<Payment[]> => {
+const triggerBackgroundRebuildIfNeeded = async (userId: string): Promise<void> => {
+  if (process.env.SKIP_CACHE_REBUILD !== undefined) return
   const uncachedAddresses: Address[] = []
-  if (process.env.SKIP_CACHE_REBUILD === undefined) {
-    const uncachedAddressStream = getUserUncachedAddresses(userId)
-    for await (const address of uncachedAddressStream) {
-      uncachedAddresses.push(address)
-    }
+  const uncachedAddressStream = getUserUncachedAddresses(userId)
+  for await (const address of uncachedAddressStream) {
+    uncachedAddresses.push(address)
   }
-
   if (uncachedAddresses.length > 0) {
     if (!isBackgroundRebuildActive(userId)) {
-      console.log(`[CACHE] getPaymentList: ${uncachedAddresses.length} uncached addresses for user ${userId}, starting background rebuild`)
+      console.log(`[CACHE] ${uncachedAddresses.length} uncached addresses for user ${userId}, starting background rebuild`)
     }
     void cacheAddressesInBackground(uncachedAddresses, userId)
   }
+}
 
+export const getPaymentList = async (userId: string): Promise<Payment[]> => {
+  await triggerBackgroundRebuildIfNeeded(userId)
   return await getCachedPaymentsForUser(userId)
 }
 
@@ -176,6 +177,7 @@ export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: 
         paymentCount++
       }
     }
+    // Yield to prevent saturating DB pool during batch cache rebuilds
     await new Promise(resolve => setTimeout(resolve, 200))
   }
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
@@ -369,20 +371,7 @@ const cacheAddressesInBackground = async (addresses: Address[], userId: string):
 }
 
 export async function * getPaymentStream (userId: string): AsyncGenerator<Payment> {
-  const uncachedAddresses: Address[] = []
-  if (process.env.SKIP_CACHE_REBUILD === undefined) {
-    const uncachedAddressStream = getUserUncachedAddresses(userId)
-    for await (const address of uncachedAddressStream) {
-      uncachedAddresses.push(address)
-    }
-  }
-
-  if (uncachedAddresses.length > 0) {
-    if (!isBackgroundRebuildActive(userId)) {
-      console.log(`[CACHE] getPaymentStream: ${uncachedAddresses.length} uncached addresses for user ${userId}, starting background rebuild`)
-    }
-    void cacheAddressesInBackground(uncachedAddresses, userId)
-  }
+  await triggerBackgroundRebuildIfNeeded(userId)
 
   const userButtonIds: string[] = (await fetchPaybuttonArrayByUserId(userId))
     .map(p => p.id)
