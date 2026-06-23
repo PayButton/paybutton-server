@@ -274,7 +274,7 @@ export const CHRONIK_INITIALIZATION_DELAY = 2000
 export const MEMPOOL_PROCESS_DELAY = 100
 export const CONFIRMED_TX_PROCESS_DELAY = 100
 
-export const CHRONIK_WS_MAX_TRIES = 10
+export const CHRONIK_WS_MAX_CONNECTION_ATTEMPTS = 10
 export const CHRONIK_WS_BASE_DELAY_MS = 5000
 
 // Number of tries before failing a chronik HTTP call (min 1)
