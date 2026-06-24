@@ -1,7 +1,7 @@
 import { NextApiResponse, NextApiRequest } from 'next'
 import { parseAddress } from 'utils/validators'
 import { DEFAULT_TX_PAGE_SIZE, RESPONSE_MESSAGES, TX_PAGE_SIZE_LIMIT } from 'constants/index'
-import { fetchPaginatedAddressTransactions } from 'services/transactionService'
+import { fetchPaginatedAddressTransactions, getSimplifiedTransactions } from 'services/transactionService'
 import { upsertAddress } from 'services/addressService'
 import Cors from 'cors'
 import { runMiddleware } from 'utils/index'
@@ -37,7 +37,8 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       const serverOnly = req.query.serverOnly === '1'
 
       try {
-        const transactions = await fetchPaginatedAddressTransactions(address, page, pageSize, orderBy, orderDesc)
+        const transactionsWithAddressAndPrices = await fetchPaginatedAddressTransactions(address, page, pageSize, orderBy, orderDesc)
+        const transactions = getSimplifiedTransactions(transactionsWithAddressAndPrices)
         res.status(200).send(transactions)
       } catch (err: any) {
         switch (err.message) {

@@ -26,7 +26,8 @@ const includePaybuttonsAndPrices = {
       }
     }
   },
-  ...includePrices
+  ...includePrices,
+  inputs: { orderBy: { index: 'asc' as const } }
 }
 
 describe('Create services', () => {
@@ -194,6 +195,37 @@ describe('Address object arrays (input/output) integration', () => {
     expect(simplified.inputAddresses).toEqual(inputs)
     expect(simplified.outputAddresses).toEqual(outputs)
   })
+
+  it('getSimplifiedTrasaction uses inputs from tx when not provided explicitly, but outputs must be provided as parameter', () => {
+    const inputsFromDb = [
+      { address: 'ecash:qqinput1', amount: new Prisma.Decimal(1.23) },
+      { address: 'ecash:qqinput2', amount: new Prisma.Decimal(4.56) }
+    ]
+    const outputsProvided = [
+      { address: 'ecash:qqout1', amount: new Prisma.Decimal(7.89) },
+      { address: 'ecash:qqout2', amount: new Prisma.Decimal(0.12) }
+    ]
+    const tx: any = {
+      hash: 'hash1',
+      amount: new Prisma.Decimal(5),
+      confirmed: true,
+      opReturn: '',
+      address: { address: 'ecash:qqprimaryaddressxxxxxxxxxxxxxxxxxxxxx' },
+      timestamp: 1700000000,
+      prices: mockedTransaction.prices,
+      inputs: inputsFromDb
+      // Note: outputs are no longer stored in DB, so they won't be read from tx.outputs
+    }
+    const simplified = transactionService.getSimplifiedTrasaction(tx, undefined, outputsProvided)
+    expect(simplified.inputAddresses).toEqual([
+      { address: 'ecash:qqinput1', amount: new Prisma.Decimal(1.23) },
+      { address: 'ecash:qqinput2', amount: new Prisma.Decimal(4.56) }
+    ])
+    expect(simplified.outputAddresses).toEqual([
+      { address: 'ecash:qqout1', amount: new Prisma.Decimal(7.89) },
+      { address: 'ecash:qqout2', amount: new Prisma.Decimal(0.12) }
+    ])
+  })
 })
 
 describe('Date and timezone filters for transactions', () => {
@@ -206,7 +238,7 @@ describe('Date and timezone filters for transactions', () => {
     { label: 'negative offset (Canada)', timezone: 'America/Toronto' }
   ]
 
-  const computeExpectedRange = (tz: string) => {
+  const computeExpectedRange = (tz: string): { gte: number, lte: number } => {
     const start = new Date(startDate)
     const end = new Date(endDate)
 
@@ -234,7 +266,7 @@ describe('Date and timezone filters for transactions', () => {
     }
   }
 
-  const computeYearFilter = (year: number, tz: string) => {
+  const computeYearFilter = (year: number, tz: string): { timestamp: { gte: number, lte: number } } => {
     const startDateObj = new Date(year, 0, 1, 0, 0, 0)
     const endDateObj = new Date(year, 11, 31, 23, 59, 59)
 
@@ -424,4 +456,3 @@ describe('Date and timezone filters for transactions', () => {
     expect(callArgs.where.OR).toBeUndefined()
   })
 })
-
