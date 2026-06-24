@@ -8,7 +8,7 @@ import {
   ChronikBlockchainClient,
   multiBlockchainClient
 } from '../../services/chronikService'
-import { Address } from '@prisma/client'
+import { Address, Prisma } from '@prisma/client'
 import { fetchAddressesArray } from '../../services/addressService'
 import { fetchUnconfirmedTransactions, deleteTransactions, upsertTransaction } from '../../services/transactionService'
 import { executeAddressTriggers } from '../../services/triggerService'
@@ -61,6 +61,11 @@ jest.mock('../../services/addressService', () => ({
 
 jest.mock('../../services/transactionService', () => ({
   createManyTransactions: jest.fn(),
+  createManyTransactionsForSync: jest.fn(async () => ({
+    insertedCount: 0,
+    inserted: []
+  })),
+  filterRowsNeedingCreateMany: jest.fn(async (rows: unknown[]) => rows),
   deleteTransactions: jest.fn(),
   fetchUnconfirmedTransactions: jest.fn(),
   upsertTransaction: jest.fn(),
@@ -1321,6 +1326,33 @@ describe('Regression: mempool + retries + onMessage + cache TTL', () => {
     expect(txMock).toHaveBeenCalledTimes(2)
   })
 
+  it('chronikCallWithRetry retries on error then succeeds', async () => {
+    process.env.WS_AUTH_KEY = 'test-auth-key'
+    const client = new ChronikBlockchainClient('ecash')
+    await new Promise(resolve => setImmediate(resolve))
+
+    const fn = jest.fn()
+      .mockRejectedValueOnce(new Error('Transaction not found in the index'))
+      .mockResolvedValueOnce({ txs: [{ txid: 'tx1' }], numTxs: 1 })
+
+    const result = await (client as any).chronikCallWithRetry('script history', fn, 3, 1)
+
+    expect(result.txs).toHaveLength(1)
+    expect(fn).toHaveBeenCalledTimes(2)
+  })
+
+  it('chronikCallWithRetry retries on any error until tries exhausted', async () => {
+    process.env.WS_AUTH_KEY = 'test-auth-key'
+    const client = new ChronikBlockchainClient('ecash')
+    await new Promise(resolve => setImmediate(resolve))
+
+    const fn = jest.fn().mockRejectedValue(new Error('connection refused'))
+    await expect(
+      (client as any).chronikCallWithRetry('test', fn, 3, 1)
+    ).rejects.toThrow('connection refused')
+    expect(fn).toHaveBeenCalledTimes(3)
+  })
+
   it('clearOldMessages expires entries by TTL and from the correct maps', () => {
     process.env.WS_AUTH_KEY = 'test-auth-key'
     const client = new ChronikBlockchainClient('ecash')
@@ -1403,14 +1435,22 @@ describe('WS onMessage matrix (no re-mocks)', () => {
       .mockReturnValue(['ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h'])
 
     // minimal transaction shape for downstream
+    // Note: getTransactionFromChronikTransaction is now synchronous, so use mockReturnValue
     jest.spyOn(client, 'getTransactionFromChronikTransaction')
-      .mockResolvedValue({
+      .mockReturnValue({
         hash: 'txCONF',
-        amount: '0.01',
+        amount: new Prisma.Decimal('0.01'),
         timestamp: Math.floor(Date.now() / 1000),
         addressId: 'addr-1',
-        confirmed: false,
-        opReturn: JSON.stringify({ message: { type: 'PAY', paymentId: 'pid-1' } })
+        confirmed: true,
+        orphaned: false,
+        opReturn: JSON.stringify({ message: { type: 'PAY', paymentId: 'pid-1' } }),
+        inputs: {
+          create: []
+        },
+        outputs: {
+          create: []
+        }
       })
 
     const paySpy = jest.spyOn(client, 'handleUpdateClientPaymentStatus')

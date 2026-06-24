@@ -273,14 +273,20 @@ export const MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME = 2
 export const CHRONIK_INITIALIZATION_DELAY = 2000
 export const MEMPOOL_PROCESS_DELAY = 100
 
+// Number of tries before failing a chronik call (min 1)
+export const CHRONIK_TRIES = 3
+// Initial delay between retries in milliseconds. This is multiplied by 2 for each retry.
+export const CHRONIK_RETRY_DELAY_MS = 1000
+
 /* WIP RENAME ALL THOSE */
 // When fetching some address transactions, number of transactions to fetch at a time.
 // On chronik, the max allowed is 200
 export const CHRONIK_FETCH_N_TXS_PER_PAGE = 200
 
-export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 128
-export const TX_EMIT_BATCH_SIZE = 2_000 // for our generator, not chronik
-export const DB_COMMIT_BATCH_SIZE = 2_000 // tamanho dos lotes para commit no DB
+export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 16
+export const TX_EMIT_BATCH_SIZE = 200 // for our generator, not chronik
+export const DB_COMMIT_BATCH_SIZE = 200 // tamanho dos lotes para commit no DB
+export const TX_BATCH_POLLING_DELAY = 500 // delay (ms) between polling for new batches of txs to commit to the DB
 
 export const TRIGGER_POST_CONCURRENCY = 100
 export const TRIGGER_EMAIL_CONCURRENCY = 100
@@ -288,7 +294,13 @@ export const TRIGGER_EMAIL_CONCURRENCY = 100
 export const TRIGGER_LOG_BATCH_SIZE = 200
 
 export const PRICES_CONNECTION_BATCH_SIZE = 1_000
-// interactive $transaction timeout in ms (for the single delete + several createMany of prices)
+// interactive $transaction timeout in ms (for batched delete + createMany of prices)
 export const PRICES_CONNECTION_TIMEOUT = 30_000
 
 export const CLIENT_PAYMENT_EXPIRATION_TIME = (7) * (24 * 60 * 60 * 1000) // (number of days) * (24 * 60 * 60 * 1000)
+
+// Enough for eCash IFP when created
+export const MAX_TXS_PER_ADDRESS = 250000
+
+// Will look for this many days before to check if there are gaps in prices
+export const N_DAYS_LOOK_FOR_PRICE_GAPS = 30

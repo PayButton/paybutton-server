@@ -54,10 +54,10 @@ export function getSimplifiedTrasaction (tx: TransactionWithAddressAndPrices, in
 
   const parsedOpReturn = resolveOpReturn(opReturn)
 
-  const dbInputsArr = (tx as { inputs?: Array<{ address: { address: string }, amount: Prisma.Decimal }> }).inputs
-  const dbOutputsArr = (tx as { outputs?: Array<{ address: { address: string }, amount: Prisma.Decimal }> }).outputs
-  const resolvedInputAddresses = inputAddresses ?? (Array.isArray(dbInputsArr) ? dbInputsArr.map(i => ({ address: i.address.address, amount: i.amount })) : [])
-  const resolvedOutputAddresses = outputAddresses ?? (Array.isArray(dbOutputsArr) ? dbOutputsArr.map(o => ({ address: o.address.address, amount: o.amount })) : [])
+  const dbInputsArr = (tx as { inputs?: Array<{ address: string, amount: Prisma.Decimal }> }).inputs
+  const resolvedInputAddresses = inputAddresses ?? (Array.isArray(dbInputsArr) ? dbInputsArr.map(i => ({ address: i.address, amount: i.amount })) : [])
+  // outputAddresses must be provided as parameter since TransactionOutput is no longer stored in DB
+  const resolvedOutputAddresses = outputAddresses ?? []
 
   const simplifiedTransaction: SimplifiedTransaction = {
     hash,
@@ -96,8 +96,7 @@ const includePrices = {
 const includeAddressAndPrices = {
   address: true,
   ...includePrices,
-  inputs: { include: { address: true }, orderBy: { index: 'asc' as const } },
-  outputs: { include: { address: true }, orderBy: { index: 'asc' as const } }
+  inputs: { orderBy: { index: 'asc' as const } }
 }
 
 const transactionWithPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
@@ -137,8 +136,7 @@ const includePaybuttonsAndPrices = {
     }
   },
   ...includePrices,
-  inputs: { include: { address: true }, orderBy: { index: 'asc' as const } },
-  outputs: { include: { address: true }, orderBy: { index: 'asc' as const } }
+  inputs: { orderBy: { index: 'asc' as const } }
 }
 export const includePaybuttonsAndPricesAndInvoices = {
   ...includePaybuttonsAndPrices,
@@ -185,7 +183,8 @@ export async function fetchTransactionsByAddressListWithPagination (
   pageSize: number,
   orderBy?: string,
   orderDesc = true,
-  networkIdsListFilter?: number[]
+  networkIdsListFilter?: number[],
+  includeInputs = false
 ): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
 
@@ -211,6 +210,14 @@ export async function fetchTransactionsByAddressListWithPagination (
     }
   }
 
+  // Build include conditionally - exclude inputs by default unless explicitly requested
+  const include = includeInputs
+    ? includePaybuttonsAndPricesAndInvoices
+    : (() => {
+        const { inputs, ...rest } = includePaybuttonsAndPricesAndInvoices
+        return rest
+      })()
+
   return await prisma.transaction.findMany({
     where: {
       addressId: {
@@ -222,11 +229,11 @@ export async function fetchTransactionsByAddressListWithPagination (
         }
       }
     },
-    include: includePaybuttonsAndPricesAndInvoices,
+    include,
     orderBy: orderByQuery,
     skip: page * pageSize,
     take: pageSize
-  })
+  }) as unknown as TransactionsWithPaybuttonsAndPrices[]
 }
 
 export async function fetchTxCountByAddressString (addressString: string): Promise<number> {
@@ -421,6 +428,24 @@ function buildPriceTxConnectionInput (tx: Transaction, allPrices: AllPrices): Pr
   ]
 }
 
+async function deletePriceTxConnectionsInChunks (
+  client: Prisma.TransactionClient,
+  transactionIds: string[]
+): Promise<void> {
+  let pricesUnlinkedCount = 0
+  console.log(
+    `[PRICES] Disconnecting existing price links for ${transactionIds.length} txs...`
+  )
+  for (let i = 0; i < transactionIds.length; i += PRICES_CONNECTION_BATCH_SIZE) {
+    const slice = transactionIds.slice(i, i + PRICES_CONNECTION_BATCH_SIZE)
+    const result = await client.pricesOnTransactions.deleteMany({
+      where: { transactionId: { in: slice } }
+    })
+    pricesUnlinkedCount += result.count
+  }
+  console.log(`[PRICES] Disconnected ${pricesUnlinkedCount} price links.`)
+}
+
 async function createPriceTxConnectionInChunks (
   client: Prisma.TransactionClient | typeof prisma,
   rows: Prisma.PricesOnTransactionsCreateManyInput[]
@@ -531,12 +556,7 @@ export async function connectTransactionsListToPrices (
 
   await prisma.$transaction(
     async (tx) => {
-      console.log(
-        `[PRICES] Disconnecting existing price links for ${txList.length} txs...`
-      )
-      await tx.pricesOnTransactions.deleteMany({
-        where: { transactionId: { in: txList.map((t) => t.id) } }
-      })
+      await deletePriceTxConnectionsInChunks(tx, txList.map((t) => t.id))
       await createPriceTxConnectionInChunks(tx, rows)
     },
     { timeout: PRICES_CONNECTION_TIMEOUT }
@@ -558,47 +578,267 @@ export async function connectAllTransactionsToPrices (): Promise<void> {
   console.log('[PRICES] Finished connecting txs to prices.')
 }
 
-interface TxDistinguished {
-  tx: TransactionWithNetwork
-  isCreated: boolean
+interface ExistingTxSnapshot {
+  confirmed: boolean
+  timestamp: number
+  orphaned: boolean
 }
 
-export async function createManyTransactions (
+const txSnapshotKey = (hash: string, addressId: string): string =>
+  `${hash}:${addressId}`
+
+const rowNeedsUpsert = (
+  row: Prisma.TransactionUncheckedCreateInput,
+  existing: ExistingTxSnapshot
+): boolean => {
+  const confirmed = row.confirmed ?? false
+  const timestamp = row.timestamp
+  const orphaned = row.orphaned ?? false
+  return (
+    existing.confirmed !== confirmed ||
+    existing.timestamp !== timestamp ||
+    existing.orphaned !== orphaned
+  )
+}
+
+/** Minimal row returned from bulk sync persist (no prices / paybuttons / cache). */
+export interface SyncPersistedTransaction {
+  id: string
+  hash: string
+  addressId: string
+  amount: Prisma.Decimal
+  timestamp: number
+  confirmed: boolean
+}
+
+export interface CreateManyTransactionsSyncResult {
+  insertedCount: number
+  inserted: SyncPersistedTransaction[]
+}
+
+interface PersistManyTransactionRowsResult {
+  inserted: SyncPersistedTransaction[]
+  updated: SyncPersistedTransaction[]
+  updatedCount: number
+}
+
+const syncPersistedTxSelect = {
+  id: true,
+  hash: true,
+  addressId: true,
+  amount: true,
+  timestamp: true,
+  confirmed: true
+} as const
+
+/**
+ * Cheap dedupe before createManyTransactions: returns only new rows or rows
+ * whose confirmed, timestamp, or orphaned may have changed.
+ */
+export async function filterRowsNeedingCreateMany (
   transactionsData: Prisma.TransactionUncheckedCreateInput[]
-): Promise<TransactionWithAddressAndPrices[]> {
-  const insertedTransactionsDistinguished: TxDistinguished[] = []
+): Promise<Prisma.TransactionUncheckedCreateInput[]> {
+  if (transactionsData.length === 0) {
+    return []
+  }
+
+  const existingTxs = await prisma.transaction.findMany({
+    where: {
+      OR: transactionsData.map(tx => ({
+        hash: tx.hash,
+        addressId: tx.addressId
+      }))
+    },
+    select: {
+      hash: true,
+      addressId: true,
+      confirmed: true,
+      timestamp: true,
+      orphaned: true
+    }
+  })
+
+  const existingMap = new Map<string, ExistingTxSnapshot>()
+  for (const tx of existingTxs) {
+    existingMap.set(txSnapshotKey(tx.hash, tx.addressId), tx)
+  }
+
+  return transactionsData.filter(row => {
+    const existing = existingMap.get(txSnapshotKey(row.hash, row.addressId))
+    if (existing == null) {
+      return true
+    }
+    return rowNeedsUpsert(row, existing)
+  })
+}
+
+/**
+ * Insert or update transactions and inputs only (no prices, cache, or heavy includes).
+ */
+async function persistManyTransactionRows (
+  transactionsData: Prisma.TransactionUncheckedCreateInput[]
+): Promise<PersistManyTransactionRowsResult> {
+  const flatTxData = transactionsData.map(tx => ({
+    hash: tx.hash,
+    amount: tx.amount,
+    timestamp: tx.timestamp,
+    addressId: tx.addressId,
+    confirmed: tx.confirmed ?? false,
+    isPayment: tx.amount > 0,
+    opReturn: tx.opReturn ?? '',
+    orphaned: false
+  }))
+
+  const txInputs = transactionsData.map((tx) => {
+    const inputs = (tx.inputs != null) && 'create' in tx.inputs ? tx.inputs.create : []
+    return {
+      hash: tx.hash,
+      addressId: tx.addressId,
+      inputs: Array.isArray(inputs) ? inputs : []
+    }
+  })
+
+  const inserted: SyncPersistedTransaction[] = []
+  const updated: SyncPersistedTransaction[] = []
+  let updatedCount = 0
 
   await prisma.$transaction(
-    async (prisma) => {
-      const BATCH_SIZE = 50
-      for (let i = 0; i < transactionsData.length; i += BATCH_SIZE) {
-        const batch = transactionsData.slice(i, i + BATCH_SIZE)
+    async (tx) => {
+      const existingTxs = await tx.transaction.findMany({
+        where: {
+          OR: flatTxData.map(row => ({
+            hash: row.hash,
+            addressId: row.addressId
+          }))
+        },
+        select: {
+          id: true,
+          hash: true,
+          addressId: true,
+          confirmed: true,
+          timestamp: true,
+          orphaned: true
+        }
+      })
 
-        const results = await Promise.all(
-          batch.map(async (tx) =>
-            await prisma.transaction.upsert({
-              create: tx,
-              where: {
-                Transaction_hash_addressId_unique_constraint: {
-                  hash: tx.hash,
-                  addressId: tx.addressId
-                }
-              },
-              update: {
-                confirmed: tx.confirmed,
-                timestamp: tx.timestamp
-              },
-              include: includeNetwork
+      const existingMap = new Map<string, typeof existingTxs[0]>()
+      for (const row of existingTxs) {
+        existingMap.set(`${row.hash}:${row.addressId}`, row)
+      }
+
+      const newTxs: typeof flatTxData = []
+      const newTxsInputs: typeof txInputs = []
+      const toUpdate: Array<{
+        id: string
+        confirmed: boolean
+        timestamp: number
+        orphaned: boolean
+      }> = []
+
+      for (let i = 0; i < flatTxData.length; i++) {
+        const row = flatTxData[i]
+        const key = `${row.hash}:${row.addressId}`
+        const existing = existingMap.get(key)
+
+        if (existing != null) {
+          const confirmedChanged = existing.confirmed !== row.confirmed
+          const timestampChanged = existing.timestamp !== row.timestamp
+          const orphanedChanged = existing.orphaned !== row.orphaned
+
+          if (confirmedChanged || timestampChanged || orphanedChanged) {
+            toUpdate.push({
+              id: existing.id,
+              confirmed: row.confirmed,
+              timestamp: row.timestamp,
+              orphaned: row.orphaned
+            })
+          }
+        } else {
+          newTxs.push(row)
+          newTxsInputs.push(txInputs[i])
+        }
+      }
+
+      if (newTxs.length > 0) {
+        await tx.transaction.createMany({
+          data: newTxs,
+          skipDuplicates: true
+        })
+
+        const createdTxs = await tx.transaction.findMany({
+          where: {
+            OR: newTxs.map(row => ({
+              hash: row.hash,
+              addressId: row.addressId
+            }))
+          },
+          select: syncPersistedTxSelect
+        })
+
+        const txMap = new Map<string, { tx: typeof createdTxs[0], inputs: typeof txInputs[0]['inputs'] }>()
+        for (let i = 0; i < newTxs.length; i++) {
+          const row = newTxs[i]
+          const created = createdTxs.find(
+            ct => ct.hash === row.hash && ct.addressId === row.addressId
+          )
+          if (created != null) {
+            txMap.set(`${row.hash}:${row.addressId}`, {
+              tx: created,
+              inputs: newTxsInputs[i].inputs
+            })
+          }
+        }
+
+        const allInputs: Array<{
+          transactionId: string
+          address: string
+          index: number
+          amount: Prisma.Decimal
+        }> = []
+        for (const [, { tx: createdTx, inputs }] of txMap) {
+          for (const input of inputs) {
+            allInputs.push({
+              transactionId: createdTx.id,
+              address: input.address,
+              index: input.index,
+              amount: input.amount instanceof Prisma.Decimal
+                ? input.amount
+                : new Prisma.Decimal(input.amount as string | number)
+            })
+          }
+        }
+
+        if (allInputs.length > 0) {
+          await tx.transactionInput.createMany({
+            data: allInputs,
+            skipDuplicates: true
+          })
+        }
+
+        for (const createdTx of createdTxs) {
+          inserted.push(createdTx)
+        }
+      }
+
+      if (toUpdate.length > 0) {
+        await Promise.all(
+          toUpdate.map(async update =>
+            await tx.transaction.update({
+              where: { id: update.id },
+              data: {
+                confirmed: update.confirmed,
+                timestamp: update.timestamp,
+                orphaned: update.orphaned
+              }
             })
           )
         )
-
-        for (const upsertedTx of results) {
-          insertedTransactionsDistinguished.push({
-            tx: upsertedTx,
-            isCreated: upsertedTx.createdAt.getTime() === upsertedTx.updatedAt.getTime()
-          })
-        }
+        const updatedTxs = await tx.transaction.findMany({
+          where: { id: { in: toUpdate.map(u => u.id) } },
+          select: syncPersistedTxSelect
+        })
+        updated.push(...updatedTxs)
+        updatedCount = updatedTxs.length
       }
     },
     {
@@ -606,12 +846,55 @@ export async function createManyTransactions (
     }
   )
 
-  const insertedTransactions = insertedTransactionsDistinguished
-    .filter((txD) => txD.isCreated)
-    .map((txD) => txD.tx)
+  return { inserted, updated, updatedCount }
+}
 
-  await connectTransactionsListToPrices(insertedTransactions)
-  const txsWithPaybuttonsAndPrices = await fetchTransactionsWithPaybuttonsAndPricesForIdList(insertedTransactions.map((tx) => tx.id))
+/**
+ * Bulk sync path: persist txs + inputs only. Prices, Redis cache, and paybutton
+ * graphs are deferred to connectAllTransactionsToPrices after the sync job.
+ */
+export async function createManyTransactionsForSync (
+  transactionsData: Prisma.TransactionUncheckedCreateInput[]
+): Promise<CreateManyTransactionsSyncResult> {
+  if (transactionsData.length === 0) {
+    return { insertedCount: 0, inserted: [] }
+  }
+
+  const { inserted } = await persistManyTransactionRows(transactionsData)
+  return {
+    insertedCount: inserted.length,
+    inserted
+  }
+}
+
+export async function createManyTransactions (
+  transactionsData: Prisma.TransactionUncheckedCreateInput[]
+): Promise<TransactionWithAddressAndPrices[]> {
+  if (transactionsData.length === 0) {
+    return []
+  }
+
+  const { inserted, updated } = await persistManyTransactionRows(transactionsData)
+  const persistedIds = [
+    ...inserted.map(t => t.id),
+    ...updated.map(t => t.id)
+  ]
+
+  if (persistedIds.length === 0) {
+    return []
+  }
+
+  const persistedTransactions = await prisma.transaction.findMany({
+    where: {
+      id: { in: persistedIds }
+    },
+    include: includeNetwork
+  })
+
+  await connectTransactionsListToPrices(persistedTransactions)
+  const txsWithPaybuttonsAndPrices = await fetchTransactionsWithPaybuttonsAndPricesForIdList(
+    persistedIds
+  )
 
   void CacheSet.txsCreation(txsWithPaybuttonsAndPrices)
 
@@ -689,7 +972,9 @@ export async function fetchTransactionsByPaybuttonIdWithPagination (
   pageSize: number,
   orderDesc: boolean,
   orderBy?: string,
-  networkIds?: number[]): Promise<TransactionsWithPaybuttonsAndPrices[]> {
+  networkIds?: number[],
+  includeInputs = false
+): Promise<TransactionsWithPaybuttonsAndPrices[]> {
   const addressIdList = await fetchAddressesByPaybuttonId(paybuttonId)
   const transactions = await fetchTransactionsByAddressListWithPagination(
     addressIdList,
@@ -697,7 +982,9 @@ export async function fetchTransactionsByPaybuttonIdWithPagination (
     pageSize,
     orderBy,
     orderDesc,
-    networkIds)
+    networkIds,
+    includeInputs
+  )
 
   return transactions
 }
@@ -801,7 +1088,7 @@ export async function getPaymentsByUserIdOrderedByButtonName (
     LEFT JOIN \`PricesOnTransactions\` pt ON t.\`id\` = pt.\`transactionId\`
     LEFT JOIN \`Price\` pb ON pt.\`priceId\` = pb.\`id\`
     LEFT JOIN \`Invoice\` i ON i.\`transactionId\` = t.\`id\`
-    WHERE t.\`amount\` > 0
+    WHERE t.\`isPayment\` = TRUE
     AND EXISTS (
       SELECT 1
       FROM \`AddressesOnUserProfiles\` au
@@ -871,7 +1158,8 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   buttonIds?: string[],
   years?: string[],
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  includeInputs = false
 ): Promise<Payment[]> {
   const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
 
@@ -908,7 +1196,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
     address: {
       userProfiles: { some: { userId } }
     },
-    amount: { gt: 0 }
+    isPayment: true
   }
 
   if (startDate !== undefined && endDate !== undefined && startDate !== '' && endDate !== '') {
@@ -927,9 +1215,17 @@ export async function fetchAllPaymentsByUserIdWithPagination (
     }
   }
 
+  // Build include conditionally - exclude inputs by default unless explicitly requested
+  const include = includeInputs
+    ? includePaybuttonsAndPricesAndInvoices
+    : (() => {
+        const { inputs, ...rest } = includePaybuttonsAndPricesAndInvoices
+        return rest
+      })()
+
   const transactions = await prisma.transaction.findMany({
     where,
-    include: includePaybuttonsAndPricesAndInvoices,
+    include,
     orderBy: orderByQuery,
     skip: page * Number(pageSize),
     take: Number(pageSize)
@@ -939,7 +1235,7 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   for (let index = 0; index < transactions.length; index++) {
     const tx = transactions[index]
     if (Number(tx.amount) > 0) {
-      const payment = await generatePaymentFromTxWithInvoices(tx, userId)
+      const payment = generatePaymentFromTxWithInvoices(tx as unknown as TransactionWithAddressAndPricesAndInvoices, userId)
       transformedData.push(payment)
     }
   }
@@ -1026,9 +1322,7 @@ export async function fetchAllPaymentsByUserId (
         in: networkIds ?? Object.values(NETWORK_IDS)
       }
     },
-    amount: {
-      gt: 0
-    }
+    isPayment: true
   }
 
   if (buttonIds !== undefined && buttonIds.length > 0) {
@@ -1082,7 +1376,7 @@ export const getFilteredTransactionCount = async (
         some: { userId }
       }
     },
-    amount: { gt: 0 }
+    isPayment: true
   }
   if (buttonIds !== undefined && buttonIds.length > 0) {
     where.address!.paybuttons = {
@@ -1109,8 +1403,7 @@ export const fetchDistinctPaymentYearsByUser = async (userId: string): Promise<n
     FROM Transaction t
     JOIN Address a ON a.id = t.addressId
     JOIN AddressesOnUserProfiles ap ON ap.addressId = a.id
-    WHERE ap.userId = ${userId} AND
-    t.amount > 0
+    WHERE ap.userId = ${userId}
     ORDER BY year ASC
   `
 

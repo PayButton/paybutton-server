@@ -23,8 +23,6 @@ model Address {
   paybuttons         AddressesOnButtons[]
   transactions       Transaction[]
   clientPayments     ClientPayment[]
-  transactionInputs  TransactionInput[]
-  transactionOutputs TransactionOutput[]
 
   @@index([networkId], map: "Address_networkId_fkey")
 }
@@ -74,6 +72,7 @@ model Transaction {
   amount    Decimal                @db.Decimal(24, 8)
   confirmed Boolean                @default(false)
   orphaned  Boolean                @default(false)
+  isPayment Boolean                @default(false)
   timestamp Int
   addressId String
   opReturn String                @db.LongText @default("")
@@ -81,40 +80,26 @@ model Transaction {
   prices    PricesOnTransactions[]
   invoices  Invoice[]
   inputs    TransactionInput[]
-  outputs   TransactionOutput[]
 
   createdAt DateTime                  @default(now())
   updatedAt DateTime                  @updatedAt
 
   @@unique([hash, addressId], name: "Transaction_hash_addressId_unique_constraint")
   @@index([addressId, timestamp], map: "Transaction_addressId_timestamp_idx")
+  @@index([addressId, isPayment])
 }
 
 model TransactionInput {
   id            String      @id @default(dbgenerated("(uuid())"))
   transactionId String
-  addressId     String
+  address       String      @db.VarChar(255)
   index         Int
   transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  address       Address     @relation(fields: [addressId], references: [id], onDelete: Cascade)
   amount        Decimal     @db.Decimal(24, 8)
 
   @@index([transactionId])
-  @@index([addressId])
 }
 
-model TransactionOutput {
-  id            String      @id @default(dbgenerated("(uuid())"))
-  transactionId String
-  addressId     String
-  index         Int
-  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  address       Address     @relation(fields: [addressId], references: [id], onDelete: Cascade)
-  amount        Decimal     @db.Decimal(24, 8)
-
-  @@index([transactionId])
-  @@index([addressId])
-}
 
 model Wallet {
   id             String                    @id @default(dbgenerated("(uuid())"))

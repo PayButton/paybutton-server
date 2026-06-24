@@ -49,7 +49,7 @@ export const getAddressPrefixed = function (addressString: string): string {
   return `${getAddressPrefix(addressString)}:${removeAddressPrefix(addressString)}`
 }
 
-export async function satoshisToUnit (satoshis: bigint, networkFormat: string): Promise<Prisma.Decimal> {
+export function satoshisToUnit (satoshis: bigint, networkFormat: string): Prisma.Decimal {
   const decimal = new Prisma.Decimal(satoshis.toString())
   if (networkFormat === xecaddr.Format.Xecaddr) {
     return decimal.dividedBy(1e2)
