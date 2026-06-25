@@ -1,4 +1,4 @@
-FROM  --platform=linux/amd64 node:lts-alpine
+FROM node:lts-alpine
 RUN apk add --no-cache python3 make g++  bash openssl
 SHELL ["/bin/bash", "-c"]
 USER node
