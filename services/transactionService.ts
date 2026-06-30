@@ -556,22 +556,21 @@ export async function connectTransactionsListToPrices (
 
   // Build all join rows (2 per tx: USD + CAD)
   const rows: Prisma.PricesOnTransactionsCreateManyInput[] = []
-  const skippedTxIds: string[] = []
+  const txIdsToConnect: string[] = []
   for (const t of txList) {
     const ts = flattenTimestamp(t.timestamp)
     const allPrices = priceByNetworkTs.get(`${t.address.networkId}:${ts}`)
     if (allPrices == null) {
-      skippedTxIds.push(t.id)
       continue
     }
     rows.push(...buildPriceTxConnectionInput(t, allPrices))
+    txIdsToConnect.push(t.id)
   }
 
-  if (skippedTxIds.length > 0) {
-    console.warn(`[PRICES] Skipped ${skippedTxIds.length} txs due to missing price data.`)
+  if (txIdsToConnect.length < txList.length) {
+    console.warn(`[PRICES] Skipped ${txList.length - txIdsToConnect.length} txs due to missing price data.`)
   }
 
-  const txIdsToConnect = txList.filter(t => !skippedTxIds.includes(t.id)).map(t => t.id)
   if (txIdsToConnect.length === 0) {
     console.warn('[PRICES] No txs to connect after filtering — all had missing prices.')
     return
