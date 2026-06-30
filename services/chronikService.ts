@@ -745,10 +745,7 @@ export class ChronikBlockchainClient {
         void this.reconnectWs()
       },
       onConnect: (_: ws.Event) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik webSocket connection (re)established.`) },
-      onEnd: (e: ws.Event) => {
-        console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik WebSocket ended, type: ${e.type}. Attempting reconnection...`)
-        void this.reconnectWs()
-      },
+      onEnd: (e: ws.Event) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik WebSocket ended, type: ${e.type}.`) },
       autoReconnect: false
     }
   }
