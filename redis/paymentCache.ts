@@ -177,7 +177,7 @@ export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: 
         paymentCount++
       }
     }
-    // Yield to prevent saturating DB pool during batch cache rebuilds
+    // Throttle batch processing slightly so long cache rebuilds don't monopolize DB resources.
     await new Promise(resolve => setTimeout(resolve, 200))
   }
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
