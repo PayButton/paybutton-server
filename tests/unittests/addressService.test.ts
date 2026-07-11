@@ -2,7 +2,7 @@ import prisma from 'prisma-local/clientInstance'
 import { Prisma } from '@prisma/client'
 import * as addressService from 'services/addressService'
 import { prismaMock } from 'prisma-local/mockedClient'
-import { mockedBCHAddress, mockedNetwork, mockedTransactionList, mockedAddressesOnButtons, mockedAddressIdList } from '../mockedObjects'
+import { mockedBCHAddress, mockedNetwork, mockedAddressesOnButtons, mockedAddressIdList } from '../mockedObjects'
 import { RESPONSE_MESSAGES } from 'constants/index'
 
 describe('Find by substring', () => {
@@ -22,15 +22,18 @@ describe('Find by substring', () => {
     )
   })
   it('Get address payment info', async () => {
-    prismaMock.transaction.findMany.mockResolvedValue(mockedTransactionList)
-    prisma.transaction.findMany = prismaMock.transaction.findMany
-    jest.spyOn(addressService, 'fetchAddressBySubstring').mockImplementation(async (_: string) => {
-      return {
-        network: mockedNetwork,
-        transactions: mockedTransactionList,
-        ...mockedBCHAddress
-      }
-    })
+    prismaMock.address.findMany.mockResolvedValue([mockedBCHAddress])
+    prisma.address.findMany = prismaMock.address.findMany
+    prismaMock.transaction.aggregate.mockResolvedValue({
+      _sum: { amount: new Prisma.Decimal('6.01247724') },
+      _count: { _all: 3 },
+      _avg: { amount: null },
+      _min: { amount: null },
+      _max: { amount: null }
+    } as any)
+    prisma.transaction.aggregate = prismaMock.transaction.aggregate as any
+    prismaMock.transaction.count.mockResolvedValue(3)
+    prisma.transaction.count = prismaMock.transaction.count
     const result = await addressService.generateAddressPaymentInfo('mock')
     expect(result).toHaveProperty('balance', new Prisma.Decimal('6.01247724'))
     expect(result).toHaveProperty('paymentCount', 3)

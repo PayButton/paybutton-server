@@ -1362,7 +1362,8 @@ describe('GET /api/dashboard', () => {
         payments: expect.any(Number),
         buttons: expect.any(Number)
       },
-      filtered: expect.any(Boolean)
+      filtered: expect.any(Boolean),
+      cacheRebuilding: true
     }
     )
   })
