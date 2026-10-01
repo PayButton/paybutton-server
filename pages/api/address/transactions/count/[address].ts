@@ -20,6 +20,9 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
         case RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400.message:
           res.status(400).json(RESPONSE_MESSAGES.MULTIPLE_USER_IDS_PROVIDED_400)
           break
+        case RESPONSE_MESSAGES.INVALID_ADDRESS_400.message:
+          res.status(RESPONSE_MESSAGES.INVALID_ADDRESS_400.statusCode).json(RESPONSE_MESSAGES.INVALID_ADDRESS_400)
+          break
         default:
           res.status(500).json({ statusCode: 500, message: err.message })
       }
