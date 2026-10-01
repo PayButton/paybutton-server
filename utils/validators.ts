@@ -232,7 +232,8 @@ interface TriggerSignature {
 function getSignaturePayload (postData: string, postDataParameters: PostDataParameters): string {
   const includedVariables = TRIGGER_POST_VARIABLES.filter(v => postData.includes(v)).sort()
   const result = includedVariables.map(varString => {
-    const key = varString.replace('<', '').replace('>', '') as keyof PostDataParameters
+    // Tokens in TRIGGER_POST_VARIABLES are a single `<name>` pair.
+    const key = varString.slice(1, -1) as keyof PostDataParameters
     let valueString = ''
     if (key === 'opReturn') {
       const value = postDataParameters[key]
