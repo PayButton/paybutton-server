@@ -74,7 +74,7 @@ export default function PayButton (props: PaybuttonProps): React.ReactElement {
   }
 
   const fetchPaybutton = async (): Promise<PaybuttonWithAddresses> => {
-    const paybuttonId = typeof props.paybuttonId === 'string' ? props.paybuttonId : ''
+    const paybuttonId = String(props.paybuttonId)
     const res = await fetch(`/api/paybutton/${encodeURIComponent(paybuttonId)}`, {
       method: 'GET'
     })
