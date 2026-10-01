@@ -112,7 +112,7 @@ describe('parseAddress', () => {
 
   it('Reject repeated query parameters passed as an array', () => {
     expect(() => {
-      v.parseAddress([exampleAddresses.ecash, exampleAddresses.bitcoincash] as unknown as string)
+      v.parseAddress([exampleAddresses.ecash, exampleAddresses.bitcoincash])
     }).toThrow(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
   })
 })
