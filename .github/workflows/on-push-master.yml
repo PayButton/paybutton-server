@@ -3,6 +3,10 @@ on:
   push:
     branches:
       - master
+
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Unit and Integration Tests
