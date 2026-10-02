@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import style from 'styles/landing.module.css'
 import logoImageSource from 'assets/logo.png'
 import dynamic from 'next/dynamic'
 import LogoutButton from './LogoutButton'
+import CommunityDialog from 'components/CommunityDialog'
 
 const ThemeToggle = dynamic(
   async () => await import('components/Sidebar/themetoggle'),
@@ -19,6 +20,24 @@ interface IProps {
 
 export default function Navbar ({ userId }: IProps): JSX.Element {
   const [mobileMenu, setMobileMenu] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
+  const [communityOpen, setCommunityOpen] = useState(false)
+
+  useEffect(() => {
+    if (!aboutOpen) return undefined
+    const closeAbout = (event: MouseEvent): void => {
+      const target = event.target as HTMLElement
+      if (target.closest('[data-about-menu]') === null) setAboutOpen(false)
+    }
+    document.addEventListener('mousedown', closeAbout)
+    return () => document.removeEventListener('mousedown', closeAbout)
+  }, [aboutOpen])
+
+  const openCommunity = (): void => {
+    setAboutOpen(false)
+    setMobileMenu(false)
+    setCommunityOpen(true)
+  }
 
   return (
     <div className={style.navbar_ctn}>
@@ -71,6 +90,24 @@ export default function Navbar ({ userId }: IProps): JSX.Element {
           >
             Docs
           </Link>
+          <div className={style.about_wrap} data-about-menu>
+            <button
+              type="button"
+              className={style.about_btn}
+              aria-expanded={aboutOpen}
+              aria-haspopup="true"
+              onClick={() => setAboutOpen(!aboutOpen)}
+            >
+              About
+            </button>
+            {aboutOpen && (
+              <div className={style.about_dropdown} role="menu">
+                <button type="button" role="menuitem" onClick={openCommunity}>
+                  Community
+                </button>
+              </div>
+            )}
+          </div>
           {userId === undefined
             ? (
             <>
@@ -96,6 +133,7 @@ export default function Navbar ({ userId }: IProps): JSX.Element {
               )}
         </div>
       </div>
+      <CommunityDialog open={communityOpen} onClose={() => setCommunityOpen(false)} />
     </div>
   )
 }

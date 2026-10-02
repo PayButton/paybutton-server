@@ -1,0 +1,70 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.dialog {
+  width: 100%;
+  max-width: 420px;
+  background: var(--secondary-bg-color);
+  color: var(--primary-text-color);
+  border-radius: 12px;
+  padding: 28px 24px 22px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+}
+
+.dialog h2 {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+
+.dialog p {
+  margin: 0 0 20px;
+  color: var(--secondary-text-color);
+  line-height: 1.5;
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.links a {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--primary-text-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.links a:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+button.close {
+  margin-top: 18px;
+  width: 100%;
+  border-radius: 10px;
+  padding: 10px 16px;
+  border: 1px solid var(--primary-text-color);
+  background: transparent !important;
+  color: var(--primary-text-color);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+button.close:enabled:hover {
+  background: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
+  color: #fff;
+}

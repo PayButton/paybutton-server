@@ -18,6 +18,7 @@ import Docs from 'assets/docs.png'
 import Admin from 'assets/admin-icon.png'
 import Logout from 'assets/logout-icon.png'
 import { UserProfile } from '@prisma/client'
+import CommunityDialog from 'components/CommunityDialog'
 const ThemeToggle = dynamic(async () => await import('./themetoggle'), {
   ssr: false
 })
@@ -74,6 +75,8 @@ interface IProps {
 
 const Sidebar: React.FC = ({ chart, setChart, loggedUser }: IProps) => {
   const [menu, setMenu] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
+  const [communityOpen, setCommunityOpen] = useState(false)
   const useMediaQuery = (width: number): boolean => {
     const [targetReached, setTargetReached] = useState(false)
     const updateTarget = useCallback((e) => {
@@ -139,6 +142,36 @@ const Sidebar: React.FC = ({ chart, setChart, loggedUser }: IProps) => {
               .map(item =>
                 <MenuItem key={item.name} name={item.name} image={item.image} isRestricted={item.isRestricted}/>
               )}
+            <li className={style.about_group}>
+              <button
+                type="button"
+                className={style.about_btn}
+                aria-expanded={aboutOpen}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setAboutOpen(!aboutOpen)
+                }}
+              >
+                About
+              </button>
+              {aboutOpen && (
+                <button
+                  type="button"
+                  className={style.community_btn}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setAboutOpen(false)
+                    setCommunityOpen(true)
+                    if (isBreakpoint) {
+                      setMenu(false)
+                      setCheckBox()
+                    }
+                  }}
+                >
+                  Community
+                </button>
+              )}
+            </li>
           </ul>
         </nav>
       </div>
@@ -162,6 +195,7 @@ const Sidebar: React.FC = ({ chart, setChart, loggedUser }: IProps) => {
         </a>
       </div>
     </aside>
+    <CommunityDialog open={communityOpen} onClose={() => setCommunityOpen(false)} />
     </>
     }
   </>

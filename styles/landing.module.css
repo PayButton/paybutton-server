@@ -131,6 +131,66 @@ body[data-theme="dark"] .navbar_ctn img {
   margin-right: 0px;
 }
 
+.about_wrap {
+  position: relative;
+  margin-left: 30px;
+}
+
+button.about_btn {
+  background: transparent !important;
+  border: none;
+  padding: 0;
+  color: var(--primary-text-color);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+button.about_btn:enabled:hover,
+button.about_btn:enabled:focus {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--accent-color);
+  filter: none;
+}
+
+.about_dropdown {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 0;
+  min-width: 160px;
+  background: var(--secondary-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 6px;
+  z-index: 5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.about_dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent !important;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--primary-text-color);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.about_dropdown button:enabled:hover {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--accent-color);
+}
+
 .menubtn_ctn_outer {
   display: none;
 }
@@ -174,6 +234,36 @@ body[data-theme="dark"] .navbar_ctn img {
 
   .navlink_ctn button {
     order: 8;
+  }
+
+  .about_wrap {
+    order: 0;
+    margin-left: 0;
+    width: 100%;
+  }
+
+  button.about_btn {
+    font-size: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--primary-text-color);
+    width: 100%;
+    text-align: left;
+    border-radius: 0;
+  }
+
+  .about_dropdown {
+    position: static;
+    min-width: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    padding: 0 0 0 12px;
+  }
+
+  .about_dropdown button {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--primary-text-color);
+    border-radius: 0;
   }
 
   .navbar_ctn img {
