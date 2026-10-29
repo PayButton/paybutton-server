@@ -23,7 +23,7 @@ services:
     ports:
       - 3567:3567
     environment:
-      MYSQL_CONNECTION_URI: "mysql://${SUPERTOKENS_DB_USER}:${SUPERTOKENS_DB_PASSWORD}@${MAIN_DB_HOST}:${MAIN_DB_PORT}/supertokens?sslMode=REQUIRED"
+      MYSQL_CONNECTION_URI: "mysql://${SUPERTOKENS_DB_USER}:${SUPERTOKENS_DB_PASSWORD}@${MAIN_DB_HOST}:${MAIN_DB_PORT}/supertokens?useSsl=true&trustServerCertificate=true"
 
   cache:
     container_name: paybutton-cache
