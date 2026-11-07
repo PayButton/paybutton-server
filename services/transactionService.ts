@@ -681,6 +681,8 @@ export async function filterRowsNeedingCreateMany (
 
 /**
  * Insert or update transactions and inputs only (no prices, cache, or heavy includes).
+ * Existing-row lookup and updates stay outside the interactive transaction so a
+ * pool connection is not held for the full classify + per-row update window.
  */
 async function persistManyTransactionRows (
   transactionsData: Prisma.TransactionUncheckedCreateInput[]
@@ -705,68 +707,68 @@ async function persistManyTransactionRows (
     }
   })
 
+  const existingTxs = await prisma.transaction.findMany({
+    where: {
+      OR: flatTxData.map(row => ({
+        hash: row.hash,
+        addressId: row.addressId
+      }))
+    },
+    select: {
+      id: true,
+      hash: true,
+      addressId: true,
+      confirmed: true,
+      timestamp: true,
+      orphaned: true
+    }
+  })
+
+  const existingMap = new Map<string, typeof existingTxs[0]>()
+  for (const row of existingTxs) {
+    existingMap.set(`${row.hash}:${row.addressId}`, row)
+  }
+
+  const newTxs: typeof flatTxData = []
+  const newTxsInputs: typeof txInputs = []
+  const toUpdate: Array<{
+    id: string
+    confirmed: boolean
+    timestamp: number
+    orphaned: boolean
+  }> = []
+
+  for (let i = 0; i < flatTxData.length; i++) {
+    const row = flatTxData[i]
+    const key = `${row.hash}:${row.addressId}`
+    const existing = existingMap.get(key)
+
+    if (existing != null) {
+      const confirmedChanged = existing.confirmed !== row.confirmed
+      const timestampChanged = existing.timestamp !== row.timestamp
+      const orphanedChanged = existing.orphaned !== row.orphaned
+
+      if (confirmedChanged || timestampChanged || orphanedChanged) {
+        toUpdate.push({
+          id: existing.id,
+          confirmed: row.confirmed,
+          timestamp: row.timestamp,
+          orphaned: row.orphaned
+        })
+      }
+    } else {
+      newTxs.push(row)
+      newTxsInputs.push(txInputs[i])
+    }
+  }
+
   const inserted: SyncPersistedTransaction[] = []
   const updated: SyncPersistedTransaction[] = []
   let updatedCount = 0
 
-  await prisma.$transaction(
-    async (tx) => {
-      const existingTxs = await tx.transaction.findMany({
-        where: {
-          OR: flatTxData.map(row => ({
-            hash: row.hash,
-            addressId: row.addressId
-          }))
-        },
-        select: {
-          id: true,
-          hash: true,
-          addressId: true,
-          confirmed: true,
-          timestamp: true,
-          orphaned: true
-        }
-      })
-
-      const existingMap = new Map<string, typeof existingTxs[0]>()
-      for (const row of existingTxs) {
-        existingMap.set(`${row.hash}:${row.addressId}`, row)
-      }
-
-      const newTxs: typeof flatTxData = []
-      const newTxsInputs: typeof txInputs = []
-      const toUpdate: Array<{
-        id: string
-        confirmed: boolean
-        timestamp: number
-        orphaned: boolean
-      }> = []
-
-      for (let i = 0; i < flatTxData.length; i++) {
-        const row = flatTxData[i]
-        const key = `${row.hash}:${row.addressId}`
-        const existing = existingMap.get(key)
-
-        if (existing != null) {
-          const confirmedChanged = existing.confirmed !== row.confirmed
-          const timestampChanged = existing.timestamp !== row.timestamp
-          const orphanedChanged = existing.orphaned !== row.orphaned
-
-          if (confirmedChanged || timestampChanged || orphanedChanged) {
-            toUpdate.push({
-              id: existing.id,
-              confirmed: row.confirmed,
-              timestamp: row.timestamp,
-              orphaned: row.orphaned
-            })
-          }
-        } else {
-          newTxs.push(row)
-          newTxsInputs.push(txInputs[i])
-        }
-      }
-
-      if (newTxs.length > 0) {
+  if (newTxs.length > 0) {
+    await prisma.$transaction(
+      async (tx) => {
         await tx.transaction.createMany({
           data: newTxs,
           skipDuplicates: true
@@ -825,33 +827,53 @@ async function persistManyTransactionRows (
         for (const createdTx of createdTxs) {
           inserted.push(createdTx)
         }
+      },
+      {
+        timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT
       }
+    )
+  }
 
-      if (toUpdate.length > 0) {
-        await Promise.all(
-          toUpdate.map(async update =>
-            await tx.transaction.update({
-              where: { id: update.id },
-              data: {
-                confirmed: update.confirmed,
-                timestamp: update.timestamp,
-                orphaned: update.orphaned
-              }
-            })
-          )
-        )
-        const updatedTxs = await tx.transaction.findMany({
-          where: { id: { in: toUpdate.map(u => u.id) } },
-          select: syncPersistedTxSelect
+  if (toUpdate.length > 0) {
+    const updateGroups = new Map<string, {
+      confirmed: boolean
+      timestamp: number
+      orphaned: boolean
+      ids: string[]
+    }>()
+    for (const update of toUpdate) {
+      const key = `${String(update.confirmed)}:${update.timestamp}:${String(update.orphaned)}`
+      const group = updateGroups.get(key)
+      if (group == null) {
+        updateGroups.set(key, {
+          confirmed: update.confirmed,
+          timestamp: update.timestamp,
+          orphaned: update.orphaned,
+          ids: [update.id]
         })
-        updated.push(...updatedTxs)
-        updatedCount = updatedTxs.length
+      } else {
+        group.ids.push(update.id)
       }
-    },
-    {
-      timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT
     }
-  )
+
+    for (const group of updateGroups.values()) {
+      await prisma.transaction.updateMany({
+        where: { id: { in: group.ids } },
+        data: {
+          confirmed: group.confirmed,
+          timestamp: group.timestamp,
+          orphaned: group.orphaned
+        }
+      })
+    }
+
+    const updatedTxs = await prisma.transaction.findMany({
+      where: { id: { in: toUpdate.map(u => u.id) } },
+      select: syncPersistedTxSelect
+    })
+    updated.push(...updatedTxs)
+    updatedCount = updatedTxs.length
+  }
 
   return { inserted, updated, updatedCount }
 }

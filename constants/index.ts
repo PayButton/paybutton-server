@@ -198,7 +198,7 @@ export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
 
 export type BLOCKCHAIN_CLIENT_OPTIONS = 'chronik'
 
-export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 45000
+export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 15000
 export const DEFAULT_TX_PAGE_SIZE = 100
 
 export const PAYMENT_WEEK_KEY_FORMAT = 'YYYY:WW'
