@@ -28,7 +28,10 @@ const parseAddressTextBlock = function (addressBlock: string): string[] {
     .filter((value, index, self) => self.indexOf(value) === index)
 }
 
-export const parseAddress = function (addressString: string | undefined): string {
+export const parseAddress = function (addressString: string | string[] | undefined): string {
+  // Repeated query keys arrive as arrays. String methods like includes() then
+  // check membership instead of a substring, so reject non-strings before use.
+  if (Array.isArray(addressString)) throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
   if (addressString === '' || addressString === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
   let parsedAddress: string
   if (

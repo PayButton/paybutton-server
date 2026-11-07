@@ -8,6 +8,7 @@ import walletsEndpoint from 'pages/api/wallets/index'
 import walletEndpoint from 'pages/api/wallet/index'
 import walletIdEndpoint from 'pages/api/wallet/[id]'
 import transactionsEndpoint from 'pages/api/address/transactions/[address]'
+import transactionCountEndpoint from 'pages/api/address/transactions/count/[address]'
 import balanceEndpoint from 'pages/api/address/balance/[address]'
 import dashboardEndpoint from 'pages/api/dashboard/index'
 import paymentsEndpoint from 'pages/api/payments/index'
@@ -1285,6 +1286,24 @@ describe('GET /api/address/transactions/[address]', () => {
   })
 })
 
+describe('GET /api/address/transactions/count/[address]', () => {
+  it('HTTP 400 when multiple address query parameters are provided', async () => {
+    const requestOptions: RequestOptions = {
+      method: 'GET' as RequestMethod,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      query: {
+        address: ['address1', 'address2']
+      }
+    }
+    const res = await testEndpoint(requestOptions, transactionCountEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.INVALID_ADDRESS_400.statusCode)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
+  })
+})
+
 describe('GET /api/address/balance/[address]', () => {
   const baseRequestOptions: RequestOptions = {
     method: 'GET' as RequestMethod,
@@ -1299,6 +1318,22 @@ describe('GET /api/address/balance/[address]', () => {
     expect(res.statusCode).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.statusCode)
     const responseData = res._getJSONData()
     expect(responseData.message).toBe(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
+  })
+
+  it('Should return HTTP 400 when multiple address query parameters are provided', async () => {
+    const requestOptions: RequestOptions = {
+      method: 'GET' as RequestMethod,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      query: {
+        address: ['address1', 'address2']
+      }
+    }
+    const res = await testEndpoint(requestOptions, balanceEndpoint)
+    const responseData = res._getJSONData()
+    expect(res.statusCode).toBe(RESPONSE_MESSAGES.INVALID_ADDRESS_400.statusCode)
+    expect(responseData.message).toBe(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
   })
 })
 

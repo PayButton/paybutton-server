@@ -6,7 +6,7 @@ import { runMiddleware, satoshisToUnit } from 'utils/index'
 import xecaddr from 'xecaddrjs'
 import { multiBlockchainClient } from 'services/chronikService'
 
-const { ADDRESS_NOT_PROVIDED_400 } = RESPONSE_MESSAGES
+const { ADDRESS_NOT_PROVIDED_400, INVALID_ADDRESS_400 } = RESPONSE_MESSAGES
 const cors = Cors({
   methods: ['GET', 'HEAD']
 })
@@ -23,6 +23,9 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       switch (err.message) {
         case ADDRESS_NOT_PROVIDED_400.message:
           res.status(ADDRESS_NOT_PROVIDED_400.statusCode).json(ADDRESS_NOT_PROVIDED_400)
+          break
+        case INVALID_ADDRESS_400.message:
+          res.status(INVALID_ADDRESS_400.statusCode).json(INVALID_ADDRESS_400)
           break
         default:
           res.status(500).json({ statusCode: 500, message: err.message })
