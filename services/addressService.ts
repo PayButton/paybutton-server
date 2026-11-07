@@ -2,7 +2,7 @@ import { Prisma, Address } from '@prisma/client'
 import prisma from 'prisma-local/clientInstance'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { fetchAddressTransactions } from 'services/transactionService'
-import { getNetworkFromSlug } from 'services/networkService'
+import { getNetworkIdFromSlug } from 'services/networkService'
 
 const addressWithTransactionAndNetwork = Prisma.validator<Prisma.AddressDefaultArgs>()({
   include: { transactions: true, network: true }
@@ -206,7 +206,7 @@ export async function upsertAddress (
   includeTransactions = false
 ): Promise<AddressWithTransactions> {
   const prefix = addressString.split(':')[0].toLowerCase()
-  const network = await getNetworkFromSlug(prefix)
+  const networkId = getNetworkIdFromSlug(prefix)
   const localPrisma = prismaTransaction ?? prisma
   return await localPrisma.address.upsert({
     where: {
@@ -214,7 +214,7 @@ export async function upsertAddress (
     },
     create: {
       address: addressString.toLowerCase(),
-      networkId: Number(network.id)
+      networkId
     },
     update: {
     },

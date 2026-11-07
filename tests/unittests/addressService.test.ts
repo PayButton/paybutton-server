@@ -51,10 +51,13 @@ describe('Create by substring', () => {
   it('Create single address', async () => {
     prismaMock.address.upsert.mockResolvedValue(mockedBCHAddress)
     prisma.address.upsert = prismaMock.address.upsert
-    prismaMock.network.findUnique.mockResolvedValue(mockedNetwork)
-    prisma.network.findUnique = prismaMock.network.findUnique
 
     const result = await addressService.upsertAddress(mockedBCHAddress.address)
     expect(result).toEqual(mockedBCHAddress)
+    expect(prismaMock.address.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        networkId: mockedBCHAddress.networkId
+      })
+    }))
   })
 })
