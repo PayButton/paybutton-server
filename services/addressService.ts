@@ -125,13 +125,15 @@ export async function fetchAddressBySubstring (substring: string, includeTransac
 }
 
 export async function addressExists (addressString: string, raise = false): Promise<boolean> {
-  try {
-    await prisma.address.findUniqueOrThrow({
-      where: {
-        address: addressString
-      }
-    })
-  } catch (err: any) {
+  const address = await prisma.address.findUnique({
+    where: {
+      address: addressString
+    },
+    select: {
+      id: true
+    }
+  })
+  if (address === null) {
     if (raise) {
       throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
     }
