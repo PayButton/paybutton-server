@@ -141,6 +141,21 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
   }, [selectedButtonIds])
 
   useEffect(() => {
+    if (dashboardData?.cacheRebuilding !== true) return
+    const timer = setTimeout(() => {
+      let url = 'api/dashboard'
+      if (selectedButtonIds.length > 0) {
+        url += `?buttonIds=${selectedButtonIds.join(',')}`
+      }
+      fetch(url, { headers: { Timezone: moment.tz.guess() } })
+        .then(async res => await res.json())
+        .then(json => { setDashboardData(json) })
+        .catch(console.error)
+    }, 15000)
+    return () => clearTimeout(timer)
+  }, [dashboardData?.cacheRebuilding, selectedButtonIds])
+
+  useEffect(() => {
     setPeriodFromString(dashboardData, activePeriodString)
     if (dashboardData !== undefined) {
       setTotalString(
@@ -202,6 +217,11 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
                 ))}
               </div>
             </div>
+      )}
+      {dashboardData.cacheRebuilding === true && (
+        <div className={style.cache_banner}>
+          Data still being calculated. Values will update automatically.
+        </div>
       )}
       <div className={style.number_ctn}>
         <NumberBlock value={'$'.concat(formatQuoteValue(activePeriod.totalRevenue, user.userProfile.preferredCurrencyId)) } text='Revenue' />

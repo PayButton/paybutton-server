@@ -251,3 +251,13 @@ body[data-theme='dark'] .show_filters_button img {
   align-items: center;
   gap: 10px;
 }
+
+.cache_banner {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 10px 16px;
+  border-radius: 6px;
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
