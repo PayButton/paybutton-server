@@ -1,7 +1,7 @@
 import prisma from 'prisma-local/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT, HUMAN_READABLE_DATE_FORMAT } from 'constants/index'
-import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
+import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId } from 'services/addressService'
 import { AllPrices, QuoteValues, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
 import _ from 'lodash'
 import { CacheSet } from 'redis/index'
@@ -319,12 +319,20 @@ export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (a
 export async function fetchPaginatedAddressTransactions (addressString: string, page: number, pageSize: number, orderBy?: string, orderDesc = true): Promise<TransactionWithAddressAndPrices[]> {
   const orderByQuery = transactionOrderBy(orderBy, orderDesc)
   const parsedAddress = parseAddress(addressString)
-  await addressExists(parsedAddress, true)
+  const address = await prisma.address.findUnique({
+    where: {
+      address: parsedAddress
+    },
+    select: {
+      id: true
+    }
+  })
+  if (address === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
+  }
   const txs = await prisma.transaction.findMany({
     where: {
-      address: {
-        address: parsedAddress
-      }
+      addressId: address.id
     },
     include: includeAddressAndPrices,
     orderBy: orderByQuery,

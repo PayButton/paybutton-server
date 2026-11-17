@@ -1,6 +1,6 @@
 import { NextApiResponse, NextApiRequest } from 'next'
 import { parseAddress } from 'utils/validators'
-import { DEFAULT_TX_PAGE_SIZE, RESPONSE_MESSAGES, TX_PAGE_SIZE_LIMIT } from 'constants/index'
+import { ADDRESS_TX_PAGE_SIZE_LIMIT, DEFAULT_TX_PAGE_SIZE, RESPONSE_MESSAGES } from 'constants/index'
 import { fetchPaginatedAddressTransactions, getSimplifiedTransactions } from 'services/transactionService'
 import { upsertAddress } from 'services/addressService'
 import Cors from 'cors'
@@ -27,8 +27,8 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       if (isNaN(page) || isNaN(pageSize)) {
         throw new Error(RESPONSE_MESSAGES.PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400.message)
       }
-      if (pageSize > TX_PAGE_SIZE_LIMIT) {
-        throw new Error(RESPONSE_MESSAGES.PAGE_SIZE_LIMIT_EXCEEDED_400.message)
+      if (pageSize > ADDRESS_TX_PAGE_SIZE_LIMIT) {
+        throw new Error(RESPONSE_MESSAGES.ADDRESS_PAGE_SIZE_LIMIT_EXCEEDED_400.message)
       }
 
       const address = parseAddress(req.query.address as string)
@@ -62,6 +62,10 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
           res.status(INVALID_ADDRESS_400.statusCode).json(INVALID_ADDRESS_400)
           break
         }
+        case RESPONSE_MESSAGES.ADDRESS_PAGE_SIZE_LIMIT_EXCEEDED_400.message:
+          res.status(RESPONSE_MESSAGES.ADDRESS_PAGE_SIZE_LIMIT_EXCEEDED_400.statusCode)
+            .json(RESPONSE_MESSAGES.ADDRESS_PAGE_SIZE_LIMIT_EXCEEDED_400)
+          break
         case NO_ADDRESS_FOUND_404.message: {
           res.status(NO_ADDRESS_FOUND_404.statusCode).json(NO_ADDRESS_FOUND_404)
           break
