@@ -5,6 +5,7 @@ export interface ResponseMessage {
   message: string
 }
 export const TX_PAGE_SIZE_LIMIT = 2000
+export const ADDRESS_TX_PAGE_SIZE_LIMIT = 500
 export const RESPONSE_MESSAGES = {
   SUCCESSFULLY_SYNCED_200: { statusCode: 200, message: 'Successfully synced.' },
   STARTED_SYNC_200: { statusCode: 200, message: 'Sync started.' },
@@ -89,6 +90,7 @@ export const RESPONSE_MESSAGES = {
   COULD_NOT_DOWNLOAD_FILE_500: { statusCode: 500, message: 'Failed to download file.' },
   INVALID_DATA_JSON_WITH_VARIABLES_400: (variables: string[]) => { return { statusCode: 400, message: `Data is not valid. Make sure that ${variables.join(', ')} are not inside quotes.` } },
   PAGE_SIZE_LIMIT_EXCEEDED_400: { statusCode: 400, message: `Page size limit should be at most ${TX_PAGE_SIZE_LIMIT}.` },
+  ADDRESS_PAGE_SIZE_LIMIT_EXCEEDED_400: { statusCode: 400, message: `Page size limit should be at most ${ADDRESS_TX_PAGE_SIZE_LIMIT}.` },
   PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400: { statusCode: 400, message: 'pageSize and page parameters should be valid integers.' },
   INVALID_OUTPUT_SCRIPT_LENGTH_500: (l: number) => { return { statusCode: 500, message: `Invalid outputScript length ${l}` } },
   FAILED_TO_PARSE_TX_OP_RETURN_500: { statusCode: 500, message: 'Failed to parse OP_RETURN data in Tx.' },
@@ -198,7 +200,7 @@ export const QUOTE_IDS: KeyValueT<number> = { USD: 1, CAD: 2 }
 
 export type BLOCKCHAIN_CLIENT_OPTIONS = 'chronik'
 
-export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 45000
+export const UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT = 15000
 export const DEFAULT_TX_PAGE_SIZE = 100
 
 export const PAYMENT_WEEK_KEY_FORMAT = 'YYYY:WW'
@@ -270,13 +272,18 @@ export const XEC_TX_EXPLORER_URL = 'https://explorer.e.cash/tx/'
 export const BCH_TX_EXPLORER_URL = 'https://blockchair.com/bitcoin-cash/transaction/'
 
 export const MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME = 2
+export const MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME = 20
 export const CHRONIK_INITIALIZATION_DELAY = 2000
 export const MEMPOOL_PROCESS_DELAY = 100
+export const CONFIRMED_TX_PROCESS_DELAY = 100
 
-// Number of tries before failing a chronik call (min 1)
-export const CHRONIK_TRIES = 3
+export const CHRONIK_WS_MAX_CONNECTION_ATTEMPTS = 10
+export const CHRONIK_WS_BASE_DELAY_MS = 5000
+
+// Number of tries before failing a chronik HTTP call (min 1)
+export const CHRONIK_HTTP_MAX_TRIES = 3
 // Initial delay between retries in milliseconds. This is multiplied by 2 for each retry.
-export const CHRONIK_RETRY_DELAY_MS = 1000
+export const CHRONIK_HTTP_BASE_DELAY_MS = 1000
 
 /* WIP RENAME ALL THOSE */
 // When fetching some address transactions, number of transactions to fetch at a time.

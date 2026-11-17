@@ -239,6 +239,11 @@ describe('Date and timezone filters for transactions', () => {
     { label: 'negative offset (Canada)', timezone: 'America/Toronto' }
   ]
 
+  beforeEach(() => {
+    prismaMock.address.findMany.mockResolvedValue([{ id: 'addr-1' }] as any)
+    prisma.address.findMany = prismaMock.address.findMany
+  })
+
   const computeExpectedRange = (tz: string): { gte: number, lte: number } => {
     const start = new Date(startDate)
     const end = new Date(endDate)
@@ -498,15 +503,24 @@ describe('address transaction orderBy blacklist', () => {
   const address = `ecash:${exampleAddresses.ecash}`
 
   beforeEach(() => {
-    prismaMock.address.findUniqueOrThrow.mockResolvedValue(mockedBCHAddress)
-    prisma.address.findUniqueOrThrow = prismaMock.address.findUniqueOrThrow
+    prismaMock.address.findUnique.mockResolvedValue({ id: mockedBCHAddress.id } as any)
+    prisma.address.findUnique = prismaMock.address.findUnique
     prismaMock.transaction.findMany.mockResolvedValue([])
     prisma.transaction.findMany = prismaMock.transaction.findMany
+  })
+
+  it('queries by addressId after resolving the address', async () => {
+    await transactionService.fetchPaginatedAddressTransactions(address, 0, 10, 'timestamp', true)
+    expect(prismaMock.transaction.findMany.mock.calls[0][0]).toEqual(expect.objectContaining({
+      where: { addressId: mockedBCHAddress.id },
+      orderBy: { timestamp: 'desc' }
+    }))
   })
 
   it('sorts by an allowed nested address field', async () => {
     await transactionService.fetchPaginatedAddressTransactions(address, 0, 10, 'address.networkId', false)
     expect(prismaMock.transaction.findMany.mock.calls[0][0]).toEqual(expect.objectContaining({
+      where: { addressId: mockedBCHAddress.id },
       orderBy: { address: { networkId: 'asc' } }
     }))
   })

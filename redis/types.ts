@@ -37,6 +37,7 @@ export interface DashboardData {
     buttons: number
   }
   filtered: boolean
+  cacheRebuilding?: boolean
 }
 
 export interface ButtonDisplayData {
