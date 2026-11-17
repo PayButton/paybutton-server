@@ -38,10 +38,13 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   removeUnserializableFields(userProfile)
 
+  const routeId = context.params?.id
+  const paybuttonId = Array.isArray(routeId) ? routeId[0] ?? '' : routeId ?? ''
+
   return {
     props: {
       userProfile,
-      paybuttonId: context.params?.id
+      paybuttonId
     }
   }
 }
@@ -71,7 +74,8 @@ export default function PayButton (props: PaybuttonProps): React.ReactElement {
   }
 
   const fetchPaybutton = async (): Promise<PaybuttonWithAddresses> => {
-    const res = await fetch(`/api/paybutton/${props.paybuttonId}`, {
+    const paybuttonId = String(props.paybuttonId)
+    const res = await fetch(`/api/paybutton/${encodeURIComponent(paybuttonId)}`, {
       method: 'GET'
     })
     let resData = await res.json() as PaybuttonWithAddresses | ResponseMessage

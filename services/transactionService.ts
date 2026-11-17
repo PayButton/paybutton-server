@@ -1,7 +1,7 @@
 import prisma from 'prisma-local/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT, HUMAN_READABLE_DATE_FORMAT } from 'constants/index'
-import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, addressExists } from 'services/addressService'
+import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId } from 'services/addressService'
 import { AllPrices, QuoteValues, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
 import _ from 'lodash'
 import { CacheSet } from 'redis/index'
@@ -177,6 +177,57 @@ export async function fetchTransactionsByAddressList (
   })
 }
 
+type TransactionOrderBy = Prisma.TransactionOrderByWithRelationInput
+
+// Repeated query keys arrive as arrays. Only known fields become Prisma orderBy
+// objects; anything else, including arrays, sorts by timestamp.
+function transactionOrderBy (orderBy: unknown, orderDesc: boolean): TransactionOrderBy {
+  const direction: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
+  if (typeof orderBy !== 'string') {
+    return { timestamp: direction }
+  }
+  switch (orderBy) {
+    case 'id':
+      return { id: direction }
+    case 'hash':
+      return { hash: direction }
+    case 'amount':
+      return { amount: direction }
+    case 'confirmed':
+      return { confirmed: direction }
+    case 'createdAt':
+      return { createdAt: direction }
+    case 'address.address':
+      return { address: { address: direction } }
+    case 'address.networkId':
+      return { address: { networkId: direction } }
+    case 'timestamp':
+    default:
+      return { timestamp: direction }
+  }
+}
+
+function paymentOrderBy (orderBy: unknown, orderDesc: boolean): TransactionOrderBy {
+  const direction: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
+  if (typeof orderBy !== 'string') {
+    return { timestamp: direction }
+  }
+  switch (orderBy) {
+    case 'id':
+      return { id: direction }
+    case 'hash':
+      return { hash: direction }
+    case 'amount':
+    case 'values':
+      return { amount: direction }
+    case 'networkId':
+      return { address: { networkId: direction } }
+    case 'timestamp':
+    default:
+      return { timestamp: direction }
+  }
+}
+
 export async function fetchTransactionsByAddressListWithPagination (
   addressIdList: string[],
   page: number,
@@ -186,29 +237,7 @@ export async function fetchTransactionsByAddressListWithPagination (
   networkIdsListFilter?: number[],
   includeInputs = false
 ): Promise<TransactionsWithPaybuttonsAndPrices[]> {
-  const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
-
-  // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
-  let orderByQuery
-  if (orderBy !== undefined && orderBy !== '') {
-    if (orderBy.includes('.')) {
-      const [relation, property] = orderBy.split('.')
-      orderByQuery = {
-        [relation]: {
-          [property]: orderDescString
-        }
-      }
-    } else {
-      orderByQuery = {
-        [orderBy]: orderDescString
-      }
-    }
-  } else {
-    // Default orderBy
-    orderByQuery = {
-      timestamp: orderDescString
-    }
-  }
+  const orderByQuery = transactionOrderBy(orderBy, orderDesc)
 
   // Build include conditionally - exclude inputs by default unless explicitly requested
   const include = includeInputs
@@ -299,36 +328,22 @@ export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (a
 }
 
 export async function fetchPaginatedAddressTransactions (addressString: string, page: number, pageSize: number, orderBy?: string, orderDesc = true): Promise<TransactionWithAddressAndPrices[]> {
-  const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
-
-  // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
-  let orderByQuery
-  if (orderBy !== undefined && orderBy !== '') {
-    if (orderBy.includes('.')) {
-      const [relation, property] = orderBy.split('.')
-      orderByQuery = {
-        [relation]: {
-          [property]: orderDescString
-        }
-      }
-    } else {
-      orderByQuery = {
-        [orderBy]: orderDescString
-      }
-    }
-  } else {
-    // Default orderBy
-    orderByQuery = {
-      timestamp: orderDescString
-    }
-  }
+  const orderByQuery = transactionOrderBy(orderBy, orderDesc)
   const parsedAddress = parseAddress(addressString)
-  await addressExists(parsedAddress, true)
+  const address = await prisma.address.findUnique({
+    where: {
+      address: parsedAddress
+    },
+    select: {
+      id: true
+    }
+  })
+  if (address === null) {
+    throw new Error(RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message)
+  }
   const txs = await prisma.transaction.findMany({
     where: {
-      address: {
-        address: parsedAddress
-      }
+      addressId: address.id
     },
     include: includeAddressAndPrices,
     orderBy: orderByQuery,
@@ -698,6 +713,8 @@ export async function filterRowsNeedingCreateMany (
 
 /**
  * Insert or update transactions and inputs only (no prices, cache, or heavy includes).
+ * Existing-row lookup and updates stay outside the interactive transaction so a
+ * pool connection is not held for the full classify + per-row update window.
  */
 async function persistManyTransactionRows (
   transactionsData: Prisma.TransactionUncheckedCreateInput[]
@@ -722,68 +739,68 @@ async function persistManyTransactionRows (
     }
   })
 
+  const existingTxs = await prisma.transaction.findMany({
+    where: {
+      OR: flatTxData.map(row => ({
+        hash: row.hash,
+        addressId: row.addressId
+      }))
+    },
+    select: {
+      id: true,
+      hash: true,
+      addressId: true,
+      confirmed: true,
+      timestamp: true,
+      orphaned: true
+    }
+  })
+
+  const existingMap = new Map<string, typeof existingTxs[0]>()
+  for (const row of existingTxs) {
+    existingMap.set(`${row.hash}:${row.addressId}`, row)
+  }
+
+  const newTxs: typeof flatTxData = []
+  const newTxsInputs: typeof txInputs = []
+  const toUpdate: Array<{
+    id: string
+    confirmed: boolean
+    timestamp: number
+    orphaned: boolean
+  }> = []
+
+  for (let i = 0; i < flatTxData.length; i++) {
+    const row = flatTxData[i]
+    const key = `${row.hash}:${row.addressId}`
+    const existing = existingMap.get(key)
+
+    if (existing != null) {
+      const confirmedChanged = existing.confirmed !== row.confirmed
+      const timestampChanged = existing.timestamp !== row.timestamp
+      const orphanedChanged = existing.orphaned !== row.orphaned
+
+      if (confirmedChanged || timestampChanged || orphanedChanged) {
+        toUpdate.push({
+          id: existing.id,
+          confirmed: row.confirmed,
+          timestamp: row.timestamp,
+          orphaned: row.orphaned
+        })
+      }
+    } else {
+      newTxs.push(row)
+      newTxsInputs.push(txInputs[i])
+    }
+  }
+
   const inserted: SyncPersistedTransaction[] = []
   const updated: SyncPersistedTransaction[] = []
   let updatedCount = 0
 
-  await prisma.$transaction(
-    async (tx) => {
-      const existingTxs = await tx.transaction.findMany({
-        where: {
-          OR: flatTxData.map(row => ({
-            hash: row.hash,
-            addressId: row.addressId
-          }))
-        },
-        select: {
-          id: true,
-          hash: true,
-          addressId: true,
-          confirmed: true,
-          timestamp: true,
-          orphaned: true
-        }
-      })
-
-      const existingMap = new Map<string, typeof existingTxs[0]>()
-      for (const row of existingTxs) {
-        existingMap.set(`${row.hash}:${row.addressId}`, row)
-      }
-
-      const newTxs: typeof flatTxData = []
-      const newTxsInputs: typeof txInputs = []
-      const toUpdate: Array<{
-        id: string
-        confirmed: boolean
-        timestamp: number
-        orphaned: boolean
-      }> = []
-
-      for (let i = 0; i < flatTxData.length; i++) {
-        const row = flatTxData[i]
-        const key = `${row.hash}:${row.addressId}`
-        const existing = existingMap.get(key)
-
-        if (existing != null) {
-          const confirmedChanged = existing.confirmed !== row.confirmed
-          const timestampChanged = existing.timestamp !== row.timestamp
-          const orphanedChanged = existing.orphaned !== row.orphaned
-
-          if (confirmedChanged || timestampChanged || orphanedChanged) {
-            toUpdate.push({
-              id: existing.id,
-              confirmed: row.confirmed,
-              timestamp: row.timestamp,
-              orphaned: row.orphaned
-            })
-          }
-        } else {
-          newTxs.push(row)
-          newTxsInputs.push(txInputs[i])
-        }
-      }
-
-      if (newTxs.length > 0) {
+  if (newTxs.length > 0) {
+    await prisma.$transaction(
+      async (tx) => {
         await tx.transaction.createMany({
           data: newTxs,
           skipDuplicates: true
@@ -842,33 +859,53 @@ async function persistManyTransactionRows (
         for (const createdTx of createdTxs) {
           inserted.push(createdTx)
         }
+      },
+      {
+        timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT
       }
+    )
+  }
 
-      if (toUpdate.length > 0) {
-        await Promise.all(
-          toUpdate.map(async update =>
-            await tx.transaction.update({
-              where: { id: update.id },
-              data: {
-                confirmed: update.confirmed,
-                timestamp: update.timestamp,
-                orphaned: update.orphaned
-              }
-            })
-          )
-        )
-        const updatedTxs = await tx.transaction.findMany({
-          where: { id: { in: toUpdate.map(u => u.id) } },
-          select: syncPersistedTxSelect
+  if (toUpdate.length > 0) {
+    const updateGroups = new Map<string, {
+      confirmed: boolean
+      timestamp: number
+      orphaned: boolean
+      ids: string[]
+    }>()
+    for (const update of toUpdate) {
+      const key = `${String(update.confirmed)}:${update.timestamp}:${String(update.orphaned)}`
+      const group = updateGroups.get(key)
+      if (group == null) {
+        updateGroups.set(key, {
+          confirmed: update.confirmed,
+          timestamp: update.timestamp,
+          orphaned: update.orphaned,
+          ids: [update.id]
         })
-        updated.push(...updatedTxs)
-        updatedCount = updatedTxs.length
+      } else {
+        group.ids.push(update.id)
       }
-    },
-    {
-      timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT
     }
-  )
+
+    for (const group of updateGroups.values()) {
+      await prisma.transaction.updateMany({
+        where: { id: { in: group.ids } },
+        data: {
+          confirmed: group.confirmed,
+          timestamp: group.timestamp,
+          orphaned: group.orphaned
+        }
+      })
+    }
+
+    const updatedTxs = await prisma.transaction.findMany({
+      where: { id: { in: toUpdate.map(u => u.id) } },
+      select: syncPersistedTxSelect
+    })
+    updated.push(...updatedTxs)
+    updatedCount = updatedTxs.length
+  }
 
   return { inserted, updated, updatedCount }
 }
@@ -1185,36 +1222,12 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   endDate?: string,
   includeInputs = false
 ): Promise<Payment[]> {
-  const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
-
   if (orderBy === 'buttonDisplayDataList') {
     return await getPaymentsByUserIdOrderedByButtonName(
       userId, page, pageSize, orderDesc, buttonIds
     )
   }
-  // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
-  let orderByQuery
-  if (orderBy !== undefined && orderBy !== '') {
-    if (orderBy === 'values') {
-      orderByQuery = {
-        amount: orderDescString
-      }
-    } else if (orderBy === 'networkId') {
-      orderByQuery = {
-        address: {
-          networkId: orderDescString
-        }
-      }
-    } else {
-      orderByQuery = {
-        [orderBy]: orderDescString
-      }
-    }
-  } else {
-    orderByQuery = {
-      timestamp: orderDescString
-    }
-  }
+  const orderByQuery = paymentOrderBy(orderBy, orderDesc)
 
   const userAddresses = await prisma.address.findMany({
     where: { userProfiles: { some: { userId } } },

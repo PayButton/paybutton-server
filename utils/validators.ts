@@ -28,7 +28,10 @@ const parseAddressTextBlock = function (addressBlock: string): string[] {
     .filter((value, index, self) => self.indexOf(value) === index)
 }
 
-export const parseAddress = function (addressString: string | undefined): string {
+export const parseAddress = function (addressString: string | string[] | undefined): string {
+  // Repeated query keys arrive as arrays. String methods like includes() then
+  // check membership instead of a substring, so reject non-strings before use.
+  if (addressString !== undefined && typeof addressString !== 'string') throw new Error(RESPONSE_MESSAGES.INVALID_ADDRESS_400.message)
   if (addressString === '' || addressString === undefined) throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
   let parsedAddress: string
   if (
@@ -232,7 +235,8 @@ interface TriggerSignature {
 function getSignaturePayload (postData: string, postDataParameters: PostDataParameters): string {
   const includedVariables = TRIGGER_POST_VARIABLES.filter(v => postData.includes(v)).sort()
   const result = includedVariables.map(varString => {
-    const key = varString.replace('<', '').replace('>', '') as keyof PostDataParameters
+    // Tokens in TRIGGER_POST_VARIABLES are a single `<name>` pair.
+    const key = varString.slice(1, -1) as keyof PostDataParameters
     let valueString = ''
     if (key === 'opReturn') {
       const value = postDataParameters[key]
