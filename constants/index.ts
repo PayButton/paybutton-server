@@ -170,6 +170,9 @@ export const HUMAN_READABLE_DATE_FORMAT = 'YYYY-MM-DD'
 export const PRICE_API_DATE_FORMAT = 'YYYY-MM-DD'
 export const PRICE_API_TIMEOUT = 40 * 1000 // 40 seconds
 export const PRICE_API_MAX_RETRIES = 1
+// When backfilling missing price days, up to this many days are fetched one by one;
+// more than this uses a single bulk request instead.
+export const PRICE_BACKFILL_PER_DAY_FETCH_LIMIT = 5
 
 export const SYNC_TXS_JOBS_MAX_RETRIES = 3
 export const SYNC_TXS_JOBS_RETRY_DELAY = 2000

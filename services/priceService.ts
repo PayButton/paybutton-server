@@ -2,7 +2,7 @@ import axios from 'axios'
 import { Prisma, Price } from '@prisma/client'
 import config from 'config'
 import prisma from 'prisma-local/clientInstance'
-import { PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, N_DAYS_LOOK_FOR_PRICE_GAPS } from 'constants/index'
+import { PRICE_API_TIMEOUT, PRICE_API_MAX_RETRIES, PRICE_API_DATE_FORMAT, RESPONSE_MESSAGES, NETWORK_TICKERS, XEC_NETWORK_ID, BCH_NETWORK_ID, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, N_DAYS_LOOK_FOR_PRICE_GAPS, NETWORK_TICKERS_FROM_ID, PRICE_BACKFILL_PER_DAY_FETCH_LIMIT } from 'constants/index'
 import { validatePriceAPIUrlAndToken, validateNetworkTicker } from 'utils/validators'
 import moment from 'moment'
 
@@ -253,6 +253,73 @@ export async function syncPastDaysNewerPrices (): Promise<void> {
   } else {
     console.log('[PRICES] All missing prices have been synced.')
   }
+}
+
+/**
+ * Fetches prices for specific days of a network from the price API and stores them.
+ * Used to backfill days that transactions need but that are missing from the DB,
+ * regardless of how old they are.
+ *
+ * Many days are fetched with a single bulk request; a few days (or days the bulk
+ * response lacks, when they are few) are fetched one by one. Failures are logged
+ * and skipped, never thrown.
+ *
+ * @param timestamps day-start (UTC) timestamps, as given by flattenTimestamp
+ * @returns the timestamps whose prices were stored
+ */
+export async function fetchAndStoreMissingPrices (networkId: number, timestamps: number[]): Promise<number[]> {
+  const networkTicker = NETWORK_TICKERS_FROM_ID[networkId]
+  if (networkTicker === undefined || timestamps.length === 0) return []
+
+  let remaining = timestamps.map(timestamp => ({
+    timestamp,
+    formatted: moment.unix(timestamp).utc().format(PRICE_API_DATE_FORMAT)
+  }))
+  const stored: number[] = []
+
+  const store = async (price: IResponseData, timestamp: number, formatted: string): Promise<void> => {
+    try {
+      await upsertPricesForNetworkId(price, networkId, timestamp)
+      stored.push(timestamp)
+    } catch {
+      console.warn(`[PRICES] Could not store fetched ${networkTicker} price for ${formatted}.`)
+    }
+  }
+
+  if (remaining.length > PRICE_BACKFILL_PER_DAY_FETCH_LIMIT) {
+    const allPrices = await getAllPricesByNetworkTicker(networkTicker, false)
+    if (allPrices === null) {
+      console.warn(`[PRICES] Could not fetch ${networkTicker} daily prices to backfill ${remaining.length} missing days.`)
+      return stored
+    }
+    const priceByDay = new Map(allPrices.map(p => [p.day, p]))
+    const notInBulk: typeof remaining = []
+    for (const day of remaining) {
+      const price = priceByDay.get(day.formatted)
+      if (price === undefined) {
+        notInBulk.push(day)
+      } else {
+        await store(price, day.timestamp, day.formatted)
+      }
+    }
+    remaining = notInBulk
+  }
+
+  if (remaining.length > PRICE_BACKFILL_PER_DAY_FETCH_LIMIT) {
+    console.warn(`[PRICES] Price API has no ${networkTicker} prices for ${remaining.length} days, e.g. ${remaining[0].formatted}.`)
+    return stored
+  }
+
+  for (const day of remaining) {
+    try {
+      const price = await getPriceForDayAndNetworkTicker(moment.utc(day.formatted), networkTicker)
+      await store(price, day.timestamp, day.formatted)
+    } catch {
+      console.warn(`[PRICES] Could not fetch ${networkTicker} price for ${day.formatted}.`)
+    }
+  }
+
+  return stored
 }
 
 export async function syncCurrentPrices (): Promise<void> {
