@@ -177,6 +177,57 @@ export async function fetchTransactionsByAddressList (
   })
 }
 
+type TransactionOrderBy = Prisma.TransactionOrderByWithRelationInput
+
+// Repeated query keys arrive as arrays. Only known fields become Prisma orderBy
+// objects; anything else, including arrays, sorts by timestamp.
+function transactionOrderBy (orderBy: unknown, orderDesc: boolean): TransactionOrderBy {
+  const direction: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
+  if (typeof orderBy !== 'string') {
+    return { timestamp: direction }
+  }
+  switch (orderBy) {
+    case 'id':
+      return { id: direction }
+    case 'hash':
+      return { hash: direction }
+    case 'amount':
+      return { amount: direction }
+    case 'confirmed':
+      return { confirmed: direction }
+    case 'createdAt':
+      return { createdAt: direction }
+    case 'address.address':
+      return { address: { address: direction } }
+    case 'address.networkId':
+      return { address: { networkId: direction } }
+    case 'timestamp':
+    default:
+      return { timestamp: direction }
+  }
+}
+
+function paymentOrderBy (orderBy: unknown, orderDesc: boolean): TransactionOrderBy {
+  const direction: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
+  if (typeof orderBy !== 'string') {
+    return { timestamp: direction }
+  }
+  switch (orderBy) {
+    case 'id':
+      return { id: direction }
+    case 'hash':
+      return { hash: direction }
+    case 'amount':
+    case 'values':
+      return { amount: direction }
+    case 'networkId':
+      return { address: { networkId: direction } }
+    case 'timestamp':
+    default:
+      return { timestamp: direction }
+  }
+}
+
 export async function fetchTransactionsByAddressListWithPagination (
   addressIdList: string[],
   page: number,
@@ -186,29 +237,7 @@ export async function fetchTransactionsByAddressListWithPagination (
   networkIdsListFilter?: number[],
   includeInputs = false
 ): Promise<TransactionsWithPaybuttonsAndPrices[]> {
-  const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
-
-  // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
-  let orderByQuery
-  if (orderBy !== undefined && orderBy !== '') {
-    if (orderBy.includes('.')) {
-      const [relation, property] = orderBy.split('.')
-      orderByQuery = {
-        [relation]: {
-          [property]: orderDescString
-        }
-      }
-    } else {
-      orderByQuery = {
-        [orderBy]: orderDescString
-      }
-    }
-  } else {
-    // Default orderBy
-    orderByQuery = {
-      timestamp: orderDescString
-    }
-  }
+  const orderByQuery = transactionOrderBy(orderBy, orderDesc)
 
   // Build include conditionally - exclude inputs by default unless explicitly requested
   const include = includeInputs
@@ -288,29 +317,7 @@ export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (a
 }
 
 export async function fetchPaginatedAddressTransactions (addressString: string, page: number, pageSize: number, orderBy?: string, orderDesc = true): Promise<TransactionWithAddressAndPrices[]> {
-  const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
-
-  // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
-  let orderByQuery
-  if (orderBy !== undefined && orderBy !== '') {
-    if (orderBy.includes('.')) {
-      const [relation, property] = orderBy.split('.')
-      orderByQuery = {
-        [relation]: {
-          [property]: orderDescString
-        }
-      }
-    } else {
-      orderByQuery = {
-        [orderBy]: orderDescString
-      }
-    }
-  } else {
-    // Default orderBy
-    orderByQuery = {
-      timestamp: orderDescString
-    }
-  }
+  const orderByQuery = transactionOrderBy(orderBy, orderDesc)
   const parsedAddress = parseAddress(addressString)
   await addressExists(parsedAddress, true)
   const txs = await prisma.transaction.findMany({
@@ -1161,36 +1168,12 @@ export async function fetchAllPaymentsByUserIdWithPagination (
   endDate?: string,
   includeInputs = false
 ): Promise<Payment[]> {
-  const orderDescString: Prisma.SortOrder = orderDesc ? 'desc' : 'asc'
-
   if (orderBy === 'buttonDisplayDataList') {
     return await getPaymentsByUserIdOrderedByButtonName(
       userId, page, pageSize, orderDesc, buttonIds
     )
   }
-  // Get query for orderBy that works with nested properties (e.g. `address.networkId`)
-  let orderByQuery
-  if (orderBy !== undefined && orderBy !== '') {
-    if (orderBy === 'values') {
-      orderByQuery = {
-        amount: orderDescString
-      }
-    } else if (orderBy === 'networkId') {
-      orderByQuery = {
-        address: {
-          networkId: orderDescString
-        }
-      }
-    } else {
-      orderByQuery = {
-        [orderBy]: orderDescString
-      }
-    }
-  } else {
-    orderByQuery = {
-      timestamp: orderDescString
-    }
-  }
+  const orderByQuery = paymentOrderBy(orderBy, orderDesc)
 
   const where: Prisma.TransactionWhereInput = {
     address: {

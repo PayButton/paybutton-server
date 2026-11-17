@@ -2,6 +2,7 @@ import prisma from 'prisma-local/clientInstance'
 import * as transactionService from 'services/transactionService'
 import { prismaMock } from 'prisma-local/mockedClient'
 import { mockedBCHAddress, mockedUSDPriceOnTransaction, mockedCADPriceOnTransaction, mockedTransaction, mockedUserProfile, mockedAddressIdList, mockedTransactionList } from '../mockedObjects'
+import { exampleAddresses } from '../utils'
 import { CacheSet } from 'redis/index'
 import { Prisma } from '@prisma/client'
 import * as addressService from 'services/addressService'
@@ -454,5 +455,72 @@ describe('Date and timezone filters for transactions', () => {
 
     expect(callArgs.where.timestamp).toBeUndefined()
     expect(callArgs.where.OR).toBeUndefined()
+  })
+
+  it('maps payment sort fields and ignores values that are not on the blacklist', async () => {
+    prismaMock.transaction.findMany.mockResolvedValue([])
+    prisma.transaction.findMany = prismaMock.transaction.findMany
+
+    await transactionService.fetchAllPaymentsByUserIdWithPagination(
+      'user-1', 0, 10, 'UTC', 'values', false
+    )
+    expect(prismaMock.transaction.findMany.mock.calls[0][0]).toEqual(expect.objectContaining({
+      orderBy: { amount: 'asc' }
+    }))
+
+    prismaMock.transaction.findMany.mockClear()
+    await transactionService.fetchAllPaymentsByUserIdWithPagination(
+      'user-1', 0, 10, 'UTC', 'networkId', true
+    )
+    expect(prismaMock.transaction.findMany.mock.calls[0][0]).toEqual(expect.objectContaining({
+      orderBy: { address: { networkId: 'desc' } }
+    }))
+
+    prismaMock.transaction.findMany.mockClear()
+    await transactionService.fetchAllPaymentsByUserIdWithPagination(
+      'user-1', 0, 10, 'UTC', '__proto__', true
+    )
+    expect(prismaMock.transaction.findMany.mock.calls[0][0]).toEqual(expect.objectContaining({
+      orderBy: { timestamp: 'desc' }
+    }))
+
+    prismaMock.transaction.findMany.mockClear()
+    await transactionService.fetchAllPaymentsByUserIdWithPagination(
+      'user-1', 0, 10, 'UTC', ['amount', 'hash'] as unknown as string, true
+    )
+    expect(prismaMock.transaction.findMany.mock.calls[0][0]).toEqual(expect.objectContaining({
+      orderBy: { timestamp: 'desc' }
+    }))
+  })
+})
+
+describe('address transaction orderBy blacklist', () => {
+  const address = `ecash:${exampleAddresses.ecash}`
+
+  beforeEach(() => {
+    prismaMock.address.findUniqueOrThrow.mockResolvedValue(mockedBCHAddress)
+    prisma.address.findUniqueOrThrow = prismaMock.address.findUniqueOrThrow
+    prismaMock.transaction.findMany.mockResolvedValue([])
+    prisma.transaction.findMany = prismaMock.transaction.findMany
+  })
+
+  it('sorts by an allowed nested address field', async () => {
+    await transactionService.fetchPaginatedAddressTransactions(address, 0, 10, 'address.networkId', false)
+    expect(prismaMock.transaction.findMany.mock.calls[0][0]).toEqual(expect.objectContaining({
+      orderBy: { address: { networkId: 'asc' } }
+    }))
+  })
+
+  it('falls back to timestamp when orderBy is an array or an unknown field', async () => {
+    await transactionService.fetchPaginatedAddressTransactions(address, 0, 10, ['timestamp'] as unknown as string, true)
+    expect(prismaMock.transaction.findMany.mock.calls[0][0]).toEqual(expect.objectContaining({
+      orderBy: { timestamp: 'desc' }
+    }))
+
+    prismaMock.transaction.findMany.mockClear()
+    await transactionService.fetchPaginatedAddressTransactions(address, 0, 10, 'constructor', true)
+    expect(prismaMock.transaction.findMany.mock.calls[0][0]).toEqual(expect.objectContaining({
+      orderBy: { timestamp: 'desc' }
+    }))
   })
 })

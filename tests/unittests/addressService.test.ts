@@ -58,3 +58,37 @@ describe('Create by substring', () => {
     expect(result).toEqual(mockedBCHAddress)
   })
 })
+
+describe('addressExists', () => {
+  it('returns true when the address exists', async () => {
+    prismaMock.address.findUnique.mockResolvedValue({ id: mockedBCHAddress.id } as any)
+    prisma.address.findUnique = prismaMock.address.findUnique
+
+    await expect(addressService.addressExists(mockedBCHAddress.address)).resolves.toBe(true)
+  })
+
+  it('returns false when the address is missing', async () => {
+    prismaMock.address.findUnique.mockResolvedValue(null)
+    prisma.address.findUnique = prismaMock.address.findUnique
+
+    await expect(addressService.addressExists(mockedBCHAddress.address)).resolves.toBe(false)
+  })
+
+  it('throws NO_ADDRESS_FOUND when raise is true and the address is missing', async () => {
+    prismaMock.address.findUnique.mockResolvedValue(null)
+    prisma.address.findUnique = prismaMock.address.findUnique
+
+    await expect(addressService.addressExists(mockedBCHAddress.address, true)).rejects.toThrow(
+      RESPONSE_MESSAGES.NO_ADDRESS_FOUND_404.message
+    )
+  })
+
+  it('propagates database errors instead of treating them as missing addresses', async () => {
+    const poolTimeout = new Error('Timed out fetching a new connection from the connection pool.')
+    prismaMock.address.findUnique.mockRejectedValue(poolTimeout)
+    prisma.address.findUnique = prismaMock.address.findUnique
+
+    await expect(addressService.addressExists(mockedBCHAddress.address, true)).rejects.toThrow(poolTimeout)
+    await expect(addressService.addressExists(mockedBCHAddress.address)).rejects.toThrow(poolTimeout)
+  })
+})
