@@ -9,6 +9,7 @@ import {
 } from 'services/transactionService'
 import { fetchAllUserAddresses, AddressPaymentInfo } from 'services/addressService'
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
+import { QuoteValues } from 'services/priceService'
 
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT, N_OF_QUOTES } from 'constants/index'
 import moment from 'moment-timezone'
@@ -122,7 +123,16 @@ export const generatePaymentFromTx = (tx: TransactionsWithPaybuttonsAndPrices): 
 }
 
 export const generatePaymentFromTxWithInvoices = (tx: TransactionWithAddressAndPricesAndInvoices, userId?: string): Payment => {
-  const values = getTransactionValue(tx)
+  // Txs can be left without price links when price data is missing for their
+  // timestamp (see connectTransactionsListToPrices); connectAllTransactionsToPrices
+  // retries them later. Don't fail the whole payments listing over one of them.
+  let values: QuoteValues
+  if (tx.prices.length !== N_OF_QUOTES) {
+    console.warn(`[PAYMENTS] tx ${tx.hash} has missing price links (${tx.prices.length}/${N_OF_QUOTES}), using zero fiat values`)
+    values = { usd: new Prisma.Decimal(0), cad: new Prisma.Decimal(0) }
+  } else {
+    values = getTransactionValue(tx)
+  }
   let buttonDisplayDataList: Array<{ name: string, id: string}> = []
   if (tx.address.paybuttons !== undefined) {
     buttonDisplayDataList = tx.address.paybuttons.map(
