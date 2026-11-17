@@ -8,6 +8,7 @@ import { Prisma } from '@prisma/client'
 import * as addressService from 'services/addressService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import moment from 'moment-timezone'
+import * as priceService from 'services/priceService'
 
 const includePrices = {
   prices: {
@@ -536,5 +537,61 @@ describe('address transaction orderBy blacklist', () => {
     expect(prismaMock.transaction.findMany.mock.calls[0][0]).toEqual(expect.objectContaining({
       orderBy: { timestamp: 'desc' }
     }))
+  })
+})
+
+describe('connectTransactionsListToPrices', () => {
+  const dayTs = moment.utc('2026-08-02').unix()
+  const tx = { ...mockedTransaction, id: 'tx-1', timestamp: dayTs + 3600, address: { networkId: 1 } }
+  const usd = { ...mockedUSDPriceOnTransaction.price, id: 11, timestamp: dayTs, networkId: 1 }
+  const cad = { ...mockedCADPriceOnTransaction.price, id: 12, timestamp: dayTs, networkId: 1 }
+  let fetchMissing: jest.SpyInstance
+
+  beforeEach(() => {
+    prismaMock.pricesOnTransactions.deleteMany.mockResolvedValue({ count: 0 })
+    prismaMock.pricesOnTransactions.createMany.mockResolvedValue({ count: 2 })
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock))
+    prisma.$transaction = prismaMock.$transaction
+    prisma.price.findMany = prismaMock.price.findMany
+    fetchMissing = jest.spyOn(priceService, 'fetchAndStoreMissingPrices')
+  })
+
+  afterEach(() => {
+    fetchMissing.mockRestore()
+    prismaMock.price.findMany.mockReset()
+    prismaMock.pricesOnTransactions.createMany.mockClear()
+  })
+
+  it('fetches prices missing from the DB and links the tx to them', async () => {
+    prismaMock.price.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([usd, cad])
+    fetchMissing.mockResolvedValue([dayTs])
+
+    await transactionService.connectTransactionsListToPrices([tx] as any)
+
+    expect(fetchMissing).toHaveBeenCalledWith(1, [dayTs])
+    expect(prismaMock.pricesOnTransactions.createMany).toHaveBeenCalledWith({
+      data: [{ transactionId: 'tx-1', priceId: 11 }, { transactionId: 'tx-1', priceId: 12 }],
+      skipDuplicates: true
+    })
+  })
+
+  it('does not call the price API when prices are already stored', async () => {
+    prismaMock.price.findMany.mockResolvedValueOnce([usd, cad])
+
+    await transactionService.connectTransactionsListToPrices([tx] as any)
+
+    expect(fetchMissing).not.toHaveBeenCalled()
+    expect(prismaMock.pricesOnTransactions.createMany).toHaveBeenCalledTimes(1)
+  })
+
+  it('skips the tx when the price API cannot provide the day', async () => {
+    prismaMock.price.findMany.mockResolvedValueOnce([])
+    fetchMissing.mockResolvedValue([])
+
+    await transactionService.connectTransactionsListToPrices([tx] as any)
+
+    expect(prismaMock.pricesOnTransactions.createMany).not.toHaveBeenCalled()
   })
 })
