@@ -76,42 +76,38 @@ export const CacheSet = {
 
 type MethodName = 'dashboardData' | 'paymentList' | 'addressBalance' | 'paymentsCount'
 
-interface PendingCalls {
-  [userId: string]: Set<MethodName>
-}
-
 export class CacheGet {
-  private static pendingCalls: PendingCalls = {}
+  // In-flight calls keyed by method + arguments. Concurrent callers with the
+  // same key share one promise instead of failing or duplicating the work.
+  private static readonly pendingCalls = new Map<string, Promise<unknown>>()
 
   private static async executeCall<T>(
-    userId: string,
+    key: string,
     methodName: MethodName,
-    fn: () => Promise<T>
+    fn: () => Promise<T>,
+    args: unknown[] = []
   ): Promise<T> {
-    if (this.pendingCalls[userId] === undefined) {
-      this.pendingCalls[userId] = new Set()
+    const callKey = JSON.stringify([methodName, key, ...args])
+    const pending = this.pendingCalls.get(callKey)
+    if (pending !== undefined) {
+      return await (pending as Promise<T>)
     }
 
-    if (this.pendingCalls[userId].has(methodName)) {
-      throw new Error(`Method "${methodName}" is already being executed for user "${userId}".`)
-    }
-
-    this.pendingCalls[userId].add(methodName)
-
-    try {
-      return await fn()
-    } finally {
-      this.pendingCalls[userId].delete(methodName)
-      if (this.pendingCalls[userId].size === 0) {
-        this.pendingCalls[userId] = undefined as unknown as Set<MethodName>
+    const promise = (async () => {
+      try {
+        return await fn()
+      } finally {
+        this.pendingCalls.delete(callKey)
       }
-    }
+    })()
+    this.pendingCalls.set(callKey, promise)
+    return await promise
   }
 
   static async dashboardData (userId: string, timezone: string, buttonIds?: string[]): Promise<DashboardData> {
     return await this.executeCall(userId, 'dashboardData', async () => {
       return await getUserDashboardData(userId, timezone, buttonIds)
-    })
+    }, [timezone, buttonIds ?? []])
   }
 
   static async paymentList (userId: string): Promise<Payment[]> {
@@ -129,6 +125,6 @@ export class CacheGet {
   static async paymentsCount (userId: string, timezone: string): Promise<number> {
     return await this.executeCall(userId, 'paymentsCount', async () => {
       return await getCachedPaymentsCountForUser(userId, timezone)
-    })
+    }, [timezone])
   }
 }

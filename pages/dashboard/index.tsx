@@ -78,6 +78,7 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
   const [showFilters, setShowFilters] = useState<boolean>(false)
   const [buttons, setButtons] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [loadError, setLoadError] = useState<boolean>(false)
 
   const setPeriodFromString = (data?: DashboardData, periodString?: PeriodString): void => {
     if (data === undefined) return
@@ -120,20 +121,30 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
       setIsLoading(true)
+      setLoadError(false)
       let url = 'api/dashboard'
       if (selectedButtonIds.length > 0) {
         url += `?buttonIds=${selectedButtonIds.join(',')}`
       }
-      const res = await fetch(url, {
-        headers: {
-          Timezone: moment.tz.guess()
+      try {
+        const res = await fetch(url, {
+          headers: {
+            Timezone: moment.tz.guess()
+          }
+        })
+        if (!res.ok) {
+          throw new Error(`Failed to load dashboard: ${res.status}`)
         }
-      })
-      const json = await res.json()
-      setDashboardData(json)
-      setIsLoading(false)
+        const json = await res.json()
+        setDashboardData(json)
+      } catch (err) {
+        console.error(err)
+        setLoadError(true)
+      } finally {
+        setIsLoading(false)
+      }
     }
-    fetchData().catch(console.error)
+    void fetchData()
     const savedActivePeriodString = loadStateFromCookie(COOKIE_NAMES.DASHBOARD_FILTER, undefined) as (PeriodString | undefined)
     if (savedActivePeriodString !== undefined) {
       setActivePeriodString(savedActivePeriodString)
@@ -152,11 +163,17 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
     }
   }, [activePeriodString, dashboardData])
 
+  const errorMessage = (
+    <div className={style.load_error}>
+      Failed to load dashboard data. Please refresh the page to try again.
+    </div>
+  )
+
   if (dashboardData === undefined || activePeriod === undefined) {
     return (
       <>
         <TopBar title="Dashboard" user={user?.stUser?.email} />
-        <Loading />
+        {loadError ? errorMessage : <Loading />}
       </>
     )
   }
@@ -165,6 +182,7 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
     <>
       <TopBar title="Dashboard" user={user?.stUser?.email} />
       {isLoading && <Loading />}
+      {loadError && errorMessage}
       <div className={style.filter_btns}>
           <div
             onClick={() => setShowFilters(!showFilters)}
