@@ -190,6 +190,7 @@ model UserProfile {
   preferredCurrencyId Int @default(1)
   preferredTimezone String    @db.VarChar(255)@default("")
   csvRowCollapsing Boolean @default(true)
+  csvCollapseThreshold Int @default(1)
   proUntil DateTime?
   paybuttons   Paybutton[]
 

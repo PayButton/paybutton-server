@@ -529,7 +529,8 @@ export const mockedUserProfile: UserProfile = {
   emailCredits: 15,
   postCredits: 15,
   proUntil: null,
-  csvRowCollapsing: false
+  csvRowCollapsing: false,
+  csvCollapseThreshold: 0
 }
 
 export const mockedUserProfileWithPublicKey: UserProfile = {
@@ -545,7 +546,8 @@ export const mockedUserProfileWithPublicKey: UserProfile = {
   emailCredits: 15,
   postCredits: 15,
   proUntil: null,
-  csvRowCollapsing: false
+  csvRowCollapsing: false,
+  csvCollapseThreshold: 0
 }
 
 export const mockedAddressesOnButtons: AddressesOnButtons[] = [
