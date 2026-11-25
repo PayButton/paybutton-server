@@ -119,6 +119,9 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
   }, [])
 
   useEffect(() => {
+    // Set to false on cleanup so a request superseded by a newer filter
+    // selection can't overwrite the newer request's data or error state.
+    let isCurrent = true
     const fetchData = async (): Promise<void> => {
       setIsLoading(true)
       setLoadError(false)
@@ -136,12 +139,12 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
           throw new Error(`Failed to load dashboard: ${res.status}`)
         }
         const json = await res.json()
-        setDashboardData(json)
+        if (isCurrent) setDashboardData(json)
       } catch (err) {
         console.error(err)
-        setLoadError(true)
+        if (isCurrent) setLoadError(true)
       } finally {
-        setIsLoading(false)
+        if (isCurrent) setIsLoading(false)
       }
     }
     void fetchData()
@@ -149,10 +152,12 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
     if (savedActivePeriodString !== undefined) {
       setActivePeriodString(savedActivePeriodString)
     }
+    return () => { isCurrent = false }
   }, [selectedButtonIds])
 
   useEffect(() => {
     if (dashboardData?.cacheRebuilding !== true) return
+    let isCurrent = true
     const timer = setTimeout(() => {
       let url = 'api/dashboard'
       if (selectedButtonIds.length > 0) {
@@ -163,10 +168,18 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
           if (!res.ok) throw new Error(`Failed to refresh dashboard: ${res.status}`)
           return await res.json()
         })
-        .then(json => { setDashboardData(json) })
-        .catch(console.error)
+        .then(json => { if (isCurrent) setDashboardData(json) })
+        .catch(err => {
+          console.error(err)
+          // Polling stops here, so tell the user to refresh instead of
+          // promising values will update automatically.
+          if (isCurrent) setLoadError(true)
+        })
     }, 15000)
-    return () => clearTimeout(timer)
+    return () => {
+      isCurrent = false
+      clearTimeout(timer)
+    }
   }, [dashboardData?.cacheRebuilding, selectedButtonIds])
 
   useEffect(() => {
@@ -239,7 +252,7 @@ export default function Dashboard ({ user }: PaybuttonsProps): React.ReactElemen
               </div>
             </div>
       )}
-      {dashboardData.cacheRebuilding === true && (
+      {dashboardData.cacheRebuilding === true && !loadError && (
         <div className={style.cache_banner}>
           Data still being calculated. Values will update automatically.
         </div>
