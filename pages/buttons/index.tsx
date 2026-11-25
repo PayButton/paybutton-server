@@ -41,7 +41,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 }
 
 interface PaybuttonsProps {
-  user: UserWithSupertokens
+  // Absent when getServerSideProps found no valid session.
+  user?: UserWithSupertokens
 }
 
 interface PaybuttonsState {
@@ -59,13 +60,16 @@ export default class Buttons extends React.Component<PaybuttonsProps, Paybuttons
   }
 
   async componentDidMount (): Promise<void> {
+    if (this.props.user === undefined) return
     await this.fetchPaybuttons()
     await this.fetchWallets()
     this.setState({ loading: false })
   }
 
   async fetchPaybuttons (): Promise<void> {
-    const res = await fetch(`/api/paybuttons?userId=${this.props.user.userProfile.id}`, {
+    const userId = this.props.user?.userProfile.id
+    if (userId === undefined) return
+    const res = await fetch(`/api/paybuttons?userId=${userId}`, {
       method: 'GET'
     })
     if (res.status === 200) {
@@ -76,7 +80,9 @@ export default class Buttons extends React.Component<PaybuttonsProps, Paybuttons
   }
 
   async fetchWallets (): Promise<void> {
-    const res = await fetch(`/api/wallets?userId=${this.props.user.userProfile.id}`, {
+    const userId = this.props.user?.userProfile.id
+    if (userId === undefined) return
+    const res = await fetch(`/api/wallets?userId=${userId}`, {
       method: 'GET'
     })
     if (res.status === 200) {
@@ -116,10 +122,10 @@ export default class Buttons extends React.Component<PaybuttonsProps, Paybuttons
   }
 
   render (): React.ReactElement {
-    if (this.state.loading) {
+    if (this.props.user === undefined || this.state.loading) {
       return (
         <>
-          <TopBar title="Buttons" user={this.props.user.stUser?.email} />
+          <TopBar title="Buttons" user={this.props.user?.stUser?.email} />
           <Loading />
         </>
       )
