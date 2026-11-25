@@ -42,7 +42,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 }
 
 interface WalletsProps {
-  user: UserWithSupertokens
+  // Absent when getServerSideProps found no valid session.
+  user?: UserWithSupertokens
 }
 
 interface WalletsState {
@@ -64,16 +65,19 @@ export default class Wallets extends React.Component<WalletsProps, WalletsState>
   }
 
   async componentDidMount (): Promise<void> {
+    if (this.props.user === undefined) return
     await this.fetchWallets()
     await this.fetchNetworks()
     this.setState({ loading: false })
   }
 
   async fetchWallets (): Promise<void> {
-    const walletsResponse = await fetch(`/api/wallets?userId=${this.props.user.userProfile.id}`, {
+    const userId = this.props.user?.userProfile.id
+    if (userId === undefined) return
+    const walletsResponse = await fetch(`/api/wallets?userId=${userId}`, {
       method: 'GET'
     })
-    const addressesResponse = await fetch(`/api/addresses?userId=${this.props.user.userProfile.id}&includePaybuttons=1`, {
+    const addressesResponse = await fetch(`/api/addresses?userId=${userId}&includePaybuttons=1`, {
       method: 'GET'
     })
     if (walletsResponse.status === 200) {
@@ -106,10 +110,10 @@ export default class Wallets extends React.Component<WalletsProps, WalletsState>
   }
 
   render (): React.ReactElement {
-    if (this.state.loading) {
+    if (this.props.user === undefined || this.state.loading) {
       return (
         <>
-          <TopBar title="Wallets" user={this.props.user.stUser?.email} />
+          <TopBar title="Wallets" user={this.props.user?.stUser?.email} />
           <Loading />
         </>
       )
