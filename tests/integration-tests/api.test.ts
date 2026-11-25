@@ -1383,7 +1383,11 @@ describe('GET /api/dashboard', () => {
   it('Should return HTTP 200', async () => {
     const res = await testEndpoint(baseRequestOptions, dashboardEndpoint)
     expect(res.statusCode).toBe(200)
-    const responseData = res._getJSONData()
+    // cacheRebuilding is only set while the background payment-cache rebuild is
+    // still running, which races with this request; when it finished first the
+    // key is absent.
+    const { cacheRebuilding, ...responseData } = res._getJSONData()
+    expect([undefined, true]).toContain(cacheRebuilding)
     expect(responseData).toEqual({
       thirtyDays: expectedPeriodData,
       sevenDays: expectedPeriodData,
@@ -1397,8 +1401,7 @@ describe('GET /api/dashboard', () => {
         payments: expect.any(Number),
         buttons: expect.any(Number)
       },
-      filtered: expect.any(Boolean),
-      cacheRebuilding: true
+      filtered: expect.any(Boolean)
     }
     )
   })

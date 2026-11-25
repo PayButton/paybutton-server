@@ -7,9 +7,15 @@ export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'GET') {
     await setSession(req, res)
     const userId = req.session.userId
-    const page = (req.query.page === '' || req.query.page === undefined) ? 0 : Number(req.query.page)
+    const rawPage = req.query.page
+    const page = (rawPage === '' || rawPage === undefined)
+      ? 0
+      : (typeof rawPage === 'string' && rawPage.trim() === '') ? NaN : Number(rawPage)
     const pageSize = (req.query.pageSize === '' || req.query.pageSize === undefined) ? DEFAULT_TX_PAGE_SIZE : Number(req.query.pageSize)
-    if (!Number.isInteger(page) || !Number.isInteger(pageSize) || page < 0 || pageSize < 1) {
+    if (
+      !Number.isInteger(page) || !Number.isInteger(pageSize) || page < 0 || pageSize < 1 ||
+      !Number.isSafeInteger(page * pageSize)
+    ) {
       res.status(RESPONSE_MESSAGES.PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400.statusCode)
         .json(RESPONSE_MESSAGES.PAGE_SIZE_AND_PAGE_SHOULD_BE_NUMBERS_400)
       return
