@@ -252,6 +252,14 @@ body[data-theme='dark'] .show_filters_button img {
   gap: 10px;
 }
 
+.load_error {
+  margin: 20px 0;
+  padding: 15px 20px;
+  border-radius: 10px;
+  background-color: var(--secondary-bg-color);
+  color: var(--primary-text-color);
+}
+
 .cache_banner {
   background-color: #fff3cd;
   color: #856404;
