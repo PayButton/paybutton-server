@@ -2,7 +2,7 @@ import prisma from 'prisma-local/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT, HUMAN_READABLE_DATE_FORMAT } from 'constants/index'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId } from 'services/addressService'
-import { AllPrices, QuoteValues, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
+import { AllPrices, QuoteValues, fetchAndStoreMissingPrices, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
 import _ from 'lodash'
 import { CacheSet } from 'redis/index'
 import { SimplifiedTransaction } from 'ws-service/types'
@@ -502,6 +502,36 @@ export async function connectTransactionToPrices (
   await createPriceTxConnectionInChunks(txClient, rows)
 }
 
+/** Returns the complete (USD + CAD) stored prices for the given day timestamps, keyed by timestamp. */
+async function fetchStoredPricesForNetworkAndTimestamps (
+  networkId: number,
+  timestamps: number[]
+): Promise<Map<number, AllPrices>> {
+  const prices = await prisma.price.findMany({
+    where: {
+      networkId,
+      timestamp: { in: timestamps },
+      quoteId: { in: [CAD_QUOTE_ID, USD_QUOTE_ID] }
+    }
+  })
+
+  const grouped = new Map<number, Partial<AllPrices>>()
+  for (const p of prices) {
+    const g = grouped.get(p.timestamp) ?? {}
+    if (p.quoteId === CAD_QUOTE_ID) g.cad = p
+    else if (p.quoteId === USD_QUOTE_ID) g.usd = p
+    grouped.set(p.timestamp, g)
+  }
+
+  const complete = new Map<number, AllPrices>()
+  for (const [ts, g] of grouped) {
+    if (g.cad !== undefined && g.usd !== undefined) {
+      complete.set(ts, { cad: g.cad, usd: g.usd })
+    }
+  }
+  return complete
+}
+
 export async function connectTransactionsListToPrices (
   txList: TransactionWithNetwork[]
 ): Promise<void> {
@@ -527,43 +557,29 @@ export async function connectTransactionsListToPrices (
     const tsArray = [...timestamps]
     pairs += tsArray.length
 
-    // Bulk fetch all (CAD + USD) for this networkId
-    const prices = await prisma.price.findMany({
-      where: {
-        networkId,
-        timestamp: { in: tsArray },
-        quoteId: { in: [CAD_QUOTE_ID, USD_QUOTE_ID] }
-      }
-    })
+    let storedPrices = await fetchStoredPricesForNetworkAndTimestamps(networkId, tsArray)
 
-    // Group prices by timestamp
-    const grouped = new Map<number, Partial<AllPrices>>()
-    for (const p of prices) {
-      const g = grouped.get(p.timestamp) ?? {}
-      if (p.quoteId === CAD_QUOTE_ID) g.cad = p
-      else if (p.quoteId === USD_QUOTE_ID) g.usd = p
-      grouped.set(p.timestamp, g)
+    // Days missing from the DB (of any age) are fetched from the price API, so
+    // their txs get linked here instead of staying unpriced.
+    const missingTs = tsArray.filter(ts => !storedPrices.has(ts))
+    if (missingTs.length > 0) {
+      console.log(`[PRICES] ${missingTs.length} days missing prices for networkId=${networkId}, fetching from price API...`)
+      const fetchedTs = await fetchAndStoreMissingPrices(networkId, missingTs)
+      if (fetchedTs.length > 0) {
+        const fetchedPrices = await fetchStoredPricesForNetworkAndTimestamps(networkId, fetchedTs)
+        storedPrices = new Map([...storedPrices, ...fetchedPrices])
+      }
     }
 
     for (const ts of tsArray) {
-      const allPrices = grouped.get(ts)
-      const formattedDate = moment.unix(ts).format(HUMAN_READABLE_DATE_FORMAT)
-
-      if (allPrices == null) {
+      const allPrices = storedPrices.get(ts)
+      if (allPrices === undefined) {
         console.warn(
-          `[PRICES] No price record found for networkId=${networkId} at ${formattedDate} — skipping affected txs.`
+          `[PRICES] No complete price data for networkId=${networkId} at ${moment.unix(ts).format(HUMAN_READABLE_DATE_FORMAT)} — skipping affected txs.`
         )
         continue
       }
-
-      if ((allPrices.cad == null) || (allPrices.usd == null)) {
-        console.warn(
-          `[PRICES] Incomplete price data for networkId=${networkId} at ${formattedDate} — skipping affected txs.`
-        )
-        continue
-      }
-
-      priceByNetworkTs.set(`${networkId}:${ts}`, allPrices as AllPrices)
+      priceByNetworkTs.set(`${networkId}:${ts}`, allPrices)
     }
   }
 
