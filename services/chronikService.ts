@@ -1175,7 +1175,6 @@ export class ChronikBlockchainClient {
         // addresses whose new txs are now priced instead of waiting for the end of
         // the sync, which an interrupted sync never reaches. Txs left unpriced are
         // invalidated by connectAllTransactionsToPrices once it links them.
-        const addressStringById = new Map(commitTuples.map(t => [t.row.addressId, t.addressString]))
         const linkedAddresses = [...new Set(
           syncResult.inserted.filter(t => linkedIds.has(t.id)).map(t => addressStringById.get(t.addressId))
         )].filter((a): a is string => a !== undefined)
