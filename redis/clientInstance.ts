@@ -37,6 +37,14 @@ class RedisMocked {
     return []
   }
 
+  async incr (key: string): Promise<number> {
+    return 1
+  }
+
+  async eval (...args: unknown[]): Promise<number> {
+    return 1
+  }
+
   scanStream (opt: ScanStreamOptions): ScanStream {
     const stream = new ScanStream({
       ...opt,

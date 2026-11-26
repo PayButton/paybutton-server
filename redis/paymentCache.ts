@@ -14,6 +14,7 @@ import { QuoteValues } from 'services/priceService'
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT, N_OF_QUOTES } from 'constants/index'
 import moment from 'moment-timezone'
 import { CacheSet } from 'redis/index'
+import { bumpCacheGeneration } from './cacheGeneration'
 import { ButtonDisplayData, Payment } from './types'
 import { getUserDashboardData, clearDashboardCache } from './dashboardCache'
 // ADDRESS:payments:YYYY:MM
@@ -240,14 +241,6 @@ export const getCachedPaymentsCountForUser = async (userId: string, timezone: st
   return dashboardData.total.payments
 }
 
-export const cacheGroupedPayments = async (paymentsGroupedByKey: KeyValueT<Payment[]>): Promise<void> => {
-  await Promise.all(
-    Object.keys(paymentsGroupedByKey).map(async key =>
-      await redis.set(key, JSON.stringify(paymentsGroupedByKey[key]))
-    )
-  )
-}
-
 export const getPaymentsForWeekKey = async (weekKey: string): Promise<Payment[]> => {
   const paymentsString = await redis.get(weekKey)
   return (paymentsString === null) ? [] : JSON.parse(paymentsString)
@@ -333,6 +326,9 @@ export const clearRecentAddressCache = async (addressString: string, timestamps:
 
 /** Remove all week-grouped payment keys for an address (forces rebuild from DB). */
 export const clearPaymentCacheForAddress = async (addressString: string): Promise<void> => {
+  // Bumped even when nothing is cached yet: that is exactly when a rebuild may be
+  // in flight, and it must not publish what it read before this invalidation.
+  await bumpCacheGeneration(addressString)
   const weekKeys = await getCachedWeekKeysForAddress(addressString)
   if (weekKeys.length === 0) {
     return
@@ -369,7 +365,8 @@ const cacheAddressesInBackground = async (addresses: Address[], userId: string):
   try {
     for (const address of addresses) {
       try {
-        await CacheSet.addressCreation(address)
+        // Not written if the address was invalidated meanwhile; the next read retries.
+        if (!(await CacheSet.addressCreation(address))) continue
         cached++
         if (cached % 10 === 0 || cached === addresses.length) {
           console.log(`[CACHE] Background: cached ${cached}/${addresses.length} addresses for user ${userId}`)

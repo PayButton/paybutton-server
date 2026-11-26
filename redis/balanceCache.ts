@@ -1,9 +1,10 @@
 import { AddressPaymentInfo, generateAddressPaymentInfo } from 'services/addressService'
 import { TransactionWithAddressAndPrices } from 'services/transactionService'
 import { redis } from './clientInstance'
+import { bumpCacheGeneration, getCacheGeneration, setIfGenerationUnchanged } from './cacheGeneration'
 
 // ADDRESS:balance
-const getBalanceKey = (addressString: string): string => {
+export const getBalanceKey = (addressString: string): string => {
   return `${addressString}:balance`
 }
 
@@ -22,8 +23,12 @@ export const getCachedBalanceForAddress = async (addressString: string): Promise
 export const getBalanceForAddress = async (addressString: string): Promise<AddressPaymentInfo> => {
   let paymentInfo = await getCachedBalanceForAddress(addressString)
   if (paymentInfo === null) {
+    // Read before the DB so an invalidation during the read discards the result.
+    const generation = await getCacheGeneration(addressString)
     paymentInfo = await generateAddressPaymentInfo(addressString)
-    await cacheBalanceForAddress(paymentInfo, addressString)
+    await setIfGenerationUnchanged(addressString, generation, [
+      [getBalanceKey(addressString), JSON.stringify(paymentInfo)]
+    ])
   }
   return paymentInfo
 }
@@ -40,6 +45,7 @@ export const updateBalanceCacheFromTx = async (tx: TransactionWithAddressAndPric
 }
 
 export const clearBalanceCache = async (addressString: string): Promise<void> => {
+  await bumpCacheGeneration(addressString)
   const key = getBalanceKey(addressString)
   await redis.del(key, () => {})
 }
