@@ -1711,6 +1711,126 @@ describe('chronik WebSocket reconnection', () => {
 
     expect(endpoint.waitForOpen).toHaveBeenCalledTimes(16)
   })
+
+  it('logs the close code, reason and whether the close was clean', async () => {
+    const log = jest.spyOn(console, 'log').mockImplementation(() => {})
+    configs[0].onEnd({ type: 'close', code: 1006, reason: '', wasClean: false })
+
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('code: 1006, reason: (none), clean: false'))
+    log.mockRestore()
+  })
+
+  describe('post-reconnect backfill', () => {
+    const mockedFetchAddresses = fetchAddressesArray as jest.Mock
+
+    it('backfills on a reconnect but not on the first connection', async () => {
+      const backfill = jest.spyOn(client, 'backfillAfterReconnect').mockResolvedValue(undefined)
+      client.wsHasConnected = false
+
+      await client.connectWsWithRetry(mkEndpoint(), client.wsGeneration)
+      expect(backfill).not.toHaveBeenCalled()
+
+      configs[0].onEnd({ type: 'close' })
+      await jest.advanceTimersByTimeAsync(WS_BASE_DELAY_MS)
+      expect(backfill).toHaveBeenCalledTimes(1)
+    })
+
+    it('syncs the subscribed addresses with triggers and client payment reconciliation enabled', async () => {
+      const addresses = [{ address: subscribedAddresses[0] }]
+      mockedFetchAddresses.mockResolvedValue(addresses as any)
+      const sync = jest.spyOn(client, 'syncAddresses').mockResolvedValue({ failedAddressesWithErrors: {}, successfulAddressesWithCount: {} })
+
+      await client.backfillAfterReconnect()
+
+      expect(fetchAddressesArray).toHaveBeenCalledWith(subscribedAddresses)
+      expect(sync).toHaveBeenCalledWith(addresses, true, true)
+    })
+
+    it('runs one backfill at a time and coalesces reconnects during a run into one more', async () => {
+      mockedFetchAddresses.mockResolvedValue([] as any)
+      let release!: () => void
+      const sync = jest.spyOn(client, 'syncAddresses')
+        .mockImplementationOnce(async () => await new Promise(resolve => { release = () => resolve({ failedAddressesWithErrors: {}, successfulAddressesWithCount: {} }) }))
+        .mockResolvedValue({ failedAddressesWithErrors: {}, successfulAddressesWithCount: {} })
+
+      const first = client.backfillAfterReconnect()
+      await jest.advanceTimersByTimeAsync(0)
+      await client.backfillAfterReconnect()
+      await client.backfillAfterReconnect()
+      expect(sync).toHaveBeenCalledTimes(1)
+
+      release()
+      await first
+      expect(sync).toHaveBeenCalledTimes(2)
+    })
+
+    it('does not throw when the sync fails', async () => {
+      jest.spyOn(console, 'error').mockImplementation(() => {})
+      mockedFetchAddresses.mockRejectedValue(new Error('db down'))
+
+      await expect(client.backfillAfterReconnect()).resolves.toBeUndefined()
+    })
+  })
+})
+
+describe('commitTransactionsBatch client payment reconciliation', () => {
+  const tuple = (hash: string, amount: number, confirmed: boolean, opReturn = '{"paymentId":"pid"}'): any => ({
+    row: { hash, addressId: 'addr-1', timestamp: 1700000000, amount: new Prisma.Decimal(amount), confirmed, opReturn },
+    raw: {},
+    addressString: 'ecash:addr-1'
+  })
+
+  let client: any
+  let update: jest.SpyInstance
+
+  beforeEach(() => {
+    process.env.WS_AUTH_KEY = 'test-auth-key'
+    ;(createManyTransactionsForSync as jest.Mock).mockResolvedValueOnce({ insertedCount: 0, inserted: [], updatedAddressIds: [] })
+    jest.spyOn(prisma.address, 'findMany').mockResolvedValue([] as any)
+    jest.spyOn(console, 'log').mockImplementation(() => {})
+    client = new ChronikBlockchainClient('ecash')
+    update = jest.spyOn(client, 'handleUpdateClientPaymentStatus').mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it('sets CONFIRMED for confirmed txs and ADDED_TO_MEMPOOL for unconfirmed ones, as the live handlers do', async () => {
+    const confirmed = tuple('hash-1', 5, true)
+    const unconfirmed = tuple('hash-2', 7, false)
+
+    await client.commitTransactionsBatch([confirmed, unconfirmed], [], false, true)
+
+    expect(update).toHaveBeenCalledWith(confirmed.row.amount, confirmed.row.opReturn, 'CONFIRMED', 'ecash:addr-1')
+    expect(update).toHaveBeenCalledWith(unconfirmed.row.amount, unconfirmed.row.opReturn, 'ADDED_TO_MEMPOOL', 'ecash:addr-1')
+  })
+
+  it('reconciles txs that already existed, not only newly inserted ones', async () => {
+    await client.commitTransactionsBatch([tuple('hash-1', 5, true)], [], false, true)
+
+    expect(update).toHaveBeenCalledTimes(1)
+  })
+
+  it('skips zero-amount txs, like the live handlers', async () => {
+    await client.commitTransactionsBatch([tuple('hash-1', 0, true)], [], false, true)
+
+    expect(update).not.toHaveBeenCalled()
+  })
+
+  it('does nothing unless asked to', async () => {
+    await client.commitTransactionsBatch([tuple('hash-1', 5, true)], [], false)
+
+    expect(update).not.toHaveBeenCalled()
+  })
+
+  it('keeps going and does not fail the batch when one update fails', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    update.mockRejectedValueOnce(new Error('db down'))
+
+    await expect(client.commitTransactionsBatch([tuple('hash-1', 5, true), tuple('hash-2', 6, false)], [], false, true)).resolves.toBeDefined()
+    expect(update).toHaveBeenCalledTimes(2)
+  })
 })
 
 describe('commitTransactionsBatch price linking', () => {
