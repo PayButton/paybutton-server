@@ -113,12 +113,6 @@ const includeNetwork = {
   }
 }
 
-const transactionWithNetwork = Prisma.validator<Prisma.TransactionDefaultArgs>()(
-  { include: includeNetwork }
-)
-
-type TransactionWithNetwork = Prisma.TransactionGetPayload<typeof transactionWithNetwork>
-
 const transactionWithAddressAndPrices = Prisma.validator<Prisma.TransactionDefaultArgs>()(
   { include: includeAddressAndPrices }
 )
@@ -530,13 +524,13 @@ export interface ConnectPricesOptions {
  * Writes in chunks of PRICES_CONNECTION_TX_CHUNK_SIZE txs, each in its own short
  * DB transaction: a chunk that fails is logged and skipped (its txs stay unpriced
  * for the next run to retry) instead of rolling back the whole list.
- * Returns how many txs were linked.
+ * Returns the ids of the txs that were linked.
  */
 export async function connectTransactionsListToPrices (
   txList: PriceLinkableTransaction[],
   { skipUnlink = false }: ConnectPricesOptions = {}
-): Promise<number> {
-  if (txList.length === 0) return 0
+): Promise<string[]> {
+  if (txList.length === 0) return []
 
   // collect UNIQUE (networkId, timestamp) pairs
   const networkIdToTimestamps = new Map<number, Set<number>>()
@@ -590,7 +584,7 @@ export async function connectTransactionsListToPrices (
   }
   const skippedNoPrice = txList.length - txsToConnect.length
 
-  let linked = 0
+  const linkedIds: string[] = []
   let failedChunks = 0
   for (let i = 0; i < txsToConnect.length; i += PRICES_CONNECTION_TX_CHUNK_SIZE) {
     const chunk = txsToConnect.slice(i, i + PRICES_CONNECTION_TX_CHUNK_SIZE)
@@ -606,23 +600,23 @@ export async function connectTransactionsListToPrices (
         },
         { timeout: PRICES_CONNECTION_TIMEOUT }
       )
-      linked += chunk.length
+      linkedIds.push(...ids)
     } catch (err: any) {
       failedChunks++
       console.error(`[PRICES] Failed to link prices for a chunk of ${chunk.length} txs (first: ${ids[0]}): ${err.message as string}`)
     }
   }
 
-  const failedTxs = txsToConnect.length - linked
+  const failedTxs = txsToConnect.length - linkedIds.length
   if (skippedNoPrice > 0 || failedChunks > 0 || txList.length >= PRICES_CONNECTION_TX_CHUNK_SIZE) {
     console.log(
-      `[PRICES] Linked ${linked}/${txList.length} txs to prices` +
+      `[PRICES] Linked ${linkedIds.length}/${txList.length} txs to prices` +
       (skippedNoPrice > 0 ? `, ${skippedNoPrice} skipped (no price data)` : '') +
       (failedChunks > 0 ? `, ${failedTxs} failed in ${failedChunks} chunks` : '') +
       '.'
     )
   }
-  return linked
+  return linkedIds
 }
 
 let connectAllTransactionsToPricesRun: Promise<void> | undefined
@@ -649,6 +643,16 @@ export async function connectAllTransactionsToPrices (): Promise<void> {
 
 async function runConnectAllTransactionsToPrices (): Promise<void> {
   console.log('[PRICES] Started connecting txs to prices.')
+  // Addresses whose cached payments were built while these txs were unpriced
+  // (and so left them out); their caches are dropped once the txs are linked.
+  const addressesToInvalidate = new Set<string>()
+  const trackLinked = (txs: Array<{ id: string, address: { address: string } }>, linkedIds: string[]): void => {
+    const linked = new Set(linkedIds)
+    for (const t of txs) {
+      if (linked.has(t.id)) addressesToInvalidate.add(t.address.address)
+    }
+  }
+
   let found = 0
   let linked = 0
   let cursor: string | undefined
@@ -660,20 +664,32 @@ async function runConnectAllTransactionsToPrices (): Promise<void> {
       },
       orderBy: { id: 'asc' },
       take: UNPRICED_TXS_PAGE_SIZE,
-      select: { id: true, timestamp: true, address: { select: { networkId: true } } }
+      select: { id: true, timestamp: true, address: { select: { networkId: true, address: true } } }
     })
     if (page.length === 0) break
     cursor = page[page.length - 1].id
     found += page.length
-    linked += await connectTransactionsListToPrices(page, { skipUnlink: true })
+    const linkedIds = await connectTransactionsListToPrices(page, { skipUnlink: true })
+    linked += linkedIds.length
+    trackLinked(page, linkedIds)
     console.log(`[PRICES] Txs with no prices: ${linked}/${found} linked so far.`)
   }
   console.log(`[PRICES] Found ${found} txs with no prices, linked ${linked}.`)
 
   const wrongNumberOfPricesTxs = await fetchAllTransactionsWithIrregularPrices()
   console.log(`[PRICES] Found ${wrongNumberOfPricesTxs.length} txs with irregular prices.`)
-  const relinked = await connectTransactionsListToPrices(wrongNumberOfPricesTxs)
-  console.log(`[PRICES] Finished connecting txs to prices (${linked} unpriced and ${relinked} irregular txs linked).`)
+  const relinkedIds = await connectTransactionsListToPrices(wrongNumberOfPricesTxs)
+  trackLinked(wrongNumberOfPricesTxs, relinkedIds)
+  console.log(`[PRICES] Finished connecting txs to prices (${linked} unpriced and ${relinkedIds.length} irregular txs linked).`)
+
+  if (addressesToInvalidate.size > 0) {
+    try {
+      await CacheSet.addressesSynced([...addressesToInvalidate])
+      console.log(`[PRICES] Invalidated caches for ${addressesToInvalidate.size} addresses with newly priced txs.`)
+    } catch (err: any) {
+      console.error(`[PRICES] Failed to invalidate caches after linking prices: ${err.message as string}`)
+    }
+  }
 }
 
 /**
@@ -1102,7 +1118,7 @@ export async function markTransactionsOrphaned (hash: string): Promise<void> {
   })
 }
 
-export async function fetchAllTransactionsWithIrregularPrices (): Promise<TransactionWithNetwork[]> {
+export async function fetchAllTransactionsWithIrregularPrices (): Promise<Array<PriceLinkableTransaction & { address: { address: string } }>> {
   const grouped = await prisma.pricesOnTransactions.groupBy({
     by: ['transactionId'],
     _count: { transactionId: true },
@@ -1113,7 +1129,7 @@ export async function fetchAllTransactionsWithIrregularPrices (): Promise<Transa
 
   return await prisma.transaction.findMany({
     where: { id: { in: ids } },
-    include: includeNetwork
+    select: { id: true, timestamp: true, address: { select: { networkId: true, address: true } } }
   })
 }
 

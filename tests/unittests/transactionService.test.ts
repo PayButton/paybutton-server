@@ -620,7 +620,7 @@ describe('connectTransactionsListToPrices chunking', () => {
   it('writes each chunk of txs in its own DB transaction', async () => {
     const linked = await transactionService.connectTransactionsListToPrices(makeTxs(501))
 
-    expect(linked).toBe(501)
+    expect(linked).toHaveLength(501)
     expect(prismaMock.$transaction).toHaveBeenCalledTimes(2)
     const createManyCalls = prismaMock.pricesOnTransactions.createMany.mock.calls as any[]
     expect(createManyCalls[0][0].data).toHaveLength(1000)
@@ -635,7 +635,7 @@ describe('connectTransactionsListToPrices chunking', () => {
 
     const linked = await transactionService.connectTransactionsListToPrices(makeTxs(501))
 
-    expect(linked).toBe(1)
+    expect(linked).toEqual(['tx-500'])
     expect(prismaMock.$transaction).toHaveBeenCalledTimes(2)
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Transaction already closed'))
     errorSpy.mockRestore()
@@ -657,9 +657,10 @@ describe('connectAllTransactionsToPrices', () => {
   const usd = { ...mockedUSDPriceOnTransaction.price, id: 11, timestamp: dayTs, networkId: 1 }
   const cad = { ...mockedCADPriceOnTransaction.price, id: 12, timestamp: dayTs, networkId: 1 }
   const page = [
-    { id: 'a', timestamp: dayTs + 60, address: { networkId: 1 } },
-    { id: 'b', timestamp: dayTs + 120, address: { networkId: 1 } }
+    { id: 'a', timestamp: dayTs + 60, address: { networkId: 1, address: 'ecash:addr-a' } },
+    { id: 'b', timestamp: dayTs + 120, address: { networkId: 1, address: 'ecash:addr-b' } }
   ]
+  let invalidate: jest.SpyInstance
 
   beforeEach(() => {
     prisma.$transaction = prismaMock.$transaction
@@ -675,6 +676,11 @@ describe('connectAllTransactionsToPrices', () => {
     prismaMock.transaction.findMany
       .mockResolvedValueOnce(page as any)
       .mockResolvedValue([])
+    invalidate = jest.spyOn(CacheSet, 'addressesSynced').mockResolvedValue()
+  })
+
+  afterEach(() => {
+    invalidate.mockRestore()
   })
 
   it('pages through unpriced txs by id and links them without unlinking', async () => {
@@ -693,6 +699,22 @@ describe('connectAllTransactionsToPrices', () => {
       skipDuplicates: true
     })
     expect(prismaMock.pricesOnTransactions.deleteMany).not.toHaveBeenCalled()
+  })
+
+  it('invalidates the caches of addresses whose txs got linked', async () => {
+    await transactionService.connectAllTransactionsToPrices()
+
+    expect(invalidate).toHaveBeenCalledWith(['ecash:addr-a', 'ecash:addr-b'])
+  })
+
+  it('does not invalidate caches when no tx could be linked', async () => {
+    prismaMock.price.findMany.mockResolvedValue([])
+    const fetchMissing = jest.spyOn(priceService, 'fetchAndStoreMissingPrices').mockResolvedValue([])
+
+    await transactionService.connectAllTransactionsToPrices()
+
+    expect(invalidate).not.toHaveBeenCalled()
+    fetchMissing.mockRestore()
   })
 
   it('makes a concurrent call wait for the run in progress instead of starting another', async () => {

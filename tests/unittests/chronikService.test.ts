@@ -1738,7 +1738,7 @@ describe('commitTransactionsBatch price linking', () => {
   })
 
   it('links prices for the txs it just inserted, with the client network', async () => {
-    const link = (connectTransactionsListToPrices as jest.Mock).mockReset().mockResolvedValue(1)
+    const link = (connectTransactionsListToPrices as jest.Mock).mockReset().mockResolvedValue(['tx-1'])
     const client = new ChronikBlockchainClient('ecash')
 
     await (client as any).commitTransactionsBatch(commitTuples, [], false)
