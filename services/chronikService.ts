@@ -145,6 +145,11 @@ export class ChronikBlockchainClient {
   // retry loops belonging to a replaced endpoint can tell they are stale.
   private wsGeneration = 0
   private wsClosedOnPurpose = false
+  // Whether a WS connection has been opened before, so later ones are reconnects.
+  private wsHasConnected = false
+  // Post-reconnect backfill in progress, and whether another reconnect asked for one meanwhile.
+  private wsBackfillRun: Promise<void> | undefined
+  private wsBackfillPending = false
   private confirmedTxsBeingProcessed = 0
 
   constructor (networkSlug: string) {
@@ -210,13 +215,52 @@ export class ChronikBlockchainClient {
     for (let attempt = 1; this.isCurrentWs(generation); attempt++) {
       try {
         await endpoint.waitForOpen()
+        if (!this.isCurrentWs(generation)) return
         console.log(`${this.CHRONIK_MSG_PREFIX}: WebSocket connected.`)
+        if (this.wsHasConnected) {
+          void this.backfillAfterReconnect()
+        }
+        this.wsHasConnected = true
         return
       } catch (err: any) {
         const delay = Math.min(baseDelay * Math.pow(2, Math.min(attempt - 1, 16)), CHRONIK_WS_MAX_DELAY_MS)
         console.error(`${this.CHRONIK_MSG_PREFIX}: WebSocket connection attempt ${attempt} failed: ${err.message as string}. Retrying in ${delay / 1000}s...`)
         await new Promise(resolve => setTimeout(resolve, delay))
       }
+    }
+  }
+
+  // Txs that hit the mempool or a block while the WS was down never produce a WS
+  // message, so their payments, triggers and client payment statuses would be
+  // missed until the next restart. After each reconnect, sync the subscribed
+  // addresses to catch them.
+  // Runs one at a time; reconnects during a run schedule a single follow-up run.
+  public async backfillAfterReconnect (): Promise<void> {
+    if (this.wsBackfillRun !== undefined) {
+      this.wsBackfillPending = true
+      return
+    }
+    this.wsBackfillRun = (async () => {
+      do {
+        this.wsBackfillPending = false
+        const subscribed = this.getSubscribedAddresses()
+        if (subscribed.length === 0) continue
+        try {
+          const addresses = await fetchAddressesArray(subscribed)
+          console.log(`${this.CHRONIK_MSG_PREFIX}: Syncing ${addresses.length} subscribed addresses for txs missed while the WebSocket was down...`)
+          const { failedAddressesWithErrors, successfulAddressesWithCount } = await this.syncAddresses(addresses, true, true)
+          const missed = Object.values(successfulAddressesWithCount).reduce((p, c) => p + c, 0)
+          const failed = Object.keys(failedAddressesWithErrors).length
+          console.log(`${this.CHRONIK_MSG_PREFIX}: Post-reconnect sync found ${missed} missed txs (${failed} addresses failed).`)
+        } catch (err: any) {
+          console.error(`${this.CHRONIK_MSG_PREFIX}: Post-reconnect sync failed: ${err.message as string}`)
+        }
+      } while (this.wsBackfillPending)
+    })()
+    try {
+      await this.wsBackfillRun
+    } finally {
+      this.wsBackfillRun = undefined
     }
   }
 
@@ -804,7 +848,11 @@ export class ChronikBlockchainClient {
       // round is not retried. With autoReconnect off every close ends up in onEnd
       // (onReconnect is never called), and we reconnect from there ourselves.
       onEnd: (e: ws.Event) => {
-        console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik WebSocket ended, type: ${e.type}.`)
+        // The close code tells who ended it: 1006 means the connection dropped
+        // without a close frame (network/NAT/firewall), while 1000/1001 or other
+        // codes with a reason mean the server or a proxy closed it on purpose.
+        const { code, reason, wasClean } = e as ws.CloseEvent
+        console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik WebSocket ended, type: ${e.type}, code: ${code}, reason: ${reason === '' ? '(none)' : reason}, clean: ${String(wasClean)}.`)
         void this.handleWsEnded(generation)
       },
       autoReconnect: false
@@ -1143,7 +1191,8 @@ export class ChronikBlockchainClient {
   private async commitTransactionsBatch (
     commitTuples: Array<{ row: Prisma.TransactionUncheckedCreateInput, raw: Tx, addressString: string }>,
     productionAddressesIds: string[],
-    runTriggers: boolean
+    runTriggers: boolean,
+    reconcileClientPayments = false
   ): Promise<string[]> {
     const rows = commitTuples.map(p => p.row)
     const rowsToUpsert = await filterRowsNeedingCreateMany(rows)
@@ -1225,6 +1274,10 @@ export class ChronikBlockchainClient {
       triggerBatch.length = 0
     }
 
+    if (reconcileClientPayments) {
+      await this.reconcileClientPaymentsForBatch(commitTuples)
+    }
+
     // Get the latest timestamp of all committed transactions (including pre-existent) for each address.
     // This is redundant under normal circumstances, but is more robust than only updating for the newly created transactions.
     const addressMaxTimestamp = new Map<string, number>()
@@ -1265,7 +1318,31 @@ export class ChronikBlockchainClient {
     return changedAddresses
   }
 
-  public async syncAddresses (addresses: Address[], runTriggers = false): Promise<SyncAndSubscriptionReturn> {
+  // Applies the live WS handlers' client payment rules to synced txs, whose
+  // messages were missed: a confirmed tx sets its client payment to CONFIRMED,
+  // an unconfirmed one to ADDED_TO_MEMPOOL. Covers every tx in the batch, not
+  // only new rows, so a tx first seen before a disconnect and confirmed during
+  // it is reconciled too. A failure is logged and doesn't fail the batch.
+  private async reconcileClientPaymentsForBatch (
+    commitTuples: Array<{ row: Prisma.TransactionUncheckedCreateInput, addressString: string }>
+  ): Promise<void> {
+    const zero = new Prisma.Decimal(0)
+    for (const { row, addressString } of commitTuples) {
+      // Same filter as getAddressesForTransaction in the live handlers.
+      if (zero.equals(row.amount as Prisma.Decimal)) continue
+      const opReturn = typeof row.opReturn === 'string' ? row.opReturn : undefined
+      const status: ClientPaymentStatus = row.confirmed === true ? 'CONFIRMED' : 'ADDED_TO_MEMPOOL'
+      try {
+        await this.handleUpdateClientPaymentStatus(row.amount, opReturn, status, addressString)
+      } catch (err: any) {
+        console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to reconcile client payment for ${row.hash} (${addressString}): ${err.message as string}`)
+      }
+    }
+  }
+
+  // reconcileClientPayments: also update client payment statuses as the live WS
+  // handlers would (used by the post-reconnect backfill).
+  public async syncAddresses (addresses: Address[], runTriggers = false, reconcileClientPayments = false): Promise<SyncAndSubscriptionReturn> {
     const failedAddressesWithErrors: KeyValueT<string> = {}
     const successfulAddressesWithCount: KeyValueT<number> = {}
     const productionAddressesIds = productionAddresses.filter(a => a.networkId === this.networkId).map(a => a.id)
@@ -1290,7 +1367,7 @@ export class ChronikBlockchainClient {
     let changedAddressesUnknown = false
     const commit = async (tuples: RowWithRaw[]): Promise<void> => {
       try {
-        const changed = await this.commitTransactionsBatch(tuples, productionAddressesIds, runTriggers)
+        const changed = await this.commitTransactionsBatch(tuples, productionAddressesIds, runTriggers, reconcileClientPayments)
         changed.forEach(a => changedAddresses.add(a))
       } catch (err) {
         changedAddressesUnknown = true
