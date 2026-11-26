@@ -1165,25 +1165,33 @@ export class ChronikBlockchainClient {
     // Link prices batch by batch instead of only at the end of the sync job, so
     // an interrupted sync (restart, deploy) doesn't leave everything unpriced.
     // A failure here is not fatal: connectAllTransactionsToPrices retries later.
+    let linkedAddresses: string[] = []
     if (syncResult.inserted.length > 0) {
       try {
         const linkedIds = new Set(await connectTransactionsListToPrices(
           syncResult.inserted.map(t => ({ ...t, address: { networkId: this.networkId } })),
           { skipUnlink: true }
         ))
-        // The bulk path doesn't add txs to cached payments, so drop the caches of
-        // addresses whose new txs are now priced instead of waiting for the end of
-        // the sync, which an interrupted sync never reaches. Txs left unpriced are
-        // invalidated by connectAllTransactionsToPrices once it links them.
-        const linkedAddresses = [...new Set(
-          syncResult.inserted.filter(t => linkedIds.has(t.id)).map(t => addressStringById.get(t.addressId))
-        )].filter((a): a is string => a !== undefined)
-        if (linkedAddresses.length > 0) {
-          await invalidateCachesForAddresses(linkedAddresses)
-        }
+        linkedAddresses = syncResult.inserted
+          .filter(t => linkedIds.has(t.id))
+          .map(t => addressStringById.get(t.addressId))
+          .filter((a): a is string => a !== undefined)
       } catch (err: any) {
         console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to link prices for ${syncResult.inserted.length} synced txs: ${err.message as string}`)
       }
+    }
+
+    // The bulk path doesn't update cached payments, so drop the caches of addresses
+    // with newly priced or updated txs now instead of waiting for the end of the
+    // sync, which an interrupted sync never reaches (and the next sync won't see
+    // these txs as changed again). Txs left unpriced are invalidated by
+    // connectAllTransactionsToPrices once it links them.
+    const updatedAddresses = syncResult.updatedAddressIds
+      .map(id => addressStringById.get(id))
+      .filter((a): a is string => a !== undefined)
+    const addressesToInvalidate = [...new Set([...linkedAddresses, ...updatedAddresses])]
+    if (addressesToInvalidate.length > 0) {
+      await invalidateCachesForAddresses(addressesToInvalidate)
     }
 
     const createdForProd = syncResult.inserted.filter(t =>
@@ -1263,7 +1271,7 @@ export class ChronikBlockchainClient {
     const productionAddressesIds = productionAddresses.filter(a => a.networkId === this.networkId).map(a => a.id)
 
     if (addresses.length === 0) {
-      return { failedAddressesWithErrors, successfulAddressesWithCount }
+      return { failedAddressesWithErrors, successfulAddressesWithCount, changedAddresses: [] }
     }
 
     console.log(`${this.CHRONIK_MSG_PREFIX} Syncing ${addresses.length} addresses...`)
@@ -1276,9 +1284,18 @@ export class ChronikBlockchainClient {
     interface RowWithRaw { row: Prisma.TransactionUncheckedCreateInput, raw: Tx, addressString: string }
     let toCommit: RowWithRaw[] = []
     const changedAddresses = new Set<string>()
+    // A commit that throws may have persisted some rows (inserts and update
+    // groups commit separately, and follow-up work runs after both), so which
+    // addresses changed is then unknown.
+    let changedAddressesUnknown = false
     const commit = async (tuples: RowWithRaw[]): Promise<void> => {
-      const changed = await this.commitTransactionsBatch(tuples, productionAddressesIds, runTriggers)
-      changed.forEach(a => changedAddresses.add(a))
+      try {
+        const changed = await this.commitTransactionsBatch(tuples, productionAddressesIds, runTriggers)
+        changed.forEach(a => changedAddresses.add(a))
+      } catch (err) {
+        changedAddressesUnknown = true
+        throw err
+      }
     }
 
     try {
@@ -1363,7 +1380,11 @@ export class ChronikBlockchainClient {
     console.log(`${this.CHRONIK_MSG_PREFIX} Finished syncing ${total} txs for ${addresses.length} addresses with ${failed.length} errors.`)
     console.timeEnd(`${this.CHRONIK_MSG_PREFIX} syncAddresses`)
 
-    return { failedAddressesWithErrors, successfulAddressesWithCount, changedAddresses: [...changedAddresses] }
+    return {
+      failedAddressesWithErrors,
+      successfulAddressesWithCount,
+      changedAddresses: changedAddressesUnknown ? undefined : [...changedAddresses]
+    }
   }
 
   /**
@@ -1383,7 +1404,7 @@ export class ChronikBlockchainClient {
           console.log(`${this.CHRONIK_MSG_PREFIX}:> ${addr} — ${successfulAddressesWithCount[addr]}.`)
         }
       })
-      return changedAddresses ?? []
+      return changedAddresses
     } catch (err: any) {
       console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR: (skipping anyway) initial missing transactions sync failed: ${err.message as string} ${err.stack as string}`)
       return undefined
@@ -1566,14 +1587,17 @@ class MultiBlockchainClient {
   public async syncAddresses (addresses: Address[], runTriggers = false): Promise<SyncAndSubscriptionReturn> {
     let failedAddressesWithErrors: KeyValueT<string> = {}
     let successfulAddressesWithCount: KeyValueT<number> = {}
-    const changedAddresses: string[] = []
+    let changedAddresses: string[] | undefined = []
 
     for (const networkSlug of Object.keys(this.clients)) {
       const thisNetworkAddresses = addresses.filter(a => a.networkId === NETWORK_IDS_FROM_SLUGS[networkSlug])
       const ret = await this.clients[networkSlug as MainNetworkSlugsType].syncAddresses(thisNetworkAddresses, runTriggers)
       failedAddressesWithErrors = { ...failedAddressesWithErrors, ...ret.failedAddressesWithErrors }
       successfulAddressesWithCount = { ...successfulAddressesWithCount, ...ret.successfulAddressesWithCount }
-      changedAddresses.push(...(ret.changedAddresses ?? []))
+      // Unknown for one network means unknown overall.
+      changedAddresses = (changedAddresses === undefined || ret.changedAddresses === undefined)
+        ? undefined
+        : [...changedAddresses, ...ret.changedAddresses]
     }
     return {
       failedAddressesWithErrors,

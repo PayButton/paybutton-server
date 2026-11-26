@@ -1815,6 +1815,80 @@ describe('changed addresses reported by the sync', () => {
     expect(changed.sort()).toEqual(['ecash:addr-1', 'ecash:addr-2'])
   })
 
+  it('commitTransactionsBatch invalidates addresses with updated txs right away', async () => {
+    ;(createManyTransactionsForSync as jest.Mock).mockResolvedValueOnce({
+      insertedCount: 0,
+      inserted: [],
+      updatedAddressIds: ['addr-2']
+    })
+    const invalidate = (invalidateCachesForAddresses as jest.Mock).mockReset()
+    const client = new ChronikBlockchainClient('ecash')
+
+    await (client as any).commitTransactionsBatch(
+      [{ row: { hash: 'h2', addressId: 'addr-2', timestamp: 1700000000, amount: 1 }, raw: {}, addressString: 'ecash:addr-2' }],
+      [],
+      false
+    )
+
+    expect(invalidate).toHaveBeenCalledWith(['ecash:addr-2'])
+  })
+
+  describe('syncAddresses', () => {
+    const address = { id: 'addr-1', address: 'ecash:addr-1', networkId: 1 } as any
+    const setupSync = (): ChronikBlockchainClient => {
+      const client = new ChronikBlockchainClient('ecash')
+      jest.spyOn(client as any, 'fetchLatestTxsForAddresses').mockImplementation(async function * () {
+        yield { phase: 'tx-drain', chronikTxs: [{ tx: {}, address }], addressesSynced: [] }
+      })
+      jest.spyOn(client as any, 'getTransactionFromChronikTransaction').mockReturnValue(
+        { hash: 'h1', addressId: 'addr-1', timestamp: 1700000000, amount: 1 }
+      )
+      ;(createManyTransactionsForSync as jest.Mock).mockResolvedValueOnce({
+        insertedCount: 1,
+        inserted: [{ id: 'tx-1', hash: 'h1', addressId: 'addr-1', amount: new Prisma.Decimal(1), timestamp: 1700000000, confirmed: true }],
+        updatedAddressIds: []
+      })
+      return client
+    }
+
+    it('reports the changed addresses of a completed sync', async () => {
+      const client = setupSync()
+
+      const result = await client.syncAddresses([address])
+
+      expect(result.changedAddresses).toEqual(['ecash:addr-1'])
+    })
+
+    it('reports changed addresses as unknown when a commit fails after the DB write', async () => {
+      jest.spyOn(console, 'error').mockImplementation(() => {})
+      const client = setupSync()
+      // Runs after createManyTransactionsForSync has persisted the batch.
+      jest.spyOn(prisma.address, 'findMany').mockRejectedValue(new Error('db gone'))
+
+      const result = await client.syncAddresses([address])
+
+      expect(createManyTransactionsForSync).toHaveBeenCalled()
+      expect(result.changedAddresses).toBeUndefined()
+    })
+
+    it('syncMissedTransactions propagates an unknown scope instead of reporting no changes', async () => {
+      const client = new ChronikBlockchainClient('ecash')
+      jest.spyOn(client, 'syncAddresses').mockResolvedValue({
+        failedAddressesWithErrors: {},
+        successfulAddressesWithCount: {},
+        changedAddresses: undefined
+      })
+
+      await expect(client.syncMissedTransactions()).resolves.toBeUndefined()
+    })
+
+    it('returns no changes when there is nothing to sync', async () => {
+      const client = new ChronikBlockchainClient('ecash')
+
+      await expect(client.syncAddresses([])).resolves.toMatchObject({ changedAddresses: [] })
+    })
+  })
+
   it('MultiBlockchainClient.syncMissedTransactions merges both networks', async () => {
     const clients = (multiBlockchainClient as any).clients
     jest.spyOn(multiBlockchainClient, 'waitForStart').mockResolvedValue()
