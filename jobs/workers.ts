@@ -4,6 +4,7 @@ import { DEFAULT_WORKER_LOCK_DURATION } from 'constants/index'
 import { clearBalanceCache } from 'redis/balanceCache'
 import { clearDashboardCache } from 'redis/dashboardCache'
 import { clearPaymentCacheForAddress } from 'redis/paymentCache'
+import { SyncProgressTracker } from 'redis/syncProgress'
 import { fetchAllAddresses } from 'services/addressService'
 import { cleanupExpiredClientPayments } from 'services/clientPaymentService'
 import { multiBlockchainClient } from 'services/chronikService'
@@ -123,10 +124,22 @@ export const syncBlockchainAndPricesWorker = async (queueName: string, onComplet
     queueName,
     async (job) => {
       console.log(`job ${job.id as string}: syncing missed prices, transactions and connecting them...`)
-      await priceService.syncPastDaysNewerPrices()
-      const changedAddresses = await multiBlockchainClient.syncMissedTransactions()
-      await connectAllTransactionsToPrices()
-      await invalidateCachesAfterBlockchainSync(changedAddresses)
+      const progress = new SyncProgressTracker()
+      await progress.start()
+      try {
+        await progress.startPhase('prices')
+        await priceService.syncPastDaysNewerPrices()
+        await progress.startPhase('transactions')
+        const changedAddresses = await multiBlockchainClient.syncMissedTransactions(progress)
+        await progress.startPhase('priceLinking')
+        await connectAllTransactionsToPrices()
+        await progress.startPhase('cacheInvalidation')
+        await invalidateCachesAfterBlockchainSync(changedAddresses)
+        await progress.finish('completed')
+      } catch (err: any) {
+        await progress.finish('failed', err?.message ?? String(err))
+        throw err
+      }
     },
     {
       connection: redisBullMQ,

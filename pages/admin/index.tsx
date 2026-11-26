@@ -13,6 +13,7 @@ import { multiBlockchainClient } from 'services/chronikService'
 import { MainNetworkSlugsType } from 'constants/index'
 import SubscribedAddresses from 'components/Admin/SubscribedAddresses'
 import ChronikURLs from 'components/Admin/ChronikURLs'
+import SyncStatus from 'components/Admin/SyncStatus'
 import Loading from 'components/Loading'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
@@ -96,6 +97,8 @@ export default function Admin ({ user, isAdmin, chronikUrls }: IProps): JSX.Elem
         </a>
       </div>
       <ChronikURLs chronikUrls={chronikUrls}/>
+      <hr className={style.divisor}/>
+      <SyncStatus/>
       <hr className={style.divisor}/>
       <SubscribedAddresses/>
       <hr className={style.divisor}/>
