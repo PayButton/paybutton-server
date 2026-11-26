@@ -3,6 +3,7 @@ import { Address, Prisma } from '@prisma/client'
 import { CacheSet } from 'redis/index'
 import * as paymentCache from 'redis/paymentCache'
 import { clearBalanceCache, getBalanceForAddress } from 'redis/balanceCache'
+import { beginCacheClear, bumpCacheGeneration } from 'redis/cacheGeneration'
 import * as addressService from 'services/addressService'
 import * as transactionService from 'services/transactionService'
 import * as userService from 'services/userService'
@@ -26,12 +27,15 @@ jest.mock('redis/clientInstance', () => ({
       store.set(key, String(next))
       return next
     },
+    // KEYS: generation, built marker, clear epoch, clearing flag, then cache keys.
+    // ARGV: generation ('' skips), '1' to require built, clear epoch ('' skips), unused, then values.
     eval: async (_script: string, numKeys: number, ...rest: string[]) => {
       const keys = rest.slice(0, numKeys)
       const args = rest.slice(numKeys)
-      if ((store.get(keys[0]) ?? '0') !== args[0]) return 0
+      if (args[0] !== '' && (store.get(keys[0]) ?? '0') !== args[0]) return 0
       if (args[1] === '1' && !store.has(keys[1])) return 0
-      for (let i = 2; i < keys.length; i++) store.set(keys[i], args[i])
+      if (args[2] !== '' && ((store.get(keys[2]) ?? '0') !== args[2] || store.has(keys[3]))) return 0
+      for (let i = 4; i < keys.length; i++) store.set(keys[i], args[i])
       return 1
     },
     scanStream: ({ match }: { match: string }) => {
@@ -125,8 +129,8 @@ describe('cache rebuilds vs invalidation', () => {
     const ts = 1710000000
     const newTx = pricedTx('h-new', ts)
     mockedGenerate.mockImplementation(async () => {
-      // e.g. a new tx for the address arrives, or prices are linked and its caches invalidated
-      await paymentCache.clearPaymentCacheForAddress(address.address)
+      // e.g. a new tx for the address arrives while the history is being read
+      await bumpCacheGeneration(address.address)
       return rebuilt
     })
     mockedTouchedSince.mockResolvedValue([newTx])
@@ -147,7 +151,7 @@ describe('cache rebuilds vs invalidation', () => {
     const key = weekKeyFor(address.address, ts)
     rebuilt.groupedPayments = { [key]: [{ hash: 'h1' }, { hash: 'h-gone' }] }
     mockedGenerate.mockImplementation(async () => {
-      await paymentCache.clearPaymentCacheForAddress(address.address)
+      await bumpCacheGeneration(address.address)
       return rebuilt
     })
     // Now unpriced (e.g. prices unlinked for relinking): a rebuild would leave it out.
@@ -163,7 +167,7 @@ describe('cache rebuilds vs invalidation', () => {
   it('does not patch weeks into a cache cleared during the catch-up', async () => {
     const ts = 1704500000
     mockedGenerate.mockImplementation(async () => {
-      await paymentCache.clearPaymentCacheForAddress(address.address)
+      await bumpCacheGeneration(address.address)
       return rebuilt
     })
     mockedTouchedSince.mockImplementation(async () => {
@@ -176,6 +180,61 @@ describe('cache rebuilds vs invalidation', () => {
 
     expect(store.has(weekKeyFor(address.address, ts))).toBe(false)
     expect(mockedTouchedSince).toHaveBeenCalledTimes(1)
+  })
+
+  it('discards a rebuild whose payment cache was cleared while its txs were being read', async () => {
+    mockedGenerate.mockImplementation(async () => {
+      // e.g. prices linked for one of its txs, then its caches cleared
+      await paymentCache.clearPaymentCacheForAddress(address.address)
+      return rebuilt
+    })
+
+    await expect(CacheSet.addressCreation(address)).resolves.toBe(false)
+
+    expect(store.has(weekKey)).toBe(false)
+    expect(store.has(`${address.address}:cacheBuilt`)).toBe(false)
+    expect(mockedTouchedSince).not.toHaveBeenCalled()
+  })
+
+  it('writes nothing while a clear of the payment cache is still in progress', async () => {
+    // A clear that started before the rebuild and hasn't finished deleting week keys.
+    await beginCacheClear(address.address)
+    mockedGenerate.mockResolvedValue(rebuilt)
+
+    await expect(CacheSet.addressCreation(address)).resolves.toBe(false)
+
+    expect(store.has(weekKey)).toBe(false)
+    expect(store.has(`${address.address}:cacheBuilt`)).toBe(false)
+  })
+
+  it('drops the published cache if the catch-up fails, then backs off', async () => {
+    mockedGenerate.mockImplementation(async () => {
+      await bumpCacheGeneration(address.address)
+      return rebuilt
+    })
+    mockedTouchedSince.mockRejectedValue(new Error('db unreachable'))
+
+    await expect(CacheSet.addressCreation(address)).rejects.toThrow('db unreachable')
+
+    expect(store.has(weekKey)).toBe(false)
+    expect(store.has(`${address.address}:cacheBuilt`)).toBe(false)
+    expect(store.has(`${address.address}:balance`)).toBe(false)
+    await expect(CacheSet.addressCreation(address)).resolves.toBe(false)
+    expect(mockedGenerate).toHaveBeenCalledTimes(1)
+  })
+
+  it('initPaymentCache during backoff drops the balance and dashboards without writing a week', async () => {
+    mockedGenerate.mockRejectedValueOnce(new Error('db unreachable'))
+    await expect(CacheSet.addressCreation(address)).rejects.toThrow('db unreachable')
+    store.set(`${address.address}:balance`, JSON.stringify(rebuilt.info))
+    store.set('user-1:dashboard', 'cached')
+
+    await expect(paymentCache.initPaymentCache(address)).resolves.toBe(true)
+
+    expect(store.has(`${address.address}:balance`)).toBe(false)
+    expect(store.has('user-1:dashboard')).toBe(false)
+    expect([...store.keys()].some(k => k.startsWith(`${address.address}:payments:`))).toBe(false)
+    expect(mockedGenerate).toHaveBeenCalledTimes(1)
   })
 
   it('shares one rebuild between concurrent callers for the same address', async () => {

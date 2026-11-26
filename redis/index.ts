@@ -4,8 +4,7 @@ import { fetchTransactionsWithPaybuttonsAndPricesTouchedSince, TransactionsWithP
 import { fetchUsersForAddress } from 'services/userService'
 import { CACHE_CATCH_UP_MARGIN_MS, CACHE_CATCH_UP_MAX_ROUNDS, CACHE_REBUILD_FAILURE_BACKOFF_MS } from 'constants/index'
 import { clearBalanceCache, getBalanceForAddress, getBalanceKey, updateBalanceCacheFromTx } from './balanceCache'
-import { bumpCacheGeneration, getCacheBuiltKey, getCacheGeneration, setIfGenerationUnchanged } from './cacheGeneration'
-import { redis } from './clientInstance'
+import { bumpCacheGeneration, getCacheBuiltKey, getCacheClearEpoch, getCacheGeneration, setCacheEntriesIfUnchanged } from './cacheGeneration'
 import { clearDashboardCache, getUserDashboardData } from './dashboardCache'
 import { appendPaybuttonToAddressesCache, cacheManyTxs, clearPaymentCacheForAddress, generateAndCacheGroupedPaymentsAndInfoForAddress, getCachedPaymentsCountForUser, getPatchedWeekEntries, getPaymentList, initPaymentCache, removePaybuttonToAddressesCache } from './paymentCache'
 import { DashboardData, Payment } from './types'
@@ -30,14 +29,18 @@ const rebuildFailedAt = new Map<string, number>()
 
 /**
  * Rebuilds the address's payment and balance caches from the DB. If the address
- * changed while its txs were being read (a new tx, prices linked, a sync), the
+ * changed while its txs were being read (a new tx, a balance invalidation), the
  * result is written anyway and the txs touched since the read started are then
  * re-applied. Discarding it instead would make a busy address, whose rebuild can
- * take many minutes, never get cached.
+ * take many minutes, never get cached. If its payment cache was cleared while
+ * the rebuild ran, nothing is written: every write requires the clear epoch read
+ * at the start, so none can restore weeks or the built marker over a clear.
+ * Returns whether the result was written.
  */
-const rebuildAddressCache = async (address: Address): Promise<void> => {
+const rebuildAddressCache = async (address: Address): Promise<boolean> => {
   const addressString = address.address
   const since = new Date(Date.now() - CACHE_CATCH_UP_MARGIN_MS)
+  const clearEpoch = await getCacheClearEpoch(addressString)
   const startGeneration = await getCacheGeneration(addressString)
   const { groupedPayments, info } = await generateAndCacheGroupedPaymentsAndInfoForAddress(address)
   const entries: Array<[string, string]> = [
@@ -45,31 +48,59 @@ const rebuildAddressCache = async (address: Address): Promise<void> => {
     [getBalanceKey(addressString), JSON.stringify(info)],
     [getCacheBuiltKey(addressString), '1']
   ]
-  if (await setIfGenerationUnchanged(addressString, startGeneration, entries)) return
+  if (await setCacheEntriesIfUnchanged(addressString, entries, { generation: startGeneration, clearEpoch })) return true
 
-  await Promise.all(entries.map(async ([key, value]) => await redis.set(key, value)))
-  for (let round = 1; round <= CACHE_CATCH_UP_MAX_ROUNDS; round++) {
-    const generation = await getCacheGeneration(addressString)
-    const touched = await fetchTransactionsWithPaybuttonsAndPricesTouchedSince(address.id, since)
-    const balance = await generateAddressPaymentInfo(addressString)
-    const patched: Array<[string, string]> = [
-      ...await getPatchedWeekEntries(addressString, touched),
-      [getBalanceKey(addressString), JSON.stringify(balance)]
-    ]
-    // Only onto the cache written above: if it was cleared meanwhile, the next
-    // read rebuilds it, and writing a few weeks would make it look complete.
-    if (await setIfGenerationUnchanged(addressString, generation, patched, { requireBuilt: true })) {
-      console.log(`[CACHE] Rebuild of ${addressString} caught up ${touched.length} txs changed while it was reading.`)
-      return
+  if (!(await setCacheEntriesIfUnchanged(addressString, entries, { clearEpoch }))) {
+    console.log(`[CACHE] Discarded rebuild of ${addressString}: its payment cache was cleared while it was being rebuilt.`)
+    return false
+  }
+  try {
+    for (let round = 1; round <= CACHE_CATCH_UP_MAX_ROUNDS; round++) {
+      const generation = await getCacheGeneration(addressString)
+      const touched = await fetchTransactionsWithPaybuttonsAndPricesTouchedSince(address.id, since)
+      const balance = await generateAddressPaymentInfo(addressString)
+      const patched: Array<[string, string]> = [
+        ...await getPatchedWeekEntries(addressString, touched),
+        [getBalanceKey(addressString), JSON.stringify(balance)]
+      ]
+      // Only onto the cache written above: if it was cleared meanwhile, the next
+      // read rebuilds it, and writing a few weeks would make it look complete.
+      if (await setCacheEntriesIfUnchanged(addressString, patched, { generation, requireBuilt: true, clearEpoch })) {
+        console.log(`[CACHE] Rebuild of ${addressString} caught up ${touched.length} txs changed while it was reading.`)
+        return true
+      }
+      if ((await getCacheClearEpoch(addressString)) !== clearEpoch) return true
     }
-    if ((await redis.get(getCacheBuiltKey(addressString))) === null) return
+  } catch (err) {
+    // What was published lacks the changes made during the read; don't leave
+    // it passing for a complete cache. The next request rebuilds it.
+    await clearPaymentCacheForAddress(addressString).catch(() => {})
+    await clearBalanceCache(addressString).catch(() => {})
+    throw err
   }
   console.warn(`[CACHE] Rebuild of ${addressString} still changing after ${CACHE_CATCH_UP_MAX_ROUNDS} catch-up rounds; recent txs may be missing until its next invalidation.`)
+  return true
+}
+
+/** Whether a rebuild request for the address would be skipped for backoff. */
+export const isAddressRebuildBackedOff = (addressString: string): boolean => {
+  if (rebuildsInFlight.has(addressString)) return false
+  const failedAt = rebuildFailedAt.get(addressString)
+  return failedAt !== undefined && Date.now() - failedAt < CACHE_REBUILD_FAILURE_BACKOFF_MS
 }
 
 const clearDashboardsForAddress = async (addressString: string): Promise<void> => {
   const users = await fetchUsersForAddress(addressString)
   await Promise.all(users.map(async u => await clearDashboardCache(u.id)))
+}
+
+/**
+ * Drops the address's balance and its users' dashboard caches, which were built
+ * without a tx that couldn't be added to its (unbuilt) payment cache.
+ */
+export const dropCachesBuiltWithoutAddressTxs = async (addressString: string): Promise<void> => {
+  await clearBalanceCache(addressString)
+  await clearDashboardsForAddress(addressString)
 }
 
 export const CacheSet = {
@@ -80,12 +111,12 @@ export const CacheSet = {
     const addressString = address.address
     const inFlight = rebuildsInFlight.get(addressString)
     if (inFlight !== undefined) return await inFlight
-    const failedAt = rebuildFailedAt.get(addressString)
-    if (failedAt !== undefined && Date.now() - failedAt < CACHE_REBUILD_FAILURE_BACKOFF_MS) return false
+    if (isAddressRebuildBackedOff(addressString)) return false
 
     const run = (async () => {
+      let written: boolean
       try {
-        await rebuildAddressCache(address)
+        written = await rebuildAddressCache(address)
         rebuildFailedAt.delete(addressString)
       } catch (err) {
         rebuildFailedAt.set(addressString, Date.now())
@@ -93,6 +124,7 @@ export const CacheSet = {
       } finally {
         rebuildsInFlight.delete(addressString)
       }
+      if (!written) return false
       // Dashboards built while the address was uncached left its payments out.
       await clearDashboardsForAddress(addressString)
       return true

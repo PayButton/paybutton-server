@@ -13,8 +13,8 @@ import { QuoteValues } from 'services/priceService'
 
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT, N_OF_QUOTES } from 'constants/index'
 import moment from 'moment-timezone'
-import { CacheSet } from 'redis/index'
-import { bumpCacheGeneration, getCacheBuiltKey } from './cacheGeneration'
+import { CacheSet, dropCachesBuiltWithoutAddressTxs, isAddressRebuildBackedOff } from 'redis/index'
+import { beginCacheClear, bumpCacheGeneration, endCacheClear, getCacheBuiltKey } from './cacheGeneration'
 import { ButtonDisplayData, Payment } from './types'
 import { getUserDashboardData, clearDashboardCache } from './dashboardCache'
 // ADDRESS:payments:YYYY:MM
@@ -328,15 +328,19 @@ export const clearRecentAddressCache = async (addressString: string, timestamps:
 export const clearPaymentCacheForAddress = async (addressString: string): Promise<void> => {
   // Bumped even when nothing is cached yet: that is exactly when a rebuild may be
   // in flight, and it must not publish what it read before this invalidation.
-  await bumpCacheGeneration(addressString)
-  await redis.del(getCacheBuiltKey(addressString), () => {})
-  const weekKeys = await getCachedWeekKeysForAddress(addressString)
-  if (weekKeys.length === 0) {
-    return
+  // Marked as in progress first, so no rebuild write can land between deleting
+  // the marker and deleting the week keys (see beginCacheClear).
+  await beginCacheClear(addressString)
+  try {
+    await bumpCacheGeneration(addressString)
+    await redis.del(getCacheBuiltKey(addressString), () => {})
+    const weekKeys = await getCachedWeekKeysForAddress(addressString)
+    await Promise.all(
+      weekKeys.map(async (key) => await redis.del(key, () => {}))
+    )
+  } finally {
+    await endCacheClear(addressString)
   }
-  await Promise.all(
-    weekKeys.map(async (key) => await redis.del(key, () => {}))
-  )
 }
 
 /**
@@ -349,6 +353,13 @@ export const initPaymentCache = async (address: Address): Promise<boolean> => {
   if (process.env.SKIP_CACHE_REBUILD !== undefined) return false
   const cachedKeys = await getCachedWeekKeysForAddress(address.address)
   if (cachedKeys.length === 0) {
+    if (isAddressRebuildBackedOff(address.address)) {
+      // Its last rebuild failed recently, so none starts now. The tx isn't added
+      // as a lone week (that would pass for a complete cache), but the balance
+      // and dashboards built without it are dropped.
+      await dropCachesBuiltWithoutAddressTxs(address.address)
+      return true
+    }
     void CacheSet.addressCreation(address).catch((err: any) => {
       console.error(`[CACHE] Failed to rebuild ${address.address}: ${String(err?.message ?? err)}`)
     })
