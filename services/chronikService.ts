@@ -1,7 +1,7 @@
 import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client'
 import { encodeCashAddress, decodeCashAddress } from 'ecashaddrjs'
 import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CONFIRMED_TX_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, MAX_TXS_PER_ADDRESS, TX_BATCH_POLLING_DELAY, SLOW_ADDRESS_SYNC_LOG_THRESHOLD, SLOWEST_ADDRESSES_TO_LOG, CHRONIK_HTTP_MAX_TRIES, CHRONIK_HTTP_BASE_DELAY_MS, CHRONIK_WS_BASE_DELAY_MS, CHRONIK_WS_MAX_DELAY_MS } from 'constants/index'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CONFIRMED_TX_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, CHRONIK_SYNCING_WAIT_TIMEOUT_MS, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, MAX_TXS_PER_ADDRESS, TX_BATCH_POLLING_DELAY, SLOW_ADDRESS_SYNC_LOG_THRESHOLD, SLOWEST_ADDRESSES_TO_LOG, CHRONIK_HTTP_MAX_TRIES, CHRONIK_HTTP_BASE_DELAY_MS, CHRONIK_WS_BASE_DELAY_MS, CHRONIK_WS_MAX_DELAY_MS } from 'constants/index'
 import { productionAddresses } from 'prisma-local/seeds/addresses'
 import prisma from 'prisma-local/clientInstance'
 import {
@@ -906,13 +906,32 @@ export class ChronikBlockchainClient {
     return result
   }
 
+  // At startup, lets a running sync of the tx's addresses finish before the
+  // mempool handler persists it. Both paths tolerate the other inserting first
+  // (upsert / createMany skipDuplicates), so this is only an ordering nicety and
+  // must never block for good: a sync that died leaves `syncing` set, and with
+  // MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME handlers stuck here all mempool
+  // processing would stall. Stop waiting once initialization ends or on timeout.
   public async waitForSyncing (txId: string, addressStringArray: string[]): Promise<void> {
     if (!this.initializing) return
     console.log(`${this.CHRONIK_MSG_PREFIX}: Waiting unblocking addresses for ${txId}`)
+    const deadline = Date.now() + CHRONIK_SYNCING_WAIT_TIMEOUT_MS
     while (true) {
       const addresses = await fetchAddressesArray(addressStringArray)
       if (addresses.every(a => !a.syncing)) {
         console.log(`${this.CHRONIK_MSG_PREFIX}: Finished unblocking addresses for ${txId}`)
+        return
+      }
+      if (!this.initializing) {
+        console.log(`${this.CHRONIK_MSG_PREFIX}: Initialization finished, no longer waiting on addresses for ${txId}`)
+        return
+      }
+      if (Date.now() >= deadline) {
+        const stillSyncing = addresses.filter(a => a.syncing).map(a => a.address)
+        console.warn(
+          `${this.CHRONIK_MSG_PREFIX}: Gave up waiting after ${CHRONIK_SYNCING_WAIT_TIMEOUT_MS / 1000}s ` +
+          `for addresses still marked syncing for ${txId}: ${stillSyncing.join(', ')}`
+        )
         return
       }
       await new Promise(resolve => setTimeout(resolve, CHRONIK_INITIALIZATION_DELAY))
@@ -1357,6 +1376,9 @@ export class ChronikBlockchainClient {
     console.log(`${this.CHRONIK_MSG_PREFIX} Syncing ${addresses.length} addresses...`)
     console.time(`${this.CHRONIK_MSG_PREFIX} syncAddresses`)
     await setSyncingBatch(addresses.map(a => a.address), true)
+    // Addresses whose `syncing` flag this run has cleared; the rest are cleared in
+    // the finally below so a failed sync doesn't leave them flagged indefinitely.
+    const releasedAddresses = new Set<string>()
 
     const perAddrCount = new Map<string, number>()
     addresses.forEach(a => perAddrCount.set(a.id, 0))
@@ -1387,6 +1409,7 @@ export class ChronikBlockchainClient {
         if (batch.phase === 'addresses-synced') {
           // marcador de slice => desmarca syncing
           await setSyncingBatch(batch.addressesSynced, false)
+          batch.addressesSynced.forEach(a => releasedAddresses.add(a))
           progress?.addressesDone(this.networkSlug, batch.addressesSynced.length)
           continue
         }
@@ -1455,6 +1478,15 @@ export class ChronikBlockchainClient {
           failedAddressesWithErrors[a.address] = err.stack ?? String(err)
         }
       })
+    } finally {
+      const unreleased = addresses.map(a => a.address).filter(a => !releasedAddresses.has(a))
+      if (unreleased.length > 0) {
+        try {
+          await setSyncingBatch(unreleased, false)
+        } catch (err: any) {
+          console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to clear syncing flag for ${unreleased.length} addresses: ${err.message as string}`)
+        }
+      }
     }
 
     progress?.addressesFailed(this.networkSlug, failedAddressesWithErrors)

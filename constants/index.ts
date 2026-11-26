@@ -277,6 +277,9 @@ export const BCH_TX_EXPLORER_URL = 'https://blockchair.com/bitcoin-cash/transact
 export const MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME = 2
 export const MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME = 20
 export const CHRONIK_INITIALIZATION_DELAY = 2000
+// Longest a mempool tx handler waits at startup for its addresses' `syncing` flag
+// to clear. The flag can be left set by a sync that died, so never wait forever.
+export const CHRONIK_SYNCING_WAIT_TIMEOUT_MS = 120000
 export const MEMPOOL_PROCESS_DELAY = 100
 export const CONFIRMED_TX_PROCESS_DELAY = 100
 

@@ -9,7 +9,8 @@ import {
   multiBlockchainClient
 } from '../../services/chronikService'
 import { Address, Prisma } from '@prisma/client'
-import { fetchAddressesArray } from '../../services/addressService'
+import { fetchAddressesArray, setSyncingBatch } from '../../services/addressService'
+import { CHRONIK_SYNCING_WAIT_TIMEOUT_MS } from '../../constants/index'
 import { fetchUnconfirmedTransactions, deleteTransactions, upsertTransaction, connectTransactionsToPricesForAddresses, connectTransactionsListToPrices, createManyTransactionsForSync, invalidateCachesForAddresses } from '../../services/transactionService'
 import prisma from '../../prisma-local/clientInstance'
 import { executeAddressTriggers } from '../../services/triggerService'
@@ -2025,5 +2026,113 @@ describe('changed addresses reported by the sync', () => {
     jest.spyOn(clients.ecash, 'syncMissedTransactions').mockResolvedValue(['ecash:b'])
 
     await expect(multiBlockchainClient.syncMissedTransactions()).resolves.toBeUndefined()
+  })
+})
+
+describe('stale syncing flags', () => {
+  const ADDR = 'ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h'
+
+  beforeEach(() => {
+    process.env.WS_AUTH_KEY = 'test-auth-key'
+    jest.spyOn(console, 'log').mockImplementation(() => {})
+    jest.spyOn(console, 'warn').mockImplementation(() => {})
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    ;(fetchAddressesArray as jest.Mock).mockReset()
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+    jest.restoreAllMocks()
+  })
+
+  describe('waitForSyncing', () => {
+    it('gives up after the timeout when an address stays marked syncing', async () => {
+      jest.useFakeTimers()
+      ;(fetchAddressesArray as jest.Mock).mockResolvedValue([{ address: ADDR, syncing: true }])
+      const client = new ChronikBlockchainClient('ecash')
+      client.initializing = true
+
+      let done = false
+      const p = client.waitForSyncing('tx1', [ADDR]).then(() => { done = true })
+
+      await jest.advanceTimersByTimeAsync(CHRONIK_SYNCING_WAIT_TIMEOUT_MS - 5000)
+      expect(done).toBe(false)
+      await jest.advanceTimersByTimeAsync(10000)
+      await p
+      expect(done).toBe(true)
+      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('Gave up waiting'))
+    })
+
+    it('stops waiting once the client finishes initializing', async () => {
+      jest.useFakeTimers()
+      ;(fetchAddressesArray as jest.Mock).mockResolvedValue([{ address: ADDR, syncing: true }])
+      const client = new ChronikBlockchainClient('ecash')
+      client.initializing = true
+
+      let done = false
+      const p = client.waitForSyncing('tx1', [ADDR]).then(() => { done = true })
+      await jest.advanceTimersByTimeAsync(3000)
+      expect(done).toBe(false)
+
+      client.setInitialized()
+      await jest.advanceTimersByTimeAsync(3000)
+      await p
+      expect(done).toBe(true)
+      expect(console.warn).not.toHaveBeenCalled()
+    })
+
+    it('returns as soon as the addresses are no longer syncing', async () => {
+      ;(fetchAddressesArray as jest.Mock).mockResolvedValue([{ address: ADDR, syncing: false }])
+      const client = new ChronikBlockchainClient('ecash')
+      client.initializing = true
+
+      await expect(client.waitForSyncing('tx1', [ADDR])).resolves.toBeUndefined()
+      expect(fetchAddressesArray).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not wait at all when not initializing', async () => {
+      const client = new ChronikBlockchainClient('ecash')
+      client.setInitialized()
+
+      await client.waitForSyncing('tx1', [ADDR])
+      expect(fetchAddressesArray).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('syncAddresses', () => {
+    const a1 = { id: 'addr-1', address: 'ecash:addr-1', networkId: 1 } as any
+    const a2 = { id: 'addr-2', address: 'ecash:addr-2', networkId: 1 } as any
+
+    beforeEach(() => {
+      jest.spyOn(prisma.address, 'findMany').mockResolvedValue([] as any)
+      ;(setSyncingBatch as jest.Mock).mockReset().mockResolvedValue(undefined)
+    })
+
+    it('clears the syncing flag of addresses the sync never finished when it fails', async () => {
+      const client = new ChronikBlockchainClient('ecash')
+      jest.spyOn(client as any, 'fetchLatestTxsForAddresses').mockImplementation(async function * () {
+        yield { phase: 'addresses-synced', chronikTxs: [], addressesSynced: ['ecash:addr-1'] }
+        throw new Error('chronik down')
+      })
+
+      await client.syncAddresses([a1, a2])
+
+      expect(setSyncingBatch).toHaveBeenNthCalledWith(1, ['ecash:addr-1', 'ecash:addr-2'], true)
+      expect(setSyncingBatch).toHaveBeenNthCalledWith(2, ['ecash:addr-1'], false)
+      expect(setSyncingBatch).toHaveBeenNthCalledWith(3, ['ecash:addr-2'], false)
+      expect(setSyncingBatch).toHaveBeenCalledTimes(3)
+    })
+
+    it('does not clear flags again when every address finished', async () => {
+      const client = new ChronikBlockchainClient('ecash')
+      jest.spyOn(client as any, 'fetchLatestTxsForAddresses').mockImplementation(async function * () {
+        yield { phase: 'addresses-synced', chronikTxs: [], addressesSynced: ['ecash:addr-1', 'ecash:addr-2'] }
+      })
+
+      await client.syncAddresses([a1, a2])
+
+      expect(setSyncingBatch).toHaveBeenCalledTimes(2)
+      expect(setSyncingBatch).toHaveBeenLastCalledWith(['ecash:addr-1', 'ecash:addr-2'], false)
+    })
   })
 })
