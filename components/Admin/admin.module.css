@@ -6,3 +6,67 @@
 .userEmail {
   text-decoration: underline;
 }
+
+.progress {
+  position: relative;
+  height: 24px;
+  border-radius: 6px;
+  background-color: var(--primary-bg-color);
+  overflow: hidden;
+  margin: 6px 0;
+}
+
+.progress_fill {
+  height: 100%;
+  background-color: var(--accent-color);
+  transition: width 0.4s ease;
+}
+
+.progress_label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--primary-text-color);
+}
+
+.sync_meta {
+  font-size: 14px;
+  color: var(--secondary-text-color);
+}
+
+.sync_ok {
+  color: #2e9e5b;
+}
+
+.sync_running {
+  color: var(--accent-color);
+}
+
+.sync_error {
+  color: #d9534f;
+}
+
+.phases {
+  margin: 10px 0 15px;
+}
+
+.phase_done {
+  color: var(--secondary-text-color);
+}
+
+.phase_active {
+  font-weight: bold;
+  color: var(--accent-color);
+}
+
+.phase_pending {
+  opacity: 0.6;
+}
+
+.address_cell {
+  word-break: break-all;
+  font-family: monospace;
+}

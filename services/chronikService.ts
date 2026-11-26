@@ -32,6 +32,7 @@ import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfir
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
+import { SyncProgressTracker } from 'redis/syncProgress'
 import io, { Socket } from 'socket.io-client'
 import moment from 'moment'
 import { OpReturnData, parseError, parseOpReturnData } from 'utils/validators'
@@ -1342,12 +1343,14 @@ export class ChronikBlockchainClient {
 
   // reconcileClientPayments: also update client payment statuses as the live WS
   // handlers would (used by the post-reconnect backfill).
-  public async syncAddresses (addresses: Address[], runTriggers = false, reconcileClientPayments = false): Promise<SyncAndSubscriptionReturn> {
+  public async syncAddresses (addresses: Address[], runTriggers = false, reconcileClientPayments = false, progress?: SyncProgressTracker): Promise<SyncAndSubscriptionReturn> {
     const failedAddressesWithErrors: KeyValueT<string> = {}
     const successfulAddressesWithCount: KeyValueT<number> = {}
     const productionAddressesIds = productionAddresses.filter(a => a.networkId === this.networkId).map(a => a.id)
 
+    progress?.startNetwork(this.networkSlug, addresses.length)
     if (addresses.length === 0) {
+      progress?.finishNetwork(this.networkSlug)
       return { failedAddressesWithErrors, successfulAddressesWithCount, changedAddresses: [] }
     }
 
@@ -1369,6 +1372,7 @@ export class ChronikBlockchainClient {
       try {
         const changed = await this.commitTransactionsBatch(tuples, productionAddressesIds, runTriggers, reconcileClientPayments)
         changed.forEach(a => changedAddresses.add(a))
+        progress?.txsCommitted(this.networkSlug, tuples.length)
       } catch (err) {
         changedAddressesUnknown = true
         throw err
@@ -1383,6 +1387,7 @@ export class ChronikBlockchainClient {
         if (batch.phase === 'addresses-synced') {
           // marcador de slice => desmarca syncing
           await setSyncingBatch(batch.addressesSynced, false)
+          progress?.addressesDone(this.networkSlug, batch.addressesSynced.length)
           continue
         }
 
@@ -1452,6 +1457,9 @@ export class ChronikBlockchainClient {
       })
     }
 
+    progress?.addressesFailed(this.networkSlug, failedAddressesWithErrors)
+    progress?.finishNetwork(this.networkSlug)
+
     const failed = Object.keys(failedAddressesWithErrors)
     const total = Object.values(successfulAddressesWithCount).reduce((p, c) => p + c, 0)
     console.log(`${this.CHRONIK_MSG_PREFIX} Finished syncing ${total} txs for ${addresses.length} addresses with ${failed.length} errors.`)
@@ -1468,10 +1476,10 @@ export class ChronikBlockchainClient {
    * Returns the addresses whose txs changed (new or updated), or undefined if
    * the sync failed in a way that leaves that unknown.
    */
-  public async syncMissedTransactions (): Promise<string[] | undefined> {
+  public async syncMissedTransactions (progress?: SyncProgressTracker): Promise<string[] | undefined> {
     const addresses = await fetchAllAddressesForNetworkId(this.networkId)
     try {
-      const { failedAddressesWithErrors, successfulAddressesWithCount, changedAddresses } = await this.syncAddresses(addresses, true)
+      const { failedAddressesWithErrors, successfulAddressesWithCount, changedAddresses } = await this.syncAddresses(addresses, true, false, progress)
       Object.keys(failedAddressesWithErrors).forEach((addr) => {
         console.error(`${this.CHRONIK_MSG_PREFIX}: When syncing missing addresses for address ${addr} encountered error: ${failedAddressesWithErrors[addr]}`)
       })
@@ -1700,10 +1708,10 @@ class MultiBlockchainClient {
    * Returns the addresses whose txs changed during the sync, or undefined if
    * that is unknown for any network (callers should then assume all changed).
    */
-  public async syncMissedTransactions (): Promise<string[] | undefined> {
+  public async syncMissedTransactions (progress?: SyncProgressTracker): Promise<string[] | undefined> {
     await this.waitForStart()
-    const bch = await this.clients.bitcoincash.syncMissedTransactions()
-    const xec = await this.clients.ecash.syncMissedTransactions()
+    const bch = await this.clients.bitcoincash.syncMissedTransactions(progress)
+    const xec = await this.clients.ecash.syncMissedTransactions(progress)
     if (bch === undefined || xec === undefined) return undefined
     return [...bch, ...xec]
   }
