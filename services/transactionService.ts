@@ -323,6 +323,40 @@ export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (a
   }
 }
 
+/**
+ * Txs of an address created, updated or linked to prices at or after `since`:
+ * what a cache rebuild that started reading at `since` may have missed. Same
+ * shape as generateTransactionsWithPaybuttonsAndPricesForAddress yields.
+ */
+export async function fetchTransactionsWithPaybuttonsAndPricesTouchedSince (addressId: string, since: Date): Promise<TransactionsWithPaybuttonsAndPrices[]> {
+  const txs = await prisma.transaction.findMany({
+    where: {
+      addressId,
+      OR: [
+        { createdAt: { gte: since } },
+        { updatedAt: { gte: since } },
+        { prices: { some: { createdAt: { gte: since } } } }
+      ]
+    },
+    include: {
+      address: {
+        include: {
+          paybuttons: {
+            include: {
+              paybutton: true
+            }
+          }
+        }
+      },
+      ...includePrices
+    },
+    orderBy: {
+      timestamp: 'asc'
+    }
+  })
+  return txs as TransactionsWithPaybuttonsAndPrices[]
+}
+
 export async function fetchPaginatedAddressTransactions (addressString: string, page: number, pageSize: number, orderBy?: string, orderDesc = true): Promise<TransactionWithAddressAndPrices[]> {
   const orderByQuery = transactionOrderBy(orderBy, orderDesc)
   const parsedAddress = parseAddress(addressString)

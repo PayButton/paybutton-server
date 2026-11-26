@@ -13,8 +13,8 @@ import { QuoteValues } from 'services/priceService'
 
 import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT, N_OF_QUOTES } from 'constants/index'
 import moment from 'moment-timezone'
-import { CacheSet } from 'redis/index'
-import { bumpCacheGeneration } from './cacheGeneration'
+import { CacheSet, dropCachesBuiltWithoutAddressTxs, isAddressRebuildBackedOff } from 'redis/index'
+import { beginCacheClear, bumpCacheGeneration, endCacheClear, getCacheBuiltKey } from './cacheGeneration'
 import { ButtonDisplayData, Payment } from './types'
 import { getUserDashboardData, clearDashboardCache } from './dashboardCache'
 // ADDRESS:payments:YYYY:MM
@@ -328,24 +328,83 @@ export const clearRecentAddressCache = async (addressString: string, timestamps:
 export const clearPaymentCacheForAddress = async (addressString: string): Promise<void> => {
   // Bumped even when nothing is cached yet: that is exactly when a rebuild may be
   // in flight, and it must not publish what it read before this invalidation.
-  await bumpCacheGeneration(addressString)
-  const weekKeys = await getCachedWeekKeysForAddress(addressString)
-  if (weekKeys.length === 0) {
-    return
+  // Marked as in progress first, so no rebuild write can land between deleting
+  // the marker and deleting the week keys (see beginCacheClear).
+  await beginCacheClear(addressString)
+  try {
+    await bumpCacheGeneration(addressString)
+    await redis.del(getCacheBuiltKey(addressString), () => {})
+    const weekKeys = await getCachedWeekKeysForAddress(addressString)
+    await Promise.all(
+      weekKeys.map(async (key) => await redis.del(key, () => {}))
+    )
+  } finally {
+    await endCacheClear(addressString)
   }
-  await Promise.all(
-    weekKeys.map(async (key) => await redis.del(key, () => {}))
-  )
 }
 
+/**
+ * If the address has no payment cache, starts rebuilding it in the background
+ * and returns true: the rebuild reads the address's txs from the DB, so the
+ * caller has nothing to add incrementally. It doesn't wait for the rebuild,
+ * which can take minutes for a large address and must not hold up tx handling.
+ */
 export const initPaymentCache = async (address: Address): Promise<boolean> => {
   if (process.env.SKIP_CACHE_REBUILD !== undefined) return false
   const cachedKeys = await getCachedWeekKeysForAddress(address.address)
   if (cachedKeys.length === 0) {
-    await CacheSet.addressCreation(address)
+    if (isAddressRebuildBackedOff(address.address)) {
+      // Its last rebuild failed recently, so none starts now. The tx isn't added
+      // as a lone week (that would pass for a complete cache), but the balance
+      // and dashboards built without it are dropped.
+      await dropCachesBuiltWithoutAddressTxs(address.address)
+      return true
+    }
+    void CacheSet.addressCreation(address).catch((err: any) => {
+      console.error(`[CACHE] Failed to rebuild ${address.address}: ${String(err?.message ?? err)}`)
+    })
     return true
   }
   return false
+}
+
+/**
+ * The payment a tx contributes to its address's cache, or undefined if a rebuild
+ * would leave it out (not incoming, prices not linked yet, or no USD value).
+ */
+const cacheablePaymentFromTx = (tx: TransactionsWithPaybuttonsAndPrices): Payment | undefined => {
+  if (!new Prisma.Decimal(tx.amount).gt(0)) return undefined
+  if (tx.prices.length !== N_OF_QUOTES) return undefined
+  const payment = generatePaymentFromTx(tx)
+  if (!new Prisma.Decimal(payment.values.usd).gt(0)) return undefined
+  return payment
+}
+
+/**
+ * Week-key entries of the address's payment cache with these txs replaced by
+ * their current version (or dropped, if a rebuild would now leave them out).
+ * Reads the current weeks but writes nothing: the caller writes the entries.
+ * A tx whose timestamp moved to another week is not removed from its old week.
+ */
+export const getPatchedWeekEntries = async (
+  addressString: string,
+  txs: TransactionsWithPaybuttonsAndPrices[]
+): Promise<Array<[key: string, value: string]>> => {
+  const txsByWeekKey = new Map<string, TransactionsWithPaybuttonsAndPrices[]>()
+  for (const tx of txs) {
+    const key = getPaymentsWeekKey(addressString, tx.timestamp)
+    txsByWeekKey.set(key, [...(txsByWeekKey.get(key) ?? []), tx])
+  }
+  const entries: Array<[string, string]> = []
+  for (const [key, weekTxs] of txsByWeekKey) {
+    const current: Payment[] = JSON.parse((await redis.get(key)) ?? '[]')
+    const hashes = new Set(weekTxs.map(t => t.hash))
+    const updated = weekTxs
+      .map(cacheablePaymentFromTx)
+      .filter((p): p is Payment => p !== undefined)
+    entries.push([key, JSON.stringify(current.filter(p => !hashes.has(p.hash)).concat(updated))])
+  }
+  return entries
 }
 
 const activeBackgroundRebuilds = new Set<string>()
@@ -365,7 +424,8 @@ const cacheAddressesInBackground = async (addresses: Address[], userId: string):
   try {
     for (const address of addresses) {
       try {
-        // Not written if the address was invalidated meanwhile; the next read retries.
+        // Shares a rebuild already running for the address; false if skipped
+        // because its last rebuild failed recently.
         if (!(await CacheSet.addressCreation(address))) continue
         cached++
         if (cached % 10 === 0 || cached === addresses.length) {

@@ -208,6 +208,18 @@ export const DEFAULT_TX_PAGE_SIZE = 100
 
 export const PAYMENT_WEEK_KEY_FORMAT = 'YYYY:WW'
 
+// After a payment cache rebuild of an address fails, further rebuild requests
+// for it are skipped for this long instead of restarting the full read on every
+// dashboard load or new tx.
+export const CACHE_REBUILD_FAILURE_BACKOFF_MS = 10 * 60 * 1000
+// A rebuild invalidated while it was reading writes its result anyway and then
+// re-applies the txs touched since it started. The start is moved back by this
+// margin to cover clock skew between app (updatedAt) and DB (createdAt) clocks.
+export const CACHE_CATCH_UP_MARGIN_MS = 5 * 60 * 1000
+// Catch-up passes (each re-applying what changed during the previous one)
+// before giving up on an address that keeps changing.
+export const CACHE_CATCH_UP_MAX_ROUNDS = 5
+
 export const PRIMARY_XEC_COLOR = '#0074C2'
 export const SECONDARY_XEC_COLOR = '#FFFFFF'
 export const TERTIARY_XEC_COLOR = '#231f20'
