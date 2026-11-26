@@ -1,6 +1,6 @@
 import { PaybuttonTrigger, Prisma } from '@prisma/client'
 import axios from 'axios'
-import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID, SUPPORTED_QUOTES_FROM_ID, TRIGGER_LOG_BATCH_SIZE, TRIGGER_POST_CONCURRENCY, TRIGGER_EMAIL_CONCURRENCY } from 'constants/index'
+import { RESPONSE_MESSAGES, NETWORK_TICKERS_FROM_ID, SUPPORTED_QUOTES_FROM_ID, TRIGGER_LOG_BATCH_SIZE, TRIGGER_POST_CONCURRENCY, TRIGGER_EMAIL_CONCURRENCY, N_OF_QUOTES } from 'constants/index'
 import prisma from 'prisma-local/clientInstance'
 import { EMPTY_OP_RETURN, OpReturnData, parseTriggerPostData } from 'utils/validators'
 import { BroadcastTxData, SimplifiedTransaction } from 'ws-service/types'
@@ -8,6 +8,7 @@ import { fetchPaybuttonById, fetchPaybuttonWithTriggers } from './paybuttonServi
 import config from 'config'
 import { MAIL_FROM, MAIL_HTML_REPLACER, MAIL_SUBJECT, getMailerTransporter } from 'constants/mail'
 import { getTransactionValue } from './transactionService'
+import { AllPrices, QuoteValues, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from './priceService'
 import { runAsyncInBatches } from 'utils/index'
 
 // Include Paybutton.owner user inline so we don't refetch per trigger
@@ -330,6 +331,31 @@ async function fetchTriggersGroupedByAddress (addresses: string[]): Promise<Map<
   return triggersByAddress
 }
 
+const VALUE_POST_VARIABLE = '<value>'
+
+// Txs persisted by the bulk sync path have no prices linked yet (that happens
+// after the sync finishes), so fall back to looking up that day's prices.
+async function resolveTransactionValues (
+  tx: SimplifiedTransaction,
+  networkId: number,
+  pricesByDay: Map<number, Promise<AllPrices>>
+): Promise<QuoteValues> {
+  if (tx.prices?.length === N_OF_QUOTES) {
+    return getTransactionValue(tx)
+  }
+  const day = flattenTimestamp(tx.timestamp)
+  let dayPrices = pricesByDay.get(day)
+  if (dayPrices === undefined) {
+    dayPrices = fetchPricesForNetworkAndTimestamp(networkId, day, prisma, true)
+    pricesByDay.set(day, dayPrices)
+  }
+  const { usd, cad } = await dayPrices
+  return {
+    usd: usd.value.times(tx.amount),
+    cad: cad.value.times(tx.amount)
+  }
+}
+
 function buildPostParams (
   trigger: TriggerWithPaybuttonAndUser,
   tx: SimplifiedTransaction,
@@ -566,11 +592,23 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
   // Build queues
   console.log(`[TRIGGER ${currency}]: preparing triggers for ${txItems.length} txs belonging to ${uniqueAddresses.length} addresses`)
 
+  const pricesByDay = new Map<number, Promise<AllPrices>>()
   for (const { address, tx } of txItems) {
     const triggers = triggersByAddress.get(address) ?? []
     if (triggers.length === 0) continue
 
-    const values = getTransactionValue(tx)
+    // Only post triggers that use <value> need prices; a missing price must not
+    // block email triggers or post triggers that don't send the value.
+    let values: QuoteValues | undefined
+    let valuesError: any
+    if (triggers.some(t => !t.isEmailTrigger && t.postData.includes(VALUE_POST_VARIABLE))) {
+      try {
+        values = await resolveTransactionValues(tx, networkId, pricesByDay)
+      } catch (err: any) {
+        valuesError = err
+        console.error(`[TRIGGER ${currency}]: could not get value of tx ${tx.hash}: ${err?.message as string}`)
+      }
+    }
 
     for (const trigger of triggers) {
       const user = trigger.paybutton.user
@@ -582,10 +620,28 @@ export async function executeTriggersBatch (broadcasts: BroadcastTxData[], netwo
           actionType: 'SendEmail'
         })
       } else {
+        let valueStr = ''
+        if (trigger.postData.includes(VALUE_POST_VARIABLE)) {
+          if (values === undefined) {
+            logs.push({
+              triggerId: trigger.id,
+              isError: true,
+              actionType: 'PostData',
+              data: JSON.stringify({
+                errorName: valuesError?.name ?? 'Error',
+                errorMessage: `Could not get the value of tx ${tx.hash}: ${valuesError?.message as string}`,
+                errorStack: valuesError?.stack ?? '',
+                triggerPostData: trigger.postData,
+                triggerPostURL: trigger.postURL
+              })
+            })
+            continue
+          }
+          valueStr = values[SUPPORTED_QUOTES_FROM_ID[user.preferredCurrencyId]].toString()
+        }
         userPostCredits[user.id] ??= user.postCredits
-        const quoteSlug = SUPPORTED_QUOTES_FROM_ID[user.preferredCurrencyId]
         ;(postTaskQueueByUser[user.id] ??= []).push({
-          run: makePostTask(trigger, tx, currency, values[quoteSlug].toString(), logs, address),
+          run: makePostTask(trigger, tx, currency, valueStr, logs, address),
           triggerId: trigger.id,
           actionType: 'PostData'
         })

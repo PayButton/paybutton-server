@@ -1554,3 +1554,102 @@ describe('WS onMessage matrix (no re-mocks)', () => {
     logSpy.mockRestore()
   })
 })
+
+describe('chronik WebSocket reconnection', () => {
+  const WS_BASE_DELAY_MS = 5000
+  const subscribedAddresses = ['ecash:qqkv9wr69ry2p9l53lxp635va4h86wv435995w8p2h']
+
+  let client: any
+  let endpoints: any[]
+  let configs: any[]
+
+  const mkEndpoint = (): any => ({
+    waitForOpen: jest.fn(async () => {}),
+    subscribeToBlocks: jest.fn(),
+    subscribeToAddress: jest.fn(),
+    close: jest.fn(),
+    subs: { scripts: [] }
+  })
+
+  beforeEach(async () => {
+    process.env.WS_AUTH_KEY = 'test-auth-key'
+    client = new ChronikBlockchainClient('ecash')
+    await new Promise(resolve => setImmediate(resolve)) // let the async ctor finish
+
+    endpoints = []
+    configs = []
+    client.chronik = {
+      ws: jest.fn((config: any) => {
+        configs.push(config)
+        const endpoint = mkEndpoint()
+        endpoints.push(endpoint)
+        return endpoint
+      })
+    }
+    jest.spyOn(client, 'getSubscribedAddresses').mockReturnValue(subscribedAddresses)
+    client.openWs()
+    await Promise.resolve()
+    jest.useFakeTimers()
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  it('opens a new endpoint with the previous subscriptions when the socket ends', async () => {
+    configs[0].onEnd({ type: 'close' })
+    await jest.advanceTimersByTimeAsync(WS_BASE_DELAY_MS)
+
+    expect(client.chronik.ws).toHaveBeenCalledTimes(2)
+    const newEndpoint = endpoints[1]
+    expect(client.chronikWSEndpoint).toBe(newEndpoint)
+    expect(newEndpoint.subscribeToBlocks).toHaveBeenCalled()
+    expect(newEndpoint.subscribeToAddress).toHaveBeenCalledWith(subscribedAddresses[0])
+    expect(newEndpoint.waitForOpen).toHaveBeenCalled()
+  })
+
+  it('keeps reconnecting on every subsequent end', async () => {
+    configs[0].onEnd({ type: 'close' })
+    await jest.advanceTimersByTimeAsync(WS_BASE_DELAY_MS)
+    configs[1].onEnd({ type: 'close' })
+    await jest.advanceTimersByTimeAsync(WS_BASE_DELAY_MS)
+
+    expect(client.chronik.ws).toHaveBeenCalledTimes(3)
+  })
+
+  it('ignores ends from endpoints that were already replaced', async () => {
+    configs[0].onEnd({ type: 'close' })
+    await jest.advanceTimersByTimeAsync(WS_BASE_DELAY_MS)
+    configs[0].onEnd({ type: 'close' })
+    await jest.advanceTimersByTimeAsync(WS_BASE_DELAY_MS)
+
+    expect(client.chronik.ws).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not reconnect after closeWs (shutdown)', async () => {
+    client.closeWs()
+    expect(endpoints[0].close).toHaveBeenCalled()
+    configs[0].onEnd({ type: 'close' })
+    await jest.advanceTimersByTimeAsync(WS_BASE_DELAY_MS * 10)
+
+    expect(client.chronik.ws).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps retrying the connection instead of giving up after a fixed number of attempts', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    const endpoint = mkEndpoint()
+    let failures = 0
+    endpoint.waitForOpen.mockImplementation(async () => {
+      if (failures < 15) {
+        failures += 1
+        throw new Error('Error connecting to known Chronik websockets')
+      }
+    })
+    const generation = client.wsGeneration
+    const done = client.connectWsWithRetry(endpoint, generation)
+    await jest.advanceTimersByTimeAsync(60000 * 16)
+    await done
+
+    expect(endpoint.waitForOpen).toHaveBeenCalledTimes(16)
+  })
+})
