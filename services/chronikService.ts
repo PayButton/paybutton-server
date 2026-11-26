@@ -15,8 +15,10 @@ import {
   markTransactionsOrphaned,
   upsertTransaction,
   getSimplifiedTransactions,
-  getSimplifiedTrasaction
+  getSimplifiedTrasaction,
+  connectTransactionsToPricesForAddresses
 } from './transactionService'
+import { CacheSet } from 'redis/index'
 import {
   updateClientPaymentStatus,
   getClientPayment
@@ -1511,7 +1513,28 @@ class MultiBlockchainClient {
 
   public async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
     await this.subscribeAddresses(addresses)
-    return await this.syncAddresses(addresses)
+    const result = await this.syncAddresses(addresses)
+    await this.finalizeOnDemandSync(addresses)
+    return result
+  }
+
+  // syncAddresses commits through the bulk path, which defers price linking and
+  // cache updates to the sync job. On-demand syncs (new paybutton/address, client
+  // payment) run outside that job, so link prices and drop stale caches here —
+  // otherwise the synced txs stay unpriced and missing from payments until the
+  // next restart, and a cache rebuilt mid-sync stays partial.
+  private async finalizeOnDemandSync (addresses: Address[]): Promise<void> {
+    if (addresses.length === 0) return
+    try {
+      await connectTransactionsToPricesForAddresses(addresses.map(a => a.id))
+    } catch (err: any) {
+      console.error(`[CHRONIK]: Failed to link prices after syncing ${addresses.length} addresses: ${err.message as string}`)
+    }
+    try {
+      await CacheSet.addressesSynced(addresses.map(a => a.address))
+    } catch (err: any) {
+      console.error(`[CHRONIK]: Failed to invalidate caches after syncing ${addresses.length} addresses: ${err.message as string}`)
+    }
   }
 
   public async destroy (): Promise<void> {

@@ -4,7 +4,7 @@ import { TransactionsWithPaybuttonsAndPrices } from 'services/transactionService
 import { fetchUsersForAddress } from 'services/userService'
 import { cacheBalanceForAddress, clearBalanceCache, getBalanceForAddress, updateBalanceCacheFromTx } from './balanceCache'
 import { clearDashboardCache, getUserDashboardData } from './dashboardCache'
-import { appendPaybuttonToAddressesCache, cacheGroupedPayments, cacheManyTxs, generateAndCacheGroupedPaymentsAndInfoForAddress, getCachedPaymentsCountForUser, getPaymentList, initPaymentCache, removePaybuttonToAddressesCache } from './paymentCache'
+import { appendPaybuttonToAddressesCache, cacheGroupedPayments, cacheManyTxs, clearPaymentCacheForAddress, generateAndCacheGroupedPaymentsAndInfoForAddress, getCachedPaymentsCountForUser, getPaymentList, initPaymentCache, removePaybuttonToAddressesCache } from './paymentCache'
 import { DashboardData, Payment } from './types'
 import { Address } from '@prisma/client'
 
@@ -47,6 +47,23 @@ export const CacheSet = {
       )
       await clearBalanceCache(addr)
     }
+  },
+  // After a bulk (on-demand) sync committed txs for these addresses without
+  // touching the cache: drop their payment, balance and users' dashboard caches
+  // so they are rebuilt from the DB, now including the synced txs.
+  addressesSynced: async (addressStringList: string[]): Promise<void> => {
+    const userIds = new Set<string>()
+    for (const addressString of addressStringList) {
+      await clearPaymentCacheForAddress(addressString)
+      await clearBalanceCache(addressString)
+      const users = await fetchUsersForAddress(addressString)
+      users.forEach(u => userIds.add(u.id))
+    }
+    await Promise.all(
+      [...userIds].map(async id => {
+        await clearDashboardCache(id)
+      })
+    )
   },
   paybuttonCreation: async ({ paybutton, addressStringList, userId }: PaybuttonCreationParams): Promise<void> => {
     await appendPaybuttonToAddressesCache(

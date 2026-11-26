@@ -633,6 +633,36 @@ export async function connectAllTransactionsToPrices (): Promise<void> {
   console.log('[PRICES] Finished connecting txs to prices.')
 }
 
+/**
+ * Link prices for the given addresses' txs that have none (or an incomplete set).
+ * The bulk sync path (createManyTransactionsForSync) leaves txs unpriced; the
+ * sync job fixes that globally with connectAllTransactionsToPrices, but on-demand
+ * syncs (syncAndSubscribeAddresses) must do it for their own addresses.
+ */
+export async function connectTransactionsToPricesForAddresses (addressIds: string[]): Promise<void> {
+  if (addressIds.length === 0) return
+  const noPricesTxs = await prisma.transaction.findMany({
+    where: {
+      addressId: { in: addressIds },
+      prices: { none: {} }
+    },
+    include: includeNetwork
+  })
+  const irregular = await prisma.pricesOnTransactions.groupBy({
+    by: ['transactionId'],
+    where: { transaction: { addressId: { in: addressIds } } },
+    _count: { transactionId: true },
+    having: { transactionId: { _count: { lt: N_OF_QUOTES } } }
+  })
+  const irregularTxs = irregular.length === 0
+    ? []
+    : await prisma.transaction.findMany({
+      where: { id: { in: irregular.map(g => g.transactionId) } },
+      include: includeNetwork
+    })
+  await connectTransactionsListToPrices([...noPricesTxs, ...irregularTxs])
+}
+
 interface ExistingTxSnapshot {
   confirmed: boolean
   timestamp: number
