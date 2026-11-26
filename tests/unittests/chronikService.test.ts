@@ -10,8 +10,9 @@ import {
 } from '../../services/chronikService'
 import { Address, Prisma } from '@prisma/client'
 import { fetchAddressesArray } from '../../services/addressService'
-import { fetchUnconfirmedTransactions, deleteTransactions, upsertTransaction } from '../../services/transactionService'
+import { fetchUnconfirmedTransactions, deleteTransactions, upsertTransaction, connectTransactionsToPricesForAddresses } from '../../services/transactionService'
 import { executeAddressTriggers } from '../../services/triggerService'
+import { CacheSet } from '../../redis/index'
 
 process.env.WS_AUTH_KEY = 'test-auth-key'
 
@@ -71,7 +72,14 @@ jest.mock('../../services/transactionService', () => ({
   upsertTransaction: jest.fn(),
   getSimplifiedTransactions: jest.fn(),
   getSimplifiedTrasaction: jest.fn(),
-  connectAllTransactionsToPrices: jest.fn()
+  connectAllTransactionsToPrices: jest.fn(),
+  connectTransactionsToPricesForAddresses: jest.fn()
+}))
+
+jest.mock('../../redis/index', () => ({
+  CacheSet: {
+    addressesSynced: jest.fn()
+  }
 }))
 
 jest.mock('../../services/priceService', () => ({
@@ -1143,6 +1151,53 @@ describe('MultiBlockchainClient method coverage', () => {
     const result = await multiBlockchainClient.syncAndSubscribeAddresses(mockAddresses)
     expect(result).toHaveProperty('failedAddressesWithErrors')
     expect(result).toHaveProperty('successfulAddressesWithCount')
+  })
+
+  it('Should link prices and invalidate caches after an on-demand sync', async () => {
+    const validAddress = fromHash160('ecash', 'p2pkh', 'c5d2460186f7233c927e7db2dcc703c0e500b653')
+    const mockAddresses = [
+      { id: 'addr-1', address: validAddress, networkId: 1, syncing: false, createdAt: new Date(), updatedAt: new Date(), lastSynced: null }
+    ]
+    const linkPrices = connectTransactionsToPricesForAddresses as jest.Mock
+    const invalidate = CacheSet.addressesSynced as jest.Mock
+    const order: string[] = []
+    linkPrices.mockReset().mockImplementation(async () => { order.push('prices') })
+    invalidate.mockReset().mockImplementation(async () => { order.push('cache') })
+    jest.spyOn(multiBlockchainClient, 'subscribeAddresses').mockResolvedValue()
+    jest.spyOn(multiBlockchainClient, 'syncAddresses').mockImplementation(async () => {
+      order.push('sync')
+      return { failedAddressesWithErrors: {}, successfulAddressesWithCount: { [validAddress]: 3 } }
+    })
+
+    await multiBlockchainClient.syncAndSubscribeAddresses(mockAddresses)
+
+    expect(linkPrices).toHaveBeenCalledWith(['addr-1'])
+    expect(invalidate).toHaveBeenCalledWith([validAddress])
+    expect(order).toEqual(['sync', 'prices', 'cache'])
+  })
+
+  it('Should still invalidate caches and return the sync result if price linking fails', async () => {
+    const validAddress = fromHash160('ecash', 'p2pkh', 'c5d2460186f7233c927e7db2dcc703c0e500b653')
+    const mockAddresses = [
+      { id: 'addr-1', address: validAddress, networkId: 1, syncing: false, createdAt: new Date(), updatedAt: new Date(), lastSynced: null }
+    ]
+    const linkPrices = connectTransactionsToPricesForAddresses as jest.Mock
+    const invalidate = CacheSet.addressesSynced as jest.Mock
+    linkPrices.mockReset().mockRejectedValue(new Error('price API down'))
+    invalidate.mockReset().mockResolvedValue(undefined)
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    jest.spyOn(multiBlockchainClient, 'subscribeAddresses').mockResolvedValue()
+    jest.spyOn(multiBlockchainClient, 'syncAddresses').mockResolvedValue({
+      failedAddressesWithErrors: {},
+      successfulAddressesWithCount: { [validAddress]: 3 }
+    })
+
+    const result = await multiBlockchainClient.syncAndSubscribeAddresses(mockAddresses)
+
+    expect(result.successfulAddressesWithCount[validAddress]).toBe(3)
+    expect(invalidate).toHaveBeenCalledWith([validAddress])
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('price API down'))
+    errorSpy.mockRestore()
   })
 
   it('Should get transaction details for specific network', async () => {
