@@ -1711,6 +1711,101 @@ describe('chronik WebSocket reconnection', () => {
 
     expect(endpoint.waitForOpen).toHaveBeenCalledTimes(16)
   })
+
+  describe('keepalive', () => {
+    const KEEPALIVE_MS = 25000
+    const OPEN = 1
+
+    it('pings the open socket on an interval', async () => {
+      const endpoint = mkEndpoint()
+      endpoint.ws = { readyState: OPEN, ping: jest.fn() }
+      await client.connectWsWithRetry(endpoint, client.wsGeneration)
+
+      await jest.advanceTimersByTimeAsync(KEEPALIVE_MS * 3)
+      expect(endpoint.ws.ping).toHaveBeenCalledTimes(3)
+    })
+
+    it('does not ping a socket that is not open', async () => {
+      const endpoint = mkEndpoint()
+      endpoint.ws = { readyState: 3, ping: jest.fn() }
+      await client.connectWsWithRetry(endpoint, client.wsGeneration)
+
+      await jest.advanceTimersByTimeAsync(KEEPALIVE_MS * 2)
+      expect(endpoint.ws.ping).not.toHaveBeenCalled()
+    })
+
+    it('stops pinging once the socket ends', async () => {
+      const endpoint = mkEndpoint()
+      endpoint.ws = { readyState: OPEN, ping: jest.fn() }
+      await client.connectWsWithRetry(endpoint, client.wsGeneration)
+      configs[0].onEnd({ type: 'close' })
+
+      await jest.advanceTimersByTimeAsync(KEEPALIVE_MS * 2)
+      expect(endpoint.ws.ping).not.toHaveBeenCalled()
+    })
+
+    it('stops pinging after closeWs', async () => {
+      const endpoint = mkEndpoint()
+      endpoint.ws = { readyState: OPEN, ping: jest.fn() }
+      await client.connectWsWithRetry(endpoint, client.wsGeneration)
+      client.closeWs()
+
+      await jest.advanceTimersByTimeAsync(KEEPALIVE_MS * 2)
+      expect(endpoint.ws.ping).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('post-reconnect backfill', () => {
+    const mockedFetchAddresses = fetchAddressesArray as jest.Mock
+
+    it('backfills on a reconnect but not on the first connection', async () => {
+      const backfill = jest.spyOn(client, 'backfillAfterReconnect').mockResolvedValue(undefined)
+      client.wsHasConnected = false
+
+      await client.connectWsWithRetry(mkEndpoint(), client.wsGeneration)
+      expect(backfill).not.toHaveBeenCalled()
+
+      configs[0].onEnd({ type: 'close' })
+      await jest.advanceTimersByTimeAsync(WS_BASE_DELAY_MS)
+      expect(backfill).toHaveBeenCalledTimes(1)
+    })
+
+    it('syncs the subscribed addresses with triggers enabled', async () => {
+      const addresses = [{ address: subscribedAddresses[0] }]
+      mockedFetchAddresses.mockResolvedValue(addresses as any)
+      const sync = jest.spyOn(client, 'syncAddresses').mockResolvedValue({ failedAddressesWithErrors: {}, successfulAddressesWithCount: {} })
+
+      await client.backfillAfterReconnect()
+
+      expect(fetchAddressesArray).toHaveBeenCalledWith(subscribedAddresses)
+      expect(sync).toHaveBeenCalledWith(addresses, true)
+    })
+
+    it('runs one backfill at a time and coalesces reconnects during a run into one more', async () => {
+      mockedFetchAddresses.mockResolvedValue([] as any)
+      let release!: () => void
+      const sync = jest.spyOn(client, 'syncAddresses')
+        .mockImplementationOnce(async () => await new Promise(resolve => { release = () => resolve({ failedAddressesWithErrors: {}, successfulAddressesWithCount: {} }) }))
+        .mockResolvedValue({ failedAddressesWithErrors: {}, successfulAddressesWithCount: {} })
+
+      const first = client.backfillAfterReconnect()
+      await jest.advanceTimersByTimeAsync(0)
+      await client.backfillAfterReconnect()
+      await client.backfillAfterReconnect()
+      expect(sync).toHaveBeenCalledTimes(1)
+
+      release()
+      await first
+      expect(sync).toHaveBeenCalledTimes(2)
+    })
+
+    it('does not throw when the sync fails', async () => {
+      jest.spyOn(console, 'error').mockImplementation(() => {})
+      mockedFetchAddresses.mockRejectedValue(new Error('db down'))
+
+      await expect(client.backfillAfterReconnect()).resolves.toBeUndefined()
+    })
+  })
 })
 
 describe('commitTransactionsBatch price linking', () => {

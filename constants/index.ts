@@ -282,6 +282,9 @@ export const CONFIRMED_TX_PROCESS_DELAY = 100
 
 export const CHRONIK_WS_MAX_DELAY_MS = 60000
 export const CHRONIK_WS_BASE_DELAY_MS = 5000
+// Ping the chronik WS this often so proxies in front of the node (nginx's default
+// proxy_read_timeout is 60s) don't drop it as idle when no txs or blocks arrive.
+export const CHRONIK_WS_KEEPALIVE_INTERVAL_MS = 25000
 
 // Number of tries before failing a chronik HTTP call (min 1)
 export const CHRONIK_HTTP_MAX_TRIES = 3
