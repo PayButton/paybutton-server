@@ -2,9 +2,10 @@ import { AddressPaymentInfo } from 'services/addressService'
 import { PaybuttonWithAddresses } from 'services/paybuttonService'
 import { TransactionsWithPaybuttonsAndPrices } from 'services/transactionService'
 import { fetchUsersForAddress } from 'services/userService'
-import { cacheBalanceForAddress, clearBalanceCache, getBalanceForAddress, updateBalanceCacheFromTx } from './balanceCache'
+import { clearBalanceCache, getBalanceForAddress, getBalanceKey, updateBalanceCacheFromTx } from './balanceCache'
+import { bumpCacheGeneration, getCacheGeneration, setIfGenerationUnchanged } from './cacheGeneration'
 import { clearDashboardCache, getUserDashboardData } from './dashboardCache'
-import { appendPaybuttonToAddressesCache, cacheGroupedPayments, cacheManyTxs, clearPaymentCacheForAddress, generateAndCacheGroupedPaymentsAndInfoForAddress, getCachedPaymentsCountForUser, getPaymentList, initPaymentCache, removePaybuttonToAddressesCache } from './paymentCache'
+import { appendPaybuttonToAddressesCache, cacheManyTxs, clearPaymentCacheForAddress, generateAndCacheGroupedPaymentsAndInfoForAddress, getCachedPaymentsCountForUser, getPaymentList, initPaymentCache, removePaybuttonToAddressesCache } from './paymentCache'
 import { DashboardData, Payment } from './types'
 import { Address } from '@prisma/client'
 
@@ -18,12 +19,24 @@ type PaybuttonUpdateParams = PaybuttonCreationParams
 type PaybuttonDeletionParams = PaybuttonCreationParams
 
 export const CacheSet = {
-  addressCreation: async (address: Address): Promise<void> => {
-    const groupedPaymentsAndInfo = await generateAndCacheGroupedPaymentsAndInfoForAddress(address)
-    await cacheGroupedPayments(groupedPaymentsAndInfo.groupedPayments)
-    await cacheBalanceForAddress(groupedPaymentsAndInfo.info, address.address)
+  // Rebuilds the address's payment and balance caches from the DB. The result is
+  // written only if the address wasn't invalidated while the DB was being read;
+  // otherwise it's discarded and the next read rebuilds it.
+  addressCreation: async (address: Address): Promise<boolean> => {
+    const generation = await getCacheGeneration(address.address)
+    const { groupedPayments, info } = await generateAndCacheGroupedPaymentsAndInfoForAddress(address)
+    const written = await setIfGenerationUnchanged(address.address, generation, [
+      ...Object.entries(groupedPayments).map(([key, payments]): [string, string] => [key, JSON.stringify(payments)]),
+      [getBalanceKey(address.address), JSON.stringify(info)]
+    ])
+    if (!written) {
+      console.log(`[CACHE] Discarded rebuild of ${address.address}: invalidated while it was being rebuilt.`)
+    }
+    return written
   },
   txCreation: async (tx: TransactionsWithPaybuttonsAndPrices): Promise<void> => {
+    // A rebuild already reading this address's txs may have missed this one.
+    await bumpCacheGeneration(tx.address.address)
     const cacheInitialized = await initPaymentCache(tx.address)
     if (cacheInitialized) return
     void await cacheManyTxs([tx])
