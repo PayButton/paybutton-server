@@ -9,6 +9,13 @@ import * as addressService from 'services/addressService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import moment from 'moment-timezone'
 import * as priceService from 'services/priceService'
+import { redis } from 'redis/clientInstance'
+
+const PRICE_RELINK_PENDING_KEY = 'prices:relinkPending'
+const clearPendingRelinks = async (): Promise<void> => {
+  const pending = await redis.smembers(PRICE_RELINK_PENDING_KEY)
+  if (pending.length > 0) await redis.srem(PRICE_RELINK_PENDING_KEY, ...pending)
+}
 
 const includePrices = {
   prices: {
@@ -593,5 +600,284 @@ describe('connectTransactionsListToPrices', () => {
     await transactionService.connectTransactionsListToPrices([tx] as any)
 
     expect(prismaMock.pricesOnTransactions.createMany).not.toHaveBeenCalled()
+  })
+})
+
+describe('connectTransactionsListToPrices chunking', () => {
+  const dayTs = moment.utc('2026-08-02').unix()
+  const usd = { ...mockedUSDPriceOnTransaction.price, id: 11, timestamp: dayTs, networkId: 1 }
+  const cad = { ...mockedCADPriceOnTransaction.price, id: 12, timestamp: dayTs, networkId: 1 }
+  const makeTxs = (n: number): any[] => Array.from({ length: n }, (_, i) => ({
+    id: `tx-${i}`, timestamp: dayTs + 60, address: { networkId: 1 }
+  }))
+
+  beforeEach(() => {
+    prisma.$transaction = prismaMock.$transaction
+    prisma.price.findMany = prismaMock.price.findMany
+    prisma.pricesOnTransactions.deleteMany = prismaMock.pricesOnTransactions.deleteMany
+    prisma.pricesOnTransactions.createMany = prismaMock.pricesOnTransactions.createMany
+    prisma.pricesOnTransactions.groupBy = prismaMock.pricesOnTransactions.groupBy
+    prisma.transaction.findMany = prismaMock.transaction.findMany
+    prismaMock.price.findMany.mockResolvedValue([usd, cad])
+    prismaMock.pricesOnTransactions.deleteMany.mockResolvedValue({ count: 0 })
+    prismaMock.pricesOnTransactions.createMany.mockResolvedValue({ count: 0 })
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock))
+  })
+
+  it('writes each chunk of txs in its own DB transaction', async () => {
+    const linked = await transactionService.connectTransactionsListToPrices(makeTxs(501))
+
+    expect(linked).toHaveLength(501)
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(2)
+    const createManyCalls = prismaMock.pricesOnTransactions.createMany.mock.calls as any[]
+    expect(createManyCalls[0][0].data).toHaveLength(1000)
+    expect(createManyCalls[1][0].data).toHaveLength(2)
+  })
+
+  it('keeps linking the remaining chunks when one chunk fails', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    prismaMock.$transaction
+      .mockRejectedValueOnce(new Error('Transaction already closed'))
+      .mockImplementation(async (fn: any) => fn(prismaMock))
+
+    const linked = await transactionService.connectTransactionsListToPrices(makeTxs(501))
+
+    expect(linked).toEqual(['tx-500'])
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(2)
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Transaction already closed'))
+    errorSpy.mockRestore()
+  })
+
+  it('only unlinks existing prices when skipUnlink is not set', async () => {
+    await transactionService.connectTransactionsListToPrices(makeTxs(2), { skipUnlink: true })
+    expect(prismaMock.pricesOnTransactions.deleteMany).not.toHaveBeenCalled()
+
+    await transactionService.connectTransactionsListToPrices(makeTxs(2))
+    expect(prismaMock.pricesOnTransactions.deleteMany).toHaveBeenCalledWith({
+      where: { transactionId: { in: ['tx-0', 'tx-1'] } }
+    })
+  })
+
+  it('records txs whose link replacement failed so a later run relinks them', async () => {
+    await clearPendingRelinks()
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    prismaMock.$transaction.mockRejectedValue(new Error('Transaction already closed'))
+
+    await transactionService.connectTransactionsListToPrices(makeTxs(2))
+
+    expect((await redis.smembers(PRICE_RELINK_PENDING_KEY)).sort((a, b) => a.localeCompare(b))).toEqual(['tx-0', 'tx-1'])
+    await clearPendingRelinks()
+    errorSpy.mockRestore()
+  })
+
+  it('does not record failed txs that had no links (the no-prices pass finds them)', async () => {
+    await clearPendingRelinks()
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    prismaMock.$transaction.mockRejectedValue(new Error('Transaction already closed'))
+
+    await transactionService.connectTransactionsListToPrices(makeTxs(2), { skipUnlink: true })
+
+    expect(await redis.smembers(PRICE_RELINK_PENDING_KEY)).toEqual([])
+    errorSpy.mockRestore()
+  })
+})
+
+describe('connectAllTransactionsToPrices', () => {
+  const dayTs = moment.utc('2026-08-02').unix()
+  const usd = { ...mockedUSDPriceOnTransaction.price, id: 11, timestamp: dayTs, networkId: 1 }
+  const cad = { ...mockedCADPriceOnTransaction.price, id: 12, timestamp: dayTs, networkId: 1 }
+  const page = [
+    { id: 'a', timestamp: dayTs + 60, address: { networkId: 1, address: 'ecash:addr-a' } },
+    { id: 'b', timestamp: dayTs + 120, address: { networkId: 1, address: 'ecash:addr-b' } }
+  ]
+  let invalidate: jest.SpyInstance
+
+  beforeEach(() => {
+    prisma.$transaction = prismaMock.$transaction
+    prisma.price.findMany = prismaMock.price.findMany
+    prisma.pricesOnTransactions.deleteMany = prismaMock.pricesOnTransactions.deleteMany
+    prisma.pricesOnTransactions.createMany = prismaMock.pricesOnTransactions.createMany
+    prisma.pricesOnTransactions.groupBy = prismaMock.pricesOnTransactions.groupBy
+    prisma.transaction.findMany = prismaMock.transaction.findMany
+    prismaMock.price.findMany.mockResolvedValue([usd, cad])
+    prismaMock.pricesOnTransactions.createMany.mockResolvedValue({ count: 0 })
+    ;(prismaMock.pricesOnTransactions.groupBy as unknown as jest.Mock).mockResolvedValue([])
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock))
+    prismaMock.transaction.findMany
+      .mockResolvedValueOnce(page as any)
+      .mockResolvedValue([])
+    invalidate = jest.spyOn(CacheSet, 'addressesSynced').mockResolvedValue()
+  })
+
+  afterEach(() => {
+    invalidate.mockRestore()
+  })
+
+  it('pages through unpriced txs by id and links them without unlinking', async () => {
+    await transactionService.connectAllTransactionsToPrices()
+
+    const firstQuery = prismaMock.transaction.findMany.mock.calls[0][0] as any
+    const secondQuery = prismaMock.transaction.findMany.mock.calls[1][0] as any
+    expect(firstQuery.where).toEqual({ prices: { none: {} } })
+    expect(firstQuery.orderBy).toEqual({ id: 'asc' })
+    expect(secondQuery.where).toEqual({ prices: { none: {} }, id: { gt: 'b' } })
+    expect(prismaMock.pricesOnTransactions.createMany).toHaveBeenCalledWith({
+      data: [
+        { transactionId: 'a', priceId: 11 }, { transactionId: 'a', priceId: 12 },
+        { transactionId: 'b', priceId: 11 }, { transactionId: 'b', priceId: 12 }
+      ],
+      skipDuplicates: true
+    })
+    expect(prismaMock.pricesOnTransactions.deleteMany).not.toHaveBeenCalled()
+  })
+
+  it('invalidates the caches of addresses whose txs got linked', async () => {
+    await transactionService.connectAllTransactionsToPrices()
+
+    expect(invalidate).toHaveBeenCalledWith(['ecash:addr-a', 'ecash:addr-b'])
+  })
+
+  it('does not invalidate caches when no tx could be linked', async () => {
+    prismaMock.price.findMany.mockResolvedValue([])
+    const fetchMissing = jest.spyOn(priceService, 'fetchAndStoreMissingPrices').mockResolvedValue([])
+
+    await transactionService.connectAllTransactionsToPrices()
+
+    expect(invalidate).not.toHaveBeenCalled()
+    fetchMissing.mockRestore()
+  })
+
+  it('still invalidates addresses linked before a later page query fails', async () => {
+    prismaMock.transaction.findMany.mockReset()
+    prismaMock.transaction.findMany
+      .mockResolvedValueOnce(page as any)
+      .mockRejectedValueOnce(new Error('db down'))
+
+    await expect(transactionService.connectAllTransactionsToPrices()).rejects.toThrow('db down')
+
+    expect(invalidate).toHaveBeenCalledWith(['ecash:addr-a', 'ecash:addr-b'])
+  })
+
+  it('retries a failed cache invalidation on the next run', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    invalidate.mockRejectedValueOnce(new Error('redis down'))
+
+    await transactionService.connectAllTransactionsToPrices()
+    // Nothing left to link on the second run; the pending addresses are retried.
+    await transactionService.connectAllTransactionsToPrices()
+
+    expect(invalidate).toHaveBeenCalledTimes(2)
+    expect(invalidate.mock.calls[1][0]).toEqual(['ecash:addr-a', 'ecash:addr-b'])
+    errorSpy.mockRestore()
+  })
+
+  it('relinks txs recorded as pending and clears them from the pending set', async () => {
+    await clearPendingRelinks()
+    await redis.sadd(PRICE_RELINK_PENDING_KEY, 'r1', 'deleted-tx')
+    const pendingTx = { id: 'r1', timestamp: dayTs + 60, address: { networkId: 1, address: 'ecash:addr-r' } }
+    prismaMock.pricesOnTransactions.deleteMany.mockResolvedValue({ count: 2 })
+    prismaMock.transaction.findMany.mockReset()
+    prismaMock.transaction.findMany
+      .mockResolvedValueOnce([]) // no unpriced txs
+      .mockResolvedValueOnce([]) // no irregular txs
+      .mockResolvedValueOnce([pendingTx] as any) // pending relinks (deleted-tx no longer exists)
+
+    await transactionService.connectAllTransactionsToPrices()
+
+    expect(prismaMock.pricesOnTransactions.deleteMany).toHaveBeenCalledWith({ where: { transactionId: { in: ['r1'] } } })
+    expect(prismaMock.pricesOnTransactions.createMany).toHaveBeenCalledWith({
+      data: [{ transactionId: 'r1', priceId: 11 }, { transactionId: 'r1', priceId: 12 }],
+      skipDuplicates: true
+    })
+    expect(await redis.smembers(PRICE_RELINK_PENDING_KEY)).toEqual([])
+    expect(invalidate).toHaveBeenCalledWith(['ecash:addr-r'])
+  })
+
+  it('makes a concurrent call wait for the run in progress instead of starting another', async () => {
+    await Promise.all([
+      transactionService.connectAllTransactionsToPrices(),
+      transactionService.connectAllTransactionsToPrices()
+    ])
+
+    expect(prismaMock.pricesOnTransactions.groupBy).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('retryOnTransactionTimeout', () => {
+  let timeoutSpy: jest.SpyInstance
+  let warnSpy: jest.SpyInstance
+
+  beforeEach(() => {
+    timeoutSpy = jest.spyOn(global, 'setTimeout').mockImplementation(((fn: () => void) => { fn(); return 0 }) as any)
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    timeoutSpy.mockRestore()
+    warnSpy.mockRestore()
+  })
+
+  it('retries once when the DB transaction timed out', async () => {
+    const timeout = new Prisma.PrismaClientKnownRequestError('Transaction already closed', { code: 'P2028', clientVersion: 'test' })
+    const fn = jest.fn().mockRejectedValueOnce(timeout).mockResolvedValueOnce('ok')
+
+    await expect(transactionService.retryOnTransactionTimeout(fn)).resolves.toBe('ok')
+    expect(fn).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not retry other errors', async () => {
+    const fn = jest.fn().mockRejectedValue(new Error('unique constraint'))
+
+    await expect(transactionService.retryOnTransactionTimeout(fn)).rejects.toThrow('unique constraint')
+    expect(fn).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('createManyTransactionsForSync with an overlapping sync', () => {
+  const row = (hash: string): any => ({ hash, addressId: 'addr-1', amount: new Prisma.Decimal(1), timestamp: 1700000000, confirmed: true })
+
+  beforeEach(() => {
+    prisma.$transaction = prismaMock.$transaction
+    prisma.transaction.findMany = prismaMock.transaction.findMany
+    prisma.transaction.createMany = prismaMock.transaction.createMany
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock))
+    prismaMock.transaction.createMany.mockResolvedValue({ count: 1 })
+  })
+
+  it('only reports the rows this call created, identified by the ids it generated', async () => {
+    prismaMock.transaction.findMany
+      .mockResolvedValueOnce([]) // neither tx existed when checked
+      .mockImplementationOnce((async (args: any) => {
+        // A concurrent sync inserted h2 first, so only our h1 row exists with one of our ids.
+        const ourIds: string[] = args.where.id.in
+        return [{ id: ourIds[0], hash: 'h1', addressId: 'addr-1', amount: new Prisma.Decimal(1), timestamp: 1700000000, confirmed: true }]
+      }) as any)
+
+    const result = await transactionService.createManyTransactionsForSync([row('h1'), row('h2')])
+
+    const createManyData = (prismaMock.transaction.createMany.mock.calls[0][0] as any).data
+    expect(createManyData).toHaveLength(2)
+    expect(createManyData.every((r: any) => typeof r.id === 'string' && r.id.length > 0)).toBe(true)
+    const lookup = prismaMock.transaction.findMany.mock.calls[1][0] as any
+    expect(lookup.where).toEqual({ id: { in: createManyData.map((r: any) => r.id) } })
+    expect(result.inserted.map(t => t.hash)).toEqual(['h1'])
+    expect(result.insertedCount).toBe(1)
+  })
+})
+
+describe('invalidateCachesForAddresses', () => {
+  it('keeps addresses whose invalidation failed and retries them on the next call', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const invalidate = jest.spyOn(CacheSet, 'addressesSynced')
+      .mockRejectedValueOnce(new Error('redis down'))
+      .mockResolvedValue()
+
+    await transactionService.invalidateCachesForAddresses(['ecash:a'])
+    await transactionService.invalidateCachesForAddresses(['ecash:b'])
+
+    expect(invalidate).toHaveBeenCalledTimes(2)
+    expect(invalidate.mock.calls[1][0]).toEqual(['ecash:a', 'ecash:b'])
+    invalidate.mockRestore()
+    errorSpy.mockRestore()
   })
 })

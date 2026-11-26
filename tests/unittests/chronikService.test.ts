@@ -10,7 +10,8 @@ import {
 } from '../../services/chronikService'
 import { Address, Prisma } from '@prisma/client'
 import { fetchAddressesArray } from '../../services/addressService'
-import { fetchUnconfirmedTransactions, deleteTransactions, upsertTransaction, connectTransactionsToPricesForAddresses } from '../../services/transactionService'
+import { fetchUnconfirmedTransactions, deleteTransactions, upsertTransaction, connectTransactionsToPricesForAddresses, connectTransactionsListToPrices, createManyTransactionsForSync, invalidateCachesForAddresses } from '../../services/transactionService'
+import prisma from '../../prisma-local/clientInstance'
 import { executeAddressTriggers } from '../../services/triggerService'
 import { CacheSet } from '../../redis/index'
 
@@ -73,7 +74,9 @@ jest.mock('../../services/transactionService', () => ({
   getSimplifiedTransactions: jest.fn(),
   getSimplifiedTrasaction: jest.fn(),
   connectAllTransactionsToPrices: jest.fn(),
-  connectTransactionsToPricesForAddresses: jest.fn()
+  connectTransactionsToPricesForAddresses: jest.fn(),
+  connectTransactionsListToPrices: jest.fn(),
+  invalidateCachesForAddresses: jest.fn()
 }))
 
 jest.mock('../../redis/index', () => ({
@@ -1706,5 +1709,73 @@ describe('chronik WebSocket reconnection', () => {
     await done
 
     expect(endpoint.waitForOpen).toHaveBeenCalledTimes(16)
+  })
+})
+
+describe('commitTransactionsBatch price linking', () => {
+  const inserted = [{
+    id: 'tx-1',
+    hash: 'hash-1',
+    addressId: 'addr-1',
+    amount: new Prisma.Decimal(1),
+    timestamp: 1700000000,
+    confirmed: true
+  }]
+  const commitTuples = [{
+    row: { hash: 'hash-1', addressId: 'addr-1', timestamp: 1700000000, amount: 1 },
+    raw: {},
+    addressString: 'ecash:addr-1'
+  }]
+
+  beforeEach(() => {
+    process.env.WS_AUTH_KEY = 'test-auth-key'
+    ;(createManyTransactionsForSync as jest.Mock).mockResolvedValueOnce({ insertedCount: 1, inserted })
+    jest.spyOn(prisma.address, 'findMany').mockResolvedValue([] as any)
+    jest.spyOn(console, 'log').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it('links prices for the txs it just inserted, with the client network', async () => {
+    const link = (connectTransactionsListToPrices as jest.Mock).mockReset().mockResolvedValue(['tx-1'])
+    const client = new ChronikBlockchainClient('ecash')
+
+    await (client as any).commitTransactionsBatch(commitTuples, [], false)
+
+    expect(link).toHaveBeenCalledWith(
+      [{ ...inserted[0], address: { networkId: 1 } }],
+      { skipUnlink: true }
+    )
+  })
+
+  it('invalidates the caches of addresses whose new txs got linked', async () => {
+    ;(connectTransactionsListToPrices as jest.Mock).mockReset().mockResolvedValue(['tx-1'])
+    const invalidate = (invalidateCachesForAddresses as jest.Mock).mockReset()
+    const client = new ChronikBlockchainClient('ecash')
+
+    await (client as any).commitTransactionsBatch(commitTuples, [], false)
+
+    expect(invalidate).toHaveBeenCalledWith(['ecash:addr-1'])
+  })
+
+  it('does not invalidate caches when no new tx could be linked', async () => {
+    ;(connectTransactionsListToPrices as jest.Mock).mockReset().mockResolvedValue([])
+    const invalidate = (invalidateCachesForAddresses as jest.Mock).mockReset()
+    const client = new ChronikBlockchainClient('ecash')
+
+    await (client as any).commitTransactionsBatch(commitTuples, [], false)
+
+    expect(invalidate).not.toHaveBeenCalled()
+  })
+
+  it('still commits the batch when price linking fails', async () => {
+    ;(connectTransactionsListToPrices as jest.Mock).mockReset().mockRejectedValue(new Error('price API down'))
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const client = new ChronikBlockchainClient('ecash')
+
+    await expect((client as any).commitTransactionsBatch(commitTuples, [], false)).resolves.toBeUndefined()
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('price API down'))
   })
 })

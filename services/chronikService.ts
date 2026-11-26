@@ -16,7 +16,9 @@ import {
   upsertTransaction,
   getSimplifiedTransactions,
   getSimplifiedTrasaction,
-  connectTransactionsToPricesForAddresses
+  connectTransactionsToPricesForAddresses,
+  connectTransactionsListToPrices,
+  invalidateCachesForAddresses
 } from './transactionService'
 import { CacheSet } from 'redis/index'
 import {
@@ -1106,6 +1108,31 @@ export class ChronikBlockchainClient {
       `${this.CHRONIK_MSG_PREFIX} committed — created=${syncResult.insertedCount}/` +
       `${commitTuples.length}`
     )
+
+    // Link prices batch by batch instead of only at the end of the sync job, so
+    // an interrupted sync (restart, deploy) doesn't leave everything unpriced.
+    // A failure here is not fatal: connectAllTransactionsToPrices retries later.
+    if (syncResult.inserted.length > 0) {
+      try {
+        const linkedIds = new Set(await connectTransactionsListToPrices(
+          syncResult.inserted.map(t => ({ ...t, address: { networkId: this.networkId } })),
+          { skipUnlink: true }
+        ))
+        // The bulk path doesn't add txs to cached payments, so drop the caches of
+        // addresses whose new txs are now priced instead of waiting for the end of
+        // the sync, which an interrupted sync never reaches. Txs left unpriced are
+        // invalidated by connectAllTransactionsToPrices once it links them.
+        const addressStringById = new Map(commitTuples.map(t => [t.row.addressId, t.addressString]))
+        const linkedAddresses = [...new Set(
+          syncResult.inserted.filter(t => linkedIds.has(t.id)).map(t => addressStringById.get(t.addressId))
+        )].filter((a): a is string => a !== undefined)
+        if (linkedAddresses.length > 0) {
+          await invalidateCachesForAddresses(linkedAddresses)
+        }
+      } catch (err: any) {
+        console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to link prices for ${syncResult.inserted.length} synced txs: ${err.message as string}`)
+      }
+    }
 
     const createdForProd = syncResult.inserted.filter(t =>
       productionAddressesIds.includes(t.addressId)
