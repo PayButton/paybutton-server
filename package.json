@@ -11,7 +11,7 @@
     "initJobs": "JOBS_ENV=1 dotenv -e .env -c -- tsx jobs/initJobs.ts",
     "initWSServer": "dotenv -e .env -c -- ts-node -O '{\"module\":\"commonjs\"}' -r tsconfig-paths/register ws-service/route.ts",
     "start": "cross-env NODE_ENV=production node dist/index.js",
-    "prod": "yarn build && NODE_ENV=production next start",
+    "prod": "sh ./scripts/next-prod-start.sh",
     "test": "dotenv -e .env.test -- ts-node -O '{\"module\":\"commonjs\"}' node_modules/jest/bin/jest.js",
     "pretest": "dotenv -e .env.test -- prisma migrate reset --force",
     "prisma": "dotenv -e .env -c -- prisma",

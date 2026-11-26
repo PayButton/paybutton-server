@@ -155,6 +155,10 @@ export class ChronikBlockchainClient {
 
   constructor (networkSlug: string) {
     this.latencyTestFinished = false
+    // `next build` imports this module from several workers while collecting
+    // page data; nothing there talks to chronik, so don't run latency tests or
+    // open websockets for it.
+    if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) return
     void (async () => {
       if (process.env.WS_AUTH_KEY === '' || process.env.WS_AUTH_KEY === undefined) {
         throw new Error(RESPONSE_MESSAGES.MISSING_WS_AUTH_KEY_400.message)
