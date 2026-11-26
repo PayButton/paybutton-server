@@ -36,6 +36,10 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       // this flag ?serverOnly=1 tells us to only retrieve what we have in the database
       const serverOnly = req.query.serverOnly === '1'
 
+      // A lookup is activity on the address; if it had expired, this syncs what it
+      // missed before we answer.
+      await multiBlockchainClient.recordActivityForAddressStrings([address])
+
       try {
         const transactionsWithAddressAndPrices = await fetchPaginatedAddressTransactions(address, page, pageSize, orderBy, orderDesc)
         const transactions = getSimplifiedTransactions(transactionsWithAddressAndPrices)

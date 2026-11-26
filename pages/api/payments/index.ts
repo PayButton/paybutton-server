@@ -1,12 +1,14 @@
 import { fetchAllPaymentsByUserIdWithPagination } from 'services/transactionService'
 import { fetchUserProfileFromId } from 'services/userService'
 import { setSession } from 'utils/setSession'
+import { multiBlockchainClient } from 'services/chronikService'
 import { RESPONSE_MESSAGES, TX_PAGE_SIZE_LIMIT, DEFAULT_TX_PAGE_SIZE } from 'constants/index'
 
 export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'GET') {
     await setSession(req, res)
     const userId = req.session.userId
+    await multiBlockchainClient.recordUserActivity(userId)
     const rawPage = req.query.page
     const page = (rawPage === '' || rawPage === undefined)
       ? 0

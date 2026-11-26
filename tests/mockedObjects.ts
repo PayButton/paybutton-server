@@ -24,6 +24,7 @@ export const mockedPaybutton: PaybuttonWithAddresses = {
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
         lastSynced: null,
+        lastActivityAt: new Date(),
         networkId: 1
       }
     },
@@ -35,6 +36,7 @@ export const mockedPaybutton: PaybuttonWithAddresses = {
         createdAt: new Date('2022-05-27T15:18:42.000Z'),
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
         lastSynced: null,
+        lastActivityAt: new Date(),
         networkId: 2
       }
     }
@@ -49,6 +51,7 @@ export const mockedBCHAddress = {
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   networkId: 2,
   lastSynced: null,
+  lastActivityAt: new Date(),
   paybuttonId: 'bfe90894-b1f4-11ed-b556-0242ac120003',
   walletId: null
 }
@@ -60,6 +63,7 @@ export const mockedXECAddress = {
   createdAt: new Date('2022-05-27T15:18:42.000Z'),
   updatedAt: new Date('2022-05-27T15:18:42.000Z'),
   lastSynced: null,
+  lastActivityAt: new Date(),
   networkId: 1,
   paybuttonId: 'bfe90894-b1f4-11ed-b556-0242ac120003',
   walletId: null
@@ -79,6 +83,7 @@ export const mockedAddressesOnUserProfile = {
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     networkId: 1,
     lastSynced: new Date('2022-05-27T15:18:42.000Z'),
+    lastActivityAt: new Date(),
     paybuttons: [
       {
         paybuttonId: 'bfe90894-b1f4-11ed-b556-0242ac120003',
@@ -124,6 +129,7 @@ export const mockedAddressList = [
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     lastSynced: null,
+    lastActivityAt: new Date(),
     networkId: 1,
     walletId: null
   },
@@ -134,6 +140,7 @@ export const mockedAddressList = [
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     lastSynced: null,
+    lastActivityAt: new Date(),
     networkId: 2,
     walletId: null
   },
@@ -144,6 +151,7 @@ export const mockedAddressList = [
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     lastSynced: null,
+    lastActivityAt: new Date(),
     networkId: 1,
     walletId: null
   },
@@ -154,6 +162,7 @@ export const mockedAddressList = [
     createdAt: new Date('2022-05-27T15:18:42.000Z'),
     updatedAt: new Date('2022-05-27T15:18:42.000Z'),
     lastSynced: null,
+    lastActivityAt: new Date(),
     networkId: 2,
     walletId: null
   }
@@ -236,6 +245,7 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
         networkId: 1,
         lastSynced: new Date('2022-05-27T15:18:42.000Z'),
+        lastActivityAt: new Date(),
         paybuttons: [
           {
             paybuttonId: 'bfe90894-b1f4-11ed-b556-0242ac120003',
@@ -286,6 +296,7 @@ export const mockedWallet: WalletWithAddressesWithPaybuttons = {
         updatedAt: new Date('2022-05-27T15:18:42.000Z'),
         networkId: 2,
         lastSynced: new Date('2022-05-27T15:18:42.000Z'),
+        lastActivityAt: new Date(),
         paybuttons: [
           {
             paybuttonId: 'bfe90b48-b1f4-11ed-b556-0242ac120003',

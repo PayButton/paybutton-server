@@ -2,6 +2,7 @@ import * as walletService from 'services/walletService'
 import { parseWalletPATCHRequest, parseError } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { setSession } from 'utils/setSession'
+import { multiBlockchainClient } from 'services/chronikService'
 
 export default async (
   req: any,
@@ -29,6 +30,7 @@ export default async (
       params.userId = userId
       const updateWalletInput = parseWalletPATCHRequest(params)
       const wallet = await walletService.updateWallet(walletId, updateWalletInput)
+      void multiBlockchainClient.recordActivityForAddressIds(updateWalletInput.addressIdList)
       res.status(200).json(wallet)
     } catch (err: any) {
       const parsedError = parseError(err)

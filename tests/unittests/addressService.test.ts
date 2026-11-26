@@ -3,7 +3,8 @@ import { Prisma } from '@prisma/client'
 import * as addressService from 'services/addressService'
 import { prismaMock } from 'prisma-local/mockedClient'
 import { mockedBCHAddress, mockedNetwork, mockedAddressesOnButtons, mockedAddressIdList } from '../mockedObjects'
-import { RESPONSE_MESSAGES } from 'constants/index'
+import { RESPONSE_MESSAGES, ADDRESS_ACTIVITY_TOUCH_THROTTLE } from 'constants/index'
+import config from 'config'
 
 describe('Find by substring', () => {
   it('Return single address', async () => {
@@ -93,5 +94,64 @@ describe('addressExists', () => {
 
     await expect(addressService.addressExists(mockedBCHAddress.address, true)).rejects.toThrow(poolTimeout)
     await expect(addressService.addressExists(mockedBCHAddress.address)).rejects.toThrow(poolTimeout)
+  })
+})
+
+describe('address expiry', () => {
+  const DAY = 24 * 60 * 60 * 1000
+  let savedDays: number
+
+  beforeEach(() => {
+    savedDays = config.addressExpiryDays
+    config.addressExpiryDays = 180
+  })
+
+  afterEach(() => {
+    config.addressExpiryDays = savedDays
+  })
+
+  it('an address is expired only after addressExpiryDays without activity', () => {
+    expect(addressService.isAddressExpired({ lastActivityAt: new Date(Date.now() - 179 * DAY) })).toBe(false)
+    expect(addressService.isAddressExpired({ lastActivityAt: new Date(Date.now() - 181 * DAY) })).toBe(true)
+  })
+
+  it('0 disables expiry', async () => {
+    config.addressExpiryDays = 0
+    expect(addressService.getAddressExpiryCutoff()).toBeUndefined()
+    expect(addressService.isAddressExpired({ lastActivityAt: new Date(0) })).toBe(false)
+    expect(await addressService.fetchExpiredAddressesForNetworkId(1)).toEqual([])
+    expect(await addressService.fetchExpiredUserAddresses('user-1')).toEqual([])
+  })
+
+  it('fetches active and expired addresses on either side of the cutoff', async () => {
+    prismaMock.address.findMany.mockResolvedValue([])
+    prisma.address.findMany = prismaMock.address.findMany
+
+    await addressService.fetchActiveAddressesForNetworkId(1)
+    await addressService.fetchExpiredAddressesForNetworkId(1)
+
+    const [activeArgs, expiredArgs] = prismaMock.address.findMany.mock.calls.slice(-2).map(c => c[0] as any)
+    expect(activeArgs.where.networkId).toBe(1)
+    expect(activeArgs.where.lastActivityAt.gte).toBeInstanceOf(Date)
+    expect(expiredArgs.where.lastActivityAt.lt).toEqual(activeArgs.where.lastActivityAt.gte)
+  })
+
+  it('touchAddressActivity skips addresses touched recently and dedupes ids', async () => {
+    prismaMock.address.updateMany.mockResolvedValue({ count: 1 })
+    prisma.address.updateMany = prismaMock.address.updateMany
+
+    await addressService.touchAddressActivity(['a', 'b', 'a'])
+
+    const args = prismaMock.address.updateMany.mock.calls.at(-1)?.[0] as any
+    expect(args.where.id.in).toEqual(['a', 'b'])
+    const throttleCutoff: Date = args.where.lastActivityAt.lt
+    expect(args.data.lastActivityAt.getTime() - throttleCutoff.getTime()).toBe(ADDRESS_ACTIVITY_TOUCH_THROTTLE)
+  })
+
+  it('touchAddressActivity does nothing for an empty list', async () => {
+    prismaMock.address.updateMany.mockClear()
+    prisma.address.updateMany = prismaMock.address.updateMany
+    await addressService.touchAddressActivity([])
+    expect(prismaMock.address.updateMany).not.toHaveBeenCalled()
   })
 })

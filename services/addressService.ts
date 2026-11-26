@@ -1,6 +1,7 @@
 import { Prisma, Address } from '@prisma/client'
 import prisma from 'prisma-local/clientInstance'
-import { RESPONSE_MESSAGES } from 'constants/index'
+import { RESPONSE_MESSAGES, ADDRESS_ACTIVITY_TOUCH_THROTTLE } from 'constants/index'
+import config from 'config'
 import { getNetworkFromSlug } from 'services/networkService'
 
 const addressWithTransactionAndNetwork = Prisma.validator<Prisma.AddressDefaultArgs>()({
@@ -184,6 +185,98 @@ export async function fetchAllAddressesForNetworkId (networkId: number): Promise
     where: {
       networkId
     }
+  })
+}
+
+/**
+ * Addresses with no activity since this date are expired: they are left out of
+ * the startup sync and the chronik subscription until something touches them.
+ * Undefined when expiry is disabled (config.addressExpiryDays = 0).
+ */
+export function getAddressExpiryCutoff (): Date | undefined {
+  if (config.addressExpiryDays <= 0) return undefined
+  return new Date(Date.now() - config.addressExpiryDays * 24 * 60 * 60 * 1000)
+}
+
+export function isAddressExpired (address: Pick<Address, 'lastActivityAt'>): boolean {
+  const cutoff = getAddressExpiryCutoff()
+  return cutoff !== undefined && address.lastActivityAt < cutoff
+}
+
+export async function fetchActiveAddressesForNetworkId (networkId: number): Promise<Address[]> {
+  const cutoff = getAddressExpiryCutoff()
+  if (cutoff === undefined) return await fetchAllAddressesForNetworkId(networkId)
+  return await prisma.address.findMany({
+    where: {
+      networkId,
+      lastActivityAt: { gte: cutoff }
+    }
+  })
+}
+
+export async function fetchExpiredAddressesForNetworkId (networkId: number): Promise<Address[]> {
+  const cutoff = getAddressExpiryCutoff()
+  if (cutoff === undefined) return []
+  return await prisma.address.findMany({
+    where: {
+      networkId,
+      lastActivityAt: { lt: cutoff }
+    }
+  })
+}
+
+// Addresses a user owns, through their paybuttons or wallets.
+function userAddressesWhere (userId: string): Prisma.AddressWhereInput {
+  return {
+    OR: [
+      { paybuttons: { some: { paybutton: { providerUserId: userId } } } },
+      { userProfiles: { some: { userId } } }
+    ]
+  }
+}
+
+export async function fetchExpiredUserAddresses (userId: string): Promise<Address[]> {
+  const cutoff = getAddressExpiryCutoff()
+  if (cutoff === undefined) return []
+  return await prisma.address.findMany({
+    where: {
+      ...userAddressesWhere(userId),
+      lastActivityAt: { lt: cutoff }
+    }
+  })
+}
+
+// Same throttling as touchAddressActivity.
+export async function touchUserAddressesActivity (userId: string): Promise<void> {
+  const now = new Date()
+  await prisma.address.updateMany({
+    where: {
+      ...userAddressesWhere(userId),
+      lastActivityAt: { lt: new Date(now.getTime() - ADDRESS_ACTIVITY_TOUCH_THROTTLE) }
+    },
+    data: { lastActivityAt: now }
+  })
+}
+
+export async function fetchAddressesByIdList (addressIds: string[]): Promise<Address[]> {
+  return await prisma.address.findMany({
+    where: { id: { in: addressIds } }
+  })
+}
+
+/**
+ * Records activity on the addresses (by id). Skips the write for addresses
+ * touched within ADDRESS_ACTIVITY_TOUCH_THROTTLE, so frequent lookups stay cheap.
+ */
+export async function touchAddressActivity (addressIds: string[]): Promise<void> {
+  if (addressIds.length === 0) return
+  const now = new Date()
+  await prisma.address.updateMany({
+    where: {
+      id: { in: [...new Set(addressIds)] },
+      lastActivityAt: { lt: new Date(now.getTime() - ADDRESS_ACTIVITY_TOUCH_THROTTLE) }
+    },
+    data: { lastActivityAt: now }
   })
 }
 

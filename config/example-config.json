@@ -29,6 +29,7 @@
     "bitcoincash": true
   },
   "triggerPOSTTimeout": 3000,
+  "addressExpiryDays": 180,
   "sideshiftAffiliateId": "JPk84U3xN",
   "proSettings": {
     "enabled": true,

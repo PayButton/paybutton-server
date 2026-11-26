@@ -9,7 +9,7 @@ import {
   multiBlockchainClient
 } from '../../services/chronikService'
 import { Address, Prisma } from '@prisma/client'
-import { fetchAddressesArray } from '../../services/addressService'
+import { fetchAddressesArray, fetchActiveAddressesForNetworkId, fetchExpiredAddressesForNetworkId, fetchExpiredUserAddresses, touchAddressActivity, touchUserAddressesActivity } from '../../services/addressService'
 import { fetchUnconfirmedTransactions, deleteTransactions, upsertTransaction, connectTransactionsToPricesForAddresses, connectTransactionsListToPrices, createManyTransactionsForSync, invalidateCachesForAddresses } from '../../services/transactionService'
 import prisma from '../../prisma-local/clientInstance'
 import { executeAddressTriggers } from '../../services/triggerService'
@@ -45,12 +45,20 @@ jest.mock('config', () => ({
     ecash: ['https://xec.paybutton.org'],
     bitcoincash: ['https://bch.paybutton.org']
   },
-  wsBaseURL: 'localhost:5000'
+  wsBaseURL: 'localhost:5000',
+  addressExpiryDays: 180
 }))
 
 // Mock all the services that might be called during initialization
 jest.mock('../../services/addressService', () => ({
   fetchAllAddressesForNetworkId: jest.fn().mockResolvedValue([]),
+  fetchActiveAddressesForNetworkId: jest.fn().mockResolvedValue([]),
+  fetchExpiredAddressesForNetworkId: jest.fn().mockResolvedValue([]),
+  fetchExpiredUserAddresses: jest.fn().mockResolvedValue([]),
+  fetchAddressesByIdList: jest.fn().mockResolvedValue([]),
+  isAddressExpired: jest.requireActual('../../services/addressService').isAddressExpired,
+  touchAddressActivity: jest.fn(),
+  touchUserAddressesActivity: jest.fn(),
   fetchAddressBySubstring: jest.fn(),
   fetchAddressesArray: jest.fn(),
   getEarliestUnconfirmedTxTimestampForAddress: jest.fn(),
@@ -799,7 +807,8 @@ describe('ChronikBlockchainClient advanced functionality', () => {
         syncing: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        lastSynced: null
+        lastSynced: null,
+        lastActivityAt: new Date()
       }
     ]
 
@@ -825,7 +834,8 @@ describe('ChronikBlockchainClient advanced functionality', () => {
         syncing: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        lastSynced: null
+        lastSynced: null,
+        lastActivityAt: new Date()
       }
     ]
 
@@ -865,7 +875,8 @@ describe('ChronikBlockchainClient advanced functionality', () => {
         syncing: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        lastSynced: null
+        lastSynced: null,
+        lastActivityAt: new Date()
       },
       {
         id: '2',
@@ -874,7 +885,8 @@ describe('ChronikBlockchainClient advanced functionality', () => {
         syncing: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        lastSynced: null
+        lastSynced: null,
+        lastActivityAt: new Date()
       }
     ]
 
@@ -904,7 +916,8 @@ describe('ChronikBlockchainClient advanced functionality', () => {
         syncing: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        lastSynced: null
+        lastSynced: null,
+        lastActivityAt: new Date()
       }
     ]
 
@@ -940,7 +953,8 @@ describe('ChronikBlockchainClient advanced functionality', () => {
         syncing: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        lastSynced: null
+        lastSynced: null,
+        lastActivityAt: new Date()
       }
     ]
 
@@ -1080,7 +1094,8 @@ describe('MultiBlockchainClient method coverage', () => {
         syncing: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        lastSynced: null
+        lastSynced: null,
+        lastActivityAt: new Date()
       },
       {
         id: '2',
@@ -1089,7 +1104,8 @@ describe('MultiBlockchainClient method coverage', () => {
         syncing: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        lastSynced: null
+        lastSynced: null,
+        lastActivityAt: new Date()
       }
     ]
 
@@ -1112,7 +1128,8 @@ describe('MultiBlockchainClient method coverage', () => {
         syncing: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        lastSynced: null
+        lastSynced: null,
+        lastActivityAt: new Date()
       }
     ]
 
@@ -1139,7 +1156,8 @@ describe('MultiBlockchainClient method coverage', () => {
         syncing: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        lastSynced: null
+        lastSynced: null,
+        lastActivityAt: new Date()
       }
     ]
 
@@ -1160,7 +1178,7 @@ describe('MultiBlockchainClient method coverage', () => {
   it('Should link prices and invalidate caches after an on-demand sync', async () => {
     const validAddress = fromHash160('ecash', 'p2pkh', 'c5d2460186f7233c927e7db2dcc703c0e500b653')
     const mockAddresses = [
-      { id: 'addr-1', address: validAddress, networkId: 1, syncing: false, createdAt: new Date(), updatedAt: new Date(), lastSynced: null }
+      { id: 'addr-1', address: validAddress, networkId: 1, syncing: false, createdAt: new Date(), updatedAt: new Date(), lastSynced: null, lastActivityAt: new Date() }
     ]
     const linkPrices = connectTransactionsToPricesForAddresses as jest.Mock
     const invalidate = CacheSet.addressesSynced as jest.Mock
@@ -1183,7 +1201,7 @@ describe('MultiBlockchainClient method coverage', () => {
   it('Should still invalidate caches and return the sync result if price linking fails', async () => {
     const validAddress = fromHash160('ecash', 'p2pkh', 'c5d2460186f7233c927e7db2dcc703c0e500b653')
     const mockAddresses = [
-      { id: 'addr-1', address: validAddress, networkId: 1, syncing: false, createdAt: new Date(), updatedAt: new Date(), lastSynced: null }
+      { id: 'addr-1', address: validAddress, networkId: 1, syncing: false, createdAt: new Date(), updatedAt: new Date(), lastSynced: null, lastActivityAt: new Date() }
     ]
     const linkPrices = connectTransactionsToPricesForAddresses as jest.Mock
     const invalidate = CacheSet.addressesSynced as jest.Mock
@@ -2025,5 +2043,149 @@ describe('changed addresses reported by the sync', () => {
     jest.spyOn(clients.ecash, 'syncMissedTransactions').mockResolvedValue(['ecash:b'])
 
     await expect(multiBlockchainClient.syncMissedTransactions()).resolves.toBeUndefined()
+  })
+})
+
+describe('address expiry', () => {
+  const DAY = 24 * 60 * 60 * 1000
+  const addr = (id: string, opts: { expired?: boolean, synced?: boolean } = {}): Address => ({
+    id,
+    address: fromHash160('ecash', 'p2pkh', id.padEnd(40, '0').slice(0, 40)),
+    networkId: 1,
+    syncing: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lastSynced: opts.synced === false ? null : new Date(Date.now() - 200 * DAY),
+    lastActivityAt: new Date(Date.now() - (opts.expired === true ? 200 : 1) * DAY)
+  })
+
+  beforeEach(() => {
+    jest.spyOn(console, 'log').mockImplementation(() => {})
+    ;(touchAddressActivity as jest.Mock).mockReset().mockResolvedValue(undefined)
+    ;(touchUserAddressesActivity as jest.Mock).mockReset().mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it('startup sync and subscription only include active addresses', async () => {
+    const active = [addr('aa')]
+    ;(fetchActiveAddressesForNetworkId as jest.Mock).mockResolvedValue(active)
+    const client = new ChronikBlockchainClient('ecash')
+    const sync = jest.spyOn(client, 'syncAddresses').mockResolvedValue({ failedAddressesWithErrors: {}, successfulAddressesWithCount: {}, changedAddresses: [] })
+    const sub = jest.spyOn(client, 'subscribeAddresses').mockResolvedValue({ failedAddressesWithErrors: {} })
+
+    await client.syncMissedTransactions()
+    await client.subscribeInitialAddresses()
+
+    expect(sync).toHaveBeenCalledWith(active, true, false, undefined)
+    expect(sub).toHaveBeenCalledWith(active)
+    ;(fetchActiveAddressesForNetworkId as jest.Mock).mockResolvedValue([])
+  })
+
+  it('recordActivity touches every address and revives only the expired ones', async () => {
+    const fresh = addr('aa')
+    const expired = addr('bb', { expired: true })
+    const revive = jest.spyOn(multiBlockchainClient, 'syncAndSubscribeAddresses')
+      .mockResolvedValue({ failedAddressesWithErrors: {}, successfulAddressesWithCount: {} })
+
+    await multiBlockchainClient.recordActivity([fresh, expired])
+
+    expect(touchAddressActivity).toHaveBeenCalledWith(['aa', 'bb'])
+    expect(revive).toHaveBeenCalledWith([expired])
+  })
+
+  it('recordActivity does not revive when nothing expired', async () => {
+    const revive = jest.spyOn(multiBlockchainClient, 'syncAndSubscribeAddresses')
+    await multiBlockchainClient.recordActivity([addr('aa')])
+    expect(revive).not.toHaveBeenCalled()
+  })
+
+  it('recordActivity never throws', async () => {
+    ;(touchAddressActivity as jest.Mock).mockRejectedValue(new Error('db down'))
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    await expect(multiBlockchainClient.recordActivity([addr('aa')])).resolves.toBeUndefined()
+  })
+
+  it("recordUserActivity revives the user's expired addresses", async () => {
+    const expired = addr('bb', { expired: true })
+    ;(fetchExpiredUserAddresses as jest.Mock).mockResolvedValueOnce([expired])
+    const revive = jest.spyOn(multiBlockchainClient, 'syncAndSubscribeAddresses')
+      .mockResolvedValue({ failedAddressesWithErrors: {}, successfulAddressesWithCount: {} })
+
+    await multiBlockchainClient.recordUserActivity('user-1')
+
+    expect(touchUserAddressesActivity).toHaveBeenCalledWith('user-1')
+    expect(revive).toHaveBeenCalledWith([expired])
+  })
+
+  it('concurrent revivals of the same address share one sync', async () => {
+    const expired = addr('bb', { expired: true })
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const revive = jest.spyOn(multiBlockchainClient, 'syncAndSubscribeAddresses').mockImplementation(async () => {
+      await gate
+      return { failedAddressesWithErrors: {}, successfulAddressesWithCount: {} }
+    })
+
+    const a = multiBlockchainClient.reviveAddresses([expired])
+    const b = multiBlockchainClient.reviveAddresses([expired])
+    release()
+    await Promise.all([a, b])
+
+    expect(revive).toHaveBeenCalledTimes(1)
+  })
+
+  it('catch-up syncs run triggers only for addresses synced before', async () => {
+    const synced = addr('aa', { expired: true })
+    const neverSynced = addr('bb', { expired: true, synced: false })
+    jest.spyOn(multiBlockchainClient, 'subscribeAddresses').mockResolvedValue()
+    jest.spyOn(multiBlockchainClient as any, 'finalizeOnDemandSync').mockResolvedValue(undefined)
+    const sync = jest.spyOn(multiBlockchainClient, 'syncAddresses')
+      .mockResolvedValue({ failedAddressesWithErrors: {}, successfulAddressesWithCount: {}, changedAddresses: [] })
+
+    await multiBlockchainClient.syncAndSubscribeAddresses([synced, neverSynced])
+
+    expect(sync).toHaveBeenCalledWith([synced], true, true)
+    expect(sync).toHaveBeenCalledWith([neverSynced])
+  })
+
+  it('the sweep drops stale subscriptions, syncs expired addresses and resubscribes revived ones', async () => {
+    const stillExpired = addr('aa', { expired: true })
+    const gotATx = addr('bb', { expired: true })
+    const clients = (multiBlockchainClient as any).clients
+    ;(fetchExpiredAddressesForNetworkId as jest.Mock).mockImplementation(async (networkId: number) =>
+      networkId === clients.ecash.networkId ? [stillExpired, gotATx] : []
+    )
+    // After the sync, the address with a new tx has fresh activity.
+    ;(fetchAddressesArray as jest.Mock).mockResolvedValueOnce([stillExpired, { ...gotATx, lastActivityAt: new Date() }])
+    const unsubEcash = jest.spyOn(clients.ecash, 'unsubscribeAddresses').mockImplementation(() => {})
+    jest.spyOn(clients.bitcoincash, 'unsubscribeAddresses').mockImplementation(() => {})
+    const sync = jest.spyOn(multiBlockchainClient, 'syncAddresses')
+      .mockResolvedValue({ failedAddressesWithErrors: {}, successfulAddressesWithCount: {}, changedAddresses: [gotATx.address] })
+    const sub = jest.spyOn(multiBlockchainClient, 'subscribeAddresses').mockResolvedValue()
+    const finalize = jest.spyOn(multiBlockchainClient as any, 'finalizeOnDemandSync').mockResolvedValue(undefined)
+
+    await multiBlockchainClient.sweepExpiredAddresses()
+
+    expect(unsubEcash).toHaveBeenCalledWith([stillExpired.address, gotATx.address])
+    expect(sync).toHaveBeenCalledWith([stillExpired, gotATx], true, true)
+    expect(sub).toHaveBeenCalledWith([expect.objectContaining({ id: 'bb' })])
+    expect(finalize).toHaveBeenCalledWith([gotATx])
+    ;(fetchExpiredAddressesForNetworkId as jest.Mock).mockResolvedValue([])
+  })
+
+  it('a live tx on an unsubscribed address hands it over for revival', () => {
+    const client = new ChronikBlockchainClient('ecash')
+    const subscribed = addr('aa')
+    const unsubscribed = addr('bb', { expired: true })
+    jest.spyOn(client, 'getSubscribedAddresses').mockReturnValue([subscribed.address])
+    const onTx = jest.fn().mockResolvedValue(undefined)
+    client.onUnsubscribedAddressTx = onTx
+
+    ;(client as any).reviveUnsubscribedAddresses([subscribed, unsubscribed])
+
+    expect(onTx).toHaveBeenCalledWith([unsubscribed])
   })
 })

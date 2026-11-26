@@ -16,6 +16,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
   if (req.method === 'GET') {
     try {
       const address = parseAddress(req.query.address as string)
+      await multiBlockchainClient.recordActivityForAddressStrings([address])
       const response = await multiBlockchainClient.getBalance(address)
       const balance = satoshisToUnit(response, xecaddr.detectAddressFormat(address))
       res.status(200).send(balance)

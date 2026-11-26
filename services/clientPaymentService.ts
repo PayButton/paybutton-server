@@ -38,6 +38,10 @@ export const generatePaymentId = async (address: string, amount?: Prisma.Decimal
 
   if (!isAddressRegistered) {
     void multiBlockchainClient.syncAndSubscribeAddresses([clientPayment.address])
+  } else {
+    // A new payment request is activity on the address. If it had expired, this
+    // subscribes it (so the payment is seen) and syncs what it missed.
+    await multiBlockchainClient.recordActivity([clientPayment.address])
   }
 
   return clientPayment.paymentId

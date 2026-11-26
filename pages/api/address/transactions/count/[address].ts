@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { fetchTxCountByAddressString } from 'services/transactionService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import { parseAddress } from 'utils/validators'
+import { multiBlockchainClient } from 'services/chronikService'
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   if (req.method === 'GET') {
@@ -10,6 +11,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
         throw new Error(RESPONSE_MESSAGES.ADDRESS_NOT_PROVIDED_400.message)
       }
       const address = parseAddress(req.query.address as string)
+      await multiBlockchainClient.recordActivityForAddressStrings([address])
       const count = await fetchTxCountByAddressString(address)
       res.status(200).send(count)
     } catch (err: any) {

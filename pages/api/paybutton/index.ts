@@ -15,6 +15,9 @@ export default async (req: any, res: any): Promise<void> => {
       const createdPaybuttonObj = await paybuttonService.createPaybutton(createPaybuttonInput)
       const addressList = await fetchAddressesArray(createdPaybuttonObj.createdAddresses)
       void multiBlockchainClient.syncAndSubscribeAddresses(addressList)
+      // Adding an address to a button is activity on it; also revives expired
+      // existing addresses (new ones are synced just above).
+      void multiBlockchainClient.recordActivity(createdPaybuttonObj.paybutton.addresses.map(a => a.address))
       res.status(200).json(createdPaybuttonObj.paybutton)
     } catch (err: any) {
       const parsedErr = parseError(err)

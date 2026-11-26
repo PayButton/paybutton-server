@@ -1,7 +1,7 @@
 import prisma from 'prisma-local/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
 import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT, PRICES_CONNECTION_TX_CHUNK_SIZE, UNPRICED_TXS_PAGE_SIZE, SYNC_INSERT_RETRY_DELAY, HUMAN_READABLE_DATE_FORMAT } from 'constants/index'
-import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId } from 'services/addressService'
+import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId, touchAddressActivity } from 'services/addressService'
 import { AllPrices, QuoteValues, fetchAndStoreMissingPrices, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
 import _ from 'lodash'
 import { CacheSet } from 'redis/index'
@@ -431,6 +431,7 @@ export async function upsertTransaction (
     }
   })
   const created = createdTx.createdAt.getTime() === createdTx.updatedAt.getTime()
+  if (created) await recordTxActivity([createdTx.addressId])
   const networkId = await getTransactionNetworkId(createdTx)
   const ts = flattenTimestamp(createdTx.timestamp)
   const allPrices = await fetchPricesForNetworkAndTimestamp(Number(networkId), ts, prisma, true)
@@ -1108,7 +1109,18 @@ async function persistManyTransactionRows (
     updatedCount = updatedTxs.length
   }
 
+  await recordTxActivity(inserted.map(t => t.addressId))
   return { inserted, updated, updatedCount }
+}
+
+// A new tx is activity on its address (keeps it from expiring). Not fatal: the
+// txs are already persisted.
+async function recordTxActivity (addressIds: string[]): Promise<void> {
+  try {
+    await touchAddressActivity(addressIds)
+  } catch (err: any) {
+    console.error(`[ADDRESS EXPIRY]: Failed to record tx activity for ${addressIds.length} addresses: ${err.message as string}`)
+  }
 }
 
 /**

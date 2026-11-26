@@ -19,12 +19,18 @@ model Address {
   network            Network                   @relation(fields: [networkId], references: [id], onUpdate: Restrict)
   userProfiles       AddressesOnUserProfiles[]
   lastSynced         DateTime?
+  // Last time anyone showed interest in the address: a new tx, a public API
+  // lookup, a client payment, a paybutton/wallet change or its owner viewing
+  // their payments. Addresses idle for longer than config.addressExpiryDays are
+  // left out of the startup sync and the chronik subscription.
+  lastActivityAt     DateTime                  @default(now())
   syncing            Boolean                   @default(false)
   paybuttons         AddressesOnButtons[]
   transactions       Transaction[]
   clientPayments     ClientPayment[]
 
   @@index([networkId], map: "Address_networkId_fkey")
+  @@index([networkId, lastActivityAt])
 }
 
 model Paybutton {

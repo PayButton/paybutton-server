@@ -328,3 +328,15 @@ export const MAX_TXS_PER_ADDRESS = 250000
 
 // Will look for this many days before to check if there are gaps in prices
 export const N_DAYS_LOOK_FOR_PRICE_GAPS = 30
+
+// Address expiry (see config.addressExpiryDays).
+// How often the app re-checks expired addresses for txs (running their triggers)
+// and drops subscriptions of addresses that expired since startup.
+export const ADDRESS_EXPIRY_SWEEP_INTERVAL = 24 * 60 * 60 * 1000
+// Delay before the first sweep, to stay out of the way of the startup sync.
+export const ADDRESS_EXPIRY_SWEEP_INITIAL_DELAY = 60 * 60 * 1000
+// Expired addresses synced per chunk by the sweep.
+export const ADDRESS_EXPIRY_SWEEP_BATCH_SIZE = 200
+// Activity within this window of the last recorded one is not written again,
+// so repeated lookups don't write on every request.
+export const ADDRESS_ACTIVITY_TOUCH_THROTTLE = 60 * 60 * 1000

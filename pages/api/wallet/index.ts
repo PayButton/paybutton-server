@@ -1,6 +1,7 @@
 import * as walletService from 'services/walletService'
 import { parseError, parseWalletPOSTRequest } from 'utils/validators'
 import { RESPONSE_MESSAGES } from 'constants/index'
+import { multiBlockchainClient } from 'services/chronikService'
 
 export default async (req: any, res: any): Promise<void> => {
   if (req.method === 'POST') {
@@ -8,6 +9,7 @@ export default async (req: any, res: any): Promise<void> => {
     try {
       const createWalletInput = parseWalletPOSTRequest(values)
       const wallet = await walletService.createWallet(createWalletInput)
+      void multiBlockchainClient.recordActivityForAddressIds(createWalletInput.addressIdList)
       res.status(200).json(wallet)
     } catch (err: any) {
       const parsedErr = parseError(err)

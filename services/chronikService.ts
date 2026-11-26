@@ -1,7 +1,7 @@
 import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client'
 import { encodeCashAddress, decodeCashAddress } from 'ecashaddrjs'
 import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CONFIRMED_TX_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, MAX_TXS_PER_ADDRESS, TX_BATCH_POLLING_DELAY, SLOW_ADDRESS_SYNC_LOG_THRESHOLD, SLOWEST_ADDRESSES_TO_LOG, CHRONIK_HTTP_MAX_TRIES, CHRONIK_HTTP_BASE_DELAY_MS, CHRONIK_WS_BASE_DELAY_MS, CHRONIK_WS_MAX_DELAY_MS } from 'constants/index'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CONFIRMED_TX_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, MAX_TXS_PER_ADDRESS, TX_BATCH_POLLING_DELAY, SLOW_ADDRESS_SYNC_LOG_THRESHOLD, SLOWEST_ADDRESSES_TO_LOG, CHRONIK_HTTP_MAX_TRIES, CHRONIK_HTTP_BASE_DELAY_MS, CHRONIK_WS_BASE_DELAY_MS, CHRONIK_WS_MAX_DELAY_MS, ADDRESS_EXPIRY_SWEEP_INTERVAL, ADDRESS_EXPIRY_SWEEP_INITIAL_DELAY, ADDRESS_EXPIRY_SWEEP_BATCH_SIZE } from 'constants/index'
 import { productionAddresses } from 'prisma-local/seeds/addresses'
 import prisma from 'prisma-local/clientInstance'
 import {
@@ -28,7 +28,7 @@ import {
 import { Address, Prisma, ClientPaymentStatus } from '@prisma/client'
 import xecaddr from 'xecaddrjs'
 import { getAddressPrefix, satoshisToUnit } from 'utils/index'
-import { fetchAddressesArray, fetchAllAddressesForNetworkId, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced } from './addressService'
+import { fetchAddressesArray, fetchActiveAddressesForNetworkId, fetchExpiredAddressesForNetworkId, isAddressExpired, touchAddressActivity, fetchAddressesByIdList, fetchExpiredUserAddresses, touchUserAddressesActivity, getEarliestUnconfirmedTxTimestampForAddress, getLatestConfirmedTxTimestampForAddress, setSyncing, setSyncingBatch, updateLastSynced } from './addressService'
 import * as ws from 'ws'
 import { BroadcastTxData } from 'ws-service/types'
 import config from 'config'
@@ -140,6 +140,9 @@ export class ChronikBlockchainClient {
   lastProcessedMessages!: ProcessedMessages
   initializing!: boolean
   mempoolTxsBeingProcessed!: number
+  // Set by MultiBlockchainClient. Called when a live tx lands on an address
+  // that isn't subscribed (an expired one), to subscribe it and sync its gap.
+  onUnsubscribedAddressTx?: (addresses: Address[]) => Promise<void>
 
   private latencyTestFinished: boolean
   // Bumped every time a new chronik WS endpoint is created, so callbacks and
@@ -309,6 +312,31 @@ export class ChronikBlockchainClient {
   public getSubscribedAddresses (): string[] {
     const ret = this.chronikWSEndpoint.subs.scripts.map((script: WsSubScriptClient) => fromHash160(this.networkSlug, script.scriptType as AddressType, script.payload))
     return [...new Set(ret)]
+  }
+
+  public unsubscribeAddresses (addresses: string[]): void {
+    const subscribed = new Set(this.getSubscribedAddresses())
+    for (const address of addresses) {
+      if (!subscribed.has(address)) continue
+      try {
+        this.chronikWSEndpoint.unsubscribeFromAddress(address)
+      } catch (err: any) {
+        console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to unsubscribe ${address}: ${err.message as string}`)
+      }
+    }
+  }
+
+  // The live handlers store txs for every known address involved, including
+  // expired ones that aren't subscribed. Such a tx is activity: hand those
+  // addresses over to be subscribed and caught up, without blocking the handler.
+  private reviveUnsubscribedAddresses (addresses: Address[]): void {
+    if (this.onUnsubscribedAddressTx === undefined || addresses.length === 0) return
+    const subscribed = new Set(this.getSubscribedAddresses())
+    const unsubscribed = addresses.filter(a => !subscribed.has(a.address))
+    if (unsubscribed.length === 0) return
+    void this.onUnsubscribedAddressTx(unsubscribed).catch((err: any) => {
+      console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to revive ${unsubscribed.length} addresses after a live tx: ${err.message as string}`)
+    })
   }
 
   private isAlreadyBeingProcessed (txid: string, confirmed: boolean): boolean {
@@ -1028,6 +1056,7 @@ export class ChronikBlockchainClient {
               await this.handleUpdateClientPaymentStatus(amount, opReturn, 'ADDED_TO_MEMPOOL' as ClientPaymentStatus, addressWithTransaction.address.address)
             }
           }
+          this.reviveUnsubscribedAddresses(addressesWithTransactions.map(a => a.address))
         } catch (e) {
           console.error(`${this.CHRONIK_MSG_PREFIX}: mempool handler failed for ${msg.txid}`, e)
         } finally {
@@ -1139,6 +1168,7 @@ export class ChronikBlockchainClient {
           }
         }
       }
+      this.reviveUnsubscribedAddresses(addressesWithTransactions.map(a => a.address))
     }
   }
 
@@ -1477,7 +1507,9 @@ export class ChronikBlockchainClient {
    * the sync failed in a way that leaves that unknown.
    */
   public async syncMissedTransactions (progress?: SyncProgressTracker): Promise<string[] | undefined> {
-    const addresses = await fetchAllAddressesForNetworkId(this.networkId)
+    // Expired addresses are left to the app's periodic expiry sweep.
+    const addresses = await fetchActiveAddressesForNetworkId(this.networkId)
+    this.logExpirySkip('sync', addresses.length)
     try {
       const { failedAddressesWithErrors, successfulAddressesWithCount, changedAddresses } = await this.syncAddresses(addresses, true, false, progress)
       Object.keys(failedAddressesWithErrors).forEach((addr) => {
@@ -1497,12 +1529,18 @@ export class ChronikBlockchainClient {
   }
 
   public async subscribeInitialAddresses (): Promise<void> {
-    const addresses = await fetchAllAddressesForNetworkId(this.networkId)
+    const addresses = await fetchActiveAddressesForNetworkId(this.networkId)
+    this.logExpirySkip('subscription', addresses.length)
     try {
       await this.subscribeAddresses(addresses)
     } catch (err: any) {
       console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR: (skipping anyway) initial chronik subscription failed: ${err.message as string} ${err.stack as string}`)
     }
+  }
+
+  private logExpirySkip (what: string, activeCount: number): void {
+    if (config.addressExpiryDays <= 0) return
+    console.log(`${this.CHRONIK_MSG_PREFIX}: ${activeCount} addresses active in the last ${config.addressExpiryDays} days are included in the ${what}; expired addresses are skipped.`)
   }
 
   public async getLastBlockTimestamp (): Promise<number> {
@@ -1573,6 +1611,10 @@ export function outputScriptToAddress (networkSlug: string, outputScript: string
 class MultiBlockchainClient {
   private clients!: Record<MainNetworkSlugsType, ChronikBlockchainClient>
   public initializing: boolean
+  // Revivals in progress, by address, so concurrent requests for the same
+  // expired address share one sync.
+  private readonly revivalsInFlight = new Map<string, Promise<void>>()
+  private expirySweepRunning = false
 
   constructor () {
     console.log('Initializing MultiBlockchainClient...')
@@ -1586,6 +1628,9 @@ class MultiBlockchainClient {
       await Promise.all(asyncOperations)
       this.setInitialized()
       console.log('Finished initializing MultiBlockchainClient.')
+      if (this.isRunningApp()) {
+        this.scheduleExpirySweep()
+      }
     })()
   }
 
@@ -1625,6 +1670,7 @@ class MultiBlockchainClient {
 
     // Subscribe addresses & Sync lost transactions on DB upon client initialization
     if (this.isRunningApp()) {
+      newClient.onUnsubscribedAddressTx = async (addresses) => await this.reviveAddresses(addresses)
       asyncOperations.push(
         (async () => {
           await newClient.waitForLatencyTest()
@@ -1669,14 +1715,14 @@ class MultiBlockchainClient {
     })
   }
 
-  public async syncAddresses (addresses: Address[], runTriggers = false): Promise<SyncAndSubscriptionReturn> {
+  public async syncAddresses (addresses: Address[], runTriggers = false, reconcileClientPayments = false): Promise<SyncAndSubscriptionReturn> {
     let failedAddressesWithErrors: KeyValueT<string> = {}
     let successfulAddressesWithCount: KeyValueT<number> = {}
     let changedAddresses: string[] | undefined = []
 
     for (const networkSlug of Object.keys(this.clients)) {
       const thisNetworkAddresses = addresses.filter(a => a.networkId === NETWORK_IDS_FROM_SLUGS[networkSlug])
-      const ret = await this.clients[networkSlug as MainNetworkSlugsType].syncAddresses(thisNetworkAddresses, runTriggers)
+      const ret = await this.clients[networkSlug as MainNetworkSlugsType].syncAddresses(thisNetworkAddresses, runTriggers, reconcileClientPayments)
       failedAddressesWithErrors = { ...failedAddressesWithErrors, ...ret.failedAddressesWithErrors }
       successfulAddressesWithCount = { ...successfulAddressesWithCount, ...ret.successfulAddressesWithCount }
       // Unknown for one network means unknown overall.
@@ -1718,9 +1764,157 @@ class MultiBlockchainClient {
 
   public async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
     await this.subscribeAddresses(addresses)
-    const result = await this.syncAddresses(addresses)
+    const result = await this.syncCatchingUp(addresses)
     await this.finalizeOnDemandSync(addresses)
     return result
+  }
+
+  // Addresses synced before (lastSynced set) are caught up as the live handlers
+  // would have processed them: triggers run and client payments are reconciled
+  // for the txs found, which only covers txs not already stored. This matters
+  // for expired addresses, whose payments arrived while nobody was listening.
+  // Addresses never synced get their full history, so no triggers for those.
+  private async syncCatchingUp (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
+    const synced = addresses.filter(a => a.lastSynced !== null)
+    const neverSynced = addresses.filter(a => a.lastSynced === null)
+    const empty: SyncAndSubscriptionReturn = { failedAddressesWithErrors: {}, successfulAddressesWithCount: {}, changedAddresses: [] }
+    const a = synced.length > 0 ? await this.syncAddresses(synced, true, true) : empty
+    const b = neverSynced.length > 0 ? await this.syncAddresses(neverSynced) : empty
+    return {
+      failedAddressesWithErrors: { ...a.failedAddressesWithErrors, ...b.failedAddressesWithErrors },
+      successfulAddressesWithCount: { ...a.successfulAddressesWithCount, ...b.successfulAddressesWithCount },
+      changedAddresses: (a.changedAddresses === undefined || b.changedAddresses === undefined)
+        ? undefined
+        : [...a.changedAddresses, ...b.changedAddresses]
+    }
+  }
+
+  /**
+   * Subscribes the addresses and syncs what they missed. Concurrent calls for
+   * the same address share one sync.
+   */
+  public async reviveAddresses (addresses: Address[]): Promise<void> {
+    const pending: Array<Promise<void>> = []
+    const toRevive: Address[] = []
+    for (const a of addresses) {
+      const inFlight = this.revivalsInFlight.get(a.address)
+      if (inFlight !== undefined) pending.push(inFlight)
+      else toRevive.push(a)
+    }
+    if (toRevive.length > 0) {
+      console.log(`[ADDRESS EXPIRY]: Reviving ${toRevive.length} addresses...`)
+      const run = (async () => {
+        try {
+          await this.syncAndSubscribeAddresses(toRevive)
+        } finally {
+          toRevive.forEach(a => this.revivalsInFlight.delete(a.address))
+        }
+      })()
+      toRevive.forEach(a => this.revivalsInFlight.set(a.address, run))
+      pending.push(run)
+    }
+    await Promise.all(pending)
+  }
+
+  /**
+   * Records activity on the addresses and, for any that had expired, subscribes
+   * them and syncs what they missed before returning. Never throws: failing to
+   * record activity shouldn't fail the request that caused it.
+   */
+  public async recordActivity (addresses: Address[]): Promise<void> {
+    if (addresses.length === 0) return
+    try {
+      const expired = addresses.filter(a => isAddressExpired(a))
+      await touchAddressActivity(addresses.map(a => a.id))
+      if (expired.length > 0) {
+        await this.reviveAddresses(expired)
+      }
+    } catch (err: any) {
+      console.error(`[ADDRESS EXPIRY]: Failed to record activity for ${addresses.length} addresses: ${err.message as string}`)
+    }
+  }
+
+  // Same as recordActivity, by address string. Unknown addresses are ignored.
+  public async recordActivityForAddressStrings (addresses: string[]): Promise<void> {
+    try {
+      await this.recordActivity(await fetchAddressesArray(addresses))
+    } catch (err: any) {
+      console.error(`[ADDRESS EXPIRY]: Failed to record activity for ${addresses.length} addresses: ${err.message as string}`)
+    }
+  }
+
+  // Same as recordActivity, by address id.
+  public async recordActivityForAddressIds (addressIds: string[]): Promise<void> {
+    try {
+      await this.recordActivity(await fetchAddressesByIdList(addressIds))
+    } catch (err: any) {
+      console.error(`[ADDRESS EXPIRY]: Failed to record activity for ${addressIds.length} addresses: ${err.message as string}`)
+    }
+  }
+
+  // The owner viewing their payments is activity on all their addresses.
+  public async recordUserActivity (userId: string): Promise<void> {
+    try {
+      const expired = await fetchExpiredUserAddresses(userId)
+      await touchUserAddressesActivity(userId)
+      if (expired.length > 0) {
+        await this.reviveAddresses(expired)
+      }
+    } catch (err: any) {
+      console.error(`[ADDRESS EXPIRY]: Failed to record activity for user ${userId}: ${err.message as string}`)
+    }
+  }
+
+  private scheduleExpirySweep (): void {
+    if (config.addressExpiryDays <= 0) return
+    const run = (): void => {
+      void this.sweepExpiredAddresses().catch((err: any) => {
+        console.error(`[ADDRESS EXPIRY]: Sweep failed: ${err.message as string}`)
+      })
+    }
+    setTimeout(() => {
+      run()
+      setInterval(run, ADDRESS_EXPIRY_SWEEP_INTERVAL).unref()
+    }, ADDRESS_EXPIRY_SWEEP_INITIAL_DELAY).unref()
+  }
+
+  /**
+   * Periodic, low-priority pass over expired addresses, so a payment to a
+   * dormant address isn't missed for good:
+   * - drops subscriptions of addresses that expired since startup;
+   * - syncs expired addresses in small chunks, running triggers for new txs;
+   *   addresses that got new txs are active again and get subscribed.
+   */
+  public async sweepExpiredAddresses (): Promise<void> {
+    if (this.expirySweepRunning) return
+    this.expirySweepRunning = true
+    try {
+      for (const client of Object.values(this.clients)) {
+        const expired = await fetchExpiredAddressesForNetworkId(client.networkId)
+        client.unsubscribeAddresses(expired.map(a => a.address))
+        console.log(`${client.CHRONIK_MSG_PREFIX}: [ADDRESS EXPIRY] Sweeping ${expired.length} expired addresses...`)
+        let revivedCount = 0
+        for (let i = 0; i < expired.length; i += ADDRESS_EXPIRY_SWEEP_BATCH_SIZE) {
+          const chunk = expired.slice(i, i + ADDRESS_EXPIRY_SWEEP_BATCH_SIZE)
+          const { changedAddresses } = await this.syncCatchingUp(chunk)
+          // A new tx records activity on its address, so whatever is no longer
+          // expired got one.
+          const revived = (await fetchAddressesArray(chunk.map(a => a.address)))
+            .filter(a => !isAddressExpired(a))
+          if (revived.length > 0) {
+            await this.subscribeAddresses(revived)
+            revivedCount += revived.length
+          }
+          const toFinalize = changedAddresses === undefined
+            ? chunk
+            : chunk.filter(a => changedAddresses.includes(a.address))
+          await this.finalizeOnDemandSync(toFinalize)
+        }
+        console.log(`${client.CHRONIK_MSG_PREFIX}: [ADDRESS EXPIRY] Sweep done, ${revivedCount} addresses revived.`)
+      }
+    } finally {
+      this.expirySweepRunning = false
+    }
   }
 
   // syncAddresses commits through the bulk path, which defers price linking and

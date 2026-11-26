@@ -30,6 +30,9 @@ interface Config {
   networkBlockchainURLs: KeyValueT<string[]>
   networksUnderMaintenance: KeyValueT<boolean>
   triggerPOSTTimeout: number
+  // Days without activity after which an address is no longer synced or
+  // subscribed (until something touches it again). 0 disables expiry.
+  addressExpiryDays: number
   sideshiftAffiliateId: string
   smtpHost: string
   smtpPort: number
@@ -48,6 +51,10 @@ const readConfig = (): Config => {
         p[key] = Infinity
       }
     }
+  }
+
+  if (typeof config.addressExpiryDays !== 'number' || config.addressExpiryDays < 0) {
+    config.addressExpiryDays = 180
   }
 
   if (config.networksUnderMaintenance === undefined) {
