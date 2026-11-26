@@ -7,13 +7,43 @@
   text-decoration: underline;
 }
 
+.sync_card h4 {
+  margin: 0 0 16px;
+}
+
+.sync_card p {
+  margin: 0 0 12px;
+}
+
+.network_grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px 32px;
+  margin-top: 20px;
+}
+
+.network_card {
+  min-width: 0;
+}
+
+.network_card h5 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.sync_card p.sync_footer {
+  margin: 20px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--primary-bg-color);
+}
+
 .progress {
   position: relative;
   height: 24px;
   border-radius: 6px;
   background-color: var(--primary-bg-color);
   overflow: hidden;
-  margin: 6px 0;
+  margin: 6px 0 8px;
 }
 
 .progress_fill {
@@ -34,6 +64,7 @@
 
 .sync_meta {
   font-size: 14px;
+  line-height: 1.5;
   color: var(--secondary-text-color);
 }
 
@@ -50,7 +81,9 @@
 }
 
 .phases {
-  margin: 10px 0 15px;
+  margin: 0;
+  padding-left: 22px;
+  line-height: 1.7;
 }
 
 .phase_done {

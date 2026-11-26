@@ -12,6 +12,14 @@ const NETWORK_TITLES: Record<string, string> = {
   bitcoincash: 'Bitcoin Cash'
 }
 
+// Keep networks in the same order in every section.
+const networkOrder = (slug: string): number => {
+  const i = Object.keys(NETWORK_TITLES).indexOf(slug)
+  return i === -1 ? Number.MAX_SAFE_INTEGER : i
+}
+const sortedNetworks = <T,>(networks: Record<string, T>): Array<[string, T]> =>
+  Object.entries(networks).sort(([a], [b]) => networkOrder(a) - networkOrder(b))
+
 const PHASES: Array<{ key: SyncPhase, title: string }> = [
   { key: 'prices', title: 'Past prices' },
   { key: 'transactions', title: 'Transactions' },
@@ -47,7 +55,7 @@ function ProgressBar ({ done, total }: { done: number, total: number }): JSX.Ele
 function JobNetwork ({ slug, net, now }: { slug: string, net: NetworkSyncProgress, now: number }): JSX.Element {
   const end = net.finishedAt ?? now
   return (
-    <div>
+    <div className={style.network_card}>
       <h5>{NETWORK_TITLES[slug] ?? slug}</h5>
       <ProgressBar done={net.addressesDone} total={net.totalAddresses} />
       <div className={style.sync_meta}>
@@ -130,7 +138,7 @@ export default function SyncStatus (): JSX.Element {
     <h3>Sync Status</h3>
     {error !== undefined && <p className={style.sync_error}>Last refresh failed: {error}</p>}
 
-    <div className="paybutton-table-ctn">
+    <div className={`paybutton-table-ctn ${style.sync_card}`}>
       <h4>Background sync job</h4>
       <p>
         Status: <strong className={jobStatusClass}>{jobStatusLabel}</strong>
@@ -159,16 +167,16 @@ export default function SyncStatus (): JSX.Element {
           </li>
         })}
       </ol>}
-      {job !== null && Object.keys(job.networks).length > 0 && <div className="columns">
-        {Object.entries(job.networks).map(([slug, net]) => <JobNetwork key={slug} slug={slug} net={net} now={now} />)}
+      {job !== null && Object.keys(job.networks).length > 0 && <div className={style.network_grid}>
+        {sortedNetworks(job.networks).map(([slug, net]) => <JobNetwork key={slug} slug={slug} net={net} now={now} />)}
       </div>}
     </div>
 
-    <div className="paybutton-table-ctn">
+    <div className={`paybutton-table-ctn ${style.sync_card}`}>
       <h4>Addresses (all syncs, including on-demand)</h4>
-      <div className="columns">
-        {Object.entries(data.networks).map(([slug, n]) => (
-          <div key={slug}>
+      <div className={style.network_grid}>
+        {sortedNetworks(data.networks).map(([slug, n]) => (
+          <div key={slug} className={style.network_card}>
             <h5>{NETWORK_TITLES[slug] ?? slug}</h5>
             <ProgressBar done={n.total - n.syncing} total={n.total} />
             <div className={style.sync_meta}>
@@ -179,7 +187,7 @@ export default function SyncStatus (): JSX.Element {
           </div>
         ))}
       </div>
-      <p className={style.sync_meta}>
+      <p className={`${style.sync_meta} ${style.sync_footer}`}>
         Transactions without linked prices:{' '}
         {data.unpricedTxs === null || data.unpricedTxsCheckedAt === null
           ? <em>counting…</em>
@@ -187,7 +195,7 @@ export default function SyncStatus (): JSX.Element {
       </p>
     </div>
 
-    {data.syncingAddresses.length > 0 && <div className="paybutton-table-ctn">
+    {data.syncingAddresses.length > 0 && <div className={`paybutton-table-ctn ${style.sync_card}`}>
       <h4>Currently syncing addresses (oldest first)</h4>
       <table>
         <thead><tr><th>Address</th><th>Network</th><th>Syncing since</th></tr></thead>
@@ -203,7 +211,7 @@ export default function SyncStatus (): JSX.Element {
       </table>
     </div>}
 
-    {failedAddresses.length > 0 && <div className="paybutton-table-ctn">
+    {failedAddresses.length > 0 && <div className={`paybutton-table-ctn ${style.sync_card}`}>
       <h4>Failed addresses in last job run</h4>
       <table>
         <thead><tr><th>Address</th><th>Network</th><th>Error</th></tr></thead>
