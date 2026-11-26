@@ -832,3 +832,52 @@ describe('retryOnTransactionTimeout', () => {
     expect(fn).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('createManyTransactionsForSync with an overlapping sync', () => {
+  const row = (hash: string): any => ({ hash, addressId: 'addr-1', amount: new Prisma.Decimal(1), timestamp: 1700000000, confirmed: true })
+
+  beforeEach(() => {
+    prisma.$transaction = prismaMock.$transaction
+    prisma.transaction.findMany = prismaMock.transaction.findMany
+    prisma.transaction.createMany = prismaMock.transaction.createMany
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock))
+    prismaMock.transaction.createMany.mockResolvedValue({ count: 1 })
+  })
+
+  it('only reports the rows this call created, identified by the ids it generated', async () => {
+    prismaMock.transaction.findMany
+      .mockResolvedValueOnce([]) // neither tx existed when checked
+      .mockImplementationOnce((async (args: any) => {
+        // A concurrent sync inserted h2 first, so only our h1 row exists with one of our ids.
+        const ourIds: string[] = args.where.id.in
+        return [{ id: ourIds[0], hash: 'h1', addressId: 'addr-1', amount: new Prisma.Decimal(1), timestamp: 1700000000, confirmed: true }]
+      }) as any)
+
+    const result = await transactionService.createManyTransactionsForSync([row('h1'), row('h2')])
+
+    const createManyData = (prismaMock.transaction.createMany.mock.calls[0][0] as any).data
+    expect(createManyData).toHaveLength(2)
+    expect(createManyData.every((r: any) => typeof r.id === 'string' && r.id.length > 0)).toBe(true)
+    const lookup = prismaMock.transaction.findMany.mock.calls[1][0] as any
+    expect(lookup.where).toEqual({ id: { in: createManyData.map((r: any) => r.id) } })
+    expect(result.inserted.map(t => t.hash)).toEqual(['h1'])
+    expect(result.insertedCount).toBe(1)
+  })
+})
+
+describe('invalidateCachesForAddresses', () => {
+  it('keeps addresses whose invalidation failed and retries them on the next call', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const invalidate = jest.spyOn(CacheSet, 'addressesSynced')
+      .mockRejectedValueOnce(new Error('redis down'))
+      .mockResolvedValue()
+
+    await transactionService.invalidateCachesForAddresses(['ecash:a'])
+    await transactionService.invalidateCachesForAddresses(['ecash:b'])
+
+    expect(invalidate).toHaveBeenCalledTimes(2)
+    expect(invalidate.mock.calls[1][0]).toEqual(['ecash:a', 'ecash:b'])
+    invalidate.mockRestore()
+    errorSpy.mockRestore()
+  })
+})
