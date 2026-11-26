@@ -1,7 +1,7 @@
 import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client'
 import { encodeCashAddress, decodeCashAddress } from 'ecashaddrjs'
 import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CONFIRMED_TX_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, MAX_TXS_PER_ADDRESS, TX_BATCH_POLLING_DELAY, CHRONIK_HTTP_MAX_TRIES, CHRONIK_HTTP_BASE_DELAY_MS, CHRONIK_WS_MAX_CONNECTION_ATTEMPTS, CHRONIK_WS_BASE_DELAY_MS } from 'constants/index'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CONFIRMED_TX_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, MAX_TXS_PER_ADDRESS, TX_BATCH_POLLING_DELAY, CHRONIK_HTTP_MAX_TRIES, CHRONIK_HTTP_BASE_DELAY_MS, CHRONIK_WS_BASE_DELAY_MS, CHRONIK_WS_MAX_DELAY_MS } from 'constants/index'
 import { productionAddresses } from 'prisma-local/seeds/addresses'
 import prisma from 'prisma-local/clientInstance'
 import {
@@ -137,7 +137,10 @@ export class ChronikBlockchainClient {
   mempoolTxsBeingProcessed!: number
 
   private latencyTestFinished: boolean
-  private wsReconnecting = false
+  // Bumped every time a new chronik WS endpoint is created, so callbacks and
+  // retry loops belonging to a replaced endpoint can tell they are stale.
+  private wsGeneration = 0
+  private wsClosedOnPurpose = false
   private confirmedTxsBeingProcessed = 0
 
   constructor (networkSlug: string) {
@@ -156,12 +159,10 @@ export class ChronikBlockchainClient {
         config.networkBlockchainURLs[networkSlug]
       )
       this.latencyTestFinished = true
-      this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
-      this.confirmedTxsHashesFromLastBlock = []
-      this.chronikWSEndpoint.subscribeToBlocks()
-      void this.connectWsWithRetry()
-      this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
       this.CHRONIK_MSG_PREFIX = `[CHRONIK — ${networkSlug}]`
+      this.confirmedTxsHashesFromLastBlock = []
+      this.openWs()
+      this.lastProcessedMessages = { confirmed: {}, unconfirmed: {} }
       this.wsEndpoint = io(`${config.wsBaseURL}/broadcast`, {
         query: {
           key: process.env.WS_AUTH_KEY
@@ -183,40 +184,49 @@ export class ChronikBlockchainClient {
     }
   }
 
-  private async connectWsWithRetry (maxAttempts = CHRONIK_WS_MAX_CONNECTION_ATTEMPTS, baseDelay = CHRONIK_WS_BASE_DELAY_MS): Promise<void> {
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+  private isCurrentWs (generation: number): boolean {
+    return !this.wsClosedOnPurpose && generation === this.wsGeneration
+  }
+
+  // Creates a fresh chronik WS endpoint (carrying over the given address
+  // subscriptions) and keeps trying to connect it until it opens or is replaced.
+  private openWs (addresses: string[] = []): void {
+    const generation = ++this.wsGeneration
+    const endpoint = this.chronik.ws(this.getWsConfig(generation))
+    endpoint.subscribeToBlocks()
+    for (const addr of addresses) {
+      endpoint.subscribeToAddress(addr)
+    }
+    this.chronikWSEndpoint = endpoint
+    void this.connectWsWithRetry(endpoint, generation)
+  }
+
+  private async connectWsWithRetry (endpoint: WsEndpoint, generation: number, baseDelay = CHRONIK_WS_BASE_DELAY_MS): Promise<void> {
+    // Never give up: without this socket no new payments are detected and no triggers run.
+    for (let attempt = 1; this.isCurrentWs(generation); attempt++) {
       try {
-        await this.chronikWSEndpoint.waitForOpen()
+        await endpoint.waitForOpen()
         console.log(`${this.CHRONIK_MSG_PREFIX}: WebSocket connected.`)
         return
       } catch (err: any) {
-        console.error(`${this.CHRONIK_MSG_PREFIX}: WebSocket connection attempt ${attempt}/${maxAttempts} failed: ${err.message as string}`)
-        if (attempt < maxAttempts) {
-          const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), 60000)
-          console.log(`${this.CHRONIK_MSG_PREFIX}: Retrying WebSocket in ${delay / 1000}s...`)
-          await new Promise(resolve => setTimeout(resolve, delay))
-        }
+        const delay = Math.min(baseDelay * Math.pow(2, Math.min(attempt - 1, 16)), CHRONIK_WS_MAX_DELAY_MS)
+        console.error(`${this.CHRONIK_MSG_PREFIX}: WebSocket connection attempt ${attempt} failed: ${err.message as string}. Retrying in ${delay / 1000}s...`)
+        await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
-    console.error(`${this.CHRONIK_MSG_PREFIX}: WebSocket failed after ${maxAttempts} attempts. Continuing without real-time updates.`)
   }
 
-  private async reconnectWs (): Promise<void> {
-    if (this.wsReconnecting) return
-    this.wsReconnecting = true
-    try {
-      const addresses = this.getSubscribedAddresses()
-      this.chronikWSEndpoint = this.chronik.ws(this.getWsConfig())
-      this.chronikWSEndpoint.subscribeToBlocks()
-      for (const addr of addresses) {
-        this.chronikWSEndpoint.subscribeToAddress(addr)
-      }
-      await this.connectWsWithRetry()
-    } catch (err: any) {
-      console.error(`${this.CHRONIK_MSG_PREFIX}: WebSocket reconnection error: ${err.message as string}`)
-    } finally {
-      this.wsReconnecting = false
-    }
+  private async handleWsEnded (generation: number): Promise<void> {
+    if (!this.isCurrentWs(generation)) return
+    console.log(`${this.CHRONIK_MSG_PREFIX}: Reconnecting chronik WebSocket in ${CHRONIK_WS_BASE_DELAY_MS / 1000}s...`)
+    await new Promise(resolve => setTimeout(resolve, CHRONIK_WS_BASE_DELAY_MS))
+    if (!this.isCurrentWs(generation)) return
+    this.openWs(this.getSubscribedAddresses())
+  }
+
+  public closeWs (): void {
+    this.wsClosedOnPurpose = true
+    this.chronikWSEndpoint?.close()
   }
 
   public getUrls (): string[] {
@@ -736,16 +746,19 @@ export class ChronikBlockchainClient {
     return details
   }
 
-  private getWsConfig (): WsConfig {
+  private getWsConfig (generation: number): WsConfig {
     return {
       onMessage: (msg: WsMsgClient) => { void this.processWsMessage(msg) },
       onError: (e: ws.ErrorEvent) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik webSocket error, type: ${e.type} | message: ${e.message} | error: ${e.error as string}`) },
-      onReconnect: (_: ws.Event) => {
-        console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik webSocket unexpectedly closed. Attempting reconnection...`)
-        void this.reconnectWs()
-      },
       onConnect: (_: ws.Event) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik webSocket connection (re)established.`) },
-      onEnd: (e: ws.Event) => { console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik WebSocket ended, type: ${e.type}.`) },
+      // chronik-client's own reconnect is unreliable: a socket error marks the
+      // endpoint as manually closed (so it never reconnects), and a failed failover
+      // round is not retried. With autoReconnect off every close ends up in onEnd
+      // (onReconnect is never called), and we reconnect from there ourselves.
+      onEnd: (e: ws.Event) => {
+        console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik WebSocket ended, type: ${e.type}.`)
+        void this.handleWsEnded(generation)
+      },
       autoReconnect: false
     }
   }
@@ -1505,7 +1518,7 @@ class MultiBlockchainClient {
     await Promise.all(
       Object.values(this.clients).map(async (c) => {
         try {
-          c.chronikWSEndpoint.close()
+          c.closeWs()
           c.wsEndpoint.close()
         } catch (err: any) {
           console.error(`Failed to close connections for client: ${err.message as string}`)

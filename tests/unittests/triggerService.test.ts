@@ -21,6 +21,7 @@ import {
 
 import { parseTriggerPostData } from 'utils/validators'
 import { fetchPaybuttonById as fetchPaybuttonByIdMock, fetchPaybuttonWithTriggers as fetchPaybuttonWithTriggersMock } from 'services/paybuttonService'
+import { fetchPricesForNetworkAndTimestamp } from 'services/priceService'
 
 jest.mock('axios', () => ({
   __esModule: true,
@@ -77,6 +78,11 @@ jest.mock('utils/index', () => ({
   runAsyncInBatches: jest.fn(async (_name: string, runners: Array<() => Promise<void>>, _concurrency: number) => {
     for (const r of runners) { await r() }
   })
+}))
+
+jest.mock('services/priceService', () => ({
+  ...jest.requireActual('services/priceService'),
+  fetchPricesForNetworkAndTimestamp: jest.fn()
 }))
 
 // Keep original parseTriggerPostData behavior by default
@@ -591,6 +597,104 @@ describe('executeTriggersBatch mechanics', () => {
       (() => { try { return JSON.parse(l.data).errorName === 'USER_OUT_OF_POST_CREDITS' } catch { return false } })()
     )
     expect(ooc.length).toBeGreaterThan(0)
+  })
+})
+
+// ------------------------------
+// txs without linked prices (bulk sync path)
+// ------------------------------
+describe('executeTriggersBatch with txs missing linked prices', () => {
+  const mockedFetchPrices = fetchPricesForNetworkAndTimestamp as jest.MockedFunction<typeof fetchPricesForNetworkAndTimestamp>
+  const user = makeUser({ id: 'u', emailCredits: 5, postCredits: 5, preferredCurrencyId: 1 })
+  const mkTrigger = (id: string, postData: string): any => ({
+    id,
+    isEmailTrigger: false,
+    deletedAt: null,
+    postURL: `https://p/${id}`,
+    postData,
+    paybutton: { name: 'PB', providerUserId: 'u', user, addresses: [{ address: { address: primaryAddr } }] }
+  })
+  const trigWithValue = mkTrigger('tValue', '{"value": <value>}')
+  const trigNoValue = mkTrigger('tNoValue', '{"address": <address>}')
+  const trigMail = {
+    id: 'tM',
+    isEmailTrigger: true,
+    deletedAt: null,
+    postData: '',
+    emails: 'to@x.com',
+    paybutton: { name: 'PB', providerUserId: 'u', user, addresses: [{ address: { address: primaryAddr } }] }
+  }
+  // Same shape as the stub chronikService builds for txs committed by the bulk sync
+  const unpricedTx = (h: string, timestamp = 1700000000): any => ({
+    hash: h,
+    amount: new Prisma.Decimal(2),
+    paymentId: '',
+    confirmed: true,
+    message: '',
+    timestamp,
+    address: primaryAddr,
+    rawMessage: '',
+    inputAddresses: [],
+    outputAddresses: [],
+    prices: []
+  })
+  const allLogs = (): any[] => prismaMock.triggerLog.createMany.mock.calls.flatMap((c: any[]) => c[0].data as any[])
+
+  beforeEach((): void => {
+    ;(Mail.getMailerTransporter as jest.Mock).mockReturnValue({ sendMail: jest.fn(async () => ({ accepted: ['to@x.com'], response: '250 OK' })) })
+    mockedParse.mockImplementation(jest.requireActual('utils/validators').parseTriggerPostData)
+    mockedAxios.post.mockResolvedValue({ status: 200, data: 'ok' })
+    prismaMock.triggerLog.createMany.mockResolvedValue({ count: 0 } as any)
+    prismaMock.userProfile.findMany.mockResolvedValue([user])
+    prismaMock.userProfile.update.mockResolvedValue({} as any)
+  })
+
+  it('looks up the day prices to fill <value>, once per day', async () => {
+    mockedFetchPrices.mockResolvedValue({
+      usd: { value: new Prisma.Decimal('0.5') },
+      cad: { value: new Prisma.Decimal('0.6') }
+    } as any)
+    prismaMock.paybuttonTrigger.findMany.mockResolvedValue([trigWithValue] as any)
+
+    await executeTriggersBatch([
+      { address: primaryAddr, txs: [unpricedTx('h1', 1700000000), unpricedTx('h2', 1700000100)] }
+    ] as any, 1)
+
+    expect(mockedFetchPrices).toHaveBeenCalledTimes(1)
+    expect(mockedAxios.post).toHaveBeenCalledTimes(2)
+    expect(mockedAxios.post.mock.calls[0][1]).toEqual({ value: '1' }) // 2 * 0.5 USD
+    expect(allLogs().every(l => l.isError === false)).toBe(true)
+  })
+
+  it('does not look up prices when no trigger uses <value>', async () => {
+    prismaMock.paybuttonTrigger.findMany.mockResolvedValue([trigNoValue, trigMail] as any)
+
+    await executeTriggersBatch([{ address: primaryAddr, txs: [unpricedTx('h1')] }] as any, 1)
+
+    expect(mockedFetchPrices).not.toHaveBeenCalled()
+    expect(mockedAxios.post).toHaveBeenCalledTimes(1)
+    expect(allLogs().filter(l => l.isError === false)).toHaveLength(2)
+  })
+
+  it('when the price is unavailable, logs an error for <value> triggers and still runs the others', async () => {
+    mockedFetchPrices.mockRejectedValue(new Error('No Price found'))
+    prismaMock.paybuttonTrigger.findMany.mockResolvedValue([trigWithValue, trigNoValue, trigMail] as any)
+
+    await executeTriggersBatch([{ address: primaryAddr, txs: [unpricedTx('h1')] }] as any, 1)
+
+    expect(mockedAxios.post).toHaveBeenCalledTimes(1)
+    expect(mockedAxios.post.mock.calls[0][0]).toBe('https://p/tNoValue')
+
+    const logs = allLogs()
+    const valueLog = logs.find(l => l.triggerId === 'tValue')
+    expect(valueLog.isError).toBe(true)
+    expect(JSON.parse(valueLog.data).errorMessage).toContain('No Price found')
+    expect(logs.find(l => l.triggerId === 'tNoValue').isError).toBe(false)
+    expect(logs.find(l => l.triggerId === 'tM').isError).toBe(false)
+
+    // the skipped trigger is not charged
+    const upd = prismaMock.userProfile.update.mock.calls[0][0] as any
+    expect(upd.data.postCredits.decrement).toBe(1)
   })
 })
 
