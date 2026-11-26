@@ -323,6 +323,32 @@ export async function * generateTransactionsWithPaybuttonsAndPricesForAddress (a
   }
 }
 
+export interface TimestampRange {
+  min: number
+  max: number
+}
+
+/**
+ * Oldest and newest tx timestamp of each given address, keyed by address id.
+ * Addresses with no txs are left out. Uses only the (addressId, timestamp)
+ * index, so it stays cheap for addresses with huge histories.
+ */
+export async function fetchTxTimestampRangesByAddressId (addressIds: string[]): Promise<Map<string, TimestampRange>> {
+  const ranges = new Map<string, TimestampRange>()
+  if (addressIds.length === 0) return ranges
+  const rows = await prisma.transaction.groupBy({
+    by: ['addressId'],
+    where: { addressId: { in: addressIds } },
+    _min: { timestamp: true },
+    _max: { timestamp: true }
+  })
+  for (const row of rows) {
+    if (row._min.timestamp === null || row._max.timestamp === null) continue
+    ranges.set(row.addressId, { min: row._min.timestamp, max: row._max.timestamp })
+  }
+  return ranges
+}
+
 /**
  * Txs of an address created, updated or linked to prices at or after `since`:
  * what a cache rebuild that started reading at `since` may have missed. Same

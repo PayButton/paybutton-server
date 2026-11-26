@@ -219,6 +219,11 @@ export const CACHE_CATCH_UP_MARGIN_MS = 5 * 60 * 1000
 // Catch-up passes (each re-applying what changed during the previous one)
 // before giving up on an address that keeps changing.
 export const CACHE_CATCH_UP_MAX_ROUNDS = 5
+// Payment cache keys checked for existence per Redis pipeline round trip.
+export const CACHE_EXISTS_BATCH_SIZE = 1000
+// Payment cache week keys fetched per MGET. Kept smaller than the EXISTS batch
+// since each value holds a whole week of payments.
+export const CACHE_MGET_BATCH_SIZE = 200
 
 export const PRIMARY_XEC_COLOR = '#0074C2'
 export const SECONDARY_XEC_COLOR = '#FFFFFF'
