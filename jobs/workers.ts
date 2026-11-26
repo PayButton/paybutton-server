@@ -8,7 +8,7 @@ import { fetchAllAddresses } from 'services/addressService'
 import { cleanupExpiredClientPayments } from 'services/clientPaymentService'
 import { multiBlockchainClient } from 'services/chronikService'
 import { connectAllTransactionsToPrices } from 'services/transactionService'
-import { fetchAllUsers } from 'services/userService'
+import { fetchAllUsers, fetchUsersForAddresses } from 'services/userService'
 
 import * as priceService from 'services/priceService'
 
@@ -38,25 +38,37 @@ const invalidateAddressCaches = async (
 }
 
 /**
- * Drop Redis payment-week, balance, and dashboard caches after bulk blockchain sync.
- * Rebuild is lazy on the next API request.
+ * Drop Redis payment-week, balance, and dashboard caches after bulk blockchain sync,
+ * for the addresses whose txs changed and the users who own them. Rebuild is lazy
+ * on the next API request. Every other cache stays warm: wiping all of them made
+ * each user's next page load rebuild their whole history from the DB.
+ * Addresses whose txs were newly linked to prices are invalidated separately by
+ * connectAllTransactionsToPrices. If the changed set is unknown (the sync failed
+ * part-way), falls back to invalidating everything.
  */
-async function invalidateCachesAfterBlockchainSync (): Promise<void> {
-  console.log('[CACHE]: Invalidating caches after blockchain sync...')
-  const addresses = await fetchAllAddresses()
+export async function invalidateCachesAfterBlockchainSync (changedAddresses: string[] | undefined): Promise<void> {
+  const invalidateAll = changedAddresses === undefined
+  const addresses = invalidateAll
+    ? (await fetchAllAddresses()).map(a => a.address)
+    : [...new Set(changedAddresses)]
+  console.log(
+    invalidateAll
+      ? `[CACHE]: Invalidating caches for all ${addresses.length} addresses after blockchain sync (changed addresses unknown)...`
+      : `[CACHE]: Invalidating caches for ${addresses.length} addresses changed by blockchain sync...`
+  )
   let paymentCacheFailures = 0
   let balanceCacheFailures = 0
   for (let i = 0; i < addresses.length; i += ADDRESS_INVALIDATION_BATCH_SIZE) {
     const batch = addresses.slice(i, i + ADDRESS_INVALIDATION_BATCH_SIZE)
     const results = await Promise.all(
-      batch.map(async (a) => await invalidateAddressCaches(a.address))
+      batch.map(async (a) => await invalidateAddressCaches(a))
     )
     for (const r of results) {
       paymentCacheFailures += r.paymentFailures
       balanceCacheFailures += r.balanceFailures
     }
   }
-  const users = await fetchAllUsers()
+  const users = invalidateAll ? await fetchAllUsers() : await fetchUsersForAddresses(addresses)
   let dashboardCacheFailures = 0
   await Promise.all(
     users.map(async (u) => {
@@ -112,9 +124,9 @@ export const syncBlockchainAndPricesWorker = async (queueName: string, onComplet
     async (job) => {
       console.log(`job ${job.id as string}: syncing missed prices, transactions and connecting them...`)
       await priceService.syncPastDaysNewerPrices()
-      await multiBlockchainClient.syncMissedTransactions()
+      const changedAddresses = await multiBlockchainClient.syncMissedTransactions()
       await connectAllTransactionsToPrices()
-      await invalidateCachesAfterBlockchainSync()
+      await invalidateCachesAfterBlockchainSync(changedAddresses)
     },
     {
       connection: redisBullMQ,

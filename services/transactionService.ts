@@ -838,6 +838,8 @@ export interface SyncPersistedTransaction {
 export interface CreateManyTransactionsSyncResult {
   insertedCount: number
   inserted: SyncPersistedTransaction[]
+  // Addresses of pre-existing txs whose confirmed/timestamp/orphaned changed.
+  updatedAddressIds: string[]
 }
 
 interface PersistManyTransactionRowsResult {
@@ -1106,13 +1108,14 @@ export async function createManyTransactionsForSync (
   transactionsData: Prisma.TransactionUncheckedCreateInput[]
 ): Promise<CreateManyTransactionsSyncResult> {
   if (transactionsData.length === 0) {
-    return { insertedCount: 0, inserted: [] }
+    return { insertedCount: 0, inserted: [], updatedAddressIds: [] }
   }
 
-  const { inserted } = await persistManyTransactionRows(transactionsData)
+  const { inserted, updated } = await persistManyTransactionRows(transactionsData)
   return {
     insertedCount: inserted.length,
-    inserted
+    inserted,
+    updatedAddressIds: [...new Set(updated.map(t => t.addressId))]
   }
 }
 
