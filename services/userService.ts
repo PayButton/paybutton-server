@@ -124,6 +124,21 @@ export async function fetchUsersForAddress (addressString: string): Promise<User
   })
 }
 
+export async function fetchUsersForAddresses (addressStrings: string[]): Promise<UserProfile[]> {
+  if (addressStrings.length === 0) return []
+  return await prisma.userProfile.findMany({
+    where: {
+      addresses: {
+        some: {
+          address: {
+            address: { in: addressStrings }
+          }
+        }
+      }
+    }
+  })
+}
+
 export async function isUserAdmin (id: string): Promise<boolean> {
   const user = await prisma.userProfile.findFirst({
     where: {

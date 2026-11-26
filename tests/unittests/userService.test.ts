@@ -126,3 +126,24 @@ describe('user trigger limits and pro logic', () => {
     expect(userService.getUserRemainingTriggerCreditsLimit(user, 'PostData')).toBe(8)
   })
 })
+
+describe('fetchUsersForAddresses', () => {
+  it('fetches the owners of any of the given addresses in one query', async () => {
+    prisma.userProfile.findMany = prismaMock.userProfile.findMany
+    prismaMock.userProfile.findMany.mockResolvedValue([mockedUserProfile])
+
+    const users = await userService.fetchUsersForAddresses(['ecash:a', 'ecash:b'])
+
+    expect(users).toEqual([mockedUserProfile])
+    expect(prismaMock.userProfile.findMany).toHaveBeenCalledWith({
+      where: { addresses: { some: { address: { address: { in: ['ecash:a', 'ecash:b'] } } } } }
+    })
+  })
+
+  it('does not query when no address is given', async () => {
+    prisma.userProfile.findMany = prismaMock.userProfile.findMany
+
+    await expect(userService.fetchUsersForAddresses([])).resolves.toEqual([])
+    expect(prismaMock.userProfile.findMany).not.toHaveBeenCalled()
+  })
+})
