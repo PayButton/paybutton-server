@@ -1,6 +1,6 @@
 import prisma from 'prisma-local/clientInstance'
 import { Prisma, Transaction } from '@prisma/client'
-import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT, HUMAN_READABLE_DATE_FORMAT } from 'constants/index'
+import { RESPONSE_MESSAGES, USD_QUOTE_ID, CAD_QUOTE_ID, N_OF_QUOTES, UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT, SupportedQuotesType, NETWORK_IDS, PRICES_CONNECTION_BATCH_SIZE, PRICES_CONNECTION_TIMEOUT, PRICES_CONNECTION_TX_CHUNK_SIZE, UNPRICED_TXS_PAGE_SIZE, SYNC_INSERT_RETRY_DELAY, HUMAN_READABLE_DATE_FORMAT } from 'constants/index'
 import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId } from 'services/addressService'
 import { AllPrices, QuoteValues, fetchAndStoreMissingPrices, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
 import _ from 'lodash'
@@ -447,29 +447,16 @@ export async function upsertTransaction (
   }
 }
 
-function buildPriceTxConnectionInput (tx: Transaction, allPrices: AllPrices): Prisma.PricesOnTransactionsCreateManyInput[] {
+function buildPriceTxConnectionInput (tx: Pick<Transaction, 'id'>, allPrices: AllPrices): Prisma.PricesOnTransactionsCreateManyInput[] {
   return [
     { transactionId: tx.id, priceId: allPrices.usd.id },
     { transactionId: tx.id, priceId: allPrices.cad.id }
   ]
 }
 
-async function deletePriceTxConnectionsInChunks (
-  client: Prisma.TransactionClient,
-  transactionIds: string[]
-): Promise<void> {
-  let pricesUnlinkedCount = 0
-  console.log(
-    `[PRICES] Disconnecting existing price links for ${transactionIds.length} txs...`
-  )
-  for (let i = 0; i < transactionIds.length; i += PRICES_CONNECTION_BATCH_SIZE) {
-    const slice = transactionIds.slice(i, i + PRICES_CONNECTION_BATCH_SIZE)
-    const result = await client.pricesOnTransactions.deleteMany({
-      where: { transactionId: { in: slice } }
-    })
-    pricesUnlinkedCount += result.count
-  }
-  console.log(`[PRICES] Disconnected ${pricesUnlinkedCount} price links.`)
+/** The fields connectTransactionsListToPrices needs from a tx. */
+export type PriceLinkableTransaction = Pick<Transaction, 'id' | 'timestamp'> & {
+  address: { networkId: number }
 }
 
 async function createPriceTxConnectionInChunks (
@@ -532,12 +519,24 @@ async function fetchStoredPricesForNetworkAndTimestamps (
   return complete
 }
 
-export async function connectTransactionsListToPrices (
-  txList: TransactionWithNetwork[]
-): Promise<void> {
-  if (txList.length === 0) return
+export interface ConnectPricesOptions {
+  // Set when every tx is known to have no price links yet (e.g. just inserted,
+  // or selected by `prices: none`), so the per-chunk unlink can be skipped.
+  skipUnlink?: boolean
+}
 
-  console.log(`[PRICES] Preparing to connect ${txList.length} txs to prices...`)
+/**
+ * Link each tx to the USD and CAD prices of its day, replacing any existing links.
+ * Writes in chunks of PRICES_CONNECTION_TX_CHUNK_SIZE txs, each in its own short
+ * DB transaction: a chunk that fails is logged and skipped (its txs stay unpriced
+ * for the next run to retry) instead of rolling back the whole list.
+ * Returns how many txs were linked.
+ */
+export async function connectTransactionsListToPrices (
+  txList: PriceLinkableTransaction[],
+  { skipUnlink = false }: ConnectPricesOptions = {}
+): Promise<number> {
+  if (txList.length === 0) return 0
 
   // collect UNIQUE (networkId, timestamp) pairs
   const networkIdToTimestamps = new Map<number, Set<number>>()
@@ -551,11 +550,9 @@ export async function connectTransactionsListToPrices (
 
   // ---- efficient fetch ----
   const priceByNetworkTs = new Map<string, AllPrices>()
-  let pairs = 0
 
   for (const [networkId, timestamps] of networkIdToTimestamps.entries()) {
     const tsArray = [...timestamps]
-    pairs += tsArray.length
 
     let storedPrices = await fetchStoredPricesForNetworkAndTimestamps(networkId, tsArray)
 
@@ -583,61 +580,106 @@ export async function connectTransactionsListToPrices (
     }
   }
 
-  console.log(`[PRICES] Loaded prices for ${pairs} (network,timestamp) pairs.`)
-
-  // Build all join rows (2 per tx: USD + CAD)
-  const rows: Prisma.PricesOnTransactionsCreateManyInput[] = []
-  const txIdsToConnect: string[] = []
+  const txsToConnect: Array<{ id: string, rows: Prisma.PricesOnTransactionsCreateManyInput[] }> = []
   for (const t of txList) {
-    const ts = flattenTimestamp(t.timestamp)
-    const allPrices = priceByNetworkTs.get(`${t.address.networkId}:${ts}`)
+    const allPrices = priceByNetworkTs.get(`${t.address.networkId}:${flattenTimestamp(t.timestamp)}`)
     if (allPrices == null) {
       continue
     }
-    rows.push(...buildPriceTxConnectionInput(t, allPrices))
-    txIdsToConnect.push(t.id)
+    txsToConnect.push({ id: t.id, rows: buildPriceTxConnectionInput(t, allPrices) })
+  }
+  const skippedNoPrice = txList.length - txsToConnect.length
+
+  let linked = 0
+  let failedChunks = 0
+  for (let i = 0; i < txsToConnect.length; i += PRICES_CONNECTION_TX_CHUNK_SIZE) {
+    const chunk = txsToConnect.slice(i, i + PRICES_CONNECTION_TX_CHUNK_SIZE)
+    const ids = chunk.map(c => c.id)
+    const rows = chunk.flatMap(c => c.rows)
+    try {
+      await prisma.$transaction(
+        async (tx) => {
+          if (!skipUnlink) {
+            await tx.pricesOnTransactions.deleteMany({ where: { transactionId: { in: ids } } })
+          }
+          await createPriceTxConnectionInChunks(tx, rows)
+        },
+        { timeout: PRICES_CONNECTION_TIMEOUT }
+      )
+      linked += chunk.length
+    } catch (err: any) {
+      failedChunks++
+      console.error(`[PRICES] Failed to link prices for a chunk of ${chunk.length} txs (first: ${ids[0]}): ${err.message as string}`)
+    }
   }
 
-  if (txIdsToConnect.length < txList.length) {
-    console.warn(`[PRICES] Skipped ${txList.length - txIdsToConnect.length} txs due to missing price data.`)
+  const failedTxs = txsToConnect.length - linked
+  if (skippedNoPrice > 0 || failedChunks > 0 || txList.length >= PRICES_CONNECTION_TX_CHUNK_SIZE) {
+    console.log(
+      `[PRICES] Linked ${linked}/${txList.length} txs to prices` +
+      (skippedNoPrice > 0 ? `, ${skippedNoPrice} skipped (no price data)` : '') +
+      (failedChunks > 0 ? `, ${failedTxs} failed in ${failedChunks} chunks` : '') +
+      '.'
+    )
   }
-
-  if (txIdsToConnect.length === 0) {
-    console.warn('[PRICES] No txs to connect after filtering — all had missing prices.')
-    return
-  }
-
-  console.log(`[PRICES] Built ${rows.length} price links (2 per tx).`)
-
-  await prisma.$transaction(
-    async (tx) => {
-      await deletePriceTxConnectionsInChunks(tx, txIdsToConnect)
-      await createPriceTxConnectionInChunks(tx, rows)
-    },
-    { timeout: PRICES_CONNECTION_TIMEOUT }
-  )
+  return linked
 }
 
+let connectAllTransactionsToPricesRun: Promise<void> | undefined
+
+/**
+ * Link every tx that has no prices, or an incomplete set, to its day's prices.
+ * Unpriced txs are paged (UNPRICED_TXS_PAGE_SIZE at a time) rather than loaded
+ * all at once. Runs from the startup sync job and from a repeating job; a call
+ * made while a run is in progress in this process waits for that run instead of
+ * starting another one.
+ */
 export async function connectAllTransactionsToPrices (): Promise<void> {
+  if (connectAllTransactionsToPricesRun !== undefined) {
+    console.log('[PRICES] Linking txs to prices is already running, waiting for it.')
+    return await connectAllTransactionsToPricesRun
+  }
+  connectAllTransactionsToPricesRun = runConnectAllTransactionsToPrices()
+  try {
+    await connectAllTransactionsToPricesRun
+  } finally {
+    connectAllTransactionsToPricesRun = undefined
+  }
+}
+
+async function runConnectAllTransactionsToPrices (): Promise<void> {
   console.log('[PRICES] Started connecting txs to prices.')
-  const noPricesTxs = await fetchAllTransactionsWithNoPrices()
-  console.log(`[PRICES] Found ${noPricesTxs.length} txs with no prices.`)
+  let found = 0
+  let linked = 0
+  let cursor: string | undefined
+  while (true) {
+    const page = await prisma.transaction.findMany({
+      where: {
+        prices: { none: {} },
+        ...(cursor !== undefined ? { id: { gt: cursor } } : {})
+      },
+      orderBy: { id: 'asc' },
+      take: UNPRICED_TXS_PAGE_SIZE,
+      select: { id: true, timestamp: true, address: { select: { networkId: true } } }
+    })
+    if (page.length === 0) break
+    cursor = page[page.length - 1].id
+    found += page.length
+    linked += await connectTransactionsListToPrices(page, { skipUnlink: true })
+    console.log(`[PRICES] Txs with no prices: ${linked}/${found} linked so far.`)
+  }
+  console.log(`[PRICES] Found ${found} txs with no prices, linked ${linked}.`)
+
   const wrongNumberOfPricesTxs = await fetchAllTransactionsWithIrregularPrices()
   console.log(`[PRICES] Found ${wrongNumberOfPricesTxs.length} txs with irregular prices.`)
-  const txs = [
-    ...noPricesTxs,
-    ...wrongNumberOfPricesTxs
-  ]
-  console.log('[PRICES] Connecting txs to prices...')
-  void await connectTransactionsListToPrices(txs)
-  console.log('[PRICES] Finished connecting txs to prices.')
+  const relinked = await connectTransactionsListToPrices(wrongNumberOfPricesTxs)
+  console.log(`[PRICES] Finished connecting txs to prices (${linked} unpriced and ${relinked} irregular txs linked).`)
 }
 
 /**
  * Link prices for the given addresses' txs that have none (or an incomplete set).
- * The bulk sync path (createManyTransactionsForSync) leaves txs unpriced; the
- * sync job fixes that globally with connectAllTransactionsToPrices, but on-demand
- * syncs (syncAndSubscribeAddresses) must do it for their own addresses.
+ * Catches txs from an on-demand sync (syncAndSubscribeAddresses) whose per-batch
+ * price linking failed, without waiting for the repeating linking job.
  */
 export async function connectTransactionsToPricesForAddresses (addressIds: string[]): Promise<void> {
   if (addressIds.length === 0) return
@@ -661,6 +703,24 @@ export async function connectTransactionsToPricesForAddresses (addressIds: strin
       include: includeNetwork
     })
   await connectTransactionsListToPrices([...noPricesTxs, ...irregularTxs])
+}
+
+// Prisma's error code for an interactive transaction that expired or was closed.
+const PRISMA_TRANSACTION_API_ERROR = 'P2028'
+
+const isTransactionTimeoutError = (err: unknown): boolean =>
+  err instanceof Prisma.PrismaClientKnownRequestError && err.code === PRISMA_TRANSACTION_API_ERROR
+
+/** Runs `fn`; if it fails with a transaction timeout, waits and runs it once more. */
+export async function retryOnTransactionTimeout<T> (fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn()
+  } catch (err) {
+    if (!isTransactionTimeoutError(err)) throw err
+    console.warn(`[TRANSACTIONS] DB transaction timed out, retrying once in ${SYNC_INSERT_RETRY_DELAY}ms...`)
+    await new Promise(resolve => setTimeout(resolve, SYNC_INSERT_RETRY_DELAY))
+    return await fn()
+  }
 }
 
 interface ExistingTxSnapshot {
@@ -845,7 +905,10 @@ async function persistManyTransactionRows (
   let updatedCount = 0
 
   if (newTxs.length > 0) {
-    await prisma.$transaction(
+    // Retried once if the DB transaction times out (e.g. MySQL briefly stalled
+    // under load), instead of dropping the whole batch. Safe to repeat: the
+    // timed-out attempt was rolled back and the inserts skip duplicates.
+    const createdTxs = await retryOnTransactionTimeout(async () => await prisma.$transaction(
       async (tx) => {
         await tx.transaction.createMany({
           data: newTxs,
@@ -902,14 +965,13 @@ async function persistManyTransactionRows (
           })
         }
 
-        for (const createdTx of createdTxs) {
-          inserted.push(createdTx)
-        }
+        return createdTxs
       },
       {
         timeout: UPSERT_TRANSACTION_PRICES_ON_DB_TIMEOUT
       }
-    )
+    ))
+    inserted.push(...createdTxs)
   }
 
   if (toUpdate.length > 0) {
@@ -957,8 +1019,9 @@ async function persistManyTransactionRows (
 }
 
 /**
- * Bulk sync path: persist txs + inputs only. Prices, Redis cache, and paybutton
- * graphs are deferred to connectAllTransactionsToPrices after the sync job.
+ * Bulk sync path: persist txs + inputs only. The caller (commitTransactionsBatch)
+ * links prices per batch; the Redis cache is invalidated after the sync, and
+ * connectAllTransactionsToPrices retries any txs left unpriced.
  */
 export async function createManyTransactionsForSync (
   transactionsData: Prisma.TransactionUncheckedCreateInput[]
@@ -1037,18 +1100,6 @@ export async function markTransactionsOrphaned (hash: string): Promise<void> {
       orphaned: true
     }
   })
-}
-
-async function fetchAllTransactionsWithNoPrices (): Promise<TransactionWithNetwork[]> {
-  const x = await prisma.transaction.findMany({
-    where: {
-      prices: {
-        none: {}
-      }
-    },
-    include: includeNetwork
-  })
-  return x
 }
 
 export async function fetchAllTransactionsWithIrregularPrices (): Promise<TransactionWithNetwork[]> {

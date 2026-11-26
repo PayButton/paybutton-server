@@ -16,7 +16,8 @@ import {
   upsertTransaction,
   getSimplifiedTransactions,
   getSimplifiedTrasaction,
-  connectTransactionsToPricesForAddresses
+  connectTransactionsToPricesForAddresses,
+  connectTransactionsListToPrices
 } from './transactionService'
 import { CacheSet } from 'redis/index'
 import {
@@ -1106,6 +1107,20 @@ export class ChronikBlockchainClient {
       `${this.CHRONIK_MSG_PREFIX} committed — created=${syncResult.insertedCount}/` +
       `${commitTuples.length}`
     )
+
+    // Link prices batch by batch instead of only at the end of the sync job, so
+    // an interrupted sync (restart, deploy) doesn't leave everything unpriced.
+    // A failure here is not fatal: connectAllTransactionsToPrices retries later.
+    if (syncResult.inserted.length > 0) {
+      try {
+        await connectTransactionsListToPrices(
+          syncResult.inserted.map(t => ({ ...t, address: { networkId: this.networkId } })),
+          { skipUnlink: true }
+        )
+      } catch (err: any) {
+        console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to link prices for ${syncResult.inserted.length} synced txs: ${err.message as string}`)
+      }
+    }
 
     const createdForProd = syncResult.inserted.filter(t =>
       productionAddressesIds.includes(t.addressId)

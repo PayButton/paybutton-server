@@ -143,6 +143,26 @@ export const syncBlockchainAndPricesWorker = async (queueName: string, onComplet
   })
 }
 
+// Links txs that still have no prices (e.g. a failed per-batch link during sync,
+// or a startup sync that was interrupted before finishing).
+export const linkUnpricedTransactionsWorker = async (queueName: string): Promise<void> => {
+  const worker = new Worker(
+    queueName,
+    async (job) => {
+      console.log(`[PRICES] job ${job.id as string}: linking txs without prices...`)
+      await connectAllTransactionsToPrices()
+    },
+    {
+      connection: redisBullMQ,
+      lockDuration: DEFAULT_WORKER_LOCK_DURATION
+    }
+  )
+
+  worker.on('failed', (job, err) => {
+    console.error(`[PRICES] job ${job?.id as string}: linking txs without prices FAILED — ${err.message}`)
+  })
+}
+
 export const cleanupClientPaymentsWorker = async (queueName: string): Promise<void> => {
   const worker = new Worker(
     queueName,

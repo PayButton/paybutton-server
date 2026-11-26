@@ -595,3 +595,142 @@ describe('connectTransactionsListToPrices', () => {
     expect(prismaMock.pricesOnTransactions.createMany).not.toHaveBeenCalled()
   })
 })
+
+describe('connectTransactionsListToPrices chunking', () => {
+  const dayTs = moment.utc('2026-08-02').unix()
+  const usd = { ...mockedUSDPriceOnTransaction.price, id: 11, timestamp: dayTs, networkId: 1 }
+  const cad = { ...mockedCADPriceOnTransaction.price, id: 12, timestamp: dayTs, networkId: 1 }
+  const makeTxs = (n: number): any[] => Array.from({ length: n }, (_, i) => ({
+    id: `tx-${i}`, timestamp: dayTs + 60, address: { networkId: 1 }
+  }))
+
+  beforeEach(() => {
+    prisma.$transaction = prismaMock.$transaction
+    prisma.price.findMany = prismaMock.price.findMany
+    prisma.pricesOnTransactions.deleteMany = prismaMock.pricesOnTransactions.deleteMany
+    prisma.pricesOnTransactions.createMany = prismaMock.pricesOnTransactions.createMany
+    prisma.pricesOnTransactions.groupBy = prismaMock.pricesOnTransactions.groupBy
+    prisma.transaction.findMany = prismaMock.transaction.findMany
+    prismaMock.price.findMany.mockResolvedValue([usd, cad])
+    prismaMock.pricesOnTransactions.deleteMany.mockResolvedValue({ count: 0 })
+    prismaMock.pricesOnTransactions.createMany.mockResolvedValue({ count: 0 })
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock))
+  })
+
+  it('writes each chunk of txs in its own DB transaction', async () => {
+    const linked = await transactionService.connectTransactionsListToPrices(makeTxs(501))
+
+    expect(linked).toBe(501)
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(2)
+    const createManyCalls = prismaMock.pricesOnTransactions.createMany.mock.calls as any[]
+    expect(createManyCalls[0][0].data).toHaveLength(1000)
+    expect(createManyCalls[1][0].data).toHaveLength(2)
+  })
+
+  it('keeps linking the remaining chunks when one chunk fails', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    prismaMock.$transaction
+      .mockRejectedValueOnce(new Error('Transaction already closed'))
+      .mockImplementation(async (fn: any) => fn(prismaMock))
+
+    const linked = await transactionService.connectTransactionsListToPrices(makeTxs(501))
+
+    expect(linked).toBe(1)
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(2)
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Transaction already closed'))
+    errorSpy.mockRestore()
+  })
+
+  it('only unlinks existing prices when skipUnlink is not set', async () => {
+    await transactionService.connectTransactionsListToPrices(makeTxs(2), { skipUnlink: true })
+    expect(prismaMock.pricesOnTransactions.deleteMany).not.toHaveBeenCalled()
+
+    await transactionService.connectTransactionsListToPrices(makeTxs(2))
+    expect(prismaMock.pricesOnTransactions.deleteMany).toHaveBeenCalledWith({
+      where: { transactionId: { in: ['tx-0', 'tx-1'] } }
+    })
+  })
+})
+
+describe('connectAllTransactionsToPrices', () => {
+  const dayTs = moment.utc('2026-08-02').unix()
+  const usd = { ...mockedUSDPriceOnTransaction.price, id: 11, timestamp: dayTs, networkId: 1 }
+  const cad = { ...mockedCADPriceOnTransaction.price, id: 12, timestamp: dayTs, networkId: 1 }
+  const page = [
+    { id: 'a', timestamp: dayTs + 60, address: { networkId: 1 } },
+    { id: 'b', timestamp: dayTs + 120, address: { networkId: 1 } }
+  ]
+
+  beforeEach(() => {
+    prisma.$transaction = prismaMock.$transaction
+    prisma.price.findMany = prismaMock.price.findMany
+    prisma.pricesOnTransactions.deleteMany = prismaMock.pricesOnTransactions.deleteMany
+    prisma.pricesOnTransactions.createMany = prismaMock.pricesOnTransactions.createMany
+    prisma.pricesOnTransactions.groupBy = prismaMock.pricesOnTransactions.groupBy
+    prisma.transaction.findMany = prismaMock.transaction.findMany
+    prismaMock.price.findMany.mockResolvedValue([usd, cad])
+    prismaMock.pricesOnTransactions.createMany.mockResolvedValue({ count: 0 })
+    ;(prismaMock.pricesOnTransactions.groupBy as unknown as jest.Mock).mockResolvedValue([])
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock))
+    prismaMock.transaction.findMany
+      .mockResolvedValueOnce(page as any)
+      .mockResolvedValue([])
+  })
+
+  it('pages through unpriced txs by id and links them without unlinking', async () => {
+    await transactionService.connectAllTransactionsToPrices()
+
+    const firstQuery = prismaMock.transaction.findMany.mock.calls[0][0] as any
+    const secondQuery = prismaMock.transaction.findMany.mock.calls[1][0] as any
+    expect(firstQuery.where).toEqual({ prices: { none: {} } })
+    expect(firstQuery.orderBy).toEqual({ id: 'asc' })
+    expect(secondQuery.where).toEqual({ prices: { none: {} }, id: { gt: 'b' } })
+    expect(prismaMock.pricesOnTransactions.createMany).toHaveBeenCalledWith({
+      data: [
+        { transactionId: 'a', priceId: 11 }, { transactionId: 'a', priceId: 12 },
+        { transactionId: 'b', priceId: 11 }, { transactionId: 'b', priceId: 12 }
+      ],
+      skipDuplicates: true
+    })
+    expect(prismaMock.pricesOnTransactions.deleteMany).not.toHaveBeenCalled()
+  })
+
+  it('makes a concurrent call wait for the run in progress instead of starting another', async () => {
+    await Promise.all([
+      transactionService.connectAllTransactionsToPrices(),
+      transactionService.connectAllTransactionsToPrices()
+    ])
+
+    expect(prismaMock.pricesOnTransactions.groupBy).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('retryOnTransactionTimeout', () => {
+  let timeoutSpy: jest.SpyInstance
+  let warnSpy: jest.SpyInstance
+
+  beforeEach(() => {
+    timeoutSpy = jest.spyOn(global, 'setTimeout').mockImplementation(((fn: () => void) => { fn(); return 0 }) as any)
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    timeoutSpy.mockRestore()
+    warnSpy.mockRestore()
+  })
+
+  it('retries once when the DB transaction timed out', async () => {
+    const timeout = new Prisma.PrismaClientKnownRequestError('Transaction already closed', { code: 'P2028', clientVersion: 'test' })
+    const fn = jest.fn().mockRejectedValueOnce(timeout).mockResolvedValueOnce('ok')
+
+    await expect(transactionService.retryOnTransactionTimeout(fn)).resolves.toBe('ok')
+    expect(fn).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not retry other errors', async () => {
+    const fn = jest.fn().mockRejectedValue(new Error('unique constraint'))
+
+    await expect(transactionService.retryOnTransactionTimeout(fn)).rejects.toThrow('unique constraint')
+    expect(fn).toHaveBeenCalledTimes(1)
+  })
+})

@@ -306,6 +306,16 @@ export const TRIGGER_LOG_BATCH_SIZE = 200
 export const PRICES_CONNECTION_BATCH_SIZE = 1_000
 // interactive $transaction timeout in ms (for batched delete + createMany of prices)
 export const PRICES_CONNECTION_TIMEOUT = 30_000
+// Txs whose price links are replaced per DB transaction (2 links per tx). Small
+// chunks keep each transaction well under PRICES_CONNECTION_TIMEOUT and mean a
+// failure only loses that chunk, not the whole run.
+export const PRICES_CONNECTION_TX_CHUNK_SIZE = 500
+// Unpriced txs loaded into memory per page by connectAllTransactionsToPrices.
+export const UNPRICED_TXS_PAGE_SIZE = 5_000
+// How often the jobs process retries linking prices for txs that still have none.
+export const PRICE_LINKING_REPEAT_DELAY = 60 * 60 * 1000
+// Wait before retrying a sync insert whose DB transaction timed out.
+export const SYNC_INSERT_RETRY_DELAY = 2_000
 
 export const CLIENT_PAYMENT_EXPIRATION_TIME = (7) * (24 * 60 * 60 * 1000) // (number of days) * (24 * 60 * 60 * 1000)
 
