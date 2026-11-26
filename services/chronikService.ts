@@ -1,7 +1,7 @@
 import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client'
 import { encodeCashAddress, decodeCashAddress } from 'ecashaddrjs'
 import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CONFIRMED_TX_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, MAX_TXS_PER_ADDRESS, TX_BATCH_POLLING_DELAY, CHRONIK_HTTP_MAX_TRIES, CHRONIK_HTTP_BASE_DELAY_MS, CHRONIK_WS_BASE_DELAY_MS, CHRONIK_WS_MAX_DELAY_MS } from 'constants/index'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CONFIRMED_TX_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, MAX_TXS_PER_ADDRESS, TX_BATCH_POLLING_DELAY, SLOW_ADDRESS_SYNC_LOG_THRESHOLD, SLOWEST_ADDRESSES_TO_LOG, CHRONIK_HTTP_MAX_TRIES, CHRONIK_HTTP_BASE_DELAY_MS, CHRONIK_WS_BASE_DELAY_MS, CHRONIK_WS_MAX_DELAY_MS } from 'constants/index'
 import { productionAddresses } from 'prisma-local/seeds/addresses'
 import prisma from 'prisma-local/clientInstance'
 import {
@@ -410,6 +410,27 @@ export class ChronikBlockchainClient {
     return txsPage.txs
   }
 
+  private logSyncTimings (
+    logPrefix: string,
+    startedAt: number,
+    timings: Array<{ address: string, ms: number, chronikMs: number, pages: number, newTxs: number }>
+  ): void {
+    const totalPages = timings.reduce((sum, t) => sum + t.pages, 0)
+    const totalChronikMs = timings.reduce((sum, t) => sum + t.chronikMs, 0)
+    const withNewTxs = timings.filter(t => t.newTxs > 0).length
+    console.log(
+      `${logPrefix} <<< Fetched ${timings.length} addresses in ${((Date.now() - startedAt) / 1000).toFixed(1)}s: ` +
+      `${withNewTxs} with new txs, ${totalPages} chronik pages, ${(totalChronikMs / 1000).toFixed(1)}s total chronik time.`
+    )
+    const slowest = [...timings].sort((a, b) => b.ms - a.ms).slice(0, SLOWEST_ADDRESSES_TO_LOG)
+    for (const t of slowest) {
+      console.log(
+        `${logPrefix} slowest: ${t.address} ${(t.ms / 1000).toFixed(1)}s, ${t.pages} pages, ${t.newTxs} new txs ` +
+        `(chronik ${(t.chronikMs / 1000).toFixed(1)}s).`
+      )
+    }
+  }
+
   /*
    * For each address, fetch pages in parallel (“burst”),
    * then use the burst’s newest/oldest timestamps to decide whether to continue.
@@ -428,6 +449,11 @@ export class ChronikBlockchainClient {
 
     const chronikTxs: ChronikTxWithAddress[] = []
     const completedAddresses: string[] = []
+    // Per-address timings, to find what makes a startup sync slow. "waited" is
+    // time not spent fetching from chronik: mostly paused while batches are
+    // committed to the DB.
+    const fetchStartedAt = Date.now()
+    const addressTimings: Array<{ address: string, ms: number, chronikMs: number, pages: number, newTxs: number }> = []
 
     let producersPaused = false
     const producerPauseWaiters: Array<() => void> = []
@@ -495,6 +521,9 @@ export class ChronikBlockchainClient {
       let nextBurstBasePageIndex = 0
       let hasReachedStoppingCondition = false
       let newTxs = 0
+      const addressStartedAt = Date.now()
+      let chronikMs = 0
+      let pagesFetched = 0
 
       try {
         while (!hasReachedStoppingCondition) {
@@ -503,11 +532,19 @@ export class ChronikBlockchainClient {
           const pageIndex = nextBurstBasePageIndex
           let pageTxs: Tx[] = []
 
+          const pageStartedAt = Date.now()
           try {
             pageTxs = await this.getPaginatedTxs(address.address, pageIndex, CHRONIK_FETCH_N_TXS_PER_PAGE)
+            pagesFetched++
           } catch (err: any) {
             console.warn(`${addrLogPrefix} page=${pageIndex} failed: ${err.message as string}`)
             pageTxs = []
+          } finally {
+            chronikMs += Date.now() - pageStartedAt
+          }
+
+          if (pageIndex === 0 && pageTxs.length > 0 && lastSyncedTimestampSeconds === 0) {
+            console.log(`${addrLogPrefix} never synced (no lastSynced), fetching its full history.`)
           }
 
           if (pageIndex === 0 && pageTxs.length === 0) {
@@ -548,12 +585,17 @@ export class ChronikBlockchainClient {
           }
           newTxs += newTxsInThisPage
         }
-        if (newTxs > 0) {
-          console.log(`${addrLogPrefix} ${newTxs} new txs.`)
-        }
       } catch (err: any) {
         console.error(`${logPrefix}: address job failed: ${err.message as string}`)
       } finally {
+        const ms = Date.now() - addressStartedAt
+        addressTimings.push({ address: address.address, ms, chronikMs, pages: pagesFetched, newTxs })
+        if (newTxs > 0 || ms > SLOW_ADDRESS_SYNC_LOG_THRESHOLD) {
+          console.log(
+            `${addrLogPrefix} ${newTxs} new txs, ${pagesFetched} pages in ${(ms / 1000).toFixed(1)}s ` +
+            `(chronik ${(chronikMs / 1000).toFixed(1)}s, waited ${((ms - chronikMs) / 1000).toFixed(1)}s).`
+          )
+        }
         completedAddresses.push(address.address)
       }
     }
@@ -625,6 +667,8 @@ export class ChronikBlockchainClient {
     if (activeWorkers.size > 0) {
       await Promise.all(Array.from(activeWorkers))
     }
+
+    this.logSyncTimings(logPrefix, fetchStartedAt, addressTimings)
 
     // Final TX flush after all addresses processed
     if (chronikTxs.length >= TX_EMIT_BATCH_SIZE) {
@@ -1100,7 +1144,7 @@ export class ChronikBlockchainClient {
     commitTuples: Array<{ row: Prisma.TransactionUncheckedCreateInput, raw: Tx, addressString: string }>,
     productionAddressesIds: string[],
     runTriggers: boolean
-  ): Promise<void> {
+  ): Promise<string[]> {
     const rows = commitTuples.map(p => p.row)
     const rowsToUpsert = await filterRowsNeedingCreateMany(rows)
     const syncResult = await createManyTransactionsForSync(rowsToUpsert)
@@ -1109,29 +1153,45 @@ export class ChronikBlockchainClient {
       `${commitTuples.length}`
     )
 
+    // Addresses whose cached payments/balance are now stale.
+    const addressStringById = new Map(commitTuples.map(t => [t.row.addressId, t.addressString]))
+    const changedAddresses = [...new Set([
+      ...syncResult.inserted.map(t => t.addressId),
+      ...syncResult.updatedAddressIds
+    ])]
+      .map(id => addressStringById.get(id))
+      .filter((a): a is string => a !== undefined)
+
     // Link prices batch by batch instead of only at the end of the sync job, so
     // an interrupted sync (restart, deploy) doesn't leave everything unpriced.
     // A failure here is not fatal: connectAllTransactionsToPrices retries later.
+    let linkedAddresses: string[] = []
     if (syncResult.inserted.length > 0) {
       try {
         const linkedIds = new Set(await connectTransactionsListToPrices(
           syncResult.inserted.map(t => ({ ...t, address: { networkId: this.networkId } })),
           { skipUnlink: true }
         ))
-        // The bulk path doesn't add txs to cached payments, so drop the caches of
-        // addresses whose new txs are now priced instead of waiting for the end of
-        // the sync, which an interrupted sync never reaches. Txs left unpriced are
-        // invalidated by connectAllTransactionsToPrices once it links them.
-        const addressStringById = new Map(commitTuples.map(t => [t.row.addressId, t.addressString]))
-        const linkedAddresses = [...new Set(
-          syncResult.inserted.filter(t => linkedIds.has(t.id)).map(t => addressStringById.get(t.addressId))
-        )].filter((a): a is string => a !== undefined)
-        if (linkedAddresses.length > 0) {
-          await invalidateCachesForAddresses(linkedAddresses)
-        }
+        linkedAddresses = syncResult.inserted
+          .filter(t => linkedIds.has(t.id))
+          .map(t => addressStringById.get(t.addressId))
+          .filter((a): a is string => a !== undefined)
       } catch (err: any) {
         console.error(`${this.CHRONIK_MSG_PREFIX}: Failed to link prices for ${syncResult.inserted.length} synced txs: ${err.message as string}`)
       }
+    }
+
+    // The bulk path doesn't update cached payments, so drop the caches of addresses
+    // with newly priced or updated txs now instead of waiting for the end of the
+    // sync, which an interrupted sync never reaches (and the next sync won't see
+    // these txs as changed again). Txs left unpriced are invalidated by
+    // connectAllTransactionsToPrices once it links them.
+    const updatedAddresses = syncResult.updatedAddressIds
+      .map(id => addressStringById.get(id))
+      .filter((a): a is string => a !== undefined)
+    const addressesToInvalidate = [...new Set([...linkedAddresses, ...updatedAddresses])]
+    if (addressesToInvalidate.length > 0) {
+      await invalidateCachesForAddresses(addressesToInvalidate)
     }
 
     const createdForProd = syncResult.inserted.filter(t =>
@@ -1202,6 +1262,7 @@ export class ChronikBlockchainClient {
         }
       }
     }
+    return changedAddresses
   }
 
   public async syncAddresses (addresses: Address[], runTriggers = false): Promise<SyncAndSubscriptionReturn> {
@@ -1210,7 +1271,7 @@ export class ChronikBlockchainClient {
     const productionAddressesIds = productionAddresses.filter(a => a.networkId === this.networkId).map(a => a.id)
 
     if (addresses.length === 0) {
-      return { failedAddressesWithErrors, successfulAddressesWithCount }
+      return { failedAddressesWithErrors, successfulAddressesWithCount, changedAddresses: [] }
     }
 
     console.log(`${this.CHRONIK_MSG_PREFIX} Syncing ${addresses.length} addresses...`)
@@ -1222,6 +1283,20 @@ export class ChronikBlockchainClient {
 
     interface RowWithRaw { row: Prisma.TransactionUncheckedCreateInput, raw: Tx, addressString: string }
     let toCommit: RowWithRaw[] = []
+    const changedAddresses = new Set<string>()
+    // A commit that throws may have persisted some rows (inserts and update
+    // groups commit separately, and follow-up work runs after both), so which
+    // addresses changed is then unknown.
+    let changedAddressesUnknown = false
+    const commit = async (tuples: RowWithRaw[]): Promise<void> => {
+      try {
+        const changed = await this.commitTransactionsBatch(tuples, productionAddressesIds, runTriggers)
+        changed.forEach(a => changedAddresses.add(a))
+      } catch (err) {
+        changedAddressesUnknown = true
+        throw err
+      }
+    }
 
     try {
       const pfx = `${this.CHRONIK_MSG_PREFIX}[PARALLEL FETCHING]`
@@ -1237,11 +1312,7 @@ export class ChronikBlockchainClient {
         if (batch.phase === 'drain-complete') {
           if (toCommit.length > 0) {
             const remainder = toCommit.splice(0)
-            await this.commitTransactionsBatch(
-              remainder,
-              productionAddressesIds,
-              runTriggers
-            )
+            await commit(remainder)
             remainder.length = 0
           }
           continue
@@ -1269,7 +1340,7 @@ export class ChronikBlockchainClient {
 
           if (toCommit.length >= DB_COMMIT_BATCH_SIZE) {
             const commitPairs = toCommit.splice(0, DB_COMMIT_BATCH_SIZE)
-            await this.commitTransactionsBatch(commitPairs, productionAddressesIds, runTriggers)
+            await commit(commitPairs)
             // Clear commitPairs
             commitPairs.length = 0
           }
@@ -1287,7 +1358,7 @@ export class ChronikBlockchainClient {
 
       // final DB flush (se sobrou menos que DB_COMMIT_BATCH_SIZE)
       if (toCommit.length > 0) {
-        await this.commitTransactionsBatch(toCommit, productionAddressesIds, runTriggers)
+        await commit(toCommit)
         toCommit = []
       }
 
@@ -1309,13 +1380,21 @@ export class ChronikBlockchainClient {
     console.log(`${this.CHRONIK_MSG_PREFIX} Finished syncing ${total} txs for ${addresses.length} addresses with ${failed.length} errors.`)
     console.timeEnd(`${this.CHRONIK_MSG_PREFIX} syncAddresses`)
 
-    return { failedAddressesWithErrors, successfulAddressesWithCount }
+    return {
+      failedAddressesWithErrors,
+      successfulAddressesWithCount,
+      changedAddresses: changedAddressesUnknown ? undefined : [...changedAddresses]
+    }
   }
 
-  public async syncMissedTransactions (): Promise<void> {
+  /**
+   * Returns the addresses whose txs changed (new or updated), or undefined if
+   * the sync failed in a way that leaves that unknown.
+   */
+  public async syncMissedTransactions (): Promise<string[] | undefined> {
     const addresses = await fetchAllAddressesForNetworkId(this.networkId)
     try {
-      const { failedAddressesWithErrors, successfulAddressesWithCount } = await this.syncAddresses(addresses, true)
+      const { failedAddressesWithErrors, successfulAddressesWithCount, changedAddresses } = await this.syncAddresses(addresses, true)
       Object.keys(failedAddressesWithErrors).forEach((addr) => {
         console.error(`${this.CHRONIK_MSG_PREFIX}: When syncing missing addresses for address ${addr} encountered error: ${failedAddressesWithErrors[addr]}`)
       })
@@ -1325,8 +1404,10 @@ export class ChronikBlockchainClient {
           console.log(`${this.CHRONIK_MSG_PREFIX}:> ${addr} — ${successfulAddressesWithCount[addr]}.`)
         }
       })
+      return changedAddresses
     } catch (err: any) {
       console.error(`${this.CHRONIK_MSG_PREFIX}: ERROR: (skipping anyway) initial missing transactions sync failed: ${err.message as string} ${err.stack as string}`)
+      return undefined
     }
   }
 
@@ -1506,16 +1587,22 @@ class MultiBlockchainClient {
   public async syncAddresses (addresses: Address[], runTriggers = false): Promise<SyncAndSubscriptionReturn> {
     let failedAddressesWithErrors: KeyValueT<string> = {}
     let successfulAddressesWithCount: KeyValueT<number> = {}
+    let changedAddresses: string[] | undefined = []
 
     for (const networkSlug of Object.keys(this.clients)) {
       const thisNetworkAddresses = addresses.filter(a => a.networkId === NETWORK_IDS_FROM_SLUGS[networkSlug])
       const ret = await this.clients[networkSlug as MainNetworkSlugsType].syncAddresses(thisNetworkAddresses, runTriggers)
       failedAddressesWithErrors = { ...failedAddressesWithErrors, ...ret.failedAddressesWithErrors }
       successfulAddressesWithCount = { ...successfulAddressesWithCount, ...ret.successfulAddressesWithCount }
+      // Unknown for one network means unknown overall.
+      changedAddresses = (changedAddresses === undefined || ret.changedAddresses === undefined)
+        ? undefined
+        : [...changedAddresses, ...ret.changedAddresses]
     }
     return {
       failedAddressesWithErrors,
-      successfulAddressesWithCount
+      successfulAddressesWithCount,
+      changedAddresses
     }
   }
 
@@ -1532,10 +1619,16 @@ class MultiBlockchainClient {
     return await this.clients[networkSlug as MainNetworkSlugsType].getBalance(address)
   }
 
-  public async syncMissedTransactions (): Promise<void> {
+  /**
+   * Returns the addresses whose txs changed during the sync, or undefined if
+   * that is unknown for any network (callers should then assume all changed).
+   */
+  public async syncMissedTransactions (): Promise<string[] | undefined> {
     await this.waitForStart()
-    await this.clients.bitcoincash.syncMissedTransactions()
-    await this.clients.ecash.syncMissedTransactions()
+    const bch = await this.clients.bitcoincash.syncMissedTransactions()
+    const xec = await this.clients.ecash.syncMissedTransactions()
+    if (bch === undefined || xec === undefined) return undefined
+    return [...bch, ...xec]
   }
 
   public async syncAndSubscribeAddresses (addresses: Address[]): Promise<SyncAndSubscriptionReturn> {
