@@ -10,7 +10,7 @@ import {
 } from '../../services/chronikService'
 import { Address, Prisma } from '@prisma/client'
 import { fetchAddressesArray } from '../../services/addressService'
-import { fetchUnconfirmedTransactions, deleteTransactions, upsertTransaction, connectTransactionsToPricesForAddresses, connectTransactionsListToPrices, createManyTransactionsForSync } from '../../services/transactionService'
+import { fetchUnconfirmedTransactions, deleteTransactions, upsertTransaction, connectTransactionsToPricesForAddresses, connectTransactionsListToPrices, createManyTransactionsForSync, invalidateCachesForAddresses } from '../../services/transactionService'
 import prisma from '../../prisma-local/clientInstance'
 import { executeAddressTriggers } from '../../services/triggerService'
 import { CacheSet } from '../../redis/index'
@@ -76,7 +76,8 @@ jest.mock('../../services/transactionService', () => ({
   getSimplifiedTrasaction: jest.fn(),
   connectAllTransactionsToPrices: jest.fn(),
   connectTransactionsToPricesForAddresses: jest.fn(),
-  connectTransactionsListToPrices: jest.fn()
+  connectTransactionsListToPrices: jest.fn(),
+  invalidateCachesForAddresses: jest.fn()
 }))
 
 jest.mock('../../redis/index', () => ({
@@ -1748,6 +1749,26 @@ describe('commitTransactionsBatch price linking', () => {
       [{ ...inserted[0], address: { networkId: 1 } }],
       { skipUnlink: true }
     )
+  })
+
+  it('invalidates the caches of addresses whose new txs got linked', async () => {
+    ;(connectTransactionsListToPrices as jest.Mock).mockReset().mockResolvedValue(['tx-1'])
+    const invalidate = (invalidateCachesForAddresses as jest.Mock).mockReset()
+    const client = new ChronikBlockchainClient('ecash')
+
+    await (client as any).commitTransactionsBatch(commitTuples, [], false)
+
+    expect(invalidate).toHaveBeenCalledWith(['ecash:addr-1'])
+  })
+
+  it('does not invalidate caches when no new tx could be linked', async () => {
+    ;(connectTransactionsListToPrices as jest.Mock).mockReset().mockResolvedValue([])
+    const invalidate = (invalidateCachesForAddresses as jest.Mock).mockReset()
+    const client = new ChronikBlockchainClient('ecash')
+
+    await (client as any).commitTransactionsBatch(commitTuples, [], false)
+
+    expect(invalidate).not.toHaveBeenCalled()
   })
 
   it('still commits the batch when price linking fails', async () => {

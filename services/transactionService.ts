@@ -11,6 +11,7 @@ import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTxWithInvoices } from 'redis/paymentCache'
 import { ButtonDisplayData, Payment } from 'redis/types'
 import moment from 'moment-timezone'
+import { v4 as uuidv4 } from 'uuid'
 
 export function getTransactionValue (transaction: TransactionWithPrices | TransactionsWithPaybuttonsAndPrices | SimplifiedTransaction): QuoteValues {
   const ret: QuoteValues = {
@@ -647,13 +648,23 @@ let connectAllTransactionsToPricesRun: Promise<void> | undefined
 // in the jobs process and a failed invalidation usually means Redis is unreachable.
 const addressesPendingCacheInvalidation = new Set<string>()
 
+/**
+ * Drop the payment, balance and dashboard caches of these addresses. Addresses
+ * whose invalidation fails stay queued and are retried by the next call (or the
+ * next connectAllTransactionsToPrices run in this process).
+ */
+export async function invalidateCachesForAddresses (addresses: string[]): Promise<void> {
+  addresses.forEach(a => addressesPendingCacheInvalidation.add(a))
+  await flushPendingCacheInvalidations()
+}
+
 async function flushPendingCacheInvalidations (): Promise<void> {
   if (addressesPendingCacheInvalidation.size === 0) return
   const addresses = [...addressesPendingCacheInvalidation]
   try {
     await CacheSet.addressesSynced(addresses)
     addresses.forEach(a => addressesPendingCacheInvalidation.delete(a))
-    console.log(`[PRICES] Invalidated caches for ${addresses.length} addresses with newly priced txs.`)
+    console.log(`[CACHE] Invalidated caches for ${addresses.length} addresses with newly priced txs.`)
   } catch (err: any) {
     console.error(`[PRICES] Failed to invalidate caches after linking prices, will retry on the next run: ${err.message as string}`)
   }
@@ -986,23 +997,24 @@ async function persistManyTransactionRows (
   let updatedCount = 0
 
   if (newTxs.length > 0) {
+    // Ids are generated here so only rows this call created are reported as
+    // inserted: if a concurrent sync inserted the same (hash, addressId) first,
+    // skipDuplicates keeps that row (with its own id) and it is left out, so its
+    // price linking, seed-file append and triggers aren't run twice.
+    const newTxsWithIds = newTxs.map(row => ({ ...row, id: uuidv4() }))
+    const newIds = newTxsWithIds.map(row => row.id)
     // Retried once if the DB transaction times out (e.g. MySQL briefly stalled
     // under load), instead of dropping the whole batch. Safe to repeat: the
     // timed-out attempt was rolled back and the inserts skip duplicates.
     const createdTxs = await retryOnTransactionTimeout(async () => await prisma.$transaction(
       async (tx) => {
         await tx.transaction.createMany({
-          data: newTxs,
+          data: newTxsWithIds,
           skipDuplicates: true
         })
 
         const createdTxs = await tx.transaction.findMany({
-          where: {
-            OR: newTxs.map(row => ({
-              hash: row.hash,
-              addressId: row.addressId
-            }))
-          },
+          where: { id: { in: newIds } },
           select: syncPersistedTxSelect
         })
 
