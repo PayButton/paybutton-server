@@ -9,6 +9,13 @@ import * as addressService from 'services/addressService'
 import { RESPONSE_MESSAGES } from 'constants/index'
 import moment from 'moment-timezone'
 import * as priceService from 'services/priceService'
+import { redis } from 'redis/clientInstance'
+
+const PRICE_RELINK_PENDING_KEY = 'prices:relinkPending'
+const clearPendingRelinks = async (): Promise<void> => {
+  const pending = await redis.smembers(PRICE_RELINK_PENDING_KEY)
+  if (pending.length > 0) await redis.srem(PRICE_RELINK_PENDING_KEY, ...pending)
+}
 
 const includePrices = {
   prices: {
@@ -650,6 +657,29 @@ describe('connectTransactionsListToPrices chunking', () => {
       where: { transactionId: { in: ['tx-0', 'tx-1'] } }
     })
   })
+
+  it('records txs whose link replacement failed so a later run relinks them', async () => {
+    await clearPendingRelinks()
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    prismaMock.$transaction.mockRejectedValue(new Error('Transaction already closed'))
+
+    await transactionService.connectTransactionsListToPrices(makeTxs(2))
+
+    expect((await redis.smembers(PRICE_RELINK_PENDING_KEY)).sort((a, b) => a.localeCompare(b))).toEqual(['tx-0', 'tx-1'])
+    await clearPendingRelinks()
+    errorSpy.mockRestore()
+  })
+
+  it('does not record failed txs that had no links (the no-prices pass finds them)', async () => {
+    await clearPendingRelinks()
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    prismaMock.$transaction.mockRejectedValue(new Error('Transaction already closed'))
+
+    await transactionService.connectTransactionsListToPrices(makeTxs(2), { skipUnlink: true })
+
+    expect(await redis.smembers(PRICE_RELINK_PENDING_KEY)).toEqual([])
+    errorSpy.mockRestore()
+  })
 })
 
 describe('connectAllTransactionsToPrices', () => {
@@ -715,6 +745,52 @@ describe('connectAllTransactionsToPrices', () => {
 
     expect(invalidate).not.toHaveBeenCalled()
     fetchMissing.mockRestore()
+  })
+
+  it('still invalidates addresses linked before a later page query fails', async () => {
+    prismaMock.transaction.findMany.mockReset()
+    prismaMock.transaction.findMany
+      .mockResolvedValueOnce(page as any)
+      .mockRejectedValueOnce(new Error('db down'))
+
+    await expect(transactionService.connectAllTransactionsToPrices()).rejects.toThrow('db down')
+
+    expect(invalidate).toHaveBeenCalledWith(['ecash:addr-a', 'ecash:addr-b'])
+  })
+
+  it('retries a failed cache invalidation on the next run', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    invalidate.mockRejectedValueOnce(new Error('redis down'))
+
+    await transactionService.connectAllTransactionsToPrices()
+    // Nothing left to link on the second run; the pending addresses are retried.
+    await transactionService.connectAllTransactionsToPrices()
+
+    expect(invalidate).toHaveBeenCalledTimes(2)
+    expect(invalidate.mock.calls[1][0]).toEqual(['ecash:addr-a', 'ecash:addr-b'])
+    errorSpy.mockRestore()
+  })
+
+  it('relinks txs recorded as pending and clears them from the pending set', async () => {
+    await clearPendingRelinks()
+    await redis.sadd(PRICE_RELINK_PENDING_KEY, 'r1', 'deleted-tx')
+    const pendingTx = { id: 'r1', timestamp: dayTs + 60, address: { networkId: 1, address: 'ecash:addr-r' } }
+    prismaMock.pricesOnTransactions.deleteMany.mockResolvedValue({ count: 2 })
+    prismaMock.transaction.findMany.mockReset()
+    prismaMock.transaction.findMany
+      .mockResolvedValueOnce([]) // no unpriced txs
+      .mockResolvedValueOnce([]) // no irregular txs
+      .mockResolvedValueOnce([pendingTx] as any) // pending relinks (deleted-tx no longer exists)
+
+    await transactionService.connectAllTransactionsToPrices()
+
+    expect(prismaMock.pricesOnTransactions.deleteMany).toHaveBeenCalledWith({ where: { transactionId: { in: ['r1'] } } })
+    expect(prismaMock.pricesOnTransactions.createMany).toHaveBeenCalledWith({
+      data: [{ transactionId: 'r1', priceId: 11 }, { transactionId: 'r1', priceId: 12 }],
+      skipDuplicates: true
+    })
+    expect(await redis.smembers(PRICE_RELINK_PENDING_KEY)).toEqual([])
+    expect(invalidate).toHaveBeenCalledWith(['ecash:addr-r'])
   })
 
   it('makes a concurrent call wait for the run in progress instead of starting another', async () => {

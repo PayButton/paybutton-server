@@ -5,6 +5,7 @@ import { fetchAddressBySubstring, fetchAddressById, fetchAddressesByPaybuttonId 
 import { AllPrices, QuoteValues, fetchAndStoreMissingPrices, fetchPricesForNetworkAndTimestamp, flattenTimestamp } from 'services/priceService'
 import _ from 'lodash'
 import { CacheSet } from 'redis/index'
+import { redis } from 'redis/clientInstance'
 import { SimplifiedTransaction } from 'ws-service/types'
 import { OpReturnData, parseAddress } from 'utils/validators'
 import { generatePaymentFromTxWithInvoices } from 'redis/paymentCache'
@@ -448,6 +449,20 @@ function buildPriceTxConnectionInput (tx: Pick<Transaction, 'id'>, allPrices: Al
   ]
 }
 
+// Txs whose link replacement failed. Their old links stay (rolled back) and may
+// be for the wrong day, so neither the no-prices nor the irregular-count pass of
+// connectAllTransactionsToPrices would find them. Kept in Redis because the
+// failure can happen in the app process while the retry runs in the jobs process.
+const PRICE_RELINK_PENDING_KEY = 'prices:relinkPending'
+
+async function recordPendingRelinks (txIds: string[]): Promise<void> {
+  try {
+    await redis.sadd(PRICE_RELINK_PENDING_KEY, ...txIds)
+  } catch (err: any) {
+    console.error(`[PRICES] Failed to record ${txIds.length} txs for relinking: ${err.message as string}`)
+  }
+}
+
 /** The fields connectTransactionsListToPrices needs from a tx. */
 export type PriceLinkableTransaction = Pick<Transaction, 'id' | 'timestamp'> & {
   address: { networkId: number }
@@ -604,6 +619,11 @@ export async function connectTransactionsListToPrices (
     } catch (err: any) {
       failedChunks++
       console.error(`[PRICES] Failed to link prices for a chunk of ${chunk.length} txs (first: ${ids[0]}): ${err.message as string}`)
+      // Txs selected as unlinked are found again by the no-prices pass; replaced
+      // links are not, so record them for connectAllTransactionsToPrices to retry.
+      if (!skipUnlink) {
+        await recordPendingRelinks(ids)
+      }
     }
   }
 
@@ -620,6 +640,24 @@ export async function connectTransactionsListToPrices (
 }
 
 let connectAllTransactionsToPricesRun: Promise<void> | undefined
+
+// Addresses with newly priced txs whose cache invalidation hasn't succeeded yet.
+// Once linked, those txs aren't found by later runs, so the addresses must not be
+// dropped: they're retried on the next run. Kept in memory because this only runs
+// in the jobs process and a failed invalidation usually means Redis is unreachable.
+const addressesPendingCacheInvalidation = new Set<string>()
+
+async function flushPendingCacheInvalidations (): Promise<void> {
+  if (addressesPendingCacheInvalidation.size === 0) return
+  const addresses = [...addressesPendingCacheInvalidation]
+  try {
+    await CacheSet.addressesSynced(addresses)
+    addresses.forEach(a => addressesPendingCacheInvalidation.delete(a))
+    console.log(`[PRICES] Invalidated caches for ${addresses.length} addresses with newly priced txs.`)
+  } catch (err: any) {
+    console.error(`[PRICES] Failed to invalidate caches after linking prices, will retry on the next run: ${err.message as string}`)
+  }
+}
 
 /**
  * Link every tx that has no prices, or an incomplete set, to its day's prices.
@@ -645,50 +683,75 @@ async function runConnectAllTransactionsToPrices (): Promise<void> {
   console.log('[PRICES] Started connecting txs to prices.')
   // Addresses whose cached payments were built while these txs were unpriced
   // (and so left them out); their caches are dropped once the txs are linked.
-  const addressesToInvalidate = new Set<string>()
   const trackLinked = (txs: Array<{ id: string, address: { address: string } }>, linkedIds: string[]): void => {
     const linked = new Set(linkedIds)
     for (const t of txs) {
-      if (linked.has(t.id)) addressesToInvalidate.add(t.address.address)
+      if (linked.has(t.id)) addressesPendingCacheInvalidation.add(t.address.address)
     }
   }
+  const priceLinkableSelect = { id: true, timestamp: true, address: { select: { networkId: true, address: true } } } as const
 
-  let found = 0
-  let linked = 0
-  let cursor: string | undefined
-  while (true) {
-    const page = await prisma.transaction.findMany({
-      where: {
-        prices: { none: {} },
-        ...(cursor !== undefined ? { id: { gt: cursor } } : {})
-      },
-      orderBy: { id: 'asc' },
-      take: UNPRICED_TXS_PAGE_SIZE,
-      select: { id: true, timestamp: true, address: { select: { networkId: true, address: true } } }
-    })
-    if (page.length === 0) break
-    cursor = page[page.length - 1].id
-    found += page.length
-    const linkedIds = await connectTransactionsListToPrices(page, { skipUnlink: true })
-    linked += linkedIds.length
-    trackLinked(page, linkedIds)
-    console.log(`[PRICES] Txs with no prices: ${linked}/${found} linked so far.`)
-  }
-  console.log(`[PRICES] Found ${found} txs with no prices, linked ${linked}.`)
+  try {
+    let found = 0
+    let linked = 0
+    let cursor: string | undefined
+    while (true) {
+      const page = await prisma.transaction.findMany({
+        where: {
+          prices: { none: {} },
+          ...(cursor !== undefined ? { id: { gt: cursor } } : {})
+        },
+        orderBy: { id: 'asc' },
+        take: UNPRICED_TXS_PAGE_SIZE,
+        select: priceLinkableSelect
+      })
+      if (page.length === 0) break
+      cursor = page[page.length - 1].id
+      found += page.length
+      const linkedIds = await connectTransactionsListToPrices(page, { skipUnlink: true })
+      linked += linkedIds.length
+      trackLinked(page, linkedIds)
+      console.log(`[PRICES] Txs with no prices: ${linked}/${found} linked so far.`)
+    }
+    console.log(`[PRICES] Found ${found} txs with no prices, linked ${linked}.`)
 
-  const wrongNumberOfPricesTxs = await fetchAllTransactionsWithIrregularPrices()
-  console.log(`[PRICES] Found ${wrongNumberOfPricesTxs.length} txs with irregular prices.`)
-  const relinkedIds = await connectTransactionsListToPrices(wrongNumberOfPricesTxs)
-  trackLinked(wrongNumberOfPricesTxs, relinkedIds)
-  console.log(`[PRICES] Finished connecting txs to prices (${linked} unpriced and ${relinkedIds.length} irregular txs linked).`)
+    const wrongNumberOfPricesTxs = await fetchAllTransactionsWithIrregularPrices()
+    console.log(`[PRICES] Found ${wrongNumberOfPricesTxs.length} txs with irregular prices.`)
+    const relinkedIds = await connectTransactionsListToPrices(wrongNumberOfPricesTxs)
+    trackLinked(wrongNumberOfPricesTxs, relinkedIds)
 
-  if (addressesToInvalidate.size > 0) {
+    // Txs whose link replacement failed earlier (possibly in another process).
+    let pendingRelinked = 0
     try {
-      await CacheSet.addressesSynced([...addressesToInvalidate])
-      console.log(`[PRICES] Invalidated caches for ${addressesToInvalidate.size} addresses with newly priced txs.`)
+      const pendingIds = await redis.smembers(PRICE_RELINK_PENDING_KEY)
+      if (pendingIds.length > 0) {
+        const pendingTxs = await prisma.transaction.findMany({
+          where: { id: { in: pendingIds } },
+          select: priceLinkableSelect
+        })
+        const pendingLinkedIds = await connectTransactionsListToPrices(pendingTxs)
+        trackLinked(pendingTxs, pendingLinkedIds)
+        pendingRelinked = pendingLinkedIds.length
+        // Done: relinked now, or deleted since. Failures stay recorded for the next run.
+        const existing = new Set(pendingTxs.map(t => t.id))
+        const relinked = new Set(pendingLinkedIds)
+        const done = pendingIds.filter(id => relinked.has(id) || !existing.has(id))
+        if (done.length > 0) {
+          await redis.srem(PRICE_RELINK_PENDING_KEY, ...done)
+        }
+        console.log(`[PRICES] Relinked ${pendingRelinked}/${pendingIds.length} txs whose earlier link replacement failed.`)
+      }
     } catch (err: any) {
-      console.error(`[PRICES] Failed to invalidate caches after linking prices: ${err.message as string}`)
+      console.error(`[PRICES] Failed to relink txs recorded as pending: ${err.message as string}`)
     }
+
+    console.log(
+      `[PRICES] Finished connecting txs to prices (${linked} unpriced, ${relinkedIds.length} irregular ` +
+      `and ${pendingRelinked} pending txs linked).`
+    )
+  } finally {
+    // Also on failure: txs linked before it must still get their caches dropped.
+    await flushPendingCacheInvalidations()
   }
 }
 

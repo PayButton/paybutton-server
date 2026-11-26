@@ -3,8 +3,28 @@ import IORedis, { ScanStream } from 'ioredis'
 import { ScanStreamOptions } from 'ioredis/built/types'
 
 class RedisMocked {
+  private readonly sets = new Map<string, Set<string>>()
+
   async get (_: string): Promise<null> {
     return null
+  }
+
+  async sadd (key: string, ...members: string[]): Promise<number> {
+    const set = this.sets.get(key) ?? new Set<string>()
+    const before = set.size
+    members.forEach(m => set.add(m))
+    this.sets.set(key, set)
+    return set.size - before
+  }
+
+  async smembers (key: string): Promise<string[]> {
+    return [...(this.sets.get(key) ?? [])]
+  }
+
+  async srem (key: string, ...members: string[]): Promise<number> {
+    const set = this.sets.get(key)
+    if (set === undefined) return 0
+    return members.filter(m => set.delete(m)).length
   }
 
   async del (key: string, data: any): Promise<void> {
