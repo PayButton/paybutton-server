@@ -1712,47 +1712,12 @@ describe('chronik WebSocket reconnection', () => {
     expect(endpoint.waitForOpen).toHaveBeenCalledTimes(16)
   })
 
-  describe('keepalive', () => {
-    const KEEPALIVE_MS = 25000
-    const OPEN = 1
+  it('logs the close code, reason and whether the close was clean', async () => {
+    const log = jest.spyOn(console, 'log').mockImplementation(() => {})
+    configs[0].onEnd({ type: 'close', code: 1006, reason: '', wasClean: false })
 
-    it('pings the open socket on an interval', async () => {
-      const endpoint = mkEndpoint()
-      endpoint.ws = { readyState: OPEN, ping: jest.fn() }
-      await client.connectWsWithRetry(endpoint, client.wsGeneration)
-
-      await jest.advanceTimersByTimeAsync(KEEPALIVE_MS * 3)
-      expect(endpoint.ws.ping).toHaveBeenCalledTimes(3)
-    })
-
-    it('does not ping a socket that is not open', async () => {
-      const endpoint = mkEndpoint()
-      endpoint.ws = { readyState: 3, ping: jest.fn() }
-      await client.connectWsWithRetry(endpoint, client.wsGeneration)
-
-      await jest.advanceTimersByTimeAsync(KEEPALIVE_MS * 2)
-      expect(endpoint.ws.ping).not.toHaveBeenCalled()
-    })
-
-    it('stops pinging once the socket ends', async () => {
-      const endpoint = mkEndpoint()
-      endpoint.ws = { readyState: OPEN, ping: jest.fn() }
-      await client.connectWsWithRetry(endpoint, client.wsGeneration)
-      configs[0].onEnd({ type: 'close' })
-
-      await jest.advanceTimersByTimeAsync(KEEPALIVE_MS * 2)
-      expect(endpoint.ws.ping).not.toHaveBeenCalled()
-    })
-
-    it('stops pinging after closeWs', async () => {
-      const endpoint = mkEndpoint()
-      endpoint.ws = { readyState: OPEN, ping: jest.fn() }
-      await client.connectWsWithRetry(endpoint, client.wsGeneration)
-      client.closeWs()
-
-      await jest.advanceTimersByTimeAsync(KEEPALIVE_MS * 2)
-      expect(endpoint.ws.ping).not.toHaveBeenCalled()
-    })
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('code: 1006, reason: (none), clean: false'))
+    log.mockRestore()
   })
 
   describe('post-reconnect backfill', () => {

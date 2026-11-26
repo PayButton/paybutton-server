@@ -1,7 +1,7 @@
 import { BlockInfo, ChronikClient, ConnectionStrategy, ScriptUtxo, Tx, WsConfig, WsEndpoint, WsMsgClient, WsSubScriptClient } from 'chronik-client'
 import { encodeCashAddress, decodeCashAddress } from 'ecashaddrjs'
 import { AddressWithTransaction, BlockchainInfo, TransactionDetails, ProcessedMessages, SubbedAddressesLog, SyncAndSubscriptionReturn, SubscriptionReturn, SimpleBlockInfo } from 'types/chronikTypes'
-import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CONFIRMED_TX_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, MAX_TXS_PER_ADDRESS, TX_BATCH_POLLING_DELAY, SLOW_ADDRESS_SYNC_LOG_THRESHOLD, SLOWEST_ADDRESSES_TO_LOG, CHRONIK_HTTP_MAX_TRIES, CHRONIK_HTTP_BASE_DELAY_MS, CHRONIK_WS_BASE_DELAY_MS, CHRONIK_WS_MAX_DELAY_MS, CHRONIK_WS_KEEPALIVE_INTERVAL_MS } from 'constants/index'
+import { CHRONIK_MESSAGE_CACHE_DELAY, RESPONSE_MESSAGES, XEC_TIMESTAMP_THRESHOLD, XEC_NETWORK_ID, BCH_NETWORK_ID, BCH_TIMESTAMP_THRESHOLD, CHRONIK_FETCH_N_TXS_PER_PAGE, KeyValueT, NETWORK_IDS_FROM_SLUGS, SOCKET_MESSAGES, NETWORK_IDS, NETWORK_TICKERS, MainNetworkSlugsType, MAX_MEMPOOL_TXS_TO_PROCESS_AT_A_TIME, MAX_CONFIRMED_TXS_TO_PROCESS_AT_A_TIME, MEMPOOL_PROCESS_DELAY, CONFIRMED_TX_PROCESS_DELAY, CHRONIK_INITIALIZATION_DELAY, LATENCY_TEST_CHECK_DELAY, INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY, TX_EMIT_BATCH_SIZE, DB_COMMIT_BATCH_SIZE, MAX_TXS_PER_ADDRESS, TX_BATCH_POLLING_DELAY, SLOW_ADDRESS_SYNC_LOG_THRESHOLD, SLOWEST_ADDRESSES_TO_LOG, CHRONIK_HTTP_MAX_TRIES, CHRONIK_HTTP_BASE_DELAY_MS, CHRONIK_WS_BASE_DELAY_MS, CHRONIK_WS_MAX_DELAY_MS } from 'constants/index'
 import { productionAddresses } from 'prisma-local/seeds/addresses'
 import prisma from 'prisma-local/clientInstance'
 import {
@@ -145,7 +145,6 @@ export class ChronikBlockchainClient {
   // retry loops belonging to a replaced endpoint can tell they are stale.
   private wsGeneration = 0
   private wsClosedOnPurpose = false
-  private wsKeepAliveTimer: ReturnType<typeof setInterval> | undefined
   // Whether a WS connection has been opened before, so later ones are reconnects.
   private wsHasConnected = false
   // Post-reconnect backfill in progress, and whether another reconnect asked for one meanwhile.
@@ -218,7 +217,6 @@ export class ChronikBlockchainClient {
         await endpoint.waitForOpen()
         if (!this.isCurrentWs(generation)) return
         console.log(`${this.CHRONIK_MSG_PREFIX}: WebSocket connected.`)
-        this.startWsKeepAlive(endpoint, generation)
         if (this.wsHasConnected) {
           void this.backfillAfterReconnect()
         }
@@ -229,32 +227,6 @@ export class ChronikBlockchainClient {
         console.error(`${this.CHRONIK_MSG_PREFIX}: WebSocket connection attempt ${attempt} failed: ${err.message as string}. Retrying in ${delay / 1000}s...`)
         await new Promise(resolve => setTimeout(resolve, delay))
       }
-    }
-  }
-
-  // Sends a WS ping on an interval while this endpoint is the current one. The
-  // ping/pong traffic keeps idle-timeout proxies from closing the socket.
-  private startWsKeepAlive (endpoint: WsEndpoint, generation: number): void {
-    this.stopWsKeepAlive()
-    this.wsKeepAliveTimer = setInterval(() => {
-      if (!this.isCurrentWs(generation)) {
-        this.stopWsKeepAlive()
-        return
-      }
-      const socket = endpoint.ws
-      if (socket?.readyState !== ws.WebSocket.OPEN) return
-      try {
-        socket.ping()
-      } catch (err: any) {
-        console.error(`${this.CHRONIK_MSG_PREFIX}: WebSocket keepalive ping failed: ${err.message as string}`)
-      }
-    }, CHRONIK_WS_KEEPALIVE_INTERVAL_MS)
-  }
-
-  private stopWsKeepAlive (): void {
-    if (this.wsKeepAliveTimer !== undefined) {
-      clearInterval(this.wsKeepAliveTimer)
-      this.wsKeepAliveTimer = undefined
     }
   }
 
@@ -294,7 +266,6 @@ export class ChronikBlockchainClient {
 
   private async handleWsEnded (generation: number): Promise<void> {
     if (!this.isCurrentWs(generation)) return
-    this.stopWsKeepAlive()
     console.log(`${this.CHRONIK_MSG_PREFIX}: Reconnecting chronik WebSocket in ${CHRONIK_WS_BASE_DELAY_MS / 1000}s...`)
     await new Promise(resolve => setTimeout(resolve, CHRONIK_WS_BASE_DELAY_MS))
     if (!this.isCurrentWs(generation)) return
@@ -303,7 +274,6 @@ export class ChronikBlockchainClient {
 
   public closeWs (): void {
     this.wsClosedOnPurpose = true
-    this.stopWsKeepAlive()
     this.chronikWSEndpoint?.close()
   }
 
@@ -878,7 +848,11 @@ export class ChronikBlockchainClient {
       // round is not retried. With autoReconnect off every close ends up in onEnd
       // (onReconnect is never called), and we reconnect from there ourselves.
       onEnd: (e: ws.Event) => {
-        console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik WebSocket ended, type: ${e.type}.`)
+        // The close code tells who ended it: 1006 means the connection dropped
+        // without a close frame (network/NAT/firewall), while 1000/1001 or other
+        // codes with a reason mean the server or a proxy closed it on purpose.
+        const { code, reason, wasClean } = e as ws.CloseEvent
+        console.log(`${this.CHRONIK_MSG_PREFIX}: Chronik WebSocket ended, type: ${e.type}, code: ${code}, reason: ${reason === '' ? '(none)' : reason}, clean: ${String(wasClean)}.`)
         void this.handleWsEnded(generation)
       },
       autoReconnect: false
