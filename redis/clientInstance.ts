@@ -9,6 +9,10 @@ class RedisMocked {
     return null
   }
 
+  async mget (keys: string[]): Promise<null[]> {
+    return keys.map(() => null)
+  }
+
   async sadd (key: string, ...members: string[]): Promise<number> {
     const set = this.sets.get(key) ?? new Set<string>()
     const before = set.size
@@ -57,8 +61,10 @@ class RedisMocked {
     return stream
   }
 
-  pipeline (commands?: unknown[][]): any {
+  // Nothing is ever stored, so every queued command (only EXISTS is queued) yields 0.
+  pipeline (commands: unknown[][] = []): any {
     return {
+      exec: async (): Promise<Array<[null, number]>> => commands.map(() => [null, 0])
     }
   }
 

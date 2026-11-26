@@ -1,6 +1,7 @@
 import { redis } from 'redis/clientInstance'
 import { Address, Prisma } from '@prisma/client'
 import {
+  fetchTxTimestampRangesByAddressId,
   generateTransactionsWithPaybuttonsAndPricesForAddress,
   getTransactionValue,
   TransactionsWithPaybuttonsAndPrices,
@@ -11,7 +12,7 @@ import { fetchAllUserAddresses, AddressPaymentInfo } from 'services/addressServi
 import { fetchPaybuttonArrayByUserId } from 'services/paybuttonService'
 import { QuoteValues } from 'services/priceService'
 
-import { RESPONSE_MESSAGES, PAYMENT_WEEK_KEY_FORMAT, KeyValueT, N_OF_QUOTES } from 'constants/index'
+import { PAYMENT_WEEK_KEY_FORMAT, KeyValueT, N_OF_QUOTES, CACHE_EXISTS_BATCH_SIZE, CACHE_MGET_BATCH_SIZE } from 'constants/index'
 import moment from 'moment-timezone'
 import { CacheSet, dropCachesBuiltWithoutAddressTxs, isAddressRebuildBackedOff } from 'redis/index'
 import { beginCacheClear, bumpCacheGeneration, endCacheClear, getCacheBuiltKey } from './cacheGeneration'
@@ -22,23 +23,101 @@ const getPaymentsWeekKey = (addressString: string, timestamp: number): string =>
   return `${addressString}:payments:${moment.unix(timestamp).format(PAYMENT_WEEK_KEY_FORMAT)}`
 }
 
-export async function * getUserUncachedAddresses (userId: string): AsyncGenerator<Address> {
-  const addresses = await fetchAllUserAddresses(userId, false, false) as Address[]
-  for (const address of addresses) {
-    const keys = await getCachedWeekKeysForAddress(address.address)
-    if (keys.length === 0) {
-      yield address
-    }
-  }
+interface AddressCacheState {
+  address: Address
+  // Whether a full rebuild wrote the address's payment cache (see getCacheBuiltKey).
+  built: boolean
+  // The address's week keys present in the cache.
+  weekKeys: string[]
 }
 
-const triggerBackgroundRebuildIfNeeded = async (userId: string): Promise<void> => {
-  if (process.env.SKIP_CACHE_REBUILD !== undefined) return
-  const uncachedAddresses: Address[] = []
-  const uncachedAddressStream = getUserUncachedAddresses(userId)
-  for await (const address of uncachedAddressStream) {
-    uncachedAddresses.push(address)
+interface DaySpan {
+  start: number
+  end: number
+  weekSuffix: string
+}
+
+/**
+ * Each local day from `from` to `to` (unix seconds), with the suffix that
+ * getPaymentsWeekKey gives the payments timestamped on it.
+ */
+const getDaySpans = (from: number, to: number): DaySpan[] => {
+  const spans: DaySpan[] = []
+  const last = moment.unix(to)
+  let day = moment.unix(from).startOf('day')
+  while (day.isSameOrBefore(last)) {
+    const next = day.clone().add(1, 'day')
+    spans.push({ start: day.unix(), end: next.unix() - 1, weekSuffix: day.format(PAYMENT_WEEK_KEY_FORMAT) })
+    day = next
   }
+  return spans
+}
+
+/** For each key, whether it exists, batching the checks into pipelines. */
+const getKeysExist = async (keys: string[]): Promise<boolean[]> => {
+  const exist: boolean[] = []
+  for (let i = 0; i < keys.length; i += CACHE_EXISTS_BATCH_SIZE) {
+    const batch = keys.slice(i, i + CACHE_EXISTS_BATCH_SIZE)
+    const results: Array<[Error | null, unknown]> = (await redis.pipeline(batch.map(k => ['exists', k])).exec()) ?? []
+    for (const [err, count] of results) {
+      if (err !== null) throw err
+      exist.push(Number(count) === 1)
+    }
+  }
+  return exist
+}
+
+/**
+ * The payment cache state of each of the user's addresses. Week keys are named
+ * after their week, so instead of SCANning the whole keyspace (twice, per
+ * address) for them, this derives the weeks each address can have payments in
+ * from its oldest and newest tx, and checks which of those keys exist.
+ */
+const getUserAddressCacheStates = async (userId: string): Promise<AddressCacheState[]> => {
+  const addresses = await fetchAllUserAddresses(userId) as Address[]
+  if (addresses.length === 0) return []
+  const ranges = await fetchTxTimestampRangesByAddressId(addresses.map(a => a.id))
+  // Up to now at least: a tx arriving after the ranges were read may already be cached.
+  const now = moment().unix()
+  let from = now
+  let to = now
+  for (const range of ranges.values()) {
+    from = Math.min(from, range.min)
+    to = Math.max(to, range.max)
+  }
+  const daySpans = getDaySpans(from, to)
+
+  const candidateKeysByAddress = addresses.map(address => {
+    const range = ranges.get(address.id)
+    if (range === undefined) return []
+    const suffixes = new Set<string>()
+    for (const span of daySpans) {
+      if (span.end >= range.min && span.start <= Math.max(range.max, now)) {
+        suffixes.add(span.weekSuffix)
+      }
+    }
+    return [...suffixes].map(suffix => `${address.address}:payments:${suffix}`)
+  })
+  const keysToCheck = addresses.flatMap((address, i) => [getCacheBuiltKey(address.address), ...candidateKeysByAddress[i]])
+  const exist = await getKeysExist(keysToCheck)
+
+  let pos = 0
+  return addresses.map((address, i) => {
+    const built = exist[pos++]
+    const weekKeys = candidateKeysByAddress[i].filter(() => exist[pos++])
+    return { address, built, weekKeys }
+  })
+}
+
+/**
+ * Whether the address's payment cache has been written. Caches written before
+ * the built marker existed are recognized by their week keys.
+ */
+const isAddressCached = (state: AddressCacheState): boolean => state.built || state.weekKeys.length > 0
+
+const triggerBackgroundRebuildIfNeeded = (userId: string, states: AddressCacheState[]): void => {
+  if (process.env.SKIP_CACHE_REBUILD !== undefined) return
+  const uncachedAddresses = states.filter(s => !isAddressCached(s)).map(s => s.address)
   if (uncachedAddresses.length > 0) {
     if (!isBackgroundRebuildActive(userId)) {
       console.log(`[CACHE] ${uncachedAddresses.length} uncached addresses for user ${userId}, starting background rebuild`)
@@ -47,9 +126,29 @@ const triggerBackgroundRebuildIfNeeded = async (userId: string): Promise<void> =
   }
 }
 
+/** Yields the payments stored under the given week keys, fetching them in MGET batches. */
+async function * getPaymentsForWeekKeys (weekKeys: string[], userButtonIds: string[]): AsyncGenerator<Payment> {
+  const userButtonIdSet = new Set(userButtonIds)
+  for (let i = 0; i < weekKeys.length; i += CACHE_MGET_BATCH_SIZE) {
+    const values = await redis.mget(weekKeys.slice(i, i + CACHE_MGET_BATCH_SIZE))
+    for (const paymentsString of values) {
+      // Deleted since its existence was checked, e.g. by a cache clear.
+      if (paymentsString === null) continue
+      const weekPayments: Payment[] = JSON.parse(paymentsString)
+      for (const payment of weekPayments) {
+        payment.buttonDisplayDataList = payment.buttonDisplayDataList.filter(d => userButtonIdSet.has(d.id))
+        yield payment
+      }
+    }
+  }
+}
+
 export const getPaymentList = async (userId: string): Promise<Payment[]> => {
-  await triggerBackgroundRebuildIfNeeded(userId)
-  return await getCachedPaymentsForUser(userId)
+  const payments: Payment[] = []
+  for await (const payment of getPaymentStream(userId)) {
+    payments.push(payment)
+  }
+  return payments
 }
 
 const getCachedWeekKeysForAddress = async (addressString: string): Promise<string[]> => {
@@ -66,15 +165,6 @@ const getCachedWeekKeysForAddress = async (addressString: string): Promise<strin
     stream.on('end', () => resolve(keys))
     stream.on('error', reject)
   })
-}
-
-export const getCachedWeekKeysForUser = async (userId: string): Promise<string[]> => {
-  const addresses = await fetchAllUserAddresses(userId)
-  let ret: string[] = []
-  for (const addr of addresses) {
-    ret = ret.concat(await getCachedWeekKeysForAddress(addr.address))
-  }
-  return ret
 }
 
 const getPaymentsByWeek = (addressString: string, payments: Payment[]): KeyValueT<Payment[]> => {
@@ -210,29 +300,6 @@ export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: 
     groupedPayments,
     info
   }
-}
-
-export const getCachedPaymentsForUser = async (userId: string): Promise<Payment[]> => {
-  const weekKeys = await getCachedWeekKeysForUser(userId)
-  const userButtonIds: string[] = (await fetchPaybuttonArrayByUserId(userId))
-    .map(p => p.id)
-  let allPayments: Payment[] = []
-  for (const weekKey of weekKeys) {
-    const paymentsString = await redis.get(weekKey)
-    if (paymentsString === null) {
-      throw new Error(RESPONSE_MESSAGES.CACHED_PAYMENT_NOT_FOUND_404.message)
-    }
-    let weekPayments: Payment[] = JSON.parse(paymentsString)
-    weekPayments = weekPayments
-      .map(pay => {
-        pay.buttonDisplayDataList = pay.buttonDisplayDataList.filter(d =>
-          userButtonIds.includes(d.id)
-        )
-        return pay
-      })
-    allPayments = allPayments.concat(weekPayments)
-  }
-  return allPayments
 }
 
 export const getCachedPaymentsCountForUser = async (userId: string, timezone: string): Promise<number> => {
@@ -443,29 +510,15 @@ const cacheAddressesInBackground = async (addresses: Address[], userId: string):
   }
 }
 
+/**
+ * Yields the user's cached payments, starting a background rebuild of any of
+ * their addresses that aren't cached yet (whose payments are left out).
+ */
 export async function * getPaymentStream (userId: string): AsyncGenerator<Payment> {
-  await triggerBackgroundRebuildIfNeeded(userId)
+  const states = await getUserAddressCacheStates(userId)
+  triggerBackgroundRebuildIfNeeded(userId, states)
 
   const userButtonIds: string[] = (await fetchPaybuttonArrayByUserId(userId))
     .map(p => p.id)
-  const weekKeys = await getCachedWeekKeysForUser(userId)
-
-  for (const weekKey of weekKeys) {
-    const paymentsString = await redis.get(weekKey)
-
-    if (paymentsString !== null) {
-      let weekPayments: Payment[] = JSON.parse(paymentsString)
-      weekPayments = weekPayments
-        .map(pay => {
-          pay.buttonDisplayDataList = pay.buttonDisplayDataList.filter(d =>
-            userButtonIds.includes(d.id)
-          )
-          return pay
-        })
-
-      for (const payment of weekPayments) {
-        yield payment
-      }
-    }
-  }
+  yield * getPaymentsForWeekKeys(states.flatMap(s => s.weekKeys), userButtonIds)
 }
