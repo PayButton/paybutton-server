@@ -65,7 +65,8 @@ jest.mock('../../services/transactionService', () => ({
   createManyTransactions: jest.fn(),
   createManyTransactionsForSync: jest.fn(async () => ({
     insertedCount: 0,
-    inserted: []
+    inserted: [],
+    updatedAddressIds: []
   })),
   filterRowsNeedingCreateMany: jest.fn(async (rows: unknown[]) => rows),
   deleteTransactions: jest.fn(),
@@ -1728,7 +1729,7 @@ describe('commitTransactionsBatch price linking', () => {
 
   beforeEach(() => {
     process.env.WS_AUTH_KEY = 'test-auth-key'
-    ;(createManyTransactionsForSync as jest.Mock).mockResolvedValueOnce({ insertedCount: 1, inserted })
+    ;(createManyTransactionsForSync as jest.Mock).mockResolvedValueOnce({ insertedCount: 1, inserted, updatedAddressIds: [] })
     jest.spyOn(prisma.address, 'findMany').mockResolvedValue([] as any)
     jest.spyOn(console, 'log').mockImplementation(() => {})
   })
@@ -1754,7 +1755,60 @@ describe('commitTransactionsBatch price linking', () => {
     const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
     const client = new ChronikBlockchainClient('ecash')
 
-    await expect((client as any).commitTransactionsBatch(commitTuples, [], false)).resolves.toBeUndefined()
+    await expect((client as any).commitTransactionsBatch(commitTuples, [], false)).resolves.toEqual(['ecash:addr-1'])
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('price API down'))
+  })
+})
+
+describe('changed addresses reported by the sync', () => {
+  beforeEach(() => {
+    process.env.WS_AUTH_KEY = 'test-auth-key'
+    jest.spyOn(prisma.address, 'findMany').mockResolvedValue([] as any)
+    jest.spyOn(console, 'log').mockImplementation(() => {})
+    ;(connectTransactionsListToPrices as jest.Mock).mockReset().mockResolvedValue([])
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it('commitTransactionsBatch returns the addresses with inserted or updated txs', async () => {
+    ;(createManyTransactionsForSync as jest.Mock).mockResolvedValueOnce({
+      insertedCount: 1,
+      inserted: [{ id: 'tx-1', hash: 'h1', addressId: 'addr-1', amount: new Prisma.Decimal(1), timestamp: 1700000000, confirmed: true }],
+      updatedAddressIds: ['addr-2']
+    })
+    const client = new ChronikBlockchainClient('ecash')
+    const tuple = (addressId: string, hash: string): any => ({
+      row: { hash, addressId, timestamp: 1700000000, amount: 1 },
+      raw: {},
+      addressString: `ecash:${addressId}`
+    })
+
+    const changed = await (client as any).commitTransactionsBatch(
+      [tuple('addr-1', 'h1'), tuple('addr-2', 'h2'), tuple('addr-3', 'h3')],
+      [],
+      false
+    )
+
+    expect(changed.sort()).toEqual(['ecash:addr-1', 'ecash:addr-2'])
+  })
+
+  it('MultiBlockchainClient.syncMissedTransactions merges both networks', async () => {
+    const clients = (multiBlockchainClient as any).clients
+    jest.spyOn(multiBlockchainClient, 'waitForStart').mockResolvedValue()
+    jest.spyOn(clients.bitcoincash, 'syncMissedTransactions').mockResolvedValue(['bitcoincash:a'])
+    jest.spyOn(clients.ecash, 'syncMissedTransactions').mockResolvedValue(['ecash:b'])
+
+    await expect(multiBlockchainClient.syncMissedTransactions()).resolves.toEqual(['bitcoincash:a', 'ecash:b'])
+  })
+
+  it('MultiBlockchainClient.syncMissedTransactions is undefined when a network sync failed', async () => {
+    const clients = (multiBlockchainClient as any).clients
+    jest.spyOn(multiBlockchainClient, 'waitForStart').mockResolvedValue()
+    jest.spyOn(clients.bitcoincash, 'syncMissedTransactions').mockResolvedValue(undefined)
+    jest.spyOn(clients.ecash, 'syncMissedTransactions').mockResolvedValue(['ecash:b'])
+
+    await expect(multiBlockchainClient.syncMissedTransactions()).resolves.toBeUndefined()
   })
 })

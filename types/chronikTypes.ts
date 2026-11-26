@@ -50,4 +50,6 @@ export interface SubscriptionReturn {
 export interface SyncAndSubscriptionReturn {
   failedAddressesWithErrors: KeyValueT<string>
   successfulAddressesWithCount: KeyValueT<number>
+  // Addresses that got new txs, or existing txs updated, during the sync.
+  changedAddresses?: string[]
 }

@@ -296,6 +296,10 @@ export const CHRONIK_FETCH_N_TXS_PER_PAGE = 200
 export const INITIAL_ADDRESS_SYNC_FETCH_CONCURRENTLY = 16
 export const TX_EMIT_BATCH_SIZE = 200 // for our generator, not chronik
 export const DB_COMMIT_BATCH_SIZE = 200 // tamanho dos lotes para commit no DB
+// Addresses whose startup sync takes longer than this are logged with timings.
+export const SLOW_ADDRESS_SYNC_LOG_THRESHOLD = 30_000
+// How many of the slowest addresses to list at the end of a startup sync.
+export const SLOWEST_ADDRESSES_TO_LOG = 10
 export const TX_BATCH_POLLING_DELAY = 500 // delay (ms) between polling for new batches of txs to commit to the DB
 
 export const TRIGGER_POST_CONCURRENCY = 100

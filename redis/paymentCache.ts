@@ -172,14 +172,17 @@ export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: 
   let balance = new Prisma.Decimal(0)
   let paymentCount = 0
   let txCount = 0
+  let skippedUnpriced = 0
   const txsWithPaybuttonsGenerator = generateTransactionsWithPaybuttonsAndPricesForAddress(address.id)
   for await (const batch of txsWithPaybuttonsGenerator) {
     for (const tx of batch) {
       txCount++
       balance = balance.plus(tx.amount)
       if (tx.amount.gt(0)) {
+        // Left out until its prices are linked; connectAllTransactionsToPrices
+        // then invalidates this address so it is rebuilt with the tx.
         if (tx.prices.length !== N_OF_QUOTES) {
-          console.warn(`[CACHE] Skipping tx ${tx.hash} — missing price links (${tx.prices.length}/${N_OF_QUOTES})`)
+          skippedUnpriced++
           continue
         }
         const payment = generatePaymentFromTx(tx)
@@ -192,6 +195,9 @@ export const generateAndCacheGroupedPaymentsAndInfoForAddress = async (address: 
   }
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
   console.log(`[CACHE] Cached address ${address.address.slice(0, 20)}...: ${paymentCount} payments, ${txCount} txs in ${elapsed}s`)
+  if (skippedUnpriced > 0) {
+    console.warn(`[CACHE] Address ${address.address}: left out ${skippedUnpriced} payments with missing price links.`)
+  }
   const info: AddressPaymentInfo = {
     balance,
     paymentCount
