@@ -69,8 +69,15 @@ export default function SyncStatus (): JSX.Element {
     const load = async (): Promise<void> => {
       try {
         const res = await fetch('/api/admin/syncStatus')
-        const json = await res.json()
+        // A proxy timeout or crash returns an HTML error page, not JSON.
+        const text = await res.text()
         if (cancelled) return
+        let json: any
+        try {
+          json = JSON.parse(text)
+        } catch {
+          throw new Error(`HTTP ${res.status} ${res.statusText} (non-JSON response)`)
+        }
         if (!res.ok) throw new Error(json.message ?? `HTTP ${res.status}`)
         setData(json)
         setError(undefined)
@@ -173,7 +180,10 @@ export default function SyncStatus (): JSX.Element {
         ))}
       </div>
       <p className={style.sync_meta}>
-        Transactions without linked prices: <strong>{data.unpricedTxs.toLocaleString()}</strong> (counted {formatDuration(now - data.unpricedTxsCheckedAt)} ago)
+        Transactions without linked prices:{' '}
+        {data.unpricedTxs === null || data.unpricedTxsCheckedAt === null
+          ? <em>counting…</em>
+          : <><strong>{data.unpricedTxs.toLocaleString()}</strong> (counted {formatDuration(now - data.unpricedTxsCheckedAt)} ago)</>}
       </p>
     </div>
 
